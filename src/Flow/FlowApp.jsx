@@ -146,9 +146,9 @@ export default function FlowApp() {
         <FlowMenu
           session={session} tableContext={tableContext}
           cart={cart} cartTotal={cartTotal} cartCount={cartCount}
-          onBack={() => setScreen("home")}
-          onAddToCart={addToCart} onUpdateQty={updateCartQty}
-          onRemove={removeFromCart} onClear={clearCart}
+          onBack={() => setScreen("home")} setScreen={setScreen}
+          addToCart={addToCart} updateCartQty={updateCartQty}
+          removeFromCart={removeFromCart} clearCart={clearCart}
           onCheckout={() => setScreen("checkout")}
         />
       )}

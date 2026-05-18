@@ -1,329 +1,504 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3011";
-const fIDR = n => "Rp " + (n || 0).toLocaleString("id-ID");
+const BRAND = "#F59E0B";
+const BG = "#0A0A0A";
+const CARD = "#1A1A1A";
+const BORDER = "#2A2A2A";
+const TEXT = "#FAFAFA";
+const SUB = "#A1A1AA";
 
-const CAT_LABELS = {
-  all: "Semua",
-  froyo: "🍦 Froyo",
-  smoothies: "🥤 Smoothie",
-  yogulato: "🍨 Gelato",
-  takehome: "📦 Take Home",
-  collab: "🎮 Collab",
-};
+const API = typeof window !== "undefined"
+  ? `${window.location.protocol}//${window.location.hostname}:3011`
+  : "";
 
-export default function FlowMenu({ session, tableContext, cart, cartTotal, cartCount, onBack, onAddToCart, onUpdateQty, onRemove, onClear, onCheckout }) {
+// Fallback toppings (used if /api/toppings missing)
+const FALLBACK_TOPPINGS = [
+  { id: "f01", name: "Strawberry", group: "Fruits", price: 0 },
+  { id: "f02", name: "Kiwi", group: "Fruits", price: 0 },
+  { id: "f03", name: "Peach", group: "Fruits", price: 0 },
+  { id: "f04", name: "Mangga", group: "Fruits", price: 0 },
+  { id: "f05", name: "Longan", group: "Fruits", price: 0 },
+  { id: "f06", name: "Nanas", group: "Fruits", price: 0 },
+  { id: "f07", name: "Aloe Vera", group: "Fruits", price: 0 },
+  { id: "c01", name: "Mochi Mix", group: "Crunchies", price: 0 },
+  { id: "c02", name: "Oreo Crumble", group: "Crunchies", price: 0 },
+  { id: "c03", name: "Granola", group: "Crunchies", price: 0 },
+  { id: "c04", name: "Rainbow Cubes", group: "Crunchies", price: 0 },
+  { id: "c05", name: "Roasted Almond", group: "Crunchies", price: 0 },
+  { id: "c06", name: "Honey Granola", group: "Crunchies", price: 0 },
+  { id: "c07", name: "Chia Seed", group: "Crunchies", price: 0 },
+  { id: "s01", name: "Blueberry Sauce", group: "Sauces", price: 0 },
+  { id: "s02", name: "Mango Sauce", group: "Sauces", price: 0 },
+  { id: "s03", name: "Taro Latte", group: "Sauces", price: 0 },
+  { id: "s04", name: "Chocolate Sauce", group: "Sauces", price: 0 },
+  { id: "p01", name: "Cookie Dough", group: "Premium", price: 4000 },
+  { id: "p02", name: "Choco Waferino", group: "Premium", price: 4000 },
+  { id: "p03", name: "Goji Berry", group: "Premium", price: 4000 },
+  { id: "p04", name: "Caviar Jelly", group: "Premium", price: 4000 },
+];
+
+const FALLBACK_EXTRA = 8000;
+
+const GROUP_ORDER = ["Fruits", "Crunchies", "Sauces", "Premium"];
+const GROUP_EMOJI = { Fruits: "🍓", Crunchies: "🥣", Sauces: "🍯", Premium: "⭐" };
+
+function rupiah(n) {
+  return "Rp " + Number(n || 0).toLocaleString("id-ID");
+}
+
+function calcAddonTotal(selected, freeQuota, extraPrice) {
+  if (!selected || selected.length === 0) return 0;
+  // Premium toppings: always charged at their price
+  const premiumCost = selected.reduce((s, t) => s + (t.price || 0), 0);
+  // Over-quota: anything beyond freeQuota costs extraPrice each
+  const overQuota = Math.max(0, selected.length - freeQuota);
+  const extraCost = overQuota * extraPrice;
+  return premiumCost + extraCost;
+}
+
+export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCart, clearCart, setScreen, customer }) {
   const [menu, setMenu] = useState([]);
+  const [toppings, setToppings] = useState(FALLBACK_TOPPINGS);
+  const [extraPrice, setExtraPrice] = useState(FALLBACK_EXTRA);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
   const [activeCat, setActiveCat] = useState("all");
-  const [query, setQuery] = useState("");
-  const [detailItem, setDetailItem] = useState(null);
+  const [detail, setDetail] = useState(null); // item being customized
+  const [selectedToppings, setSelectedToppings] = useState([]);
+  const [detailQty, setDetailQty] = useState(1);
   const [showCart, setShowCart] = useState(false);
 
+  // Load menu + toppings
   useEffect(() => {
-    fetch(`${API}/api/menu`)
-      .then(r => r.ok ? r.json() : Promise.reject("Menu load failed"))
-      .then(data => setMenu(Array.isArray(data) ? data : (data.menu || data.data || [])))
-      .catch(e => setError(String(e)))
-      .finally(() => setLoading(false));
+    Promise.all([
+      fetch(`${API}/api/menu`).then(r => r.ok ? r.json() : []),
+      fetch(`${API}/api/toppings`).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([m, t]) => {
+      setMenu(Array.isArray(m) ? m : []);
+      if (t && Array.isArray(t.toppings)) {
+        setToppings(t.toppings);
+        if (typeof t.extraPrice === "number") setExtraPrice(t.extraPrice);
+      }
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
 
+  // Categories from menu
   const categories = useMemo(() => {
-    const cats = [...new Set(menu.map(m => m.cat))];
-    return ["all", ...cats];
+    const set = new Set(menu.map(m => m.cat));
+    return ["all", ...Array.from(set)];
   }, [menu]);
 
-  const filteredMenu = useMemo(() => {
-    return menu.filter(m => {
-      if (activeCat !== "all" && m.cat !== activeCat) return false;
-      if (query) {
-        const q = query.toLowerCase();
-        if (!m.name.toLowerCase().includes(q) && !m.desc?.toLowerCase().includes(q)) return false;
-      }
-      return true;
+  const catLabels = {
+    all: "Semua",
+    froyo: "🍦 Froyo",
+    smoothies: "🥤 Smoothies",
+    yogulato: "🍨 Yogulato",
+    takehome: "📦 Take Home",
+    collab: "✨ Special",
+  };
+
+  const filtered = useMemo(() => {
+    let list = menu.filter(m => m.avail !== false);
+    if (activeCat !== "all") list = list.filter(m => m.cat === activeCat);
+    if (search.trim()) {
+      const q = search.trim().toLowerCase();
+      list = list.filter(m => m.name.toLowerCase().includes(q) || (m.desc || "").toLowerCase().includes(q));
+    }
+    return list;
+  }, [menu, activeCat, search]);
+
+  // Group toppings
+  const groupedToppings = useMemo(() => {
+    const groups = {};
+    toppings.forEach(t => {
+      if (!groups[t.group]) groups[t.group] = [];
+      groups[t.group].push(t);
     });
-  }, [menu, activeCat, query]);
+    return groups;
+  }, [toppings]);
+
+  // Open detail for an item
+  function openDetail(item) {
+    setDetail(item);
+    setSelectedToppings([]);
+    setDetailQty(1);
+  }
+  function closeDetail() {
+    setDetail(null);
+    setSelectedToppings([]);
+    setDetailQty(1);
+  }
+
+  function toggleTopping(t) {
+    setSelectedToppings(prev => {
+      const exists = prev.find(x => x.id === t.id);
+      if (exists) return prev.filter(x => x.id !== t.id);
+      return [...prev, t];
+    });
+  }
+
+  function handleAdd() {
+    if (!detail) return;
+    const freeQuota = detail.freeToppings || 0;
+    const addonTotal = calcAddonTotal(selectedToppings, freeQuota, extraPrice);
+    const hasAddons = selectedToppings.length > 0;
+    const item = {
+      id: hasAddons ? `${detail.id}-${Date.now()}` : detail.id,
+      baseId: detail.id,
+      e: detail.emoji,
+      n: detail.name,
+      p: detail.price,
+      freeToppings: detail.freeToppings || 0,
+      addons: { toppings: selectedToppings },
+      addonTotal,
+    };
+    for (let i = 0; i < detailQty; i++) addToCart(item);
+    closeDetail();
+  }
+
+  const cartTotal = useMemo(() => {
+    return cart.reduce((s, it) => {
+      const q = it.q || 1;
+      return s + (it.p || 0) * q + (it.addonTotal || 0) * q;
+    }, 0);
+  }, [cart]);
+
+  const cartCount = useMemo(() => cart.reduce((s, it) => s + (it.q || 1), 0), [cart]);
+
+  // Live total for detail bottom sheet
+  const detailAddonTotal = useMemo(() => {
+    if (!detail) return 0;
+    return calcAddonTotal(selectedToppings, detail.freeToppings || 0, extraPrice);
+  }, [selectedToppings, detail, extraPrice]);
+
+  const detailLineTotal = useMemo(() => {
+    if (!detail) return 0;
+    return (detail.price + detailAddonTotal) * detailQty;
+  }, [detail, detailAddonTotal, detailQty]);
 
   return (
-    <div style={S.container}>
-      <header style={S.header}>
-        <button onClick={onBack} style={S.backBtn}>← Back</button>
-        <div style={S.headTitle}>Menu BINTORO</div>
-        <button onClick={() => setShowCart(true)} style={S.cartIconBtn}>
-          🛒{cartCount > 0 && <span style={S.cartBadge}>{cartCount}</span>}
-        </button>
-      </header>
+    <div style={{ minHeight: "100vh", background: BG, color: TEXT, paddingBottom: cart.length > 0 ? 90 : 24 }}>
+      {/* Header */}
+      <div style={{ position: "sticky", top: 0, background: BG, borderBottom: `1px solid ${BORDER}`, padding: "14px 20px", zIndex: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+          <button onClick={() => setScreen("home")} style={{
+            background: "transparent", border: "none", color: TEXT, fontSize: 24, cursor: "pointer", padding: 0, width: 32
+          }}>←</button>
+          <h1 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: BRAND, letterSpacing: 1 }}>
+            MENU
+          </h1>
+        </div>
 
-      <div style={S.searchBox}>
+        {/* Search */}
         <input
           type="text"
-          placeholder="🔍 Cari menu..."
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          style={S.searchInput}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Cari menu..."
+          style={{
+            width: "100%", padding: "10px 14px", background: CARD, border: `1px solid ${BORDER}`,
+            borderRadius: 10, color: TEXT, fontSize: 14, outline: "none"
+          }}
         />
+
+        {/* Category tabs */}
+        <div style={{ display: "flex", gap: 6, marginTop: 10, overflowX: "auto", paddingBottom: 2 }}>
+          {categories.map(c => (
+            <button key={c} onClick={() => setActiveCat(c)} style={{
+              padding: "7px 12px", borderRadius: 999, whiteSpace: "nowrap",
+              border: `1px solid ${activeCat === c ? BRAND : BORDER}`,
+              background: activeCat === c ? BRAND : "transparent",
+              color: activeCat === c ? "#000" : TEXT,
+              fontSize: 12, fontWeight: 600, cursor: "pointer"
+            }}>{catLabels[c] || c}</button>
+          ))}
+        </div>
       </div>
 
-      <div style={S.catTabs}>
-        {categories.map(cat => (
-          <button
-            key={cat}
-            onClick={() => setActiveCat(cat)}
-            style={{
-              ...S.catTab,
-              ...(activeCat === cat ? S.catTabActive : {}),
-            }}
-          >
-            {CAT_LABELS[cat] || cat}
-          </button>
-        ))}
-      </div>
-
-      {loading && <div style={S.loading}>Loading menu...</div>}
-      {error && <div style={S.error}>⚠️ {error}</div>}
-
-      {!loading && (
-        <div style={S.itemGrid}>
-          {filteredMenu.map(item => (
-            <button
-              key={item.id}
-              onClick={() => item.avail && setDetailItem(item)}
-              disabled={!item.avail}
-              style={{ ...S.itemCard, ...(item.avail ? {} : S.itemUnavail) }}
-            >
-              {item.popular && <div style={S.popularBadge}>⭐ POPULAR</div>}
-              {!item.avail && <div style={S.outBadge}>Habis</div>}
-              <div style={S.itemEmoji}>{item.emoji}</div>
-              <div style={S.itemName}>{item.name}</div>
-              <div style={S.itemDesc}>{item.desc}</div>
-              {item.freeToppings > 0 && (
-                <div style={S.freeTopping}>+ {item.freeToppings} topping gratis</div>
+      {/* Menu grid */}
+      <div style={{ padding: 16 }}>
+        {loading && <div style={{ textAlign: "center", padding: 40, color: SUB }}>⏳ Loading menu...</div>}
+        {!loading && filtered.length === 0 && (
+          <div style={{ textAlign: "center", padding: 40, color: SUB }}>Tidak ada menu yang cocok</div>
+        )}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {filtered.map(item => (
+            <button key={item.id} onClick={() => openDetail(item)} style={{
+              background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14,
+              padding: 14, textAlign: "left", cursor: "pointer", position: "relative", overflow: "hidden"
+            }}>
+              {item.popular && (
+                <span style={{
+                  position: "absolute", top: 8, right: 8, background: BRAND, color: "#000",
+                  fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4
+                }}>POPULAR</span>
               )}
-              <div style={S.itemPrice}>{fIDR(item.price)}</div>
+              <div style={{ fontSize: 40, marginBottom: 6 }}>{item.emoji}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, lineHeight: 1.3 }}>{item.name}</div>
+              <div style={{ fontSize: 11, color: SUB, marginBottom: 8, minHeight: 28, lineHeight: 1.3 }}>{item.desc}</div>
+              {item.freeToppings > 0 && (
+                <div style={{ fontSize: 10, color: BRAND, marginBottom: 6 }}>+ {item.freeToppings} topping gratis</div>
+              )}
+              <div style={{ fontSize: 14, fontWeight: 700, color: BRAND }}>{rupiah(item.price)}</div>
             </button>
           ))}
-          {filteredMenu.length === 0 && !loading && (
-            <div style={S.emptyState}>Tidak ada menu match search.</div>
-          )}
+        </div>
+      </div>
+
+      {/* Sticky cart bar */}
+      {cart.length > 0 && !detail && !showCart && (
+        <div onClick={() => setShowCart(true)} style={{
+          position: "fixed", bottom: 12, left: "50%", transform: "translateX(-50%)",
+          width: "calc(100% - 24px)", maxWidth: 420,
+          background: BRAND, borderRadius: 12, padding: "12px 16px",
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          cursor: "pointer", boxShadow: "0 8px 24px rgba(245,158,11,0.3)", zIndex: 50
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{
+              background: "#000", color: BRAND, fontWeight: 700,
+              padding: "4px 9px", borderRadius: 8, fontSize: 13
+            }}>{cartCount}</span>
+            <span style={{ color: "#000", fontWeight: 700, fontSize: 14 }}>Lihat Keranjang</span>
+          </div>
+          <span style={{ color: "#000", fontWeight: 800, fontSize: 15 }}>{rupiah(cartTotal)}</span>
         </div>
       )}
 
-      {cartCount > 0 && (
-        <button onClick={() => setShowCart(true)} style={S.cartBar}>
-          <div style={S.cartBarLeft}>
-            <span style={S.cartBarBadge}>{cartCount}</span>
-            <span>Lihat Cart</span>
+      {/* Item Detail bottom sheet */}
+      {detail && (
+        <div onClick={closeDetail} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.95)", zIndex: 100,
+          display: "flex", alignItems: "flex-end", justifyContent: "center"
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: BG, width: "100%", maxWidth: 440, borderRadius: "20px 20px 0 0",
+            maxHeight: "92vh", overflowY: "auto", paddingBottom: 110
+          }}>
+            <div style={{ width: 40, height: 4, background: BORDER, borderRadius: 2, margin: "12px auto" }} />
+
+            {/* Item header */}
+            <div style={{ padding: "0 20px 16px" }}>
+              <div style={{ fontSize: 56, textAlign: "center", marginBottom: 8 }}>{detail.emoji}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, textAlign: "center" }}>{detail.name}</div>
+              <div style={{ fontSize: 13, color: SUB, textAlign: "center", marginTop: 6, lineHeight: 1.4 }}>{detail.desc}</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: BRAND, textAlign: "center", marginTop: 10 }}>
+                {rupiah(detail.price)}
+              </div>
+            </div>
+
+            {/* Toppings picker */}
+            {detail.freeToppings > 0 && (
+              <div style={{ padding: "0 20px 16px" }}>
+                {/* Counter banner */}
+                <ToppingCounter
+                  selected={selectedToppings}
+                  freeQuota={detail.freeToppings}
+                  extraPrice={extraPrice}
+                  addonTotal={detailAddonTotal}
+                />
+
+                {/* Groups */}
+                {GROUP_ORDER.map(group => {
+                  const list = groupedToppings[group];
+                  if (!list || list.length === 0) return null;
+                  const isPremium = group === "Premium";
+                  return (
+                    <div key={group} style={{ marginBottom: 16 }}>
+                      <div style={{
+                        fontSize: 12, fontWeight: 700, color: isPremium ? BRAND : SUB,
+                        marginBottom: 8, letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 6
+                      }}>
+                        <span>{GROUP_EMOJI[group]}</span>
+                        <span style={{ textTransform: "uppercase" }}>{group}</span>
+                        {isPremium && <span style={{ fontSize: 10, color: BRAND }}>· {rupiah(list[0].price)} per item</span>}
+                      </div>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        {list.map(t => {
+                          const selected = !!selectedToppings.find(x => x.id === t.id);
+                          return (
+                            <button key={t.id} onClick={() => toggleTopping(t)} style={{
+                              padding: "8px 12px", borderRadius: 999,
+                              border: `1px solid ${selected ? BRAND : BORDER}`,
+                              background: selected ? BRAND : "transparent",
+                              color: selected ? "#000" : TEXT,
+                              fontSize: 12, fontWeight: 600, cursor: "pointer",
+                              display: "flex", alignItems: "center", gap: 4
+                            }}>
+                              {selected && <span>✓</span>}
+                              <span>{t.name}</span>
+                              {t.price > 0 && (
+                                <span style={{
+                                  fontSize: 10, opacity: 0.8,
+                                  color: selected ? "#000" : BRAND
+                                }}>+{t.price/1000}k</span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Quantity + Total */}
+            <div style={{
+              position: "sticky", bottom: 0, background: BG, borderTop: `1px solid ${BORDER}`,
+              padding: "14px 20px", display: "flex", flexDirection: "column", gap: 10
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+                  <button onClick={() => setDetailQty(Math.max(1, detailQty - 1))} style={{
+                    width: 36, height: 36, borderRadius: "50%", border: `1px solid ${BORDER}`,
+                    background: CARD, color: TEXT, fontSize: 18, cursor: "pointer"
+                  }}>−</button>
+                  <div style={{ width: 44, textAlign: "center", fontSize: 16, fontWeight: 700 }}>{detailQty}</div>
+                  <button onClick={() => setDetailQty(detailQty + 1)} style={{
+                    width: 36, height: 36, borderRadius: "50%", border: `1px solid ${BORDER}`,
+                    background: CARD, color: TEXT, fontSize: 18, cursor: "pointer"
+                  }}>+</button>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 10, color: SUB }}>TOTAL</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: BRAND }}>{rupiah(detailLineTotal)}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button onClick={closeDetail} style={{
+                  flex: 1, padding: "12px", borderRadius: 10, background: "transparent",
+                  border: `1px solid ${BORDER}`, color: TEXT, fontSize: 14, fontWeight: 600, cursor: "pointer"
+                }}>Batal</button>
+                <button onClick={handleAdd} style={{
+                  flex: 2, padding: "12px", borderRadius: 10, background: BRAND,
+                  border: "none", color: "#000", fontSize: 14, fontWeight: 800, cursor: "pointer"
+                }}>+ Tambah ke Cart</button>
+              </div>
+            </div>
           </div>
-          <span style={S.cartBarTotal}>{fIDR(cartTotal)} →</span>
-        </button>
+        </div>
       )}
 
-      {detailItem && (
-        <ItemDetailModal
-          item={detailItem}
-          onClose={() => setDetailItem(null)}
-          onAdd={(qty) => {
-            onAddToCart(detailItem, qty);
-            setDetailItem(null);
-          }}
-        />
-      )}
-
+      {/* Cart Modal */}
       {showCart && (
-        <CartModal
-          cart={cart}
-          cartTotal={cartTotal}
-          onClose={() => setShowCart(false)}
-          onUpdateQty={onUpdateQty}
-          onRemove={onRemove}
-          onClear={onClear}
-          onCheckout={() => {
-            setShowCart(false);
-            onCheckout();
-          }}
-        />
+        <div onClick={() => setShowCart(false)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.95)", zIndex: 100,
+          display: "flex", alignItems: "flex-end", justifyContent: "center"
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: BG, width: "100%", maxWidth: 440, borderRadius: "20px 20px 0 0",
+            maxHeight: "90vh", overflowY: "auto", paddingBottom: 24
+          }}>
+            <div style={{ width: 40, height: 4, background: BORDER, borderRadius: 2, margin: "12px auto" }} />
+
+            <div style={{ padding: "0 20px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: BRAND }}>
+                KERANJANG ({cartCount})
+              </h2>
+              {cart.length > 0 && (
+                <button onClick={() => { clearCart(); setShowCart(false); }} style={{
+                  background: "transparent", border: "none", color: "#EF4444", fontSize: 12, cursor: "pointer"
+                }}>🗑 Kosongin</button>
+              )}
+            </div>
+
+            <div style={{ padding: "0 20px" }}>
+              {cart.length === 0 && (
+                <div style={{ textAlign: "center", padding: 40, color: SUB }}>Keranjang kosong</div>
+              )}
+              {cart.map((it, i) => {
+                const q = it.q || 1;
+                const lineTotal = (it.p + (it.addonTotal || 0)) * q;
+                return (
+                  <div key={it.id + "-" + i} style={{
+                    background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12,
+                    padding: 12, marginBottom: 8
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 700 }}>
+                          <span style={{ marginRight: 6 }}>{it.e}</span>{it.n}
+                        </div>
+                        <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{rupiah(it.p)}</div>
+                      </div>
+                      <button onClick={() => removeFromCart(it.id)} style={{
+                        background: "transparent", border: "none", color: "#EF4444",
+                        fontSize: 18, cursor: "pointer", padding: "0 4px"
+                      }}>✕</button>
+                    </div>
+
+                    {it.addons?.toppings?.length > 0 && (
+                      <div style={{ fontSize: 11, color: SUB, marginBottom: 8, lineHeight: 1.4 }}>
+                        + {it.addons.toppings.map(t => t.name).join(", ")}
+                        {it.addonTotal > 0 && <span style={{ color: BRAND }}> ({rupiah(it.addonTotal)})</span>}
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+                        <button onClick={() => updateCartQty(it.id, Math.max(1, q - 1))} style={{
+                          width: 28, height: 28, borderRadius: "50%", border: `1px solid ${BORDER}`,
+                          background: BG, color: TEXT, fontSize: 14, cursor: "pointer"
+                        }}>−</button>
+                        <div style={{ width: 32, textAlign: "center", fontSize: 13, fontWeight: 700 }}>{q}</div>
+                        <button onClick={() => updateCartQty(it.id, q + 1)} style={{
+                          width: 28, height: 28, borderRadius: "50%", border: `1px solid ${BORDER}`,
+                          background: BG, color: TEXT, fontSize: 14, cursor: "pointer"
+                        }}>+</button>
+                      </div>
+                      <span style={{ fontSize: 14, fontWeight: 700 }}>{rupiah(lineTotal)}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {cart.length > 0 && (
+              <div style={{ padding: "12px 20px 0", borderTop: `1px solid ${BORDER}`, marginTop: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                  <span style={{ fontSize: 14, color: SUB }}>Total</span>
+                  <span style={{ fontSize: 22, fontWeight: 800, color: BRAND }}>{rupiah(cartTotal)}</span>
+                </div>
+                <button onClick={() => { setShowCart(false); setScreen("checkout"); }} style={{
+                  width: "100%", padding: "14px", borderRadius: 12, background: BRAND,
+                  border: "none", color: "#000", fontSize: 15, fontWeight: 800, cursor: "pointer"
+                }}>Checkout →</button>
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
-function ItemDetailModal({ item, onClose, onAdd }) {
-  const [qty, setQty] = useState(1);
-
+function ToppingCounter({ selected, freeQuota, extraPrice, addonTotal }) {
+  const used = selected.length;
+  const remaining = Math.max(0, freeQuota - used);
+  const over = Math.max(0, used - freeQuota);
+  const isOver = over > 0;
   return (
-    <div style={M.overlay} onClick={onClose}>
-      <div style={M.modal} onClick={e => e.stopPropagation()}>
-        <button onClick={onClose} style={M.closeBtn}>✕</button>
-
-        <div style={M.hero}>
-          <div style={M.heroEmoji}>{item.emoji}</div>
+    <div style={{
+      background: isOver ? "rgba(245,158,11,0.08)" : "rgba(16,185,129,0.08)",
+      border: `1px solid ${isOver ? "rgba(245,158,11,0.3)" : "rgba(16,185,129,0.3)"}`,
+      borderRadius: 10, padding: 12, marginBottom: 16,
+      display: "flex", justifyContent: "space-between", alignItems: "center"
+    }}>
+      <div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: isOver ? "#F59E0B" : "#10B981" }}>
+          {used} / {freeQuota} topping {isOver ? `(+${over} extra)` : `(${remaining} sisa free)`}
         </div>
-
-        <div style={M.body}>
-          <div style={M.name}>{item.name}</div>
-          <div style={M.desc}>{item.desc}</div>
-
-          {item.freeToppings > 0 && (
-            <div style={M.toppingHint}>
-              🎁 Termasuk <strong>{item.freeToppings} topping gratis</strong> · pilih di kasir/staff
-            </div>
-          )}
-
-          <div style={M.priceRow}>
-            <span style={M.priceLabel}>Harga</span>
-            <span style={M.priceValue}>{fIDR(item.price)}</span>
-          </div>
-
-          <div style={M.qtyRow}>
-            <span style={M.qtyLabel}>Jumlah</span>
-            <div style={M.qtyControls}>
-              <button onClick={() => setQty(Math.max(1, qty - 1))} style={M.qtyBtn}>−</button>
-              <span style={M.qtyValue}>{qty}</span>
-              <button onClick={() => setQty(qty + 1)} style={M.qtyBtn}>+</button>
-            </div>
-          </div>
-
-          <button onClick={() => onAdd(qty)} style={M.addBtn}>
-            Tambah ke Cart · {fIDR(item.price * qty)}
-          </button>
+        <div style={{ fontSize: 10, color: "#A1A1AA", marginTop: 3 }}>
+          {isOver ? `Extra Rp ${extraPrice/1000}rb per topping` : "Pilih sampai habis, gratis!"}
         </div>
       </div>
+      {addonTotal > 0 && (
+        <div style={{ fontSize: 14, fontWeight: 700, color: "#F59E0B" }}>
+          +Rp {addonTotal.toLocaleString("id-ID")}
+        </div>
+      )}
     </div>
   );
 }
-
-function CartModal({ cart, cartTotal, onClose, onUpdateQty, onRemove, onClear, onCheckout }) {
-  return (
-    <div style={M.overlay} onClick={onClose}>
-      <div style={M.cartModal} onClick={e => e.stopPropagation()}>
-        <div style={M.cartHeader}>
-          <div>
-            <div style={M.cartTitle}>Keranjang</div>
-            <div style={M.cartSub}>{cart.length} item</div>
-          </div>
-          <button onClick={onClose} style={M.closeBtn}>✕</button>
-        </div>
-
-        <div style={M.cartItems}>
-          {cart.length === 0 && (
-            <div style={M.emptyCart}>
-              🛒
-              <div style={{marginTop: 8}}>Keranjang masih kosong</div>
-            </div>
-          )}
-
-          {cart.map((item, idx) => (
-            <div key={idx} style={M.cartItem}>
-              <div style={M.cartItemEmoji}>{item.emoji}</div>
-              <div style={M.cartItemBody}>
-                <div style={M.cartItemName}>{item.name}</div>
-                <div style={M.cartItemPrice}>{fIDR(item.price)}</div>
-              </div>
-              <div style={M.cartItemQty}>
-                <button onClick={() => onUpdateQty(idx, item.qty - 1)} style={M.qtyBtnSmall}>−</button>
-                <span style={M.qtyValueSmall}>{item.qty}</span>
-                <button onClick={() => onUpdateQty(idx, item.qty + 1)} style={M.qtyBtnSmall}>+</button>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {cart.length > 0 && (
-          <>
-            <div style={M.cartFooterTotal}>
-              <span>Total</span>
-              <span style={M.cartFooterAmount}>{fIDR(cartTotal)}</span>
-            </div>
-
-            <div style={M.cartFooterBtns}>
-              <button onClick={onClear} style={M.clearBtn}>Kosongin</button>
-              <button onClick={onCheckout} style={M.checkoutBtn}>
-                Checkout →
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-const S = {
-  container: { width: "min(440px, 100%)", minHeight: "100vh", padding: "16px 14px 100px", display: "flex", flexDirection: "column", gap: 14 },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 4 },
-  backBtn: { padding: "8px 14px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid #2a2a2a", color: "white", fontSize: 13, cursor: "pointer", fontFamily: "inherit" },
-  headTitle: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: "#F59E0B", letterSpacing: 1 },
-  cartIconBtn: { position: "relative", width: 40, height: 40, borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid #2a2a2a", color: "white", fontSize: 18, cursor: "pointer", fontFamily: "inherit" },
-  cartBadge: { position: "absolute", top: -4, right: -4, background: "#F59E0B", color: "#111", borderRadius: 10, padding: "2px 6px", fontSize: 10, fontWeight: 800, minWidth: 18 },
-  searchBox: { padding: 0 },
-  searchInput: { width: "100%", padding: "12px 14px", borderRadius: 12, background: "#0d0d0d", border: "1px solid #2a2a2a", color: "white", fontSize: 14, fontFamily: "inherit", outline: "none" },
-  catTabs: { display: "flex", gap: 6, overflowX: "auto", padding: "4px 0", scrollbarWidth: "none" },
-  catTab: { padding: "8px 14px", borderRadius: 20, background: "transparent", border: "1px solid #2a2a2a", color: "#9CA3AF", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
-  catTabActive: { background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.4)", color: "#F59E0B" },
-  loading: { padding: 40, textAlign: "center", color: "#9CA3AF" },
-  error: { padding: 12, borderRadius: 8, background: "rgba(248,113,113,0.10)", color: "#F87171", fontSize: 12 },
-  itemGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
-  itemCard: { position: "relative", padding: "14px 12px", borderRadius: 14, background: "linear-gradient(180deg, #161616 0%, #0d0d0d 100%)", border: "1px solid #2a2a2a", color: "white", cursor: "pointer", fontFamily: "inherit", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, animation: "fadeUp 0.3s ease" },
-  itemUnavail: { opacity: 0.4, cursor: "not-allowed" },
-  itemEmoji: { fontSize: 38, marginBottom: 4 },
-  itemName: { fontSize: 13, fontWeight: 700, lineHeight: 1.3 },
-  itemDesc: { fontSize: 10, color: "#9CA3AF", lineHeight: 1.4, minHeight: 28 },
-  freeTopping: { fontSize: 9, color: "#10B981", fontWeight: 600 },
-  itemPrice: { marginTop: 4, fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: "#F59E0B", letterSpacing: 1 },
-  popularBadge: { position: "absolute", top: 8, left: 8, padding: "2px 6px", borderRadius: 4, background: "rgba(245,158,11,0.15)", color: "#F59E0B", fontSize: 8, fontWeight: 800, letterSpacing: 0.5 },
-  outBadge: { position: "absolute", top: 8, right: 8, padding: "2px 6px", borderRadius: 4, background: "rgba(248,113,113,0.15)", color: "#F87171", fontSize: 8, fontWeight: 800 },
-  emptyState: { gridColumn: "span 2", padding: 30, textAlign: "center", color: "#6B7280", fontSize: 13 },
-  cartBar: {
-    position: "fixed", bottom: 16, left: "50%", transform: "translateX(-50%)",
-    width: "min(420px, calc(100% - 32px))", padding: "14px 18px", borderRadius: 14,
-    background: "linear-gradient(135deg, #F59E0B, #D97706)", border: "none", color: "#111",
-    display: "flex", justifyContent: "space-between", alignItems: "center",
-    fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-    boxShadow: "0 12px 28px rgba(245,158,11,0.3)", zIndex: 100,
-  },
-  cartBarLeft: { display: "flex", alignItems: "center", gap: 10 },
-  cartBarBadge: { background: "#111", color: "#F59E0B", width: 24, height: 24, borderRadius: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 800 },
-  cartBarTotal: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: 1 },
-};
-
-const M = {
-  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(10px)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 200, padding: 0 },
-  modal: { width: "min(440px, 100%)", maxHeight: "85vh", background: "linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)", borderRadius: "20px 20px 0 0", border: "1px solid #2a2a2a", overflow: "hidden", display: "flex", flexDirection: "column", animation: "slideUp 0.3s ease" },
-  closeBtn: { position: "absolute", top: 12, right: 12, width: 36, height: 36, borderRadius: 10, background: "rgba(0,0,0,0.5)", border: "1px solid rgba(255,255,255,0.1)", color: "white", fontSize: 16, cursor: "pointer", zIndex: 1 },
-  hero: { padding: "32px 20px", background: "linear-gradient(180deg, rgba(245,158,11,0.10), transparent)", display: "flex", justifyContent: "center", alignItems: "center" },
-  heroEmoji: { fontSize: 80 },
-  body: { padding: "20px 24px 28px", display: "flex", flexDirection: "column", gap: 14 },
-  name: { fontSize: 20, fontWeight: 800 },
-  desc: { fontSize: 13, color: "#9CA3AF", lineHeight: 1.5 },
-  toppingHint: { padding: "10px 12px", borderRadius: 10, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.2)", color: "#10B981", fontSize: 11, lineHeight: 1.5 },
-  priceRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderTop: "1px solid #2a2a2a" },
-  priceLabel: { fontSize: 12, color: "#9CA3AF" },
-  priceValue: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "#F59E0B", letterSpacing: 1 },
-  qtyRow: { display: "flex", justifyContent: "space-between", alignItems: "center" },
-  qtyLabel: { fontSize: 12, color: "#9CA3AF" },
-  qtyControls: { display: "flex", alignItems: "center", gap: 12 },
-  qtyBtn: { width: 38, height: 38, borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid #2a2a2a", color: "white", fontSize: 18, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
-  qtyValue: { fontSize: 18, fontWeight: 700, minWidth: 24, textAlign: "center" },
-  addBtn: { marginTop: 8, width: "100%", padding: "14px", borderRadius: 12, background: "linear-gradient(135deg, #F59E0B, #D97706)", border: "none", color: "#111", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" },
-
-  cartModal: { width: "min(440px, 100%)", maxHeight: "85vh", background: "linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%)", borderRadius: "20px 20px 0 0", border: "1px solid #2a2a2a", overflow: "hidden", display: "flex", flexDirection: "column", animation: "slideUp 0.3s ease" },
-  cartHeader: { padding: "18px 20px", borderBottom: "1px solid #2a2a2a", display: "flex", justifyContent: "space-between", alignItems: "center" },
-  cartTitle: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: "#F59E0B", letterSpacing: 1 },
-  cartSub: { fontSize: 11, color: "#9CA3AF", marginTop: 2 },
-  cartItems: { flex: 1, overflowY: "auto", padding: "8px 16px" },
-  emptyCart: { padding: 60, textAlign: "center", color: "#6B7280", fontSize: 32 },
-  cartItem: { display: "flex", alignItems: "center", gap: 12, padding: "12px 4px", borderBottom: "1px solid #1a1a1a" },
-  cartItemEmoji: { fontSize: 28, width: 44 },
-  cartItemBody: { flex: 1 },
-  cartItemName: { fontSize: 13, fontWeight: 700 },
-  cartItemPrice: { fontSize: 12, color: "#F59E0B", marginTop: 2, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 0.5 },
-  cartItemQty: { display: "flex", alignItems: "center", gap: 6 },
-  qtyBtnSmall: { width: 26, height: 26, borderRadius: 6, background: "rgba(255,255,255,0.05)", border: "1px solid #2a2a2a", color: "white", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
-  qtyValueSmall: { fontSize: 13, fontWeight: 700, minWidth: 16, textAlign: "center" },
-  cartFooterTotal: { padding: "14px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #2a2a2a" },
-  cartFooterAmount: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: "#F59E0B", letterSpacing: 1 },
-  cartFooterBtns: { padding: "0 20px 20px", display: "flex", gap: 10 },
-  clearBtn: { padding: "12px 16px", borderRadius: 10, background: "transparent", border: "1px solid #2a2a2a", color: "#F87171", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" },
-  checkoutBtn: { flex: 1, padding: "12px", borderRadius: 10, background: "linear-gradient(135deg, #10B981, #059669)", border: "none", color: "white", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" },
-};
