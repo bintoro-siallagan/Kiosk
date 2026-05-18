@@ -1,0 +1,265 @@
+import React, { useState, useEffect } from "react";
+
+const API = import.meta.env.VITE_API_URL || "http://localhost:3011";
+
+export default function FlowHome({ session, tableContext, onLogout }) {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Refresh profile data from server
+    fetch(`${API}/api/customers?phone=${session.phone}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        const c = Array.isArray(data) ? data[0] : (data?.customer || data);
+        setProfile(c || { phone: session.phone, name: session.name, points: 0, total_spend: 0 });
+      })
+      .catch(() => setProfile({ phone: session.phone, name: session.name, points: 0, total_spend: 0 }))
+      .finally(() => setLoading(false));
+  }, [session.phone]);
+
+  const points = profile?.points || 0;
+  const totalSpend = profile?.total_spend || 0;
+  const tier = points >= 1000 ? "VIP ⭐" : points >= 300 ? "Member 🎫" : "Guest";
+
+  return (
+    <div style={S.container}>
+      <header style={S.header}>
+        <div style={S.logo}>BINTORO</div>
+        <button onClick={onLogout} style={S.logoutBtn}>Logout</button>
+      </header>
+
+      <div style={S.profile}>
+        <div style={S.greeting}>Halo, {profile?.name || session.name}! 👋</div>
+        {tableContext ? (
+          <div style={S.tableBadge}>📍 Meja {tableContext}</div>
+        ) : (
+          <div style={S.modeBadge}>🛍️ Bawa Pulang</div>
+        )}
+
+        <div style={S.statsRow}>
+          <div style={S.statBox}>
+            <div style={S.statLabel}>Poin</div>
+            <div style={S.statValue}>{points.toLocaleString("id-ID")}</div>
+            <div style={S.statBadge}>{tier}</div>
+          </div>
+          <div style={S.statBox}>
+            <div style={S.statLabel}>Total Belanja</div>
+            <div style={S.statValue}>{Math.floor(totalSpend / 1000)}<span style={S.statUnit}>rb</span></div>
+            <div style={S.statBadge}>Sejak gabung</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={S.actionsGrid}>
+        <ActionCard
+          icon="🍽️"
+          title="Pesan Sekarang"
+          subtitle="Browse menu BINTORO"
+          accent="#F59E0B"
+          comingSoon
+        />
+        <ActionCard
+          icon="🔁"
+          title="Pesan Ulang"
+          subtitle="Order favorit"
+          accent="#10B981"
+          comingSoon
+        />
+        <ActionCard
+          icon="📦"
+          title="Pesanan Aktif"
+          subtitle="Track status pesanan"
+          accent="#3B82F6"
+          comingSoon
+        />
+        <ActionCard
+          icon="🎁"
+          title="Tukar Poin"
+          subtitle="Redeem rewards"
+          accent="#8B5CF6"
+          comingSoon
+        />
+        <ActionCard
+          icon="🎉"
+          title="Promo"
+          subtitle="Promo aktif"
+          accent="#EC4899"
+          comingSoon
+        />
+        <ActionCard
+          icon="📜"
+          title="Riwayat"
+          subtitle="Transaction history"
+          accent="#6366F1"
+          comingSoon
+        />
+      </div>
+
+      <div style={S.devNote}>
+        🚧 <strong>Coming next:</strong> Menu browse, cart, checkout, real-time tracking
+      </div>
+
+      <div style={S.footer}>BINTORO Flow · Mobile Order Portal</div>
+    </div>
+  );
+}
+
+function ActionCard({ icon, title, subtitle, accent, comingSoon, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={comingSoon}
+      style={{
+        ...S.actionCard,
+        ...(comingSoon ? { opacity: 0.5, cursor: "not-allowed" } : {}),
+      }}
+    >
+      <div style={{ ...S.actionIcon, background: `${accent}20`, color: accent }}>
+        {icon}
+      </div>
+      <div style={S.actionTitle}>{title}</div>
+      <div style={S.actionSub}>{subtitle}</div>
+      {comingSoon && <div style={S.soonBadge}>Soon</div>}
+    </button>
+  );
+}
+
+const S = {
+  container: {
+    width: "min(440px, 100%)",
+    minHeight: "100vh",
+    padding: "20px 16px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 20,
+  },
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingBottom: 8,
+  },
+  logo: {
+    fontFamily: "'Bebas Neue', sans-serif",
+    fontSize: 28,
+    color: "#F59E0B",
+    letterSpacing: 2,
+  },
+  logoutBtn: {
+    padding: "6px 12px",
+    borderRadius: 8,
+    background: "transparent",
+    border: "1px solid #2a2a2a",
+    color: "#9CA3AF",
+    fontSize: 11,
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
+  profile: {
+    background: "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.02) 100%)",
+    border: "1px solid rgba(245,158,11,0.2)",
+    borderRadius: 16,
+    padding: "20px 18px",
+    animation: "fadeUp 0.4s ease",
+  },
+  greeting: { fontSize: 18, fontWeight: 700, marginBottom: 10 },
+  tableBadge: {
+    display: "inline-block",
+    padding: "5px 12px",
+    borderRadius: 16,
+    background: "rgba(245,158,11,0.15)",
+    border: "1px solid rgba(245,158,11,0.3)",
+    color: "#F59E0B",
+    fontSize: 11,
+    fontWeight: 600,
+  },
+  modeBadge: {
+    display: "inline-block",
+    padding: "5px 12px",
+    borderRadius: 16,
+    background: "rgba(59,130,246,0.15)",
+    color: "#60A5FA",
+    fontSize: 11,
+    fontWeight: 600,
+  },
+  statsRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 10,
+    marginTop: 16,
+  },
+  statBox: {
+    background: "rgba(0,0,0,0.4)",
+    border: "1px solid rgba(255,255,255,0.05)",
+    borderRadius: 12,
+    padding: "12px 14px",
+  },
+  statLabel: { fontSize: 10, color: "#9CA3AF", letterSpacing: 1, fontWeight: 600, marginBottom: 4 },
+  statValue: {
+    fontFamily: "'Bebas Neue', sans-serif",
+    fontSize: 28,
+    color: "#F59E0B",
+    lineHeight: 1,
+    letterSpacing: 1,
+  },
+  statUnit: { fontSize: 14, color: "#9CA3AF", marginLeft: 2 },
+  statBadge: { fontSize: 10, color: "#6B7280", marginTop: 6 },
+  actionsGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 10,
+  },
+  actionCard: {
+    position: "relative",
+    padding: "16px 12px",
+    borderRadius: 14,
+    background: "linear-gradient(180deg, #161616 0%, #0d0d0d 100%)",
+    border: "1px solid #2a2a2a",
+    color: "white",
+    cursor: "pointer",
+    fontFamily: "inherit",
+    textAlign: "left",
+  },
+  actionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 20,
+    marginBottom: 8,
+  },
+  actionTitle: { fontSize: 13, fontWeight: 700 },
+  actionSub: { fontSize: 10, color: "#9CA3AF", marginTop: 2 },
+  soonBadge: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    padding: "2px 6px",
+    borderRadius: 4,
+    background: "rgba(245,158,11,0.15)",
+    color: "#F59E0B",
+    fontSize: 8,
+    fontWeight: 700,
+    letterSpacing: 1,
+  },
+  devNote: {
+    padding: "12px 14px",
+    borderRadius: 10,
+    background: "rgba(139,92,246,0.08)",
+    border: "1px dashed rgba(139,92,246,0.3)",
+    color: "#A78BFA",
+    fontSize: 11,
+    lineHeight: 1.6,
+  },
+  footer: {
+    marginTop: "auto",
+    textAlign: "center",
+    fontSize: 10,
+    color: "#4B5563",
+    letterSpacing: 1,
+    padding: "12px 0",
+  },
+};

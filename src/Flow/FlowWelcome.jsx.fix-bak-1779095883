@@ -1,0 +1,321 @@
+import React, { useState } from "react";
+
+const API = import.meta.env.VITE_API_URL || "http://localhost:3011";
+
+export default function FlowWelcome({ onAuth, tableContext }) {
+  const [step, setStep] = useState("phone"); // phone | register
+  const [phone, setPhone] = useState("");
+  const [name, setName] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  function normalizePhone(p) {
+    let n = p.replace(/[^0-9]/g, "");
+    if (n.startsWith("0")) n = "62" + n.substring(1);
+    if (!n.startsWith("62")) n = "62" + n;
+    return n;
+  }
+
+  async function handlePhoneSubmit() {
+    setError("");
+    if (phone.length < 8) {
+      setError("Nomor terlalu pendek");
+      return;
+    }
+    setLoading(true);
+    const normPhone = normalizePhone(phone);
+
+    try {
+      // Try common customer lookup endpoints
+      let customer = null;
+
+      // Attempt 1: GET /api/customers?phone=X
+      try {
+        const r = await fetch(`${API}/api/customers?phone=${normPhone}`);
+        if (r.ok) {
+          const data = await r.json();
+          customer = Array.isArray(data) ? data[0] : (data.customer || data);
+          if (customer && !customer.phone) customer = null;
+        }
+      } catch {}
+
+      // Attempt 2: GET /api/customers/by-phone/:phone
+      if (!customer) {
+        try {
+          const r = await fetch(`${API}/api/customers/by-phone/${normPhone}`);
+          if (r.ok) {
+            const data = await r.json();
+            customer = data.customer || data;
+            if (customer && !customer.phone) customer = null;
+          }
+        } catch {}
+      }
+
+      if (customer && customer.name) {
+        onAuth(customer);
+      } else {
+        // Not found → go to register
+        setStep("register");
+      }
+    } catch (e) {
+      setError("Gagal menghubungi server");
+    }
+    setLoading(false);
+  }
+
+  async function handleRegister() {
+    setError("");
+    if (!name.trim()) {
+      setError("Nama belum diisi");
+      return;
+    }
+    setLoading(true);
+    const normPhone = normalizePhone(phone);
+
+    try {
+      const r = await fetch(`${API}/api/customers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: normPhone, name: name.trim() }),
+      });
+
+      if (r.ok) {
+        const data = await r.json();
+        const customer = data.customer || data;
+        onAuth(customer);
+      } else {
+        setError("Gagal daftar. Coba lagi.");
+      }
+    } catch {
+      setError("Server error");
+    }
+    setLoading(false);
+  }
+
+  return (
+    <div style={S.container}>
+      <div style={S.hero}>
+        <div style={S.logo}>BINTORO</div>
+        <div style={S.tagline}>Order Langsung dari HP-mu</div>
+        {tableContext && (
+          <div style={S.tableBadge}>📍 Meja {tableContext}</div>
+        )}
+      </div>
+
+      <div style={S.card}>
+        {step === "phone" && (
+          <>
+            <div style={S.cardTitle}>Selamat Datang ☕</div>
+            <div style={S.cardSub}>Masukin nomor WhatsApp kamu</div>
+
+            <div style={S.inputGroup}>
+              <span style={S.inputPrefix}>+62</span>
+              <input
+                type="tel"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                style={S.input}
+                placeholder="81234567890"
+                autoFocus
+              />
+            </div>
+
+            {error && <div style={S.error}>{error}</div>}
+
+            <button
+              onClick={handlePhoneSubmit}
+              disabled={loading || phone.length < 8}
+              style={{
+                ...S.btnPrimary,
+                ...(loading || phone.length < 8 ? S.btnDisabled : {}),
+              }}
+            >
+              {loading ? "Mengecek..." : "Lanjut →"}
+            </button>
+
+            <div style={S.hint}>
+              💡 Belum pernah order? Tenang, nanti tinggal isi nama sekali aja.
+            </div>
+          </>
+        )}
+
+        {step === "register" && (
+          <>
+            <div style={S.cardTitle}>Halo! 👋</div>
+            <div style={S.cardSub}>Sekali aja isi nama, biar order berikutnya lebih cepet.</div>
+
+            <div style={S.fieldLabel}>Nama Kamu</div>
+            <input
+              type="text"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              style={{ ...S.input, ...S.inputFull, marginBottom: 16 }}
+              placeholder="Nama panggilan"
+              autoFocus
+            />
+
+            <div style={S.phonePreview}>📱 +{normalizePhone(phone)}</div>
+
+            {error && <div style={S.error}>{error}</div>}
+
+            <button
+              onClick={handleRegister}
+              disabled={loading || !name.trim()}
+              style={{
+                ...S.btnPrimary,
+                ...(loading || !name.trim() ? S.btnDisabled : {}),
+              }}
+            >
+              {loading ? "Mendaftar..." : "Daftar & Lanjut →"}
+            </button>
+
+            <button onClick={() => setStep("phone")} style={S.btnGhost}>
+              ← Ganti nomor
+            </button>
+          </>
+        )}
+      </div>
+
+      <div style={S.footer}>
+        Powered by BINTORO Flow
+      </div>
+    </div>
+  );
+}
+
+const S = {
+  container: {
+    width: "min(440px, 100%)",
+    minHeight: "100vh",
+    padding: "32px 20px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 24,
+  },
+  hero: {
+    textAlign: "center",
+    padding: "20px 0",
+    animation: "fadeUp 0.5s ease",
+  },
+  logo: {
+    fontFamily: "'Bebas Neue', sans-serif",
+    fontSize: 48,
+    color: "#F59E0B",
+    letterSpacing: 3,
+  },
+  tagline: {
+    fontSize: 13,
+    color: "#9CA3AF",
+    marginTop: 4,
+    letterSpacing: 0.5,
+  },
+  tableBadge: {
+    display: "inline-block",
+    marginTop: 12,
+    padding: "6px 14px",
+    borderRadius: 20,
+    background: "rgba(245,158,11,0.10)",
+    border: "1px solid rgba(245,158,11,0.3)",
+    color: "#F59E0B",
+    fontSize: 12,
+    fontWeight: 600,
+  },
+  card: {
+    background: "linear-gradient(180deg, #161616 0%, #0d0d0d 100%)",
+    border: "1px solid #2a2a2a",
+    borderRadius: 20,
+    padding: "28px 24px",
+    animation: "fadeUp 0.6s ease",
+  },
+  cardTitle: { fontSize: 22, fontWeight: 800, marginBottom: 6 },
+  cardSub: { fontSize: 13, color: "#9CA3AF", marginBottom: 24 },
+  fieldLabel: { fontSize: 11, color: "#9CA3AF", marginBottom: 6, letterSpacing: 1, fontWeight: 600 },
+  inputGroup: {
+    display: "flex",
+    gap: 0,
+    marginBottom: 16,
+  },
+  inputPrefix: {
+    padding: "14px 16px",
+    background: "#0a0a0a",
+    border: "1px solid #2a2a2a",
+    borderRight: "none",
+    borderRadius: "12px 0 0 12px",
+    color: "#9CA3AF",
+    fontSize: 15,
+    fontWeight: 600,
+  },
+  input: {
+    flex: 1,
+    padding: "14px 16px",
+    background: "#0a0a0a",
+    border: "1px solid #2a2a2a",
+    borderRadius: "0 12px 12px 0",
+    color: "white",
+    fontSize: 16,
+    fontFamily: "inherit",
+    outline: "none",
+  },
+  inputFull: { borderRadius: 12 },
+  phonePreview: {
+    padding: "10px 14px",
+    borderRadius: 10,
+    background: "rgba(255,255,255,0.04)",
+    border: "1px solid #2a2a2a",
+    fontSize: 13,
+    color: "#9CA3AF",
+    marginBottom: 16,
+  },
+  error: {
+    padding: "10px 12px",
+    borderRadius: 8,
+    background: "rgba(248,113,113,0.10)",
+    color: "#F87171",
+    fontSize: 12,
+    marginBottom: 12,
+  },
+  btnPrimary: {
+    width: "100%",
+    padding: "14px",
+    borderRadius: 12,
+    background: "linear-gradient(135deg, #F59E0B, #D97706)",
+    border: "none",
+    color: "#111",
+    fontSize: 15,
+    fontWeight: 800,
+    fontFamily: "inherit",
+    cursor: "pointer",
+    letterSpacing: 0.5,
+  },
+  btnGhost: {
+    width: "100%",
+    marginTop: 10,
+    padding: "10px",
+    background: "transparent",
+    border: "none",
+    color: "#9CA3AF",
+    fontSize: 13,
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
+  btnDisabled: {
+    background: "#374151",
+    cursor: "not-allowed",
+    color: "#9CA3AF",
+  },
+  hint: {
+    marginTop: 16,
+    fontSize: 11,
+    color: "#6B7280",
+    lineHeight: 1.5,
+    textAlign: "center",
+  },
+  footer: {
+    marginTop: "auto",
+    textAlign: "center",
+    fontSize: 10,
+    color: "#4B5563",
+    letterSpacing: 1,
+    padding: "20px 0",
+  },
+};

@@ -1,0 +1,83 @@
+import React, { useState, useEffect } from "react";
+import FlowWelcome from "./FlowWelcome.jsx";
+import FlowHome from "./FlowHome.jsx";
+
+const API = import.meta.env.VITE_API_URL || "http://localhost:3011";
+const SESSION_KEY = "flowos_session";
+
+export default function FlowApp() {
+  // Persistent session via localStorage
+  const [session, setSession] = useState(() => {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (raw) {
+        const s = JSON.parse(raw);
+        if (s.phone && s.expires > Date.now()) return s;
+      }
+    } catch {}
+    return null;
+  });
+
+  const [screen, setScreen] = useState(session ? "home" : "welcome");
+
+  // Detect QR table context from URL (?flow=1&table=T05)
+  const [tableContext, setTableContext] = useState(() => {
+    const q = new URLSearchParams(window.location.search);
+    return q.get("table") || null;
+  });
+
+  function handleAuth(customer) {
+    // Save 30-day session
+    const newSession = {
+      phone: customer.phone,
+      name: customer.name,
+      customerId: customer.id || null,
+      expires: Date.now() + 30 * 24 * 60 * 60 * 1000,
+    };
+    try { localStorage.setItem(SESSION_KEY, JSON.stringify(newSession)); } catch {}
+    setSession(newSession);
+    setScreen("home");
+  }
+
+  function handleLogout() {
+    try { localStorage.removeItem(SESSION_KEY); } catch {}
+    setSession(null);
+    setScreen("welcome");
+  }
+
+  return (
+    <div style={S.app}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { background: #000; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+      `}</style>
+
+      {screen === "welcome" && (
+        <FlowWelcome onAuth={handleAuth} tableContext={tableContext} />
+      )}
+
+      {screen === "home" && session && (
+        <FlowHome
+          session={session}
+          tableContext={tableContext}
+          onLogout={handleLogout}
+        />
+      )}
+    </div>
+  );
+}
+
+const S = {
+  app: {
+    minHeight: "100vh",
+    background: "linear-gradient(180deg, #0a0a0a 0%, #000 100%)",
+    fontFamily: "'Plus Jakarta Sans', sans-serif",
+    color: "white",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
+};
