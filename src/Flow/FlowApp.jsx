@@ -138,7 +138,7 @@ export default function FlowApp() {
 
                   {screen === "promos" && (
         <FlowPromos
-          customer={customer}
+          customer={session}
           setActivePromo={setActivePromo}
           setScreen={setScreen}
         />
