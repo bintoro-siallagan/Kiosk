@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "volume": 1,
+  "ttsEnabled": true,
+  "ttsPhrase": "Terima kasih kakak",
+  "ttsLang": "id-ID",
+  "profiles": {
+    "newOrder": true,
+    "orderReady": true,
+    "kitchenAlert": true,
+    "paymentSuccess": true,
+    "addToCart": true,
+    "tap": true,
+    "click": true,
+    "swoosh": true,
+    "confirm": true,
+    "error": true
+  },
+  "updatedAt": 1778776987164
+}

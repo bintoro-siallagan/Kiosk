@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2D1B4E"/>
+      <stop offset="100%" stop-color="#0a0418"/>
+    </linearGradient>
+    <linearGradient id="pinkOrange" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EC4899"/>
+      <stop offset="100%" stop-color="#F97316"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg2)"/>
+  <!-- Burst decoration -->
+  <g transform="translate(1500,200)" opacity="0.15">
+    <circle r="220" fill="#EC4899"/>
+  </g>
+  <g transform="translate(400,850)" opacity="0.12">
+    <circle r="180" fill="#F97316"/>
+  </g>
+  <!-- Yogurt emoji -->
+  <text x="960" y="280" text-anchor="middle" font-size="120">🍦</text>
+  <!-- Headline -->
+  <text x="960" y="450" text-anchor="middle" font-family="Impact, sans-serif" font-size="160" font-weight="900" fill="url(#pinkOrange)" letter-spacing="8">BELI 2 GRATIS 1</text>
+  <text x="960" y="540" text-anchor="middle" font-family="Arial, sans-serif" font-size="40" fill="#fff" letter-spacing="6">PROMO HARI INI · FROZEN YOGURT</text>
+  <!-- Conditions -->
+  <rect x="510" y="640" width="900" height="180" rx="20" fill="#000" opacity="0.4"/>
+  <text x="960" y="710" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" fill="#FBBF24" font-weight="700">★ Khusus Member ★</text>
+  <text x="960" y="760" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#fff">Pakai kode promo: SAVELY3</text>
+  <text x="960" y="800" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#aaa">Berlaku sampai jam 21:00</text>
+  <!-- CTA -->
+  <text x="960" y="940" text-anchor="middle" font-family="Impact, sans-serif" font-size="44" fill="#fff" letter-spacing="6">👆 PESAN SEKARANG</text>
+</svg>

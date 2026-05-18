@@ -1,0 +1,19 @@
+{
+  "enabled": {
+    "ready": true,
+    "completed": true
+  },
+  "provider": null,
+  "templates": {
+    "ready": "🍦 Halo {customerName}!\n\nPesanan *#{orderId}* kamu sudah siap diambil di counter ya. Tunjukkan struk atau sebut nomor pesanan.\n\nTotal: Rp {totalIDR}\n\nTerima kasih,\n*SOURSALLY*",
+    "completed": "✅ Terima kasih telah berbelanja di Soursally\n\nPesanan #{orderId} udah selesai diambil.\n\nRate pengalaman kamu: {trackingUrl}"
+  },
+  "fonnte": {
+    "token": "DUMMY_FONNTE_TOKEN"
+  },
+  "twilio": {
+    "sid": "",
+    "token": "",
+    "from": ""
+  }
+}

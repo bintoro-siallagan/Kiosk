@@ -1,0 +1,71 @@
+import QRISPayment from "./QRISPayment.jsx";
+import { api } from "./api";
+
+export default function Payment({ cart, orderType, promo, tableData, customerData, onSuccess, onBack }) {
+  const orderNum = String(Math.floor(Math.random() * 9000 + 1000));
+
+  // === Hitung total dari cart ===
+  const subtotal   = cart.reduce((sum, e) => sum + (e.item.price * e.qty + (e.addonTotal || 0)), 0);
+  const afterPromo = Math.max(0, subtotal - (promo?.discount || 0));
+  const amount     = Math.round(afterPromo * 1.11);   // PPN 11%
+
+  // === Map cart ke shape yang dipake QRISPayment ===
+  const items = cart.map(e => ({
+    name:  e.item.name,
+    price: e.item.price,
+    qty:   e.qty,
+  }));
+
+  return (
+    <QRISPayment
+      items={items}
+      amount={amount}
+      customerInfo={{ name: customerData?.name, phone: customerData?.phone }}
+      orderType={orderType}
+      orderNum={orderNum}
+      onSuccess={async (payInfo) => {
+        let createdOrder = null;
+        try {
+          createdOrder = await api.createOrder({
+            type:           orderType,
+            table:          tableData?.id || tableData?.name || (orderType==="dine"?"A1":"-"),
+            pay:            "QRIS",
+            customerId:     customerData?.customer?.id,
+            customerName:   customerData?.name,
+            customerPhone:  customerData?.phone,
+            promoCode:      promo?.code     || null,
+            promoDiscount:  promo?.discount || 0,
+            midtransId:     payInfo?.midtrans?.transactionId || null,
+            items: cart.map(e => ({
+              e:          e.item.emoji,
+              n:          e.item.name,
+              q:          e.qty,
+              p:          e.item.price,
+              addonTotal: e.addonTotal,
+            })),
+          });
+        } catch {}
+
+        // Send WA tracking link
+        if (customerData?.phone && createdOrder?.id) {
+          try {
+            const result = await api.sendWATracking({
+              phone:        customerData.phone,
+              orderId:      createdOrder.id,
+              customerName: customerData.name,
+            });
+            if (result.waUrl) {
+              window.__lastWAUrl    = result.waUrl;
+              window.__lastTrackUrl = result.trackUrl;
+              window.__lastOrderId  = createdOrder.id;
+            }
+          } catch {}
+        }
+
+        onSuccess({ orderId: createdOrder?.id, ...payInfo });
+      }}
+      onBack={onBack}
+      onFallback={onBack}
+    />
+  );
+}

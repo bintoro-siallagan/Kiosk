@@ -1,0 +1,86 @@
+import { useState } from "react";
+import OrderTypePicker from "./OrderTypePicker.jsx";
+import TableSelector from "./TableSelector.jsx";
+import CustomerNameInput from "./CustomerNameInput.jsx";
+
+export default function POSOrder({ cashier, onCancel, onComplete }) {
+  const [step, setStep] = useState("type");
+  const [order, setOrder] = useState({ type: null, table: null, customerName: "" });
+  const update = (changes) => setOrder(o => ({ ...o, ...changes }));
+
+  if (step === "type") return (
+    <OrderTypePicker
+      onPick={(type) => {
+        update({ type });
+        setStep(type === "dine-in" ? "table" : "name");
+      }}
+      onCancel={onCancel}
+    />
+  );
+
+  if (step === "table") return (
+    <TableSelector
+      onPick={(table) => { update({ table }); setStep("name"); }}
+      onBack={() => setStep("type")}
+      onCancel={onCancel}
+    />
+  );
+
+  if (step === "name") return (
+    <CustomerNameInput
+      order={order}
+      onContinue={(name) => { update({ customerName: name }); setStep("menu"); }}
+      onBack={() => setStep(order.type === "dine-in" ? "table" : "type")}
+      onCancel={onCancel}
+    />
+  );
+
+  // step === "menu" → STUB for Step 3
+  return (
+    <div style={S.root}>
+      <header style={S.header}>
+        <button onClick={() => setStep("name")} style={S.backBtn}>← Back</button>
+        <div style={S.summary}>
+          {order.type === "dine-in" ? "🍽️ Dine-in" : "🛍️ Take-away"}
+          {order.table && ` · ${order.table.name}`}
+          {order.customerName && ` · ${order.customerName}`}
+        </div>
+        <button onClick={onCancel} style={S.cancelBtn}>✕</button>
+      </header>
+      <main style={S.main}>
+        <div style={{textAlign:"center", padding:"40px 20px"}}>
+          <div style={{fontSize:80, marginBottom:16}}>🍴</div>
+          <h2 style={{fontFamily:"'Bebas Neue',cursive", fontSize:42, letterSpacing:3, color:"#F59E0B", margin:"0 0 8px"}}>MENU & ORDER ENTRY</h2>
+          <p style={{color:"#888"}}>Coming in Step 3 — reuse Kiosk.jsx menu with POS context</p>
+
+          <div style={S.summaryBox}>
+            <div style={S.summaryRow}><span style={S.lbl}>Kasir:</span><span>{cashier.name}</span></div>
+            <div style={S.summaryRow}><span style={S.lbl}>Tipe:</span><span>{order.type}</span></div>
+            {order.table && <div style={S.summaryRow}><span style={S.lbl}>Meja:</span><span>{order.table.name} ({order.table.capacity} pax)</span></div>}
+            <div style={S.summaryRow}><span style={S.lbl}>Customer:</span><span>{order.customerName || "(skip)"}</span></div>
+          </div>
+
+          <button onClick={onComplete} style={S.completeBtn}>
+            ✓ Selesai (demo) — Kembali ke Home
+          </button>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+const S = {
+  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'DM Sans',sans-serif" },
+  header: { display:"flex", alignItems:"center", justifyContent:"space-between",
+    padding:"14px 24px", borderBottom:"1px solid #222", background:"#0a0a0a" },
+  backBtn: { background:"transparent", border:"1px solid #333", color:"#aaa", padding:"8px 14px", borderRadius:8, fontSize:13, cursor:"pointer", fontFamily:"inherit" },
+  summary: { fontSize:14, color:"#F59E0B", fontWeight:600 },
+  cancelBtn: { background:"transparent", border:"1px solid #444", color:"#aaa", padding:"8px 12px", borderRadius:8, fontSize:14, cursor:"pointer", fontFamily:"inherit" },
+  main: { maxWidth:600, margin:"0 auto", padding:"32px 24px" },
+  summaryBox: { background:"#1a1a1a", border:"1px solid #2a2a2a", borderRadius:14, padding:"20px 24px", marginTop:32, textAlign:"left" },
+  summaryRow: { display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:"1px solid #222", fontSize:14 },
+  lbl: { color:"#888" },
+  completeBtn: { marginTop:32, background:"#F59E0B", color:"#111", border:"none",
+    borderRadius:12, padding:"14px 32px", fontFamily:"inherit",
+    fontSize:14, fontWeight:700, cursor:"pointer" }
+};

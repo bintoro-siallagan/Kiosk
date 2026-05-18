@@ -1,0 +1,1172 @@
+const express = require("express");
+const cors = require("cors");
+const http = require("http");
+const { WebSocketServer } = require("ws");
+
+const app = express();
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+
+app.use(cors());
+app.use(express.json());
+
+// ─── IN-MEMORY DATABASE ────────────────────────────────────────────────────
+let orders = [
+  { id: "A01", time: Date.now() - 180000, type: "dine",     table: "A3", status: "preparing", pay: "QRIS",     total: 185000, items: [{ e: "🍔", n: "Classic Smash Burger", q: 2, p: 55000 }, { e: "🍟", n: "Truffle Fries", q: 1, p: 38000 }] },
+  { id: "A02", time: Date.now() - 60000,  type: "takeaway", table: "-",  status: "waiting",   pay: "Transfer", total: 98000,  items: [{ e: "🫧", n: "Truffle Funghi", q: 1, p: 98000 }] },
+  { id: "A03", time: Date.now() - 420000, type: "dine",     table: "B1", status: "ready",     pay: "Cash",     total: 142000, items: [{ e: "🥩", n: "BBQ Bacon Beast", q: 1, p: 75000 }, { e: "🥛", n: "Salted Caramel Shake", q: 2, p: 32000 }] },
+  { id: "A04", time: Date.now() - 900000, type: "dine",     table: "A1", status: "completed", pay: "Kartu",    total: 220000, items: [{ e: "🔥", n: "Diavola", q: 2, p: 88000 }, { e: "🥬", n: "Caesar Royale", q: 1, p: 52000 }] },
+  { id: "A05", time: Date.now() - 30000,  type: "dine",     table: "C2", status: "waiting",   pay: "QRIS",     total: 75000,  items: [{ e: "🥩", n: "BBQ Bacon Beast", q: 1, p: 75000 }] },
+];
+
+let menu = [
+  { id: 1,  e: "🍔", name: "Classic Smash Burger",   cat: "Burgers",  price: 55000, avail: true  },
+  { id: 2,  e: "🥩", name: "BBQ Bacon Beast",         cat: "Burgers",  price: 75000, avail: true  },
+  { id: 3,  e: "🍄", name: "Mushroom Swiss",          cat: "Burgers",  price: 62000, avail: true  },
+  { id: 4,  e: "🌶️", name: "Spicy Crispy Chicken",   cat: "Burgers",  price: 65000, avail: false },
+  { id: 5,  e: "🍕", name: "Margherita",              cat: "Pizza",    price: 78000, avail: true  },
+  { id: 6,  e: "🫧", name: "Truffle Funghi",          cat: "Pizza",    price: 98000, avail: true  },
+  { id: 7,  e: "🔥", name: "Diavola",                 cat: "Pizza",    price: 88000, avail: true  },
+  { id: 8,  e: "🥬", name: "Caesar Royale",           cat: "Salads",   price: 52000, avail: true  },
+  { id: 9,  e: "🍉", name: "Watermelon Feta",         cat: "Salads",   price: 55000, avail: true  },
+  { id: 10, e: "🍟", name: "Truffle Fries",           cat: "Sides",    price: 38000, avail: true  },
+  { id: 11, e: "🧅", name: "Onion Rings",             cat: "Sides",    price: 28000, avail: true  },
+  { id: 12, e: "🧀", name: "Mac & Cheese Bites",      cat: "Sides",    price: 35000, avail: false },
+  { id: 13, e: "🍋", name: "Craft Lemonade",          cat: "Drinks",   price: 22000, avail: true  },
+  { id: 14, e: "🥛", name: "Salted Caramel Shake",    cat: "Drinks",   price: 32000, avail: true  },
+  { id: 15, e: "🍵", name: "Matcha Cooler",           cat: "Drinks",   price: 25000, avail: true  },
+  { id: 16, e: "🍮", name: "Burnt Basque Cheesecake", cat: "Desserts", price: 42000, avail: true  },
+  { id: 17, e: "🍫", name: "Choco Lava Cake",         cat: "Desserts", price: 45000, avail: true  },
+];
+
+let orderCounter = 6;
+
+// ─── WEBSOCKET BROADCAST ───────────────────────────────────────────────────
+function broadcast(event, data) {
+  const msg = JSON.stringify({ event, data, ts: Date.now() });
+  wss.clients.forEach(client => {
+    if (client.readyState === 1) client.send(msg);
+  });
+}
+
+wss.on("connection", (ws) => {
+  console.log("🔌 Client connected via WebSocket");
+  // Send current state on connect
+  ws.send(JSON.stringify({ event: "init", data: { orders, menu }, ts: Date.now() }));
+  ws.on("close", () => console.log("🔌 Client disconnected"));
+});
+
+// ─── ROUTES ────────────────────────────────────────────────────────────────
+
+// Health check
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", uptime: process.uptime(), time: new Date().toISOString() });
+});
+
+// ── ORDERS ──────────────────────────────────────────────────────────────────
+
+// GET all orders
+app.get("/api/orders", (req, res) => {
+  const { status } = req.query;
+  const result = status ? orders.filter(o => o.status === status) : orders;
+  res.json(result);
+});
+
+// GET single order
+app.get("/api/orders/:id", (req, res) => {
+  const order = orders.find(o => o.id === req.params.id);
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  res.json(order);
+});
+
+// POST create new order (from kiosk checkout)
+app.post("/api/orders", (req, res) => {
+  const { type, table, items, pay, addons, customerId, customerName, customerPhone } = req.body;
+  if (!type || !items || !items.length) {
+    return res.status(400).json({ error: "type and items are required" });
+  }
+
+  const total = items.reduce((s, i) => s + (i.p * i.q) + (i.addonTotal || 0), 0);
+  const tax   = Math.round(total * 0.11);
+
+  const order = {
+    id:       `A${String(++orderCounter).padStart(2, "0")}`,
+    time:     Date.now(),
+    type:     type || "dine",
+    table:    table || "-",
+    status:   "waiting",
+    pay:      pay || "QRIS",
+    items,
+    addons:   addons || {},
+    subtotal: total,
+    tax,
+    total:    total + tax,
+    customerId,
+    customerName,
+    customerPhone,
+    promoCode:    req.body.promoCode    || null,
+    promoDiscount:req.body.promoDiscount|| 0,
+  };
+
+  // Update customer visit count & spend
+  if (customerId) {
+    const cIdx = customers.findIndex(c => c.id === customerId);
+    if (cIdx >= 0) {
+      customers[cIdx].visits     += 1;
+      customers[cIdx].totalSpend += order.total;
+      customers[cIdx].lastVisit   = Date.now();
+      // Promote to member after 3 visits
+      if (customers[cIdx].visits >= 3 && !customers[cIdx].tags?.includes("member")) {
+        customers[cIdx].tags = [...(customers[cIdx].tags||[]).filter(t=>t!=="new"), "member"];
+      }
+      // Promote to VIP after 10 visits
+      if (customers[cIdx].visits >= 10 && !customers[cIdx].tags?.includes("vip")) {
+        customers[cIdx].tags = [...(customers[cIdx].tags||[]), "vip"];
+      }
+    }
+  }
+
+  // Record promo usage
+  if (req.body.promoCode) {
+    const pi = promoCodes.findIndex(p => p.code === req.body.promoCode);
+    if (pi >= 0) promoCodes[pi].usedCount++;
+  }
+
+  // Mark table as occupied
+  if (order.type === "dine" && order.table) {
+    const ti = tables.findIndex(t => t.id === order.table || t.name === order.table);
+    if (ti >= 0) { tables[ti].status = "occupied"; broadcast("table:updated", tables[ti]); }
+  }
+
+  // Add to active shift
+  if (activeShift) {
+    activeShift.totalOrders++;
+    activeShift.totalRevenue += order.total;
+  }
+
+  orders.push(order);
+  broadcast("order:new", order);
+  console.log(`✅ New order #${order.id} — ${order.type} — Rp ${order.total.toLocaleString()}`);
+
+  // Push notif ke ESB POS (non-blocking)
+  pushOrderToESB(order).then(result => {
+    if (result.ok) {
+      broadcast("esb:pushed", { orderId: order.id, ok: true });
+    } else if (!result.skipped) {
+      retryQueue.push(order); // queue for retry
+      broadcast("esb:pushed", { orderId: order.id, ok: false, error: result.error });
+    }
+  }).catch(e => {
+    console.error("ESB push error:", e.message);
+    retryQueue.push(order);
+  });
+
+  res.status(201).json(order);
+});
+
+// PATCH update order status
+app.patch("/api/orders/:id/status", (req, res) => {
+  const { status } = req.body;
+  const valid = ["waiting", "preparing", "ready", "completed", "cancelled"];
+  if (!valid.includes(status)) {
+    return res.status(400).json({ error: `Status must be one of: ${valid.join(", ")}` });
+  }
+
+  const idx = orders.findIndex(o => o.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Order not found" });
+
+  const prevStatus = orders[idx].status;
+  orders[idx] = { ...orders[idx], status, updatedAt: Date.now() };
+  broadcast("order:updated", orders[idx]);
+  console.log(`📦 Order #${orders[idx].id} → ${status}`);
+
+  // Free table when order completed/cancelled
+  if (["completed","cancelled"].includes(status) && orders[idx].type === "dine") {
+    const ti = tables.findIndex(t => t.id === orders[idx].table || t.name === orders[idx].table);
+    if (ti >= 0) {
+      const stillOccupied = orders.some(o =>
+        o.id !== orders[idx].id &&
+        o.type === "dine" &&
+        (o.table === tables[ti].id || o.table === tables[ti].name) &&
+        !["completed","cancelled"].includes(o.status)
+      );
+      if (!stillOccupied) {
+        tables[ti].status = "available";
+        broadcast("table:updated", tables[ti]);
+      }
+    }
+  }
+
+  res.json(orders[idx]);
+});
+
+// DELETE cancel order
+app.delete("/api/orders/:id", (req, res) => {
+  const idx = orders.findIndex(o => o.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Order not found" });
+  orders[idx] = { ...orders[idx], status: "cancelled", updatedAt: Date.now() };
+  broadcast("order:updated", orders[idx]);
+  res.json({ success: true, id: req.params.id });
+});
+
+// ── MENU ────────────────────────────────────────────────────────────────────
+
+// GET all menu
+app.get("/api/menu", (req, res) => {
+  res.json(menu);
+});
+
+// GET available menu only
+app.get("/api/menu/available", (req, res) => {
+  res.json(menu.filter(m => m.avail));
+});
+
+// PATCH update menu item (price / availability)
+app.patch("/api/menu/:id", (req, res) => {
+  const id  = parseInt(req.params.id);
+  const idx = menu.findIndex(m => m.id === id);
+  if (idx === -1) return res.status(404).json({ error: "Menu item not found" });
+
+  const { price, avail } = req.body;
+  if (price !== undefined) {
+    if (typeof price !== "number" || price <= 0) {
+      return res.status(400).json({ error: "price must be a positive number" });
+    }
+    menu[idx].price = price;
+  }
+  if (avail !== undefined) menu[idx].avail = Boolean(avail);
+
+  broadcast("menu:updated", menu[idx]);
+  console.log(`🍔 Menu #${id} "${menu[idx].name}" updated — price:${menu[idx].price} avail:${menu[idx].avail}`);
+  res.json(menu[idx]);
+});
+
+// ── STATS ────────────────────────────────────────────────────────────────────
+app.get("/api/stats", (req, res) => {
+  const completed  = orders.filter(o => o.status === "completed");
+  const active     = orders.filter(o => !["completed","cancelled"].includes(o.status));
+  const revenue    = orders.filter(o => o.status !== "cancelled").reduce((s, o) => s + o.total, 0);
+  const cancelled  = orders.filter(o => o.status === "cancelled").length;
+
+  const byStatus = {};
+  ["waiting","preparing","ready","completed","cancelled"].forEach(s => {
+    byStatus[s] = orders.filter(o => o.status === s).length;
+  });
+
+  const topItems = {};
+  orders.filter(o => o.status !== "cancelled").forEach(o => {
+    o.items.forEach(i => {
+      topItems[i.n] = (topItems[i.n] || 0) + i.q;
+    });
+  });
+  const topSorted = Object.entries(topItems)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, count]) => ({ name, count }));
+
+  res.json({
+    totalOrders:   orders.length,
+    activeOrders:  active.length,
+    completedOrders: completed.length,
+    cancelledOrders: cancelled,
+    revenue,
+    tax: Math.round(revenue * 0.11 / 1.11),
+    netRevenue: Math.round(revenue / 1.11),
+    avgOrder: completed.length ? Math.round(revenue / completed.length) : 0,
+    byStatus,
+    topItems: topSorted,
+    menuAvailable: menu.filter(m => m.avail).length,
+    menuTotal: menu.length,
+  });
+});
+
+
+
+
+// ─── PROMO CODE SYSTEM ────────────────────────────────────────────────────────
+let promoCodes = [
+  {
+    id: "P001", code: "BINTORO10", type: "percent", value: 10,
+    desc: "Diskon 10% untuk semua menu",
+    minOrder: 50000, maxDiscount: 50000,
+    usageLimit: 100, usedCount: 12,
+    validFrom: Date.now() - 86400000*7,
+    validUntil: Date.now() + 86400000*30,
+    active: true, forMember: false,
+  },
+  {
+    id: "P002", code: "MEMBER20", type: "percent", value: 20,
+    desc: "Diskon 20% khusus member",
+    minOrder: 75000, maxDiscount: 75000,
+    usageLimit: 500, usedCount: 44,
+    validFrom: Date.now() - 86400000*30,
+    validUntil: Date.now() + 86400000*60,
+    active: true, forMember: true,
+  },
+  {
+    id: "P003", code: "GRATISFRIES", type: "fixed", value: 38000,
+    desc: "Gratis Truffle Fries",
+    minOrder: 100000, maxDiscount: 38000,
+    usageLimit: 50, usedCount: 8,
+    validFrom: Date.now() - 86400000*3,
+    validUntil: Date.now() + 86400000*7,
+    active: true, forMember: false,
+  },
+  {
+    id: "P004", code: "VIP25", type: "percent", value: 25,
+    desc: "Diskon 25% khusus member VIP",
+    minOrder: 100000, maxDiscount: 100000,
+    usageLimit: 200, usedCount: 5,
+    validFrom: Date.now() - 86400000*1,
+    validUntil: Date.now() + 86400000*90,
+    active: true, forMember: true,
+  },
+  {
+    id: "P005", code: "NEWMEMBER", type: "fixed", value: 25000,
+    desc: "Potongan Rp 25.000 untuk member baru",
+    minOrder: 60000, maxDiscount: 25000,
+    usageLimit: 1000, usedCount: 130,
+    validFrom: Date.now() - 86400000*60,
+    validUntil: Date.now() + 86400000*365,
+    active: true, forMember: true,
+  },
+];
+let promoCounter = 5;
+
+// Calculate discount amount
+function calcDiscount(promo, subtotal) {
+  if (promo.type === "percent") {
+    const disc = Math.round(subtotal * promo.value / 100);
+    return Math.min(disc, promo.maxDiscount);
+  }
+  return Math.min(promo.value, subtotal);
+}
+
+// POST /api/promo/validate — validate promo code
+app.post("/api/promo/validate", (req, res) => {
+  const { code, subtotal, customerId, customerTags } = req.body;
+  if (!code) return res.status(400).json({ ok: false, error: "Kode promo harus diisi" });
+
+  const promo = promoCodes.find(p => p.code.toUpperCase() === code.trim().toUpperCase());
+
+  if (!promo)          return res.json({ ok: false, error: "Kode promo tidak ditemukan" });
+  if (!promo.active)   return res.json({ ok: false, error: "Kode promo sudah tidak aktif" });
+  if (Date.now() < promo.validFrom)  return res.json({ ok: false, error: "Kode promo belum berlaku" });
+  if (Date.now() > promo.validUntil) return res.json({ ok: false, error: "Kode promo sudah kadaluarsa" });
+  if (promo.usedCount >= promo.usageLimit) return res.json({ ok: false, error: "Kode promo sudah habis digunakan" });
+  if (subtotal < promo.minOrder) {
+    return res.json({ ok: false, error: `Minimum order ${new Intl.NumberFormat("id-ID", {style:"currency",currency:"IDR",maximumFractionDigits:0}).format(promo.minOrder)}` });
+  }
+  if (promo.forMember && !customerId) {
+    return res.json({ ok: false, error: "Kode ini khusus untuk member. Daftar dulu yuk!" });
+  }
+  if (promo.code === "VIP25" && !customerTags?.includes("vip")) {
+    return res.json({ ok: false, error: "Kode ini khusus untuk member VIP ⭐" });
+  }
+
+  const discount = calcDiscount(promo, subtotal);
+  res.json({
+    ok: true,
+    promoId:   promo.id,
+    code:      promo.code,
+    desc:      promo.desc,
+    type:      promo.type,
+    value:     promo.value,
+    discount,
+    forMember: promo.forMember,
+  });
+});
+
+// GET /api/promo — list all promo (admin)
+app.get("/api/promo", (req, res) => {
+  res.json(promoCodes);
+});
+
+// POST /api/promo — create new promo (admin)
+app.post("/api/promo", (req, res) => {
+  const { code, type, value, desc, minOrder, maxDiscount, usageLimit, validUntil, active, forMember } = req.body;
+  if (!code || !type || !value) return res.status(400).json({ error: "code, type, value required" });
+  if (promoCodes.find(p => p.code.toUpperCase() === code.toUpperCase())) {
+    return res.status(409).json({ error: "Kode sudah digunakan" });
+  }
+  const promo = {
+    id:         `P${String(++promoCounter).padStart(3,"0")}`,
+    code:       code.trim().toUpperCase(),
+    type, value: Number(value), desc: desc||"",
+    minOrder:   Number(minOrder)||0,
+    maxDiscount:Number(maxDiscount)||value,
+    usageLimit: Number(usageLimit)||999,
+    usedCount:  0,
+    validFrom:  Date.now(),
+    validUntil: validUntil ? new Date(validUntil).getTime() : Date.now()+86400000*30,
+    active:     active !== false,
+    forMember:  Boolean(forMember),
+  };
+  promoCodes.push(promo);
+  broadcast("promo:created", promo);
+  res.status(201).json(promo);
+});
+
+// PATCH /api/promo/:id — update promo
+app.patch("/api/promo/:id", (req, res) => {
+  const idx = promoCodes.findIndex(p => p.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Promo not found" });
+  promoCodes[idx] = { ...promoCodes[idx], ...req.body, id: promoCodes[idx].id };
+  res.json(promoCodes[idx]);
+});
+
+// DELETE /api/promo/:id — delete promo
+app.delete("/api/promo/:id", (req, res) => {
+  promoCodes = promoCodes.filter(p => p.id !== req.params.id);
+  res.json({ ok: true });
+});
+
+// GET /api/promo/stats — promo usage stats
+app.get("/api/promo/stats", (req, res) => {
+  const totalSaved = promoCodes.reduce((s,p) => s + p.usedCount * (p.type==="fixed" ? p.value : 0), 0);
+  res.json({
+    total:    promoCodes.length,
+    active:   promoCodes.filter(p=>p.active).length,
+    expired:  promoCodes.filter(p=>Date.now()>p.validUntil).length,
+    totalUsage: promoCodes.reduce((s,p)=>s+p.usedCount,0),
+    totalSaved,
+  });
+});
+
+// ─── CUSTOMER DATABASE ────────────────────────────────────────────────────
+// In-memory store (replace with real DB like SQLite/PostgreSQL in production)
+let customers = [
+  { id:"C001", name:"Budi Santoso",  phone:"08123456789", visits:5, totalSpend:485000, createdAt:Date.now()-86400000*30, lastVisit:Date.now()-3600000, tags:["member"] },
+  { id:"C002", name:"Sari Dewi",     phone:"08234567890", visits:2, totalSpend:198000, createdAt:Date.now()-86400000*7,  lastVisit:Date.now()-7200000, tags:["new"] },
+  { id:"C003", name:"Andi Pratama",  phone:"08345678901", visits:8, totalSpend:920000, createdAt:Date.now()-86400000*60, lastVisit:Date.now()-1800000, tags:["member","vip"] },
+];
+let customerCounter = 3;
+
+// Whatsapp tracking base URL — set via env
+const WA_TRACKING_BASE = process.env.WA_TRACKING_BASE || "http://localhost:5173";
+
+// ── Customer CRUD ──────────────────────────────────────────────────────────
+
+// GET all customers (with search + filter)
+app.get("/api/customers", (req, res) => {
+  const { q, tag, limit = 100, offset = 0 } = req.query;
+  let result = [...customers];
+  if (q) {
+    const ql = q.toLowerCase();
+    result = result.filter(c => c.name.toLowerCase().includes(ql) || c.phone.includes(q));
+  }
+  if (tag) result = result.filter(c => c.tags?.includes(tag));
+  res.json({
+    total: result.length,
+    data:  result.slice(Number(offset), Number(offset) + Number(limit)),
+  });
+});
+
+// GET single customer by phone (for lookup at kiosk)
+app.get("/api/customers/lookup", (req, res) => {
+  const { phone } = req.query;
+  if (!phone) return res.status(400).json({ error: "phone required" });
+  const clean = phone.replace(/\D/g,"");
+  const found = customers.find(c => c.phone.replace(/\D/g,"") === clean);
+  if (!found) return res.status(404).json({ error: "Customer not found" });
+  res.json(found);
+});
+
+// POST create or update customer (upsert by phone)
+app.post("/api/customers", (req, res) => {
+  const { name, phone, tags } = req.body;
+  if (!name || !phone) return res.status(400).json({ error: "name and phone required" });
+  const clean = phone.replace(/\D/g,"");
+  const existing = customers.find(c => c.phone.replace(/\D/g,"") === clean);
+  if (existing) {
+    // Update name if changed
+    if (name && name !== existing.name) existing.name = name;
+    if (tags) existing.tags = [...new Set([...(existing.tags||[]), ...tags])];
+    return res.json({ ...existing, isNew: false });
+  }
+  const customer = {
+    id:        `C${String(++customerCounter).padStart(3,"0")}`,
+    name:      name.trim(),
+    phone:     clean,
+    visits:    0,
+    totalSpend:0,
+    createdAt: Date.now(),
+    lastVisit: null,
+    tags:      tags || ["new"],
+  };
+  customers.push(customer);
+  console.log(`👤 New customer: ${customer.name} (${customer.phone})`);
+  res.status(201).json({ ...customer, isNew: true });
+});
+
+// PATCH update customer
+app.patch("/api/customers/:id", (req, res) => {
+  const idx = customers.findIndex(c => c.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Customer not found" });
+  customers[idx] = { ...customers[idx], ...req.body, id: customers[idx].id };
+  res.json(customers[idx]);
+});
+
+// DELETE customer
+app.delete("/api/customers/:id", (req, res) => {
+  customers = customers.filter(c => c.id !== req.params.id);
+  res.json({ ok: true });
+});
+
+// GET customer stats (for marketing)
+app.get("/api/customers/stats", (req, res) => {
+  const total     = customers.length;
+  const members   = customers.filter(c => c.tags?.includes("member")).length;
+  const vip       = customers.filter(c => c.tags?.includes("vip")).length;
+  const newToday  = customers.filter(c => Date.now()-c.createdAt < 86400000).length;
+  const totalRev  = customers.reduce((s,c) => s+c.totalSpend, 0);
+  const avgVisits = total ? (customers.reduce((s,c)=>s+c.visits,0)/total).toFixed(1) : 0;
+  res.json({ total, members, vip, newToday, totalRev, avgVisits });
+});
+
+// POST send WhatsApp tracking link
+app.post("/api/customers/send-wa", async (req, res) => {
+  const { phone, orderId, customerName } = req.body;
+  if (!phone || !orderId) return res.status(400).json({ error: "phone and orderId required" });
+
+  const trackUrl = `${WA_TRACKING_BASE}/track?order=${orderId}`;
+  const message  = encodeURIComponent(
+    `Halo ${customerName||"Kak"}! 👋\n\nTerima kasih sudah memesan di *BINTORO* 🍽️\n\nPesanan *#${orderId}* Anda sedang kami proses.\n\nCek status pesanan real-time di sini:\n👉 ${trackUrl}\n\nEstimasi siap: *12–18 menit*\n\nTerima kasih! 🙏`
+  );
+
+  // WhatsApp API (wa.me deep link — works without Business API)
+  const cleanPhone = phone.replace(/\D/g,"");
+  const waPhone    = cleanPhone.startsWith("0") ? "62" + cleanPhone.slice(1) : cleanPhone;
+  const waUrl      = `https://wa.me/${waPhone}?text=${message}`;
+
+  console.log(`📱 WA link generated for ${waPhone} — Order #${orderId}`);
+  res.json({ ok: true, waUrl, trackUrl });
+});
+
+// ─── PRINTER (Epson TM-T82 via TCP/LAN) ──────────────────────────────────
+const net = require("net");
+
+function tcpPrint(ip, port, data) {
+  return new Promise((resolve, reject) => {
+    const client = new net.Socket();
+    const timeout = setTimeout(() => { client.destroy(); reject(new Error("Timeout")); }, 5000);
+    client.connect(port, ip, () => {
+      client.write(Buffer.from(data));
+      clearTimeout(timeout);
+      client.end();
+      resolve(true);
+    });
+    client.on("error", (e) => { clearTimeout(timeout); reject(e); });
+  });
+}
+
+// POST /api/print — send ESC/POS bytes to printer
+app.post("/api/print", async (req, res) => {
+  const { ip, port, data } = req.body;
+  if (!ip || !port || !data) return res.status(400).json({ error: "ip, port, data required" });
+  try {
+    await tcpPrint(ip, parseInt(port), data);
+    console.log(`🖨️  Printed to ${ip}:${port} (${data.length} bytes)`);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(`🖨️  Print failed: ${e.message}`);
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// POST /api/print/test — test printer connection
+app.post("/api/print/test", async (req, res) => {
+  const { ip, port } = req.body;
+  if (!ip || !port) return res.status(400).json({ error: "ip and port required" });
+  try {
+    // Send init + beep + cut
+    const testBytes = [0x1B,0x40, 0x1B,0x42,0x02,0x01, 0x0A,0x0A, 0x1D,0x56,0x41,0x03];
+    await tcpPrint(ip, parseInt(port), testBytes);
+    res.json({ ok: true, message: `Printer ${ip}:${port} connected` });
+  } catch (e) {
+    res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+
+// ─── ESB POS PUSH NOTIFICATION ───────────────────────────────────────────
+// Config diambil dari environment variables atau di-set via /api/esb/config
+let esbConfig = {
+  baseUrl:  process.env.ESB_BASE_URL  || "https://api.esb.co.id/eso-qs/v1",
+  apiKey:   process.env.ESB_API_KEY   || "",
+  outletId: process.env.ESB_OUTLET_ID || "",
+  enabled:  process.env.ESB_ENABLED   === "true" || false,
+};
+
+// Format order ke payload ESB Order QS
+function buildESBOrderPayload(order) {
+  return {
+    outlet_id:    esbConfig.outletId,
+    order_id:     order.id,
+    order_source: "KIOSK",
+    order_type:   order.type === "dine" ? "DINE_IN" : "TAKEAWAY",
+    table_number: order.table || null,
+    payment_method: order.pay || "QRIS",
+    status:       "NEW",
+    items: (order.items || []).map(i => ({
+      item_code:  String(i.id || i.n),
+      item_name:  i.n,
+      quantity:   i.q,
+      unit_price: i.p,
+      subtotal:   i.p * i.q,
+      notes:      i.note || "",
+    })),
+    subtotal:     order.subtotal || order.total,
+    tax:          order.tax || 0,
+    total:        order.total,
+    created_at:   new Date(order.time || Date.now()).toISOString(),
+  };
+}
+
+// Push order ke ESB POS
+async function pushOrderToESB(order) {
+  if (!esbConfig.enabled || !esbConfig.apiKey || !esbConfig.outletId) {
+    console.log("⚡ ESB push skipped (disabled or no config)");
+    return { ok: false, skipped: true };
+  }
+
+  const payload = buildESBOrderPayload(order);
+  const endpoints = [
+    `/outlets/${esbConfig.outletId}/orders`,
+    `/order`,
+    `/orders`,
+  ];
+
+  for (const ep of endpoints) {
+    try {
+      const fetch = (await import("node-fetch")).default;
+      const res = await fetch(`${esbConfig.baseUrl}${ep}`, {
+        method:  "POST",
+        headers: {
+          "Content-Type":  "application/json",
+          "Accept":        "application/json",
+          "Authorization": `Bearer ${esbConfig.apiKey}`,
+          "X-Outlet-Id":   esbConfig.outletId,
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        console.log(`🔔 ESB POS notif OK — Order #${order.id} → ${esbConfig.baseUrl}${ep}`);
+        return { ok: true, endpoint: ep, response: data };
+      }
+    } catch (e) {
+      console.warn(`⚠️  ESB push attempt ${ep} failed: ${e.message}`);
+    }
+  }
+
+  console.error(`❌ ESB POS push failed — Order #${order.id}`);
+  return { ok: false, error: "All endpoints failed" };
+}
+
+// Retry queue untuk order yang gagal push
+const retryQueue = [];
+setInterval(async () => {
+  if (!esbConfig.enabled || retryQueue.length === 0) return;
+  const order = retryQueue.shift();
+  console.log(`🔁 Retry ESB push Order #${order.id}...`);
+  const result = await pushOrderToESB(order);
+  if (!result.ok && !result.skipped) retryQueue.push(order); // put back if still fails
+}, 30000); // retry every 30s
+
+// GET /api/esb/config — get current ESB config (mask api key)
+app.get("/api/esb/config", (req, res) => {
+  res.json({
+    baseUrl:  esbConfig.baseUrl,
+    outletId: esbConfig.outletId,
+    enabled:  esbConfig.enabled,
+    hasApiKey: !!esbConfig.apiKey,
+    apiKeyHint: esbConfig.apiKey ? esbConfig.apiKey.slice(0,8) + "..." : "",
+  });
+});
+
+// POST /api/esb/config — update ESB config at runtime
+app.post("/api/esb/config", (req, res) => {
+  const { baseUrl, apiKey, outletId, enabled } = req.body;
+  if (baseUrl)  esbConfig.baseUrl  = baseUrl;
+  if (apiKey)   esbConfig.apiKey   = apiKey;
+  if (outletId) esbConfig.outletId = outletId;
+  if (enabled !== undefined) esbConfig.enabled = Boolean(enabled);
+  console.log(`⚙️  ESB config updated — enabled:${esbConfig.enabled} outlet:${esbConfig.outletId}`);
+  res.json({ ok: true, enabled: esbConfig.enabled, outletId: esbConfig.outletId });
+});
+
+// POST /api/esb/test — test push a dummy order
+app.post("/api/esb/test", async (req, res) => {
+  const dummy = {
+    id: "TEST-01", time: Date.now(), type: "dine", table: "T1",
+    pay: "QRIS", total: 55000, subtotal: 49550, tax: 5450,
+    items: [{ n: "Test Item", q: 1, p: 55000 }],
+  };
+  const result = await pushOrderToESB(dummy);
+  res.json(result);
+});
+
+// POST /api/esb/retry — manual retry semua failed orders
+app.post("/api/esb/retry", (req, res) => {
+  const count = retryQueue.length;
+  res.json({ ok: true, queued: count });
+});
+
+
+// ─── MIDTRANS QRIS PAYMENT ────────────────────────────────────────────────
+const midtransConfig = {
+  serverKey:    process.env.MIDTRANS_SERVER_KEY    || "",
+  clientKey:    process.env.MIDTRANS_CLIENT_KEY    || "",
+  isProduction: process.env.MIDTRANS_PRODUCTION    === "true",
+};
+
+// Midtrans Core API base URL
+const mtBaseUrl = () => midtransConfig.isProduction
+  ? "https://api.midtrans.com"
+  : "https://api.sandbox.midtrans.com";
+
+// Auth header: Base64(serverKey:)
+const mtAuth = () => "Basic " + Buffer.from(midtransConfig.serverKey + ":").toString("base64");
+
+async function midtransRequest(method, path, body) {
+  const fetch = (await import("node-fetch")).default;
+  const res = await fetch(`${mtBaseUrl()}${path}`, {
+    method,
+    headers: {
+      "Content-Type":  "application/json",
+      "Accept":        "application/json",
+      "Authorization": mtAuth(),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error_messages?.[0] || data?.status_message || `HTTP ${res.status}`);
+  return data;
+}
+
+// POST /api/payment/qris — create QRIS transaction
+app.post("/api/payment/qris", async (req, res) => {
+  const { orderId, amount, items, customerName } = req.body;
+  if (!orderId || !amount) return res.status(400).json({ error: "orderId and amount required" });
+  if (!midtransConfig.serverKey) return res.status(503).json({ error: "Midtrans server key not configured" });
+
+  try {
+    const payload = {
+      payment_type: "qris",
+      transaction_details: {
+        order_id:     `BINTORO-${orderId}-${Date.now()}`,
+        gross_amount: Math.round(amount),
+      },
+      qris: { acquirer: "gopay" },
+      item_details: (items || []).map(i => ({
+        id:       String(i.id || i.n),
+        price:    Math.round(i.p || 0),
+        quantity: i.q || 1,
+        name:     (i.n || i.name || "Item").slice(0, 50),
+      })),
+      customer_details: {
+        first_name: customerName || "Customer",
+        email:      "customer@bintoro.id",
+      },
+    };
+
+    const result = await midtransRequest("POST", "/v2/charge", payload);
+    console.log(`💳 QRIS created — Order: ${payload.transaction_details.order_id} — Rp ${amount.toLocaleString()}`);
+
+    // Store transaction mapping
+    const txEntry = {
+      internalOrderId: orderId,
+      midtransOrderId: payload.transaction_details.order_id,
+      transactionId:   result.transaction_id,
+      status:          result.transaction_status,
+      qrString:        result.qr_string,
+      qrUrl:           result.actions?.find(a => a.name === "generate-qr-code")?.url || "",
+      amount,
+      createdAt:       Date.now(),
+    };
+    transactions.set(txEntry.midtransOrderId, txEntry);
+
+    res.json({
+      ok:             true,
+      midtransOrderId: txEntry.midtransOrderId,
+      transactionId:  result.transaction_id,
+      qrString:       result.qr_string,
+      qrUrl:          txEntry.qrUrl,
+      status:         result.transaction_status,
+      expiryTime:     result.expiry_time,
+    });
+  } catch (e) {
+    console.error("Midtrans QRIS error:", e.message);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/payment/status/:orderId — poll transaction status
+app.get("/api/payment/status/:orderId", async (req, res) => {
+  const { orderId } = req.params;
+  // Find midtrans order id from our mapping
+  let mtOrderId = orderId;
+  for (const [k, v] of transactions.entries()) {
+    if (v.internalOrderId === orderId) { mtOrderId = k; break; }
+  }
+  try {
+    const result = await midtransRequest("GET", `/v2/${mtOrderId}/status`);
+    const tx = transactions.get(mtOrderId);
+    if (tx) {
+      tx.status = result.transaction_status;
+      transactions.set(mtOrderId, tx);
+    }
+    const paid = ["capture","settlement"].includes(result.transaction_status);
+    res.json({
+      ok:     true,
+      status: result.transaction_status,
+      paid,
+      paymentType: result.payment_type,
+      transactionTime: result.transaction_time,
+      grossAmount: result.gross_amount,
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/payment/webhook — Midtrans notification handler
+app.post("/api/payment/webhook", async (req, res) => {
+  const notif = req.body;
+  console.log(`🔔 Midtrans webhook: ${notif.order_id} → ${notif.transaction_status}`);
+
+  const tx = transactions.get(notif.order_id);
+  const paid = ["capture","settlement"].includes(notif.transaction_status);
+
+  if (tx) {
+    tx.status = notif.transaction_status;
+    tx.paid = paid;
+    transactions.set(notif.order_id, tx);
+
+    // Update order status
+    const orderIdx = orders.findIndex(o => o.id === tx.internalOrderId);
+    if (orderIdx >= 0 && paid) {
+      orders[orderIdx].paymentStatus = "paid";
+      orders[orderIdx].paymentMethod = notif.payment_type || "qris";
+      broadcast("payment:confirmed", {
+        orderId:    tx.internalOrderId,
+        midtransId: notif.order_id,
+        status:     notif.transaction_status,
+        paid,
+      });
+    }
+  }
+  res.json({ status: "ok" });
+});
+
+// GET /api/payment/config — get Midtrans client key (safe to expose)
+app.get("/api/payment/config", (req, res) => {
+  res.json({
+    clientKey:    midtransConfig.clientKey,
+    isProduction: midtransConfig.isProduction,
+    configured:   !!midtransConfig.serverKey,
+    snapUrl:      midtransConfig.isProduction
+      ? "https://app.midtrans.com/snap/snap.js"
+      : "https://app.sandbox.midtrans.com/snap/snap.js",
+  });
+});
+
+// POST /api/payment/midtrans-config — update keys at runtime
+app.post("/api/payment/midtrans-config", (req, res) => {
+  const { serverKey, clientKey, isProduction } = req.body;
+  if (serverKey)    midtransConfig.serverKey    = serverKey;
+  if (clientKey)    midtransConfig.clientKey    = clientKey;
+  if (isProduction !== undefined) midtransConfig.isProduction = Boolean(isProduction);
+  console.log(`⚙️  Midtrans config updated — production:${midtransConfig.isProduction}`);
+  res.json({ ok: true, isProduction: midtransConfig.isProduction, configured: !!midtransConfig.serverKey });
+});
+
+// In-memory transaction store
+const transactions = new Map();
+
+
+
+// ─── ADMIN AUTH MIDDLEWARE ────────────────────────────────────────────────────
+function requireAdmin(req, res, next) {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+  if (!token) return res.status(401).json({ error: "Authentication required" });
+  const session = adminSessions.get(token);
+  if (!session) return res.status(401).json({ error: "Invalid or expired session" });
+  req.admin = session;
+  next();
+}
+
+// Optional: apply to sensitive admin routes only
+// app.use("/api/menu", requireAdmin);
+// app.use("/api/promo", requireAdmin);
+// app.use("/api/customers", requireAdmin);
+// (Uncomment above when ready for production auth enforcement)
+
+// ─── ADMIN AUTH (PIN-based) ───────────────────────────────────────────────────
+const adminUsers = [
+  { id:"U001", name:"Manager",   pin:"123456", role:"manager", active:true },
+  { id:"U002", name:"Kasir 1",   pin:"111111", role:"kasir",   active:true },
+  { id:"U003", name:"Kasir 2",   pin:"222222", role:"kasir",   active:true },
+];
+const adminSessions = new Map(); // token → { userId, role, loginAt }
+
+function genToken() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+
+app.post("/api/auth/login", (req, res) => {
+  const { pin } = req.body;
+  if (!pin) return res.status(400).json({ error: "PIN required" });
+  const user = adminUsers.find(u => u.pin === pin && u.active);
+  if (!user) return res.status(401).json({ error: "PIN salah" });
+  const token = genToken();
+  adminSessions.set(token, { userId: user.id, name: user.name, role: user.role, loginAt: Date.now() });
+  console.log(`🔐 Login: ${user.name} (${user.role})`);
+  res.json({ ok: true, token, name: user.name, role: user.role });
+});
+
+app.post("/api/auth/logout", (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer ","");
+  if (token) adminSessions.delete(token);
+  res.json({ ok: true });
+});
+
+app.get("/api/auth/me", (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer ","");
+  const session = token && adminSessions.get(token);
+  if (!session) return res.status(401).json({ error: "Not authenticated" });
+  const user = adminUsers.find(u => u.id === session.userId);
+  res.json({ ...session, pin: undefined });
+});
+
+app.get("/api/auth/users", (req, res) => {
+  res.json(adminUsers.map(u => ({ ...u, pin: "••••••" })));
+});
+
+app.post("/api/auth/users", (req, res) => {
+  const { name, pin, role } = req.body;
+  if (!name || !pin || !role) return res.status(400).json({ error: "name, pin, role required" });
+  if (pin.length !== 6) return res.status(400).json({ error: "PIN harus 6 digit" });
+  const user = { id: `U${String(adminUsers.length+1).padStart(3,"0")}`, name, pin, role, active: true };
+  adminUsers.push(user);
+  res.status(201).json({ ...user, pin: "••••••" });
+});
+
+app.patch("/api/auth/users/:id", (req, res) => {
+  const idx = adminUsers.findIndex(u => u.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "User not found" });
+  const { name, pin, role, active } = req.body;
+  if (name) adminUsers[idx].name = name;
+  if (pin && pin.length === 6) adminUsers[idx].pin = pin;
+  if (role) adminUsers[idx].role = role;
+  if (active !== undefined) adminUsers[idx].active = Boolean(active);
+  res.json({ ...adminUsers[idx], pin: "••••••" });
+});
+
+// ─── TABLE / MEJA MANAGEMENT ─────────────────────────────────────────────────
+let tables = [
+  { id:"T01", name:"Meja A1", zone:"A", capacity:4, status:"available", qrCode:"T01" },
+  { id:"T02", name:"Meja A2", zone:"A", capacity:4, status:"available", qrCode:"T02" },
+  { id:"T03", name:"Meja A3", zone:"A", capacity:2, status:"occupied",  qrCode:"T03" },
+  { id:"T04", name:"Meja B1", zone:"B", capacity:6, status:"available", qrCode:"T04" },
+  { id:"T05", name:"Meja B2", zone:"B", capacity:6, status:"available", qrCode:"T05" },
+  { id:"T06", name:"Meja C1", zone:"C", capacity:2, status:"available", qrCode:"T06" },
+  { id:"T07", name:"Meja C2", zone:"C", capacity:2, status:"occupied",  qrCode:"T07" },
+  { id:"T08", name:"Meja D1", zone:"D", capacity:8, status:"available", qrCode:"T08" },
+];
+
+app.get("/api/tables", (req, res) => res.json(tables));
+
+app.get("/api/tables/:id", (req, res) => {
+  const table = tables.find(t => t.id === req.params.id || t.qrCode === req.params.id);
+  if (!table) return res.status(404).json({ error: "Table not found" });
+  res.json(table);
+});
+
+app.patch("/api/tables/:id", (req, res) => {
+  const idx = tables.findIndex(t => t.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Table not found" });
+  tables[idx] = { ...tables[idx], ...req.body, id: tables[idx].id };
+  broadcast("table:updated", tables[idx]);
+  res.json(tables[idx]);
+});
+
+app.post("/api/tables", (req, res) => {
+  const { name, zone, capacity } = req.body;
+  const id = `T${String(tables.length+1).padStart(2,"0")}`;
+  const table = { id, name: name||id, zone: zone||"A", capacity: Number(capacity)||4, status:"available", qrCode:id };
+  tables.push(table);
+  res.status(201).json(table);
+});
+
+app.delete("/api/tables/:id", (req, res) => {
+  tables = tables.filter(t => t.id !== req.params.id);
+  res.json({ ok: true });
+});
+
+// ─── SHIFT / KASIR MANAGEMENT ─────────────────────────────────────────────────
+let shifts = [];
+let activeShift = null;
+
+app.get("/api/shifts", (req, res) => res.json(shifts));
+app.get("/api/shifts/active", (req, res) => res.json(activeShift || { active: false }));
+
+app.post("/api/shifts/open", (req, res) => {
+  if (activeShift) return res.status(409).json({ error: "Shift sudah terbuka" });
+  const { kasirName, openingCash } = req.body;
+  activeShift = {
+    id:          `SH${String(shifts.length+1).padStart(3,"0")}`,
+    kasirName:   kasirName || "Kasir",
+    openAt:      Date.now(),
+    closeAt:     null,
+    openingCash: Number(openingCash)||0,
+    closingCash: null,
+    orders:      [],
+    totalOrders: 0,
+    totalRevenue:0,
+    active:      true,
+  };
+  console.log(`🟢 Shift dibuka: ${activeShift.kasirName}`);
+  res.json(activeShift);
+});
+
+app.post("/api/shifts/close", (req, res) => {
+  if (!activeShift) return res.status(404).json({ error: "Tidak ada shift aktif" });
+  const { closingCash, note } = req.body;
+  // Collect orders in this shift
+  const shiftOrders = orders.filter(o => o.time >= activeShift.openAt && o.status !== "cancelled");
+  const totalRevenue = shiftOrders.reduce((s,o) => s+o.total, 0);
+  activeShift = {
+    ...activeShift,
+    closeAt:      Date.now(),
+    closingCash:  Number(closingCash)||0,
+    note:         note||"",
+    orders:       shiftOrders.map(o => o.id),
+    totalOrders:  shiftOrders.length,
+    totalRevenue,
+    active:       false,
+  };
+  shifts.push({ ...activeShift });
+  const closed = { ...activeShift };
+  activeShift = null;
+  console.log(`🔴 Shift ditutup: ${closed.kasirName} — ${shiftOrders.length} order, Rp ${totalRevenue.toLocaleString()}`);
+  res.json(closed);
+});
+
+// ─── STOCK / AVAILABILITY REAL-TIME ──────────────────────────────────────────
+// Broadcast menu update to all kiosks
+app.post("/api/menu/:id/stock", (req, res) => {
+  const id  = parseInt(req.params.id);
+  const idx = menu.findIndex(m => m.id === id);
+  if (idx === -1) return res.status(404).json({ error: "Item not found" });
+  const { avail, reason } = req.body;
+  menu[idx].avail = Boolean(avail);
+  menu[idx].stockNote = reason || "";
+  // Broadcast to ALL connected clients (kiosk + admin)
+  broadcast("menu:stockUpdate", { id, avail: menu[idx].avail, name: menu[idx].name, reason });
+  console.log(`📦 Stock update: ${menu[idx].name} → ${avail?"available":"sold out"}`);
+  res.json(menu[idx]);
+});
+
+// Bulk stock update
+app.post("/api/menu/stock/bulk", (req, res) => {
+  const { updates } = req.body; // [{ id, avail }]
+  const changed = [];
+  (updates||[]).forEach(u => {
+    const idx = menu.findIndex(m => m.id === u.id);
+    if (idx >= 0) { menu[idx].avail = Boolean(u.avail); changed.push(menu[idx]); }
+  });
+  broadcast("menu:bulkStockUpdate", { items: changed });
+  res.json({ ok: true, updated: changed.length });
+});
+
+// ─── WA NOTIFICATION "PESANAN SIAP" ──────────────────────────────────────────
+app.post("/api/notify/ready", async (req, res) => {
+  const { orderId } = req.body;
+  const order = orders.find(o => o.id === orderId);
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  if (!order.customerPhone) return res.json({ ok: false, reason: "No phone" });
+
+  const trackUrl = `${process.env.WA_TRACKING_BASE || "http://localhost:5173"}/?track&order=${orderId}`;
+  const message = encodeURIComponent(
+    `Halo ${order.customerName||"Kak"}! 🎉
+
+Pesanan *#${orderId}* Anda sudah *SIAP DIAMBIL!* ✅
+
+` +
+    `${order.type==="dine"?`Silakan ke meja *${order.table}* ya 🪑`:"Silakan ambil di konter kami 🛍️"}
+
+` +
+    `Cek detail pesanan: ${trackUrl}
+
+Terima kasih sudah memesan di *BINTORO* 🍽️`
+  );
+  const cleanPhone = order.customerPhone.replace(/\D/g,"");
+  const waPhone    = cleanPhone.startsWith("0") ? "62" + cleanPhone.slice(1) : cleanPhone;
+  const waUrl      = `https://wa.me/${waPhone}?text=${message}`;
+
+  console.log(`📱 WA Ready notification → ${waPhone} (Order #${orderId})`);
+  res.json({ ok: true, waUrl, phone: waPhone });
+});
+
+// ─── DIGITAL RECEIPT ─────────────────────────────────────────────────────────
+app.get("/api/receipt/:orderId", (req, res) => {
+  const order = orders.find(o => o.id === req.params.orderId);
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  const tax = Math.round((order.subtotal||order.total) * 0.11 / 1.11);
+  res.json({
+    receiptNo:    `RCP-${order.id}-${Date.now().toString(36).toUpperCase()}`,
+    orderId:      order.id,
+    timestamp:    new Date(order.time).toLocaleString("id-ID"),
+    kasir:        order.kasirName || "Kiosk Self Order",
+    type:         order.type,
+    table:        order.table,
+    items:        order.items,
+    subtotal:     order.subtotal || order.total,
+    promoCode:    order.promoCode || null,
+    promoDiscount:order.promoDiscount || 0,
+    tax,
+    total:        order.total,
+    payment:      "QRIS",
+    midtransId:   order.midtransId || null,
+    customer:     { name: order.customerName, phone: order.customerPhone },
+    status:       order.status,
+  });
+});
+
+// ─── STAFF CALL ───────────────────────────────────────────────────────────────
+const staffCalls = [];
+app.post("/api/staff-call", (req, res) => {
+  const { tableId, reason, orderId } = req.body;
+  const call = {
+    id:      Date.now(),
+    tableId: tableId || "-",
+    reason:  reason || "Butuh bantuan",
+    orderId: orderId || null,
+    time:    Date.now(),
+    resolved:false,
+  };
+  staffCalls.push(call);
+  broadcast("staffCall", call);
+  console.log(`🔔 Staff call: Meja ${tableId} — ${reason}`);
+  res.json({ ok: true, callId: call.id });
+});
+
+app.get("/api/staff-call", (req, res) => res.json(staffCalls.filter(c=>!c.resolved)));
+app.patch("/api/staff-call/:id/resolve", (req, res) => {
+  const call = staffCalls.find(c=>c.id===Number(req.params.id));
+  if (call) { call.resolved = true; broadcast("staffCallResolved", { id: call.id }); }
+  res.json({ ok: true });
+});
+
+// ─── START SERVER ─────────────────────────────────────────────────────────
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  console.log("");
+  console.log("🍽️  BINTORO BACKEND");
+  console.log("─────────────────────────────");
+  console.log(`🚀 REST API  : http://localhost:${PORT}/api`);
+  console.log(`🔌 WebSocket : ws://localhost:${PORT}`);
+  console.log(`❤️  Health   : http://localhost:${PORT}/api/health`);
+  console.log("─────────────────────────────");
+  console.log("");
+});

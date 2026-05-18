@@ -1,0 +1,12 @@
+{
+  "enabled": false,
+  "smtpHost": "smtp.gmail.com",
+  "smtpPort": 587,
+  "smtpSecure": false,
+  "smtpUser": "",
+  "smtpPass": "",
+  "fromEmail": "",
+  "fromName": "BINTORO Kiosk",
+  "recipients": [],
+  "updatedAt": 1778812311940
+}

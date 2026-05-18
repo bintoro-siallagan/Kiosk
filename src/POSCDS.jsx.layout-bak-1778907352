@@ -1,0 +1,436 @@
+import { useState, useEffect, useRef } from "react";
+
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
+const WS_URL = API_BASE.replace(/^http/, "ws");
+
+// Stages for post-payment tracking
+const STAGES = [
+  { key: "waiting",   label: "Diterima",     emoji: "📝", color: "#94A3B8" },
+  { key: "preparing", label: "Disiapkan",    emoji: "👨‍🍳", color: "#F59E0B" },
+  { key: "ready",     label: "Siap Diambil", emoji: "🔔", color: "#10B981" },
+  { key: "completed", label: "Selesai",      emoji: "✅", color: "#22C55E" },
+];
+
+const fmt = (n) => "Rp " + (n || 0).toLocaleString("id-ID");
+
+export default function POSCDS() {
+  const [mode, setMode] = useState("idle"); // idle | cart | qris | success | tracking
+  const [state, setState] = useState({});
+  const [connStatus, setConnStatus] = useState("connecting");
+  const wsRef = useRef(null);
+  const reconnectTimerRef = useRef(null);
+
+  // Auto-fetch order updates if tracking
+  useEffect(() => {
+    if (mode !== "tracking" || !state.completedOrder?.id) return;
+    let timer;
+    const fetchOrder = async () => {
+      try {
+        const r = await fetch(`${API_BASE}/api/orders/${state.completedOrder.id}`);
+        if (r.ok) {
+          const data = await r.json();
+          setState(prev => ({...prev, completedOrder: data}));
+        }
+      } catch {}
+    };
+    fetchOrder();
+    timer = setInterval(fetchOrder, 5000);
+    return () => clearInterval(timer);
+  }, [mode, state.completedOrder?.id]);
+
+  // WebSocket connection with reconnect
+  useEffect(() => {
+    let mounted = true;
+
+    const connect = () => {
+      if (!mounted) return;
+      setConnStatus("connecting");
+      try {
+        const ws = new WebSocket(WS_URL);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          if (!mounted) return;
+          setConnStatus("connected");
+          console.log("[CDS] WebSocket connected");
+        };
+
+        ws.onmessage = (msg) => {
+          if (!mounted) return;
+          try {
+            const parsed = JSON.parse(msg.data);
+            const event = parsed.event || parsed.type;
+            const data = parsed.data || parsed.payload || {};
+            handleEvent(event, data);
+          } catch (e) {
+            console.warn("[CDS] Failed to parse:", e);
+          }
+        };
+
+        ws.onerror = (err) => {
+          console.warn("[CDS] WS error:", err);
+        };
+
+        ws.onclose = () => {
+          if (!mounted) return;
+          setConnStatus("disconnected");
+          console.log("[CDS] WS closed, reconnecting in 3s...");
+          reconnectTimerRef.current = setTimeout(connect, 3000);
+        };
+      } catch (e) {
+        if (!mounted) return;
+        reconnectTimerRef.current = setTimeout(connect, 3000);
+      }
+    };
+
+    connect();
+
+    return () => {
+      mounted = false;
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      if (wsRef.current) {
+        wsRef.current.onclose = null;
+        wsRef.current.close();
+      }
+    };
+  }, []);
+
+  const handleEvent = (event, data) => {
+    switch (event) {
+      case "pos:cart_update":
+        setState(prev => ({...prev, ...data}));
+        if (data.cart && data.cart.length > 0) setMode("cart");
+        else if (mode !== "idle") setMode("idle");
+        break;
+
+      case "pos:payment_qris":
+        setState(prev => ({...prev, qris: data}));
+        setMode("qris");
+        break;
+
+      case "pos:order_complete":
+        setState(prev => ({...prev, completedOrder: data.order || data}));
+        setMode("success");
+        setTimeout(() => setMode("tracking"), 4000);
+        break;
+
+      case "pos:idle":
+      case "pos:reset":
+        setState({});
+        setMode("idle");
+        break;
+
+      case "order:updated":
+        // Order status changed in DB (KDS workflow)
+        setState(prev => {
+          if (prev.completedOrder && data.id === prev.completedOrder.id) {
+            return {...prev, completedOrder: data};
+          }
+          return prev;
+        });
+        break;
+    }
+  };
+
+  // Render based on mode
+  return (
+    <div style={S.root}>
+      <ConnIndicator status={connStatus} />
+      {mode === "idle" && <CDSIdle />}
+      {mode === "cart" && <CDSCart state={state} />}
+      {mode === "qris" && <CDSQR state={state} />}
+      {mode === "success" && <CDSSuccess state={state} />}
+      {mode === "tracking" && <CDSTracking state={state} />}
+    </div>
+  );
+}
+
+function ConnIndicator({ status }) {
+  const color = status === "connected" ? "#10B981" : status === "connecting" ? "#F59E0B" : "#EF4444";
+  return (
+    <div style={{...S.conn, color, borderColor:color}}>
+      <span style={{...S.connDot, background:color}}/> {status}
+    </div>
+  );
+}
+
+function CDSIdle() {
+  return (
+    <div style={S.center}>
+      <div style={S.logo}>☕</div>
+      <div style={S.brand}>BINTORO</div>
+      <div style={S.idleTagline}>Selamat datang!</div>
+      <div style={S.idleHint}>Pesanan Anda akan ditampilkan di sini</div>
+      <div style={S.idleBlinker}>● ● ●</div>
+    </div>
+  );
+}
+
+function CDSCart({ state }) {
+  const cart = state.cart || [];
+  const subtotal = state.subtotal ?? cart.reduce(
+    (s, c) => s + ((c.price || 0) + (c.addonTotal || 0)) * c.qty, 0
+  );
+  const customerName = state.order?.customerName;
+  const orderType = state.order?.type;
+
+  return (
+    <>
+      <header style={S.header}>
+        <div style={S.headerLeft}>
+          <span style={S.logoSmall}>☕</span>
+          <span style={S.brandSmall}>BINTORO</span>
+        </div>
+        <div style={S.headerRight}>
+          {orderType && <span style={S.tag}>{orderType === "dine-in" ? "🍽️ Dine-in" : "🛍️ Take-away"}</span>}
+        </div>
+      </header>
+
+      <main style={S.cartMain}>
+        <div style={S.cartTitle}>
+          Pesanan Anda
+          {customerName && <span style={S.customerName}>· {customerName}</span>}
+        </div>
+
+        <div style={S.cartList}>
+          {cart.map(item => {
+            const lineTotal = ((item.price || 0) + (item.addonTotal || 0)) * item.qty;
+            const toppings = item.addons?.toppings || [];
+            return (
+              <div key={item.cartKey || item.id} style={S.cartItem}>
+                <div style={S.itemEmoji}>{item.emoji || "🍴"}</div>
+                <div style={S.itemBody}>
+                  <div style={S.itemName}>{item.name}</div>
+                  {toppings.length > 0 && (
+                    <div style={S.itemAddons}>
+                      {toppings.map((t, i) => (
+                        <span key={i} style={S.addonTag}>+ {t.name}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div style={S.itemQty}>{item.qty}x</div>
+                <div style={S.itemPrice}>{fmt(lineTotal)}</div>
+              </div>
+            );
+          })}
+        </div>
+      </main>
+
+      <footer style={S.cartFooter}>
+        <div>
+          <div style={S.subLabel}>SUBTOTAL</div>
+          <div style={S.subAmount}>{fmt(subtotal)}</div>
+        </div>
+        <div style={S.taxNote}>PPN 10% included</div>
+      </footer>
+    </>
+  );
+}
+
+function CDSQR({ state }) {
+  const qris = state.qris || {};
+  const amount = qris.amount || state.subtotal || 0;
+  const qrUrl = qris.qrCode || qris.qrUrl || qris.actions?.[0]?.url;
+
+  return (
+    <>
+      <header style={S.header}>
+        <div style={S.headerLeft}>
+          <span style={S.logoSmall}>☕</span>
+          <span style={S.brandSmall}>BINTORO</span>
+        </div>
+        <div style={S.tag}>💳 QRIS Payment</div>
+      </header>
+
+      <main style={S.qrMain}>
+        <div style={S.qrTitle}>Scan QR untuk Bayar</div>
+
+        <div style={S.qrFrame}>
+          {qrUrl ? (
+            <img src={qrUrl} alt="QR Code" style={S.qrImage} />
+          ) : (
+            <div style={S.qrLoading}>
+              <div style={S.loader}>⏳</div>
+              <div>Generating QR...</div>
+            </div>
+          )}
+        </div>
+
+        <div style={S.qrHint}>
+          Buka aplikasi e-wallet atau mobile banking<br/>
+          (GoPay, OVO, DANA, ShopeePay, dst)
+        </div>
+
+        <div style={S.qrAmountBox}>
+          <span style={S.subLabel}>TOTAL BAYAR</span>
+          <span style={S.qrAmount}>{fmt(amount)}</span>
+        </div>
+      </main>
+    </>
+  );
+}
+
+function CDSSuccess({ state }) {
+  const order = state.completedOrder || {};
+  return (
+    <div style={S.center}>
+      <div style={S.successCheck}>✅</div>
+      <div style={S.successTitle}>Pembayaran Berhasil!</div>
+      <div style={S.successOrderId}>Order #{order.id || ""}</div>
+      <div style={S.successAmount}>{fmt(order.total || 0)}</div>
+      <div style={S.successThanks}>Terima kasih 🙏</div>
+      <div style={S.idleHint}>Mengalihkan ke status pesanan...</div>
+    </div>
+  );
+}
+
+function CDSTracking({ state }) {
+  const order = state.completedOrder || {};
+  const currentStage = order.status || "waiting";
+  const currentIdx = STAGES.findIndex(s => s.key === currentStage);
+
+  return (
+    <>
+      <header style={S.header}>
+        <div style={S.headerLeft}>
+          <span style={S.logoSmall}>☕</span>
+          <span style={S.brandSmall}>BINTORO</span>
+        </div>
+        <div style={S.tag}>Order #{order.id}</div>
+      </header>
+
+      <main style={S.trackMain}>
+        <div style={S.trackTitle}>Status Pesanan Anda</div>
+        <div style={S.trackSubtitle}>
+          {order.customerName ? `Untuk ${order.customerName}` : "Customer"}
+        </div>
+
+        <div style={S.stagesContainer}>
+          {STAGES.map((stage, idx) => {
+            const isActive = idx === currentIdx;
+            const isPast = idx < currentIdx;
+            const color = isActive ? stage.color : isPast ? stage.color : "#333";
+            return (
+              <div key={stage.key} style={S.stageRow}>
+                <div style={{...S.stageOrb, background: color, boxShadow: isActive ? `0 0 30px ${color}` : "none"}}>
+                  <span style={{fontSize:isActive?42:28}}>{stage.emoji}</span>
+                </div>
+                <div style={{...S.stageLabel, color: isActive ? "#fff" : isPast ? "#888" : "#444",
+                  fontWeight: isActive ? 800 : 600}}>
+                  {stage.label}
+                </div>
+                {idx < STAGES.length - 1 && (
+                  <div style={{...S.stageConnector, background: isPast ? stage.color : "#222"}}/>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={S.trackHint}>
+          {currentIdx === 0 && "Pesanan sedang diterima"}
+          {currentIdx === 1 && "Pesanan sedang disiapkan koki"}
+          {currentIdx === 2 && "🎉 Pesanan siap diambil di counter!"}
+          {currentIdx === 3 && "Terima kasih, sampai jumpa lagi!"}
+        </div>
+      </main>
+    </>
+  );
+}
+
+const S = {
+  root: { minHeight:"100vh", width:"100vw", background:"#0a0a0a", color:"#fff",
+    fontFamily:"'DM Sans',sans-serif", overflow:"hidden", position:"relative",
+    display:"flex", flexDirection:"column" },
+  conn: { position:"fixed", top:12, right:12, fontSize:10, padding:"3px 10px",
+    border:"1px solid", borderRadius:100, background:"#0a0a0a",
+    display:"flex", alignItems:"center", gap:6, zIndex:100 },
+  connDot: { width:6, height:6, borderRadius:"50%" },
+
+  center: { flex:1, display:"flex", flexDirection:"column", alignItems:"center",
+    justifyContent:"center", padding:40, textAlign:"center" },
+  logo: { fontSize:120, marginBottom:8 },
+  logoSmall: { fontSize:32 },
+  brand: { fontSize:72, fontFamily:"'Bebas Neue',cursive", color:"#F59E0B",
+    letterSpacing:8, marginBottom:24 },
+  brandSmall: { fontSize:28, fontFamily:"'Bebas Neue',cursive", color:"#F59E0B",
+    letterSpacing:4 },
+
+  idleTagline: { fontSize:32, color:"#fff", marginBottom:12, fontWeight:300 },
+  idleHint: { fontSize:18, color:"#888" },
+  idleBlinker: { marginTop:80, fontSize:24, color:"#F59E0B", letterSpacing:8,
+    animation:"pulse 2s infinite" },
+
+  header: { display:"flex", justifyContent:"space-between", alignItems:"center",
+    padding:"24px 40px", borderBottom:"1px solid #222" },
+  headerLeft: { display:"flex", alignItems:"center", gap:16 },
+  headerRight: {},
+  tag: { fontSize:18, padding:"8px 18px", borderRadius:100,
+    background:"rgba(245,158,11,0.15)", color:"#F59E0B", fontWeight:600 },
+
+  cartMain: { flex:1, padding:"32px 60px", overflowY:"auto" },
+  cartTitle: { fontSize:36, fontFamily:"'Bebas Neue',cursive", color:"#F59E0B",
+    letterSpacing:2, marginBottom:32 },
+  customerName: { fontSize:24, color:"#888", marginLeft:12 },
+  cartList: { display:"flex", flexDirection:"column", gap:16 },
+  cartItem: { display:"flex", alignItems:"center", gap:24, padding:"20px 24px",
+    background:"#111", borderRadius:16, border:"1px solid #1a1a1a" },
+  itemEmoji: { fontSize:48, width:64, textAlign:"center" },
+  itemBody: { flex:1 },
+  itemName: { fontSize:22, fontWeight:700, marginBottom:4 },
+  itemAddons: { display:"flex", flexWrap:"wrap", gap:6, marginTop:6 },
+  addonTag: { fontSize:13, color:"#10B981", background:"rgba(16,185,129,0.1)",
+    padding:"3px 10px", borderRadius:100 },
+  itemQty: { fontSize:24, fontWeight:800, color:"#888", width:60, textAlign:"center" },
+  itemPrice: { fontSize:22, fontWeight:800, color:"#F59E0B", minWidth:160, textAlign:"right",
+    fontFamily:"'Bebas Neue',cursive" },
+
+  cartFooter: { display:"flex", justifyContent:"space-between", alignItems:"flex-end",
+    padding:"24px 60px", borderTop:"2px solid #F59E0B", background:"#0a0a0a" },
+  subLabel: { fontSize:14, color:"#888", letterSpacing:2, fontWeight:600 },
+  subAmount: { fontSize:64, fontFamily:"'Bebas Neue',cursive", color:"#F59E0B",
+    letterSpacing:2, marginTop:4 },
+  taxNote: { fontSize:13, color:"#666" },
+
+  qrMain: { flex:1, display:"flex", flexDirection:"column", alignItems:"center",
+    justifyContent:"center", padding:40, textAlign:"center" },
+  qrTitle: { fontSize:42, fontFamily:"'Bebas Neue',cursive", color:"#F59E0B",
+    letterSpacing:3, marginBottom:32 },
+  qrFrame: { padding:24, background:"#fff", borderRadius:24,
+    boxShadow:"0 0 60px rgba(245,158,11,0.3)" },
+  qrImage: { width:360, height:360, objectFit:"contain", display:"block" },
+  qrLoading: { width:360, height:360, display:"flex", flexDirection:"column",
+    alignItems:"center", justifyContent:"center", color:"#666" },
+  loader: { fontSize:64, marginBottom:12 },
+  qrHint: { fontSize:18, color:"#aaa", marginTop:24, lineHeight:1.6 },
+  qrAmountBox: { marginTop:32, padding:"20px 40px",
+    background:"#111", border:"2px solid #F59E0B", borderRadius:16,
+    display:"flex", flexDirection:"column", alignItems:"center" },
+  qrAmount: { fontSize:56, fontFamily:"'Bebas Neue',cursive", color:"#F59E0B",
+    letterSpacing:2, marginTop:4 },
+
+  successCheck: { fontSize:160, marginBottom:24 },
+  successTitle: { fontSize:48, fontFamily:"'Bebas Neue',cursive", color:"#10B981",
+    letterSpacing:3, marginBottom:16 },
+  successOrderId: { fontSize:24, color:"#888", marginBottom:8 },
+  successAmount: { fontSize:56, fontFamily:"'Bebas Neue',cursive", color:"#F59E0B",
+    letterSpacing:2, marginBottom:24 },
+  successThanks: { fontSize:28, color:"#fff", marginBottom:40 },
+
+  trackMain: { flex:1, padding:"32px 60px", display:"flex", flexDirection:"column" },
+  trackTitle: { fontSize:42, fontFamily:"'Bebas Neue',cursive", color:"#F59E0B",
+    letterSpacing:3, marginBottom:8 },
+  trackSubtitle: { fontSize:18, color:"#888", marginBottom:48 },
+  stagesContainer: { display:"flex", flexDirection:"column", gap:24,
+    maxWidth:600, margin:"0 auto", width:"100%", flex:1, justifyContent:"center" },
+  stageRow: { display:"grid", gridTemplateColumns:"80px 1fr 1fr", alignItems:"center",
+    position:"relative", padding:"12px 0" },
+  stageOrb: { width:72, height:72, borderRadius:"50%", display:"flex",
+    alignItems:"center", justifyContent:"center", transition:"all 0.4s" },
+  stageLabel: { fontSize:24, marginLeft:24, transition:"all 0.3s" },
+  stageConnector: { position:"absolute", left:36, top:80, width:2, height:24,
+    transition:"all 0.4s" },
+  trackHint: { fontSize:20, color:"#F59E0B", textAlign:"center",
+    marginTop:32, padding:20, background:"rgba(245,158,11,0.08)", borderRadius:16 }
+};

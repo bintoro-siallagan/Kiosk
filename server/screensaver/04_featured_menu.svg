@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0a0418"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#bg4)"/>
+  <!-- Title -->
+  <text x="960" y="140" text-anchor="middle" font-family="Impact, sans-serif" font-size="80" fill="#F59E0B" letter-spacing="12">MENU FAVORIT</text>
+  <text x="960" y="200" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#aaa" letter-spacing="6">BEST SELLER MINGGU INI</text>
+
+  <!-- 3 product cards -->
+  <g transform="translate(180,300)">
+    <rect width="480" height="500" rx="24" fill="#0d1117" stroke="#F59E0B" stroke-width="2" opacity="0.9"/>
+    <text x="240" y="180" text-anchor="middle" font-size="180">🤍</text>
+    <text x="240" y="280" text-anchor="middle" font-family="Impact, sans-serif" font-size="44" fill="#fff" letter-spacing="3">WHITE SKIM</text>
+    <text x="240" y="320" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#888">Regular / Large</text>
+    <text x="240" y="430" text-anchor="middle" font-family="Impact, sans-serif" font-size="56" fill="#F59E0B">Rp 50K</text>
+  </g>
+
+  <g transform="translate(720,300)">
+    <rect width="480" height="500" rx="24" fill="#0d1117" stroke="#EC4899" stroke-width="2" opacity="0.9"/>
+    <text x="240" y="180" text-anchor="middle" font-size="180">🌸</text>
+    <text x="240" y="280" text-anchor="middle" font-family="Impact, sans-serif" font-size="44" fill="#fff" letter-spacing="3">BLACK SAKURA</text>
+    <text x="240" y="320" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#888">Premium Special</text>
+    <text x="240" y="430" text-anchor="middle" font-family="Impact, sans-serif" font-size="56" fill="#EC4899">Rp 69K</text>
+  </g>
+
+  <g transform="translate(1260,300)">
+    <rect width="480" height="500" rx="24" fill="#0d1117" stroke="#A78BFA" stroke-width="2" opacity="0.9"/>
+    <text x="240" y="180" text-anchor="middle" font-size="180">🍫</text>
+    <text x="240" y="280" text-anchor="middle" font-family="Impact, sans-serif" font-size="44" fill="#fff" letter-spacing="3">CHOCO MINT</text>
+    <text x="240" y="320" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#888">Limited Edition</text>
+    <text x="240" y="430" text-anchor="middle" font-family="Impact, sans-serif" font-size="56" fill="#A78BFA">Rp 55K</text>
+  </g>
+
+  <!-- CTA -->
+  <text x="960" y="950" text-anchor="middle" font-family="Impact, sans-serif" font-size="52" fill="#fff" letter-spacing="8">👆 PESAN SEKARANG</text>
+  <text x="960" y="1010" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#666">Topping unlimited · Bisa custom rasa</text>
+</svg>

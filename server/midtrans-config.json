@@ -1,0 +1,11 @@
+{
+  "serverKey": "SB-Mid-server-IaqDcGjLpWFLivUNbrLd0DTB",
+  "clientKey": "SB-Mid-client-d_X5XKi3EZ_pL6NJ",
+  "isProduction": false,
+  "enabledMethods": [
+    "qris"
+  ],
+  "merchantId": "G772624498",
+  "notificationUrl": "bintoro.siallagan@mysoursallyu.com",
+  "updatedAt": 1778931325866
+}

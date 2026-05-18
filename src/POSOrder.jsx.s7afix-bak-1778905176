@@ -1,0 +1,82 @@
+import { useState } from "react";
+import OrderTypePicker from "./OrderTypePicker.jsx";
+import TableSelector from "./TableSelector.jsx";
+import POSCustomerPicker from "./POSCustomerPicker.jsx";
+import POSMenu from "./POSMenu.jsx";
+import POSConfirm from "./POSConfirm.jsx";
+import POSSuccess from "./POSSuccess.jsx";
+
+export default function POSOrder({ cashier, onCancel, onComplete }) {
+  const [step, setStep] = useState("type");
+  const [order, setOrder] = useState({
+    type: null, table: null, customerName: "",
+    action: null, cart: [], subtotal: 0, created: null
+  });
+  const update = (changes) => setOrder(o => ({ ...o, ...changes }));
+
+  if (step === "type") return (
+    <OrderTypePicker
+      onPick={(type) => { update({ type }); setStep(type === "dine-in" ? "table" : "name"); }}
+      onCancel={onCancel}
+    />
+  );
+
+  if (step === "table") return (
+    <TableSelector
+      onPick={(table) => { update({ table }); setStep("name"); }}
+      onBack={() => setStep("type")}
+      onCancel={onCancel}
+    />
+  );
+
+  if (step === "name") return (
+    <POSCustomerPicker
+      order={order}
+      onContinue={(name) => { update({ ...customer }); setStep("menu"); }}
+      onBack={() => setStep(order.type === "dine-in" ? "table" : "type")}
+      onCancel={onCancel}
+    />
+  );
+
+  if (step === "menu") return (
+    <POSMenu
+      order={order}
+      cashier={cashier}
+      onBack={() => setStep("name")}
+      onCancel={onCancel}
+      onCheckout={({ action, cart, subtotal }) => {
+        update({ action, cart, subtotal });
+        setStep("confirm");
+      }}
+    />
+  );
+
+  if (step === "confirm") return (
+    <POSConfirm
+      order={order}
+      cashier={cashier}
+      onBack={() => setStep("menu")}
+      onCancel={onCancel}
+      onSuccess={(created) => {
+        update({ created });
+        setStep("success");
+      }}
+    />
+  );
+
+  if (step === "success") return (
+    <POSSuccess
+      created={order.created}
+      order={order}
+      cashier={cashier}
+      onDone={onComplete}
+      onAnother={() => {
+        setOrder({
+          type: null, table: null, customerName: "",
+          action: null, cart: [], subtotal: 0, created: null
+        });
+        setStep("type");
+      }}
+    />
+  );
+}

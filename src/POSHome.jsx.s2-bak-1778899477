@@ -1,0 +1,105 @@
+export default function POSHome({ cashier, onLogout }) {
+  const role = (cashier.role || "kasir").toLowerCase();
+  return (
+    <div style={S.root}>
+      <header style={S.header}>
+        <div style={S.brand}>☕ BINTORO POS</div>
+        <div style={S.user}>
+          <span style={S.userIcon}>👤</span>
+          <span style={S.userName}>{cashier.name}</span>
+          <span style={{...S.userRole, background: roleColors[role] || roleColors.kasir}}>
+            {(cashier.role || "kasir").toUpperCase()}
+          </span>
+          <button onClick={onLogout} style={S.logout}>Logout</button>
+        </div>
+      </header>
+
+      <main style={S.main}>
+        <div style={S.welcome}>
+          <h2 style={S.welcomeTitle}>Halo, {cashier.name}! 👋</h2>
+          <p style={S.welcomeSub}>Siap untuk shift hari ini.</p>
+        </div>
+
+        <button style={S.bigBtn} onClick={() => alert("Order entry — coming in Step 3")}>
+          <div style={{fontSize: 44}}>🛒</div>
+          <div>ORDER BARU</div>
+          <div style={S.btnHint}>Mulai pesanan untuk customer</div>
+        </button>
+
+        <section style={S.section}>
+          <h3 style={S.sectionTitle}>📋 Tab Aktif</h3>
+          <div style={S.empty}>
+            Belum ada tab aktif. <br/>
+            <span style={{fontSize: 11, color: "#555"}}>Tab yang belum dibayar akan muncul di sini.</span>
+          </div>
+        </section>
+
+        <section style={S.section}>
+          <h3 style={S.sectionTitle}>📊 Hari Ini</h3>
+          <div style={S.statsGrid}>
+            <div style={S.statCard}>
+              <div style={S.statValue}>—</div>
+              <div style={S.statLabel}>ORDERS</div>
+            </div>
+            <div style={S.statCard}>
+              <div style={S.statValue}>—</div>
+              <div style={S.statLabel}>REVENUE</div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
+const roleColors = {
+  admin: "#EF4444", manager: "#A855F7",
+  kasir: "#3B82F6", staff: "#10B981"
+};
+
+const S = {
+  root: { minHeight: "100vh", background: "#111", color: "#fff", fontFamily: "'DM Sans',sans-serif" },
+  header: {
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    padding: "14px 24px", borderBottom: "1px solid #222", background: "#0a0a0a",
+    position: "sticky", top: 0, zIndex: 10
+  },
+  brand: { fontFamily: "'Bebas Neue',cursive", fontSize: 28, letterSpacing: 3, color: "#F59E0B" },
+  user: { display: "flex", alignItems: "center", gap: 10, fontSize: 14 },
+  userIcon: { fontSize: 20 },
+  userName: { fontWeight: 700 },
+  userRole: { color: "#fff", padding: "2px 10px", borderRadius: 100, fontSize: 10, fontWeight: 700, letterSpacing: 1 },
+  logout: {
+    background: "transparent", border: "1px solid #333", color: "#aaa",
+    padding: "6px 14px", borderRadius: 8, fontSize: 12, cursor: "pointer", marginLeft: 8,
+    fontFamily: "inherit"
+  },
+  main: { maxWidth: 900, margin: "0 auto", padding: "40px 24px" },
+  welcome: { textAlign: "center", marginBottom: 32 },
+  welcomeTitle: { fontSize: 28, margin: "0 0 4px", fontWeight: 700 },
+  welcomeSub: { color: "#888", margin: 0 },
+  bigBtn: {
+    width: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+    background: "#F59E0B", color: "#111", border: "none", borderRadius: 20,
+    padding: "36px 20px", fontFamily: "inherit",
+    fontSize: 26, fontWeight: 800, letterSpacing: 2,
+    cursor: "pointer", boxShadow: "0 8px 24px rgba(245,158,11,0.3)"
+  },
+  btnHint: { fontSize: 11, fontWeight: 600, color: "#7a4a00", letterSpacing: 1 },
+  section: { marginTop: 40 },
+  sectionTitle: { fontSize: 16, color: "#fff", margin: "0 0 12px", fontWeight: 700, letterSpacing: 1 },
+  empty: {
+    background: "#1a1a1a", border: "1px dashed #2a2a2a",
+    borderRadius: 12, padding: "32px 20px", textAlign: "center", color: "#666", fontSize: 13
+  },
+  statsGrid: { display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 12 },
+  statCard: {
+    background: "#1a1a1a", border: "1px solid #222", borderRadius: 12,
+    padding: 24, textAlign: "center"
+  },
+  statValue: {
+    fontSize: 40, fontWeight: 800, fontFamily: "'Bebas Neue',cursive",
+    color: "#F59E0B", letterSpacing: 2, lineHeight: 1
+  },
+  statLabel: { fontSize: 10, color: "#888", letterSpacing: 1.5, fontWeight: 700, marginTop: 6 }
+};

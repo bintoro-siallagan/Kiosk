@@ -1,0 +1,31 @@
+import { useState } from "react";
+import POSLogin from "./POSLogin.jsx";
+import POSHome from "./POSHome.jsx";
+import ShiftGate from "./ShiftGate.jsx";
+
+export default function POSApp() {
+  const [cashier, setCashier] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem("posCashier");
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  });
+
+  const handleLogin = (user) => {
+    sessionStorage.setItem("posCashier", JSON.stringify(user));
+    setCashier(user);
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("posCashier");
+    setCashier(null);
+  };
+
+  if (!cashier) return <POSLogin onLogin={handleLogin} />;
+
+  return (
+    <ShiftGate>
+      <POSHome cashier={cashier} onLogout={handleLogout} />
+    </ShiftGate>
+  );
+}
