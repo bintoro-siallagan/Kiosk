@@ -6,14 +6,12 @@ import FlowCheckout from "./FlowCheckout.jsx";
 import FlowSuccess from "./FlowSuccess.jsx";
 import FlowHistory from "./FlowHistory";
 import FlowPromos from "./FlowPromos";
-import FlowRedeem from "./FlowRedeem";
 
 const SESSION_KEY = "flowos_session";
 const CART_KEY = "flowos_cart";
 
 export default function FlowApp() {
   const [activePromo, setActivePromo] = useState(null);
-  const [pointsToRedeem, setPointsToRedeem] = useState(0);
   const [session, setSession] = useState(() => {
     try {
       const raw = localStorage.getItem(SESSION_KEY);
@@ -68,31 +66,16 @@ export default function FlowApp() {
   }
 
   function addToCart(item, qty = 1) {
-    const hasAddons = item.addons?.toppings?.length > 0;
-    const addonsHash = hasAddons
-      ? JSON.stringify(item.addons.toppings.map(t => t.id).sort())
-      : null;
     setCart(prev => {
-      const existing = prev.find(c =>
-        c.id === item.id && ((c._addonsHash || null) === addonsHash)
-      );
+      const existing = prev.find(c => c.id === item.id && !c._addonsHash);
       if (existing) {
-        return prev.map(c =>
-          c.id === item.id && ((c._addonsHash || null) === addonsHash)
-            ? { ...c, qty: c.qty + qty } : c
-        );
+        return prev.map(c => c.id === item.id && !c._addonsHash
+          ? { ...c, qty: c.qty + qty } : c);
       }
       return [...prev, {
-        id: item.id,
-        name: item.name || item.n,
-        emoji: item.emoji || item.e,
-        price: item.price ?? item.p,
-        cat: item.cat,
-        qty,
-        addonTotal: item.addonTotal || 0,
-        addons: item.addons || {},
-        _addonsHash: addonsHash,
-        freeToppings: item.freeToppings,
+        id: item.id || item.n || item.name, name: item.name || item.n, n: item.name || item.n, emoji: item.emoji,
+        price: item.price || item.p || 0, p: item.price || item.p || 0, cat: item.cat, qty, q: qty,
+        addonTotal: item.addonTotal || 0, addons: item.addons || {},
       }];
     });
   }
@@ -153,17 +136,9 @@ export default function FlowApp() {
         />
       )}
 
-                        {screen === "redeem" && session && (
-        <FlowRedeem
-          session={session}
-          setPointsToRedeem={setPointsToRedeem}
-          setScreen={setScreen}
-        />
-      )}
-
-      {screen === "promos" && session && (
+                  {screen === "promos" && (
         <FlowPromos
-          customer={session}
+          customer={customer}
           setActivePromo={setActivePromo}
           setScreen={setScreen}
         />
@@ -183,10 +158,6 @@ export default function FlowApp() {
           cart={cart} cartTotal={cartTotal}
           onBack={() => setScreen("menu")}
           onPlaced={handleOrderPlaced}
-          activePromo={activePromo}
-          setActivePromo={setActivePromo}
-          pointsToRedeem={pointsToRedeem}
-          setPointsToRedeem={setPointsToRedeem}
         />
       )}
 
