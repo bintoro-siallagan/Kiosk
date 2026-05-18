@@ -20,6 +20,7 @@ import POSApp        from "./POSApp.jsx";
 import ShiftManager  from "./ShiftManager.jsx";
 
 import FlowApp from "./Flow/FlowApp.jsx";
+import { MenuProvider } from "./MenuContext.jsx";
 function getScene() {
   const q = window.location.search;
   if (new URLSearchParams(q).get("flow")) return "flow";
