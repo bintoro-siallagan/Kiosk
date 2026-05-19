@@ -621,7 +621,7 @@ const S = {
   ssSlide: { width:"100%", height:"100%", display:"flex", alignItems:"center",
     justifyContent:"center", animation:"ssFadeIn 0.8s ease-out" },
   ssCenter: { display:"flex", flexDirection:"column", alignItems:"center",
-    textAlign:"center", padding:40, maxWidth:800 },
+    textAlign:"center", padding:40, maxWidth:800, gap:16 },
 
   ssLogo: { fontSize:320, lineHeight:1, marginBottom:32 },
   ssBrand: { fontSize:80, fontFamily:"'Bebas Neue',sans-serif", color:"#FF6B35",
@@ -630,11 +630,11 @@ const S = {
   ssHint: { fontSize:18, color:"#888", marginTop:24 },
 
   ssBadge: { padding:"8px 24px", background:"rgba(245,158,11,0.15)",
-    color:"#FF6B35", borderRadius:100, fontSize:14, fontWeight:800,
-    letterSpacing:2, marginBottom:32 },
+    color:"#FF6B35", borderRadius:100, fontSize:48, fontWeight:800,
+    letterSpacing:2, marginBottom:0 },
 
-  ssItemEmoji: { fontSize:200, marginBottom:24, lineHeight:1 },
-  ssItemName: { fontSize:56, fontWeight:900, color:"#fff", marginBottom:16,
+  ssItemEmoji: { fontSize:150, lineHeight:1, marginBottom:0 },
+  ssItemName: { fontSize:64, fontWeight:900, color:"#fff", marginBottom:16,
     fontFamily:"'Bebas Neue',sans-serif", letterSpacing:3, lineHeight:1.1 },
   ssItemDesc: { fontSize:22, color:"#aaa", marginBottom:24, lineHeight:1.5,
     maxWidth:600 },
@@ -644,8 +644,8 @@ const S = {
     background:"rgba(16,185,129,0.15)", color:"#10B981",
     borderRadius:100, fontSize:16, fontWeight:700 },
 
-  ssPromoEmoji: { fontSize:80, marginBottom:32 },
-  ssPromoBigTitle: { fontSize:88, fontWeight:900, color:"#EF4444",
+  ssPromoEmoji: { fontSize:80, lineHeight:1, marginBottom:0 },
+  ssPromoBigTitle: { fontSize:132, fontWeight:900, color:"#EF4444",
     fontFamily:"'Bebas Neue',sans-serif", letterSpacing:6, marginBottom:16,
     lineHeight:1, textShadow:"0 0 30px rgba(239,68,68,0.5)" },
   ssPromoTag: { padding:"6px 16px", background:"rgba(59,130,246,0.15)",
@@ -665,7 +665,7 @@ const S = {
   ssPromoCodeValue: { fontSize:48, fontFamily:"'Bebas Neue',sans-serif",
     color:"#EF4444", letterSpacing:6, marginTop:4 },
 
-  ssMemberIcon: { fontSize:160, marginBottom:24 },
+  ssMemberIcon: { fontSize:160, lineHeight:1, marginBottom:96 },
 
   ssThanksIcon: { fontSize:100, marginBottom:24 },
   ssSocial: { marginTop:32, fontSize:18, color:"#FF6B35",

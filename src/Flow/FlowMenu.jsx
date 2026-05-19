@@ -178,162 +178,154 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
   }, [detail, detailAddonTotal, detailQty]);
 
   return (
-    <div style={{ minHeight: "100vh", background: BG, color: TEXT, paddingBottom: cart.length > 0 ? 90 : 24 }}>
-      {/* Header */}
-      <div style={{ position: "sticky", top: 0, background: BG, borderBottom: `1px solid ${BORDER}`, padding: "14px 20px", zIndex: 10 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-          <button onClick={() => setScreen("home")} style={{
-            background: "transparent", border: "none", color: TEXT, fontSize: 24, cursor: "pointer", padding: 0, width: 32
-          }}>←</button>
-          <h1 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: BRAND, letterSpacing: 1 }}>
-            MENU
-          </h1>
-        </div>
+    <div style={{ height: "100vh", background: BG, color: TEXT, display: "flex", overflow: "hidden" }}>
 
-        {/* Search */}
-        <input
-          type="text"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Cari menu..."
-          style={{
-            width: "100%", padding: "10px 14px", background: CARD, border: `1px solid ${BORDER}`,
-            borderRadius: 10, color: TEXT, fontSize: 14, outline: "none"
-          }}
-        />
-
-        {/* Category tabs */}
-        <div style={{ display: "flex", gap: 6, marginTop: 10, overflowX: "auto", paddingBottom: 2 }}>
-          {categories.map(c => (
-            <button key={c} onClick={() => setActiveCat(c)} style={{
-              padding: "7px 12px", borderRadius: 999, whiteSpace: "nowrap",
-              border: `1px solid ${activeCat === c ? BRAND : BORDER}`,
-              background: activeCat === c ? BRAND : "transparent",
-              color: activeCat === c ? "#000" : TEXT,
-              fontSize: 12, fontWeight: 600, cursor: "pointer"
-            }}>{catLabels[c] || c}</button>
-          ))}
-        </div>
-      </div>
-
-      {/* Menu grid */}
-      <div style={{ padding: 16 }}>
-        {loading && <div style={{ textAlign: "center", padding: 40, color: SUB }}>⏳ Loading menu...</div>}
-        {!loading && filtered.length === 0 && (
-          <div style={{ textAlign: "center", padding: 40, color: SUB }}>Tidak ada menu yang cocok</div>
-        )}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          {filtered.map(item => (
-            <button key={item.id} onClick={() => openDetail(item)} style={{
-              background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14,
-              padding: 14, textAlign: "left", cursor: "pointer", position: "relative", overflow: "hidden", color: TEXT
-            }}>
-              {item.popular && (
-                <span style={{
-                  position: "absolute", top: 8, right: 8, background: BRAND, color: "#000",
-                  fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4
-                }}>POPULAR</span>
-              )}
-              <div style={{ fontSize: 40, marginBottom: 6 }}>{item.emoji}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, lineHeight: 1.3, color: TEXT }}>{item.name}</div>
-              <div style={{ fontSize: 11, color: SUB, marginBottom: 8, minHeight: 28, lineHeight: 1.3 }}>{item.desc}</div>
-              {item.freeToppings > 0 && (
-                <div style={{ fontSize: 10, color: BRAND, marginBottom: 6 }}>+ {item.freeToppings} topping gratis</div>
-              )}
-              <div style={{ fontSize: 14, fontWeight: 700, color: BRAND }}>{rupiah(item.price)}</div>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Sticky cart bar */}
-      {cart.length > 0 && !detail && !showCart && (
-        <div onClick={() => setShowCart(true)} style={{
-          position: "fixed", bottom: 12, left: "50%", transform: "translateX(-50%)",
-          width: "calc(100% - 24px)", maxWidth: 420,
-          background: BRAND, borderRadius: 12, padding: "12px 16px",
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          cursor: "pointer", boxShadow: "0 8px 24px rgba(245,158,11,0.3)", zIndex: 50
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{
-              background: "#000", color: BRAND, fontWeight: 700,
-              padding: "4px 9px", borderRadius: 8, fontSize: 13
-            }}>{cartCount}</span>
-            <span style={{ color: "#000", fontWeight: 700, fontSize: 14 }}>Lihat Keranjang</span>
+      {/* ══ LEFT: Menu ══ */}
+      <div style={{ flex: "0 0 60%", display: "flex", flexDirection: "column", borderRight: `1px solid ${BORDER}`, overflow: "hidden" }}>
+        <div style={{ background: BG, borderBottom: `1px solid ${BORDER}`, padding: "14px 20px", flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+            <button onClick={() => setScreen("home")} style={{ background: "transparent", border: "none", color: TEXT, fontSize: 24, cursor: "pointer", padding: 0, width: 32 }}>←</button>
+            <h1 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: BRAND, letterSpacing: 1 }}>MENU</h1>
           </div>
-          <span style={{ color: "#000", fontWeight: 800, fontSize: 15 }}>{rupiah(cartTotal)}</span>
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari menu..."
+            style={{ width: "100%", padding: "10px 14px", background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, color: TEXT, fontSize: 14, outline: "none" }} />
+          <div style={{ display: "flex", gap: 6, marginTop: 10, overflowX: "auto", paddingBottom: 2 }}>
+            {categories.map(c => (
+              <button key={c} onClick={() => setActiveCat(c)} style={{
+                padding: "7px 12px", borderRadius: 999, whiteSpace: "nowrap",
+                border: `1px solid ${activeCat === c ? BRAND : BORDER}`,
+                background: activeCat === c ? BRAND : "transparent",
+                color: activeCat === c ? "#000" : TEXT,
+                fontSize: 12, fontWeight: 600, cursor: "pointer"
+              }}>{catLabels[c] || c}</button>
+            ))}
+          </div>
         </div>
-      )}
+        <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+          {loading && <div style={{ textAlign: "center", padding: 40, color: SUB }}>⏳ Loading menu...</div>}
+          {!loading && filtered.length === 0 && <div style={{ textAlign: "center", padding: 40, color: SUB }}>Tidak ada menu yang cocok</div>}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            {filtered.map(item => (
+              <button key={item.id} onClick={() => openDetail(item)} style={{
+                background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14,
+                padding: 14, textAlign: "left", cursor: "pointer", position: "relative", overflow: "hidden", color: TEXT
+              }}>
+                {item.popular && <span style={{ position: "absolute", top: 8, right: 8, background: BRAND, color: "#000", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4 }}>POPULAR</span>}
+                <div style={{ fontSize: 40, marginBottom: 6 }}>{item.emoji}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, lineHeight: 1.3, color: TEXT }}>{item.name}</div>
+                <div style={{ fontSize: 11, color: SUB, marginBottom: 8, minHeight: 28, lineHeight: 1.3 }}>{item.desc}</div>
+                {item.freeToppings > 0 && <div style={{ fontSize: 10, color: BRAND, marginBottom: 6 }}>+ {item.freeToppings} topping gratis</div>}
+                <div style={{ fontSize: 14, fontWeight: 700, color: BRAND }}>{rupiah(item.price)}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
-      {/* Item Detail bottom sheet */}
+      {/* ══ RIGHT: Cart Summary ══ */}
+      <div style={{ flex: "0 0 40%", display: "flex", flexDirection: "column", background: "#111" }}>
+        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${BORDER}`, flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: BRAND }}>
+            PESANAN{cartCount > 0 ? ` (${cartCount})` : ""}
+          </h2>
+          {cart.length > 0 && (
+            <button onClick={clearCart} style={{ background: "transparent", border: "none", color: "#EF4444", fontSize: 12, cursor: "pointer" }}>🗑 Kosongin</button>
+          )}
+        </div>
+        <div style={{ flex: 1, overflowY: "auto", padding: "0 16px" }}>
+          {cart.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "60px 20px", color: SUB }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>🛒</div>
+              <div style={{ fontSize: 14 }}>Belum ada item</div>
+              <div style={{ fontSize: 12, marginTop: 6, color: "#555" }}>Pilih menu di sebelah kiri</div>
+            </div>
+          ) : (
+            cart.map((it, i) => {
+              const q = it.q || 1;
+              const lineTotal = (it.p + (it.addonTotal || 0)) * q;
+              return (
+                <div key={it.id + "-" + i} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 12, marginTop: 8 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700 }}><span style={{ marginRight: 6 }}>{it.e}</span>{it.n}</div>
+                      <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{rupiah(it.p)}</div>
+                    </div>
+                    <button onClick={() => removeFromCart(it.id)} style={{ background: "transparent", border: "none", color: "#EF4444", fontSize: 18, cursor: "pointer", padding: "0 4px" }}>✕</button>
+                  </div>
+                  {it.addons?.toppings?.length > 0 && (
+                    <div style={{ fontSize: 11, color: SUB, marginBottom: 8, lineHeight: 1.4 }}>
+                      + {it.addons.toppings.map(t => t.name).join(", ")}
+                      {it.addonTotal > 0 && <span style={{ color: BRAND }}> ({rupiah(it.addonTotal)})</span>}
+                    </div>
+                  )}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center" }}>
+                      <button onClick={() => updateCartQty(it.id, Math.max(1, q - 1))} style={{ width: 28, height: 28, borderRadius: "50%", border: `1px solid ${BORDER}`, background: BG, color: TEXT, fontSize: 14, cursor: "pointer" }}>−</button>
+                      <div style={{ width: 32, textAlign: "center", fontSize: 13, fontWeight: 700 }}>{q}</div>
+                      <button onClick={() => updateCartQty(it.id, q + 1)} style={{ width: 28, height: 28, borderRadius: "50%", border: `1px solid ${BORDER}`, background: BG, color: TEXT, fontSize: 14, cursor: "pointer" }}>+</button>
+                    </div>
+                    <span style={{ fontSize: 14, fontWeight: 700 }}>{rupiah(lineTotal)}</span>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+        <div style={{ padding: "16px 20px", borderTop: `1px solid ${BORDER}`, flexShrink: 0 }}>
+          {cart.length > 0 ? (
+            <>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: 1 }}>TOTAL</span>
+                <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: BRAND }}>{rupiah(cartTotal)}</span>
+              </div>
+              <button onClick={() => setScreen("checkout")} style={{ width: "100%", padding: "14px", borderRadius: 12, background: BRAND, border: "none", color: "#000", fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: 2, cursor: "pointer" }}>CHECKOUT →</button>
+            </>
+          ) : (
+            <button disabled style={{ width: "100%", padding: "14px", borderRadius: 12, background: BORDER, border: "none", color: SUB, fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, cursor: "not-allowed" }}>PILIH MENU DULU</button>
+          )}
+        </div>
+      </div>
+
+      {/* TOPPING PICKER MODAL */}
       {detail && (
-        <div onClick={closeDetail} style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.95)", zIndex: 100,
-          display: "flex", alignItems: "flex-end", justifyContent: "center"
-        }}>
-          <div onClick={e => e.stopPropagation()} style={{
-            background: BG, width: "100%", maxWidth: 440, borderRadius: "20px 20px 0 0",
-            maxHeight: "92vh", overflowY: "auto", paddingBottom: 110
-          }}>
+        <div onClick={closeDetail} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.95)", zIndex: 100, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: BG, width: "100%", maxWidth: 440, borderRadius: "20px 20px 0 0", maxHeight: "92vh", overflowY: "auto", paddingBottom: 110 }}>
             <div style={{ width: 40, height: 4, background: BORDER, borderRadius: 2, margin: "12px auto" }} />
-
-            {/* Item header */}
             <div style={{ padding: "0 20px 16px" }}>
               <div style={{ fontSize: 56, textAlign: "center", marginBottom: 8 }}>{detail.emoji}</div>
               <div style={{ fontSize: 20, fontWeight: 800, textAlign: "center" }}>{detail.name}</div>
               <div style={{ fontSize: 13, color: SUB, textAlign: "center", marginTop: 6, lineHeight: 1.4 }}>{detail.desc}</div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: BRAND, textAlign: "center", marginTop: 10 }}>
-                {rupiah(detail.price)}
-              </div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: BRAND, textAlign: "center", marginTop: 10 }}>{rupiah(detail.price)}</div>
             </div>
-
-            {/* Toppings picker */}
             {detail.freeToppings > 0 && (
               <div style={{ padding: "0 20px 16px" }}>
-                {/* Counter banner */}
-                <ToppingCounter
-                  selected={selectedToppings}
-                  freeQuota={detail.freeToppings}
-                  extraPrice={extraPrice}
-                  addonTotal={detailAddonTotal}
-                />
-
-                {/* Groups */}
+                <ToppingCounter selected={selectedToppings} freeQuota={detail.freeToppings} extraPrice={extraPrice} addonTotal={detailAddonTotal} />
                 {GROUP_ORDER.map(group => {
                   const list = groupedToppings[group];
                   if (!list || list.length === 0) return null;
                   const isPremium = group === "Premium";
                   return (
                     <div key={group} style={{ marginBottom: 16 }}>
-                      <div style={{
-                        fontSize: 12, fontWeight: 700, color: isPremium ? BRAND : SUB,
-                        marginBottom: 8, letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 6
-                      }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: isPremium ? BRAND : SUB, marginBottom: 8, letterSpacing: 0.5, display: "flex", alignItems: "center", gap: 6 }}>
                         <span>{GROUP_EMOJI[group]}</span>
                         <span style={{ textTransform: "uppercase" }}>{group}</span>
                         {isPremium && <span style={{ fontSize: 10, color: BRAND }}>· {rupiah(list[0].price)} per item</span>}
                       </div>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                         {list.map(t => {
-                          const selected = !!selectedToppings.find(x => x.id === t.id);
+                          const sel = !!selectedToppings.find(x => x.id === t.id);
                           return (
                             <button key={t.id} onClick={() => toggleTopping(t)} style={{
                               padding: "8px 12px", borderRadius: 999,
-                              border: `1px solid ${selected ? BRAND : BORDER}`,
-                              background: selected ? BRAND : "transparent",
-                              color: selected ? "#000" : TEXT,
+                              border: `1px solid ${sel ? BRAND : BORDER}`,
+                              background: sel ? BRAND : "transparent",
+                              color: sel ? "#000" : TEXT,
                               fontSize: 12, fontWeight: 600, cursor: "pointer",
                               display: "flex", alignItems: "center", gap: 4
                             }}>
-                              {selected && <span>✓</span>}
+                              {sel && <span>✓</span>}
                               <span>{t.name}</span>
-                              {t.price > 0 && (
-                                <span style={{
-                                  fontSize: 10, opacity: 0.8,
-                                  color: selected ? "#000" : BRAND
-                                }}>+{t.price/1000}k</span>
-                              )}
+                              {t.price > 0 && <span style={{ fontSize: 10, opacity: 0.8, color: sel ? "#000" : BRAND }}>+{t.price/1000}k</span>}
                             </button>
                           );
                         })}
@@ -343,23 +335,12 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
                 })}
               </div>
             )}
-
-            {/* Quantity + Total */}
-            <div style={{
-              position: "sticky", bottom: 0, background: BG, borderTop: `1px solid ${BORDER}`,
-              padding: "14px 20px", display: "flex", flexDirection: "column", gap: 10
-            }}>
+            <div style={{ position: "sticky", bottom: 0, background: BG, borderTop: `1px solid ${BORDER}`, padding: "14px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-                  <button onClick={() => setDetailQty(Math.max(1, detailQty - 1))} style={{
-                    width: 36, height: 36, borderRadius: "50%", border: `1px solid ${BORDER}`,
-                    background: CARD, color: TEXT, fontSize: 18, cursor: "pointer"
-                  }}>−</button>
+                  <button onClick={() => setDetailQty(Math.max(1, detailQty - 1))} style={{ width: 36, height: 36, borderRadius: "50%", border: `1px solid ${BORDER}`, background: CARD, color: TEXT, fontSize: 18, cursor: "pointer" }}>−</button>
                   <div style={{ width: 44, textAlign: "center", fontSize: 16, fontWeight: 700 }}>{detailQty}</div>
-                  <button onClick={() => setDetailQty(detailQty + 1)} style={{
-                    width: 36, height: 36, borderRadius: "50%", border: `1px solid ${BORDER}`,
-                    background: CARD, color: TEXT, fontSize: 18, cursor: "pointer"
-                  }}>+</button>
+                  <button onClick={() => setDetailQty(detailQty + 1)} style={{ width: 36, height: 36, borderRadius: "50%", border: `1px solid ${BORDER}`, background: CARD, color: TEXT, fontSize: 18, cursor: "pointer" }}>+</button>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 10, color: SUB }}>TOTAL</div>
@@ -367,113 +348,16 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
                 </div>
               </div>
               <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={closeDetail} style={{
-                  flex: 1, padding: "12px", borderRadius: 10, background: "transparent",
-                  border: `1px solid ${BORDER}`, color: TEXT, fontSize: 14, fontWeight: 600, cursor: "pointer"
-                }}>Batal</button>
-                <button onClick={handleAdd} style={{
-                  flex: 2, padding: "12px", borderRadius: 10, background: BRAND,
-                  border: "none", color: "#000", fontSize: 14, fontWeight: 800, cursor: "pointer"
-                }}>+ Tambah ke Cart</button>
+                <button onClick={closeDetail} style={{ flex: 1, padding: "12px", borderRadius: 10, background: "transparent", border: `1px solid ${BORDER}`, color: TEXT, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Batal</button>
+                <button onClick={handleAdd} style={{ flex: 2, padding: "12px", borderRadius: 10, background: BRAND, border: "none", color: "#000", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>+ Tambah ke Cart</button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Cart Modal */}
-      {showCart && (
-        <div onClick={() => setShowCart(false)} style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.95)", zIndex: 100,
-          display: "flex", alignItems: "flex-end", justifyContent: "center"
-        }}>
-          <div onClick={e => e.stopPropagation()} style={{
-            background: BG, width: "100%", maxWidth: 440, borderRadius: "20px 20px 0 0",
-            maxHeight: "90vh", overflowY: "auto", paddingBottom: 24
-          }}>
-            <div style={{ width: 40, height: 4, background: BORDER, borderRadius: 2, margin: "12px auto" }} />
-
-            <div style={{ padding: "0 20px 12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: BRAND }}>
-                KERANJANG ({cartCount})
-              </h2>
-              {cart.length > 0 && (
-                <button onClick={() => { clearCart(); setShowCart(false); }} style={{
-                  background: "transparent", border: "none", color: "#EF4444", fontSize: 12, cursor: "pointer"
-                }}>🗑 Kosongin</button>
-              )}
-            </div>
-
-            <div style={{ padding: "0 20px" }}>
-              {cart.length === 0 && (
-                <div style={{ textAlign: "center", padding: 40, color: SUB }}>Keranjang kosong</div>
-              )}
-              {cart.map((it, i) => {
-                const q = it.q || 1;
-                const lineTotal = (it.p + (it.addonTotal || 0)) * q;
-                return (
-                  <div key={it.id + "-" + i} style={{
-                    background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12,
-                    padding: 12, marginBottom: 8
-                  }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 14, fontWeight: 700 }}>
-                          <span style={{ marginRight: 6 }}>{it.e}</span>{it.n}
-                        </div>
-                        <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{rupiah(it.p)}</div>
-                      </div>
-                      <button onClick={() => removeFromCart(it.id)} style={{
-                        background: "transparent", border: "none", color: "#EF4444",
-                        fontSize: 18, cursor: "pointer", padding: "0 4px"
-                      }}>✕</button>
-                    </div>
-
-                    {it.addons?.toppings?.length > 0 && (
-                      <div style={{ fontSize: 11, color: SUB, marginBottom: 8, lineHeight: 1.4 }}>
-                        + {it.addons.toppings.map(t => t.name).join(", ")}
-                        {it.addonTotal > 0 && <span style={{ color: BRAND }}> ({rupiah(it.addonTotal)})</span>}
-                      </div>
-                    )}
-
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
-                        <button onClick={() => updateCartQty(it.id, Math.max(1, q - 1))} style={{
-                          width: 28, height: 28, borderRadius: "50%", border: `1px solid ${BORDER}`,
-                          background: BG, color: TEXT, fontSize: 14, cursor: "pointer"
-                        }}>−</button>
-                        <div style={{ width: 32, textAlign: "center", fontSize: 13, fontWeight: 700 }}>{q}</div>
-                        <button onClick={() => updateCartQty(it.id, q + 1)} style={{
-                          width: 28, height: 28, borderRadius: "50%", border: `1px solid ${BORDER}`,
-                          background: BG, color: TEXT, fontSize: 14, cursor: "pointer"
-                        }}>+</button>
-                      </div>
-                      <span style={{ fontSize: 14, fontWeight: 700 }}>{rupiah(lineTotal)}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {cart.length > 0 && (
-              <div style={{ padding: "12px 20px 0", borderTop: `1px solid ${BORDER}`, marginTop: 12 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                  <span style={{ fontSize: 14, color: SUB }}>Total</span>
-                  <span style={{ fontSize: 22, fontWeight: 800, color: BRAND }}>{rupiah(cartTotal)}</span>
-                </div>
-                <button onClick={() => { setShowCart(false); setScreen("checkout"); }} style={{
-                  width: "100%", padding: "14px", borderRadius: 12, background: BRAND,
-                  border: "none", color: "#000", fontSize: 15, fontWeight: 800, cursor: "pointer"
-                }}>Checkout →</button>
-              </div>
-            )}
           </div>
         </div>
       )}
     </div>
   );
 }
-
 function ToppingCounter({ selected, freeQuota, extraPrice, addonTotal }) {
   const used = selected.length;
   const remaining = Math.max(0, freeQuota - used);
