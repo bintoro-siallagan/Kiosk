@@ -73,7 +73,7 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
         <div style={S.successIcon}>
           {currentStep >= 3 ? "🎉" : currentStep >= 2 ? "🛎️" : currentStep >= 1 ? "👨‍🍳" : "✅"}
         </div>
-        <div style={{...S.title, color: currentStep >= 3 ? "#F59E0B" : "#10B981"}}>
+        <div style={{...S.title, color: currentStep >= 3 ? "#FF6B35" : "#10B981"}}>
           {currentStep >= 3 && "Pesanan Selesai!"}
           {currentStep === 2 && "Pesanan Siap Diambil!"}
           {currentStep === 1 && "Sedang Disiapkan"}
@@ -160,7 +160,7 @@ const S = {
   title: { fontSize: 24, fontWeight: 800, marginTop: 8 },
   subtitle: { fontSize: 13, color: "#9CA3AF", marginTop: 4, padding: "0 20px" },
   orderCard: { padding: "20px", borderRadius: 16, background: "linear-gradient(135deg, rgba(245,158,11,0.10), rgba(245,158,11,0.02))", border: "1px solid rgba(245,158,11,0.3)", textAlign: "center" },
-  orderId: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: "#F59E0B", letterSpacing: 2 },
+  orderId: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: "#FF6B35", letterSpacing: 2 },
   orderTotal: { fontSize: 20, fontWeight: 800, marginTop: 4 },
   orderMeta: { fontSize: 12, color: "#9CA3AF", marginTop: 8 },
   steps: { display: "flex", alignItems: "center", gap: 2, padding: "12px 0" },
@@ -168,7 +168,7 @@ const S = {
   stepActive: { opacity: 0.7 },
   stepDone: { opacity: 1 },
   stepIcon: { width: 40, height: 40, borderRadius: 20, background: "rgba(255,255,255,0.04)", border: "1px solid #2a2a2a", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, transition: "all 0.3s ease" },
-  stepIconActive: { background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.4)", color: "#F59E0B" },
+  stepIconActive: { background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.4)", color: "#FF6B35" },
   stepIconDone: { background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.5)", color: "#10B981", fontSize: 18 },
   stepLabel: { fontSize: 9, fontWeight: 600, textAlign: "center" },
   stepLine: { flex: 1, height: 2, background: "#2a2a2a", marginBottom: 18, transition: "background 0.3s ease" },
@@ -180,7 +180,7 @@ const S = {
   infoText: { fontSize: 11, color: "#D1D5DB", lineHeight: 1.6 },
   btnRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 },
   btnSecondary: { padding: "12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid #2a2a2a", color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
-  btnPrimary: { padding: "14px", borderRadius: 12, background: "linear-gradient(135deg, #F59E0B, #D97706)", border: "none", color: "#111", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" },
+  btnPrimary: { padding: "14px", borderRadius: 12, background: "linear-gradient(135deg, #FF6B35, #D97706)", border: "none", color: "#111", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" },
   btnGhost: { padding: "10px", background: "transparent", border: "none", color: "#9CA3AF", fontSize: 12, cursor: "pointer", fontFamily: "inherit" },
   footer: { marginTop: "auto", textAlign: "center", fontSize: 10, color: "#4B5563", letterSpacing: 1, padding: "12px 0" },
 };

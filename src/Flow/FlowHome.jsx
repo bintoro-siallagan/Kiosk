@@ -32,7 +32,7 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
   const tags = profile?.tags || ["new"];
 
   let tier = "Guest"; let tierColor = "#9CA3AF";
-  if (tags.includes("vip")) { tier = "VIP ⭐"; tierColor = "#F59E0B"; }
+  if (tags.includes("vip")) { tier = "VIP ⭐"; tierColor = "#FF6B35"; }
   else if (tags.includes("member")) { tier = "Member 🎫"; tierColor = "#10B981"; }
   else if (tags.includes("new")) { tier = "Baru ✨"; tierColor = "#60A5FA"; }
 
@@ -71,7 +71,7 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
       </div>
 
       <div style={S.actionsGrid}>
-        <ActionCard icon="🍽️" title="Pesan Sekarang" subtitle="Browse menu BINTORO" accent="#F59E0B" onClick={() => onNavigate("menu")} />
+        <ActionCard icon="🍽️" title="Pesan Sekarang" subtitle="Browse menu BINTORO" accent="#FF6B35" onClick={() => onNavigate("menu")} />
         <ActionCard icon="🔁" title="Pesan Ulang" subtitle="Order favorit" accent="#10B981" comingSoon />
         <ActionCard icon="📦" title="Pesanan Aktif" subtitle="Track status pesanan" accent="#3B82F6" comingSoon />
         <ActionCard icon="🎁" title="Tukar Poin" subtitle={points >= 100 ? "Bisa redeem!" : "Min 100 poin"} accent="#8B5CF6" onClick={() => onNavigate("redeem")} />
@@ -108,16 +108,16 @@ function ActionCard({ icon, title, subtitle, accent, comingSoon, onClick }) {
 const S = {
   container: { width: "min(440px, 100%)", minHeight: "100vh", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 20, position: "relative" },
   header: { display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 8 },
-  logo: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "#F59E0B", letterSpacing: 2 },
+  logo: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "#FF6B35", letterSpacing: 2 },
   logoutBtn: { padding: "6px 12px", borderRadius: 8, background: "transparent", border: "1px solid #2a2a2a", color: "#9CA3AF", fontSize: 11, cursor: "pointer", fontFamily: "inherit" },
   profile: { background: "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.02) 100%)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 16, padding: "20px 18px", animation: "fadeUp 0.4s ease" },
   greeting: { fontSize: 18, fontWeight: 700, marginBottom: 10 },
-  tableBadge: { display: "inline-block", padding: "5px 12px", borderRadius: 16, background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", color: "#F59E0B", fontSize: 11, fontWeight: 600 },
+  tableBadge: { display: "inline-block", padding: "5px 12px", borderRadius: 16, background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", color: "#FF6B35", fontSize: 11, fontWeight: 600 },
   modeBadge: { display: "inline-block", padding: "5px 12px", borderRadius: 16, background: "rgba(59,130,246,0.15)", color: "#60A5FA", fontSize: 11, fontWeight: 600 },
   statsRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 },
   statBox: { background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "12px 14px" },
   statLabel: { fontSize: 10, color: "#9CA3AF", letterSpacing: 1, fontWeight: 600, marginBottom: 4 },
-  statValue: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "#F59E0B", lineHeight: 1, letterSpacing: 1 },
+  statValue: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "#FF6B35", lineHeight: 1, letterSpacing: 1 },
   statUnit: { fontSize: 14, color: "#9CA3AF", marginLeft: 2 },
   statBadge: { fontSize: 10, marginTop: 6, fontWeight: 600 },
   actionsGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
@@ -125,12 +125,12 @@ const S = {
   actionIcon: { width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, marginBottom: 8 },
   actionTitle: { fontSize: 13, fontWeight: 700 },
   actionSub: { fontSize: 10, color: "#9CA3AF", marginTop: 2 },
-  soonBadge: { position: "absolute", top: 8, right: 8, padding: "2px 6px", borderRadius: 4, background: "rgba(245,158,11,0.15)", color: "#F59E0B", fontSize: 8, fontWeight: 700, letterSpacing: 1 },
+  soonBadge: { position: "absolute", top: 8, right: 8, padding: "2px 6px", borderRadius: 4, background: "rgba(245,158,11,0.15)", color: "#FF6B35", fontSize: 8, fontWeight: 700, letterSpacing: 1 },
   footer: { textAlign: "center", fontSize: 10, color: "#4B5563", letterSpacing: 1, padding: "12px 0" },
   cartFloater: {
     position: "sticky", bottom: 20, marginTop: "auto",
     width: "100%", padding: "14px 18px", borderRadius: 14,
-    background: "linear-gradient(135deg, #F59E0B, #D97706)",
+    background: "linear-gradient(135deg, #FF6B35, #D97706)",
     border: "none", color: "#111",
     display: "flex", justifyContent: "space-between", alignItems: "center",
     fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
@@ -139,7 +139,7 @@ const S = {
   },
   cartFloaterLeft: { display: "flex", alignItems: "center", gap: 10 },
   cartCount: {
-    background: "#111", color: "#F59E0B",
+    background: "#111", color: "#FF6B35",
     width: 24, height: 24, borderRadius: 12,
     display: "inline-flex", alignItems: "center", justifyContent: "center",
     fontSize: 13, fontWeight: 800,
