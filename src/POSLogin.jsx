@@ -90,7 +90,7 @@ const S = {
   },
   header: { textAlign: "center", marginBottom: 48 },
   title: {
-    fontFamily: "'Bebas Neue',cursive",
+    fontFamily: "'Montserrat',sans-serif",
     fontSize: 72, letterSpacing: 5,
     margin: "0 0 4px", color: "#F59E0B"
   },

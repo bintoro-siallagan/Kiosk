@@ -323,7 +323,7 @@ const S = {
   header: { display:"flex", alignItems:"center", justifyContent:"space-between",
     padding:"14px 24px", borderBottom:"1px solid #222", background:"#0a0a0a",
     position:"sticky", top:0, zIndex:10 },
-  brand: { fontFamily:"'Bebas Neue',cursive", fontSize:28, letterSpacing:3, color:"#F59E0B" },
+  brand: { fontFamily:"'Montserrat',sans-serif", fontSize:20, fontWeight:800, letterSpacing:1, color:"#F59E0B", textTransform:"uppercase" },
   user: { display:"flex", alignItems:"center", gap:10, fontSize:14 },
   userIcon: { fontSize:20 },
   userName: { fontWeight:700 },
@@ -354,8 +354,8 @@ const S = {
     cursor:"pointer", transition:"all 0.15s", textAlign:"left",
     display:"flex", flexDirection:"column", gap:8 },
   tabHeaderRow: { display:"flex", justifyContent:"space-between", alignItems:"baseline" },
-  tabId: { fontSize:18, fontWeight:800, color:"#F59E0B", fontFamily:"'Bebas Neue',cursive", letterSpacing:2 },
-  tabTotal: { fontFamily:"'Bebas Neue',cursive", fontSize:20, color:"#fff", letterSpacing:1 },
+  tabId: { fontSize:18, fontWeight:800, color:"#F59E0B", fontFamily:"'Montserrat',sans-serif", letterSpacing:2 },
+  tabTotal: { fontFamily:"'Montserrat',sans-serif", fontSize:20, color:"#fff", letterSpacing:1 },
   tabMidRow: { fontSize:13, color:"#ccc", display:"flex", gap:4, flexWrap:"wrap" },
   tabType: { fontWeight:600 },
   tabTable: { color:"#aaa" },
@@ -371,7 +371,7 @@ const S = {
   tabBtnPay: { flex:1, padding:"10px 14px", borderRadius:10, background:"linear-gradient(135deg, #10B981, #059669)", border:"none", color:"white", cursor:"pointer", fontSize:13, fontWeight:700, fontFamily:"inherit" },
   tabBtnMerge: { flex:1, padding:"10px 8px", borderRadius:10, background:"rgba(139,92,246,0.12)", border:"1px solid rgba(139,92,246,0.4)", color:"#A78BFA", cursor:"pointer", fontSize:12, fontWeight:600, fontFamily:"inherit" },
   statCard: { background:"#1a1a1a", border:"1px solid #222", borderRadius:12, padding:24, textAlign:"center" },
-  statValue: { fontSize:32, fontWeight:800, fontFamily:"'Bebas Neue',cursive",
+  statValue: { fontSize:32, fontWeight:800, fontFamily:"'Montserrat',sans-serif",
     color:"#F59E0B", letterSpacing:2, lineHeight:1 },
   statLabel: { fontSize:10, color:"#888", letterSpacing:1.5, fontWeight:700, marginTop:6 }
 };

@@ -409,7 +409,7 @@ export default function ZReport({ onClose }) {
             <div style={{borderBottom:"2px solid #000",paddingBottom:14,marginBottom:20}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
                 <div>
-                  <div style={{fontSize:32,fontWeight:900,fontFamily:"'Bebas Neue',sans-serif",letterSpacing:4,color:"#000"}}>🍦 BINTORO</div>
+                  <div style={{fontSize:32,fontWeight:900,fontFamily:"'Montserrat',sans-serif",letterSpacing:4,color:"#000"}}>🍦 BINTORO</div>
                   <div style={{fontSize:11,color:"#000",letterSpacing:2,marginTop:2}}>SELF-ORDER KIOSK · POS</div>
                 </div>
                 <div style={{textAlign:"right",fontSize:10,color:"#444"}}>
@@ -419,7 +419,7 @@ export default function ZReport({ onClose }) {
               </div>
             </div>
             <div style={{textAlign:"center",marginBottom:24}}>
-              <div style={{fontSize:22,fontWeight:800,color:"#000",fontFamily:"'Bebas Neue',sans-serif",letterSpacing:3}}>📊 Z-REPORT</div>
+              <div style={{fontSize:22,fontWeight:800,color:"#000",fontFamily:"'Montserrat',sans-serif",letterSpacing:3}}>📊 Z-REPORT</div>
               <div style={{fontSize:13,color:"#222",marginTop:4,fontWeight:600}}>LAPORAN PENJUALAN</div>
               <div style={{fontSize:12,color:"#444",marginTop:6,fontStyle:"italic"}}>Periode: {report?.period?.label || "—"}</div>
             </div>

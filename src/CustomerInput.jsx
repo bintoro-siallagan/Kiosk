@@ -96,7 +96,7 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
   return (
     <div style={C.root}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=DM+Sans:wght@400;600;700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
         @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
         @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
@@ -123,7 +123,7 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 24px 24px",animation:"fadeUp 0.25s ease"}}>
           <div style={C.stepEmoji}>📱</div>
           <div style={C.stepTitle}>Nomor HP</div>
-          <div style={C.stepSub}>Untuk tracking pesanan via WhatsApp</div>
+          <div style={C.stepSub}>Dapat notifikasi saat pesanan siap + kumpulkan poin reward</div>
 
           {/* Phone display */}
           <div style={{...C.phoneDisplay, animation: shake?"shake 0.4s ease":"none"}}>
@@ -136,6 +136,12 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
 
           <Numpad onKey={handleNumKey}/>
 
+          <div style={{display:'flex',gap:8,marginTop:12,flexWrap:'wrap',justifyContent:'center',maxWidth:380}}>
+            {["📍 Tracking pesanan","💬 Notif WhatsApp","🎁 Kumpulkan poin"].map((b,i)=>(
+              <span key={i} style={{fontSize:11,color:'#666',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:99,padding:'5px 12px'}}>{b}</span>
+            ))}
+          </div>
+
           <button style={C.backLink} onClick={onBack}>← Kembali ke menu</button>
         </div>
       )}
@@ -146,7 +152,7 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
           <div style={C.stepEmoji}>👋</div>
           <div style={C.stepTitle}>Hai, siapa nama Anda?</div>
           <div style={C.stepSub}>
-            <span style={{color:"#38BDF8",fontFamily:"'Bebas Neue',cursive",letterSpacing:1}}>{phone}</span>
+            <span style={{color:"#38BDF8",fontFamily:"'Montserrat',sans-serif",letterSpacing:1}}>{phone}</span>
             {" "}belum terdaftar
           </div>
 
@@ -252,9 +258,9 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
 // Numpad styles — big touch targets
 const N = {
   pad:      {display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,width:"100%",maxWidth:340,margin:"20px 0 0"},
-  key:      {height:72,fontSize:26,fontWeight:700,background:"#1a1a2e",border:"1px solid #252540",borderRadius:16,color:"#fff",fontFamily:"'Bebas Neue',cursive",letterSpacing:1,transition:"background 0.1s",WebkitTapHighlightColor:"transparent",active:{background:"#252540"}},
+  key:      {height:72,fontSize:26,fontWeight:700,background:"#1a1a2e",border:"1px solid #252540",borderRadius:16,color:"#fff",fontFamily:"'Montserrat',sans-serif",letterSpacing:1,transition:"background 0.1s",WebkitTapHighlightColor:"transparent",active:{background:"#252540"}},
   keyDel:   {height:72,fontSize:22,background:"#1a1a2e",border:"1px solid #252540",borderRadius:16,color:"#F87171",fontWeight:700,transition:"background 0.1s"},
-  keyEnter: {height:72,fontSize:20,background:"linear-gradient(135deg,#F59E0B,#F97316)",border:"none",borderRadius:16,color:"#050810",fontWeight:700,letterSpacing:1,fontFamily:"'Bebas Neue',cursive"},
+  keyEnter: {height:72,fontSize:20,background:"linear-gradient(135deg,#F59E0B,#F97316)",border:"none",borderRadius:16,color:"#050810",fontWeight:700,letterSpacing:1,fontFamily:"'Montserrat',sans-serif"},
 };
 
 const C = {
@@ -262,13 +268,13 @@ const C = {
   strip:      {display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",background:"#0d1117",borderBottom:"1px solid #1a1a2e",gap:12},
   stripLabel: {fontSize:13,fontWeight:600,marginBottom:2},
   stripItems: {fontSize:11,color:"#555",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:240},
-  stripTotal: {fontFamily:"'Bebas Neue',cursive",fontSize:22,color:"#F59E0B",letterSpacing:1,flexShrink:0},
-  stepEmoji:  {fontSize:56,marginBottom:10,display:"block",textAlign:"center"},
-  stepTitle:  {fontFamily:"'Bebas Neue',cursive",fontSize:32,letterSpacing:3,color:"#fff",marginBottom:6,textAlign:"center"},
-  stepSub:    {fontSize:13,color:"#666",marginBottom:24,textAlign:"center",lineHeight:1.5},
+  stripTotal: {fontFamily:"'Montserrat',sans-serif",fontSize:22,color:"#F59E0B",letterSpacing:1,flexShrink:0},
+  stepEmoji:  {fontSize:80,marginBottom:8,display:"block",textAlign:"center"},
+  stepTitle:  {fontFamily:"'Montserrat',sans-serif",fontSize:36,letterSpacing:2,color:"#fff",marginBottom:8,textAlign:"center",fontWeight:900},
+  stepSub:    {fontSize:15,color:"#888",marginBottom:20,textAlign:"center",lineHeight:1.6},
   phoneDisplay:{display:"flex",alignItems:"center",justifyContent:"center",gap:12,background:"#0d1117",border:"1px solid #21262d",borderRadius:16,padding:"18px 24px",width:"100%",maxWidth:340,marginBottom:8},
   phonePrefix:{fontSize:16,color:"#555",fontFamily:"'Plus Jakarta Sans',sans-serif"},
-  phoneNum:   {fontFamily:"'Bebas Neue',cursive",fontSize:28,letterSpacing:4,flex:1,textAlign:"center"},
+  phoneNum:   {fontFamily:"'Montserrat',sans-serif",fontSize:28,letterSpacing:4,flex:1,textAlign:"center"},
   spinner:    {width:18,height:18,border:"2px solid #333",borderTop:"2px solid #F59E0B",borderRadius:"50%",animation:"spin 0.8s linear infinite",display:"inline-block",flexShrink:0},
   nameInput:  {width:"100%",background:"#0d1117",border:"1px solid #21262d",borderRadius:14,padding:"18px 20px",color:"#fff",fontSize:20,marginBottom:16,fontFamily:"'Plus Jakarta Sans',sans-serif",textAlign:"center"},
   benefits:   {display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"},
@@ -276,10 +282,10 @@ const C = {
   memberCard: {display:"flex",alignItems:"center",gap:14,background:"#0d1117",border:"1px solid #38BDF822",borderRadius:18,padding:"18px 20px",width:"100%"},
   memberAva:  {width:54,height:54,borderRadius:"50%",background:"linear-gradient(135deg,#38BDF8,#6366F1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,flexShrink:0,color:"#fff"},
   memberName: {fontSize:18,fontWeight:700,marginBottom:3},
-  memberPhone:{fontSize:12,color:"#666",fontFamily:"'Bebas Neue',cursive",letterSpacing:1},
-  visits:     {fontFamily:"'Bebas Neue',cursive",fontSize:28,color:"#F59E0B",lineHeight:1},
+  memberPhone:{fontSize:12,color:"#666",fontFamily:"'Montserrat',sans-serif",letterSpacing:1},
+  visits:     {fontFamily:"'Montserrat',sans-serif",fontSize:28,color:"#F59E0B",lineHeight:1},
   tag:        {fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20,letterSpacing:0.5},
-  bigBtn:     {background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:14,padding:"18px",color:"#050810",fontSize:16,fontWeight:700,letterSpacing:1,fontFamily:"'Bebas Neue',cursive",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"opacity 0.15s"},
+  bigBtn:     {background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:14,padding:"18px",color:"#050810",fontSize:16,fontWeight:700,letterSpacing:1,fontFamily:"'Montserrat',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"opacity 0.15s"},
   redeemBox: {width:"100%",marginTop:16,padding:"14px 16px",background:"#0d1117",border:"1px solid rgba(251,146,60,0.2)",borderRadius:14},
   slider:    {width:"100%",accentColor:"#FB923C",height:6,cursor:"pointer"},
   ghostBtn:   {background:"#0d1117",border:"1px solid #21262d",borderRadius:14,padding:"16px 20px",color:"#666",fontSize:13,fontWeight:600},

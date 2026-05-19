@@ -77,7 +77,7 @@ const S = {
     padding:"14px 24px", borderBottom:"1px solid #222", background:"#0a0a0a",
     position:"sticky", top:0, zIndex:10 },
   backBtn: { background:"transparent", border:"1px solid #333", color:"#aaa", padding:"8px 14px", borderRadius:8, fontSize:13, cursor:"pointer", fontFamily:"inherit" },
-  title: { fontFamily:"'Bebas Neue',cursive", fontSize:32, letterSpacing:3, color:"#F59E0B", margin:0 },
+  title: { fontFamily:"'Montserrat',sans-serif", fontSize:32, letterSpacing:3, color:"#F59E0B", margin:0 },
   cancelBtn: { background:"transparent", border:"1px solid #444", color:"#aaa", padding:"8px 12px", borderRadius:8, fontSize:14, cursor:"pointer", fontFamily:"inherit", minWidth:36 },
   main: { maxWidth:1100, margin:"0 auto", padding:"32px 24px" },
   loading: { textAlign:"center", color:"#666", padding:60 },

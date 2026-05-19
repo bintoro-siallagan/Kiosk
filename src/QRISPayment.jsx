@@ -94,6 +94,7 @@ export default function QRISPayment(props) {
         setMidtransOrderId(data.midtransOrderId);
         setQrUrl(data.qrUrl);
         setQrString(data.qrString);
+        setDeeplinkUrl(data.deeplinkUrl || data.deepLinkUrl || null);
         setPhase('waiting');
       } catch (e) {
         console.error('[Charge] Error:', e);
@@ -222,7 +223,7 @@ export default function QRISPayment(props) {
               <div style={S.orderId}>Order: {midtransOrderId}</div>
               <div style={S.midtrans}>Polling #{pollCount}</div>
               <a
-                href="https://simulator.sandbox.midtrans.com/gopay/ui"
+                href={deeplinkUrl || "https://simulator.sandbox.midtrans.com/gopay/ui"}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{ ...S.btn, marginTop: 16, fontSize: 12, textDecoration: 'none', display: 'inline-block' }}
@@ -278,6 +279,6 @@ const S = {
   qrPlaceholder: { width: 220, height: 220, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' },
   qrImg: { width: 220, height: 220, background: '#fff', borderRadius: 8, padding: 8 },
   amount: { fontSize: 28, fontWeight: 700, color: '#f97316' },
-  orderId: { fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 12, wordBreak: 'break-all', maxWidth: 240 },
+  orderId: { fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 12, wordBreak: 'break-all', maxWidth: 300, userSelect: 'all', cursor: 'text' },
   midtrans: { fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 4 },
 };

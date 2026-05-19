@@ -9,28 +9,29 @@ const S = {
     minHeight: '100vh',
     background: '#0a0a0a',
     color: '#fff',
-    padding: '48px 24px',
+    padding: '40px 24px',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
+    justifyContent: 'center',
     fontFamily: '-apple-system, system-ui, sans-serif',
   },
   title:       { fontSize: 32, fontWeight: 700, letterSpacing: 4, margin: 0 },
-  subtitle:    { fontSize: 14, color: 'rgba(255,255,255,0.5)', marginTop: 4, marginBottom: 48 },
+  subtitle:    { fontSize: 14, color: 'rgba(255,255,255,0.5)', marginTop: 4, marginBottom: 24 },
   totalLabel:  { fontSize: 11, color: 'rgba(255,255,255,0.5)', letterSpacing: 2, marginBottom: 8 },
-  totalAmount: { fontSize: 48, fontWeight: 700, color: '#fb923c', marginBottom: 56, fontVariantNumeric: 'tabular-nums' },
+  totalAmount: { fontSize: 64, fontWeight: 900, color: '#fb923c', marginBottom: 32, fontVariantNumeric: 'tabular-nums', textShadow: '0 0 40px rgba(251,146,60,0.4)' },
   methodGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: 20,
     width: '100%',
-    maxWidth: 560,
+    maxWidth: 640,
   },
   methodCard: {
     background: 'rgba(255,255,255,0.04)',
     border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: 16,
-    padding: '48px 24px',
+    borderRadius: 20,
+    padding: '64px 48px',
     cursor: 'pointer',
     transition: 'background .15s, border-color .15s, transform .15s',
     display: 'flex',
@@ -39,9 +40,9 @@ const S = {
     gap: 12,
     userSelect: 'none',
   },
-  methodIcon:  { fontSize: 56 },
-  methodLabel: { fontSize: 18, fontWeight: 700, letterSpacing: 1 },
-  methodSub:   { fontSize: 12, color: 'rgba(255,255,255,0.5)' },
+  methodIcon:  { fontSize: 80 },
+  methodLabel: { fontSize: 22, fontWeight: 800, letterSpacing: 2 },
+  methodSub:   { fontSize: 14, color: 'rgba(255,255,255,0.5)' },
   backBtn: {
     marginTop: 40,
     background: 'transparent',
@@ -56,7 +57,10 @@ const S = {
 
 export default function Payment({ cart, orderType, promo, tableData, customerData, onSuccess, onBack }) {
   const [method, setMethod] = useState(null); // null | 'cash' | 'qris'
+  const [cashStep, setCashStep] = useState('customer'); // 'customer' | 'kasir'
   const orderNum = String(Math.floor(Math.random() * 9000 + 1000));
+  // Reset cashStep when method changes
+  const handleSetMethod = (m) => { setCashStep('customer'); setMethod(m); };
 
   // === Payment methods (fetched from backend) ===
   const [enabledMethods, setEnabledMethods] = useState(null);
@@ -208,6 +212,32 @@ export default function Payment({ cart, orderType, promo, tableData, customerDat
         </div>
 
         {onBack && <button style={S.backBtn} onClick={onBack}>← Kembali</button>}
+      </div>
+    );
+  }
+
+  // === CASH — CUSTOMER HANDOFF ===
+  if (method === 'cash' && cashStep === 'customer') {
+    return (
+      <div style={{...S.page, justifyContent:'center', gap:20, padding:'40px 24px'}}>
+        <div style={{fontSize:72, lineHeight:1}}>🧾</div>
+        <div style={{fontFamily:"'Montserrat',sans-serif", fontSize:24, fontWeight:900, letterSpacing:3, color:'#fff'}}>PESANAN #{orderNum}</div>
+        <div style={{fontSize:13, color:'rgba(255,255,255,0.4)', letterSpacing:2}}>TOTAL PEMBAYARAN</div>
+        <div style={{fontSize:56, fontWeight:800, color:'#fb923c', fontVariantNumeric:'tabular-nums', lineHeight:1}}>
+          Rp {amount.toLocaleString('id-ID')}
+        </div>
+        <div style={{background:'rgba(251,146,60,0.08)', border:'2px solid rgba(251,146,60,0.25)', borderRadius:20, padding:'24px 40px', textAlign:'center', maxWidth:460, marginTop:8}}>
+          <div style={{fontSize:48, marginBottom:12}}>💵</div>
+          <div style={{fontSize:22, fontWeight:800, marginBottom:8, letterSpacing:1}}>Silakan ke Kasir</div>
+          <div style={{fontSize:14, color:'rgba(255,255,255,0.5)', lineHeight:1.8}}>
+            Tunjukkan nomor pesanan <strong style={{color:'#fb923c'}}>#{orderNum}</strong> ke kasir<br/>
+            untuk menyelesaikan pembayaran tunai
+          </div>
+        </div>
+        <button style={{marginTop:16, background:'transparent', border:'1px solid rgba(255,255,255,0.06)', color:'rgba(255,255,255,0.2)', borderRadius:10, padding:'10px 20px', fontSize:10, letterSpacing:3, cursor:'pointer'}}
+          onClick={() => setCashStep('kasir')}>
+          KASIR — PROSES PEMBAYARAN
+        </button>
       </div>
     );
   }

@@ -43,7 +43,7 @@ const KB = {
   key:      { minWidth:40, height:52, background:"#1a1a2e", border:"1px solid #252545", borderRadius:10, color:"#fff", fontSize:15, fontWeight:700, fontFamily:"'Plus Jakarta Sans',sans-serif", transition:"background 0.08s" },
   delKey:   { minWidth:52, height:52, background:"#2a1a2e", border:"1px solid #3a2545", borderRadius:10, color:"#F87171", fontSize:18, fontWeight:700 },
   clearKey: { height:52, flex:1, background:"#1a1a1a", border:"1px solid #252525", borderRadius:10, color:"#888", fontSize:13, fontWeight:600 },
-  enterKey: { height:52, flex:2, background:"linear-gradient(90deg,#F59E0B,#F97316)", border:"none", borderRadius:10, color:"#050810", fontSize:14, fontWeight:700, letterSpacing:1, fontFamily:"'Bebas Neue',cursive" },
+  enterKey: { height:52, flex:2, background:"linear-gradient(90deg,#F59E0B,#F97316)", border:"none", borderRadius:10, color:"#050810", fontSize:14, fontWeight:700, letterSpacing:1, fontFamily:"'Montserrat',sans-serif" },
 };
 
 // ── PROMO INPUT MODAL ─────────────────────────────────────────────────────────
@@ -79,7 +79,7 @@ export default function PromoInput({ subtotal, customerId, customerTags, cart, o
     <div style={P.overlay} onClick={onClose}>
       <div style={P.modal} onClick={e=>e.stopPropagation()}>
         <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=DM+Sans:wght@400;600;700&display=swap');
           *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
           @keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
           @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
@@ -173,19 +173,19 @@ const P = {
   modal:      { background:"#0d1117", borderRadius:"24px 24px 0 0", width:"100%", maxWidth:560, animation:"slideUp 0.3s ease", border:"1px solid #1a1a2e", borderBottom:"none", maxHeight:"90vh", display:"flex", flexDirection:"column" },
   header:     { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"20px 22px 16px", borderBottom:"1px solid #1a1a2e" },
   headerLeft: { display:"flex", alignItems:"center", gap:12 },
-  title:      { fontFamily:"'Bebas Neue',cursive", fontSize:22, letterSpacing:3, color:"#F59E0B" },
+  title:      { fontFamily:"'Montserrat',sans-serif", fontSize:22, letterSpacing:3, color:"#F59E0B" },
   sub:        { fontSize:11, color:"#555" },
   closeBtn:   { background:"#1a1a2e", border:"none", borderRadius:"50%", width:34, height:34, color:"#888", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" },
   body:       { padding:"16px 20px 24px", display:"flex", flexDirection:"column", alignItems:"center", gap:14, overflowY:"auto" },
   codeDisplay:{ display:"flex", alignItems:"center", justifyContent:"center", gap:12, width:"100%", background:"#080c10", border:"2px solid", borderRadius:16, padding:"16px 20px", transition:"border-color 0.3s", minHeight:62 },
-  codeText:   { fontFamily:"'Bebas Neue',cursive", fontSize:28, letterSpacing:6, color:"#fff", flex:1, textAlign:"center" },
+  codeText:   { fontFamily:"'Montserrat',sans-serif", fontSize:28, letterSpacing:6, color:"#fff", flex:1, textAlign:"center" },
   spinner:    { width:20, height:20, border:"2px solid #333", borderTop:"2px solid #F59E0B", borderRadius:"50%", animation:"spin 0.8s linear infinite", flexShrink:0 },
   resultBox:  { display:"flex", alignItems:"center", gap:12, width:"100%", background:"rgba(52,211,153,0.08)", border:"1px solid rgba(52,211,153,0.25)", borderRadius:14, padding:"14px 16px" },
   resultIcon: { fontSize:28, flexShrink:0 },
   resultTitle:{ fontSize:14, fontWeight:600, color:"#34D399", marginBottom:3 },
   resultDiscount:{ fontSize:12, color:"#888" },
-  resultAmount:{ fontFamily:"'Bebas Neue',cursive", fontSize:22, color:"#34D399", letterSpacing:1, marginLeft:"auto", flexShrink:0 },
+  resultAmount:{ fontFamily:"'Montserrat',sans-serif", fontSize:22, color:"#34D399", letterSpacing:1, marginLeft:"auto", flexShrink:0 },
   errorBox:   { display:"flex", alignItems:"center", gap:10, width:"100%", background:"rgba(248,113,113,0.08)", border:"1px solid rgba(248,113,113,0.25)", borderRadius:12, padding:"12px 16px" },
-  applyBtn:   { flex:2, background:"linear-gradient(90deg,#34D399,#059669)", border:"none", borderRadius:12, padding:"16px", color:"#fff", fontSize:15, fontWeight:700, letterSpacing:1, fontFamily:"'Bebas Neue',cursive" },
+  applyBtn:   { flex:2, background:"linear-gradient(90deg,#34D399,#059669)", border:"none", borderRadius:12, padding:"16px", color:"#fff", fontSize:15, fontWeight:700, letterSpacing:1, fontFamily:"'Montserrat',sans-serif" },
   cancelBtn:  { background:"#1a1a2e", border:"1px solid #21262d", borderRadius:12, padding:"14px 20px", color:"#888", fontSize:13, fontWeight:600 },
 };

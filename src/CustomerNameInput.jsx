@@ -48,7 +48,7 @@ const S = {
   main: { maxWidth:560, margin:"0 auto", padding:"40px 24px", textAlign:"center" },
   summary: { background:"#1a1a1a", border:"1px solid #2a2a2a", borderRadius:12, padding:"12px 20px",
     color:"#F59E0B", fontSize:14, fontWeight:600, marginBottom:40, display:"inline-block" },
-  title: { fontFamily:"'Bebas Neue',cursive", fontSize:48, letterSpacing:3, color:"#F59E0B", margin:"0 0 8px" },
+  title: { fontFamily:"'Montserrat',sans-serif", fontSize:48, letterSpacing:3, color:"#F59E0B", margin:"0 0 8px" },
   subtitle: { color:"#888", fontSize:14, marginBottom:32 },
   input: { width:"100%", padding:"16px 20px", borderRadius:12, background:"#1a1a1a", border:"2px solid #2a2a2a",
     color:"#fff", fontFamily:"inherit", fontSize:18, boxSizing:"border-box", marginBottom:24, textAlign:"center" },

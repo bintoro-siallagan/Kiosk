@@ -103,7 +103,7 @@ export default function ToppingPicker({ item, onConfirm, onClose }) {
               style={{
                 ...S.progressFill,
                 width: `${Math.min(100, (selected.length / Math.max(freeCount, 1)) * 100)}%`,
-                background: selected.length > freeCount ? '#F59E0B' : '#E91E8C',
+                background: selected.length > freeCount ? '#F59E0B' : '#FF6B35',
               }}
             />
           </div>
@@ -144,7 +144,7 @@ export default function ToppingPicker({ item, onConfirm, onClose }) {
                 style={{
                   ...S.toppingBtn,
                   ...(sel ? S.toppingSelected : {}),
-                  borderColor: sel ? '#E91E8C' : 'rgba(255,255,255,0.08)',
+                  borderColor: sel ? '#FF6B35' : 'rgba(255,255,255,0.08)',
                 }}
                 onClick={() => toggle(t)}
               >
@@ -168,8 +168,8 @@ export default function ToppingPicker({ item, onConfirm, onClose }) {
                 key={t.id}
                 style={{
                   ...S.selectedChip,
-                  background: i < freeCount ? 'rgba(233,30,140,0.15)' : 'rgba(245,158,11,0.15)',
-                  borderColor: i < freeCount ? '#E91E8C' : '#F59E0B',
+                  background: i < freeCount ? 'rgba(255,107,53,0.15)' : 'rgba(245,158,11,0.15)',
+                  borderColor: i < freeCount ? '#FF6B35' : '#F59E0B',
                 }}
                 onClick={() => toggle(t)}
               >
@@ -312,14 +312,14 @@ const S = {
     gap: 4,
   },
   tabActive: {
-    background: '#E91E8C',
+    background: '#FF6B35',
     color: '#fff',
-    borderColor: '#E91E8C',
+    borderColor: '#FF6B35',
     fontWeight: 600,
   },
   tabCount: {
     fontSize: 10,
-    background: 'rgba(233,30,140,0.3)',
+    background: 'rgba(255,107,53,0.3)',
     borderRadius: 99,
     padding: '1px 5px',
     minWidth: 14,
@@ -349,7 +349,7 @@ const S = {
     minHeight: 64,
   },
   toppingSelected: {
-    background: 'rgba(233,30,140,0.08)',
+    background: 'rgba(255,107,53,0.08)',
   },
   toppingName: {
     fontSize: 13,
@@ -392,7 +392,7 @@ const S = {
     width: 20,
     height: 20,
     borderRadius: 10,
-    background: '#E91E8C',
+    background: '#FF6B35',
     color: '#fff',
     fontSize: 11,
     fontWeight: 800,
@@ -455,7 +455,7 @@ const S = {
     padding: '14px 28px',
     borderRadius: 12,
     border: 'none',
-    background: '#E91E8C',
+    background: '#FF6B35',
     color: '#fff',
     fontSize: 15,
     fontWeight: 800,

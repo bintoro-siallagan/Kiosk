@@ -3,6 +3,7 @@ import * as audio from "./audio.js";
 import { PROFILES as AUDIO_PROFILES } from "./audio.js";
 import { api, createSocket } from "./api.js";
 import ZReport from "./ZReport.jsx";
+import FlowQRGen from "./Flow/FlowQRGen.jsx";
 
 const fIDR = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
 const fTime = (d) => new Date(d).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});
@@ -19,10 +20,8 @@ const STATUS = {
 };
 
 const MOCK_ORDERS = [];
-
 const MENU_MOCK = [];
 
-// Mini sparkline chart
 function Sparkline({ data, color, height=40 }) {
   if (!data?.length) return null;
   const max = Math.max(...data, 1);
@@ -45,7 +44,6 @@ function Sparkline({ data, color, height=40 }) {
   );
 }
 
-// Donut chart
 function Donut({ segments, size=80 }) {
   const r = 28, cx = size/2, cy = size/2, circ = 2*Math.PI*r;
   const total = segments.reduce((s,g)=>s+g.val,0)||1;
@@ -66,7 +64,6 @@ function Donut({ segments, size=80 }) {
   );
 }
 
-// Order kanban card
 function OrderCard({ order, onStatus, compact }) {
   const st = STATUS[order.status];
   const mins = Math.floor((Date.now()-order.time)/60000);
@@ -173,10 +170,8 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
     setMidtransSaving(true);
     try {
       const result = await api.setMidtransConfig(patch);
-      // Trust server response — preserve UNMASKED serverKey from local state if response is masked
       setMidtransConfig(cur => {
         const next = result.config || result;
-        // Keep local serverKey if server returned masked version (bullets)
         if (next.serverKey && next.serverKey.includes("•") && cur.serverKey && !cur.serverKey.includes("•")) {
           next.serverKey = cur.serverKey;
         }
@@ -189,7 +184,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
     } finally { setMidtransSaving(false); }
   };
 
-  // Upload audio for specific profile (filename = {profile}.{ext})
   const handleProfileAudioUpload = async (profileKey, file) => {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { if (typeof notify==="function") notify("File > 5MB","#F87171"); return; }
@@ -198,13 +192,11 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
       const b64 = await new Promise((res, rej) => { reader.onload = () => res(reader.result); reader.onerror = rej; reader.readAsDataURL(file); });
       const ext = (file.name.split(".").pop() || "mp3").toLowerCase();
       const targetName = `${profileKey}.${ext}`;
-      // Delete any existing file with different extension
       const existing = audioFiles.find(f => f.name.toLowerCase().startsWith(profileKey.toLowerCase() + "."));
       if (existing && existing.name !== targetName) { try { await api.deleteAudio(existing.name); } catch {} }
       await api.uploadAudio(targetName, { dataBase64: b64 });
       const fresh = await api.listAudio();
       setAudioFiles(fresh.files || []);
-      // Re-init audio module's custom file mapping
       await audio.loadAudioConfig?.();
       if (typeof notify==="function") notify(`Sound ${profileKey} terupload`, "#34D399");
     } catch (e) { if (typeof notify==="function") notify("Gagal: "+e.message, "#F87171"); }
@@ -222,19 +214,17 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
     } catch (e) { if (typeof notify==="function") notify("Gagal: "+e.message, "#F87171"); }
   };
 
-    const handleAudioUpload = async (file) => {
+  const handleAudioUpload = async (file) => {
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) { if (typeof notify==="function") notify("File > 5MB","#F87171"); return; }
     setAudioUploading(true);
     try {
-      // Read as base64
       const reader = new FileReader();
       const b64 = await new Promise((resolve, reject) => {
         reader.onload = () => resolve(reader.result);
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-      // Determine target name from extension
       const ext = (file.name.split(".").pop() || "mp3").toLowerCase();
       const target = `thanks.${ext}`;
       await api.uploadAudio(target, { dataBase64: b64, mimeType: file.type });
@@ -273,7 +263,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
     } catch (e) { setEmailTest({error: e.message}); }
   };
 
-    const updateScreensaver = async (patch) => {
+  const updateScreensaver = async (patch) => {
     try {
       const result = await api.setScreensaverConfig(patch);
       setScreensaverConfig(result.config);
@@ -308,11 +298,9 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
     try {
       const reader = new FileReader();
       const b64 = await new Promise((res, rej) => { reader.onload = () => res(reader.result); reader.onerror = rej; reader.readAsDataURL(file); });
-      // Keep original name extension if user uploads different type — strip old ext, append new ext
       const baseName = oldName.replace(/\.[^.]+$/, "");
       const newExt = (file.name.split(".").pop() || "jpg").toLowerCase();
       const targetName = `${baseName}.${newExt}`;
-      // If extension changes, delete old file first
       if (targetName !== oldName) {
         try { await api.deleteScreensaverImage(oldName); } catch {}
       }
@@ -325,7 +313,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
     } finally { setSsUploading(false); }
   };
 
-    const handleSsDelete = async (name) => {
+  const handleSsDelete = async (name) => {
     if (!confirm(`Hapus ${name}?`)) return;
     try {
       await api.deleteScreensaverImage(name);
@@ -339,12 +327,11 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
     setTimeout(() => setSsPreviewing(false), 5000);
   };
 
-    const updateAudioConfig = async (patch) => {
+  const updateAudioConfig = async (patch) => {
     setAudioConfigSaving(true);
     try {
       const result = await api.setAudioConfig(patch);
       setAudioConfigState(result.config);
-      // Apply to local audio module immediately (no refresh needed)
       audio.applyServerConfig?.(result.config);
       if (typeof notify==="function") notify("Audio settings tersimpan", "#34D399");
     } catch (e) {
@@ -357,10 +344,9 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
     updateAudioConfig({ profiles: { ...audioConfig.profiles, [key]: next } });
   };
 
-    const handleAudioPreview = async () => {
+  const handleAudioPreview = async () => {
     setAudioPreviewing(true);
     try {
-      // Use the same logic as speakThanks: try file first
       const apiUrl = (import.meta.env.VITE_API_URL || "http://localhost:3001");
       let playedFile = false;
       for (const ext of ["mp3","wav","ogg"]) {
@@ -383,7 +369,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
     }
   };
 
-    const testMidtransKey = async () => {
+  const testMidtransKey = async () => {
     setMidtransTest({ status: "testing" });
     try {
       const result = await api.testMidtrans();
@@ -405,6 +391,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
       if (typeof notify === "function") notify("Backup dibuat", "#34D399");
     } catch (e) { if (typeof notify === "function") notify("Gagal: "+e.message, "#F87171"); }
   };
+
   const [waConfig, setWaConfig] = useState({ enabled:{ready:true,completed:false}, provider:null, templates:{ready:"",completed:""}, fonnte:{token:""}, twilio:{sid:"",token:"",from:""} });
   const [waTestPhone, setWaTestPhone] = useState("");
   const [waTestResult, setWaTestResult] = useState(null);
@@ -425,6 +412,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
       setWaTestResult(r);
     } catch (e) { setWaTestResult({ ok: false, error: e.message }); }
   };
+
   const [paymentMethods, setPaymentMethods] = useState({ cash: true, qris: true });
 
   useEffect(() => {
@@ -445,11 +433,12 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
       if (typeof notify === 'function') notify("Gagal: " + e.message, "#F87171");
     }
   };
+
   const [menu, setMenu]         = useState([]);
   const [stats, setStats]       = useState(null);
   const [loading, setLoading]   = useState(true);
   const [connected, setConn]    = useState(false);
-  const [activeTab, setTab]     = useState("overview"); // overview | orders | menu | settings
+  const [activeTab, setTab]     = useState("overview");
   const [toast, setToast]       = useState(null);
   const [now, setNow]           = useState(Date.now());
   const [editPrice, setEditPrice] = useState(null);
@@ -498,7 +487,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
       setOrders(p=>p.map(o=>o.id===id?updated:o));
       const lbl = {preparing:"diproses 👨‍🍳",ready:"siap diambil ✅",completed:"selesai 🎉",cancelled:"dibatalkan ❌"};
       notify(`Order #${id} ${lbl[status]||status}`, STATUS[status].color);
-      // WA push when order is READY
       if (status === "ready") {
         try {
           const res = await api.notifyReady(id);
@@ -516,12 +504,10 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
     if (!item) return;
     const newAvail = !item.avail;
     try {
-      // Use /stock endpoint for real-time broadcast to all connected kiosks
       const updated = await api.updateStock(id, { avail: newAvail });
       setMenu(p=>p.map(m=>m.id===id?{...m,...updated}:m));
       notify(`${newAvail ? "✅" : "⛔"} ${item.name} — ${newAvail ? "stok tersedia" : "stok habis"}`);
     } catch {
-      // Fallback: local state only
       setMenu(p=>p.map(m=>m.id===id?{...m,avail:newAvail}:m));
       notify(`${newAvail ? "✅" : "⛔"} ${item.name} (offline mode)`);
     }
@@ -537,7 +523,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
     setEditPrice(null); setPriceVal("");
   }
 
-  // Derived stats
   const active    = orders.filter(o=>!["completed", "cancelled", "refunded", "partial_refund"].includes(o.status));
   const completed = orders.filter(o=>o.status==="completed");
   const revenue   = completed.reduce((s,o)=>s+o.total,0);
@@ -546,13 +531,11 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
   const ready     = orders.filter(o=>o.status==="ready");
   const avgTime   = completed.length ? 14 : 0;
 
-  // Revenue by hour (last 8 hours)
   const hourData = Array.from({length:8},(_,i)=>{
     const h = new Date(now - (7-i)*3600000).getHours();
     return completed.filter(o=>new Date(o.time).getHours()===h).reduce((s,o)=>s+o.total,0)/1000;
   });
 
-  // Top items
   const itemMap = {};
   orders.filter(o=>o.status!=="cancelled").forEach(o=>o.items.forEach(i=>{
     itemMap[i.n] = (itemMap[i.n]||{qty:0,rev:0,e:i.e});
@@ -574,7 +557,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
     <div style={D.root}>
       <style>{FONTS + CSS}</style>
 
-      {/* TOAST */}
       {toast && (
         <div style={{...D.toast, borderColor:`${toast.color}44`, color:toast.color, background:`${toast.color}0f`}}>
           {toast.msg}
@@ -599,6 +581,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
             {id:"orders",   icon:"⊞", label:"Pesanan",  badge: active.length||null},
             {id:"menu",     icon:"≡",  label:"Menu",     badge: menu.filter(m=>!m.avail).length||null},
             {id:"settings", icon:"⚙", label:"Pengaturan"},
+            {id:"qrgen",   icon:"⬡", label:"QR Meja"},
           ].map(n=>(
             <button key={n.id} className={`nav-item${activeTab===n.id?" active":""}`}
               onClick={()=>setTab(n.id)} style={D.navItem}>
@@ -644,7 +627,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
         {/* ════════ OVERVIEW TAB ════════ */}
         {activeTab==="overview" && (
           <div style={{animation:"fadeUp 0.3s ease"}}>
-            {/* Header */}
             <div style={D.pageHeader}>
               <div>
                 <div style={D.pageTitle}>Dashboard Overview</div>
@@ -655,7 +637,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
               <button style={D.refreshBtn} onClick={()=>window.location.reload()}>↺ Refresh</button>
             </div>
 
-            {/* KPI Row */}
             <div style={D.kpiRow}>
               {[
                 {label:"Pendapatan",  val:fIDR(revenue),          sub:`dari ${completed.length} transaksi`, color:"#F59E0B", data:hourData, icon:"💰"},
@@ -677,15 +658,12 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
               ))}
             </div>
 
-            {/* Main grid */}
             <div style={D.mainGrid}>
-              {/* Order Queue */}
               <div style={D.gridCard}>
                 <div style={D.cardHead}>
                   <div style={D.cardTitle}>⊞ Order Queue</div>
                   <button style={D.seeAllBtn} onClick={()=>setTab("orders")}>Lihat semua →</button>
                 </div>
-                {/* Kanban columns */}
                 <div style={D.kanban}>
                   {[
                     {key:"waiting",   label:"Menunggu",  orders:waiting,   color:"#F59E0B"},
@@ -709,9 +687,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                 </div>
               </div>
 
-              {/* Right column */}
               <div style={{display:"flex",flexDirection:"column",gap:16}}>
-                {/* Revenue chart */}
                 <div style={D.gridCard}>
                   <div style={D.cardHead}>
                     <div style={D.cardTitle}>💰 Revenue (8 jam)</div>
@@ -734,7 +710,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                   </div>
                 </div>
 
-                {/* Visit type donut */}
                 <div style={D.gridCard}>
                   <div style={D.cardHead}>
                     <div style={D.cardTitle}>👥 Tipe Kunjungan</div>
@@ -763,7 +738,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                   </div>
                 </div>
 
-                {/* Top items */}
                 <div style={D.gridCard}>
                   <div style={D.cardHead}>
                     <div style={D.cardTitle}>🏆 Item Terlaris</div>
@@ -780,7 +754,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
               </div>
             </div>
 
-            {/* Live order feed */}
             <div style={{...D.gridCard,marginTop:16}}>
               <div style={D.cardHead}>
                 <div style={D.cardTitle}>📡 Live Order Feed</div>
@@ -819,12 +792,10 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
               </div>
             </div>
 
-            {/* Status tabs */}
             <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
               {["Semua","Menunggu","Diproses","Siap","Selesai"].map((f,i)=>{
                 const keys=[null,"waiting","preparing","ready","completed"];
                 const cnt = keys[i] ? orders.filter(o=>o.status===keys[i]).length : orders.length;
-                const active2 = f==="Semua" ? !["Menunggu","Diproses","Siap","Selesai"].some(x=>x===f) : true;
                 return (
                   <div key={f} style={{background:"#0d1117",border:`1px solid ${keys[i]?STATUS[keys[i]].color+"33":"#21262d"}`,borderRadius:20,padding:"6px 14px",fontSize:12,fontWeight:600,color:keys[i]?STATUS[keys[i]].color:"#888",display:"flex",alignItems:"center",gap:6}}>
                     {f} <span style={{background:"#1a1a2e",borderRadius:10,padding:"1px 6px",fontSize:10}}>{cnt}</span>
@@ -833,7 +804,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
               })}
             </div>
 
-            {/* Full kanban */}
             <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:16}}>
               {["waiting","preparing","ready"].map(key=>{
                 const col = STATUS[key];
@@ -854,7 +824,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
               })}
             </div>
 
-            {/* Recent completed */}
             <div style={{...D.gridCard,marginTop:16}}>
               <div style={D.cardHead}>
                 <div style={D.cardTitle}>🏁 Selesai & Dibatalkan</div>
@@ -954,7 +923,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                 </div>
               ))}
 
-              {/* 🖨 Printer Wizard */}
+              {/* 🖨 Printer */}
               <div style={{background:"#0d1117",border:"1px solid #161b22",borderRadius:14,padding:"20px",gridColumn:"span 2"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
                   <div>
@@ -988,7 +957,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                 <div style={{fontSize:10,color:"#666",marginTop:10,lineHeight:1.5}}>Port default 9100 (RAW). Kosongin IP buat skip print di printer itu. Debug mode = simpan .bin file daripada print real.</div>
               </div>
 
-              {/* 💵 Metode Pembayaran Kiosk (top-level cash/qris toggle) */}
+              {/* 💵 Metode Pembayaran */}
               <div style={{background:"#0d1117",border:"1px solid #161b22",borderRadius:14,padding:"20px",gridColumn:"span 2"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
                   <div>
@@ -1026,7 +995,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                 </div>
               </div>
 
-              {/* 💳 Midtrans Payment Gateway */}
+              {/* 💳 Midtrans */}
               <div style={{background:"#0d1117",border:`1px solid ${midtransConfig.isProduction?"#F87171":"#161b22"}`,borderRadius:14,padding:"20px",gridColumn:"span 2"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
                   <div>
@@ -1084,7 +1053,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                       return <button key={m} onClick={()=>{
                         const cur = midtransConfig.enabledMethods || [];
                         const next = on ? cur.filter(x=>x!==m) : [...cur, m];
-                        setMidtransConfig({...midtransConfig, enabledMethods: next}); // optimistic UI update
+                        setMidtransConfig({...midtransConfig, enabledMethods: next});
                         updateMidtrans({enabledMethods: next});
                       }} style={{background: on ? "rgba(52,211,153,0.12)" : "transparent", border:`1px solid ${on?"#34D399":"#21262d"}`, borderRadius:6, padding:"6px 12px", color: on ? "#34D399" : "#666", cursor:"pointer", fontSize:11, fontWeight:600, transition:"all 0.15s"}}>{on ? "✓ " : "○ "}{m}</button>;
                     })}
@@ -1095,17 +1064,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                     style={{background:"#161b22",border:"1px solid #A78BFA55",borderRadius:8,padding:"10px 18px",color:"#A78BFA",cursor:"pointer",fontSize:12,fontWeight:700}}>
                     🔌 Test Connection
                   </button>
-                  <button onClick={async()=>{
-                    // Save full current state (explicit)
-                    await updateMidtrans({
-                      serverKey: midtransConfig.serverKey,
-                      clientKey: midtransConfig.clientKey,
-                      merchantId: midtransConfig.merchantId,
-                      notificationUrl: midtransConfig.notificationUrl,
-                      isProduction: midtransConfig.isProduction,
-                      enabledMethods: midtransConfig.enabledMethods,
-                    });
-                  }} disabled={midtransSaving}
+                  <button onClick={async()=>{ await updateMidtrans({ serverKey: midtransConfig.serverKey, clientKey: midtransConfig.clientKey, merchantId: midtransConfig.merchantId, notificationUrl: midtransConfig.notificationUrl, isProduction: midtransConfig.isProduction, enabledMethods: midtransConfig.enabledMethods }); }} disabled={midtransSaving}
                     style={{background:midtransSaving?"#666":"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:8,padding:"10px 22px",color:"#050810",cursor:midtransSaving?"wait":"pointer",fontSize:13,fontWeight:700,fontFamily:"'Plus Jakarta Sans',sans-serif",boxShadow:midtransSaving?"none":"0 4px 12px rgba(245,158,11,0.3)"}}>
                     {midtransSaving ? "⏳ Menyimpan…" : "💾 Simpan"}
                   </button>
@@ -1118,7 +1077,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                 </div>
               </div>
 
-              {/* 🎚 Audio Settings — backend-persisted */}
+              {/* 🎚 Audio Settings */}
               {audioConfig && (
                 <div style={{background:"#0d1117",border:"1px solid #161b22",borderRadius:14,padding:"20px",gridColumn:"span 2"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
@@ -1176,13 +1135,11 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                         const customFile = audioFiles.find(f => f.name.toLowerCase().startsWith(p.key.toLowerCase() + "."));
                         return (
                           <div key={p.key} style={{background:"#0a0e16",border:`1px solid ${on?(customFile?"#34D39955":"#21262d"):"#3a1f1f"}`,borderRadius:8,padding:"10px",display:"flex",flexDirection:"column",gap:8,opacity:on?1:0.55}}>
-                            {/* Top: label + checkbox */}
                             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
                               <button onClick={()=>{ p.play?.(); }} style={{background:"transparent",border:"none",color:"#fff",fontSize:11,fontWeight:600,cursor:"pointer",flex:1,textAlign:"left"}}>{p.label}</button>
                               <input type="checkbox" checked={on} onChange={()=>toggleProfile(p.key)}
                                 style={{accentColor:"#34D399",cursor:"pointer",width:16,height:16}}/>
                             </div>
-                            {/* Bottom: custom file or upload */}
                             <div style={{borderTop:"1px solid #1a1a2e",paddingTop:6,display:"flex",alignItems:"center",justifyContent:"space-between",gap:4}}>
                               {customFile ? (
                                 <>
@@ -1206,7 +1163,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                 </div>
               )}
 
-              {/* 📤 Suara & Voice Notification */}
+              {/* 🔊 Suara & Voice Notification */}
               <div style={{background:"#0d1117",border:"1px solid #161b22",borderRadius:14,padding:"20px",gridColumn:"span 2"}}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
                   <div>
@@ -1245,7 +1202,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                 </div>
               </div>
 
-              {/* 📧 Email / SMTP — for report delivery */}
+              {/* 📧 Email / SMTP */}
               {emailConfig && (
                 <div style={{background:"#0d1117",border:"1px solid #161b22",borderRadius:14,padding:"20px",gridColumn:"span 2"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
@@ -1312,7 +1269,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                   </div>
                   <div style={{marginBottom:14}}>
                     <div style={{fontSize:11,color:"#888",marginBottom:6,fontWeight:600}}>DEFAULT RECIPIENTS (pisah koma)</div>
-                    <input type="text" placeholder="owner@bintoro.id, manager@bintoro.id, akuntan@bintoro.id"
+                    <input type="text" placeholder="owner@bintoro.id, manager@bintoro.id"
                       value={(emailConfig.recipients||[]).join(", ")}
                       onChange={e=>setEmailConfig({...emailConfig, recipients: e.target.value.split(",").map(x=>x.trim()).filter(Boolean)})}
                       onBlur={e=>updateEmailConfig({recipients: e.target.value.split(",").map(x=>x.trim()).filter(Boolean)})}
@@ -1330,16 +1287,10 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                       {emailTest.loading ? "Testing..." : (emailTest.error || emailTest.message || "OK")}
                     </span>}
                   </div>
-                  <div style={{fontSize:10,color:"#666",marginTop:10,lineHeight:1.6}}>
-                    💡 <strong>Gmail setup:</strong> 1) Aktifkan 2-Step Verification di Google Account →
-                    2) Buka <a href="https://myaccount.google.com/apppasswords" target="_blank" style={{color:"#A78BFA"}}>App Passwords</a> →
-                    3) Generate password baru → 4) Paste di SMTP Password field.<br/>
-                    <strong>Common ports:</strong> 587 (STARTTLS, default), 465 (SSL/TLS), 25 (unencrypted, jarang dipakai)
-                  </div>
                 </div>
               )}
 
-                            {/* Screensaver — slideshow attractor on idle */}
+              {/* 🖼 Screensaver */}
               {screensaverConfig && (
                 <div style={{background:"#0d1117",border:"1px solid #161b22",borderRadius:14,padding:"20px",gridColumn:"span 2"}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
@@ -1355,7 +1306,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                       {screensaverConfig.enabled ? "● AKTIF" : "○ NONAKTIF"}
                     </button>
                   </div>
-
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
                     <div>
                       <div style={{fontSize:11,color:"#888",marginBottom:6,fontWeight:600}}>IDLE TRIGGER (detik)</div>
@@ -1372,17 +1322,14 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                         style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13}}/>
                     </div>
                   </div>
-
                   <div style={{marginBottom:14}}>
                     <div style={{fontSize:11,color:"#888",marginBottom:6,fontWeight:600}}>TAGLINE</div>
                     <input type="text" value={screensaverConfig.tagline||""}
                       onChange={e => setScreensaverConfig({...screensaverConfig, tagline: e.target.value})}
                       onBlur={e => updateScreensaver({tagline: e.target.value})}
                       placeholder="SENTUH UNTUK MEMESAN"
-                      style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Bebas Neue',cursive",letterSpacing:2}}/>
+                      style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Montserrat',sans-serif",letterSpacing:2}}/>
                   </div>
-
-                  {/* Image thumbnails */}
                   <div style={{marginBottom:14}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                       <span style={{fontSize:11,color:"#888",fontWeight:600}}>GAMBAR ({screensaverImages.length})</span>
@@ -1394,18 +1341,14 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                           Belum ada slide. Klik "+ Tambah Slide Baru" untuk upload.
                         </div>
                       )}
-
                       {screensaverImages.map((img, idx) => (
                         <div key={img.name} style={{display:"flex",gap:14,padding:"12px",background:"#0a0e16",border:"1px solid #21262d",borderRadius:10,alignItems:"center"}}>
-                          {/* Slide number */}
-                          <div style={{minWidth:36,height:36,borderRadius:8,background:"#1a1a2e",display:"flex",alignItems:"center",justifyContent:"center",color:"#F59E0B",fontFamily:"'Bebas Neue',cursive",fontSize:20,fontWeight:700}}>
+                          <div style={{minWidth:36,height:36,borderRadius:8,background:"#1a1a2e",display:"flex",alignItems:"center",justifyContent:"center",color:"#F59E0B",fontFamily:"'Montserrat',sans-serif",fontSize:20,fontWeight:700}}>
                             {idx + 1}
                           </div>
-                          {/* Thumbnail */}
                           <div style={{width:160,aspectRatio:"16/9",borderRadius:8,overflow:"hidden",background:"#000",flexShrink:0}}>
                             <img src={`${(import.meta.env.VITE_API_URL || "http://localhost:3001")}/screensaver/${img.name}`} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                           </div>
-                          {/* Info */}
                           <div style={{flex:1,minWidth:0}}>
                             <div style={{fontSize:13,fontWeight:600,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
                               {img.name.replace(/^\d+_/, "")}
@@ -1414,7 +1357,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                               {(img.size/1024).toFixed(1)} KB · {new Date(img.modified).toLocaleString("id-ID")}
                             </div>
                           </div>
-                          {/* Actions */}
                           <div style={{display:"flex",gap:6}}>
                             <label style={{background:"#161b22",border:"1px solid #A78BFA55",borderRadius:8,padding:"8px 14px",color:"#A78BFA",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"'Plus Jakarta Sans',sans-serif"}}>
                               🔄 Ganti
@@ -1428,8 +1370,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                           </div>
                         </div>
                       ))}
-
-                      {/* Add new slide button */}
                       <label style={{display:"flex",justifyContent:"center",alignItems:"center",gap:10,padding:"16px",background:"transparent",border:"2px dashed #F59E0B66",borderRadius:10,color:"#F59E0B",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"'Plus Jakarta Sans',sans-serif"}}>
                         {ssUploading ? "⏳ Uploading…" : "+ Tambah Slide Baru"}
                         <input type="file" accept="image/*" multiple style={{display:"none"}}
@@ -1442,7 +1382,22 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
             </div>
           </div>
         )}
+
+        {/* ════════ QR MEJA TAB ════════ */}
+        {activeTab==="qrgen" && (
+          <div style={{animation:"fadeUp 0.3s ease"}}>
+            <div style={D.pageHeader}>
+              <div>
+                <div style={D.pageTitle}>QR Meja</div>
+                <div style={D.pageSub}>Generate & print QR code untuk setiap meja</div>
+              </div>
+            </div>
+            <FlowQRGen />
+          </div>
+        )}
+
       </main>
+
       {showZReport && <ZReport onClose={() => setShowZReport(false)} />}
     </div>
   );

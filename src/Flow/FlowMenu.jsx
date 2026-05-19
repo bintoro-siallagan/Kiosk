@@ -11,7 +11,6 @@ const API = typeof window !== "undefined"
   ? `${window.location.protocol}//${window.location.hostname}:3011`
   : "";
 
-// Fallback toppings (used if /api/toppings missing)
 const FALLBACK_TOPPINGS = [
   { id: "f01", name: "Strawberry", group: "Fruits", price: 0 },
   { id: "f02", name: "Kiwi", group: "Fruits", price: 0 },
@@ -38,7 +37,6 @@ const FALLBACK_TOPPINGS = [
 ];
 
 const FALLBACK_EXTRA = 8000;
-
 const GROUP_ORDER = ["Fruits", "Crunchies", "Sauces", "Premium"];
 const GROUP_EMOJI = { Fruits: "🍓", Crunchies: "🥣", Sauces: "🍯", Premium: "⭐" };
 
@@ -48,9 +46,7 @@ function rupiah(n) {
 
 function calcAddonTotal(selected, freeQuota, extraPrice) {
   if (!selected || selected.length === 0) return 0;
-  // Premium toppings: always charged at their price
   const premiumCost = selected.reduce((s, t) => s + (t.price || 0), 0);
-  // Over-quota: anything beyond freeQuota costs extraPrice each
   const overQuota = Math.max(0, selected.length - freeQuota);
   const extraCost = overQuota * extraPrice;
   return premiumCost + extraCost;
@@ -63,12 +59,11 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [activeCat, setActiveCat] = useState("all");
-  const [detail, setDetail] = useState(null); // item being customized
+  const [detail, setDetail] = useState(null);
   const [selectedToppings, setSelectedToppings] = useState([]);
   const [detailQty, setDetailQty] = useState(1);
   const [showCart, setShowCart] = useState(false);
 
-  // Load menu + toppings
   useEffect(() => {
     Promise.all([
       fetch(`${API}/api/menu`).then(r => r.ok ? r.json() : []),
@@ -83,7 +78,6 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
     }).catch(() => setLoading(false));
   }, []);
 
-  // Categories from menu
   const categories = useMemo(() => {
     const set = new Set(menu.map(m => m.cat));
     return ["all", ...Array.from(set)];
@@ -108,7 +102,6 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
     return list;
   }, [menu, activeCat, search]);
 
-  // Group toppings
   const groupedToppings = useMemo(() => {
     const groups = {};
     toppings.forEach(t => {
@@ -118,7 +111,6 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
     return groups;
   }, [toppings]);
 
-  // Open detail for an item
   function openDetail(item) {
     setDetail(item);
     setSelectedToppings([]);
@@ -166,7 +158,6 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
 
   const cartCount = useMemo(() => cart.reduce((s, it) => s + (it.q || 1), 0), [cart]);
 
-  // Live total for detail bottom sheet
   const detailAddonTotal = useMemo(() => {
     if (!detail) return 0;
     return calcAddonTotal(selectedToppings, detail.freeToppings || 0, extraPrice);
@@ -180,6 +171,13 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
   return (
     <div style={{ height: "100vh", background: BG, color: TEXT, display: "flex", overflow: "hidden" }}>
 
+      {/* ── Hide scrollbar for category tabs ── */}
+      <style>{`
+        .cat-scroll::-webkit-scrollbar { display: none }
+        .cat-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        @keyframes fadeArrow { 0%,100% { opacity: 0.3; transform: translateX(0); } 50% { opacity: 0.8; transform: translateX(-4px); } }
+      `}</style>
+
       {/* ══ LEFT: Menu ══ */}
       <div style={{ flex: "0 0 60%", display: "flex", flexDirection: "column", borderRight: `1px solid ${BORDER}`, overflow: "hidden" }}>
         <div style={{ background: BG, borderBottom: `1px solid ${BORDER}`, padding: "14px 20px", flexShrink: 0 }}>
@@ -189,18 +187,28 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
           </div>
           <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari menu..."
             style={{ width: "100%", padding: "10px 14px", background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, color: TEXT, fontSize: 14, outline: "none" }} />
-          <div style={{ display: "flex", gap: 6, marginTop: 10, overflowX: "auto", paddingBottom: 2 }}>
-            {categories.map(c => (
-              <button key={c} onClick={() => setActiveCat(c)} style={{
-                padding: "7px 12px", borderRadius: 999, whiteSpace: "nowrap",
-                border: `1px solid ${activeCat === c ? BRAND : BORDER}`,
-                background: activeCat === c ? BRAND : "transparent",
-                color: activeCat === c ? "#000" : TEXT,
-                fontSize: 12, fontWeight: 600, cursor: "pointer"
-              }}>{catLabels[c] || c}</button>
-            ))}
+
+          {/* FIX 1: Category tabs — scrollbar hidden, fade hint at right edge */}
+          <div style={{ position: "relative", marginTop: 10 }}>
+            <div className="cat-scroll" style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
+              {categories.map(c => (
+                <button key={c} onClick={() => setActiveCat(c)} style={{
+                  padding: "7px 14px", borderRadius: 999, whiteSpace: "nowrap", flexShrink: 0,
+                  border: `1px solid ${activeCat === c ? BRAND : BORDER}`,
+                  background: activeCat === c ? BRAND : "transparent",
+                  color: activeCat === c ? "#000" : TEXT,
+                  fontSize: 12, fontWeight: 600, cursor: "pointer"
+                }}>{catLabels[c] || c}</button>
+              ))}
+            </div>
+            {/* Right fade — hints more tabs exist */}
+            <div style={{
+              position: "absolute", right: 0, top: 0, bottom: 4, width: 40, pointerEvents: "none",
+              background: `linear-gradient(to right, transparent, ${BG})`
+            }} />
           </div>
         </div>
+
         <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
           {loading && <div style={{ textAlign: "center", padding: 40, color: SUB }}>⏳ Loading menu...</div>}
           {!loading && filtered.length === 0 && <div style={{ textAlign: "center", padding: 40, color: SUB }}>Tidak ada menu yang cocok</div>}
@@ -232,12 +240,32 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
             <button onClick={clearCart} style={{ background: "transparent", border: "none", color: "#EF4444", fontSize: 12, cursor: "pointer" }}>🗑 Kosongin</button>
           )}
         </div>
+
         <div style={{ flex: 1, overflowY: "auto", padding: "0 16px" }}>
           {cart.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "60px 20px", color: SUB }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>🛒</div>
-              <div style={{ fontSize: 14 }}>Belum ada item</div>
-              <div style={{ fontSize: 12, marginTop: 6, color: "#555" }}>Pilih menu di sebelah kiri</div>
+            /* FIX 2: Empty state — full-height centering, more inviting */
+            <div style={{
+              height: "100%", display: "flex", flexDirection: "column",
+              alignItems: "center", justifyContent: "center",
+              padding: "0 24px", gap: 10, userSelect: "none"
+            }}>
+              <div style={{ fontSize: 64, opacity: 0.25, lineHeight: 1 }}>🛒</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: TEXT, opacity: 0.4, marginTop: 4 }}>
+                Belum ada pesanan
+              </div>
+              <div style={{ fontSize: 12, color: SUB, textAlign: "center", lineHeight: 1.6, opacity: 0.8 }}>
+                Ketuk item di sebelah kiri<br />untuk mulai pesan
+              </div>
+              {/* animated arrow hinting left panel */}
+              <div style={{
+                marginTop: 12, display: "flex", alignItems: "center", gap: 6,
+                padding: "8px 16px", borderRadius: 999,
+                border: `1px dashed ${BORDER}`,
+                fontSize: 11, color: "#444"
+              }}>
+                <span style={{ animation: "fadeArrow 1.8s ease-in-out infinite" }}>←</span>
+                <span>pilih menu dulu</span>
+              </div>
             </div>
           ) : (
             cart.map((it, i) => {
@@ -271,6 +299,7 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
             })
           )}
         </div>
+
         <div style={{ padding: "16px 20px", borderTop: `1px solid ${BORDER}`, flexShrink: 0 }}>
           {cart.length > 0 ? (
             <>
@@ -358,6 +387,7 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
     </div>
   );
 }
+
 function ToppingCounter({ selected, freeQuota, extraPrice, addonTotal }) {
   const used = selected.length;
   const remaining = Math.max(0, freeQuota - used);

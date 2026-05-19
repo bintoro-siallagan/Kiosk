@@ -434,7 +434,7 @@ function POSQRISFlow({ cart, subtotal, order, onCancel, onPaid }) {
             <div style={{padding:"12px 24px", background:"#111", border:"1px solid #F59E0B",
               borderRadius:12, marginBottom:24, display:"inline-flex", flexDirection:"column", alignItems:"center"}}>
               <span style={{fontSize:11, color:"#888", letterSpacing:2}}>MENUNGGU PEMBAYARAN</span>
-              <span style={{fontSize:32, fontFamily:"'Bebas Neue',cursive", color:"#F59E0B", letterSpacing:2}}>
+              <span style={{fontSize:32, fontFamily:"'Montserrat',sans-serif", color:"#F59E0B", letterSpacing:2}}>
                 Rp {fmt(subtotal)}
               </span>
             </div>
@@ -483,7 +483,7 @@ const S = {
     display:"flex", flexDirection:"column" },
   header: { display:"flex", alignItems:"center", justifyContent:"space-between",
     padding:"16px 24px", borderBottom:"1px solid #222" },
-  headTitle: { fontFamily:"'Bebas Neue',sans-serif", fontSize:32, color:"#F59E0B", margin:0 },
+  headTitle: { fontFamily:"'Montserrat',sans-serif", fontSize:32, color:"#F59E0B", margin:0 },
   iconBtn: { background:"transparent", border:"1px solid #333", color:"#aaa",
     padding:"8px 14px", borderRadius:8, fontSize:13, cursor:"pointer", fontFamily:"inherit" },
   main: { flex:1, padding:"24px 20px", maxWidth:640, margin:"0 auto", width:"100%",
@@ -509,7 +509,7 @@ const S = {
     padding:"16px 20px", display:"flex", justifyContent:"space-between", alignItems:"center" },
   subLabel: { fontSize:13, fontWeight:600 },
   taxNote: { fontSize:10, color:"#666", marginTop:2 },
-  subAmount: { fontFamily:"'Bebas Neue',sans-serif", fontSize:36, color:"#F59E0B", letterSpacing:1 },
+  subAmount: { fontFamily:"'Montserrat',sans-serif", fontSize:36, color:"#F59E0B", letterSpacing:1 },
 
   payCard: { background:"#0a0a0a", border:"1px solid #222", borderRadius:14, padding:16 },
   payTitle: { fontSize:11, color:"#888", letterSpacing:2, fontWeight:700, marginBottom:12 },

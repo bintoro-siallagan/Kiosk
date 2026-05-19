@@ -54,7 +54,7 @@ const S = {
   },
   icon: { fontSize: 100, marginBottom: 16, opacity: 0.85 },
   title: {
-    fontFamily: "'Bebas Neue',cursive",
+    fontFamily: "'Montserrat',sans-serif",
     fontSize: 56, letterSpacing: 3, margin: "0 0 8px", color: "#F59E0B"
   },
   subtitle: {
