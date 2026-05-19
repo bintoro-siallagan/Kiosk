@@ -623,8 +623,8 @@ const S = {
   ssCenter: { display:"flex", flexDirection:"column", alignItems:"center",
     textAlign:"center", padding:40, maxWidth:800 },
 
-  ssLogo: { fontSize:110, marginBottom:16 },
-  ssBrand: { fontSize:96, fontFamily:"'Bebas Neue',sans-serif", color:"#FF6B35",
+  ssLogo: { fontSize:320, lineHeight:1, marginBottom:32 },
+  ssBrand: { fontSize:80, fontFamily:"'Bebas Neue',sans-serif", color:"#FF6B35",
     letterSpacing:12, marginBottom:24, fontWeight:400, lineHeight:1 },
   ssTagline: { fontSize:36, color:"#fff", marginBottom:16, fontWeight:400 },
   ssHint: { fontSize:18, color:"#888", marginTop:24 },
