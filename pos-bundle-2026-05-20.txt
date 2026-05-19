@@ -1,0 +1,4531 @@
+================================================================
+# Bites-Kiosk POS Bundle
+# Project:     bites-kiosk
+# Generated:   2026-05-20 01:15:24
+# Working dir: /Users/bintorosiallagan/bites-kiosk
+================================================================
+
+// ----------------------------------------------------------------
+// PROJECT STRUCTURE (src/, depth 2)
+// ----------------------------------------------------------------
+src/Admin.jsx
+src/AdminLogin.jsx
+src/App.css
+src/App.jsx
+src/CashPayment.jsx
+src/CustomerInput.jsx
+src/CustomerNameInput.jsx
+src/CustomerTrackingPage.jsx
+src/DigitalReceipt.jsx
+src/ESBNotif.jsx
+src/ESBSync.jsx
+src/Flow/FlowApp.jsx
+src/Flow/FlowCheckout.jsx
+src/Flow/FlowHistory.jsx
+src/Flow/FlowHome.jsx
+src/Flow/FlowMenu.jsx
+src/Flow/FlowPromos.jsx
+src/Flow/FlowQRGen.jsx
+src/Flow/FlowRedeem.jsx
+src/Flow/FlowSuccess.jsx
+src/Flow/FlowWelcome.jsx
+src/Kiosk.jsx
+src/MemberList.jsx
+src/MenuContext.jsx
+src/OrderTracking.jsx
+src/OrderTypePicker.jsx
+src/POSApp.jsx
+src/POSCDS.jsx
+src/POSConfirm.jsx
+src/POSCustomerPicker.jsx
+src/POSHome.jsx
+src/POSLogin.jsx
+src/POSMenu.jsx
+src/POSMergeTabsModal.jsx
+src/POSOrder.jsx
+src/POSOrderHistory.jsx
+src/POSSettle.jsx
+src/POSSplitPayment.jsx
+src/POSSuccess.jsx
+src/Payment.jsx
+src/PromoInput.jsx
+src/PromoManager.jsx
+src/QRISPayment.jsx
+src/QRISPayment1.jsx
+src/Report.jsx
+src/Screensaver.jsx
+src/ShiftGate.jsx
+src/ShiftManager.jsx
+src/TableSelector.jsx
+src/ToppingPicker.jsx
+src/ZReport.jsx
+src/api.js
+src/audio.js
+src/esbApi.js
+src/escpos.js
+src/index.css
+src/main.jsx
+src/menuData.js
+
+
+// ============================================================
+// FILE: src/POSApp.jsx
+// LINES: 89
+// ============================================================
+import { useState } from "react";
+import POSLogin from "./POSLogin.jsx";
+import POSHome from "./POSHome.jsx";
+import POSOrder from "./POSOrder.jsx";
+import POSSettle from "./POSSettle.jsx";
+import POSSuccess from "./POSSuccess.jsx";
+import ShiftGate from "./ShiftGate.jsx";
+
+export default function POSApp() {
+  const [cashier, setCashier] = useState(() => {
+    try {
+      const raw = sessionStorage.getItem("posCashier");
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  });
+  const [view, setView] = useState("home"); // home | order | settle | settle-success | resume
+  const [settlingTab, setSettlingTab] = useState(null);
+  const [resumingTab, setResumingTab] = useState(null);
+  const [settledResult, setSettledResult] = useState(null);
+
+  const handleLogin = (user) => {
+    sessionStorage.setItem("posCashier", JSON.stringify(user));
+    setCashier(user);
+    setView("home");
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem("posCashier");
+    setCashier(null);
+    setView("home");
+  };
+
+  if (!cashier) return <POSLogin onLogin={handleLogin} />;
+
+  return (
+    <ShiftGate>
+      {view === "home" && (
+        <POSHome
+          cashier={cashier}
+          onLogout={handleLogout}
+          onNewOrder={() => setView("order")}
+          onSettleTab={(tab) => { setSettlingTab(tab); setView("settle"); }}
+          onResumeTab={(tab) => { setResumingTab(tab); setView("resume"); }}
+        />
+      )}
+      {view === "order" && (
+        <POSOrder
+          cashier={cashier}
+          onCancel={() => setView("home")}
+          onComplete={() => setView("home")}
+        />
+      )}
+      {view === "settle" && settlingTab && (
+        <POSSettle
+          tab={settlingTab}
+          cashier={cashier}
+          onBack={() => { setSettlingTab(null); setView("home"); }}
+          onSuccess={(settled) => {
+            setSettledResult(settled);
+            setView("settle-success");
+          }}
+        />
+      )}
+      {view === "resume" && resumingTab && (
+        <POSOrder
+          cashier={cashier}
+          resumeTab={resumingTab}
+          onCancel={() => { setResumingTab(null); setView("home"); }}
+          onComplete={() => { setResumingTab(null); setView("home"); }}
+        />
+      )}
+            {view === "settle-success" && settledResult && (
+        <POSSuccess
+          created={settledResult}
+          order={{
+            type: settledResult.type === "dine" ? "dine-in" : "take-away",
+            table: settledResult.table && settledResult.table !== "-" ? { name: settledResult.table } : null,
+            customerName: settledResult.customer_name || settledResult.customerName || "",
+            action: "pay",
+            subtotal: settledResult.total
+          }}
+          cashier={cashier}
+          onDone={() => { setSettledResult(null); setSettlingTab(null); setView("home"); }}
+          onAnother={() => { setSettledResult(null); setSettlingTab(null); setView("order"); }}
+        />
+      )}
+    </ShiftGate>
+  );
+}
+
+
+// ============================================================
+// FILE: src/POSLogin.jsx
+// LINES: 144
+// ============================================================
+import { useState, useEffect } from "react";
+
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
+
+export default function POSLogin({ onLogin }) {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/auth/users`)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then(data => {
+        const list = Array.isArray(data) ? data : (data?.users || []);
+        setUsers(list);
+        setLoading(false);
+      })
+      .catch(err => { setError(err.message); setLoading(false); });
+  }, []);
+
+  return (
+    <div style={S.root}>
+      <header style={S.header}>
+        <h1 style={S.title}>☕ BINTORO POS</h1>
+        <p style={S.subtitle}>POINT OF SALE TERMINAL</p>
+      </header>
+
+      <section style={S.section}>
+        <h2 style={S.sectionTitle}>Pilih Kasir untuk Memulai</h2>
+
+        {loading && <div style={S.loading}>☕ Memuat...</div>}
+
+        {error && (
+          <div style={S.error}>⚠ Gagal memuat user: {error}</div>
+        )}
+
+        {!loading && !error && users.length === 0 && (
+          <div style={S.empty}>
+            <div style={{fontSize: 60, marginBottom: 12}}>👤</div>
+            <p style={{margin: "0 0 4px", fontSize: 16}}>Belum ada kasir terdaftar</p>
+            <p style={S.hint}>Tambah user via <a href="?admin" style={S.link}>Admin → User Admin</a></p>
+          </div>
+        )}
+
+        {!loading && users.length > 0 && (
+          <div style={S.grid}>
+            {users.map(u => {
+              const role = (u.role || "kasir").toLowerCase();
+              return (
+                <button
+                  key={u.id}
+                  onClick={() => onLogin(u)}
+                  style={S.card}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#F59E0B"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#2a2a2a"; e.currentTarget.style.transform = "translateY(0)"; }}
+                >
+                  <div style={S.avatar}>👤</div>
+                  <div style={S.name}>{u.name || "Unnamed"}</div>
+                  <div style={{...S.role, background: roleColors[role] || roleColors.kasir}}>
+                    {(u.role || "kasir").toUpperCase()}
+                  </div>
+                  <div style={S.cta}>► PILIH</div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <footer style={S.footer}>
+        <a href="?" style={S.backLink}>← Kembali ke Kiosk</a>
+      </footer>
+    </div>
+  );
+}
+
+const roleColors = {
+  admin:   "#EF4444",
+  manager: "#A855F7",
+  kasir:   "#3B82F6",
+  staff:   "#10B981"
+};
+
+const S = {
+  root: {
+    minHeight: "100vh", background: "#111", color: "#fff",
+    fontFamily: "'Plus Jakarta Sans',sans-serif",
+    padding: "48px 24px",
+    display: "flex", flexDirection: "column"
+  },
+  header: { textAlign: "center", marginBottom: 48 },
+  title: {
+    fontFamily: "'Montserrat',sans-serif",
+    fontSize: 72, letterSpacing: 5,
+    margin: "0 0 4px", color: "#F59E0B"
+  },
+  subtitle: { fontSize: 12, color: "#888", margin: 0, letterSpacing: 4, fontWeight: 600 },
+  section: { maxWidth: 1100, width: "100%", margin: "0 auto", flex: 1 },
+  sectionTitle: {
+    fontSize: 18, color: "#aaa", textAlign: "center",
+    marginBottom: 32, fontWeight: 500, letterSpacing: 1
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: 20
+  },
+  card: {
+    background: "#1a1a1a", border: "2px solid #2a2a2a",
+    borderRadius: 16, padding: "32px 20px",
+    color: "#fff", fontFamily: "inherit",
+    cursor: "pointer", transition: "all 0.2s",
+    textAlign: "center",
+    display: "flex", flexDirection: "column",
+    alignItems: "center", gap: 12
+  },
+  avatar: { fontSize: 56, opacity: 0.9 },
+  name: { fontSize: 22, fontWeight: 700, color: "#fff" },
+  role: {
+    color: "#fff", padding: "4px 14px",
+    borderRadius: 100, fontSize: 11,
+    fontWeight: 700, letterSpacing: 1.5
+  },
+  cta: {
+    marginTop: 8, color: "#F59E0B",
+    fontSize: 13, fontWeight: 700, letterSpacing: 1.5
+  },
+  loading: { textAlign: "center", color: "#666", padding: 60 },
+  error: {
+    background: "#1a1a1a", border: "1px solid #EF4444",
+    color: "#FCA5A5", padding: 16, borderRadius: 10,
+    marginBottom: 20, textAlign: "center"
+  },
+  empty: {
+    textAlign: "center", color: "#888",
+    padding: "60px 20px",
+    background: "#1a1a1a", borderRadius: 16,
+    border: "1px dashed #2a2a2a"
+  },
+  hint: { fontSize: 13, color: "#666", marginTop: 8 },
+  link: { color: "#F59E0B", textDecoration: "none" },
+  footer: { textAlign: "center", marginTop: 48 },
+  backLink: { color: "#555", fontSize: 13, textDecoration: "none" }
+};
+
+
+// ============================================================
+// FILE: src/POSHome.jsx
+// LINES: 377
+// ============================================================
+import { useState, useEffect } from "react";
+
+import POSOrderHistory from "./POSOrderHistory.jsx";
+import POSMergeTabsModal from "./POSMergeTabsModal.jsx";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
+
+// Track CDS window reference across re-renders
+let cdsWindowRef = null;
+
+async function openCDSOnSecondScreen() {
+  // If already open, just focus it
+  if (cdsWindowRef && !cdsWindowRef.closed) {
+    cdsWindowRef.focus();
+    return cdsWindowRef;
+  }
+
+  const base = window.location.origin + window.location.pathname.replace(/\/?$/, "/");
+  const cdsUrl = `${base}?cds=1`;
+
+  // Detect LAN IP from current page if accessed via LAN (so CDS phone-scan works)
+  let finalUrl = cdsUrl;
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    // Try to get LAN IP from backend config
+    try {
+      const r = await fetch(`${API_BASE}/api/config/public`);
+      const cfg = await r.json();
+      if (cfg.lanHost) {
+        finalUrl = `http://${cfg.lanHost}:${window.location.port || '5184'}${window.location.pathname}?cds=1`;
+      }
+    } catch (e) {}
+  }
+
+  let position = "";
+
+  // Try Window Management API (Chrome 100+, requires user gesture + permission)
+  try {
+    if ('getScreenDetails' in window) {
+      const screenDetails = await window.getScreenDetails();
+      const secondary = screenDetails.screens.find(s => !s.isPrimary);
+      if (secondary) {
+        position = `left=${secondary.availLeft},top=${secondary.availTop},width=${secondary.availWidth},height=${secondary.availHeight}`;
+        console.log('[CDS] Opening on secondary screen:', secondary);
+      } else {
+        console.log('[CDS] Only one screen detected');
+      }
+    }
+  } catch (e) {
+    console.log('[CDS] Window Management API:', e.message);
+  }
+
+  // Fallback: assume second screen is to the right at window.screen.width offset
+  if (!position) {
+    position = `left=${window.screen.width},top=0,width=1920,height=1080`;
+  }
+
+  const features = `${position},toolbar=no,menubar=no,location=no,status=no,scrollbars=yes`;
+  cdsWindowRef = window.open(finalUrl, 'BintoroCDS', features);
+
+  if (!cdsWindowRef) {
+    alert("Popup diblok! Allow popup untuk bites-kiosk di browser settings, lalu coba lagi.");
+    return null;
+  }
+
+  cdsWindowRef.focus();
+  return cdsWindowRef;
+}
+
+export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, onResumeTab }) {
+  const [tabs, setTabs] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [mergeTab, setMergeTab] = useState(null);
+  const [todayOrders, setTodayOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // POSHome mount → reset CDS to welcome screen
+  useEffect(() => {
+    fetch(`${API_BASE}/api/pos/broadcast`, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ event: "pos:idle", data: {} })
+    }).catch(() => {});
+  }, []);
+
+  const role = (cashier.role || "kasir").toLowerCase();
+
+  const refresh = () => {
+    fetch(`${API_BASE}/api/orders`)
+      .then(r => r.json())
+      .then(data => {
+        const all = Array.isArray(data) ? data : (data?.orders || []);
+        // Active tabs: status === "tab_open"
+        const activeTabs = all.filter(o => o.status === "tab_open");
+        setTabs(activeTabs);
+        // Today's orders: created today (any status, by any kasir)
+        const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+        const today = all.filter(o => o.time >= todayStart.getTime() && o.status !== "cancelled");
+        setTodayOrders(today);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    refresh();
+    const id = setInterval(refresh, 10000);
+    return () => clearInterval(id);
+  }, []);
+
+  const todayCount = todayOrders.length;
+  const todayRevenue = todayOrders.filter(o => o.status !== "tab_open").reduce((s, o) => s + (o.total || 0), 0);
+  const fmt = (n) => (n || 0).toLocaleString("id-ID");
+  const fmtTime = (ms) => {
+    const d = new Date(ms);
+    return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+  };
+
+  return (
+    <div style={S.root}>
+      {mergeTab && (
+        <POSMergeTabsModal
+          sourceTab={mergeTab}
+          kasir={cashier?.name || "Manager"}
+          onClose={() => setMergeTab(null)}
+          onSuccess={(result) => {
+            setMergeTab(null);
+            // Reload tabs by re-mounting (rely on existing reload pattern)
+            if (typeof window !== 'undefined') window.location.reload();
+          }}
+        />
+      )}
+      {showHistory && (
+        <POSOrderHistory
+          onClose={() => setShowHistory(false)}
+          kasir={typeof kasir !== 'undefined' ? kasir : 'Manager'}
+        />
+      )}
+
+      <button
+        onClick={openCDSOnSecondScreen}
+        title="Buka Customer Display di layar kedua"
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = "#F59E0B";
+          e.currentTarget.style.color = "#000";
+          e.currentTarget.style.transform = "translateX(-50%) translateY(-2px)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = "rgba(245,158,11,0.08)";
+          e.currentTarget.style.color = "#F59E0B";
+          e.currentTarget.style.transform = "translateX(-50%) translateY(0)";
+        }}
+        style={{
+          position:"fixed",
+          bottom:28, left:"50%", transform:"translateX(-50%)",
+          zIndex:1000,
+          padding:"14px 28px",
+          background:"rgba(245,158,11,0.08)",
+          color:"#F59E0B",
+          border:"2px solid #F59E0B",
+          borderRadius:100,
+          fontWeight:800, fontSize:14, letterSpacing:0.5,
+          fontFamily:"'Plus Jakarta Sans',sans-serif",
+          cursor:"pointer",
+          boxShadow:"0 8px 24px rgba(0,0,0,0.4), 0 0 0 4px rgba(245,158,11,0.1)",
+          display:"flex", alignItems:"center", gap:10,
+          backdropFilter:"blur(8px)",
+          transition:"all 0.2s ease",
+          whiteSpace:"nowrap"
+        }}
+      >
+        <span style={{fontSize:18}}>🖥️</span> Buka Layar Pelanggan
+      </button>
+      <header style={S.header}>
+        <div style={S.brand}>☕ BINTORO POS</div>
+        <div style={S.user}>
+          <span style={S.userIcon}>👤</span>
+          <span style={S.userName}>{cashier.name}</span>
+          <span style={{...S.userRole, background: roleColors[role] || roleColors.kasir}}>
+            {(cashier.role || "kasir").toUpperCase()}
+          </span>
+          <button onClick={onLogout} style={S.logout}>Logout</button>
+        </div>
+      </header>
+
+      <main style={S.main}>
+        <div style={S.welcome}>
+          <h2 style={S.welcomeTitle}>Halo, {cashier.name}! 👋</h2>
+          <p style={S.welcomeSub}>Siap untuk shift hari ini.</p>
+        </div>
+
+        <button style={S.bigBtn} onClick={onNewOrder}>
+          <div style={{fontSize: 44}}>🛒</div>
+          <div>ORDER BARU</div>
+          <div style={S.btnHint}>Mulai pesanan untuk customer</div>
+        </button>
+
+        <div
+
+          onClick={() => setShowHistory(true)}
+
+          style={{
+
+            margin: "56px 0 40px",
+
+            padding: "18px 22px",
+
+            borderRadius: 14,
+
+            background: "linear-gradient(135deg, rgba(245,158,11,0.10), rgba(245,158,11,0.04))",
+
+            border: "1px solid rgba(245,158,11,0.30)",
+
+            cursor: "pointer",
+
+            display: "flex",
+
+            alignItems: "center",
+
+            justifyContent: "space-between",
+
+          }}
+
+        >
+
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+
+            <div style={{ fontSize: 30 }}>📋</div>
+
+            <div>
+
+              <div style={{ fontSize: 17, fontWeight: 700, color: "#F59E0B" }}>Riwayat Pesanan</div>
+
+              <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>Cancel, refund, atau cari order sebelumnya</div>
+
+            </div>
+
+          </div>
+
+          <div style={{ fontSize: 22, color: "#F59E0B" }}>›</div>
+
+        </div>
+
+
+        <section style={S.section}>
+          <h3 style={S.sectionTitle}>
+            📋 Tab Aktif {tabs.length > 0 && <span style={S.badge}>{tabs.length}</span>}
+          </h3>
+
+          {loading && <div style={S.loadingState}>Loading...</div>}
+
+          {!loading && tabs.length === 0 && (
+            <div style={S.empty}>
+              Belum ada tab aktif.<br/>
+              <span style={{fontSize:11, color:"#555"}}>Tab dari Open Tab akan muncul di sini.</span>
+            </div>
+          )}
+
+          {tabs.length > 0 && (
+            <div style={S.tabList}>
+              {tabs.map(tab => (
+                <div key={tab.id} style={S.tabCard}>
+                  <div style={S.tabHeaderRow}>
+                    <div style={S.tabId}>#{tab.id}</div>
+                    <div style={S.tabTotal}>Rp {fmt(tab.total)}</div>
+                  </div>
+                  <div style={S.tabMidRow}>
+                    <span style={S.tabType}>
+                      {tab.type === "dine" ? "🍽️ Dine-in" : "🛍️ Take-away"}
+                    </span>
+                    {tab.table && tab.table !== "-" && (
+                      <span style={S.tabTable}>· Meja {tab.table}</span>
+                    )}
+                    {tab.customer_name && (
+                      <span style={S.tabCustomer}>· {tab.customer_name}</span>
+                    )}
+                  </div>
+                  <div style={S.tabFooterRow}>
+                    <span style={S.tabTime}>{fmtTime(tab.time)}</span>
+                    <span style={S.tabItems}>· {(tab.items || []).length} item</span>
+                    <span style={S.tabKasir}>· 👤 {tab.kasir || "?"}</span>
+                  </div>
+                  <div style={S.tabActions}>
+                    <button style={S.tabBtnAdd} onClick={() => onResumeTab && onResumeTab(tab)}>
+                      ➕ Tambah
+                    </button>
+                    <button style={S.tabBtnMerge} onClick={() => setMergeTab(tab)}>
+                      🔗 Merge
+                    </button>
+                    <button style={S.tabBtnPay} onClick={() => onSettleTab(tab)}>
+                      💰 Bayar
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section style={S.section}>
+          <h3 style={S.sectionTitle}>📊 Hari Ini</h3>
+          <div style={S.statsGrid}>
+            <div style={S.statCard}>
+              <div style={S.statValue}>{todayCount || "—"}</div>
+              <div style={S.statLabel}>ORDERS</div>
+            </div>
+            <div style={S.statCard}>
+              <div style={S.statValue}>{todayRevenue > 0 ? `Rp ${fmt(todayRevenue)}` : "—"}</div>
+              <div style={S.statLabel}>REVENUE</div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  );
+}
+
+const roleColors = {
+  admin: "#EF4444", manager: "#A855F7",
+  kasir: "#3B82F6", staff: "#10B981"
+};
+
+const S = {
+  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Plus Jakarta Sans',sans-serif" },
+  header: { display:"flex", alignItems:"center", justifyContent:"space-between",
+    padding:"14px 24px", borderBottom:"1px solid #222", background:"#0a0a0a",
+    position:"sticky", top:0, zIndex:10 },
+  brand: { fontFamily:"'Montserrat',sans-serif", fontSize:20, fontWeight:800, letterSpacing:1, color:"#F59E0B", textTransform:"uppercase" },
+  user: { display:"flex", alignItems:"center", gap:10, fontSize:14 },
+  userIcon: { fontSize:20 },
+  userName: { fontWeight:700 },
+  userRole: { color:"#fff", padding:"2px 10px", borderRadius:100, fontSize:10, fontWeight:700, letterSpacing:1 },
+  logout: { background:"transparent", border:"1px solid #333", color:"#aaa",
+    padding:"6px 14px", borderRadius:8, fontSize:12, cursor:"pointer",
+    marginLeft:8, fontFamily:"inherit" },
+  main: { maxWidth:900, margin:"0 auto", padding:"40px 24px" },
+  welcome: { textAlign:"center", marginBottom:32 },
+  welcomeTitle: { fontSize:28, margin:"0 0 4px", fontWeight:700 },
+  welcomeSub: { color:"#888", margin:0 },
+  bigBtn: { width:"100%", display:"flex", flexDirection:"column", alignItems:"center", gap:6,
+    background:"#F59E0B", color:"#111", border:"none", borderRadius:20, padding:"36px 20px",
+    fontFamily:"inherit", fontSize:26, fontWeight:800, letterSpacing:2, cursor:"pointer",
+    boxShadow:"0 8px 24px rgba(245,158,11,0.3)" },
+  btnHint: { fontSize:11, fontWeight:600, color:"#7a4a00", letterSpacing:1 },
+  section: { marginTop:40 },
+  sectionTitle: { fontSize:16, color:"#fff", margin:"0 0 12px", fontWeight:700, letterSpacing:1,
+    display:"flex", alignItems:"center", gap:8 },
+  badge: { background:"#F59E0B", color:"#111", padding:"2px 10px", borderRadius:100,
+    fontSize:11, fontWeight:800 },
+  loadingState: { textAlign:"center", color:"#666", padding:20 },
+  empty: { background:"#1a1a1a", border:"1px dashed #2a2a2a", borderRadius:12,
+    padding:"32px 20px", textAlign:"center", color:"#666", fontSize:13 },
+  tabList: { display:"flex", flexDirection:"column", gap:10 },
+  tabCard: { background:"#1a1a1a", border:"1px solid #2a2a2a", borderLeft:"4px solid #F59E0B",
+    borderRadius:12, padding:"14px 18px", color:"#fff", fontFamily:"inherit",
+    cursor:"pointer", transition:"all 0.15s", textAlign:"left",
+    display:"flex", flexDirection:"column", gap:8 },
+  tabHeaderRow: { display:"flex", justifyContent:"space-between", alignItems:"baseline" },
+  tabId: { fontSize:18, fontWeight:800, color:"#F59E0B", fontFamily:"'Montserrat',sans-serif", letterSpacing:2 },
+  tabTotal: { fontFamily:"'Montserrat',sans-serif", fontSize:20, color:"#fff", letterSpacing:1 },
+  tabMidRow: { fontSize:13, color:"#ccc", display:"flex", gap:4, flexWrap:"wrap" },
+  tabType: { fontWeight:600 },
+  tabTable: { color:"#aaa" },
+  tabCustomer: { color:"#aaa" },
+  tabFooterRow: { fontSize:11, color:"#888", display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" },
+  tabTime: { color:"#666" },
+  tabItems: { color:"#666" },
+  tabKasir: { color:"#666" },
+  settleCta: { marginLeft:"auto", color:"#F59E0B", fontWeight:700, fontSize:12, letterSpacing:1 },
+  statsGrid: { display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:12 },
+  tabActions: { display:"flex", gap:8, marginTop:12, paddingTop:12, borderTop:"1px solid #2a2a2a" },
+  tabBtnAdd: { flex:1, padding:"10px 14px", borderRadius:10, background:"rgba(245,158,11,0.12)", border:"1px solid rgba(245,158,11,0.4)", color:"#F59E0B", cursor:"pointer", fontSize:13, fontWeight:600, fontFamily:"inherit" },
+  tabBtnPay: { flex:1, padding:"10px 14px", borderRadius:10, background:"linear-gradient(135deg, #10B981, #059669)", border:"none", color:"white", cursor:"pointer", fontSize:13, fontWeight:700, fontFamily:"inherit" },
+  tabBtnMerge: { flex:1, padding:"10px 8px", borderRadius:10, background:"rgba(139,92,246,0.12)", border:"1px solid rgba(139,92,246,0.4)", color:"#A78BFA", cursor:"pointer", fontSize:12, fontWeight:600, fontFamily:"inherit" },
+  statCard: { background:"#1a1a1a", border:"1px solid #222", borderRadius:12, padding:24, textAlign:"center" },
+  statValue: { fontSize:32, fontWeight:800, fontFamily:"'Montserrat',sans-serif",
+    color:"#F59E0B", letterSpacing:2, lineHeight:1 },
+  statLabel: { fontSize:10, color:"#888", letterSpacing:1.5, fontWeight:700, marginTop:6 }
+};
+
+
+// ============================================================
+// FILE: src/OrderTypePicker.jsx
+// LINES: 45
+// ============================================================
+export default function OrderTypePicker({ onPick, onCancel }) {
+  return (
+    <div style={S.root}>
+      <div style={S.card}>
+        <h1 style={S.title}>Pilih Tipe Order</h1>
+        <p style={S.subtitle}>Bagaimana customer akan menikmati pesanan?</p>
+
+        <div style={S.grid}>
+          <button onClick={() => onPick("dine-in")} style={S.option}
+            onMouseEnter={e => e.currentTarget.style.borderColor = "#F59E0B"}
+            onMouseLeave={e => e.currentTarget.style.borderColor = "#2a2a2a"}>
+            <div style={S.icon}>🍽️</div>
+            <div style={S.optionTitle}>Dine-in</div>
+            <div style={S.optionHint}>Makan di restoran</div>
+          </button>
+          <button onClick={() => onPick("take-away")} style={S.option}
+            onMouseEnter={e => e.currentTarget.style.borderColor = "#F59E0B"}
+            onMouseLeave={e => e.currentTarget.style.borderColor = "#2a2a2a"}>
+            <div style={S.icon}>🛍️</div>
+            <div style={S.optionTitle}>Take-away</div>
+            <div style={S.optionHint}>Bawa pulang</div>
+          </button>
+        </div>
+
+        <button onClick={onCancel} style={S.cancelLink}>✕ Batalkan Order</button>
+      </div>
+    </div>
+  );
+}
+
+const S = {
+  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Plus Jakarta Sans',sans-serif",
+    display:"flex", alignItems:"center", justifyContent:"center", padding:24 },
+  card: { maxWidth:700, width:"100%", textAlign:"center" },
+  title: { fontFamily:"'Montserrat',sans-serif", fontSize:52, letterSpacing:4, margin:"0 0 8px", color:"#F59E0B" },
+  subtitle: { color:"#888", fontSize:16, marginBottom:48 },
+  grid: { display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:20, marginBottom:32 },
+  option: { background:"#1a1a1a", border:"2px solid #2a2a2a", borderRadius:20, padding:"48px 24px",
+    color:"#fff", fontFamily:"inherit", cursor:"pointer", transition:"all 0.2s",
+    display:"flex", flexDirection:"column", alignItems:"center", gap:12 },
+  icon: { fontSize:80, marginBottom:8 },
+  optionTitle: { fontSize:24, fontWeight:700 },
+  optionHint: { fontSize:13, color:"#888" },
+  cancelLink: { background:"transparent", border:"none", color:"#666", fontSize:13, cursor:"pointer", fontFamily:"inherit", padding:12 }
+};
+
+
+// ============================================================
+// FILE: src/POSCustomerPicker.jsx
+// LINES: 295
+// ============================================================
+import { useState } from "react";
+
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
+
+const TABS = [
+  { id: "member", icon: "📱", label: "Member" },
+  { id: "new",    icon: "✨", label: "Baru" },
+  { id: "guest",  icon: "👤", label: "Tamu" }
+];
+
+export default function POSCustomerPicker({ order, onContinue, onBack, onCancel }) {
+  const [tab, setTab] = useState("member");
+
+  // ── Existing member lookup ──
+  const [phoneIn, setPhoneIn] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [foundMember, setFoundMember] = useState(null);
+  const [searchErr, setSearchErr] = useState(null);
+
+  // ── New member registration ──
+  const [newName, setNewName] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  // ── Guest ──
+  const [guestName, setGuestName] = useState("");
+
+  // ── Search ──
+  const handleSearch = async () => {
+    if (!phoneIn || phoneIn.length < 8) {
+      setSearchErr("Phone minimal 8 digit");
+      return;
+    }
+    setSearching(true);
+    setSearchErr(null);
+    setFoundMember(null);
+    try {
+      const url = `${API_BASE}/api/customers/lookup?phone=${encodeURIComponent(phoneIn.trim())}`;
+      const r = await fetch(url);
+      if (r.ok) {
+        const data = await r.json();
+        // Response may be either {id, name, ...} OR {data: {...}} OR null/empty
+        const cust = data?.id ? data : (data?.data?.id ? data.data : null);
+        if (cust) {
+          // Optionally fetch loyalty/points
+          try {
+            const lr = await fetch(`${API_BASE}/api/customers/${cust.id}/loyalty`);
+            if (lr.ok) {
+              const loyalty = await lr.json();
+              cust.points = loyalty?.points ?? cust.points ?? 0;
+            }
+          } catch {}
+          setFoundMember(cust);
+        } else {
+          setSearchErr("Member tidak ditemukan. Coba daftar baru di tab Baru.");
+        }
+      } else {
+        setSearchErr("Member tidak ditemukan");
+      }
+    } catch (e) {
+      setSearchErr("Koneksi gagal: " + e.message);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleUseMember = () => {
+    onContinue({
+      customerId: foundMember.id,
+      customerName: foundMember.name,
+      customerPhone: foundMember.phone,
+      customerPoints: foundMember.points || 0,
+      isNewMember: false
+    });
+  };
+
+  // ── Create new ──
+  const handleCreateMember = async () => {
+    if (!newName.trim()) { alert("Nama wajib diisi"); return; }
+    if (!newPhone.trim() || newPhone.length < 8) { alert("Phone min 8 digit"); return; }
+    setCreating(true);
+    try {
+      const r = await fetch(`${API_BASE}/api/customers`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          name: newName.trim(),
+          phone: newPhone.trim()
+        })
+      });
+      if (!r.ok) throw new Error("Server error " + r.status);
+      const created = await r.json();
+      const cust = created?.id ? created : created?.data;
+      if (cust && cust.id) {
+        onContinue({
+          customerId: cust.id,
+          customerName: cust.name,
+          customerPhone: cust.phone,
+          customerPoints: cust.points || 0,
+          isNewMember: true
+        });
+      } else {
+        alert("Gagal membuat member: response tidak valid");
+      }
+    } catch (e) {
+      alert("Gagal: " + e.message);
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  // ── Guest ──
+  const handleGuest = () => {
+    onContinue({
+      customerId: null,
+      customerName: guestName.trim() || null,
+      customerPhone: null,
+      customerPoints: 0,
+      isNewMember: false
+    });
+  };
+
+  // ── Render ──
+  const ctxLabel = (
+    <>
+      {order.type === "dine-in" ? "🍽️ Dine-in" : "🛍️ Take-away"}
+      {order.table && <span style={{color:"#666"}}> · {order.table.name}</span>}
+    </>
+  );
+
+  return (
+    <div style={S.root}>
+      <header style={S.header}>
+        <button onClick={onBack} style={S.iconBtn}>← Back</button>
+        <div style={S.ctx}>{ctxLabel}</div>
+        <button onClick={onCancel} style={S.iconBtn}>✕</button>
+      </header>
+
+      <main style={S.main}>
+        <h1 style={S.title}>Customer</h1>
+        <p style={S.subtitle}>Pilih opsi member untuk akumulasi poin</p>
+
+        {/* Tabs */}
+        <div style={S.tabs}>
+          {TABS.map(t => (
+            <button key={t.id} onClick={() => { setTab(t.id); setSearchErr(null); }}
+              style={{...S.tab, ...(tab === t.id ? S.tabActive : {})}}>
+              <span style={{fontSize:18}}>{t.icon}</span>
+              <span>{t.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Member existing tab */}
+        {tab === "member" && (
+          <div style={S.panel}>
+            <label style={S.label}>Nomor HP Member</label>
+            <div style={S.inputRow}>
+              <input
+                value={phoneIn}
+                onChange={e => setPhoneIn(e.target.value.replace(/[^0-9]/g, ""))}
+                placeholder="08xxxxxxxxxx"
+                style={S.input}
+                autoFocus
+                onKeyDown={e => { if (e.key === "Enter") handleSearch(); }}
+              />
+              <button onClick={handleSearch} disabled={searching} style={S.searchBtn}>
+                {searching ? "..." : "🔍 Cari"}
+              </button>
+            </div>
+            {searchErr && <div style={S.err}>⚠ {searchErr}</div>}
+
+            {foundMember && (
+              <div style={S.memberCard}>
+                <div style={S.memberTop}>
+                  <div>
+                    <div style={S.memberName}>👤 {foundMember.name}</div>
+                    <div style={S.memberPhone}>{foundMember.phone}</div>
+                  </div>
+                  <div style={S.memberPoints}>
+                    <div style={S.pointsLabel}>POIN</div>
+                    <div style={S.pointsValue}>{(foundMember.points || 0).toLocaleString("id-ID")}</div>
+                  </div>
+                </div>
+                {foundMember.tags && foundMember.tags.length > 0 && (
+                  <div style={S.tagsRow}>
+                    {foundMember.tags.map(t => (
+                      <span key={t} style={S.tag}>{t}</span>
+                    ))}
+                  </div>
+                )}
+                <button onClick={handleUseMember} style={S.primaryBtn}>
+                  ✓ Lanjut dengan Member Ini
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* New member tab */}
+        {tab === "new" && (
+          <div style={S.panel}>
+            <label style={S.label}>Nama Lengkap *</label>
+            <input
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              placeholder="Nama customer"
+              style={S.inputFull}
+              autoFocus
+            />
+            <label style={S.label}>Nomor HP *</label>
+            <input
+              value={newPhone}
+              onChange={e => setNewPhone(e.target.value.replace(/[^0-9]/g, ""))}
+              placeholder="08xxxxxxxxxx"
+              style={S.inputFull}
+            />
+            <button onClick={handleCreateMember} disabled={creating} style={S.primaryBtn}>
+              {creating ? "Daftar..." : "✨ Daftar & Lanjut"}
+            </button>
+            <p style={S.hint}>Member baru akan dapat poin dari order ini</p>
+          </div>
+        )}
+
+        {/* Guest tab */}
+        {tab === "guest" && (
+          <div style={S.panel}>
+            <label style={S.label}>Nama (opsional)</label>
+            <input
+              value={guestName}
+              onChange={e => setGuestName(e.target.value)}
+              placeholder="Untuk panggil saat pesanan siap"
+              style={S.inputFull}
+              autoFocus
+            />
+            <button onClick={handleGuest} style={S.primaryBtn}>
+              👤 Lanjut Tanpa Member
+            </button>
+            <p style={S.hint}>Order tetap tersimpan, tapi tidak ada akumulasi poin</p>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+const S = {
+  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Plus Jakarta Sans',sans-serif",
+    display:"flex", flexDirection:"column" },
+  header: { display:"flex", alignItems:"center", gap:12,
+    padding:"12px 20px", borderBottom:"1px solid #222", background:"#0a0a0a" },
+  iconBtn: { background:"transparent", border:"1px solid #333", color:"#aaa",
+    padding:"8px 14px", borderRadius:8, fontSize:13, cursor:"pointer", fontFamily:"inherit" },
+  ctx: { flex:1, fontSize:14, color:"#F59E0B", fontWeight:600 },
+  main: { flex:1, padding:"40px 24px", maxWidth:560, margin:"0 auto", width:"100%", boxSizing:"border-box" },
+  title: { fontFamily:"'Montserrat',sans-serif", fontSize:42, color:"#F59E0B", letterSpacing:2,
+    margin:0, textAlign:"center" },
+  subtitle: { textAlign:"center", color:"#888", fontSize:13, marginBottom:24 },
+  tabs: { display:"flex", gap:6, padding:4, background:"#0a0a0a", border:"1px solid #222",
+    borderRadius:12, marginBottom:20 },
+  tab: { flex:1, padding:"12px", background:"transparent", border:"none", color:"#888",
+    borderRadius:8, cursor:"pointer", fontFamily:"inherit", fontSize:13, fontWeight:600,
+    display:"flex", alignItems:"center", justifyContent:"center", gap:6 },
+  tabActive: { background:"#F59E0B", color:"#111", fontWeight:800 },
+  panel: { background:"#0a0a0a", border:"1px solid #222", borderRadius:14, padding:24 },
+  label: { display:"block", fontSize:12, color:"#888", marginBottom:6, marginTop:8,
+    letterSpacing:0.5, textTransform:"uppercase", fontWeight:600 },
+  inputRow: { display:"flex", gap:8, marginBottom:8 },
+  input: { flex:1, padding:"14px 16px", borderRadius:10,
+    background:"#1a1a1a", border:"1px solid #2a2a2a", color:"#fff",
+    fontFamily:"inherit", fontSize:16, boxSizing:"border-box" },
+  inputFull: { width:"100%", padding:"14px 16px", borderRadius:10,
+    background:"#1a1a1a", border:"1px solid #2a2a2a", color:"#fff",
+    fontFamily:"inherit", fontSize:16, boxSizing:"border-box", marginBottom:8 },
+  searchBtn: { padding:"0 20px", background:"#1a1a1a", border:"1px solid #F59E0B",
+    color:"#F59E0B", borderRadius:10, cursor:"pointer", fontFamily:"inherit",
+    fontWeight:700, fontSize:14 },
+  err: { fontSize:12, color:"#EF4444", padding:"8px 0", marginBottom:8 },
+  memberCard: { marginTop:16, padding:16, background:"#111", border:"1px solid #F59E0B",
+    borderRadius:12 },
+  memberTop: { display:"flex", justifyContent:"space-between", alignItems:"flex-start",
+    marginBottom:12 },
+  memberName: { fontSize:16, fontWeight:700 },
+  memberPhone: { fontSize:12, color:"#888", marginTop:2 },
+  memberPoints: { textAlign:"right" },
+  pointsLabel: { fontSize:10, color:"#666", letterSpacing:1, fontWeight:600 },
+  pointsValue: { fontSize:20, fontWeight:800, color:"#F59E0B", fontFamily:"'Montserrat',sans-serif" },
+  tagsRow: { display:"flex", gap:6, marginBottom:12, flexWrap:"wrap" },
+  tag: { fontSize:10, padding:"3px 8px", borderRadius:100,
+    background:"rgba(245,158,11,0.15)", color:"#F59E0B", fontWeight:600 },
+  primaryBtn: { width:"100%", padding:"14px", background:"#F59E0B", color:"#111",
+    border:"none", borderRadius:12, fontFamily:"inherit", fontSize:14, fontWeight:800,
+    letterSpacing:1, cursor:"pointer", marginTop:12 },
+  hint: { fontSize:11, color:"#666", textAlign:"center", marginTop:10, marginBottom:0 }
+};
+
+
+// ============================================================
+// FILE: src/CustomerInput.jsx
+// LINES: 293
+// ============================================================
+import { useState, useRef, useEffect, useCallback } from "react";
+import * as audio from "./audio.js";
+import { api } from "./api.js";
+
+const fIDR = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
+
+// ── NUMPAD ────────────────────────────────────────────────────────────────────
+function Numpad({ onKey }) {
+  const keys = [1,2,3,4,5,6,7,8,9,"⌫",0,"✓"];
+  return (
+    <div style={N.pad}>
+      {keys.map(k => (
+        <button key={k} onPointerDown={e=>{e.preventDefault();onKey(k);}}
+          style={k==="✓" ? N.keyEnter : k==="⌫" ? N.keyDel : N.key}>
+          {k}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
+  const [phone, setPhone]     = useState("");
+  const [name,  setName]      = useState("");
+  const [step,  setStep]      = useState("phone"); // phone | name | found
+  const [busy,  setBusy]      = useState(false);
+  const [shake, setShake]     = useState(false);
+  const [customer, setCust]   = useState(null);
+  const [loyalty, setLoyalty] = useState(null);
+  const [redeemPoints, setRedeemPoints] = useState(0);
+  const nameRef               = useRef();
+  const inputRef              = useRef();
+
+  // Auto-focus name input when step changes
+  useEffect(() => {
+    if (step === "name") setTimeout(() => nameRef.current?.focus(), 80);
+  }, [step]);
+
+  const subtotal = cart.reduce((s,e) => s+(e.item.price+e.addonTotal)*e.qty, 0);
+  const total    = subtotal + Math.round(subtotal*0.11);
+
+  const triggerShake = () => {
+    setShake(true);
+    setTimeout(() => setShake(false), 500);
+  };
+
+  // Numpad handler for phone step
+  const handleNumKey = useCallback((k) => {
+    audio.playClick();
+    if (k === "⌫") { setPhone(p => p.slice(0,-1)); return; }
+    if (k === "✓") { handlePhoneDone(); return; }
+    if (phone.length < 13) setPhone(p => p + k);
+  }, [phone]);
+
+  async function handlePhoneDone() {
+    if (phone.length < 9) { triggerShake(); return; }
+    setBusy(true);
+    try {
+      const found = await api.lookupCustomer(phone);
+      audio.playSwoosh();
+      if (found) {
+        setCust(found);
+        setName(found.name);
+        try { setLoyalty(await api.getCustomerLoyalty(found.id)); } catch {}
+        setStep("found");
+      } else {
+        setCust(null);
+        setStep("name");
+      }
+    } catch {
+      // Real error (network) — treat as new customer flow, fail-safe
+      setCust(null);
+      setStep("name");
+    } finally { setBusy(false); }
+  }
+
+  async function handleConfirm() {
+    if (!name.trim()) { triggerShake(); return; }
+    setBusy(true);
+    try {
+      let c = customer;
+      if (!c) c = await api.createCustomer({ name: name.trim(), phone }).catch(()=>null);
+      const redeemDisc = loyalty ? Math.floor(redeemPoints / (loyalty.redeemRate||100)) * 1000 : 0;
+      onConfirm({ customer: c, name: name.trim(), phone, loyalty, pointsRedeemed: redeemPoints, pointsDiscount: redeemDisc });
+    } catch {
+      onConfirm({ customer: null, name: name.trim(), phone, loyalty: null });
+    } finally { setBusy(false); }
+  }
+
+  // Format phone display: 0812-3456-7890
+  const displayPhone = phone.replace(/(\d{4})(\d{4})(\d+)/, "$1-$2-$3")
+                            .replace(/(\d{4})(\d+)/, "$1-$2");
+
+  const TAG = { member:{c:"#38BDF8",l:"Member"}, vip:{c:"#F59E0B",l:"⭐ VIP"}, new:{c:"#34D399",l:"Baru"} };
+
+  return (
+    <div style={C.root}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=DM+Sans:wght@400;600;700&display=swap');
+        *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+        @keyframes pop{0%{transform:scale(0.85);opacity:0}60%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        button{cursor:pointer;user-select:none;-webkit-user-select:none;font-family:'Plus Jakarta Sans',sans-serif;}
+        input:focus{outline:none}
+      `}</style>
+
+      {/* ── ORDER SUMMARY STRIP ── */}
+      <div style={C.strip}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <span style={{fontSize:20}}>{orderType==="dine"?"🪑":"🛍️"}</span>
+          <div>
+            <div style={C.stripLabel}>{orderType==="dine"?"Makan di Sini":"Bawa Pulang"} · {cart.reduce((s,e)=>s+e.qty,0)} item</div>
+            <div style={C.stripItems}>{cart.slice(0,3).map(e=>e.item.name).join(" · ")}{cart.length>3?"...":""}</div>
+          </div>
+        </div>
+        <div style={C.stripTotal}>{fIDR(total)}</div>
+      </div>
+
+      {/* ── PHONE STEP ── */}
+      {step==="phone" && (
+        <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 24px 24px",animation:"fadeUp 0.25s ease"}}>
+          <div style={C.stepEmoji}>📱</div>
+          <div style={C.stepTitle}>Nomor HP</div>
+          <div style={C.stepSub}>Dapat notifikasi saat pesanan siap + kumpulkan poin reward</div>
+
+          {/* Phone display */}
+          <div style={{...C.phoneDisplay, animation: shake?"shake 0.4s ease":"none"}}>
+            <span style={C.phonePrefix}>+62</span>
+            <span style={{...C.phoneNum, color: phone ? "#fff" : "#444"}}>
+              {displayPhone || "___-____-____"}
+            </span>
+            {busy && <span style={C.spinner}/>}
+          </div>
+
+          <Numpad onKey={handleNumKey}/>
+
+          <div style={{display:'flex',gap:8,marginTop:12,flexWrap:'wrap',justifyContent:'center',maxWidth:380}}>
+            {["📍 Tracking pesanan","💬 Notif WhatsApp","🎁 Kumpulkan poin"].map((b,i)=>(
+              <span key={i} style={{fontSize:11,color:'#666',background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:99,padding:'5px 12px'}}>{b}</span>
+            ))}
+          </div>
+
+          <button style={C.backLink} onClick={onBack}>← Kembali ke menu</button>
+        </div>
+      )}
+
+      {/* ── NAME STEP (new customer) ── */}
+      {step==="name" && (
+        <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 32px 32px",animation:"fadeUp 0.25s ease",maxWidth:480,margin:"0 auto",width:"100%"}}>
+          <div style={C.stepEmoji}>👋</div>
+          <div style={C.stepTitle}>Hai, siapa nama Anda?</div>
+          <div style={C.stepSub}>
+            <span style={{color:"#38BDF8",fontFamily:"'Montserrat',sans-serif",letterSpacing:1}}>{phone}</span>
+            {" "}belum terdaftar
+          </div>
+
+          <input ref={nameRef} style={{...C.nameInput, animation:shake?"shake 0.4s ease":"none"}}
+            value={name} onChange={e=>setName(e.target.value)}
+            onKeyDown={e=>e.key==="Enter"&&handleConfirm()}
+            placeholder="Ketik nama Anda..." maxLength={40}
+          />
+
+          {/* Benefit chips */}
+          <div style={C.benefits}>
+            {["📍 Tracking pesanan","💬 Info via WhatsApp","🎁 Promo member"].map((b,i)=>(
+              <span key={i} style={C.benefitChip}>{b}</span>
+            ))}
+          </div>
+
+          <div style={{display:"flex",gap:12,width:"100%",marginTop:20}}>
+            <button style={C.ghostBtn} onClick={()=>setStep("phone")}>← Ubah No.</button>
+            <button style={{...C.bigBtn, opacity:!name.trim()||busy?0.45:1, flex:2}}
+              disabled={!name.trim()||busy} onClick={handleConfirm}>
+              {busy ? <span style={C.spinner}/> : "DAFTAR & BAYAR →"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── FOUND STEP (existing member) ── */}
+      {step==="found" && customer && (
+        <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 28px 28px",animation:"fadeUp 0.25s ease",maxWidth:480,margin:"0 auto",width:"100%"}}>
+          <div style={{...C.stepEmoji,animation:"pop 0.4s ease"}}>🎉</div>
+          <div style={C.stepTitle}>Selamat Datang!</div>
+
+          {/* Member card */}
+          <div style={C.memberCard}>
+            <div style={C.memberAva}>
+              {customer.name[0].toUpperCase()}
+            </div>
+            <div style={{flex:1}}>
+              <div style={C.memberName}>{customer.name}</div>
+              <div style={C.memberPhone}>{customer.phone}</div>
+              <div style={{display:"flex",gap:6,marginTop:6,flexWrap:"wrap"}}>
+                {(customer.tags||[]).map(t=>(
+                  <span key={t} style={{...C.tag,color:TAG[t]?.c||"#aaa",background:`${TAG[t]?.c||"#aaa"}18`,border:`1px solid ${TAG[t]?.c||"#aaa"}33`}}>
+                    {TAG[t]?.l||t}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div style={C.visits}>{customer.visits}</div>
+              <div style={{fontSize:10,color:"#555"}}>kunjungan</div>
+            </div>
+          </div>
+
+          {loyalty && loyalty.points >= loyalty.minRedeemPoints && (() => {
+            const maxFromBalance = Math.floor(loyalty.points / loyalty.redeemRate) * loyalty.redeemRate;
+            const maxFromPct = Math.floor((subtotal * 0.5) / loyalty.redeemRate) * loyalty.redeemRate;
+            const maxRedeem = Math.min(maxFromBalance, maxFromPct);
+            const redeemDisc = Math.floor(redeemPoints / loyalty.redeemRate) * 1000;
+            return maxRedeem > 0 ? (
+              <div style={C.redeemBox}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                  <span style={{fontSize:12,color:"#FB923C",letterSpacing:1}}>🎁 TUKAR POIN (opsional)</span>
+                  <span style={{fontSize:11,color:"#666"}}>{loyalty.points} pt tersedia</span>
+                </div>
+                <input type="range" min={0} max={maxRedeem} step={loyalty.redeemRate}
+                  value={redeemPoints} onChange={e => setRedeemPoints(+e.target.value)}
+                  style={C.slider} />
+                <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#666",marginTop:4}}>
+                  <span>Tanpa Tukar</span>
+                  <span>Max {maxRedeem} pt</span>
+                </div>
+                <div style={{textAlign:"center",marginTop:10,padding:"8px",background:"rgba(251,146,60,0.08)",borderRadius:10}}>
+                  {redeemPoints > 0 ? (
+                    <>
+                      <span style={{fontSize:18,fontWeight:700,color:"#FB923C"}}>{redeemPoints} poin</span>
+                      <span style={{fontSize:13,color:"#888",margin:"0 8px"}}>·</span>
+                      <span style={{fontSize:14,color:"#34D399",fontWeight:600}}>Hemat Rp {redeemDisc.toLocaleString("id-ID")}</span>
+                    </>
+                  ) : (
+                    <span style={{fontSize:13,color:"#666"}}>Geser untuk tukar poin</span>
+                  )}
+                </div>
+              </div>
+            ) : null;
+          })()}
+
+          <div style={{display:"flex",gap:12,width:"100%",marginTop:20}}>
+            <button style={C.ghostBtn} onClick={()=>{setStep("phone");setPhone("");setCust(null);setRedeemPoints(0);setLoyalty(null);}}>
+              Bukan saya
+            </button>
+            <button style={{...C.bigBtn,flex:2,background:"linear-gradient(90deg,#34D399,#059669)"}}
+              disabled={busy} onClick={handleConfirm}>
+              {busy ? <span style={C.spinner}/> : "✓ YA, LANJUT BAYAR"}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Numpad styles — big touch targets
+const N = {
+  pad:      {display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,width:"100%",maxWidth:340,margin:"20px 0 0"},
+  key:      {height:72,fontSize:26,fontWeight:700,background:"#1a1a2e",border:"1px solid #252540",borderRadius:16,color:"#fff",fontFamily:"'Montserrat',sans-serif",letterSpacing:1,transition:"background 0.1s",WebkitTapHighlightColor:"transparent",active:{background:"#252540"}},
+  keyDel:   {height:72,fontSize:22,background:"#1a1a2e",border:"1px solid #252540",borderRadius:16,color:"#F87171",fontWeight:700,transition:"background 0.1s"},
+  keyEnter: {height:72,fontSize:20,background:"linear-gradient(135deg,#F59E0B,#F97316)",border:"none",borderRadius:16,color:"#050810",fontWeight:700,letterSpacing:1,fontFamily:"'Montserrat',sans-serif"},
+};
+
+const C = {
+  root:       {fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#050810",color:"#fff",minHeight:"100vh",display:"flex",flexDirection:"column"},
+  strip:      {display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",background:"#0d1117",borderBottom:"1px solid #1a1a2e",gap:12},
+  stripLabel: {fontSize:13,fontWeight:600,marginBottom:2},
+  stripItems: {fontSize:11,color:"#555",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:240},
+  stripTotal: {fontFamily:"'Montserrat',sans-serif",fontSize:22,color:"#F59E0B",letterSpacing:1,flexShrink:0},
+  stepEmoji:  {fontSize:80,marginBottom:8,display:"block",textAlign:"center"},
+  stepTitle:  {fontFamily:"'Montserrat',sans-serif",fontSize:36,letterSpacing:2,color:"#fff",marginBottom:8,textAlign:"center",fontWeight:900},
+  stepSub:    {fontSize:15,color:"#888",marginBottom:20,textAlign:"center",lineHeight:1.6},
+  phoneDisplay:{display:"flex",alignItems:"center",justifyContent:"center",gap:12,background:"#0d1117",border:"1px solid #21262d",borderRadius:16,padding:"18px 24px",width:"100%",maxWidth:340,marginBottom:8},
+  phonePrefix:{fontSize:16,color:"#555",fontFamily:"'Plus Jakarta Sans',sans-serif"},
+  phoneNum:   {fontFamily:"'Montserrat',sans-serif",fontSize:28,letterSpacing:4,flex:1,textAlign:"center"},
+  spinner:    {width:18,height:18,border:"2px solid #333",borderTop:"2px solid #F59E0B",borderRadius:"50%",animation:"spin 0.8s linear infinite",display:"inline-block",flexShrink:0},
+  nameInput:  {width:"100%",background:"#0d1117",border:"1px solid #21262d",borderRadius:14,padding:"18px 20px",color:"#fff",fontSize:20,marginBottom:16,fontFamily:"'Plus Jakarta Sans',sans-serif",textAlign:"center"},
+  benefits:   {display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"},
+  benefitChip:{background:"rgba(52,211,153,0.08)",border:"1px solid rgba(52,211,153,0.2)",borderRadius:20,padding:"5px 12px",fontSize:12,color:"#34D399"},
+  memberCard: {display:"flex",alignItems:"center",gap:14,background:"#0d1117",border:"1px solid #38BDF822",borderRadius:18,padding:"18px 20px",width:"100%"},
+  memberAva:  {width:54,height:54,borderRadius:"50%",background:"linear-gradient(135deg,#38BDF8,#6366F1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,flexShrink:0,color:"#fff"},
+  memberName: {fontSize:18,fontWeight:700,marginBottom:3},
+  memberPhone:{fontSize:12,color:"#666",fontFamily:"'Montserrat',sans-serif",letterSpacing:1},
+  visits:     {fontFamily:"'Montserrat',sans-serif",fontSize:28,color:"#F59E0B",lineHeight:1},
+  tag:        {fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20,letterSpacing:0.5},
+  bigBtn:     {background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:14,padding:"18px",color:"#050810",fontSize:16,fontWeight:700,letterSpacing:1,fontFamily:"'Montserrat',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"opacity 0.15s"},
+  redeemBox: {width:"100%",marginTop:16,padding:"14px 16px",background:"#0d1117",border:"1px solid rgba(251,146,60,0.2)",borderRadius:14},
+  slider:    {width:"100%",accentColor:"#FB923C",height:6,cursor:"pointer"},
+  ghostBtn:   {background:"#0d1117",border:"1px solid #21262d",borderRadius:14,padding:"16px 20px",color:"#666",fontSize:13,fontWeight:600},
+  backLink:   {background:"transparent",border:"none",color:"#444",fontSize:12,marginTop:12,letterSpacing:1,textDecoration:"underline"},
+};
+
+
+// ============================================================
+// FILE: src/CustomerNameInput.jsx
+// LINES: 60
+// ============================================================
+import { useState } from "react";
+
+export default function CustomerNameInput({ order, onContinue, onBack, onCancel }) {
+  const [name, setName] = useState("");
+
+  return (
+    <div style={S.root}>
+      <header style={S.header}>
+        <button onClick={onBack} style={S.backBtn}>← Back</button>
+        <button onClick={onCancel} style={S.cancelBtn}>✕</button>
+      </header>
+
+      <main style={S.main}>
+        <div style={S.summary}>
+          {order.type === "dine-in" ? "🍽️ Dine-in" : "🛍️ Take-away"}
+          {order.table && ` · ${order.table.name} (${order.table.capacity || 4} pax)`}
+        </div>
+
+        <h1 style={S.title}>Nama Customer</h1>
+        <p style={S.subtitle}>Opsional — untuk panggil pesanan saat siap</p>
+
+        <input
+          type="text"
+          autoFocus
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Mis: Budi, Sarah..."
+          style={S.input}
+          onKeyDown={(e) => e.key === "Enter" && onContinue(name.trim())}
+        />
+
+        <div style={S.actions}>
+          <button onClick={() => onContinue("")} style={S.skipBtn}>Skip →</button>
+          <button onClick={() => onContinue(name.trim())} style={S.continueBtn}>
+            Lanjut ke Menu →
+          </button>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+const S = {
+  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Plus Jakarta Sans',sans-serif" },
+  header: { display:"flex", justifyContent:"space-between", padding:"14px 24px", borderBottom:"1px solid #222", background:"#0a0a0a" },
+  backBtn: { background:"transparent", border:"1px solid #333", color:"#aaa", padding:"8px 14px", borderRadius:8, fontSize:13, cursor:"pointer", fontFamily:"inherit" },
+  cancelBtn: { background:"transparent", border:"1px solid #444", color:"#aaa", padding:"8px 12px", borderRadius:8, fontSize:14, cursor:"pointer", fontFamily:"inherit", minWidth:36 },
+  main: { maxWidth:560, margin:"0 auto", padding:"40px 24px", textAlign:"center" },
+  summary: { background:"#1a1a1a", border:"1px solid #2a2a2a", borderRadius:12, padding:"12px 20px",
+    color:"#F59E0B", fontSize:14, fontWeight:600, marginBottom:40, display:"inline-block" },
+  title: { fontFamily:"'Montserrat',sans-serif", fontSize:48, letterSpacing:3, color:"#F59E0B", margin:"0 0 8px" },
+  subtitle: { color:"#888", fontSize:14, marginBottom:32 },
+  input: { width:"100%", padding:"16px 20px", borderRadius:12, background:"#1a1a1a", border:"2px solid #2a2a2a",
+    color:"#fff", fontFamily:"inherit", fontSize:18, boxSizing:"border-box", marginBottom:24, textAlign:"center" },
+  actions: { display:"flex", gap:12, justifyContent:"center" },
+  skipBtn: { background:"transparent", border:"1px solid #333", color:"#aaa", padding:"14px 24px",
+    borderRadius:12, fontSize:14, fontWeight:600, cursor:"pointer", fontFamily:"inherit" },
+  continueBtn: { background:"#F59E0B", color:"#111", border:"none", padding:"14px 28px",
+    borderRadius:12, fontSize:14, fontWeight:700, cursor:"pointer", fontFamily:"inherit" }
+};
+
+
+// ============================================================
+// FILE: src/POSMenu.jsx
+// LINES: 322
+// ============================================================
+import { useState, useEffect, useMemo } from "react";
+import ToppingPicker from "./ToppingPicker.jsx";
+
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
+
+// Cart key helper: same item + same toppings = same cart row
+function makeCartKey(item, addons) {
+  const tIds = (addons?.toppings || []).map(t => t.id).sort().join("_");
+  return tIds ? `${item.id}-${tIds}` : `${item.id}`;
+}
+
+export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }) {
+  const [menu, setMenu] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [activeCat, setActiveCat] = useState("All");
+  const [cart, setCart] = useState([]);
+  const [toppingItem, setToppingItem] = useState(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/menu`)
+      .then(r => r.json())
+      .then(d => {
+        setMenu(Array.isArray(d) ? d : (d?.items || []));
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  const categories = useMemo(() => {
+    const cats = new Set();
+    menu.forEach(m => cats.add(m.category || m.cat || "Other"));
+    return ["All", ...Array.from(cats).sort()];
+  }, [menu]);
+
+  const filtered = useMemo(() => menu.filter(m => {
+    const cat = m.category || m.cat || "Other";
+    if (activeCat !== "All" && cat !== activeCat) return false;
+    if (search && !(m.name || "").toLowerCase().includes(search.toLowerCase())) return false;
+    if (m.avail === false || m.available === false || m.active === false) return false;
+    return true;
+  }), [menu, activeCat, search]);
+
+  // Add item to cart (with or without toppings)
+  const addItem = (item, addons, addonTotal) => {
+    setCart(c => {
+      const fullAddons = addons || {};
+      const cartKey = makeCartKey(item, fullAddons);
+      const existing = c.find(ci => ci.cartKey === cartKey);
+      if (existing) {
+        return c.map(ci => ci.cartKey === cartKey ? {...ci, qty: ci.qty + 1} : ci);
+      }
+      return [...c, {
+        ...item,
+        cartKey,
+        qty: 1,
+        addons: fullAddons,
+        addonTotal: addonTotal || 0
+      }];
+    });
+  };
+
+  // Click item handler: open topping picker if item has freeToppings
+  const handleItemClick = (item) => {
+    if (item.freeToppings > 0) {
+      setToppingItem(item);
+    } else {
+      addItem(item, {}, 0);
+    }
+  };
+
+  // ToppingPicker confirm callback
+  // ToppingPicker signature: onConfirm(item, selectedToppings[], addonCost)
+  const handleToppingConfirm = (item, selectedToppings, addonCost) => {
+    const toppings = Array.isArray(selectedToppings) ? selectedToppings : [];
+    const addons = { toppings };
+    addItem(item, addons, addonCost || 0);
+    setToppingItem(null);
+  };
+
+  const updateQty = (cartKey, delta) => {
+    setCart(c => c.map(ci => ci.cartKey === cartKey ? {...ci, qty: ci.qty + delta} : ci).filter(ci => ci.qty > 0));
+  };
+
+  const removeItem = (cartKey) => setCart(c => c.filter(ci => ci.cartKey !== cartKey));
+
+  const subtotal = useMemo(() => {
+    return cart.reduce((s, ci) => s + ((ci.price || 0) + (ci.addonTotal || 0)) * ci.qty, 0);
+  }, [cart]);
+  const cartCount = cart.reduce((s, ci) => s + ci.qty, 0);
+  const fmt = (n) => (n || 0).toLocaleString("id-ID");
+
+
+  // Broadcast cart updates to CDS (Step 7B)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      fetch(`${API_BASE}/api/pos/broadcast`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          event: "pos:cart_update",
+          data: { cart, subtotal, order }
+        })
+      }).catch(() => {});
+    }, 250);
+    return () => clearTimeout(t);
+  }, [cart, subtotal]);
+
+  const handleAction = (action) => {
+    if (cart.length === 0) { alert("Cart kosong! Tambah item dulu."); return; }
+    onCheckout({ action, cart, subtotal });
+  };
+
+  return (
+    <div style={S.root}>
+      <header style={S.header}>
+        <button onClick={onBack} style={S.iconBtn}>← Back</button>
+        <div style={S.summary}>
+          <span>{order.type === "dine-in" ? "🍽️ Dine-in" : "🛍️ Take-away"}</span>
+          {order.table && <><span style={S.dot}>·</span><span>{order.table.name}</span></>}
+          {order.customerName && <><span style={S.dot}>·</span><span>{order.customerName}</span></>}
+        </div>
+        <div style={S.kasir}>👤 {cashier.name}</div>
+        <button onClick={onCancel} style={S.iconBtn}>✕</button>
+      </header>
+
+      <div style={S.body}>
+        <div style={S.menuSide}>
+          <div style={S.toolbar}>
+            <input
+              placeholder="🔍 Cari item..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={S.search}
+            />
+          </div>
+          <div style={S.cats}>
+            {categories.map(c => (
+              <button key={c} onClick={() => setActiveCat(c)}
+                style={{...S.catBtn, ...(activeCat === c ? S.catActive : {})}}>
+                {c}
+              </button>
+            ))}
+          </div>
+
+          {loading && <div style={S.loading}>Memuat menu...</div>}
+
+          <div style={S.grid}>
+            {filtered.map(item => (
+              <button key={item.id} onClick={() => handleItemClick(item)} style={S.itemCard}>
+                {item.image ? (
+                  <img src={item.image} alt="" style={S.itemImg} onError={e => e.target.style.display = "none"}/>
+                ) : (
+                  <div style={S.itemImgPlaceholder}>{item.emoji || "🍴"}</div>
+                )}
+                <div style={S.itemName}>{item.name}</div>
+                <div style={S.itemPrice}>Rp {fmt(item.price)}</div>
+                {item.freeToppings > 0 && (
+                  <div style={S.toppingTag}>+ {item.freeToppings} topping</div>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {!loading && filtered.length === 0 && (
+            <div style={S.emptyState}>Gak ada item match.</div>
+          )}
+        </div>
+
+        <div style={S.cartSide}>
+          <div style={S.cartHeader}>
+            <span>🛒 Cart</span>
+            {cartCount > 0 && <span style={S.cartBadge}>{cartCount}</span>}
+          </div>
+
+          {cart.length === 0 ? (
+            <div style={S.cartEmpty}>
+              <div style={{fontSize:56, opacity:0.4, marginBottom:8}}>🛒</div>
+              <p style={{margin:"4px 0"}}>Cart kosong</p>
+              <p style={{fontSize:11, color:"#555", margin:0}}>Click item untuk add</p>
+            </div>
+          ) : (
+            <>
+              <div style={S.cartItems}>
+                {cart.map(ci => {
+                  const toppings = ci.addons?.toppings || [];
+                  const linePrice = ((ci.price || 0) + (ci.addonTotal || 0)) * ci.qty;
+                  return (
+                    <div key={ci.cartKey} style={S.cartItem}>
+                      <div style={S.cartItemTop}>
+                        <div style={{flex:1}}>
+                          <div style={S.cartItemName}>{ci.name}</div>
+                          {toppings.length > 0 && (
+                            <div style={S.toppingList}>
+                              {toppings.map((t, i) => (
+                                <div key={i} style={S.toppingRow}>
+                                  + {t.name}{t.price > 0 && ` (Rp ${fmt(t.price)})`}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <button onClick={() => removeItem(ci.cartKey)} style={S.removeBtn}>✕</button>
+                      </div>
+                      <div style={S.cartItemBot}>
+                        <div style={S.qtyControls}>
+                          <button onClick={() => updateQty(ci.cartKey, -1)} style={S.qtyBtn}>−</button>
+                          <span style={S.qty}>{ci.qty}</span>
+                          <button onClick={() => updateQty(ci.cartKey, 1)} style={S.qtyBtn}>+</button>
+                        </div>
+                        <div style={S.itemSub}>Rp {fmt(linePrice)}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={S.cartTotal}>
+                <div style={S.totalRow}>
+                  <span>Subtotal</span>
+                  <span style={S.totalAmount}>Rp {fmt(subtotal)}</span>
+                </div>
+                <div style={S.taxNote}>PPN 10% included</div>
+              </div>
+
+              <div style={S.actions}>
+                <button onClick={() => handleAction("pay")} style={S.payBtn}>
+                  💸 Bayar Sekarang
+                </button>
+                <button onClick={() => handleAction("openTab")} style={S.tabBtn}>
+                  📋 Open Tab
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Topping Picker Modal */}
+      {toppingItem && (
+        <ToppingPicker
+          item={toppingItem}
+          onClose={() => setToppingItem(null)}
+          onConfirm={handleToppingConfirm}
+        />
+      )}
+    </div>
+  );
+}
+
+const S = {
+  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Plus Jakarta Sans',sans-serif",
+    display:"flex", flexDirection:"column" },
+  header: { display:"flex", alignItems:"center", gap:12,
+    padding:"12px 20px", borderBottom:"1px solid #222", background:"#0a0a0a",
+    position:"sticky", top:0, zIndex:10 },
+  iconBtn: { background:"transparent", border:"1px solid #333", color:"#aaa",
+    padding:"8px 14px", borderRadius:8, fontSize:13, cursor:"pointer", fontFamily:"inherit" },
+  summary: { flex:1, fontSize:14, color:"#F59E0B", fontWeight:600, display:"flex", gap:6, alignItems:"center" },
+  dot: { color:"#444" },
+  kasir: { fontSize:13, color:"#888" },
+  body: { flex:1, display:"flex", overflow:"hidden" },
+  menuSide: { flex:1, padding:"16px 20px", overflowY:"auto", maxHeight:"calc(100vh - 60px)" },
+  toolbar: { marginBottom:12 },
+  search: { width:"100%", padding:"12px 16px", borderRadius:10,
+    background:"#1a1a1a", border:"1px solid #2a2a2a", color:"#fff",
+    fontFamily:"inherit", fontSize:14, boxSizing:"border-box" },
+  cats: { display:"flex", gap:8, marginBottom:16, flexWrap:"wrap" },
+  catBtn: { background:"#1a1a1a", border:"1px solid #2a2a2a", color:"#aaa",
+    padding:"8px 14px", borderRadius:100, fontSize:13, cursor:"pointer",
+    fontFamily:"inherit", whiteSpace:"nowrap" },
+  catActive: { background:"#F59E0B", color:"#111", borderColor:"#F59E0B", fontWeight:700 },
+  loading: { textAlign:"center", color:"#666", padding:40 },
+  grid: { display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(150px, 1fr))", gap:12 },
+  itemCard: { background:"#1a1a1a", border:"1px solid #2a2a2a", borderRadius:14,
+    padding:12, color:"#fff", fontFamily:"inherit", cursor:"pointer",
+    transition:"all 0.15s", textAlign:"left",
+    display:"flex", flexDirection:"column", gap:8, position:"relative" },
+  itemImg: { width:"100%", height:100, objectFit:"cover", borderRadius:8, background:"#222" },
+  itemImgPlaceholder: { width:"100%", height:100, borderRadius:8, background:"#222",
+    display:"flex", alignItems:"center", justifyContent:"center", fontSize:56 },
+  itemName: { fontSize:13, fontWeight:600, lineHeight:1.3 },
+  itemPrice: { fontSize:13, color:"#F59E0B", fontWeight:700 },
+  toppingTag: { fontSize:10, color:"#10B981", fontWeight:600, letterSpacing:0.5,
+    background:"rgba(16,185,129,0.1)", padding:"2px 6px", borderRadius:4,
+    alignSelf:"flex-start" },
+  emptyState: { textAlign:"center", color:"#555", padding:40 },
+  cartSide: { width:340, background:"#0a0a0a", borderLeft:"1px solid #222",
+    display:"flex", flexDirection:"column", maxHeight:"calc(100vh - 60px)", position:"sticky", top:60 },
+  cartHeader: { padding:"16px 20px", borderBottom:"1px solid #222",
+    display:"flex", alignItems:"center", gap:8, fontSize:15, fontWeight:700 },
+  cartBadge: { background:"#F59E0B", color:"#111", padding:"2px 10px", borderRadius:100,
+    fontSize:11, fontWeight:700 },
+  cartEmpty: { flex:1, display:"flex", flexDirection:"column", alignItems:"center",
+    justifyContent:"center", color:"#666", padding:20, textAlign:"center" },
+  cartItems: { flex:1, overflowY:"auto", padding:"8px 16px" },
+  cartItem: { padding:"12px 0", borderBottom:"1px solid #222" },
+  cartItemTop: { display:"flex", justifyContent:"space-between", marginBottom:8, gap:8 },
+  cartItemName: { fontSize:13, fontWeight:600 },
+  toppingList: { marginTop:4, marginLeft:2 },
+  toppingRow: { fontSize:11, color:"#10B981", padding:"1px 0" },
+  removeBtn: { background:"transparent", border:"none", color:"#666", fontSize:14,
+    cursor:"pointer", padding:"0 4px", fontFamily:"inherit" },
+  cartItemBot: { display:"flex", justifyContent:"space-between", alignItems:"center" },
+  qtyControls: { display:"flex", alignItems:"center", gap:8,
+    background:"#1a1a1a", border:"1px solid #2a2a2a", borderRadius:8, padding:"2px" },
+  qtyBtn: { background:"transparent", border:"none", color:"#fff", fontSize:16,
+    width:24, height:24, cursor:"pointer", fontFamily:"inherit", borderRadius:6 },
+  qty: { fontSize:13, fontWeight:700, minWidth:20, textAlign:"center" },
+  itemSub: { fontSize:13, fontWeight:700, color:"#F59E0B" },
+  cartTotal: { padding:"16px 20px", borderTop:"1px solid #222", background:"#111" },
+  totalRow: { display:"flex", justifyContent:"space-between", alignItems:"center",
+    fontSize:15, fontWeight:600 },
+  totalAmount: { fontSize:20, fontWeight:800, color:"#F59E0B", fontFamily:"'Montserrat',sans-serif", letterSpacing:1 },
+  taxNote: { fontSize:10, color:"#555", marginTop:2 },
+  actions: { padding:"12px 16px 20px", display:"flex", flexDirection:"column", gap:8 },
+  payBtn: { background:"#F59E0B", color:"#111", border:"none", borderRadius:12,
+    padding:"14px", fontFamily:"inherit", fontSize:14, fontWeight:800,
+    letterSpacing:1, cursor:"pointer" },
+  tabBtn: { background:"transparent", color:"#aaa", border:"1px solid #444", borderRadius:12,
+    padding:"12px", fontFamily:"inherit", fontSize:13, fontWeight:600, cursor:"pointer" }
+};
+
+
+// ============================================================
+// FILE: src/POSOrder.jsx
+// LINES: 107
+// ============================================================
+import { useState } from "react";
+import OrderTypePicker from "./OrderTypePicker.jsx";
+import TableSelector from "./TableSelector.jsx";
+import POSCustomerPicker from "./POSCustomerPicker.jsx";
+import POSMenu from "./POSMenu.jsx";
+import POSConfirm from "./POSConfirm.jsx";
+import POSSuccess from "./POSSuccess.jsx";
+
+export default function POSOrder({ cashier, resumeTab, onCancel, onComplete }) {
+  // Convert tab items (DB format) back to cart format
+  const itemsToCart = (items) => (items || []).map(it => ({
+    name: it.n || "",
+    emoji: it.e || "",
+    qty: it.q || 1,
+    price: it.p || 0,
+    addonTotal: it.addonTotal || 0,
+    addons: it.addons || {},
+  }));
+
+  const initialState = resumeTab ? {
+    type: resumeTab.type === "dine" ? "dine-in" : "take-away",
+    table: (resumeTab.table && resumeTab.table !== "-")
+      ? { id: resumeTab.table, name: resumeTab.table }
+      : null,
+    customerName: resumeTab.customer_name || resumeTab.customerName || "",
+    customerId: resumeTab.customer_id || resumeTab.customerId || null,
+    customerPhone: resumeTab.customer_phone || resumeTab.customerPhone || null,
+    action: "openTab",
+    cart: itemsToCart(resumeTab.items),
+    subtotal: resumeTab.total || 0,
+    created: null,
+    resumeTabId: resumeTab.id,
+  } : {
+    type: null, table: null, customerName: "",
+    action: null, cart: [], subtotal: 0, created: null
+  };
+
+  const [step, setStep] = useState(resumeTab ? "menu" : "type");
+  const [order, setOrder] = useState(initialState);
+  const update = (changes) => setOrder(o => ({ ...o, ...changes }));
+
+  if (step === "type") return (
+    <OrderTypePicker
+      onPick={(type) => { update({ type }); setStep(type === "dine-in" ? "table" : "name"); }}
+      onCancel={onCancel}
+    />
+  );
+
+  if (step === "table") return (
+    <TableSelector
+      onPick={(table) => { update({ table }); setStep("name"); }}
+      onBack={() => setStep("type")}
+      onCancel={onCancel}
+    />
+  );
+
+  if (step === "name") return (
+    <POSCustomerPicker
+      order={order}
+      onContinue={(customer) => { update({ ...customer }); setStep("menu"); }}
+      onBack={() => setStep(order.type === "dine-in" ? "table" : "type")}
+      onCancel={onCancel}
+    />
+  );
+
+  if (step === "menu") return (
+    <POSMenu
+      order={order}
+      cashier={cashier}
+      onBack={() => setStep("name")}
+      onCancel={onCancel}
+      onCheckout={({ action, cart, subtotal }) => {
+        update({ action, cart, subtotal });
+        setStep("confirm");
+      }}
+    />
+  );
+
+  if (step === "confirm") return (
+    <POSConfirm
+      order={order}
+      cashier={cashier}
+      onBack={() => setStep("menu")}
+      onCancel={onCancel}
+      onSuccess={(created) => {
+        update({ created });
+        setStep("success");
+      }}
+    />
+  );
+
+  if (step === "success") return (
+    <POSSuccess
+      created={order.created}
+      order={order}
+      cashier={cashier}
+      onDone={onComplete}
+      onAnother={() => {
+        setOrder({
+          type: null, table: null, customerName: "",
+          action: null, cart: [], subtotal: 0, created: null
+        });
+        setStep("type");
+      }}
+    />
+  );
+}
+
+
+// ============================================================
+// FILE: src/POSConfirm.jsx
+// LINES: 529
+// ============================================================
+import { useState, useEffect, useRef } from "react";
+
+import POSSplitPayment from "./POSSplitPayment.jsx";
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
+const fmt = (n) => (n || 0).toLocaleString("id-ID");
+
+// Broadcast to CDS helper
+const cdsCast = (event, data) => {
+  fetch(`${API_BASE}/api/pos/broadcast`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ event, data })
+  }).catch(() => {});
+};
+
+export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess }) {
+  const [payMethod, setPayMethod] = useState("CASH");
+  const [showSplitModal, setShowSplitModal] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [qrisFlow, setQrisFlow] = useState(false);
+
+  // Broadcast payment method to CDS (anti-fraud: customer sees method live)
+  useEffect(() => {
+    if (!isOpenTab) cdsCast("pos:payment_method", { method: payMethod });
+  }, [payMethod]);
+  useEffect(() => {
+    return () => cdsCast("pos:payment_method", { method: null });
+  }, []);
+
+  const cart = order.cart || [];
+  const subtotal = order.subtotal || 0;
+  const isOpenTab = order.action === "openTab";
+  const isResuming = !!order.resumeTabId;
+
+  const submitOrder = async (payOverride, midtransOrderId) => {
+    setBusy(true);
+    const action = order.action || "pay";
+    const status = action === "openTab" ? "tab_open" : "waiting";
+
+    // RESUME MODE: update existing tab_open order via PATCH
+    if (isResuming) {
+      try {
+        const r = await fetch(`${API_BASE}/api/orders/${order.resumeTabId}/items`, {
+          method: "PATCH",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({
+            items: cart.map(ci => ({
+              e: ci.emoji || "",
+              n: ci.name,
+              q: ci.qty,
+              p: ci.price,
+              addonTotal: ci.addonTotal || 0,
+              addons: ci.addons || {}
+            })),
+            subtotal,
+            tax: Math.round(subtotal * 0.1 / 1.1),
+            total: subtotal
+          })
+        });
+        if (!r.ok) throw new Error("PATCH error " + r.status);
+        const updated = await r.json();
+        const updatedOrder = updated.order || updated;
+        // Resume mode: skip CDS payment_complete broadcast (tab still open, no payment)
+        // Skip POSSuccess routing (no payment happened)
+        onCancel();
+        return;
+      } catch (e) {
+        alert("Gagal update tab: " + e.message);
+        setBusy(false);
+        return;
+      }
+    }
+
+    try {
+      const r = await fetch(`${API_BASE}/api/orders`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          type: order.type === "dine-in" ? "dine" : "takeaway",
+          table: order.table?.id || null,
+          items: cart.map(ci => ({
+            e: ci.emoji || "",
+            n: ci.name,
+            q: ci.qty,
+            p: ci.price,
+            addonTotal: ci.addonTotal || 0,
+            addons: ci.addons || {}
+          })),
+          pay: payOverride || payMethod,
+          subtotal,
+          total: subtotal,
+          customerName: order.customerName || null,
+          customerId: order.customerId || null,
+          customerPhone: order.customerPhone || null,
+          status,
+          kasir: cashier?.name || null,
+          source: "pos",
+          midtransId: midtransOrderId || null
+        })
+      });
+      if (!r.ok) throw new Error("Server error " + r.status);
+      const saved = await r.json();
+
+      // Mark table as occupied for dine-in
+      if (order.type === "dine-in" && order.table?.id) {
+        fetch(`${API_BASE}/api/tables/${order.table.id}`, {
+          method: "PATCH",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({status: "occupied"})
+        }).catch(() => {});
+      }
+
+      // For Open Tab (new tab), skip payment success flow
+      if (isOpenTab) {
+        // No payment, no CDS celebration, just back to home
+        onCancel();
+        return;
+      }
+
+      // Broadcast success to CDS (real payment)
+      cdsCast("pos:order_complete", { order: saved });
+
+      onSuccess(saved);
+    } catch (e) {
+      alert("Gagal save order: " + e.message);
+      setBusy(false);
+    }
+  };
+
+  const handleConfirm = () => {
+    if (isOpenTab) {
+      submitOrder("UNPAID");
+      return;
+    }
+    if (payMethod === "QRIS") {
+      setQrisFlow(true);
+    } else {
+      submitOrder("CASH");
+    }
+  };
+
+  if (qrisFlow) {
+    return <POSQRISFlow
+      cart={cart}
+      subtotal={subtotal}
+      order={order}
+      onCancel={() => setQrisFlow(false)}
+      onPaid={(midtransOrderId) => {
+        submitOrder("QRIS", midtransOrderId);
+      }}
+    />;
+  }
+
+  return (
+    <div style={S.root}>
+      <header style={S.header}>
+        <button onClick={onBack} style={S.iconBtn}>← Back</button>
+        <h1 style={S.headTitle}>Konfirmasi Pembayaran</h1>
+        <button onClick={onCancel} style={S.iconBtn}>✕</button>
+      </header>
+
+      <main style={S.main}>
+        {isOpenTab && (
+          <div style={{
+            margin: "12px 16px",
+            padding: "14px 18px",
+            borderRadius: 12,
+            background: "rgba(245,158,11,0.10)",
+            border: "1px solid rgba(245,158,11,0.40)",
+            color: "#F59E0B",
+            fontSize: 14,
+            fontWeight: 600,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}>
+            <span style={{fontSize: 22}}>📋</span>
+            <div>
+              <div style={{fontSize: 15, fontWeight: 700}}>{isResuming ? "Tambah ke Tab #" + order.resumeTabId : "Mode Buka Tab"}</div>
+              <div style={{fontSize: 12, color: "#FCD34D", marginTop: 2}}>{isResuming ? "Item lama + baru akan diupdate ke tab ini. Bayar nanti pas customer lunasin." : "Tab disimpan tanpa pembayaran. Bayar nanti pas customer mau lunasin."}</div>
+            </div>
+          </div>
+        )}
+
+        <div style={S.metaCard}>
+          <div style={S.metaRow}>
+            <span style={S.metaLabel}>Tipe</span>
+            <span style={S.metaValue}>
+              {order.type === "dine-in" ? "🍽️ Dine-in" : "🛍️ Take-away"}
+              {order.table && ` · ${order.table.name}`}
+            </span>
+          </div>
+          {order.customerName && (
+            <div style={S.metaRow}>
+              <span style={S.metaLabel}>Customer</span>
+              <span style={S.metaValue}>
+                {order.customerId ? "📱" : "👤"} {order.customerName}
+                {order.customerPoints > 0 && <span style={{color:"#F59E0B",marginLeft:8,fontSize:12}}>· {order.customerPoints} poin</span>}
+              </span>
+            </div>
+          )}
+          <div style={S.metaRow}>
+            <span style={S.metaLabel}>Kasir</span>
+            <span style={S.metaValue}>👤 {cashier?.name}</span>
+          </div>
+        </div>
+
+        <div style={S.itemsCard}>
+          <div style={S.itemsHeader}>PESANAN ({cart.length} ITEM)</div>
+          {cart.map((ci, idx) => {
+            const toppings = ci.addons?.toppings || [];
+            const lineTotal = ((ci.price || 0) + (ci.addonTotal || 0)) * ci.qty;
+            return (
+              <div key={ci.cartKey || ci.id || idx} style={S.cartRow}>
+                <div style={S.cartLeft}>
+                  <span style={S.cartEmoji}>{ci.emoji || "🍴"}</span>
+                  <div>
+                    <div style={S.cartName}>{ci.name}</div>
+                    <div style={S.cartSubprice}>Rp {fmt(ci.price)} × {ci.qty}</div>
+                    {toppings.length > 0 && (
+                      <div style={S.cartToppings}>
+                        {toppings.map((t, i) => (
+                          <div key={i}>+ {t.name}{t.price > 0 && ` (Rp ${fmt(t.price)})`}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div style={S.cartLineTotal}>Rp {fmt(lineTotal)}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={S.subtotalCard}>
+          <div>
+            <div style={S.subLabel}>Subtotal</div>
+            <div style={S.taxNote}>PPN 10% included</div>
+          </div>
+          <div style={S.subAmount}>Rp {fmt(subtotal)}</div>
+        </div>
+
+        {!isOpenTab && (
+          <div style={S.payCard}>
+          <div style={S.payTitle}>Metode Pembayaran</div>
+          <div style={S.payOptions}>
+            <button
+              onClick={() => setPayMethod("CASH")}
+              style={{...S.payBtn, ...(payMethod === "CASH" ? S.payActive : {})}}
+            >
+              <span style={S.payIcon}>💵</span>
+              <span style={S.payName}>CASH</span>
+              <span style={S.payHint}>Bayar tunai ke kasir</span>
+            </button>
+            <button
+              onClick={() => setPayMethod("QRIS")}
+              style={{...S.payBtn, ...(payMethod === "QRIS" ? S.payActive : {})}}
+            >
+              <span style={S.payIcon}>📱</span>
+              <span style={S.payName}>QRIS</span>
+              <span style={S.payHint}>Customer scan QR di CDS</span>
+            </button>
+            <button
+              onClick={() => setShowSplitModal(true)}
+              style={{...S.payBtn, background:"rgba(139,92,246,0.10)", borderColor:"rgba(139,92,246,0.4)"}}
+            >
+              <span style={S.payIcon}>💸</span>
+              <span style={S.payName}>SPLIT</span>
+              <span style={S.payHint}>Bayar pakai 2+ metode</span>
+            </button>
+          </div>
+        </div>
+        )}
+
+        <button onClick={handleConfirm} disabled={busy} style={S.confirmBtn}>
+          {busy ? "..." : isResuming ? "✓ Update Tab" : isOpenTab ? "📋 Buka Tab (belum dibayar)" : payMethod === "QRIS" ? "📱 Tampilkan QR ke Customer" : "✓ Konfirmasi Bayar"}
+        </button>
+      {showSplitModal && (
+        <POSSplitPayment
+          order={{
+            id: null,
+            total: subtotal,
+            type: order.type,
+            table: order.table?.id,
+            customerName: order.customerName,
+            cart: cart,
+            subtotal: subtotal,
+            _newOrder: true,
+            _orderData: {
+              type: order.type === "dine-in" ? "dine" : "takeaway",
+              table: order.table?.id || null,
+              items: cart.map(ci => ({
+                e: ci.emoji || "",
+                n: ci.name,
+                q: ci.qty,
+                p: ci.price,
+                addonTotal: ci.addonTotal || 0,
+                addons: ci.addons || {}
+              })),
+              subtotal,
+              total: subtotal,
+              customerName: order.customerName || null,
+              customerId: order.customerId || null,
+              customerPhone: order.customerPhone || null,
+              kasir: cashier?.name || null,
+              source: "pos",
+            }
+          }}
+          kasir={cashier?.name || "Manager"}
+          onClose={() => setShowSplitModal(false)}
+          onSuccess={(result) => {
+            setShowSplitModal(false);
+            onSuccess(result.order || result);
+          }}
+        />
+      )}
+      </main>
+    </div>
+  );
+}
+
+// ── QRIS Flow Sub-component ─────────────────────────────────────────
+function POSQRISFlow({ cart, subtotal, order, onCancel, onPaid }) {
+  const [status, setStatus] = useState("loading"); // loading | waiting | paid | timeout | error
+  const [qrData, setQrData] = useState(null);
+  const [errMsg, setErrMsg] = useState("");
+  const pollRef = useRef(null);
+  const startedRef = useRef(false);
+
+  useEffect(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+    initPayment();
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
+
+  const initPayment = async () => {
+    setStatus("loading");
+    setErrMsg("");
+    try {
+      const tempOrderId = "POS-" + Date.now();
+      const r = await fetch(`${API_BASE}/api/payment/qris`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          orderId: tempOrderId,
+          amount: subtotal,
+          items: cart.map(c => ({
+            id: c.id,
+            n: c.name,
+            p: (c.price || 0) + (c.addonTotal || 0),
+            q: c.qty
+          })),
+          customerName: order.customerName || "POS Customer"
+        })
+      });
+
+      if (!r.ok) {
+        const text = await r.text();
+        throw new Error(`Server ${r.status}: ${text.substring(0, 200)}`);
+      }
+      const data = await r.json();
+
+      const qrUrl = data.qrCode || data.qr_code || data.actions?.find(a => a.name === "generate-qr-code")?.url || data.actions?.[0]?.url;
+      const mtOrderId = data.midtransOrderId || data.order_id || tempOrderId;
+
+      if (!qrUrl) throw new Error("No QR returned by server");
+
+      const qr = { qrCode: qrUrl, amount: subtotal, midtransOrderId: mtOrderId };
+      setQrData(qr);
+      setStatus("waiting");
+
+      // Broadcast to CDS
+      cdsCast("pos:payment_qris", qr);
+
+      // Start polling
+      pollRef.current = setInterval(() => pollStatus(mtOrderId), 3000);
+    } catch (e) {
+      setErrMsg(e.message);
+      setStatus("error");
+    }
+  };
+
+  const pollStatus = async (mtOrderId) => {
+    try {
+      const r = await fetch(`${API_BASE}/api/payment/status/${mtOrderId}`);
+      if (r.ok) {
+        const data = await r.json();
+        const st = data.status || data.transaction_status;
+        if (st === "settlement" || st === "capture" || st === "paid" || st === "success") {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setStatus("paid");
+          setTimeout(() => onPaid(mtOrderId), 1500);
+        } else if (st === "deny" || st === "cancel" || st === "expire") {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setStatus("timeout");
+        }
+      }
+    } catch {}
+  };
+
+  const handleCancel = () => {
+    if (pollRef.current) clearInterval(pollRef.current);
+    cdsCast("pos:reset", {});
+    onCancel();
+  };
+
+  return (
+    <div style={S.root}>
+      <header style={S.header}>
+        <button onClick={handleCancel} style={S.iconBtn}>← Cancel</button>
+        <h1 style={S.headTitle}>QRIS Payment</h1>
+        <span style={{...S.iconBtn, opacity:0, pointerEvents:"none"}}>✕</span>
+      </header>
+
+      <main style={{...S.main, alignItems:"center", textAlign:"center"}}>
+        {status === "loading" && (
+          <>
+            <div style={{fontSize:64,marginBottom:16}}>⏳</div>
+            <h2 style={{fontSize:24,marginBottom:8}}>Membuat QR Code...</h2>
+            <p style={{color:"#888"}}>Mohon tunggu sebentar</p>
+          </>
+        )}
+
+        {status === "waiting" && qrData && (
+          <>
+            <div style={{padding:16, background:"#fff", borderRadius:16, marginBottom:24}}>
+              <img src={qrData.qrCode} alt="QR" style={{width:240, height:240}}/>
+            </div>
+            <h2 style={{fontSize:22, marginBottom:8}}>Customer scan QR di CDS layar</h2>
+            <p style={{color:"#888", marginBottom:24}}>QR juga tampil besar di Customer Display</p>
+            <div style={{padding:"12px 24px", background:"#111", border:"1px solid #F59E0B",
+              borderRadius:12, marginBottom:24, display:"inline-flex", flexDirection:"column", alignItems:"center"}}>
+              <span style={{fontSize:11, color:"#888", letterSpacing:2}}>MENUNGGU PEMBAYARAN</span>
+              <span style={{fontSize:32, fontFamily:"'Montserrat',sans-serif", color:"#F59E0B", letterSpacing:2}}>
+                Rp {fmt(subtotal)}
+              </span>
+            </div>
+            <div style={{color:"#888", fontSize:13}}>
+              <span style={{display:"inline-block", animation:"pulse 1.5s infinite"}}>●</span> Polling status setiap 3 detik
+            </div>
+          </>
+        )}
+
+        {status === "paid" && (
+          <>
+            <div style={{fontSize:120, marginBottom:16}}>✅</div>
+            <h2 style={{fontSize:28, color:"#10B981", marginBottom:8}}>Pembayaran Berhasil!</h2>
+            <p style={{color:"#888"}}>Menyimpan order...</p>
+          </>
+        )}
+
+        {status === "timeout" && (
+          <>
+            <div style={{fontSize:64, marginBottom:16}}>⏰</div>
+            <h2 style={{fontSize:24, marginBottom:8}}>Pembayaran Timeout</h2>
+            <p style={{color:"#888", marginBottom:24}}>QR expired atau customer cancel</p>
+            <button onClick={handleCancel} style={S.confirmBtn}>← Kembali</button>
+          </>
+        )}
+
+        {status === "error" && (
+          <>
+            <div style={{fontSize:64, marginBottom:16}}>⚠️</div>
+            <h2 style={{fontSize:22, color:"#EF4444", marginBottom:8}}>QRIS Tidak Tersedia</h2>
+            <p style={{color:"#888", marginBottom:8, maxWidth:500}}>{errMsg}</p>
+            <p style={{color:"#666", fontSize:13, marginBottom:24, maxWidth:500}}>
+              Backend Midtrans mungkin belum dikonfigurasi.<br/>
+              Gunakan Cash sementara waktu.
+            </p>
+            <button onClick={handleCancel} style={S.confirmBtn}>← Pakai Cash</button>
+          </>
+        )}
+      </main>
+    </div>
+  );
+}
+
+const S = {
+  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Plus Jakarta Sans',sans-serif",
+    display:"flex", flexDirection:"column" },
+  header: { display:"flex", alignItems:"center", justifyContent:"space-between",
+    padding:"16px 24px", borderBottom:"1px solid #222" },
+  headTitle: { fontFamily:"'Montserrat',sans-serif", fontSize:32, color:"#F59E0B", margin:0 },
+  iconBtn: { background:"transparent", border:"1px solid #333", color:"#aaa",
+    padding:"8px 14px", borderRadius:8, fontSize:13, cursor:"pointer", fontFamily:"inherit" },
+  main: { flex:1, padding:"24px 20px", maxWidth:640, margin:"0 auto", width:"100%",
+    boxSizing:"border-box", display:"flex", flexDirection:"column", gap:16 },
+
+  metaCard: { background:"#0a0a0a", border:"1px solid #222", borderRadius:14, padding:16 },
+  metaRow: { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0" },
+  metaLabel: { fontSize:13, color:"#888" },
+  metaValue: { fontSize:14, fontWeight:600 },
+
+  itemsCard: { background:"#0a0a0a", border:"1px solid #222", borderRadius:14, padding:"12px 16px" },
+  itemsHeader: { fontSize:11, color:"#666", letterSpacing:2, fontWeight:700, padding:"4px 0 12px" },
+  cartRow: { display:"flex", justifyContent:"space-between", alignItems:"flex-start",
+    padding:"12px 0", borderTop:"1px solid #1a1a1a", gap:12 },
+  cartLeft: { display:"flex", gap:12, flex:1 },
+  cartEmoji: { fontSize:36 },
+  cartName: { fontSize:14, fontWeight:700 },
+  cartSubprice: { fontSize:11, color:"#888", marginTop:2 },
+  cartToppings: { marginTop:4, fontSize:11, color:"#10B981" },
+  cartLineTotal: { fontSize:15, fontWeight:800, color:"#F59E0B" },
+
+  subtotalCard: { background:"#0a0a0a", border:"1px solid #F59E0B", borderRadius:14,
+    padding:"16px 20px", display:"flex", justifyContent:"space-between", alignItems:"center" },
+  subLabel: { fontSize:13, fontWeight:600 },
+  taxNote: { fontSize:10, color:"#666", marginTop:2 },
+  subAmount: { fontFamily:"'Montserrat',sans-serif", fontSize:36, color:"#F59E0B", letterSpacing:1 },
+
+  payCard: { background:"#0a0a0a", border:"1px solid #222", borderRadius:14, padding:16 },
+  payTitle: { fontSize:11, color:"#888", letterSpacing:2, fontWeight:700, marginBottom:12 },
+  payOptions: { display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 },
+  payBtn: { background:"#111", border:"2px solid #2a2a2a", borderRadius:12,
+    padding:"14px 12px", cursor:"pointer", color:"#fff", fontFamily:"inherit",
+    display:"flex", flexDirection:"column", alignItems:"center", gap:4, transition:"all 0.15s" },
+  payActive: { borderColor:"#F59E0B", background:"rgba(245,158,11,0.08)" },
+  payIcon: { fontSize:32 },
+  payName: { fontSize:14, fontWeight:800 },
+  payHint: { fontSize:10, color:"#888", textAlign:"center" },
+
+  confirmBtn: { background:"#F59E0B", color:"#111", border:"none", borderRadius:14,
+    padding:"18px", fontFamily:"inherit", fontSize:16, fontWeight:800,
+    letterSpacing:1, cursor:"pointer", boxShadow:"0 0 30px rgba(245,158,11,0.3)",
+    marginTop:8 }
+};
+
+
+// ============================================================
+// FILE: src/CashPayment.jsx
+// LINES: 269
+// ============================================================
+import { useState } from "react";
+import * as audio from "./audio.js";
+
+const S = {
+  page: {
+    minHeight: '100vh',
+    background: '#0a0a0a',
+    color: '#fff',
+    padding: '32px 24px',
+    fontFamily: '-apple-system, system-ui, sans-serif',
+  },
+  title:    { fontSize: 32, fontWeight: 700, letterSpacing: 4, textAlign: 'center', margin: 0 },
+  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginTop: 4, marginBottom: 32 },
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: 16,
+    maxWidth: 920,
+    margin: '0 auto',
+  },
+  card: {
+    background: 'rgba(255,255,255,0.04)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    borderRadius: 16,
+    padding: 24,
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 480,
+  },
+  chip: {
+    display: 'inline-block',
+    background: 'rgba(255,255,255,0.08)',
+    padding: '4px 10px',
+    borderRadius: 8,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
+  },
+  label: {
+    fontSize: 11,
+    letterSpacing: 2,
+    color: 'rgba(255,255,255,0.5)',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  amount: { fontSize: 32, fontWeight: 700, color: '#fb923c', fontVariantNumeric: 'tabular-nums' },
+  receivedDisplay: {
+    fontSize: 40,
+    fontWeight: 700,
+    fontVariantNumeric: 'tabular-nums',
+    marginBottom: 20,
+  },
+  quickGrid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: 8,
+    marginBottom: 20,
+  },
+  qBtn: {
+    background: 'rgba(255,255,255,0.06)',
+    border: '1px solid rgba(255,255,255,0.1)',
+    color: '#fff',
+    borderRadius: 10,
+    padding: '14px 8px',
+    fontSize: 15,
+    fontWeight: 600,
+    cursor: 'pointer',
+    transition: 'background .1s',
+  },
+  qBtnPas:   { background: 'rgba(251,146,60,0.15)', border: '1px solid rgba(251,146,60,0.4)', color: '#fb923c' },
+  qBtnReset: { background: 'transparent', border: '1px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.6)' },
+  changeBox: {
+    background: 'rgba(255,255,255,0.04)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  changeLabel: { fontSize: 11, letterSpacing: 2, color: 'rgba(255,255,255,0.5)', marginBottom: 4 },
+  changeValue: { fontSize: 28, fontWeight: 700, fontVariantNumeric: 'tabular-nums' },
+  changeOK:    { color: '#4ade80' },
+  changeShort: { color: '#f87171' },
+  confirmBtn: {
+    width: '100%',
+    background: '#fb923c',
+    border: 'none',
+    color: '#000',
+    borderRadius: 12,
+    padding: '18px 24px',
+    fontSize: 16,
+    fontWeight: 700,
+    letterSpacing: 1,
+    cursor: 'pointer',
+    marginTop: 'auto',
+  },
+  confirmDisabled: {
+    background: 'rgba(255,255,255,0.08)',
+    color: 'rgba(255,255,255,0.3)',
+    cursor: 'not-allowed',
+  },
+  backBtn: {
+    background: 'transparent',
+    border: '1px solid rgba(255,255,255,0.15)',
+    color: '#fff',
+    borderRadius: 12,
+    padding: '12px 20px',
+    fontSize: 13,
+    cursor: 'pointer',
+    marginTop: 16,
+  },
+  footer: { textAlign: 'center', marginTop: 24, fontSize: 11, color: 'rgba(255,255,255,0.3)' },
+};
+
+export default function CashPayment({ items = [], amount = 0, subtotal = 0, promo = null, orderNum, onSuccess, onBack, isMember = false, pointsRedeemed = 0, pointsDiscount = 0 }) {
+  const [received, setReceived] = useState(0);
+
+  const change   = received - amount;
+  const isEnough = received >= amount;
+
+  const addAmount = (n) => setReceived(r => r + n);
+  const setExact  = () => setReceived(amount);
+  const reset     = () => setReceived(0);
+
+  const confirm = () => {
+    if (!isEnough) return;
+    audio.playPaymentSuccess();
+    audio.speakThanks();
+    onSuccess({ cashReceived: received, cashChange: change });
+  };
+
+  return (
+    <div style={S.page}>
+      <h1 style={S.title}>BINTORO</h1>
+      <p style={S.subtitle}>Pembayaran Tunai</p>
+
+      <div style={S.grid}>
+        {/* LEFT — order summary */}
+        <div style={S.card}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+            <span style={S.chip}>#{orderNum}</span>
+            <span style={S.chip}>{items.length} item</span>
+          </div>
+
+          <div style={S.label}>ITEMS</div>
+          <div style={{ flex: 1, overflowY: 'auto', marginBottom: 16 }}>
+            {items.map((it, i) => {
+              const qty = it.qty ?? 1;
+              const baseTotal = (it.price ?? 0) * qty;
+              const breakdown = it.addonBreakdown || [];
+              const addonTotalForItem = (it.addonTotal ?? 0) * qty;
+              const hasBreakdown = breakdown.length > 0;
+              return (
+                <div key={i} style={{padding:'8px 0',fontSize:13,borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+                  <div style={{display:'flex',justifyContent:'space-between'}}>
+                    <span>{qty}× {it.name}</span>
+                    <span>Rp {baseTotal.toLocaleString('id-ID')}</span>
+                  </div>
+                  {hasBreakdown && breakdown.map((a, j) => {
+                    const linePrice = (a.price || 0) * qty;
+                    return (
+                      <div key={j} style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#888',marginLeft:16,marginTop:3,lineHeight:1.4}}>
+                        <span>+ {a.name}</span>
+                        <span style={{color: linePrice > 0 ? '#888' : '#34D399'}}>
+                          {linePrice > 0 ? `Rp ${linePrice.toLocaleString('id-ID')}` : 'gratis'}
+                        </span>
+                      </div>
+                    );
+                  })}
+                  {hasBreakdown && (() => {
+                    const explicit = breakdown.reduce((s,a)=>s+(a.price||0),0);
+                    const extra = Math.max(0, (it.addonTotal||0) - explicit) * qty;
+                    return extra > 0 ? (
+                      <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#888',marginLeft:16,marginTop:3,lineHeight:1.4}}>
+                        <span>+ Topping ekstra</span>
+                        <span>Rp {extra.toLocaleString('id-ID')}</span>
+                      </div>
+                    ) : null;
+                  })()}
+                  {!hasBreakdown && it.addonLabels?.length > 0 && addonTotalForItem > 0 && (
+                    <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#888',marginLeft:16,marginTop:3,lineHeight:1.4}}>
+                      <span>+ {it.addonLabels.join(', ')}</span>
+                      <span>Rp {addonTotalForItem.toLocaleString('id-ID')}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* RINGKASAN — transparant breakdown so customer ga bingung */}
+          <div style={{ paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.1)', marginBottom: 12 }}>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#aaa",padding:"4px 0"}}>
+              <span>Subtotal</span>
+              <span>Rp {(subtotal || amount).toLocaleString('id-ID')}</span>
+            </div>
+            {promo && promo.discount > 0 && (
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#34D399",padding:"4px 0"}}>
+                <span>🎟 Promo {promo.code || ""}</span>
+                <span>− Rp {promo.discount.toLocaleString('id-ID')}</span>
+              </div>
+            )}
+            {promo?.freeItems?.length > 0 && (
+              <div style={{fontSize:11,color:"#6EE7B7",padding:"2px 0 6px 18px",fontStyle:"italic"}}>
+                🎁 GRATIS: {promo.freeItems.map(fi => `${fi.qty}× ${fi.name}`).join(", ")}
+              </div>
+            )}
+            {pointsRedeemed > 0 && (
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#FB923C",padding:"4px 0"}}>
+                <span>🎁 Tukar {pointsRedeemed} poin</span>
+                <span>− Rp {pointsDiscount.toLocaleString('id-ID')}</span>
+              </div>
+            )}
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#666",padding:"4px 0",fontStyle:"italic"}}>
+              <span>PPN</span>
+              <span>sudah termasuk</span>
+            </div>
+          </div>
+
+          <div style={{ paddingTop: 12, borderTop: '2px solid rgba(255,255,255,0.15)' }}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
+              <div style={S.label}>TOTAL</div>
+              <div style={S.amount}>Rp {amount.toLocaleString('id-ID')}</div>
+            </div>
+            {isMember && (
+              <div style={{marginTop:10,padding:"10px 12px",background:"rgba(52,211,153,0.08)",border:"1px solid rgba(52,211,153,0.2)",borderRadius:8,fontSize:12,color:"#34D399",textAlign:"center"}}>
+                🎁 Anda akan dapat <strong>{Math.floor(amount / 1000)} poin</strong> dari pembelian ini
+              </div>
+            )}
+          </div>
+
+          {onBack && <button style={S.backBtn} onClick={onBack}>← Kembali</button>}
+        </div>
+
+        {/* RIGHT — cash entry */}
+        <div style={S.card}>
+          <div style={S.label}>UANG DITERIMA</div>
+          <div style={S.receivedDisplay}>Rp {received.toLocaleString('id-ID')}</div>
+
+          <div style={S.quickGrid}>
+            <button style={S.qBtn} onClick={() => addAmount(50000)}>+ 50rb</button>
+            <button style={S.qBtn} onClick={() => addAmount(100000)}>+ 100rb</button>
+            <button style={S.qBtn} onClick={() => addAmount(200000)}>+ 200rb</button>
+            <button style={S.qBtn} onClick={() => addAmount(500000)}>+ 500rb</button>
+            <button style={{ ...S.qBtn, ...S.qBtnPas }} onClick={setExact}>UANG PAS</button>
+            <button style={{ ...S.qBtn, ...S.qBtnReset }} onClick={reset}>RESET</button>
+          </div>
+
+          {received > 0 && (
+            <div style={S.changeBox}>
+              <div style={S.changeLabel}>{isEnough ? 'KEMBALIAN' : 'KURANG'}</div>
+              <div style={{ ...S.changeValue, ...(isEnough ? S.changeOK : S.changeShort) }}>
+                Rp {Math.abs(change).toLocaleString('id-ID')}
+              </div>
+            </div>
+          )}
+
+          <button
+            style={{ ...S.confirmBtn, ...(isEnough ? {} : S.confirmDisabled) }}
+            disabled={!isEnough}
+            onClick={confirm}
+          >
+            ✓ KONFIRMASI BAYAR
+          </button>
+        </div>
+      </div>
+
+      <div style={S.footer}>BINTORO Kiosk · {new Date().toLocaleString('id-ID')}</div>
+    </div>
+  );
+}
+
+
+// ============================================================
+// FILE: src/POSSplitPayment.jsx
+// LINES: 556
+// ============================================================
+import React, { useState, useEffect, useRef } from "react";
+
+const API = import.meta.env.VITE_API_URL || "http://localhost:3011";
+const fIDR = (n) => "Rp " + (n || 0).toLocaleString("id-ID");
+
+function cdsCast(event, data) {
+  fetch(`${API}/api/pos/broadcast`, {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ event, data })
+  }).catch(() => {});
+}
+
+export default function POSSplitPayment({ order, kasir, onClose, onSuccess }) {
+  const total = order.total || 0;
+  const [payments, setPayments] = useState([
+    { method: "CASH", amount: "", cashReceived: "", change: 0 }
+  ]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  // QRIS sub-flow state
+  const [qrisStep, setQrisStep] = useState(null); // null | "loading" | "waiting" | "paid" | "error"
+  const [qrData, setQrData] = useState(null);
+  const [mtOrderId, setMtOrderId] = useState(null);
+  const [finalPayloadRef, setFinalPayloadRef] = useState(null);
+  const pollRef = useRef(null);
+
+  const totalPaid = payments.reduce((s, p) => s + (parseInt(p.amount) || 0), 0);
+  const remaining = total - totalPaid;
+  const isComplete = remaining <= 0;
+  const isOverpaid = remaining < 0;
+
+  // Broadcast split info to CDS for anti-fraud display
+  useEffect(() => {
+    if (qrisStep) return; // Don't broadcast split summary if in QRIS sub-flow
+    const sum = payments.reduce((s, p) => s + (parseInt(p.amount) || 0), 0);
+    const breakdown = payments
+      .filter(p => parseInt(p.amount) > 0)
+      .map(p => `${p.method} ${fIDR(parseInt(p.amount) || 0)}`)
+      .join(" + ");
+    cdsCast("pos:payment_method", {
+      method: "SPLIT",
+      breakdown: breakdown || "Sedang diatur kasir...",
+      total: sum,
+      orderTotal: total,
+    });
+  }, [payments, total, qrisStep]);
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      cdsCast("pos:payment_method", { method: null });
+      cdsCast("pos:reset", {});
+    };
+  }, []);
+
+  function updatePayment(idx, field, value) {
+    const next = [...payments];
+    next[idx] = { ...next[idx], [field]: value };
+    if (next[idx].method === "CASH" && field === "amount") {
+      next[idx].cashReceived = value;
+    }
+    if (next[idx].method === "CASH") {
+      const cash = parseInt(next[idx].cashReceived) || 0;
+      const amt = parseInt(next[idx].amount) || 0;
+      next[idx].change = Math.max(0, cash - amt);
+    } else {
+      next[idx].change = 0;
+    }
+    setPayments(next);
+  }
+
+  function addPayment() {
+    setPayments([...payments, { method: "CASH", amount: remaining > 0 ? String(remaining) : "", cashReceived: "", change: 0 }]);
+  }
+
+  function removePayment(idx) {
+    if (payments.length === 1) return;
+    setPayments(payments.filter((_, i) => i !== idx));
+  }
+
+  function setQuickAmount(idx, amt) {
+    updatePayment(idx, "amount", String(amt));
+    if (payments[idx].method === "CASH") {
+      updatePayment(idx, "cashReceived", String(amt));
+    }
+  }
+
+  async function handleSettle() {
+    if (!isComplete) {
+      setError(`Masih kurang ${fIDR(remaining)}`);
+      return;
+    }
+
+    for (let i = 0; i < payments.length; i++) {
+      const p = payments[i];
+      const amt = parseInt(p.amount) || 0;
+      if (amt <= 0) {
+        setError(`Payment #${i + 1} amount invalid`);
+        return;
+      }
+      if (p.method === "CASH") {
+        const cash = parseInt(p.cashReceived) || 0;
+        if (cash < amt) {
+          setError(`Payment #${i + 1} cash diterima kurang dari amount`);
+          return;
+        }
+      }
+    }
+
+    setError(null);
+
+    const paymentsPayload = payments.map(p => ({
+      method: p.method,
+      amount: parseInt(p.amount) || 0,
+      by: kasir,
+      ...(p.method === "CASH" ? {
+        cashReceived: parseInt(p.cashReceived) || 0,
+        change: p.change || 0
+      } : {})
+    }));
+
+    // Compute QRIS portion
+    const qrisTotal = paymentsPayload
+      .filter(p => p.method === "QRIS")
+      .reduce((s, p) => s + p.amount, 0);
+
+    if (qrisTotal > 0) {
+      // Trigger QR sub-flow for QRIS portion
+      setFinalPayloadRef(paymentsPayload);
+      await initQRPayment(qrisTotal);
+    } else {
+      // No QRIS — save directly
+      setSubmitting(true);
+      await saveSplit(paymentsPayload);
+    }
+  }
+
+  async function initQRPayment(qrisAmount) {
+    setQrisStep("loading");
+    setError(null);
+    try {
+      const tempOrderId = "POS-SPLIT-" + Date.now();
+      const cart = order.cart || (order._orderData && order._orderData.items) || [];
+      const r = await fetch(`${API}/api/payment/qris`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          orderId: tempOrderId,
+          amount: qrisAmount,
+          items: cart.map(c => ({
+            id: c.id || null,
+            n: c.name || c.n,
+            p: (c.price || c.p || 0) + (c.addonTotal || 0),
+            q: c.qty || c.q || 1
+          })),
+          customerName: order.customerName || "POS Customer"
+        })
+      });
+
+      if (!r.ok) {
+        const text = await r.text();
+        throw new Error(`Server ${r.status}: ${text.substring(0, 200)}`);
+      }
+      const data = await r.json();
+
+      const qrUrl = data.qrCode || data.qr_code || data.actions?.find(a => a.name === "generate-qr-code")?.url || data.actions?.[0]?.url;
+      const newMtOrderId = data.midtransOrderId || data.order_id || tempOrderId;
+
+      if (!qrUrl) throw new Error("No QR returned by server");
+
+      const qr = { qrCode: qrUrl, amount: qrisAmount, midtransOrderId: newMtOrderId };
+      setQrData(qr);
+      setMtOrderId(newMtOrderId);
+      setQrisStep("waiting");
+
+      // Broadcast QR to CDS for customer to scan
+      cdsCast("pos:payment_qris", qr);
+
+      // Start polling
+      pollRef.current = setInterval(() => pollStatus(newMtOrderId), 3000);
+    } catch (e) {
+      setError(e.message);
+      setQrisStep("error");
+    }
+  }
+
+  async function pollStatus(mtId) {
+    try {
+      const r = await fetch(`${API}/api/payment/status/${mtId}`);
+      if (r.ok) {
+        const data = await r.json();
+        const st = data.status || data.transaction_status;
+        if (st === "settlement" || st === "capture" || st === "paid" || st === "success") {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setQrisStep("paid");
+          // Attach midtrans ID to QRIS payments
+          const finalPayload = finalPayloadRef.map(p =>
+            p.method === "QRIS" ? { ...p, midtransId: mtId } : p
+          );
+          setTimeout(() => {
+            setSubmitting(true);
+            saveSplit(finalPayload);
+          }, 1500);
+        } else if (st === "deny" || st === "cancel" || st === "expire") {
+          if (pollRef.current) clearInterval(pollRef.current);
+          setQrisStep("error");
+          setError("Pembayaran gagal/expire: " + st);
+        }
+      }
+    } catch {}
+  }
+
+  function cancelQR() {
+    if (pollRef.current) clearInterval(pollRef.current);
+    setQrisStep(null);
+    setQrData(null);
+    setMtOrderId(null);
+    setFinalPayloadRef(null);
+    cdsCast("pos:reset", {});
+  }
+
+  async function saveSplit(paymentsPayload) {
+    try {
+      let res, data;
+      if (order._newOrder && order._orderData) {
+        res = await fetch(`${API}/api/orders`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...order._orderData,
+            payments: paymentsPayload,
+            pay: paymentsPayload.length === 1 ? paymentsPayload[0].method : "SPLIT",
+            status: "completed",
+            midtransId: mtOrderId || null
+          })
+        });
+      } else {
+        res = await fetch(`${API}/api/orders/${order.id}/split-settle`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ payments: paymentsPayload })
+        });
+      }
+      data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Settle failed");
+      onSuccess(data);
+    } catch (e) {
+      setError("Gagal: " + e.message);
+      setSubmitting(false);
+      setQrisStep("error");
+    }
+  }
+
+  // ─── QRIS Sub-flow render ───
+  if (qrisStep) {
+    return (
+      <div style={S.overlay}>
+        <div style={S.modal}>
+          <div style={S.header}>
+            <div>
+              <div style={S.title}>QRIS Payment</div>
+              <div style={S.subtitle}>
+                {qrisStep === "loading" && "Membuat QR Code..."}
+                {qrisStep === "waiting" && `Customer scan QR untuk Rp ${(qrData?.amount || 0).toLocaleString("id-ID")}`}
+                {qrisStep === "paid" && "Pembayaran berhasil! Menyimpan..."}
+                {qrisStep === "error" && "Error"}
+              </div>
+            </div>
+            {qrisStep !== "paid" && !submitting && (
+              <button onClick={cancelQR} style={S.closeBtn}>✕</button>
+            )}
+          </div>
+
+          <div style={{padding: 30, textAlign: "center", minHeight: 380, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center"}}>
+            {qrisStep === "loading" && (
+              <>
+                <div style={{fontSize: 56, marginBottom: 16}}>⏳</div>
+                <div style={{color: "#9CA3AF", fontSize: 14}}>Mohon tunggu...</div>
+              </>
+            )}
+
+            {qrisStep === "waiting" && qrData && (
+              <>
+                <div style={{
+                  background: "white", padding: 20, borderRadius: 16,
+                  marginBottom: 20, boxShadow: "0 8px 24px rgba(255,255,255,0.1)"
+                }}>
+                  <img src={qrData.qrCode} alt="QR Code" style={{width: 260, height: 260, display: "block"}} />
+                </div>
+                <div style={{fontSize: 18, fontWeight: 700, color: "#F59E0B", fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 2}}>
+                  {fIDR(qrData.amount)}
+                </div>
+                <div style={{fontSize: 12, color: "#9CA3AF", marginTop: 8, maxWidth: 320}}>
+                  Customer scan QR ini. Otomatis lanjut setelah pembayaran berhasil.
+                </div>
+                <div style={{fontSize: 11, color: "#6B7280", marginTop: 12}}>
+                  Order ID: {mtOrderId}
+                </div>
+              </>
+            )}
+
+            {qrisStep === "paid" && (
+              <>
+                <div style={{fontSize: 72, marginBottom: 16}}>✅</div>
+                <div style={{fontSize: 18, color: "#10B981", fontWeight: 700}}>Pembayaran Berhasil!</div>
+                <div style={{fontSize: 13, color: "#9CA3AF", marginTop: 8}}>Menyimpan order...</div>
+              </>
+            )}
+
+            {qrisStep === "error" && (
+              <>
+                <div style={{fontSize: 56, marginBottom: 16}}>⚠️</div>
+                <div style={{fontSize: 16, color: "#F87171", marginBottom: 8}}>{error || "Gagal proses QR"}</div>
+                <button onClick={cancelQR} style={{...S.btnSecondary, marginTop: 16}}>
+                  Kembali ke Split
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Main Split Modal ───
+  return (
+    <div style={S.overlay}>
+      <div style={S.modal}>
+        <div style={S.header}>
+          <div>
+            <div style={S.title}>Split Payment</div>
+            <div style={S.subtitle}>Order #{order.id || "Baru"} · Total {fIDR(total)}</div>
+          </div>
+          <button onClick={onClose} style={S.closeBtn}>✕</button>
+        </div>
+
+        <div style={S.summary}>
+          <div style={S.summaryRow}>
+            <span>Total Order</span>
+            <span style={S.totalVal}>{fIDR(total)}</span>
+          </div>
+          <div style={S.summaryRow}>
+            <span>Total Dibayar</span>
+            <span style={{...S.totalVal, color: isComplete ? "#10B981" : "#F59E0B"}}>{fIDR(totalPaid)}</span>
+          </div>
+          <div style={{...S.summaryRow, ...S.summaryRemaining}}>
+            <span>Sisa</span>
+            <span style={{
+              ...S.totalVal,
+              color: isOverpaid ? "#F87171" : isComplete ? "#10B981" : "#F87171"
+            }}>
+              {isOverpaid ? `+${fIDR(-remaining)} kelebihan` : fIDR(remaining)}
+            </span>
+          </div>
+        </div>
+
+        <div style={S.paymentsList}>
+          {payments.map((p, idx) => (
+            <div key={idx} style={S.paymentRow}>
+              <div style={S.paymentHeader}>
+                <span style={S.paymentLabel}>Pembayaran #{idx + 1}</span>
+                {payments.length > 1 && (
+                  <button onClick={() => removePayment(idx)} style={S.removeBtn}>✕</button>
+                )}
+              </div>
+
+              <div style={S.methodRow}>
+                {["CASH", "QRIS"].map(m => (
+                  <button
+                    key={m}
+                    onClick={() => updatePayment(idx, "method", m)}
+                    style={{
+                      ...S.methodBtn,
+                      ...(p.method === m ? S.methodBtnActive : {})
+                    }}
+                  >
+                    {m === "CASH" ? "💵" : "📱"} {m}
+                  </button>
+                ))}
+              </div>
+
+              {p.method === "QRIS" && (
+                <div style={S.qrisHint}>
+                  💡 QR akan generate untuk total QRIS portion setelah Selesaikan
+                </div>
+              )}
+
+              <div style={S.fieldGroup}>
+                <label style={S.fieldLabel}>Jumlah</label>
+                <div style={S.inputRow}>
+                  <span style={S.inputPrefix}>Rp</span>
+                  <input
+                    type="number"
+                    value={p.amount}
+                    onChange={e => updatePayment(idx, "amount", e.target.value)}
+                    style={S.input}
+                    placeholder="0"
+                  />
+                </div>
+                <div style={S.quickButtons}>
+                  <button onClick={() => setQuickAmount(idx, remaining + (parseInt(p.amount) || 0))} style={S.quickBtn}>Sisa</button>
+                  <button onClick={() => setQuickAmount(idx, Math.round(total / 2))} style={S.quickBtn}>1/2</button>
+                  <button onClick={() => setQuickAmount(idx, total)} style={S.quickBtn}>Full</button>
+                </div>
+              </div>
+
+              {p.method === "CASH" && (
+                <div style={S.fieldGroup}>
+                  <label style={S.fieldLabel}>Cash diterima</label>
+                  <div style={S.inputRow}>
+                    <span style={S.inputPrefix}>Rp</span>
+                    <input
+                      type="number"
+                      value={p.cashReceived}
+                      onChange={e => updatePayment(idx, "cashReceived", e.target.value)}
+                      style={S.input}
+                      placeholder="0"
+                    />
+                  </div>
+                  {p.change > 0 && (
+                    <div style={S.changeRow}>Kembalian: <strong>{fIDR(p.change)}</strong></div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+
+          <button onClick={addPayment} style={S.addBtn}>➕ Tambah Pembayaran</button>
+        </div>
+
+        {error && <div style={S.error}>{error}</div>}
+
+        <div style={S.footer}>
+          <button onClick={onClose} style={S.btnSecondary} disabled={submitting}>Batal</button>
+          <button
+            onClick={handleSettle}
+            style={{
+              ...S.btnPrimary,
+              ...((!isComplete || isOverpaid) ? S.btnDisabled : {})
+            }}
+            disabled={submitting || !isComplete || isOverpaid}
+          >
+            {submitting ? "Memproses..." : isOverpaid ? "Kelebihan!" : !isComplete ? `Kurang ${fIDR(remaining)}` : `✓ Selesaikan ${fIDR(totalPaid)}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const S = {
+  overlay: {
+    position: "fixed", inset: 0,
+    background: "rgba(0,0,0,0.85)", backdropFilter: "blur(10px)",
+    display: "flex", alignItems: "center", justifyContent: "center",
+    zIndex: 1500, fontFamily: "'Plus Jakarta Sans', sans-serif",
+    padding: 20,
+  },
+  modal: {
+    width: "min(560px, 100%)", maxHeight: "92vh",
+    background: "linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%)",
+    border: "1px solid #2a2a2a", borderRadius: 16,
+    display: "flex", flexDirection: "column", overflow: "hidden",
+  },
+  header: {
+    padding: "20px 24px", borderBottom: "1px solid #2a2a2a",
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+  },
+  title: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "#F59E0B", letterSpacing: 1.5 },
+  subtitle: { fontSize: 12, color: "#9CA3AF", marginTop: 4 },
+  closeBtn: {
+    width: 36, height: 36, borderRadius: 10,
+    background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)",
+    color: "#F87171", fontSize: 16, cursor: "pointer",
+  },
+  summary: {
+    margin: "16px 20px", padding: "14px 16px", borderRadius: 12,
+    background: "rgba(255,255,255,0.03)", border: "1px solid #2a2a2a",
+  },
+  summaryRow: { display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13, color: "#D1D5DB" },
+  summaryRemaining: { borderTop: "1px solid #2a2a2a", marginTop: 8, paddingTop: 10, fontSize: 14, fontWeight: 600 },
+  totalVal: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: "white", letterSpacing: 0.5 },
+  paymentsList: { padding: "0 20px 16px", flex: 1, overflowY: "auto" },
+  paymentRow: {
+    padding: "14px 16px", marginBottom: 12, borderRadius: 12,
+    background: "rgba(255,255,255,0.03)", border: "1px solid #2a2a2a",
+  },
+  paymentHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  paymentLabel: { fontSize: 11, color: "#F59E0B", letterSpacing: 1.5, fontWeight: 700 },
+  removeBtn: {
+    width: 26, height: 26, borderRadius: 6,
+    background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)",
+    color: "#F87171", fontSize: 12, cursor: "pointer",
+  },
+  methodRow: { display: "flex", gap: 8, marginBottom: 12 },
+  methodBtn: {
+    flex: 1, padding: "10px", borderRadius: 10,
+    background: "rgba(255,255,255,0.02)", border: "1px solid #2a2a2a",
+    color: "#9CA3AF", cursor: "pointer", fontSize: 13, fontFamily: "inherit",
+  },
+  methodBtnActive: {
+    background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.5)",
+    color: "#F59E0B", fontWeight: 700,
+  },
+  qrisHint: {
+    fontSize: 11, color: "#A78BFA", padding: "8px 10px", marginBottom: 10,
+    background: "rgba(139,92,246,0.08)", border: "1px solid rgba(139,92,246,0.2)",
+    borderRadius: 8,
+  },
+  fieldGroup: { marginBottom: 10 },
+  fieldLabel: { fontSize: 11, color: "#9CA3AF", marginBottom: 4, display: "block" },
+  inputRow: { display: "flex", gap: 0, marginBottom: 6 },
+  inputPrefix: {
+    padding: "10px 12px", background: "#0a0a0a",
+    border: "1px solid #2a2a2a", borderRight: "none", borderRadius: "10px 0 0 10px",
+    color: "#9CA3AF", fontSize: 13,
+  },
+  input: {
+    flex: 1, padding: "10px 14px", borderRadius: "0 10px 10px 0",
+    background: "#0a0a0a", border: "1px solid #2a2a2a", color: "white",
+    fontSize: 15, fontFamily: "inherit", outline: "none",
+  },
+  quickButtons: { display: "flex", gap: 6 },
+  quickBtn: {
+    flex: 1, padding: "6px", borderRadius: 6,
+    background: "transparent", border: "1px solid #2a2a2a", color: "#9CA3AF",
+    cursor: "pointer", fontSize: 11, fontFamily: "inherit",
+  },
+  changeRow: { fontSize: 12, color: "#10B981", padding: "4px 0" },
+  addBtn: {
+    width: "100%", padding: "10px", borderRadius: 10,
+    background: "transparent", border: "1px dashed rgba(245,158,11,0.4)", color: "#F59E0B",
+    cursor: "pointer", fontSize: 13, fontFamily: "inherit",
+  },
+  error: { padding: "10px 20px", color: "#F87171", fontSize: 12 },
+  footer: {
+    padding: "14px 20px", borderTop: "1px solid #2a2a2a",
+    display: "flex", gap: 10, justifyContent: "flex-end",
+  },
+  btnSecondary: {
+    padding: "10px 20px", borderRadius: 10,
+    background: "transparent", border: "1px solid #2a2a2a", color: "#9CA3AF",
+    cursor: "pointer", fontFamily: "inherit", fontSize: 14,
+  },
+  btnPrimary: {
+    padding: "10px 20px", borderRadius: 10,
+    background: "linear-gradient(135deg, #10B981, #059669)",
+    border: "none", color: "white",
+    cursor: "pointer", fontFamily: "inherit", fontSize: 14, fontWeight: 700,
+  },
+  btnDisabled: {
+    background: "#374151", cursor: "not-allowed",
+  },
+};
+
+
+// ============================================================
+// FILE: src/POSSuccess.jsx
+// LINES: 82
+// ============================================================
+export default function POSSuccess({ created, order, cashier, onDone, onAnother }) {
+  const isPay = order.action === "pay";
+  const fmt = (n) => (n || 0).toLocaleString("id-ID");
+
+  return (
+    <div style={S.root}>
+      <div style={S.card}>
+        <div style={S.icon}>{isPay ? "✅" : "📋"}</div>
+
+        <h1 style={S.title}>
+          {isPay ? "PEMBAYARAN BERHASIL" : "TAB DIBUKA"}
+        </h1>
+
+        <div style={S.orderId}>Order #{created?.id || "?"}</div>
+
+        <div style={S.details}>
+          <div style={S.detailRow}>
+            <span style={S.detailLabel}>Tipe</span>
+            <span>{order.type === "dine-in" ? "🍽️ Dine-in" : "🛍️ Take-away"}</span>
+          </div>
+          {order.table && (
+            <div style={S.detailRow}>
+              <span style={S.detailLabel}>Meja</span>
+              <span>{order.table.name}</span>
+            </div>
+          )}
+          {order.customerName && (
+            <div style={S.detailRow}>
+              <span style={S.detailLabel}>Customer</span>
+              <span>{order.customerName}</span>
+            </div>
+          )}
+          <div style={S.detailRow}>
+            <span style={S.detailLabel}>Status</span>
+            <span style={isPay ? S.statusPaid : S.statusTab}>
+              {isPay ? "💵 Dibayar (Cash)" : "📋 Open Tab"}
+            </span>
+          </div>
+          <div style={S.detailRow}>
+            <span style={S.detailLabel}>Total</span>
+            <span style={S.detailTotal}>Rp {fmt(created?.total || order.subtotal)}</span>
+          </div>
+        </div>
+
+        <div style={S.actions}>
+          <button onClick={onAnother} style={S.anotherBtn}>+ Order Lagi</button>
+          <button onClick={onDone} style={S.doneBtn}>← Kembali ke Home</button>
+        </div>
+
+        <div style={S.hint}>
+          {isPay
+            ? "Pesanan akan diproses oleh dapur."
+            : "Klik tab di POSHome untuk settle pembayaran nanti."}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const S = {
+  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Plus Jakarta Sans',sans-serif",
+    display:"flex", alignItems:"center", justifyContent:"center", padding:24 },
+  card: { maxWidth:560, width:"100%", textAlign:"center" },
+  icon: { fontSize:96, marginBottom:80 },
+  title: { fontFamily:"'Bebas Neue','Plus Jakarta Sans',sans-serif", fontSize:48, letterSpacing:3, lineHeight:1.6,
+    color:"#FF6B35", margin:"0 0 8px" },
+  orderId: { fontSize:14, color:"#888", letterSpacing:3, marginBottom:56, fontWeight:600 },
+  details: { background:"#1a1a1a", border:"1px solid #2a2a2a", borderRadius:14,
+    padding:"20px 24px", marginBottom:24, textAlign:"left" },
+  detailRow: { display:"flex", justifyContent:"space-between", padding:"10px 0",
+    borderBottom:"1px solid #222", fontSize:14 },
+  detailLabel: { color:"#888" },
+  statusPaid: { color:"#10B981", fontWeight:700 },
+  statusTab: { color:"#FF6B35", fontWeight:700 },
+  detailTotal: { fontFamily:"'Bebas Neue','Plus Jakarta Sans',sans-serif", fontSize:24, color:"#FF6B35", letterSpacing:1 },
+  actions: { display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 },
+  anotherBtn: { background:"#FF6B35", color:"#111", border:"none", borderRadius:12,
+    padding:"14px", fontFamily:"inherit", fontSize:14, fontWeight:700, cursor:"pointer" },
+  doneBtn: { background:"transparent", color:"#aaa", border:"1px solid #444", borderRadius:12,
+    padding:"14px", fontFamily:"inherit", fontSize:14, fontWeight:600, cursor:"pointer" },
+  hint: { fontSize:12, color:"#555", marginTop:8 }
+};
+
+
+// ============================================================
+// FILE: src/POSCDS.jsx
+// LINES: 796
+// ============================================================
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useMenu } from "./MenuContext.jsx";
+
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
+const WS_URL = API_BASE.replace(/^http/, "ws");
+
+const STAGES = [
+  { key: "waiting",   label: "Diterima",     emoji: "📝", color: "#94A3B8" },
+  { key: "preparing", label: "Disiapkan",    emoji: "👨‍🍳", color: "#FF6B35" },
+  { key: "ready",     label: "Siap Diambil", emoji: "🔔", color: "#10B981" },
+  { key: "completed", label: "Selesai",      emoji: "✅", color: "#22C55E" },
+];
+
+const fmt = (n) => "Rp " + (n || 0).toLocaleString("id-ID");
+
+export default function POSCDS() {
+  const [mode, setMode] = useState("idle"); // idle | cart | qris | success | track-qr
+  const [state, setState] = useState({});
+  const [pubConfig, setPubConfig] = useState({ trackingBaseUrl: null });
+  const [connStatus, setConnStatus] = useState("connecting");
+  const wsRef = useRef(null);
+  const reconnectTimerRef = useRef(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE}/api/config/public`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setPubConfig(d); })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const connect = () => {
+      if (!mounted) return;
+      setConnStatus("connecting");
+      try {
+        const ws = new WebSocket(WS_URL);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          if (!mounted) return;
+          setConnStatus("connected");
+          console.log("[CDS] WebSocket connected");
+        };
+
+        ws.onmessage = (msg) => {
+          if (!mounted) return;
+          try {
+            const parsed = JSON.parse(msg.data);
+            const event = parsed.event || parsed.type;
+            const data = parsed.data || parsed.payload || {};
+            handleEvent(event, data);
+          } catch (e) {
+            console.warn("[CDS] parse fail:", e);
+          }
+        };
+
+        ws.onerror = (err) => console.warn("[CDS] WS error:", err);
+
+        ws.onclose = () => {
+          if (!mounted) return;
+          setConnStatus("disconnected");
+          reconnectTimerRef.current = setTimeout(connect, 3000);
+        };
+      } catch (e) {
+        if (!mounted) return;
+        reconnectTimerRef.current = setTimeout(connect, 3000);
+      }
+    };
+
+    connect();
+
+    return () => {
+      mounted = false;
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+      if (wsRef.current) {
+        wsRef.current.onclose = null;
+        wsRef.current.close();
+      }
+    };
+  }, []);
+
+  // Auto-reset to idle after 30s in track-qr mode (next customer)
+  useEffect(() => {
+    if (mode !== "track-qr") return;
+    const timer = setTimeout(() => {
+      setMode("idle");
+      setState({});
+    }, 30000);
+    return () => clearTimeout(timer);
+  }, [mode]);
+
+  const handleEvent = (event, data) => {
+    switch (event) {
+      case "pos:cart_update":
+        setState(prev => ({...prev, ...data}));
+        if (data.cart && data.cart.length > 0) setMode("cart");
+        else if (mode !== "idle") setMode("idle");
+        break;
+      case "pos:payment_method":
+        setState(prev => ({...prev, paymentMethod: data.method}));
+        break;
+      case "pos:payment_qris":
+        setState(prev => ({...prev, qris: data}));
+        setMode("qris");
+        break;
+      case "pos:order_complete":
+        setState(prev => ({...prev, completedOrder: data.order || data}));
+        setMode("success");
+        setTimeout(() => setMode("track-qr"), 3500);
+        break;
+      case "pos:idle":
+      case "pos:reset":
+        setState({});
+        setMode("idle");
+        break;
+    }
+  };
+
+  return (
+    <>
+      <style>{`
+        @keyframes ssFadeIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to { opacity: 1; transform: scale(1); }
+        }
+      `}</style>
+      <div style={S.root}>
+      <ConnIndicator status={connStatus} />
+      {mode === "idle" && <CDSIdle />}
+      {mode === "cart" && <CDSCart state={state} />}
+      {mode === "qris" && <CDSQR state={state} />}
+      {mode === "success" && <CDSSuccess state={state} />}
+      {mode === "track-qr" && <CDSTrackQR state={state} pubConfig={pubConfig} />}
+      </div>
+    </>
+  );
+}
+
+function ConnIndicator({ status }) {
+  const color = status === "connected" ? "#10B981" : status === "connecting" ? "#FF6B35" : "#FF6B35";
+  return (
+    <div style={{...S.conn, color, borderColor: color}}>
+      <span style={{...S.connDot, background: color}}/> {status}
+    </div>
+  );
+}
+
+function CDSIdle() {
+  const [slides, setSlides] = useState([
+    { type: "welcome" }
+  ]);
+  const [idx, setIdx] = useState(0);
+
+  // Fetch popular items + active promos
+  useEffect(() => {
+    let mounted = true;
+    Promise.all([
+      fetch(`${API_BASE}/api/menu`).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${API_BASE}/api/promos`).then(r => r.ok ? r.json() : []).catch(() => [])
+    ]).then(([menu, promos]) => {
+      if (!mounted) return;
+      const popular = (Array.isArray(menu) ? menu : []).filter(m => m.popular && m.avail !== false).slice(0, 5);
+      const now = Date.now();
+      const activePromos = (Array.isArray(promos) ? promos : [])
+        .filter(p => p.active !== false)
+        .filter(p => {
+          // Filter expired promos
+          if (!p.validUntil) return true;
+          const until = typeof p.validUntil === 'string' ? new Date(p.validUntil).getTime() : p.validUntil;
+          return until > now;
+        })
+        .slice(0, 4);
+
+      const slideList = [{ type: "welcome" }];
+      // Interleave: welcome → promo → item → promo → item → member CTA → repeat
+      activePromos.forEach((promo, i) => {
+        slideList.push({ type: "promo", data: promo });
+        if (popular[i]) slideList.push({ type: "item", data: popular[i] });
+      });
+      // Add remaining popular items
+      popular.slice(activePromos.length).forEach(item => {
+        slideList.push({ type: "item", data: item });
+      });
+      slideList.push({ type: "member" });
+      slideList.push({ type: "thanks" });
+      setSlides(slideList);
+    });
+    return () => { mounted = false; };
+  }, []);
+
+  // Auto-advance every 6 seconds
+  useEffect(() => {
+    if (slides.length <= 1) return;
+    const timer = setTimeout(() => {
+      setIdx(i => (i + 1) % slides.length);
+    }, 6000);
+    return () => clearTimeout(timer);
+  }, [idx, slides.length]);
+
+  const slide = slides[idx] || { type: "welcome" };
+
+  return (
+    <div style={S.ssRoot}>
+      {/* Slide content with key for transition */}
+      <div key={idx} style={S.ssSlide}>
+        {slide.type === "welcome" && <SlideWelcome />}
+        {slide.type === "item" && <SlideItem item={slide.data} />}
+        {slide.type === "promo" && <SlidePromo promo={slide.data} />}
+        {slide.type === "member" && <SlideMember />}
+        {slide.type === "thanks" && <SlideThanks />}
+      </div>
+
+      {/* Progress dots */}
+      {slides.length > 1 && (
+        <div style={S.ssDots}>
+          {slides.map((_, i) => (
+            <div key={i} style={{
+              ...S.ssDot,
+              background: i === idx ? "#FF6B35" : "rgba(245,158,11,0.25)",
+              width: i === idx ? 28 : 8
+            }}/>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SlideWelcome() {
+  return (
+    <div style={S.ssCenter}>
+      <div style={S.ssLogo}>☕</div>
+      <div style={S.ssBrand}>BINTORO</div>
+      <div style={S.ssTagline}>Selamat datang!</div>
+      <div style={S.ssHint}>Tap kasir untuk mulai order</div>
+    </div>
+  );
+}
+
+function SlideItem({ item }) {
+  if (!item) return null;
+  return (
+    <div style={{...S.ssCenter, background:"radial-gradient(ellipse 70% 50% at 50% 50%, rgba(255,255,255,0.03) 0%, transparent 70%)"}}>
+      <div style={S.ssBadge}>⭐ POPULAR</div>
+      <div style={S.ssItemEmoji}>{item.emoji || "🍴"}</div>
+      <div style={S.ssItemName}>{item.name}</div>
+      {item.desc && <div style={S.ssItemDesc}>{item.desc}</div>}
+      <div style={S.ssItemPrice}>{fmt(item.price)}</div>
+      {item.freeToppings > 0 && (
+        <div style={S.ssItemExtra}>+ {item.freeToppings} topping GRATIS</div>
+      )}
+    </div>
+  );
+}
+
+function SlidePromo({ promo }) {
+  if (!promo) return null;
+
+  // Smart title from promo type + value
+  let bigTitle = "";
+  let emoji = "🎁";
+  let badgeColor = "#FF6B35";
+
+  if (promo.type === "percent") {
+    bigTitle = `DISKON ${promo.value}%`;
+    emoji = "💯";
+  } else if (promo.type === "fixed") {
+    bigTitle = `HEMAT RP ${(promo.value || 0).toLocaleString("id-ID")}`;
+    emoji = "💰";
+  } else if (promo.type === "bogo") {
+    const cfg = promo.bogoConfig || {};
+    if (cfg.mode === "cross") {
+      bigTitle = "BUY 1 GET 1";
+      emoji = "🎁";
+    } else if (cfg.mode === "category") {
+      bigTitle = `BUY ${cfg.buyQty} GET ${cfg.getQty} FREE`;
+      emoji = "🥤";
+    } else if (cfg.mode === "same") {
+      bigTitle = `BUY ${cfg.buyQty} GET ${cfg.getQty} FREE`;
+      emoji = "🎁";
+    } else {
+      bigTitle = "BUY GET FREE";
+      emoji = "🎁";
+    }
+  } else {
+    bigTitle = promo.name || "SPECIAL OFFER";
+  }
+
+  // Strip emoji from desc for cleaner display (already in emoji slot)
+  const desc = (promo.desc || promo.description || "").replace(/^[🎁🔥💯💰🥤🎉]+\s*/, "");
+
+  // Member-only badge
+  const memberBadge = promo.forMember;
+  // Payment hint
+  const payHint = promo.requiredPaymentHint;
+
+  return (
+    <div style={{...S.ssCenter, background:"radial-gradient(ellipse 80% 70% at 50% 50%, rgba(255,107,53,0.12) 0%, transparent 70%)", maxWidth:"none", width:"100%", padding:"60px 80px"}}>
+      <div style={{...S.ssBadge, background:`rgba(255,107,53,0.2)`, color:badgeColor, fontSize:20, padding:"10px 32px", letterSpacing:4}}>
+        🔥 PROMO
+      </div>
+      <div style={S.ssPromoEmoji}>{emoji}</div>
+      <div style={S.ssPromoBigTitle}>{bigTitle}</div>
+      {desc && <div style={S.ssItemDesc}>{desc}</div>}
+
+      <div style={{display:"flex", gap:12, marginTop:16, flexWrap:"wrap", justifyContent:"center"}}>
+        {memberBadge && (
+          <div style={S.ssPromoTag}>💎 MEMBER ONLY</div>
+        )}
+        {payHint && (
+          <div style={S.ssPromoTagPay}>🏦 {payHint}</div>
+        )}
+        {promo.minOrder > 0 && (
+          <div style={S.ssPromoTagMin}>Min. Rp {promo.minOrder.toLocaleString("id-ID")}</div>
+        )}
+      </div>
+
+      {promo.code && (
+        <div style={S.ssPromoCode}>
+          <span style={S.ssPromoCodeLabel}>KODE</span>
+          <span style={S.ssPromoCodeValue}>{promo.code}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SlideMember() {
+  return (
+    <div style={S.ssCenter}>
+      <div style={{...S.ssBadge, background:"rgba(59,130,246,0.15)", color:"#3B82F6"}}>💎 MEMBER</div>
+      <div style={S.ssMemberIcon}>🎁</div>
+      <div style={S.ssItemName}>Jadi Member Bintoro</div>
+      <div style={S.ssItemDesc}>
+        Dapat <strong style={{color:"#FF6B35"}}>1 poin tiap Rp 1.000</strong> belanja<br/>
+        Tukar <strong style={{color:"#FF6B35"}}>100 poin = Rp 1.000</strong> diskon
+      </div>
+      <div style={{...S.ssHint, fontSize:28, color:"#aaa", letterSpacing:2}}>Daftar gratis di kasir 👋</div>
+    </div>
+  );
+}
+
+function SlideThanks() {
+  return (
+    <div style={S.ssCenter}>
+      <div style={S.ssThanksIcon}>☕</div>
+      <div style={{...S.ssItemName, fontSize:96, color:"#FF6B35", textShadow:"0 0 60px rgba(255,107,53,0.4)"}}>Terima Kasih</div>
+      <div style={S.ssItemDesc}>Sudah mampir ke Bintoro!</div>
+      <div style={S.ssSocial}>📷 @bintorocafe</div>
+    </div>
+  );
+}
+
+function CDSCart({ state }) {
+  const menu = useMenu();
+  const extraToppingPrice = menu?.extraToppingPrice || 0;
+  const tMap = useMemo(() => {
+    const m = {};
+    (menu?.toppings || []).forEach(t => { m[t.id] = t; });
+    return m;
+  }, [menu]);
+  const cart = state.cart || [];
+  const subtotal = state.subtotal ?? cart.reduce(
+    (s, c) => s + ((c.price || 0) + (c.addonTotal || 0)) * c.qty, 0
+  );
+  const customerName = state.order?.customerName;
+  const orderType = state.order?.type;
+  const itemCount = cart.reduce((s, c) => s + c.qty, 0);
+
+  return (
+    <>
+      <header style={S.header}>
+        <div style={S.headerLeft}>
+          <span style={S.logoSmall}>☕</span>
+          <span style={S.brandSmall}>BINTORO</span>
+        </div>
+        <div>
+          {orderType && <span style={S.tag}>{orderType === "dine-in" ? "🍽️ Dine-in" : "🛍️ Take-away"}</span>}
+        </div>
+      </header>
+
+      <main style={S.cartMain}>
+        <div style={S.cartTitleRow}>
+          <div style={S.cartTitle}>
+            Pesanan Anda
+            {customerName && <span style={S.customerName}>· {customerName}</span>}
+          </div>
+          <div style={S.itemCountTag}>{itemCount} item</div>
+        </div>
+
+        <div style={S.cartList}>
+          {cart.map(item => {
+            const lineTotal = ((item.price || 0) + (item.addonTotal || 0)) * item.qty;
+            const toppings = item.addons?.toppings || [];
+            const freeCount = item.freeToppings || 0;
+            const extraCount = Math.max(0, toppings.length - freeCount);
+            const perExtra = extraCount > 0 ? Math.round((item.addonTotal || 0) / extraCount) : 0;
+            return (
+              <div key={item.cartKey || item.id} style={S.cartItem}>
+                <div style={S.itemEmoji}>{item.emoji || "🍴"}</div>
+                <div style={S.itemBody}>
+                  <div style={S.itemNameRow}>
+                    <span style={S.itemName}>{item.name}</span>
+                    <span style={S.itemBasePrice}>Rp {(item.price || 0).toLocaleString("id-ID")}</span>
+                  </div>
+                  {toppings.length > 0 && (
+                    <div style={S.toppingList}>
+                      {toppings.map((t, i) => {
+                        const isFree = i < freeCount;
+                        return (
+                          <div key={i} style={S.toppingRow}>
+                            <span style={S.toppingName}>+ {t.name}</span>
+                            <span style={isFree ? S.toppingFree : S.toppingPaid}>
+                              {isFree ? "gratis" : `Rp ${perExtra.toLocaleString("id-ID", {maximumFractionDigits: 0})}`}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                <div style={S.itemQty}>{item.qty}x</div>
+                <div style={S.itemPrice}>{fmt(lineTotal)}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={S.summaryInline}>
+          <div style={S.summaryRow}>
+            <span style={S.summaryLabel}>Subtotal</span>
+            <span style={S.summaryValue}>{fmt(subtotal)}</span>
+          </div>
+          <div style={S.summaryRow}>
+            <span style={S.summaryLabelMuted}>PPN 10%</span>
+            <span style={S.summaryLabelMuted}>included</span>
+          </div>
+          <div style={S.summaryDivider}/>
+          <div style={S.summaryRow}>
+            <span style={S.totalLabel}>TOTAL</span>
+            <span style={S.totalValue}>{fmt(subtotal)}</span>
+          </div>
+        </div>
+
+        {state.paymentMethod && (
+          <div style={state.paymentMethod === "QRIS" ? S.payBannerQris : S.payBannerCash}>
+            <div style={S.payIcon}>{state.paymentMethod === "QRIS" ? "💳" : "💵"}</div>
+            <div style={S.payContent}>
+              <div style={S.payLabel}>KASIR PILIH PEMBAYARAN</div>
+              <div style={S.payMethodBig}>{state.paymentMethod}
+              {state.paymentBreakdown && state.paymentMethod === "SPLIT" && (
+                <div style={{
+                  fontSize: 18, marginTop: 12, color: "#fff",
+                  background: "rgba(255,255,255,0.1)",
+                  padding: "12px 20px", borderRadius: 12,
+                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontWeight: 600,
+                }}>
+                  📊 {state.paymentBreakdown}
+                </div>
+              )}</div>
+            </div>
+          </div>
+        )}
+
+        <div style={S.verifyNotice}>
+          <div style={S.verifyIcon}>ℹ️</div>
+          <div style={S.verifyText}>
+            Pastikan <strong style={S.verifyEmphasis}>Menu</strong> dan <strong style={S.verifyEmphasis}>Pembayaran</strong> sama dengan
+            {customerName ? <span style={S.verifyName}> {customerName} </span> : " "}
+            yang Anda terima, dan <strong style={S.verifyEmphasis}>struk</strong> diberikan oleh kasir kami.
+          </div>
+        </div>
+
+        <div style={S.cartHint}>
+          Menunggu kasir menyelesaikan pesanan...
+        </div>
+      </main>
+    </>
+  );
+}
+
+function CDSQR({ state }) {
+  const qris = state.qris || {};
+  const amount = qris.amount || state.subtotal || 0;
+  const qrUrl = qris.qrCode || qris.qrUrl;
+
+  return (
+    <>
+      <header style={S.header}>
+        <div style={S.headerLeft}>
+          <span style={S.logoSmall}>☕</span>
+          <span style={S.brandSmall}>BINTORO</span>
+        </div>
+        <div style={S.tag}>💳 QRIS Payment</div>
+      </header>
+
+      <main style={S.qrMain}>
+        <div style={S.qrTitle}>Scan QR untuk Bayar</div>
+
+        <div style={S.qrFrame}>
+          {qrUrl ? (
+            <img src={qrUrl} alt="QR Code" style={S.qrImage} />
+          ) : (
+            <div style={S.qrLoading}>
+              <div style={S.loader}>⏳</div>
+              <div>Generating QR...</div>
+            </div>
+          )}
+        </div>
+
+        <div style={S.qrHint}>
+          Buka aplikasi e-wallet atau mobile banking<br/>
+          (GoPay, OVO, DANA, ShopeePay, dst)
+        </div>
+
+        <div style={S.qrAmountBox}>
+          <span style={S.subLabel}>TOTAL BAYAR</span>
+          <span style={S.qrAmount}>{fmt(amount)}</span>
+        </div>
+      </main>
+    </>
+  );
+}
+
+function CDSSuccess({ state }) {
+  const order = state.completedOrder || {};
+  return (
+    <div style={S.center}>
+      <div style={S.successCheck}>✅</div>
+      <div style={S.successTitle}>Pembayaran Berhasil!</div>
+      <div style={S.successOrderId}>Order #{order.id || ""}</div>
+      <div style={S.successAmount}>{fmt(order.total || 0)}</div>
+      <div style={S.successThanks}>Terima kasih 🙏</div>
+      <div style={S.idleHint}>Menampilkan QR tracking...</div>
+    </div>
+  );
+}
+
+function CDSTrackQR({ state, pubConfig }) {
+  const order = state.completedOrder || {};
+  const orderId = order.id || "";
+
+  const base = pubConfig.trackingBaseUrl
+    || `${window.location.protocol}//${window.location.host}${window.location.pathname.replace(/\/$/, "")}`;
+  const trackingUrl = `${base}/?trackorder=${orderId}`;
+
+  const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=420x420&data=${encodeURIComponent(trackingUrl)}&bgcolor=ffffff&color=000000&qzone=2&margin=10`;
+
+  const isLocal = base.includes("localhost") || base.includes("127.0.0.1");
+
+  return (
+    <>
+      <header style={S.header}>
+        <div style={S.headerLeft}>
+          <span style={S.logoSmall}>☕</span>
+          <span style={S.brandSmall}>BINTORO</span>
+        </div>
+        <div style={S.tag}>Order #{orderId}</div>
+      </header>
+
+      <main style={S.trackQrMain}>
+        <div style={S.trackQrTitle}>Scan untuk Tracking</div>
+        <div style={S.trackQrSubtitle}>
+          {order.customerName ? `Terima kasih, ${order.customerName}!` : "Terima kasih!"}
+        </div>
+
+        <div style={S.trackQrFrame}>
+          <img src={qrImg} alt="Tracking QR" style={S.trackQrImage}
+            onError={(e) => { e.target.style.display = "none"; }}/>
+        </div>
+
+        <div style={S.trackQrHint}>
+          Buka kamera HP Anda → Scan QR di atas<br/>
+          Cek status pesanan kapan saja
+        </div>
+
+        {isLocal && (
+          <div style={S.warnBox}>
+            ⚠️ CDS dibuka via <code>localhost</code> — phone tidak bisa scan.<br/>
+            Buka CDS via LAN IP atau setup <code>TRACKING_BASE_URL</code> di .env.
+          </div>
+        )}
+
+        <div style={S.totalRow}>
+          <span style={S.totalLabel}>TOTAL DIBAYAR</span>
+          <span style={S.totalBig}>{fmt(order.total || 0)}</span>
+        </div>
+      </main>
+    </>
+  );
+}
+
+const S = {
+  root: { height:"100vh", width:"100vw", background:"#0a0a0a", color:"#fff",
+    fontFamily:"'Plus Jakarta Sans','-apple-system',sans-serif", overflow:"hidden", position:"relative",
+    display:"flex", flexDirection:"column" },
+  conn: { position:"fixed", top:12, right:12, fontSize:10, padding:"3px 10px",
+    border:"1px solid", borderRadius:100, background:"#0a0a0a",
+    display:"flex", alignItems:"center", gap:6, zIndex:100 },
+  connDot: { width:6, height:6, borderRadius:"50%" },
+
+  center: { flex:1, display:"flex", flexDirection:"column", alignItems:"center",
+    justifyContent:"center", gap:16, padding:40, textAlign:"center" },
+  logo: { fontSize:120, marginBottom:8 },
+  logoSmall: { fontSize:32 },
+  brand: { fontSize:96, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+    letterSpacing:4, marginBottom:24, fontWeight:800 },
+  brandSmall: { fontSize:36, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+    letterSpacing:4 },
+
+  idleTagline: { fontSize:32, color:"#fff", marginBottom:12, fontWeight:300 },
+  idleHint: { fontSize:18, color:"#888" },
+  idleBlinker: { marginTop:80, fontSize:24, color:"#FF6B35", letterSpacing:8 },
+
+  /* Screensaver styles */
+  ssRoot: { flex:1, position:"relative", display:"flex", flexDirection:"column", minHeight:"100vh",
+    alignItems:"center", justifyContent:"center", overflow:"hidden" },
+  ssSlide: { width:"100%", minHeight:"100vh", display:"flex", alignItems:"center",
+    justifyContent:"center", animation:"ssFadeIn 0.8s ease-out" },
+  ssCenter: { display:"flex", flexDirection:"column", alignItems:"center",
+    textAlign:"center", padding:"60px 80px", maxWidth:"none", width:"100%", gap:20, justifyContent:"space-evenly", minHeight:"100vh" },
+
+  ssLogo: { fontSize:240, lineHeight:1, marginBottom:12 },
+  ssBrand: { fontSize:150, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35", letterSpacing:4, marginBottom:8, fontWeight:900, lineHeight:1, textShadow:"0 0 80px rgba(255,107,53,0.5)" },
+  ssTagline: { fontSize:56, color:"#fff", marginBottom:12, fontWeight:700, letterSpacing:1 },
+  ssHint: { fontSize:24, color:"#666", marginTop:8, letterSpacing:4 },
+
+  ssBadge: { padding:"8px 24px", background:"rgba(245,158,11,0.15)",
+    color:"#FF6B35", borderRadius:100, fontSize:48, fontWeight:800,
+    letterSpacing:2, marginBottom:0 },
+
+  ssItemEmoji: { fontSize:260, lineHeight:1, marginBottom:8, filter:"drop-shadow(0 16px 40px rgba(0,0,0,0.6))" },
+  ssItemName: { fontSize:80, fontWeight:800, marginBottom:8, lineHeight:1.1, color:"#fff" },
+  ssItemDesc: { fontSize:30, color:"#ccc", marginBottom:24, lineHeight:1.5, fontWeight:500,
+    maxWidth:600 },
+  ssItemPrice: { fontSize:90, fontWeight:900, color:"#FF6B35", fontFamily:"'Montserrat',sans-serif", letterSpacing:1, marginBottom:4 },
+  ssItemExtra: { fontSize:22, color:"#34D399", fontWeight:700, padding:"8px 20px", background:"rgba(52,211,153,0.1)", borderRadius:100, letterSpacing:1 },
+
+  ssPromoEmoji: { fontSize:100, lineHeight:1, marginBottom:4 },
+  ssPromoBigTitle: { fontSize:148, fontWeight:900, color:"#FF6B35",
+    fontFamily:"'Montserrat',sans-serif", letterSpacing:2, marginBottom:8,
+    lineHeight:1, textShadow:"0 0 60px rgba(255,107,53,0.5), 0 0 120px rgba(255,107,53,0.2)" },
+  ssPromoTag: { padding:"10px 24px", background:"rgba(59,130,246,0.2)",
+    color:"#60A5FA", borderRadius:100, fontSize:18, fontWeight:800,
+    letterSpacing:2 },
+  ssPromoTagPay: { padding:"10px 24px", background:"rgba(16,185,129,0.2)",
+    color:"#34D399", borderRadius:100, fontSize:18, fontWeight:800,
+    letterSpacing:2 },
+  ssPromoTagMin: { padding:"10px 24px", background:"rgba(255,107,53,0.15)",
+    color:"#FF6B35", borderRadius:100, fontSize:18, fontWeight:800,
+    letterSpacing:2 },
+  ssPromoCode: { display:"flex", flexDirection:"column", alignItems:"center",
+    marginTop:28, padding:"24px 64px",
+    background:"rgba(255,107,53,0.08)", border:"2px dashed #FF6B35",
+    borderRadius:20, boxShadow:"0 0 40px rgba(255,107,53,0.15)" },
+  ssPromoCodeLabel: { fontSize:16, color:"#FF6B35", letterSpacing:6, fontWeight:700 },
+  ssPromoCodeValue: { fontSize:48, fontFamily:"'Montserrat',sans-serif",
+    color:"#FF6B35", letterSpacing:8, marginTop:8, fontSize:56 },
+
+  ssMemberIcon: { fontSize:200, lineHeight:1, marginBottom:24 },
+
+  ssThanksIcon: { fontSize:280, lineHeight:1, marginBottom:8 },
+  ssSocial: { marginTop:24, fontSize:28, color:"#FF6B35",
+    fontWeight:700, letterSpacing:1 },
+
+  ssDots: { position:"absolute", bottom:32, left:"50%",
+    transform:"translateX(-50%)", display:"flex", gap:8 },
+  ssDot: { height:8, borderRadius:100, transition:"all 0.3s ease" },
+
+  header: { display:"flex", justifyContent:"space-between", alignItems:"center",
+    padding:"24px 40px", borderBottom:"1px solid #222" },
+  headerLeft: { display:"flex", alignItems:"center", gap:16 },
+  tag: { fontSize:18, padding:"8px 18px", borderRadius:100,
+    background:"rgba(245,158,11,0.15)", color:"#FF6B35", fontWeight:600 },
+
+  cartMain: { flex:1, padding:"32px 60px", overflowY:"auto",
+    display:"flex", flexDirection:"column" },
+  cartTitleRow: { display:"flex", justifyContent:"space-between",
+    alignItems:"baseline", marginBottom:24 },
+  cartTitle: { fontSize:56, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+    letterSpacing:4 },
+  customerName: { fontSize:24, color:"#888", marginLeft:12, fontFamily:"'Plus Jakarta Sans',sans-serif" },
+  itemCountTag: { fontSize:13, padding:"6px 14px", borderRadius:100,
+    background:"rgba(245,158,11,0.1)", color:"#FF6B35", fontWeight:700, letterSpacing:1 },
+  cartList: { display:"flex", flexDirection:"column", gap:14, marginBottom:32 },
+  cartItem: { display:"flex", alignItems:"flex-start", gap:20, padding:"18px 22px",
+    background:"#111", borderRadius:14, border:"1px solid #1a1a1a" },
+  itemEmoji: { fontSize:44, width:60, textAlign:"center", paddingTop:4 },
+  itemBody: { flex:1 },
+  itemNameRow: { display:"flex", justifyContent:"space-between", alignItems:"baseline",
+    marginBottom:8, gap:12 },
+  itemName: { fontSize:20, fontWeight:700 },
+  itemBasePrice: { fontSize:13, color:"#888", fontWeight:600 },
+  toppingList: { display:"flex", flexDirection:"column", gap:6, marginTop:4 },
+  toppingRow: { display:"flex", justifyContent:"space-between", alignItems:"center",
+    padding:"3px 0" },
+  toppingName: { fontSize:14, color:"#fff", fontWeight:500 },
+  toppingFree: { fontSize:12, color:"#10B981", fontWeight:700, letterSpacing:0.5,
+    background:"rgba(16,185,129,0.1)", padding:"2px 10px", borderRadius:100 },
+  toppingPaid: { fontSize:12, color:"#FF6B35", fontWeight:700,
+    background:"rgba(245,158,11,0.1)", padding:"2px 10px", borderRadius:100 },
+  itemAddons: { display:"flex", flexWrap:"wrap", gap:6, marginTop:6 },
+  addonTag: { fontSize:12, color:"#10B981", background:"rgba(16,185,129,0.1)",
+    padding:"3px 10px", borderRadius:100 },
+  itemQty: { fontSize:20, fontWeight:800, color:"#888", width:50, textAlign:"center",
+    paddingTop:4 },
+  itemPrice: { fontSize:32, color:"#FF6B35", minWidth:140, textAlign:"right",
+    fontFamily:"'Montserrat',sans-serif", letterSpacing:2, paddingTop:4 },
+
+  summaryInline: { background:"#0a0a0a", border:"1px solid #222",
+    borderRadius:18, padding:"20px 28px", marginTop:8 },
+  summaryRow: { display:"flex", justifyContent:"space-between", alignItems:"center",
+    padding:"6px 0" },
+  summaryLabel: { fontSize:18, color:"#fff", fontWeight:600 },
+  summaryValue: { fontSize:22, color:"#fff", fontWeight:700 },
+  summaryLabelMuted: { fontSize:13, color:"#666" },
+  summaryDivider: { height:1, background:"#222", margin:"12px 0" },
+  totalLabel: { fontSize:18, color:"#fff", fontWeight:800, letterSpacing:1 },
+  totalValue: { fontSize:64, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+    letterSpacing:3, fontWeight:600 },
+  cartHint: { textAlign:"center", color:"#555", fontSize:13, marginTop:24,
+    padding:"12px", letterSpacing:1 },
+
+  payBannerCash: { display:"flex", alignItems:"center", gap:20, marginTop:20,
+    padding:"24px 32px", background:"rgba(16,185,129,0.08)",
+    border:"2px solid #10B981", borderRadius:18 },
+  payBannerQris: { display:"flex", alignItems:"center", gap:20, marginTop:20,
+    padding:"24px 32px", background:"rgba(59,130,246,0.08)",
+    border:"2px solid #3B82F6", borderRadius:18 },
+  payIcon: { fontSize:56 },
+  payContent: { flex:1 },
+  payLabel: { fontSize:13, color:"#888", letterSpacing:2, fontWeight:700,
+    marginBottom:4 },
+  payMethodBig: { fontSize:42, fontWeight:900, color:"#fff", letterSpacing:2 },
+
+  verifyNotice: { display:"flex", alignItems:"flex-start", gap:16, marginTop:20,
+    padding:"20px 28px", background:"rgba(245,158,11,0.06)",
+    border:"1px solid rgba(245,158,11,0.3)", borderRadius:14 },
+  verifyIcon: { fontSize:28, lineHeight:1 },
+  verifyText: { flex:1, fontSize:15, color:"#fff", lineHeight:1.6, fontWeight:500 },
+  verifyEmphasis: { color:"#FF6B35", fontWeight:700 },
+  verifyName: { display:"inline-block", padding:"3px 14px", margin:"0 4px",
+    background:"rgba(245,158,11,0.18)", color:"#FF6B35", borderRadius:8,
+    fontWeight:800, letterSpacing:0.5,
+    border:"1px solid rgba(245,158,11,0.4)" },
+
+  qrMain: { flex:1, display:"flex", flexDirection:"column", alignItems:"center",
+    justifyContent:"center", gap:16, padding:40, textAlign:"center" },
+  qrTitle: { fontSize:56, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+    letterSpacing:4, marginBottom:80 },
+  qrFrame: { padding:24, background:"#fff", borderRadius:24,
+    boxShadow:"0 0 60px rgba(245,158,11,0.3)" },
+  qrImage: { width:360, height:360, objectFit:"contain", display:"block" },
+  qrLoading: { width:360, height:360, display:"flex", flexDirection:"column",
+    alignItems:"center", justifyContent:"center", color:"#666" },
+  loader: { fontSize:64, marginBottom:12 },
+  qrHint: { fontSize:18, color:"#aaa", marginTop:24, lineHeight:1.6 },
+  qrAmountBox: { marginTop:32, padding:"20px 40px",
+    background:"#111", border:"2px solid #F59E0B", borderRadius:16,
+    display:"flex", flexDirection:"column", alignItems:"center" },
+  subLabel: { fontSize:14, color:"#888", letterSpacing:2, fontWeight:600 },
+  qrAmount: { fontSize:72, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+    letterSpacing:4, marginTop:4 },
+
+  successCheck: { fontSize:72, lineHeight:1, marginBottom:8 },
+  successTitle: { fontSize:48, fontFamily:"'Montserrat',sans-serif", color:"#10B981",
+    letterSpacing:5, marginBottom:16 },
+  successOrderId: { fontSize:24, color:"#888", marginBottom:8 },
+  successAmount: { fontSize:60, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+    letterSpacing:5, marginBottom:24 },
+  successThanks: { fontSize:28, color:"#fff", marginBottom:40 },
+
+  trackQrMain: { flex:1, padding:"32px 60px", display:"flex", flexDirection:"column",
+    alignItems:"center", textAlign:"center", overflowY:"auto" },
+  trackQrTitle: { fontSize:64, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+    letterSpacing:4, marginBottom:80 },
+  trackQrSubtitle: { fontSize:20, color:"#fff", marginBottom:32 },
+  trackQrFrame: { padding:20, background:"#fff", borderRadius:24,
+    boxShadow:"0 0 80px rgba(245,158,11,0.25)", marginBottom:24 },
+  trackQrImage: { width:420, height:420, objectFit:"contain", display:"block" },
+  trackQrHint: { fontSize:18, color:"#aaa", lineHeight:1.6, marginBottom:24,
+    maxWidth:480 },
+  warnBox: { padding:"14px 20px", background:"rgba(255,107,53,0.1)",
+    border:"1px solid #FF6B35", borderRadius:12, fontSize:13, color:"#FF6B35",
+    maxWidth:540, marginBottom:16, lineHeight:1.5 },
+  urlBox: { fontSize:13, color:"#666", padding:"8px 16px",
+    background:"#0a0a0a", border:"1px solid #222", borderRadius:8,
+    fontFamily:"monospace", marginBottom:24, wordBreak:"break-all", maxWidth:540 },
+  totalRow: { display:"flex", flexDirection:"column", alignItems:"center",
+    marginTop:8 },
+  totalBig: { fontSize:64, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+    letterSpacing:4, marginTop:4 }
+};
+
+
+// ============================================================
+// FILE: src/CustomerTrackingPage.jsx
+// LINES: 313
+// ============================================================
+import { useState, useEffect, useRef } from "react";
+import { api } from "./api.js";
+
+const STAGES = [
+  { key: "waiting",   label: "Diterima",     emoji: "📝", color: "#94A3B8" },
+  { key: "preparing", label: "Disiapkan",    emoji: "👨‍🍳", color: "#F59E0B" },
+  { key: "ready",     label: "Siap Diambil", emoji: "🔔", color: "#10B981" },
+  { key: "completed", label: "Selesai",      emoji: "✅", color: "#22C55E" },
+];
+
+const fIDR = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
+
+export default function CustomerTrackingPage({ orderId }) {
+  const [order, setOrder]   = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError]   = useState(null);
+  const [loyalty, setLoyalty] = useState(null);
+  const intervalRef = useRef(null);
+
+  const fetchOrder = async () => {
+    try {
+      const data = await api.getOrder(orderId);
+      if (data?.customerId) {
+        api.getCustomerLoyalty(data.customerId).then(setLoyalty).catch(()=>{});
+      }
+      if (data?.error) { setError(data.error); }
+      else { setOrder(data); setError(null); }
+    } catch (e) {
+      setError("Koneksi gagal — coba refresh halaman");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!orderId) { setLoading(false); setError("Order ID tidak ditemukan"); return; }
+    fetchOrder();
+    intervalRef.current = setInterval(fetchOrder, 5000);
+    return () => clearInterval(intervalRef.current);
+  }, [orderId]);
+
+  useEffect(() => {
+    if (order && ["completed","cancelled"].includes(order.status)) {
+      clearInterval(intervalRef.current);
+    }
+  }, [order?.status]);
+
+  if (loading) return (
+    <div style={S.root}>
+      <div style={S.spinner}/>
+      <div style={S.muted}>Memuat pesanan…</div>
+    </div>
+  );
+
+  if (error || !order) return (
+    <div style={S.root}>
+      <div style={{fontSize:64,textAlign:"center",marginTop:40}}>⚠️</div>
+      <div style={S.h2}>Tidak Ditemukan</div>
+      <div style={S.muted}>{error || "Order tidak ditemukan"}</div>
+    </div>
+  );
+
+  const cancelled = order.status === "cancelled";
+  const currentIdx = STAGES.findIndex(s => s.key === order.status);
+
+  return (
+    <div style={S.root}>
+      <div style={S.brand}>BINTORO</div>
+      <div style={S.muted}>SELF ORDER KIOSK</div>
+
+      <div style={S.card}>
+        <div style={S.orderNo}>#{order.id}</div>
+        <div style={S.orderType}>
+          {order.type === "dine" ? `🪑 Dine In • Meja ${order.table}` : "🛍️ Bawa Pulang"}
+        </div>
+        {order.customerName && <div style={S.customer}>{order.customerName}</div>}
+        {loyalty && (
+          <div style={{margin:"16px auto",maxWidth:360,padding:"14px 18px",background:"linear-gradient(135deg,rgba(251,146,60,0.12),rgba(245,158,11,0.06))",border:"1px solid rgba(251,146,60,0.3)",borderRadius:12,textAlign:"center"}}>
+            <div style={{fontSize:10,letterSpacing:1.5,color:"#FB923C",marginBottom:4}}>🎁 SALDO POIN KAMU</div>
+            <div style={{fontSize:28,fontWeight:800,color:"#FB923C",fontFamily:"'Space Mono',monospace"}}>{loyalty.points.toLocaleString("id-ID")} pt</div>
+            {order.pointsEarned > 0 && (
+              <div style={{fontSize:11,color:"#34D399",marginTop:6}}>+ {order.pointsEarned} dari pesanan ini</div>
+            )}
+            {order.pointsRedeemed > 0 && (
+              <div style={{fontSize:11,color:"#888",marginTop:2}}>Pakai {order.pointsRedeemed} pt untuk hemat Rp {(order.pointsDiscount||0).toLocaleString("id-ID")}</div>
+            )}
+            <div style={{fontSize:9,color:"#666",marginTop:8,letterSpacing:0.5}}>
+              {loyalty.redeemRate} poin = Rp 1.000 diskon · min {loyalty.minRedeemPoints} poin
+            </div>
+          </div>
+        )}
+      </div>
+
+      {cancelled ? (
+        <div style={{...S.card, background:"#3F1212", textAlign:"center"}}>
+          <div style={{fontSize:48}}>❌</div>
+          <div style={{fontSize:18,fontWeight:700,color:"#FCA5A5",marginTop:8}}>Pesanan Dibatalkan</div>
+        </div>
+      ) : (
+        <div style={S.timeline}>
+          {STAGES.map((stage, i) => {
+            const isPast = i < currentIdx, isCurrent = i === currentIdx;
+            return (
+              <div key={stage.key} style={S.stage}>
+                <div style={{
+                  ...S.stageBubble,
+                  background: isPast || isCurrent ? stage.color : "#1F2937",
+                  color: isPast || isCurrent ? "#fff" : "#475569",
+                  animation: isCurrent ? "tpulse 1.6s ease-in-out infinite" : "none",
+                  transform: isCurrent ? "scale(1.1)" : "scale(1)",
+                }}>{stage.emoji}</div>
+                <div style={{
+                  ...S.stageLabel,
+                  color: isPast || isCurrent ? "#E2E8F0" : "#64748B",
+                  fontWeight: isCurrent ? 700 : 400,
+                }}>{stage.label}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <div style={S.card}>
+        <div style={S.cardTitle}>PESANAN ANDA</div>
+        {(order.items||[]).map((it,i) => {
+          const toppings = it.addons?.toppings || [];
+          const explicitTotal = toppings.reduce((s,t)=>s+(t.price||0),0);
+          const extraCharge = Math.max(0, (it.addonTotal||0) - explicitTotal);
+          return (
+            <div key={i} style={{padding:"10px 0",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+                <span style={{fontWeight:600,flex:1}}>{it.q}× {it.e} {it.n}</span>
+                <span style={{fontWeight:600,minWidth:80,textAlign:"right"}}>{fIDR(it.p * it.q)}</span>
+              </div>
+              {toppings.map((t,j) => {
+                const linePrice = (t.price||0) * (it.q||1);
+                return (
+                  <div key={j} style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#94A3B8",marginLeft:14,marginTop:3,lineHeight:1.4}}>
+                    <span>+ {t.name}</span>
+                    <span style={{color: linePrice>0 ? "#94A3B8" : "#34D399"}}>
+                      {linePrice>0 ? fIDR(linePrice) : "gratis"}
+                    </span>
+                  </div>
+                );
+              })}
+              {extraCharge > 0 && (
+                <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#94A3B8",marginLeft:14,marginTop:3,lineHeight:1.4}}>
+                  <span>+ Topping ekstra</span>
+                  <span>{fIDR(extraCharge * (it.q||1))}</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {/* BOGO free items */}
+        {(order.promoFreeItems||[]).map((fi,i) => (
+          <div key={`free-${i}`} style={{padding:"10px 0",borderBottom:"1px solid rgba(255,255,255,0.06)"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
+              <span style={{fontWeight:700,flex:1,color:"#34D399"}}>🎁 {fi.qty}× {fi.name}</span>
+              <span style={{fontWeight:700,minWidth:80,textAlign:"right",color:"#34D399"}}>GRATIS</span>
+            </div>
+          </div>
+        ))}
+        <div style={S.divider}/>
+        <div style={S.totalRow}>
+          <span>TOTAL</span>
+          <span style={{color:"#F59E0B"}}>{fIDR(order.total)}</span>
+        </div>
+      </div>
+
+      <div style={S.footer}>🔄 Status auto-update tiap 5 detik</div>
+
+      <style>{`
+        @keyframes tpulse {
+          0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.6); }
+          50%     { box-shadow: 0 0 0 14px rgba(245,158,11,0); }
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        html, body { background: #050810; margin: 0; padding: 0; width: 100%; }
+        * { box-sizing: border-box; }
+        @media (max-width: 500px) {
+          /* Ensure phone fills naturally */
+        }
+      `}</style>
+    </div>
+  );
+}
+
+const S = {
+  root: {
+    minHeight: "100vh",
+    background: "#050810",
+    padding: "clamp(12px, 3vw, 24px) clamp(12px, 4vw, 32px) clamp(20px, 5vw, 40px)",
+    width: "100%",
+    maxWidth: "min(96vw, 720px)",
+    margin: "0 auto",
+    boxSizing: "border-box",
+    color: "#F1F5F9",
+    fontFamily: "'Plus Jakarta Sans',-apple-system,sans-serif",
+    display: "flex",
+    flexDirection: "column",
+    gap: "clamp(8px, 2vw, 16px)",
+  },
+  brand: {
+    fontSize: "clamp(20px, 6vw, 32px)",
+    fontWeight: 800,
+    letterSpacing: "clamp(2px, 1vw, 6px)",
+    textAlign: "center",
+    background: "linear-gradient(90deg,#F59E0B,#F97316)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    marginTop: 4,
+  },
+  muted: {
+    fontSize: "clamp(9px, 2.5vw, 12px)",
+    color: "#64748B",
+    textAlign: "center",
+    letterSpacing: 2,
+  },
+  card: {
+    background: "#0F172A",
+    border: "1px solid #1F2937",
+    borderRadius: "clamp(10px, 2vw, 16px)",
+    padding: "clamp(12px, 3vw, 20px)",
+  },
+  orderNo: {
+    fontSize: "clamp(26px, 8vw, 44px)",
+    fontWeight: 800,
+    color: "#F59E0B",
+    textAlign: "center",
+    fontFamily: "'Space Mono',monospace",
+    lineHeight: 1,
+  },
+  orderType: {
+    fontSize: "clamp(11px, 3vw, 14px)",
+    color: "#94A3B8",
+    textAlign: "center",
+    marginTop: 6,
+  },
+  customer: {
+    fontSize: "clamp(12px, 3vw, 15px)",
+    color: "#E2E8F0",
+    textAlign: "center",
+    marginTop: 6,
+  },
+  timeline: {
+    background: "#0F172A",
+    border: "1px solid #1F2937",
+    borderRadius: "clamp(10px, 2vw, 16px)",
+    padding: "clamp(14px, 3vw, 22px) clamp(8px, 2vw, 14px)",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  stage: { flex: 1, textAlign: "center", minWidth: 0 },
+  stageBubble: {
+    width: "clamp(40px, 10vw, 56px)",
+    height: "clamp(40px, 10vw, 56px)",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "clamp(18px, 5vw, 26px)",
+    margin: "0 auto 6px",
+    transition: "all 0.3s",
+  },
+  stageLabel: {
+    fontSize: "clamp(9px, 2.5vw, 12px)",
+    transition: "all 0.3s",
+    lineHeight: 1.2,
+  },
+  cardTitle: {
+    fontSize: "clamp(9px, 2.5vw, 12px)",
+    color: "#64748B",
+    letterSpacing: 2,
+    marginBottom: 10,
+  },
+  itemRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    padding: "clamp(8px, 2vw, 12px) 0",
+    borderBottom: "1px solid #1F2937",
+    fontSize: "clamp(12px, 3vw, 15px)",
+  },
+  divider: { height: 1, background: "#1F2937", margin: "clamp(8px, 2vw, 14px) 0" },
+  totalRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    fontSize: "clamp(15px, 4vw, 20px)",
+    fontWeight: 700,
+    paddingTop: 2,
+  },
+  footer: {
+    fontSize: "clamp(9px, 2.5vw, 12px)",
+    color: "#475569",
+    textAlign: "center",
+    marginTop: 6,
+  },
+  spinner: {
+    width: 30, height: 30,
+    border: "3px solid #1F2937",
+    borderTop: "3px solid #F59E0B",
+    borderRadius: "50%",
+    animation: "spin 0.8s linear infinite",
+    margin: "40px auto 14px",
+  },
+  h2: {
+    fontSize: "clamp(16px, 5vw, 22px)",
+    fontWeight: 700,
+    textAlign: "center",
+    marginTop: 8,
+  },
+};
+
+
+// ============================================================
+// FILE: src/MenuContext.jsx
+// LINES: 39
+// ============================================================
+import { createContext, useContext, useEffect, useState } from "react";
+import { api } from "./api.js";
+
+const MenuContext = createContext(null);
+
+export function MenuProvider({ children }) {
+  const [config, setConfig] = useState(null);
+  const [error,  setError]  = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    api.getMenuConfig()
+      .then(cfg => { if (mounted) setConfig(cfg); })
+      .catch(e  => { if (mounted) setError(e.message || "Failed to load menu"); });
+    return () => { mounted = false; };
+  }, []);
+
+  if (error) return (
+    <div style={{minHeight:"100vh",background:"#050810",color:"#f87171",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Plus Jakarta Sans',sans-serif",gap:10}}>
+      <div style={{fontSize:48}}>⚠️</div>
+      <div style={{fontSize:16,fontWeight:600}}>Gagal memuat menu</div>
+      <div style={{fontSize:12,color:"#888"}}>{error}</div>
+    </div>
+  );
+
+  if (!config) return (
+    <div style={{minHeight:"100vh",background:"#050810",color:"#888",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:14,letterSpacing:2}}>
+      Loading menu…
+    </div>
+  );
+
+  return <MenuContext.Provider value={config}>{children}</MenuContext.Provider>;
+}
+
+export function useMenu() {
+  const ctx = useContext(MenuContext);
+  if (!ctx) throw new Error("useMenu() must be inside <MenuProvider>");
+  return ctx;
+}
+
+
+// ============================================================
+// FILE: package.json
+// LINES: 22
+// ============================================================
+{
+  "name": "bites-kiosk",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build && gh-pages -d dist"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "gh-pages": "^6.1.1",
+    "playwright": "^1.60.0",
+    "vite": "^8.0.0"
+  }
+}
+
+
+// ============================================================
+// FILE: vite.config.js
+// LINES: 14
+// ============================================================
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  base: '/bites-kiosk/',
+  server: {
+    host: '0.0.0.0',
+    port: 5184,
+    strictPort: true,
+    allowedHosts: true,
+    cors: true
+  }
+})
+
+
+// >>> NOT FOUND: vite.config.ts

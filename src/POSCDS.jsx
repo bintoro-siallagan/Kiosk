@@ -14,7 +14,7 @@ const STAGES = [
 const fmt = (n) => "Rp " + (n || 0).toLocaleString("id-ID");
 
 export default function POSCDS() {
-  const [mode, setMode] = useState("idle"); // idle | cart | qris | success | track-qr
+  const [mode, setMode] = useState("idle"); // idle | welcoming | cart | qris | success | track-qr
   const [state, setState] = useState({});
   const [pubConfig, setPubConfig] = useState({ trackingBaseUrl: null });
   const [connStatus, setConnStatus] = useState("connecting");
@@ -110,6 +110,45 @@ export default function POSCDS() {
         setMode("success");
         setTimeout(() => setMode("track-qr"), 3500);
         break;
+
+      // ── Customer recognition (Step 1) ──
+      case "pos:phone_lookup":
+        setState(prev => ({ ...prev, phoneLookup: data, recognizedCustomer: null }));
+        if (mode === "idle" || mode === "welcoming") setMode("welcoming");
+        break;
+
+      case "pos:customer_recognized":
+        setState(prev => ({ ...prev, recognizedCustomer: data, phoneLookup: null }));
+        setMode("welcoming");
+        break;
+
+      case "pos:customer_cleared":
+        setState(prev => ({ ...prev, recognizedCustomer: null, phoneLookup: null }));
+        if (mode === "welcoming") setMode("idle");
+        break;
+
+      // ── Transaction breakdown (Step 3) ──
+      case "pos:promo_applied":
+        setState(prev => ({ ...prev, promo: data }));
+        break;
+
+      case "pos:promo_removed":
+        setState(prev => ({ ...prev, promo: null }));
+        break;
+
+      case "pos:points_redeemed":
+        setState(prev => ({
+          ...prev,
+          pointsUsed: data.pointsUsed || 0,
+          pointsValue: data.pointsValue || 0,
+          pointsRemaining: data.newBalance ?? prev.pointsRemaining
+        }));
+        break;
+
+      case "pos:transaction_breakdown":
+        setState(prev => ({ ...prev, breakdown: data }));
+        break;
+
       case "pos:idle":
       case "pos:reset":
         setState({});
@@ -129,6 +168,7 @@ export default function POSCDS() {
       <div style={S.root}>
       <ConnIndicator status={connStatus} />
       {mode === "idle" && <CDSIdle />}
+      {mode === "welcoming" && <CDSWelcoming state={state} />}
       {mode === "cart" && <CDSCart state={state} />}
       {mode === "qris" && <CDSQR state={state} />}
       {mode === "success" && <CDSSuccess state={state} />}
@@ -166,7 +206,6 @@ function CDSIdle() {
       const activePromos = (Array.isArray(promos) ? promos : [])
         .filter(p => p.active !== false)
         .filter(p => {
-          // Filter expired promos
           if (!p.validUntil) return true;
           const until = typeof p.validUntil === 'string' ? new Date(p.validUntil).getTime() : p.validUntil;
           return until > now;
@@ -174,12 +213,10 @@ function CDSIdle() {
         .slice(0, 4);
 
       const slideList = [{ type: "welcome" }];
-      // Interleave: welcome → promo → item → promo → item → member CTA → repeat
       activePromos.forEach((promo, i) => {
         slideList.push({ type: "promo", data: promo });
         if (popular[i]) slideList.push({ type: "item", data: popular[i] });
       });
-      // Add remaining popular items
       popular.slice(activePromos.length).forEach(item => {
         slideList.push({ type: "item", data: item });
       });
@@ -190,7 +227,6 @@ function CDSIdle() {
     return () => { mounted = false; };
   }, []);
 
-  // Auto-advance every 6 seconds
   useEffect(() => {
     if (slides.length <= 1) return;
     const timer = setTimeout(() => {
@@ -203,7 +239,6 @@ function CDSIdle() {
 
   return (
     <div style={S.ssRoot}>
-      {/* Slide content with key for transition */}
       <div key={idx} style={S.ssSlide}>
         {slide.type === "welcome" && <SlideWelcome />}
         {slide.type === "item" && <SlideItem item={slide.data} />}
@@ -212,7 +247,6 @@ function CDSIdle() {
         {slide.type === "thanks" && <SlideThanks />}
       </div>
 
-      {/* Progress dots */}
       {slides.length > 1 && (
         <div style={S.ssDots}>
           {slides.map((_, i) => (
@@ -258,7 +292,6 @@ function SlideItem({ item }) {
 function SlidePromo({ promo }) {
   if (!promo) return null;
 
-  // Smart title from promo type + value
   let bigTitle = "";
   let emoji = "🎁";
   let badgeColor = "#FF6B35";
@@ -288,12 +321,8 @@ function SlidePromo({ promo }) {
     bigTitle = promo.name || "SPECIAL OFFER";
   }
 
-  // Strip emoji from desc for cleaner display (already in emoji slot)
   const desc = (promo.desc || promo.description || "").replace(/^[🎁🔥💯💰🥤🎉]+\s*/, "");
-
-  // Member-only badge
   const memberBadge = promo.forMember;
-  // Payment hint
   const payHint = promo.requiredPaymentHint;
 
   return (
@@ -353,6 +382,133 @@ function SlideThanks() {
   );
 }
 
+// ═══════════════════════════════════════════════════════════
+// CDSWelcoming — Customer recognition screen (NEW, Step 1)
+// ═══════════════════════════════════════════════════════════
+function CDSWelcoming({ state }) {
+  const customer = state.recognizedCustomer;
+  const phoneLookup = state.phoneLookup;
+
+  // State 1: Customer ke-recognize
+  if (customer) {
+    const isNew = customer.isNew;
+    const accent = isNew ? "#3B82F6" : "#10B981";
+    const accentBg = isNew ? "rgba(59,130,246,0.10)" : "rgba(16,185,129,0.10)";
+
+    return (
+      <div style={{
+        flex: 1, display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        padding: "60px 40px", gap: 24,
+        animation: "ssFadeIn 0.5s ease-out"
+      }}>
+        <div style={{ fontSize: 120, lineHeight: 1 }}>
+          {isNew ? "✨" : "👋"}
+        </div>
+
+        <div style={{
+          fontSize: 18, color: accent, letterSpacing: 4,
+          fontWeight: 700, textTransform: "uppercase",
+          padding: "8px 24px", borderRadius: 999,
+          background: accentBg, border: `1px solid ${accent}`
+        }}>
+          {isNew ? "Member Baru" : "Selamat Datang Kembali"}
+        </div>
+
+        <div style={{
+          fontSize: 72, fontWeight: 800,
+          fontFamily: "'Montserrat', sans-serif",
+          color: "#fff", textAlign: "center",
+          letterSpacing: 1, lineHeight: 1.1,
+          maxWidth: 900, wordBreak: "break-word"
+        }}>
+          {isNew ? "Halo!" : `Halo, ${customer.name}`}
+        </div>
+
+        {!isNew && customer.points > 0 && (
+          <div style={{
+            display: "flex", alignItems: "center", gap: 16,
+            padding: "20px 36px", borderRadius: 16,
+            background: "rgba(245,158,11,0.10)",
+            border: "1px solid rgba(245,158,11,0.40)"
+          }}>
+            <span style={{ fontSize: 32 }}>⭐</span>
+            <div>
+              <div style={{ fontSize: 14, color: "#FCD34D", letterSpacing: 2, textTransform: "uppercase", fontWeight: 600 }}>
+                Saldo Poin
+              </div>
+              <div style={{ fontSize: 36, color: "#F59E0B", fontWeight: 800, fontFamily: "'Montserrat', sans-serif" }}>
+                {customer.points.toLocaleString("id-ID")}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isNew && (
+          <div style={{
+            fontSize: 22, color: "#888", textAlign: "center",
+            maxWidth: 600, lineHeight: 1.5
+          }}>
+            Mulai dari sekarang, setiap transaksi kasih poin yang bisa dipakai diskon di kemudian hari.
+          </div>
+        )}
+
+        <div style={{
+          marginTop: 16, fontSize: 18, color: "#666",
+          letterSpacing: 2, textTransform: "uppercase"
+        }}>
+          Kasir sedang menyiapkan pesanan...
+        </div>
+      </div>
+    );
+  }
+
+  // State 2: HP lagi diketik
+  if (phoneLookup) {
+    return (
+      <div style={{
+        flex: 1, display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        padding: "60px 40px", gap: 32
+      }}>
+        <div style={{ fontSize: 100, lineHeight: 1 }}>📱</div>
+
+        <div style={{
+          fontSize: 18, color: "#FF6B35", letterSpacing: 4,
+          fontWeight: 700, textTransform: "uppercase"
+        }}>
+          Verifikasi Member
+        </div>
+
+        <div style={{
+          fontSize: 48, fontWeight: 700,
+          fontFamily: "'JetBrains Mono', monospace",
+          color: "#fff", letterSpacing: 4,
+          padding: "16px 32px",
+          background: "rgba(255,255,255,0.05)",
+          borderRadius: 12, border: "1px dashed rgba(245,158,11,0.4)"
+        }}>
+          {phoneLookup.masked || "08xxxxxxxx"}
+        </div>
+
+        <div style={{ fontSize: 20, color: "#888", textAlign: "center" }}>
+          Kasir sedang input nomor HP Anda
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{
+      flex: 1, display: "flex",
+      alignItems: "center", justifyContent: "center",
+      color: "#666", fontSize: 18
+    }}>
+      Memuat...
+    </div>
+  );
+}
+
 function CDSCart({ state }) {
   const menu = useMenu();
   const extraToppingPrice = menu?.extraToppingPrice || 0;
@@ -368,6 +524,14 @@ function CDSCart({ state }) {
   const customerName = state.order?.customerName;
   const orderType = state.order?.type;
   const itemCount = cart.reduce((s, c) => s + c.qty, 0);
+
+  // ── Computed breakdown ── (Step 3)
+  const promoDisc = state.promo?.discount || 0;
+  const pointsVal = state.pointsValue || 0;
+  const pointsUsed = state.pointsUsed || 0;
+  const finalTotal = state.breakdown?.finalTotal
+    ?? Math.max(0, subtotal - promoDisc - pointsVal);
+  const hasDeduction = promoDisc > 0 || pointsVal > 0;
 
   return (
     <>
@@ -428,6 +592,7 @@ function CDSCart({ state }) {
           })}
         </div>
 
+        {/* ═══════ Summary with breakdown (Step 3) ═══════ */}
         <div style={S.summaryInline}>
           <div style={S.summaryRow}>
             <span style={S.summaryLabel}>Subtotal</span>
@@ -437,11 +602,47 @@ function CDSCart({ state }) {
             <span style={S.summaryLabelMuted}>PPN 10%</span>
             <span style={S.summaryLabelMuted}>included</span>
           </div>
+
+          {/* Promo deduction */}
+          {state.promo && state.promo.discount > 0 && (
+            <div style={S.deductionRow}>
+              <span style={S.deductionLabel}>
+                🎁 Promo {state.promo.code}
+              </span>
+              <span style={S.deductionValue}>-{fmt(state.promo.discount)}</span>
+            </div>
+          )}
+
+          {/* Points deduction */}
+          {pointsVal > 0 && (
+            <div style={S.deductionRow}>
+              <span style={S.deductionLabel}>
+                ⭐ Bayar dgn {pointsUsed.toLocaleString("id-ID")} poin
+              </span>
+              <span style={S.deductionValue}>-{fmt(pointsVal)}</span>
+            </div>
+          )}
+
           <div style={S.summaryDivider}/>
+
           <div style={S.summaryRow}>
-            <span style={S.totalLabel}>TOTAL</span>
-            <span style={S.totalValue}>{fmt(subtotal)}</span>
+            <span style={S.totalLabel}>
+              {hasDeduction ? "TOTAL BAYAR" : "TOTAL"}
+            </span>
+            <span style={S.totalValue}>{fmt(finalTotal)}</span>
           </div>
+
+          {hasDeduction && finalTotal === 0 && (
+            <div style={S.coveredBanner}>
+              🎉 Tertutup poin / promo — gak perlu bayar tambahan
+            </div>
+          )}
+
+          {hasDeduction && (state.pointsRemaining ?? null) !== null && pointsUsed > 0 && (
+            <div style={S.pointsAfterRow}>
+              Sisa poin Anda: <strong style={{color: "#F59E0B"}}>{state.pointsRemaining.toLocaleString("id-ID")}</strong>
+            </div>
+          )}
         </div>
 
         {state.paymentMethod && (
@@ -723,6 +924,28 @@ const S = {
     letterSpacing:3, fontWeight:600 },
   cartHint: { textAlign:"center", color:"#555", fontSize:13, marginTop:24,
     padding:"12px", letterSpacing:1 },
+
+  // ── Transaction breakdown styles (Step 3) ──
+  deductionRow: {
+    display: "flex", justifyContent: "space-between", alignItems: "center",
+    padding: "8px 0", color: "#10B981"
+  },
+  deductionLabel: { fontSize: 17, fontWeight: 600 },
+  deductionValue: { fontSize: 20, fontWeight: 800, color: "#34D399",
+    fontFamily:"'Montserrat',sans-serif", letterSpacing: 1 },
+  coveredBanner: {
+    marginTop: 18, padding: "16px 22px",
+    background: "rgba(16,185,129,0.12)",
+    border: "1px solid #10B981", borderRadius: 14,
+    textAlign: "center", color: "#34D399",
+    fontSize: 16, fontWeight: 800, letterSpacing: 1
+  },
+  pointsAfterRow: {
+    marginTop: 12, padding: "10px 16px",
+    background: "rgba(245,158,11,0.06)",
+    borderRadius: 8, textAlign: "center",
+    fontSize: 14, color: "#FCD34D"
+  },
 
   payBannerCash: { display:"flex", alignItems:"center", gap:20, marginTop:20,
     padding:"24px 32px", background:"rgba(16,185,129,0.08)",
