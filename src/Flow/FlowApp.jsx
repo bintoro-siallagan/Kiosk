@@ -6,12 +6,14 @@ import FlowCheckout from "./FlowCheckout.jsx";
 import FlowSuccess from "./FlowSuccess.jsx";
 import FlowHistory from "./FlowHistory";
 import FlowPromos from "./FlowPromos";
+import FlowRedeem from "./FlowRedeem.jsx";
 
 const SESSION_KEY = "flowos_session";
 const CART_KEY = "flowos_cart";
 
 export default function FlowApp() {
   const [activePromo, setActivePromo] = useState(null);
+  const [pointsToRedeem, setPointsToRedeem] = useState(0);
   const [session, setSession] = useState(() => {
     try {
       const raw = localStorage.getItem(SESSION_KEY);
@@ -140,6 +142,14 @@ export default function FlowApp() {
         <FlowPromos
           customer={session}
           setActivePromo={setActivePromo}
+          setScreen={setScreen}
+        />
+      )}
+
+      {screen === "redeem" && session && (
+        <FlowRedeem
+          session={session}
+          setPointsToRedeem={setPointsToRedeem}
           setScreen={setScreen}
         />
       )}
