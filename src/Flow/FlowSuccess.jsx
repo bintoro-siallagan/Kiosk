@@ -156,7 +156,7 @@ function StepLine({ done }) {
 const S = {
   container: { width: "min(440px, 100%)", minHeight: "100vh", padding: "32px 20px", display: "flex", flexDirection: "column", gap: 18, animation: "fadeUp 0.5s ease" },
   celebration: { textAlign: "center", padding: "20px 0" },
-  successIcon: { fontSize: 96, animation: "successPop 0.6s ease" },
+  successIcon: { fontSize: 72, animation: "successPop 0.6s ease", marginBottom: 32 },
   title: { fontSize: 24, fontWeight: 800, marginTop: 8 },
   subtitle: { fontSize: 13, color: "#9CA3AF", marginTop: 4, padding: "0 20px" },
   orderCard: { padding: "20px", borderRadius: 16, background: "linear-gradient(135deg, rgba(245,158,11,0.10), rgba(245,158,11,0.02))", border: "1px solid rgba(245,158,11,0.3)", textAlign: "center" },
