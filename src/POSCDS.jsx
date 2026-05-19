@@ -149,6 +149,15 @@ export default function POSCDS() {
         setState(prev => ({ ...prev, breakdown: data }));
         break;
 
+      case "pos:cash_received":
+        setState(prev => ({
+          ...prev,
+          cashReceived: data.received || 0,
+          cashChange: data.change || 0,
+          cashSufficient: data.sufficient
+        }));
+        break;
+
       case "pos:idle":
       case "pos:reset":
         setState({});
@@ -666,6 +675,28 @@ function CDSCart({ state }) {
           </div>
         )}
 
+        {/* Cash transparency — kembalian visible ke customer (Step 4A) */}
+        {state.paymentMethod === "CASH" && state.cashReceived > 0 && (
+          <div style={S.cashTransparencyBox}>
+            <div style={S.cashTransparencyHeader}>💵 PEMBAYARAN TUNAI</div>
+            <div style={S.cashTransparencyRow}>
+              <span style={S.cashTrLabel}>Uang Anda berikan</span>
+              <span style={S.cashTrValue}>{fmt(state.cashReceived)}</span>
+            </div>
+            {state.cashChange > 0 && (
+              <div style={S.cashTransparencyChange}>
+                <span style={S.cashTrChangeLabel}>Kembalian Anda</span>
+                <span style={S.cashTrChangeValue}>{fmt(state.cashChange)}</span>
+              </div>
+            )}
+            {!state.cashSufficient && state.cashReceived > 0 && (
+              <div style={S.cashTransparencyShort}>
+                ⏳ Menunggu pembayaran lengkap...
+              </div>
+            )}
+          </div>
+        )}
+
         <div style={S.verifyNotice}>
           <div style={S.verifyIcon}>ℹ️</div>
           <div style={S.verifyText}>
@@ -958,6 +989,45 @@ const S = {
   payLabel: { fontSize:13, color:"#888", letterSpacing:2, fontWeight:700,
     marginBottom:4 },
   payMethodBig: { fontSize:42, fontWeight:900, color:"#fff", letterSpacing:2 },
+
+  // Cash transparency (Step 4A — kembalian visible to customer)
+  cashTransparencyBox: {
+    background: "rgba(16,185,129,0.06)",
+    border: "2px solid #10B981",
+    borderRadius: 18, padding: "20px 28px",
+    marginTop: 20
+  },
+  cashTransparencyHeader: {
+    fontSize: 13, color: "#10B981", letterSpacing: 3,
+    fontWeight: 800, marginBottom: 12
+  },
+  cashTransparencyRow: {
+    display: "flex", justifyContent: "space-between",
+    alignItems: "center", padding: "6px 0"
+  },
+  cashTrLabel: { fontSize: 18, color: "#fff", fontWeight: 500 },
+  cashTrValue: {
+    fontSize: 22, color: "#fff", fontWeight: 700,
+    fontFamily: "'Montserrat',sans-serif", letterSpacing: 1
+  },
+  cashTransparencyChange: {
+    display: "flex", justifyContent: "space-between",
+    alignItems: "center", padding: "12px 0 0",
+    marginTop: 8, borderTop: "1px dashed rgba(16,185,129,0.3)"
+  },
+  cashTrChangeLabel: {
+    fontSize: 18, color: "#34D399", fontWeight: 700
+  },
+  cashTrChangeValue: {
+    fontSize: 48, color: "#34D399", fontWeight: 900,
+    fontFamily: "'Montserrat',sans-serif", letterSpacing: 2
+  },
+  cashTransparencyShort: {
+    marginTop: 12, padding: "10px 16px",
+    background: "rgba(252,211,77,0.1)",
+    color: "#FCD34D", fontSize: 14,
+    borderRadius: 8, textAlign: "center"
+  },
 
   verifyNotice: { display:"flex", alignItems:"flex-start", gap:16, marginTop:20,
     padding:"20px 28px", background:"rgba(245,158,11,0.06)",

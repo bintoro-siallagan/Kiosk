@@ -49,10 +49,15 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
   const [pointsOn, setPointsOn] = useState(false);
   const [pointsUsed, setPointsUsed] = useState(0);
 
+  // ─── Cash state (Step 4A — kembalian transparency) ───
+  const [cashReceived, setCashReceived] = useState(0);
+
   // ─── Computed totals ───
   const promoDiscount = appliedPromo?.discount || 0;
   const pointsValue = pointsOn ? pointsUsed * POINT_VALUE : 0;
   const finalTotal = Math.max(0, subtotal - promoDiscount - pointsValue);
+  const cashChange = Math.max(0, cashReceived - finalTotal);
+  const cashSufficient = payMethod === "CASH" ? cashReceived >= finalTotal : true;
   const maxPointsCanUse = Math.min(
     customerPoints,
     Math.floor(Math.max(0, subtotal - promoDiscount) / POINT_VALUE)
@@ -102,8 +107,27 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
       cdsCast("pos:payment_method", { method: null });
       cdsCast("pos:promo_removed", {});
       cdsCast("pos:points_redeemed", { pointsUsed: 0, pointsValue: 0 });
+      cdsCast("pos:cash_received", { received: 0, change: 0 });
     };
   }, []);
+
+  // ─── Broadcast cash received live (Step 4A) ───
+  useEffect(() => {
+    if (isOpenTab || payMethod !== "CASH") return;
+    cdsCast("pos:cash_received", {
+      received: cashReceived,
+      change: cashChange,
+      sufficient: cashSufficient
+    });
+  }, [cashReceived, finalTotal, payMethod, isOpenTab]);
+
+  // Clear cash state saat ganti method (Step 4A)
+  useEffect(() => {
+    if (payMethod !== "CASH" && cashReceived > 0) {
+      setCashReceived(0);
+      cdsCast("pos:cash_received", { received: 0, change: 0 });
+    }
+  }, [payMethod]);
 
   // ═══════════════════════════════════════════════════════════
   // PROMO HANDLERS
@@ -323,6 +347,10 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
     if (finalTotal === 0) {
       // Fully paid with poin — skip method, mark as POINTS
       submitOrder("POINTS");
+      return;
+    }
+    if (payMethod === "CASH" && !cashSufficient) {
+      alert(`Uang diterima belum cukup. Kurang Rp ${fmt(finalTotal - cashReceived)}`);
       return;
     }
     if (payMethod === "QRIS") { setQrisFlow(true); }
@@ -570,6 +598,33 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
           </div>
         )}
 
+        {/* Cash counter — only when CASH selected and total > 0 (Step 4A) */}
+        {!isOpenTab && finalTotal > 0 && payMethod === "CASH" && (
+          <div style={S.payCard}>
+            <div style={S.payTitle}>Uang Diterima</div>
+            <div style={S.cashDisplay}>
+              <div style={S.cashReceivedAmount}>Rp {fmt(cashReceived)}</div>
+              {cashReceived > 0 && (
+                cashSufficient ? (
+                  <div style={S.cashChangeRow}>
+                    Kembalian: <strong>Rp {fmt(cashChange)}</strong>
+                  </div>
+                ) : (
+                  <div style={S.cashShortRow}>
+                    Kurang: <strong>Rp {fmt(finalTotal - cashReceived)}</strong>
+                  </div>
+                )
+              )}
+            </div>
+            <div style={S.cashQuickRow}>
+              <button onClick={() => setCashReceived(c => c + 50000)} style={S.cashQuickBtn}>+50K</button>
+              <button onClick={() => setCashReceived(c => c + 100000)} style={S.cashQuickBtn}>+100K</button>
+              <button onClick={() => setCashReceived(finalTotal)} style={S.cashQuickBtnPas}>Pas (Rp {fmt(finalTotal)})</button>
+              <button onClick={() => setCashReceived(0)} style={S.cashQuickBtnClear}>⌫ Clear</button>
+            </div>
+          </div>
+        )}
+
         {/* Total = 0 banner (paid via poin only) */}
         {!isOpenTab && finalTotal === 0 && hasDeduction && (
           <div style={S.fullyPaidBanner}>
@@ -587,6 +642,9 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
            isOpenTab ? "📋 Buka Tab (belum dibayar)" :
            finalTotal === 0 ? "✓ Konfirmasi (Bayar Poin)" :
            payMethod === "QRIS" ? "📱 Tampilkan QR ke Customer" :
+           payMethod === "CASH" && cashReceived === 0 ? "💵 Input uang diterima dulu" :
+           payMethod === "CASH" && !cashSufficient ? `⚠ Kurang Rp ${fmt(finalTotal - cashReceived)}` :
+           payMethod === "CASH" ? `✓ Konfirmasi (Kembalian Rp ${fmt(cashChange)})` :
            "✓ Konfirmasi Bayar"}
         </button>
 
@@ -927,6 +985,48 @@ const S = {
     padding:"14px 18px", borderRadius:12,
     background:"rgba(16,185,129,0.10)", border:"1px solid #10B981",
     display:"flex", alignItems:"center", gap:12
+  },
+
+  // Cash counter (Step 4A)
+  cashDisplay: {
+    background: "#050810", padding: "16px 20px",
+    borderRadius: 10, marginBottom: 12,
+    border: "1px solid #1a1a1a"
+  },
+  cashReceivedAmount: {
+    fontSize: 28, fontWeight: 800, color: "#fff",
+    fontFamily: "'Montserrat',sans-serif", letterSpacing: 1
+  },
+  cashChangeRow: {
+    fontSize: 14, color: "#34D399", fontWeight: 600,
+    marginTop: 6
+  },
+  cashShortRow: {
+    fontSize: 14, color: "#FCA5A5", fontWeight: 600,
+    marginTop: 6
+  },
+  cashQuickRow: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1.5fr 1fr",
+    gap: 6
+  },
+  cashQuickBtn: {
+    background: "rgba(245,158,11,0.15)", color: "#FCD34D",
+    border: "1px solid rgba(245,158,11,0.4)", borderRadius: 8,
+    padding: "12px 8px", fontWeight: 700, fontSize: 13,
+    cursor: "pointer", fontFamily: "inherit"
+  },
+  cashQuickBtnPas: {
+    background: "rgba(16,185,129,0.15)", color: "#34D399",
+    border: "1px solid rgba(16,185,129,0.4)", borderRadius: 8,
+    padding: "12px 8px", fontWeight: 700, fontSize: 13,
+    cursor: "pointer", fontFamily: "inherit"
+  },
+  cashQuickBtnClear: {
+    background: "transparent", color: "#666",
+    border: "1px solid #2a2a2a", borderRadius: 8,
+    padding: "12px 8px", fontWeight: 500, fontSize: 12,
+    cursor: "pointer", fontFamily: "inherit"
   },
 
   confirmBtn: { background:"#F59E0B", color:"#111", border:"none", borderRadius:14,
