@@ -226,7 +226,7 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
           {filtered.map(item => (
             <button key={item.id} onClick={() => openDetail(item)} style={{
               background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14,
-              padding: 14, textAlign: "left", cursor: "pointer", position: "relative", overflow: "hidden"
+              padding: 14, textAlign: "left", cursor: "pointer", position: "relative", overflow: "hidden", color: TEXT
             }}>
               {item.popular && (
                 <span style={{
@@ -235,7 +235,7 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
                 }}>POPULAR</span>
               )}
               <div style={{ fontSize: 40, marginBottom: 6 }}>{item.emoji}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, lineHeight: 1.3 }}>{item.name}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, lineHeight: 1.3, color: TEXT }}>{item.name}</div>
               <div style={{ fontSize: 11, color: SUB, marginBottom: 8, minHeight: 28, lineHeight: 1.3 }}>{item.desc}</div>
               {item.freeToppings > 0 && (
                 <div style={{ fontSize: 10, color: BRAND, marginBottom: 6 }}>+ {item.freeToppings} topping gratis</div>

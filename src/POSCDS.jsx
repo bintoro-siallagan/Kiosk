@@ -644,7 +644,7 @@ const S = {
     background:"rgba(16,185,129,0.15)", color:"#10B981",
     borderRadius:100, fontSize:16, fontWeight:700 },
 
-  ssPromoEmoji: { fontSize:180, marginBottom:16 },
+  ssPromoEmoji: { fontSize:80, marginBottom:32 },
   ssPromoBigTitle: { fontSize:88, fontWeight:900, color:"#EF4444",
     fontFamily:"'Bebas Neue',sans-serif", letterSpacing:6, marginBottom:16,
     lineHeight:1, textShadow:"0 0 30px rgba(239,68,68,0.5)" },
