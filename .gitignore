@@ -35,3 +35,6 @@ server/data.db*
 *.bak*
 .env
 .env.bak*
+server/customer-receipts/
+server/kitchen-tickets/
+server/data.db*
