@@ -3,13 +3,13 @@
     "ready": true,
     "completed": true
   },
-  "provider": null,
+  "provider": "fonnte",
   "templates": {
-    "ready": "🍦 Halo {customerName}!\n\nPesanan *#{orderId}* kamu sudah siap diambil di counter ya. Tunjukkan struk atau sebut nomor pesanan.\n\nTotal: Rp {totalIDR}\n\nTerima kasih,\n*SOURSALLY*",
-    "completed": "✅ Terima kasih telah berbelanja di Soursally\n\nPesanan #{orderId} udah selesai diambil.\n\nRate pengalaman kamu: {trackingUrl}"
+    "ready": "Halo {customerName}! Pesanan #{orderId} siap diambil di counter. Total: Rp {totalIDR}. - BINTORO",
+    "completed": "Terima kasih sudah belanja di BINTORO. Pesanan #{orderId} selesai."
   },
   "fonnte": {
-    "token": "DUMMY_FONNTE_TOKEN"
+    "token": "TOKEN_ASLI_LO"
   },
   "twilio": {
     "sid": "",

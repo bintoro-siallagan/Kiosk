@@ -6,7 +6,7 @@ const WS_URL = API_BASE.replace(/^http/, "ws");
 
 const STAGES = [
   { key: "waiting",   label: "Diterima",     emoji: "📝", color: "#94A3B8" },
-  { key: "preparing", label: "Disiapkan",    emoji: "👨‍🍳", color: "#F59E0B" },
+  { key: "preparing", label: "Disiapkan",    emoji: "👨‍🍳", color: "#FF6B35" },
   { key: "ready",     label: "Siap Diambil", emoji: "🔔", color: "#10B981" },
   { key: "completed", label: "Selesai",      emoji: "✅", color: "#22C55E" },
 ];
@@ -139,7 +139,7 @@ export default function POSCDS() {
 }
 
 function ConnIndicator({ status }) {
-  const color = status === "connected" ? "#10B981" : status === "connecting" ? "#F59E0B" : "#EF4444";
+  const color = status === "connected" ? "#10B981" : status === "connecting" ? "#FF6B35" : "#EF4444";
   return (
     <div style={{...S.conn, color, borderColor: color}}>
       <span style={{...S.connDot, background: color}}/> {status}
@@ -218,7 +218,7 @@ function CDSIdle() {
           {slides.map((_, i) => (
             <div key={i} style={{
               ...S.ssDot,
-              background: i === idx ? "#F59E0B" : "rgba(245,158,11,0.25)",
+              background: i === idx ? "#FF6B35" : "rgba(245,158,11,0.25)",
               width: i === idx ? 28 : 8
             }}/>
           ))}
@@ -334,8 +334,8 @@ function SlideMember() {
       <div style={S.ssMemberIcon}>🎁</div>
       <div style={S.ssItemName}>Jadi Member Bintoro</div>
       <div style={S.ssItemDesc}>
-        Dapat <strong style={{color:"#F59E0B"}}>1 poin tiap Rp 1.000</strong> belanja<br/>
-        Tukar <strong style={{color:"#F59E0B"}}>100 poin = Rp 1.000</strong> diskon
+        Dapat <strong style={{color:"#FF6B35"}}>1 poin tiap Rp 1.000</strong> belanja<br/>
+        Tukar <strong style={{color:"#FF6B35"}}>100 poin = Rp 1.000</strong> diskon
       </div>
       <div style={S.ssHint}>Daftar gratis di kasir 👋</div>
     </div>
@@ -594,7 +594,7 @@ function CDSTrackQR({ state, pubConfig }) {
 }
 
 const S = {
-  root: { minHeight:"100vh", width:"100vw", background:"#0a0a0a", color:"#fff",
+  root: { height:"100vh", width:"100vw", background:"#0a0a0a", color:"#fff",
     fontFamily:"'Plus Jakarta Sans','-apple-system',sans-serif", overflow:"hidden", position:"relative",
     display:"flex", flexDirection:"column" },
   conn: { position:"fixed", top:12, right:12, fontSize:10, padding:"3px 10px",
@@ -603,17 +603,17 @@ const S = {
   connDot: { width:6, height:6, borderRadius:"50%" },
 
   center: { flex:1, display:"flex", flexDirection:"column", alignItems:"center",
-    justifyContent:"center", padding:40, textAlign:"center" },
+    justifyContent:"center", gap:16, padding:40, textAlign:"center" },
   logo: { fontSize:120, marginBottom:8 },
   logoSmall: { fontSize:32 },
-  brand: { fontSize:96, fontFamily:"'Bebas Neue',sans-serif", color:"#F59E0B",
+  brand: { fontSize:96, fontFamily:"'Bebas Neue',sans-serif", color:"#FF6B35",
     letterSpacing:8, marginBottom:24, fontWeight:400 },
-  brandSmall: { fontSize:36, fontFamily:"'Bebas Neue',sans-serif", color:"#F59E0B",
+  brandSmall: { fontSize:36, fontFamily:"'Bebas Neue',sans-serif", color:"#FF6B35",
     letterSpacing:4 },
 
   idleTagline: { fontSize:32, color:"#fff", marginBottom:12, fontWeight:300 },
   idleHint: { fontSize:18, color:"#888" },
-  idleBlinker: { marginTop:80, fontSize:24, color:"#F59E0B", letterSpacing:8 },
+  idleBlinker: { marginTop:80, fontSize:24, color:"#FF6B35", letterSpacing:8 },
 
   /* Screensaver styles */
   ssRoot: { flex:1, position:"relative", display:"flex", flexDirection:"column",
@@ -623,14 +623,14 @@ const S = {
   ssCenter: { display:"flex", flexDirection:"column", alignItems:"center",
     textAlign:"center", padding:40, maxWidth:800 },
 
-  ssLogo: { fontSize:140, marginBottom:8 },
-  ssBrand: { fontSize:120, fontFamily:"'Bebas Neue',sans-serif", color:"#F59E0B",
+  ssLogo: { fontSize:110, marginBottom:16 },
+  ssBrand: { fontSize:96, fontFamily:"'Bebas Neue',sans-serif", color:"#FF6B35",
     letterSpacing:12, marginBottom:24, fontWeight:400, lineHeight:1 },
   ssTagline: { fontSize:36, color:"#fff", marginBottom:16, fontWeight:400 },
   ssHint: { fontSize:18, color:"#888", marginTop:24 },
 
   ssBadge: { padding:"8px 24px", background:"rgba(245,158,11,0.15)",
-    color:"#F59E0B", borderRadius:100, fontSize:14, fontWeight:800,
+    color:"#FF6B35", borderRadius:100, fontSize:14, fontWeight:800,
     letterSpacing:2, marginBottom:32 },
 
   ssItemEmoji: { fontSize:200, marginBottom:24, lineHeight:1 },
@@ -638,7 +638,7 @@ const S = {
     fontFamily:"'Bebas Neue',sans-serif", letterSpacing:3, lineHeight:1.1 },
   ssItemDesc: { fontSize:22, color:"#aaa", marginBottom:24, lineHeight:1.5,
     maxWidth:600 },
-  ssItemPrice: { fontSize:72, fontFamily:"'Bebas Neue',sans-serif", color:"#F59E0B",
+  ssItemPrice: { fontSize:72, fontFamily:"'Bebas Neue',sans-serif", color:"#FF6B35",
     letterSpacing:4, marginTop:8 },
   ssItemExtra: { marginTop:16, padding:"8px 20px",
     background:"rgba(16,185,129,0.15)", color:"#10B981",
@@ -655,7 +655,7 @@ const S = {
     color:"#10B981", borderRadius:100, fontSize:13, fontWeight:800,
     letterSpacing:1 },
   ssPromoTagMin: { padding:"6px 16px", background:"rgba(245,158,11,0.15)",
-    color:"#F59E0B", borderRadius:100, fontSize:13, fontWeight:800,
+    color:"#FF6B35", borderRadius:100, fontSize:13, fontWeight:800,
     letterSpacing:1 },
   ssPromoCode: { display:"flex", flexDirection:"column", alignItems:"center",
     marginTop:24, padding:"16px 40px",
@@ -667,8 +667,8 @@ const S = {
 
   ssMemberIcon: { fontSize:160, marginBottom:24 },
 
-  ssThanksIcon: { fontSize:180, marginBottom:24 },
-  ssSocial: { marginTop:32, fontSize:18, color:"#F59E0B",
+  ssThanksIcon: { fontSize:100, marginBottom:24 },
+  ssSocial: { marginTop:32, fontSize:18, color:"#FF6B35",
     fontWeight:700, letterSpacing:1 },
 
   ssDots: { position:"absolute", bottom:32, left:"50%",
@@ -679,17 +679,17 @@ const S = {
     padding:"24px 40px", borderBottom:"1px solid #222" },
   headerLeft: { display:"flex", alignItems:"center", gap:16 },
   tag: { fontSize:18, padding:"8px 18px", borderRadius:100,
-    background:"rgba(245,158,11,0.15)", color:"#F59E0B", fontWeight:600 },
+    background:"rgba(245,158,11,0.15)", color:"#FF6B35", fontWeight:600 },
 
   cartMain: { flex:1, padding:"32px 60px", overflowY:"auto",
     display:"flex", flexDirection:"column" },
   cartTitleRow: { display:"flex", justifyContent:"space-between",
     alignItems:"baseline", marginBottom:24 },
-  cartTitle: { fontSize:56, fontFamily:"'Bebas Neue',sans-serif", color:"#F59E0B",
+  cartTitle: { fontSize:56, fontFamily:"'Bebas Neue',sans-serif", color:"#FF6B35",
     letterSpacing:4 },
   customerName: { fontSize:24, color:"#888", marginLeft:12, fontFamily:"'Plus Jakarta Sans',sans-serif" },
   itemCountTag: { fontSize:13, padding:"6px 14px", borderRadius:100,
-    background:"rgba(245,158,11,0.1)", color:"#F59E0B", fontWeight:700, letterSpacing:1 },
+    background:"rgba(245,158,11,0.1)", color:"#FF6B35", fontWeight:700, letterSpacing:1 },
   cartList: { display:"flex", flexDirection:"column", gap:14, marginBottom:32 },
   cartItem: { display:"flex", alignItems:"flex-start", gap:20, padding:"18px 22px",
     background:"#111", borderRadius:14, border:"1px solid #1a1a1a" },
@@ -705,14 +705,14 @@ const S = {
   toppingName: { fontSize:14, color:"#fff", fontWeight:500 },
   toppingFree: { fontSize:12, color:"#10B981", fontWeight:700, letterSpacing:0.5,
     background:"rgba(16,185,129,0.1)", padding:"2px 10px", borderRadius:100 },
-  toppingPaid: { fontSize:12, color:"#F59E0B", fontWeight:700,
+  toppingPaid: { fontSize:12, color:"#FF6B35", fontWeight:700,
     background:"rgba(245,158,11,0.1)", padding:"2px 10px", borderRadius:100 },
   itemAddons: { display:"flex", flexWrap:"wrap", gap:6, marginTop:6 },
   addonTag: { fontSize:12, color:"#10B981", background:"rgba(16,185,129,0.1)",
     padding:"3px 10px", borderRadius:100 },
   itemQty: { fontSize:20, fontWeight:800, color:"#888", width:50, textAlign:"center",
     paddingTop:4 },
-  itemPrice: { fontSize:32, color:"#F59E0B", minWidth:140, textAlign:"right",
+  itemPrice: { fontSize:32, color:"#FF6B35", minWidth:140, textAlign:"right",
     fontFamily:"'Bebas Neue',sans-serif", letterSpacing:2, paddingTop:4 },
 
   summaryInline: { background:"#0a0a0a", border:"1px solid #222",
@@ -724,7 +724,7 @@ const S = {
   summaryLabelMuted: { fontSize:13, color:"#666" },
   summaryDivider: { height:1, background:"#222", margin:"12px 0" },
   totalLabel: { fontSize:18, color:"#fff", fontWeight:800, letterSpacing:1 },
-  totalValue: { fontSize:64, fontFamily:"'Bebas Neue',sans-serif", color:"#F59E0B",
+  totalValue: { fontSize:64, fontFamily:"'Bebas Neue',sans-serif", color:"#FF6B35",
     letterSpacing:3, fontWeight:400 },
   cartHint: { textAlign:"center", color:"#555", fontSize:13, marginTop:24,
     padding:"12px", letterSpacing:1 },
@@ -746,16 +746,16 @@ const S = {
     border:"1px solid rgba(245,158,11,0.3)", borderRadius:14 },
   verifyIcon: { fontSize:28, lineHeight:1 },
   verifyText: { flex:1, fontSize:15, color:"#fff", lineHeight:1.6, fontWeight:400 },
-  verifyEmphasis: { color:"#F59E0B", fontWeight:700 },
+  verifyEmphasis: { color:"#FF6B35", fontWeight:700 },
   verifyName: { display:"inline-block", padding:"3px 14px", margin:"0 4px",
-    background:"rgba(245,158,11,0.18)", color:"#F59E0B", borderRadius:8,
+    background:"rgba(245,158,11,0.18)", color:"#FF6B35", borderRadius:8,
     fontWeight:800, letterSpacing:0.5,
     border:"1px solid rgba(245,158,11,0.4)" },
 
   qrMain: { flex:1, display:"flex", flexDirection:"column", alignItems:"center",
-    justifyContent:"center", padding:40, textAlign:"center" },
-  qrTitle: { fontSize:56, fontFamily:"'Bebas Neue',sans-serif", color:"#F59E0B",
-    letterSpacing:4, marginBottom:32 },
+    justifyContent:"center", gap:16, padding:40, textAlign:"center" },
+  qrTitle: { fontSize:56, fontFamily:"'Bebas Neue',sans-serif", color:"#FF6B35",
+    letterSpacing:4, marginBottom:80 },
   qrFrame: { padding:24, background:"#fff", borderRadius:24,
     boxShadow:"0 0 60px rgba(245,158,11,0.3)" },
   qrImage: { width:360, height:360, objectFit:"contain", display:"block" },
@@ -767,21 +767,21 @@ const S = {
     background:"#111", border:"2px solid #F59E0B", borderRadius:16,
     display:"flex", flexDirection:"column", alignItems:"center" },
   subLabel: { fontSize:14, color:"#888", letterSpacing:2, fontWeight:600 },
-  qrAmount: { fontSize:72, fontFamily:"'Bebas Neue',sans-serif", color:"#F59E0B",
+  qrAmount: { fontSize:72, fontFamily:"'Bebas Neue',sans-serif", color:"#FF6B35",
     letterSpacing:4, marginTop:4 },
 
-  successCheck: { fontSize:160, marginBottom:24 },
-  successTitle: { fontSize:64, fontFamily:"'Bebas Neue',sans-serif", color:"#10B981",
+  successCheck: { fontSize:72, lineHeight:1, marginBottom:8 },
+  successTitle: { fontSize:48, fontFamily:"'Bebas Neue',sans-serif", color:"#10B981",
     letterSpacing:5, marginBottom:16 },
   successOrderId: { fontSize:24, color:"#888", marginBottom:8 },
-  successAmount: { fontSize:80, fontFamily:"'Bebas Neue',sans-serif", color:"#F59E0B",
+  successAmount: { fontSize:60, fontFamily:"'Bebas Neue',sans-serif", color:"#FF6B35",
     letterSpacing:5, marginBottom:24 },
   successThanks: { fontSize:28, color:"#fff", marginBottom:40 },
 
   trackQrMain: { flex:1, padding:"32px 60px", display:"flex", flexDirection:"column",
     alignItems:"center", textAlign:"center", overflowY:"auto" },
-  trackQrTitle: { fontSize:64, fontFamily:"'Bebas Neue',sans-serif", color:"#F59E0B",
-    letterSpacing:4, marginBottom:8 },
+  trackQrTitle: { fontSize:64, fontFamily:"'Bebas Neue',sans-serif", color:"#FF6B35",
+    letterSpacing:4, marginBottom:80 },
   trackQrSubtitle: { fontSize:20, color:"#fff", marginBottom:32 },
   trackQrFrame: { padding:20, background:"#fff", borderRadius:24,
     boxShadow:"0 0 80px rgba(245,158,11,0.25)", marginBottom:24 },
@@ -796,6 +796,6 @@ const S = {
     fontFamily:"monospace", marginBottom:24, wordBreak:"break-all", maxWidth:540 },
   totalRow: { display:"flex", flexDirection:"column", alignItems:"center",
     marginTop:8 },
-  totalBig: { fontSize:64, fontFamily:"'Bebas Neue',sans-serif", color:"#F59E0B",
+  totalBig: { fontSize:64, fontFamily:"'Bebas Neue',sans-serif", color:"#FF6B35",
     letterSpacing:4, marginTop:4 }
 };
