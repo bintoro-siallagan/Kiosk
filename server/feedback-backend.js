@@ -116,6 +116,35 @@ function setupFeedback(app, opts = {}) {
     `).all(from).map(r => ({ ...r, avg_rating: Math.round(r.avg_rating * 100) / 100 })));
   });
 
+  // Export CSV — semua review buat HRD / arsip
+  router.get('/export.csv', (req, res) => {
+    const from = Number(req.query.from || 0);
+    const to = Number(req.query.to || Math.floor(Date.now() / 1000));
+    const rows = db.prepare(`
+      SELECT created_at, source, cashier, rating, comment, order_ref
+      FROM customer_feedback WHERE created_at BETWEEN ? AND ?
+      ORDER BY created_at DESC
+    `).all(from, to);
+    const cf = (v) => {
+      const s = v == null ? '' : String(v);
+      return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    };
+    const CH = { pos: 'POS', kiosk: 'Kiosk', qr: 'QR Order' };
+    const header = ['Tanggal', 'Channel', 'Kasir', 'Rating', 'Komentar', 'Order Ref'];
+    const body = rows.map(r => [
+      new Date((r.created_at || 0) * 1000).toLocaleString('id-ID'),
+      CH[r.source] || r.source || '',
+      r.cashier || '',
+      r.rating,
+      r.comment || '',
+      r.order_ref || '',
+    ].map(cf).join(','));
+    const csv = '﻿' + [header.join(','), ...body].join('\r\n');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=feedback-customer.csv`);
+    res.send(csv);
+  });
+
   const mountPath = opts.mountPath || '/api/feedback';
   app.use(mountPath, router);
   console.log(`[feedback] mounted at ${mountPath} — customer satisfaction ratings`);

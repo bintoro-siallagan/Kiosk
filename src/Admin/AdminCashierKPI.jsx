@@ -57,6 +57,53 @@ export default function AdminCashierKPI({ apiBase = "" }) {
 
   useEffect(() => { load(); }, [load]);
 
+  // Download CSV (buat HRD — review performa + reward) sesuai rentang aktif
+  const exportCsv = (path) => {
+    const now = Math.floor(Date.now() / 1000);
+    const from = range === "today" ? Math.floor(new Date().setHours(0, 0, 0, 0) / 1000)
+      : range === "7d" ? now - 7 * DAY : now - 30 * DAY;
+    const a = document.createElement("a");
+    a.href = `${apiBase}${path}?from=${from}&to=${now}`;
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+
+  // Laporan KPI print-friendly (kertas putih) buat rapat review HRD
+  const printReport = () => {
+    if (!data) return;
+    const rangeLabel = { today: "Hari Ini", "7d": "7 Hari Terakhir", "30d": "30 Hari Terakhir" }[range];
+    const rows = (data.cashiers || []).map((c, i) => `<tr>
+      <td>${i + 1}</td><td>${c.cashier}</td>
+      <td class="c">${c.kpi_score == null ? "-" : c.kpi_score}</td>
+      <td class="c">${c.feedback_count > 0 ? c.avg_rating + " ★" : "-"}</td>
+      <td class="c">${c.feedback_count}</td>
+      <td class="c">${c.good_count}</td>
+      <td class="c">${c.bad_count}</td>
+      <td class="r">${c.transactions}</td>
+      <td class="r">Rp ${Math.round(c.total_sales).toLocaleString("id-ID")}</td></tr>`).join("");
+    const html = `<html><head><title>Laporan KPI Kasir</title><style>
+      body{font-family:Arial,Helvetica,sans-serif;padding:28px;color:#111}
+      h1{font-size:18px;margin:0 0 2px} .sub{color:#666;font-size:12px;margin-bottom:16px}
+      table{width:100%;border-collapse:collapse;font-size:12px}
+      th,td{border:1px solid #bbb;padding:6px 9px} th{background:#eee;text-align:left}
+      td.c{text-align:center} td.r{text-align:right}
+      .foot{margin-top:14px;font-size:11px;color:#555;line-height:1.5}
+    </style></head><body>
+      <h1>Laporan KPI Kasir</h1>
+      <div class="sub">Periode: ${rangeLabel} &nbsp;·&nbsp; Dicetak: ${new Date().toLocaleString("id-ID")}</div>
+      <table><thead><tr>
+        <th>#</th><th>Kasir</th><th>KPI</th><th>Rating</th><th>Review</th>
+        <th>Bagus</th><th>Jelek</th><th>Transaksi</th><th>Total Sales</th>
+      </tr></thead><tbody>${rows}</tbody></table>
+      <div class="foot">Avg KPI: <b>${data.summary?.avg_kpi ?? "-"}</b> &nbsp;·&nbsp;
+        Total review jelek: <b>${data.summary?.total_bad_reviews ?? 0}</b><br/>
+        Dokumen penilaian performa kasir — bahan review HRD &amp; keputusan reward.</div>
+    </body></html>`;
+    const w = window.open("", "", "width=900,height=650");
+    if (!w) return;
+    w.document.write(html); w.document.close();
+    setTimeout(() => w.print(), 300);
+  };
+
   const cashiers = data?.cashiers || [];
   const sum = data?.summary || {};
 
@@ -66,7 +113,19 @@ export default function AdminCashierKPI({ apiBase = "" }) {
         {[["today", "Hari Ini"], ["7d", "7 Hari"], ["30d", "30 Hari"]].map(([k, l]) => (
           <button key={k} onClick={() => setRange(k)} style={S.btn(range === k)}>{l}</button>
         ))}
-        <button onClick={load} style={{ ...S.btn(false), marginLeft: "auto" }}>🔄 Refresh</button>
+        <button onClick={() => exportCsv("/api/cashier-kpi/export.csv")}
+          style={{ marginLeft: "auto", background: "#34D39922", border: "1px solid #34D39966", borderRadius: 8, padding: "8px 14px", color: "#34D399", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+          ⬇️ Export KPI (CSV)
+        </button>
+        <button onClick={() => exportCsv("/api/feedback/export.csv")}
+          style={{ background: "#22D3EE22", border: "1px solid #22D3EE66", borderRadius: 8, padding: "8px 14px", color: "#22D3EE", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+          ⬇️ Export Review (CSV)
+        </button>
+        <button onClick={printReport}
+          style={{ background: "#A78BFA22", border: "1px solid #A78BFA66", borderRadius: 8, padding: "8px 14px", color: "#A78BFA", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+          🖨️ Print
+        </button>
+        <button onClick={load} style={S.btn(false)}>🔄 Refresh</button>
       </div>
 
       {/* Summary */}
