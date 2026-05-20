@@ -614,7 +614,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
             {label:"🗑️ Log Waste", fn:() => onTools && onTools("waste")},
             {label:"⚙️ Konfigurasi", fn:() => onTools && onTools("config")},
             {label:"📋 Audit Trail", fn:() => onTools && onTools("audit")},
-            {label:"📊 Command Center", fn:() => onTools && onTools("command")},
+            {label:"📊 Command Center", fn:() => window.open(window.location.pathname + "?command=1", "_blank")},
           ].map(l=>(
             <button key={l.label} style={D.sideLink} onClick={l.fn}>{l.label}</button>
           ))}
