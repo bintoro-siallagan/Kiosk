@@ -2792,7 +2792,25 @@ function _persistRefund(order) {
 // body: { reason, cancelledBy }
 app.post("/api/orders/:id/cancel", (req, res) => {
   try {
-    const { reason, cancelledBy } = req.body || {};
+    const { reason, cancelledBy, managerPin } = req.body || {};
+
+    // ── AUDIT: Reason wajib ──
+    if (!reason || reason.trim().length < 3) {
+      return res.status(400).json({ error: "Alasan cancel wajib diisi (min 3 karakter)" });
+    }
+
+    // ── AUDIT: Manager PIN wajib ──
+    let managerName = "Unknown";
+    try {
+      const { getDb } = require("./command-center-backend");
+      const mgr = getDb().prepare("SELECT id, name FROM admin_users WHERE pin = ? AND role = 'manager'").get(managerPin);
+      if (!mgr) return res.status(403).json({ error: "PIN Manager wajib & harus valid untuk cancel order" });
+      managerName = mgr.name;
+    } catch(e) {
+      // Fallback if audit module not loaded — still require reason
+      console.warn("[Audit] PIN verify fallback:", e.message);
+    }
+
     const order = orders.find(o => o.id === req.params.id);
     if (!order) return res.status(404).json({ error: "Order not found" });
 
@@ -2804,13 +2822,30 @@ app.post("/api/orders/:id/cancel", (req, res) => {
     }
 
     const now = Date.now();
+    order._prevStatus = order.status; // preserve for audit
     order.status = "cancelled";
     order.cancelledAt = now;
-    order.cancelReason = reason || "No reason provided";
+    order.cancelReason = reason.trim();
     order.cancelledBy = cancelledBy || "Unknown";
+    order.cancelApprovedBy = managerName;
 
     _persistCancel(order);
 
+    // Broadcast with previousStatus for PHANTOM_CUP + CANCEL_PROD detection
+    const previousStatus = order._prevStatus || "unknown";
+    broadcast("pos:void", {
+      orderId: order.id,
+      cancelledAt: now,
+      reason: order.cancelReason,
+      by: order.cancelledBy,
+      approvedBy: managerName,
+      previousStatus: previousStatus,
+      amount: order.total || 0,
+      cashierId: order.kasir,
+      cashierName: cancelledBy,
+      items: order.items,
+    });
+    // Also keep legacy event
     _broadcast("order:cancelled", {
       orderId: order.id,
       cancelledAt: now,
@@ -2829,7 +2864,22 @@ app.post("/api/orders/:id/cancel", (req, res) => {
 // body: { amount, reason, refundedBy, fullRefund? }
 app.post("/api/orders/:id/refund", (req, res) => {
   try {
-    const { amount, reason, refundedBy, fullRefund } = req.body || {};
+    const { amount, reason, refundedBy, fullRefund, managerPin } = req.body || {};
+
+    // ── AUDIT: Reason wajib ──
+    if (!reason || reason.trim().length < 3) {
+      return res.status(400).json({ error: "Alasan refund wajib diisi (min 3 karakter)" });
+    }
+
+    // ── AUDIT: Manager PIN wajib ──
+    try {
+      const { getDb } = require("./command-center-backend");
+      const mgr = getDb().prepare("SELECT id, name FROM admin_users WHERE pin = ? AND role = 'manager'").get(managerPin);
+      if (!mgr) return res.status(403).json({ error: "PIN Manager wajib & harus valid untuk refund" });
+    } catch(e) {
+      console.warn("[Audit] PIN verify fallback:", e.message);
+    }
+
     const order = orders.find(o => o.id === req.params.id);
     if (!order) return res.status(404).json({ error: "Order not found" });
 

@@ -69,6 +69,21 @@ const AUDIT_SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_anomalies_type ON audit_anomalies(type);
   CREATE INDEX IF NOT EXISTS idx_anomalies_resolved ON audit_anomalies(resolved);
   CREATE INDEX IF NOT EXISTS idx_anomalies_created ON audit_anomalies(created_at);
+
+  CREATE TABLE IF NOT EXISTS pos_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_type TEXT NOT NULL,
+    data TEXT,
+    cashier_id TEXT,
+    cashier_name TEXT,
+    order_id TEXT,
+    amount INTEGER DEFAULT 0,
+    outlet_id TEXT DEFAULT 'default',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_events_type ON pos_events(event_type);
+  CREATE INDEX IF NOT EXISTS idx_events_created ON pos_events(created_at);
+  CREATE INDEX IF NOT EXISTS idx_events_cashier ON pos_events(cashier_id);
 `;
 
 // ═══ INIT — Call this at server startup ══════════════════════════════════════
@@ -167,7 +182,27 @@ const auditEngine = {
     this.empDiscCounts = {};
   },
 
+  // Log EVERY event to pos_events for forensic audit trail
+  logEvent(eventType, data) {
+    try {
+      const db = getDb();
+      const cashierId = data.cashierId || data.cashier_id || data.kasir || null;
+      const cashierName = data.cashierName || data.cashier_name || null;
+      const orderId = data.orderId || data.order_id || data.id || null;
+      const amount = data.amount || data.total || 0;
+      db.prepare(`
+        INSERT INTO pos_events (event_type, data, cashier_id, cashier_name, order_id, amount)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `).run(eventType, JSON.stringify(data), cashierId, cashierName, orderId, amount);
+    } catch(e) {
+      // silent — audit log should never break main flow
+    }
+  },
+
   check(eventType, data, db, broadcastFn) {
+    // 📝 Log every event first (forensic trail)
+    this.logEvent(eventType, data);
+
     const detected = [];
     const now = new Date();
     const cashierId = data.cashierId || data.cashier_id || null;
@@ -297,6 +332,63 @@ const auditEngine = {
         detail: `Manual discount ${data.discountPercent || "?"}% tanpa PIN manager. Log manager_pin=null. Kasir: ${cashierName}.`,
         wsEvent: eventType,
       });
+    }
+
+    // ── STOCK AUTO-DEDUCT — reduce warehouse on order complete ──
+    if (eventType === "order:new" && data.items) {
+      try {
+        const sdb = getDb();
+        const items = typeof data.items === "string" ? JSON.parse(data.items) : data.items;
+        const isLarge = (name) => /large|lrg|16oz|besar/i.test(name || "");
+        const isCone = (name) => /cone|lykone/i.test(name || "");
+        const isTakeaway = data.type === "ta" || data.type === "takeaway";
+
+        items.forEach(it => {
+          const qty = Number(it.qty || it.q) || 1;
+          const name = it.name || it.n || "";
+
+          if (isCone(name)) {
+            // Cone: deduct cone waffle
+            sdb.prepare("UPDATE audit_warehouse SET stock = MAX(0, stock - ?), updated_at = datetime('now') WHERE id = 'PK06'").run(qty);
+          } else if (isLarge(name)) {
+            // Large cup
+            sdb.prepare("UPDATE audit_warehouse SET stock = MAX(0, stock - ?), updated_at = datetime('now') WHERE id = 'PK02'").run(qty);
+          } else {
+            // Regular cup
+            sdb.prepare("UPDATE audit_warehouse SET stock = MAX(0, stock - ?), updated_at = datetime('now') WHERE id = 'PK01'").run(qty);
+          }
+          // Lid + sendok per item
+          sdb.prepare("UPDATE audit_warehouse SET stock = MAX(0, stock - ?), updated_at = datetime('now') WHERE id = 'PK03'").run(qty);
+          sdb.prepare("UPDATE audit_warehouse SET stock = MAX(0, stock - ?), updated_at = datetime('now') WHERE id = 'PK04'").run(qty);
+
+          // Yogurt base (~0.15kg per serving)
+          if (/sakura|charcoal|black/i.test(name)) {
+            sdb.prepare("UPDATE audit_warehouse SET stock = MAX(0, stock - ?), updated_at = datetime('now') WHERE id = 'RM02'").run(0.15 * qty);
+          } else if (/smooth/i.test(name)) {
+            // Smoothies use milk + fruit
+            sdb.prepare("UPDATE audit_warehouse SET stock = MAX(0, stock - ?), updated_at = datetime('now') WHERE id = 'RM03'").run(0.1 * qty);
+            if (/straw/i.test(name)) sdb.prepare("UPDATE audit_warehouse SET stock = MAX(0, stock - ?), updated_at = datetime('now') WHERE id = 'RM05'").run(0.12 * qty);
+            if (/mango/i.test(name)) sdb.prepare("UPDATE audit_warehouse SET stock = MAX(0, stock - ?), updated_at = datetime('now') WHERE id = 'RM06'").run(0.12 * qty);
+            if (/matcha/i.test(name)) sdb.prepare("UPDATE audit_warehouse SET stock = MAX(0, stock - ?), updated_at = datetime('now') WHERE id = 'RM07'").run(0.03 * qty);
+          } else {
+            // Default: plain yogurt base
+            sdb.prepare("UPDATE audit_warehouse SET stock = MAX(0, stock - ?), updated_at = datetime('now') WHERE id = 'RM01'").run(0.15 * qty);
+          }
+        });
+
+        // Paper bag for takeaway
+        if (isTakeaway) {
+          sdb.prepare("UPDATE audit_warehouse SET stock = MAX(0, stock - 1), updated_at = datetime('now') WHERE id = 'PK05'").run();
+        }
+
+        // Check for critical stock alerts
+        const criticals = sdb.prepare("SELECT * FROM audit_warehouse WHERE stock <= min_stock").all();
+        if (criticals.length > 0 && broadcastFn) {
+          broadcastFn("audit:stock_alert", { critical: criticals.map(c => ({ id: c.id, name: c.name, stock: c.stock, min: c.min_stock, unit: c.unit })) });
+        }
+      } catch(e) {
+        console.error("[Audit] Stock deduct error:", e.message);
+      }
     }
 
     // ── RULE 7: ODD_HOUR — Activity outside operating hours ──
@@ -518,6 +610,39 @@ function registerAuditEndpoints(app, _dbWrapper) {
     });
   });
 
+  // ── Event Log (forensic audit trail) ──
+  app.get("/api/audit/events", (req, res) => {
+    const limit = parseInt(req.query.limit) || 100;
+    const type = req.query.type || null;
+    const cashier = req.query.cashier || null;
+    const from = req.query.from || null;
+
+    let sql = "SELECT * FROM pos_events WHERE 1=1";
+    const params = [];
+
+    if (type) { sql += " AND event_type = ?"; params.push(type); }
+    if (cashier) { sql += " AND cashier_id = ?"; params.push(cashier); }
+    if (from) { sql += " AND created_at >= ?"; params.push(from); }
+
+    sql += " ORDER BY created_at DESC LIMIT ?";
+    params.push(limit);
+
+    const items = db.prepare(sql).all(...params);
+    res.json({ items, count: items.length });
+  });
+
+  // ── Manager PIN verification ──
+  app.post("/api/audit/verify-pin", (req, res) => {
+    const { pin } = req.body || {};
+    if (!pin) return res.status(400).json({ error: "PIN required" });
+    const user = db.prepare("SELECT id, name, role FROM admin_users WHERE pin = ? AND role = 'manager'").get(pin);
+    if (user) {
+      res.json({ ok: true, manager: user });
+    } else {
+      res.json({ ok: false, error: "PIN tidak valid atau bukan manager" });
+    }
+  });
+
   // ── Outlets (multi-outlet ready) ──
   app.get("/api/audit/outlets", (req, res) => {
     // Single-outlet for now — returns current outlet stats
@@ -567,4 +692,4 @@ function registerAuditEndpoints(app, _dbWrapper) {
 //   }
 //
 
-module.exports = { initAuditModule, registerAuditEndpoints, auditEngine };
+module.exports = { initAuditModule, registerAuditEndpoints, auditEngine, getDb };

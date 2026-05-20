@@ -386,6 +386,7 @@ export default function CommandCenter() {
         @font-face{font-family:'Geist';src:url('https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/Geist-SemiBold.woff2') format('woff2');font-weight:600}
         @font-face{font-family:'Geist';src:url('https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/Geist-Bold.woff2') format('woff2');font-weight:700}
         *{box-sizing:border-box;margin:0;padding:0}
+        #root,body{zoom:1.6}
         ::-webkit-scrollbar{width:2px}::-webkit-scrollbar-thumb{background:#2a2a35;border-radius:1px}
         @keyframes pp{0%,100%{opacity:1}50%{opacity:.25}}
         @keyframes si{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
