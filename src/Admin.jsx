@@ -909,7 +909,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
             <div style={D.pageHeader}>
               <div style={D.pageTitle}>Pengaturan</div>
             </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,maxWidth:800}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,maxWidth:"100%"}}>
               {[
                 {icon:"📊", title:"Laporan", desc:"Sales, menu, payment, kunjungan", action:"Buka Laporan", fn:() => setShowZReport(true)},
                 {icon:"🔗", title:"ESB Sync", desc:"Push/pull menu ke ESB Order QS", action:"Buka ESB Sync", fn:onESBSync},
@@ -1425,7 +1425,7 @@ const CSS = `
 `;
 
 const D = {
-  root:     {display:"flex",height:"100vh",background:"#050810",color:"#fff",fontFamily:"'Plus Jakarta Sans',sans-serif",overflow:"hidden"},
+  root:     {display:"flex",position:"fixed",top:0,left:0,right:0,bottom:0,background:"#050810",color:"#fff",fontFamily:"'Plus Jakarta Sans',sans-serif",overflow:"hidden",zIndex:9999},
   toast:    {position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",border:"1px solid",borderRadius:10,padding:"10px 20px",fontSize:12,fontWeight:600,zIndex:999,animation:"slideIn 0.3s ease",whiteSpace:"nowrap",backdropFilter:"blur(10px)"},
   sidebar:  {width:220,background:"#080c10",borderRight:"1px solid #0f1629",display:"flex",flexDirection:"column",flexShrink:0},
   sideTop:  {padding:"24px 16px 20px",borderBottom:"1px solid #0f1629",textAlign:"center"},
