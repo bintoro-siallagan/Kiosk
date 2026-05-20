@@ -19,6 +19,7 @@ export default function AdminLoyalty({ apiBase = '' }) {
   const [showAdjust, setShowAdjust] = useState(null);
   const [showTierForm, setShowTierForm] = useState(false);
   const [tierForm, setTierForm] = useState({ code: '', name: '', emoji: '🎯', color: '#888888', min_lifetime_spend: '', earn_multiplier: '' });
+  const [editTierCode, setEditTierCode] = useState(null);
 
   const loadStats = useCallback(async () => {
     try { setStats(await fetch(`${apiBase}/api/loyalty/stats`).then(r => r.json())); } catch {}
@@ -39,21 +40,39 @@ export default function AdminLoyalty({ apiBase = '' }) {
     try { setRewards(await fetch(`${apiBase}/api/loyalty/rewards`).then(r => r.json())); } catch {}
   }, [apiBase]);
 
+  const closeTierForm = () => {
+    setShowTierForm(false); setEditTierCode(null);
+    setTierForm({ code: '', name: '', emoji: '🎯', color: '#888888', min_lifetime_spend: '', earn_multiplier: '' });
+  };
+
+  const editTier = (t) => {
+    setEditTierCode(t.code);
+    setTierForm({
+      code: t.code, name: t.name || '', emoji: t.emoji || '🎯', color: t.color || '#888888',
+      min_lifetime_spend: String(t.min_lifetime_spend ?? ''), earn_multiplier: String(t.earn_multiplier ?? ''),
+    });
+    setShowTierForm(true);
+  };
+
   const saveTier = async () => {
     const f = tierForm;
-    if (!f.code.trim() || !f.name.trim()) { alert('Code & nama tier wajib diisi'); return; }
-    const r = await fetch(`${apiBase}/api/loyalty/tiers`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        code: f.code, name: f.name, emoji: f.emoji, color: f.color,
-        min_lifetime_spend: Number(f.min_lifetime_spend) || 0,
-        earn_multiplier: Number(f.earn_multiplier) || 1,
-      }),
-    });
+    if (!f.name.trim() || (!editTierCode && !f.code.trim())) { alert('Code & nama tier wajib diisi'); return; }
+    const body = {
+      name: f.name, emoji: f.emoji, color: f.color,
+      min_lifetime_spend: Number(f.min_lifetime_spend) || 0,
+      earn_multiplier: Number(f.earn_multiplier) || 1,
+    };
+    const r = await fetch(
+      editTierCode ? `${apiBase}/api/loyalty/tiers/${editTierCode}` : `${apiBase}/api/loyalty/tiers`,
+      {
+        method: editTierCode ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editTierCode ? body : { code: f.code, ...body }),
+      }
+    );
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) { alert(d.error || 'Gagal nambah tier'); return; }
-    setShowTierForm(false);
-    setTierForm({ code: '', name: '', emoji: '🎯', color: '#888888', min_lifetime_spend: '', earn_multiplier: '' });
+    if (!r.ok) { alert(d.error || 'Gagal simpan tier'); return; }
+    closeTierForm();
     loadTiers();
   };
 
@@ -63,6 +82,15 @@ export default function AdminLoyalty({ apiBase = '' }) {
     const d = await r.json().catch(() => ({}));
     if (!r.ok) { alert(d.error || 'Gagal hapus tier'); return; }
     loadTiers();
+  };
+
+  const deleteReward = async (id) => {
+    if (!window.confirm('Hapus reward ini?')) return;
+    const r = await fetch(`${apiBase}/api/loyalty/rewards/${id}`, { method: 'DELETE' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { alert(d.error || 'Gagal hapus reward'); return; }
+    if (d.deactivated) alert(d.note || 'Reward dinonaktifkan (sudah pernah ditukar)');
+    loadRewards();
   };
 
   useEffect(() => {
@@ -218,7 +246,7 @@ export default function AdminLoyalty({ apiBase = '' }) {
         <div style={{padding: 16}}>
           <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12}}>
             <h3 style={styles.sectionTitle}>Tier Configuration</h3>
-            <button onClick={() => setShowTierForm(v => !v)} style={styles.btnPrimary}>
+            <button onClick={() => showTierForm ? closeTierForm() : (setEditTierCode(null), setShowTierForm(true))} style={styles.btnPrimary}>
               {showTierForm ? '× Tutup' : '+ Tambah Tier'}
             </button>
           </div>
@@ -228,7 +256,7 @@ export default function AdminLoyalty({ apiBase = '' }) {
 
           {showTierForm && (
             <div style={{...styles.tierCard, borderLeft: '4px solid #f97316', marginBottom: 14}}>
-              <div style={{fontSize: 13, fontWeight: 600, marginBottom: 10}}>Tier Baru</div>
+              <div style={{fontSize: 13, fontWeight: 600, marginBottom: 10}}>{editTierCode ? `Edit Tier — ${editTierCode}` : 'Tier Baru'}</div>
               <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px,1fr))', gap: 8}}>
                 {[
                   ['code', 'Code (cth: diamond)', 'text'],
@@ -237,13 +265,16 @@ export default function AdminLoyalty({ apiBase = '' }) {
                   ['min_lifetime_spend', 'Min lifetime spend', 'number'],
                   ['earn_multiplier', 'Earn multiplier (cth 1.5)', 'number'],
                   ['color', 'Warna (#hex)', 'text'],
-                ].map(([k, ph, type]) => (
-                  <input key={k} type={type} placeholder={ph} value={tierForm[k]}
-                    onChange={e => setTierForm(f => ({ ...f, [k]: e.target.value }))}
-                    style={{ background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: 6, padding: '8px 10px', color: '#fff', fontSize: 13, fontFamily: 'inherit' }} />
-                ))}
+                ].map(([k, ph, type]) => {
+                  const lockCode = k === 'code' && !!editTierCode;
+                  return (
+                    <input key={k} type={type} placeholder={ph} value={tierForm[k]} readOnly={lockCode}
+                      onChange={e => setTierForm(f => ({ ...f, [k]: e.target.value }))}
+                      style={{ background: lockCode ? '#1a1a1a' : '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: 6, padding: '8px 10px', color: lockCode ? '#6b7280' : '#fff', fontSize: 13, fontFamily: 'inherit' }} />
+                  );
+                })}
               </div>
-              <button onClick={saveTier} style={{...styles.btnPrimary, marginTop: 10}}>💾 Simpan Tier</button>
+              <button onClick={saveTier} style={{...styles.btnPrimary, marginTop: 10}}>💾 {editTierCode ? 'Update Tier' : 'Simpan Tier'}</button>
             </div>
           )}
 
@@ -258,12 +289,18 @@ export default function AdminLoyalty({ apiBase = '' }) {
                     {' · '}<span style={{color: '#6b7280'}}>code: {t.code}</span>
                   </div>
                 </div>
-                {t.code !== 'bronze' && (
-                  <button onClick={() => deleteTier(t.code)}
-                    style={{ background: '#7f1d1d', color: '#fecaca', border: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    🗑 Hapus
+                <div style={{display: 'flex', gap: 6}}>
+                  <button onClick={() => editTier(t)}
+                    style={{ background: '#1e3a5f', color: '#93c5fd', border: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    ✏️ Edit
                   </button>
-                )}
+                  {t.code !== 'bronze' && (
+                    <button onClick={() => deleteTier(t.code)}
+                      style={{ background: '#7f1d1d', color: '#fecaca', border: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                      🗑 Hapus
+                    </button>
+                  )}
+                </div>
               </div>
               {t.benefits && (
                 <div style={{fontSize: 12, color: '#9ca3af', marginTop: 10, padding: 10, background: '#0f0f0f', borderRadius: 6}}>
@@ -304,7 +341,13 @@ export default function AdminLoyalty({ apiBase = '' }) {
                 {r.remaining_stock !== null && r.total_stock && (
                   <div style={{fontSize: 10, color: '#9ca3af'}}>Stock: {r.remaining_stock}/{r.total_stock}</div>
                 )}
-                <button onClick={() => { setEditReward(r); setShowRewardForm(true); }} style={{...styles.btn, width: '100%', marginTop: 10}}>Edit</button>
+                <div style={{display: 'flex', gap: 6, marginTop: 10}}>
+                  <button onClick={() => { setEditReward(r); setShowRewardForm(true); }} style={{...styles.btn, flex: 1}}>✏️ Edit</button>
+                  <button onClick={() => deleteReward(r.id)}
+                    style={{ background: '#7f1d1d', color: '#fecaca', border: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    🗑 Hapus
+                  </button>
+                </div>
               </div>
             ))}
           </div>

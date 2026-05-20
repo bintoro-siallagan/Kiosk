@@ -593,6 +593,21 @@ function setupLoyalty(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // Hapus reward
+  router.delete('/rewards/:id', (req, res) => {
+    const id = req.params.id;
+    const reward = db.prepare(`SELECT id FROM loyalty_rewards WHERE id = ?`).get(id);
+    if (!reward) return res.status(404).json({ error: 'reward tidak ditemukan' });
+    const used = db.prepare(`SELECT COUNT(*) c FROM loyalty_redemptions WHERE reward_id = ?`).get(id).c;
+    if (used > 0) {
+      // sudah pernah ditukar — jangan hard-delete (riwayat redemption hilang), nonaktifkan aja
+      db.prepare(`UPDATE loyalty_rewards SET is_active = 0 WHERE id = ?`).run(id);
+      return res.json({ ok: true, deactivated: true, note: `reward sudah ${used}x ditukar — dinonaktifkan, bukan dihapus` });
+    }
+    db.prepare(`DELETE FROM loyalty_rewards WHERE id = ?`).run(id);
+    res.json({ ok: true, deleted: true });
+  });
+
   // DASHBOARD STATS
   router.get('/stats', (req, res) => {
     const totalCustomers = db.prepare(`SELECT COUNT(*) c FROM loyalty_customers WHERE is_active = 1`).get().c;
