@@ -115,7 +115,7 @@ const btnStyle = (color, bg) => ({
   fontSize:11, fontWeight:700, fontFamily:"'Plus Jakarta Sans',sans-serif",
 });
 
-export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembers, onPromo, onShift, onLogout, adminSession }) {
+export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembers, onPromo, onShift, onLogout, adminSession, onTools }) {
   const [orders, setOrders]     = useState([]);
   const [showZReport, setShowZReport] = useState(false);
   const [printerConfig, setPrinterConfig] = useState({ debug: true, kitchen: { ip:"", port:9100 }, customer: { ip:"", port:9100 } });
