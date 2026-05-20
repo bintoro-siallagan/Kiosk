@@ -43,6 +43,7 @@ function QuickOrderFlow({ cashier, onExit }) {
       <POSPayment
         order={order}
         apiBase={`${API_HOST}/api/pos`}
+        gatewayBase={API_HOST}
         onCancel={() => setStage("menu")}
         onComplete={(result) => { setPayResult(result); setStage("receipt"); }}
       />

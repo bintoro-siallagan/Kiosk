@@ -9,6 +9,7 @@
 //   onCancel()
 //   apiBase (default '/api/pos')
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import POSPaymentGateway from './POSPaymentGateway.jsx';
 
 const TENDER_META = {
   cash:       { label: 'Tunai',     emoji: '💵', color: '#10b981', needsRef: false },
@@ -29,7 +30,10 @@ const fmtIDR = (n) => new Intl.NumberFormat('id-ID', {
 
 const QUICK_CASH = [10000, 20000, 50000, 100000];
 
-export default function POSPayment({ order, onComplete, onCancel, apiBase = '/api/pos' }) {
+// Tender yang bisa dibayar otomatis lewat Payment Gateway (Midtrans / Xendit).
+const GATEWAY_TENDERS = ['qris', 'gopay', 'ovo', 'dana', 'shopeepay'];
+
+export default function POSPayment({ order, onComplete, onCancel, apiBase = '/api/pos', gatewayBase }) {
   const [tenders, setTenders] = useState([]); // [{ tender_type, amount, ref_no, metadata }]
   const [activeTender, setActiveTender] = useState('cash');
   const [inputAmount, setInputAmount] = useState('');
@@ -40,6 +44,10 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
   const [validation, setValidation] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [showGateway, setShowGateway] = useState(false);
+
+  // POSPaymentGateway nempel sendiri "/api/payment-gateway/..." — jadi ini cukup HOST aja.
+  const GW_BASE = gatewayBase || import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
   // Load runtime config
   useEffect(() => {
@@ -224,6 +232,21 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
             {activeTenderMeta?.emoji} {activeTenderMeta?.label}
           </div>
 
+          {GATEWAY_TENDERS.includes(activeTender) && (
+            <div style={styles.gatewayPanel}>
+              <div style={styles.gatewayTitle}>💳 Bayar otomatis via Payment Gateway</div>
+              <div style={styles.gatewayDesc}>
+                QRIS dinamis / e-wallet — customer scan, lunas terkonfirmasi otomatis lewat Midtrans / Xendit.
+              </div>
+              <button
+                onClick={() => { setError(null); setShowGateway(true); }}
+                style={styles.gatewayBtn}>
+                💳 Buka Payment Gateway · {fmtIDR(totals.balance > 0 ? totals.balance : order.total)}
+              </button>
+              <div style={styles.gatewayHint}>atau input manual di bawah (mode offline)</div>
+            </div>
+          )}
+
           {activeTenderMeta?.isPoints ? (
             <>
               {order.customer?.points_balance !== undefined && (
@@ -274,6 +297,34 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
           <button onClick={addTender} style={styles.addBtn}>+ Tambah ke Tender</button>
         </div>
       </div>
+
+      {showGateway && (
+        <POSPaymentGateway
+          orderRef={order.ref}
+          amount={totals.balance > 0 ? totals.balance : order.total}
+          customerName={order.customer?.name}
+          customerPhone={order.customer?.phone}
+          apiBase={GW_BASE}
+          onPaid={(intent) => {
+            setShowGateway(false);
+            // Gateway sudah catat pos_payments lewat webhook — langsung ke struk,
+            // gak lewat finalize() biar gak dobel-record.
+            onComplete?.({
+              gateway: true,
+              tenders: [
+                ...tenders,
+                {
+                  tender_type: intent.payment_method,
+                  amount: intent.amount,
+                  ref_no: intent.external_id || intent.doc_no,
+                  metadata: { gateway: intent.provider_code, intent_id: intent.id },
+                },
+              ],
+            });
+          }}
+          onCancel={() => setShowGateway(false)}
+        />
+      )}
     </div>
   );
 }
@@ -378,4 +429,16 @@ const styles = {
     padding: '12px 20px', background: '#1f2937', color: '#fff', border: 'none',
     borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 4
   },
+  gatewayPanel: {
+    background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10,
+    padding: 14, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 4,
+  },
+  gatewayTitle: { fontSize: 14, fontWeight: 700, color: '#1e40af' },
+  gatewayDesc: { fontSize: 12, color: '#3b5b8c', lineHeight: 1.4 },
+  gatewayBtn: {
+    padding: '14px 18px', background: '#2563eb', color: '#fff', border: 'none',
+    borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: 'pointer',
+    boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
+  },
+  gatewayHint: { fontSize: 11, color: '#94a3b8', textAlign: 'center' },
 };
