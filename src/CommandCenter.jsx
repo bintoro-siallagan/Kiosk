@@ -140,7 +140,10 @@ export default function CommandCenter(){
 
   const resolve=useCallback(async id=>{
     setAnomalies(p=>p.map(a=>a.id===id?{...a,resolved:true,res:true}:a));
-    try{await fetch(`${API_BASE}/api/audit/anomalies/${id}/resolve`,{method:"POST"});}catch(e){}
+    try{
+      const token=localStorage.getItem("adminToken")||"";
+      await fetch(`${API_BASE}/api/audit/anomalies/${id}/resolve`,{method:"POST",headers:token?{"Authorization":`Bearer ${token}`}:{}});
+    }catch(e){}
   },[]);
 
   const TABS=[
