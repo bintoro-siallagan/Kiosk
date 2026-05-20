@@ -29,6 +29,7 @@ _*.mjs
 server/customer-receipts/
 server/kitchen-tickets/
 server/data.db*
+server/backups/
 *.bak*
 .env
 .env.bak*
