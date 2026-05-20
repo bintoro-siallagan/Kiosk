@@ -139,13 +139,13 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
         onClick={openCDSOnSecondScreen}
         title="Buka Customer Display di layar kedua"
         onMouseEnter={(e) => {
-          e.currentTarget.style.background = "#F59E0B";
+          e.currentTarget.style.background = "#f97316";
           e.currentTarget.style.color = "#000";
           e.currentTarget.style.transform = "translateX(-50%) translateY(-2px)";
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = "rgba(245,158,11,0.08)";
-          e.currentTarget.style.color = "#F59E0B";
+          e.currentTarget.style.background = "rgba(249,115,22,0.08)";
+          e.currentTarget.style.color = "#f97316";
           e.currentTarget.style.transform = "translateX(-50%) translateY(0)";
         }}
         style={{
@@ -153,14 +153,14 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
           bottom:28, left:"50%", transform:"translateX(-50%)",
           zIndex:1000,
           padding:"14px 28px",
-          background:"rgba(245,158,11,0.08)",
-          color:"#F59E0B",
-          border:"2px solid #F59E0B",
+          background:"rgba(249,115,22,0.08)",
+          color:"#f97316",
+          border:"2px solid #f97316",
           borderRadius:100,
           fontWeight:800, fontSize:14, letterSpacing:0.5,
-          fontFamily:"'Plus Jakarta Sans',sans-serif",
+          fontFamily:"system-ui,-apple-system,sans-serif",
           cursor:"pointer",
-          boxShadow:"0 8px 24px rgba(0,0,0,0.4), 0 0 0 4px rgba(245,158,11,0.1)",
+          boxShadow:"0 8px 24px rgba(0,0,0,0.4), 0 0 0 4px rgba(249,115,22,0.1)",
           display:"flex", alignItems:"center", gap:10,
           backdropFilter:"blur(8px)",
           transition:"all 0.2s ease",
@@ -219,9 +219,9 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
 
             borderRadius: 14,
 
-            background: "linear-gradient(135deg, rgba(245,158,11,0.10), rgba(245,158,11,0.04))",
+            background: "linear-gradient(135deg, rgba(249,115,22,0.10), rgba(249,115,22,0.04))",
 
-            border: "1px solid rgba(245,158,11,0.30)",
+            border: "1px solid rgba(249,115,22,0.30)",
 
             cursor: "pointer",
 
@@ -241,7 +241,7 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
 
             <div>
 
-              <div style={{ fontSize: 17, fontWeight: 700, color: "#F59E0B" }}>Riwayat Pesanan</div>
+              <div style={{ fontSize: 17, fontWeight: 700, color: "#f97316" }}>Riwayat Pesanan</div>
 
               <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>Cancel, refund, atau cari order sebelumnya</div>
 
@@ -249,7 +249,7 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
 
           </div>
 
-          <div style={{ fontSize: 22, color: "#F59E0B" }}>›</div>
+          <div style={{ fontSize: 22, color: "#f97316" }}>›</div>
 
         </div>
 
@@ -332,60 +332,59 @@ const roleColors = {
   kasir: "#3B82F6", staff: "#10B981"
 };
 
+// v3 design language — matches POSKasirLogin (dark #0a0a0a + orange #f97316, system-ui)
 const S = {
-  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Plus Jakarta Sans',sans-serif" },
+  root: { minHeight:"100vh", background:"#0a0a0a", color:"#fff", fontFamily:"system-ui,-apple-system,sans-serif" },
   header: { display:"flex", alignItems:"center", justifyContent:"space-between",
-    padding:"14px 24px", borderBottom:"1px solid #222", background:"#0a0a0a",
+    padding:"14px 24px", borderBottom:"1px solid #1f1f1f", background:"#0a0a0a",
     position:"sticky", top:0, zIndex:10 },
-  brand: { fontFamily:"'Montserrat',sans-serif", fontSize:20, fontWeight:800, letterSpacing:1, color:"#F59E0B", textTransform:"uppercase" },
+  brand: { fontSize:20, fontWeight:600, letterSpacing:"0.05em", color:"#f97316" },
   user: { display:"flex", alignItems:"center", gap:10, fontSize:14 },
   userIcon: { fontSize:20 },
-  userName: { fontWeight:700 },
-  userRole: { color:"#fff", padding:"2px 10px", borderRadius:100, fontSize:10, fontWeight:700, letterSpacing:1 },
-  logout: { background:"transparent", border:"1px solid #333", color:"#aaa",
-    padding:"6px 14px", borderRadius:8, fontSize:12, cursor:"pointer",
+  userName: { fontWeight:500 },
+  userRole: { color:"#fff", padding:"2px 10px", borderRadius:4, fontSize:10, fontWeight:500, letterSpacing:"0.05em" },
+  logout: { background:"#1f1f1f", border:"1px solid #2a2a2a", color:"#9ca3af",
+    padding:"6px 14px", borderRadius:6, fontSize:12, cursor:"pointer",
     marginLeft:8, fontFamily:"inherit" },
-  main: { maxWidth:900, margin:"0 auto", padding:"40px 24px" },
-  welcome: { textAlign:"center", marginBottom:32 },
-  welcomeTitle: { fontSize:28, margin:"0 0 4px", fontWeight:700 },
-  welcomeSub: { color:"#888", margin:0 },
+  main: { maxWidth:900, margin:"0 auto", padding:"32px 24px" },
+  welcome: { textAlign:"center", marginBottom:28 },
+  welcomeTitle: { fontSize:26, margin:"0 0 4px", fontWeight:500, color:"#fff" },
+  welcomeSub: { color:"#6b7280", margin:0, fontSize:13 },
   bigBtn: { width:"100%", display:"flex", flexDirection:"column", alignItems:"center", gap:6,
-    background:"#F59E0B", color:"#111", border:"none", borderRadius:20, padding:"36px 20px",
-    fontFamily:"inherit", fontSize:26, fontWeight:800, letterSpacing:2, cursor:"pointer",
-    boxShadow:"0 8px 24px rgba(245,158,11,0.3)" },
-  btnHint: { fontSize:11, fontWeight:600, color:"#7a4a00", letterSpacing:1 },
-  section: { marginTop:40 },
-  sectionTitle: { fontSize:16, color:"#fff", margin:"0 0 12px", fontWeight:700, letterSpacing:1,
+    background:"#1f1f1f", color:"#f97316", border:"1px solid #2a2a2a", borderRadius:14, padding:"30px 20px",
+    fontFamily:"inherit", fontSize:22, fontWeight:600, letterSpacing:1, cursor:"pointer", marginBottom:14 },
+  btnHint: { fontSize:11, fontWeight:400, color:"#6b7280", letterSpacing:0.3 },
+  section: { marginTop:30 },
+  sectionTitle: { fontSize:15, color:"#fff", margin:"0 0 12px", fontWeight:500, letterSpacing:0.3,
     display:"flex", alignItems:"center", gap:8 },
-  badge: { background:"#F59E0B", color:"#111", padding:"2px 10px", borderRadius:100,
-    fontSize:11, fontWeight:800 },
-  loadingState: { textAlign:"center", color:"#666", padding:20 },
-  empty: { background:"#1a1a1a", border:"1px dashed #2a2a2a", borderRadius:12,
-    padding:"32px 20px", textAlign:"center", color:"#666", fontSize:13 },
+  badge: { background:"#f97316", color:"#0a0a0a", padding:"2px 10px", borderRadius:12,
+    fontSize:11, fontWeight:600 },
+  loadingState: { textAlign:"center", color:"#6b7280", padding:20 },
+  empty: { background:"#1f1f1f", border:"1px dashed #2a2a2a", borderRadius:12,
+    padding:"32px 20px", textAlign:"center", color:"#6b7280", fontSize:13 },
   tabList: { display:"flex", flexDirection:"column", gap:10 },
-  tabCard: { background:"#1a1a1a", border:"1px solid #2a2a2a", borderLeft:"4px solid #F59E0B",
+  tabCard: { background:"#1f1f1f", border:"1px solid #2a2a2a", borderLeft:"4px solid #f97316",
     borderRadius:12, padding:"14px 18px", color:"#fff", fontFamily:"inherit",
     cursor:"pointer", transition:"all 0.15s", textAlign:"left",
     display:"flex", flexDirection:"column", gap:8 },
   tabHeaderRow: { display:"flex", justifyContent:"space-between", alignItems:"baseline" },
-  tabId: { fontSize:18, fontWeight:800, color:"#F59E0B", fontFamily:"'Montserrat',sans-serif", letterSpacing:2 },
-  tabTotal: { fontFamily:"'Montserrat',sans-serif", fontSize:20, color:"#fff", letterSpacing:1 },
-  tabMidRow: { fontSize:13, color:"#ccc", display:"flex", gap:4, flexWrap:"wrap" },
-  tabType: { fontWeight:600 },
-  tabTable: { color:"#aaa" },
-  tabCustomer: { color:"#aaa" },
-  tabFooterRow: { fontSize:11, color:"#888", display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" },
-  tabTime: { color:"#666" },
-  tabItems: { color:"#666" },
-  tabKasir: { color:"#666" },
-  settleCta: { marginLeft:"auto", color:"#F59E0B", fontWeight:700, fontSize:12, letterSpacing:1 },
+  tabId: { fontSize:17, fontWeight:600, color:"#f97316", letterSpacing:1 },
+  tabTotal: { fontSize:18, fontWeight:600, color:"#fff", letterSpacing:0.5 },
+  tabMidRow: { fontSize:13, color:"#9ca3af", display:"flex", gap:4, flexWrap:"wrap" },
+  tabType: { fontWeight:500 },
+  tabTable: { color:"#9ca3af" },
+  tabCustomer: { color:"#9ca3af" },
+  tabFooterRow: { fontSize:11, color:"#6b7280", display:"flex", gap:6, flexWrap:"wrap", alignItems:"center" },
+  tabTime: { color:"#6b7280" },
+  tabItems: { color:"#6b7280" },
+  tabKasir: { color:"#6b7280" },
+  settleCta: { marginLeft:"auto", color:"#f97316", fontWeight:500, fontSize:12, letterSpacing:0.5 },
   statsGrid: { display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:12 },
   tabActions: { display:"flex", gap:8, marginTop:12, paddingTop:12, borderTop:"1px solid #2a2a2a" },
-  tabBtnAdd: { flex:1, padding:"10px 14px", borderRadius:10, background:"rgba(245,158,11,0.12)", border:"1px solid rgba(245,158,11,0.4)", color:"#F59E0B", cursor:"pointer", fontSize:13, fontWeight:600, fontFamily:"inherit" },
-  tabBtnPay: { flex:1, padding:"10px 14px", borderRadius:10, background:"linear-gradient(135deg, #10B981, #059669)", border:"none", color:"white", cursor:"pointer", fontSize:13, fontWeight:700, fontFamily:"inherit" },
-  tabBtnMerge: { flex:1, padding:"10px 8px", borderRadius:10, background:"rgba(139,92,246,0.12)", border:"1px solid rgba(139,92,246,0.4)", color:"#A78BFA", cursor:"pointer", fontSize:12, fontWeight:600, fontFamily:"inherit" },
-  statCard: { background:"#1a1a1a", border:"1px solid #222", borderRadius:12, padding:24, textAlign:"center" },
-  statValue: { fontSize:32, fontWeight:800, fontFamily:"'Montserrat',sans-serif",
-    color:"#F59E0B", letterSpacing:2, lineHeight:1 },
-  statLabel: { fontSize:10, color:"#888", letterSpacing:1.5, fontWeight:700, marginTop:6 }
+  tabBtnAdd: { flex:1, padding:"10px 14px", borderRadius:8, background:"#f9731618", border:"1px solid #f9731644", color:"#f97316", cursor:"pointer", fontSize:13, fontWeight:500, fontFamily:"inherit" },
+  tabBtnPay: { flex:1, padding:"10px 14px", borderRadius:8, background:"#22c55e18", border:"1px solid #22c55e55", color:"#4ade80", cursor:"pointer", fontSize:13, fontWeight:600, fontFamily:"inherit" },
+  tabBtnMerge: { flex:1, padding:"10px 8px", borderRadius:8, background:"#a78bfa18", border:"1px solid #a78bfa44", color:"#a78bfa", cursor:"pointer", fontSize:12, fontWeight:500, fontFamily:"inherit" },
+  statCard: { background:"#1f1f1f", border:"1px solid #2a2a2a", borderRadius:10, padding:"18px 14px", textAlign:"center" },
+  statValue: { fontSize:28, fontWeight:500, color:"#f97316", letterSpacing:1, lineHeight:1 },
+  statLabel: { fontSize:10, color:"#6b7280", letterSpacing:1, fontWeight:500, marginTop:6, textTransform:"uppercase" }
 };
