@@ -84,6 +84,7 @@ export default function CommandCenter(){
   const [zReport,setZReport]=useState(null);
   const [anomalies,setAnomalies]=useState([]);
   const [warehouse,setWarehouse]=useState(null);
+  const [recon,setRecon]=useState(null);
   const [loading,setLoading]=useState(true);
 
   useEffect(()=>{const t=setInterval(()=>setNow(clk()),1000);return()=>clearInterval(t);},[]);
@@ -118,10 +119,11 @@ export default function CommandCenter(){
 
   // Data polling
   const refreshData=useCallback(async()=>{
-    const[z,a,w]=await Promise.all([fetchApi("/api/reports/z"),fetchApi("/api/audit/anomalies"),fetchApi("/api/audit/warehouse")]);
+    const[z,a,w,rc]=await Promise.all([fetchApi("/api/reports/z"),fetchApi("/api/audit/anomalies"),fetchApi("/api/audit/warehouse"),fetchApi("/api/aggregator/reconcile")]);
     if(z)setZReport(z);
     if(a?.items)setAnomalies(prev=>{const ids=new Set(prev.map(x=>x.id));const n=a.items.filter(x=>!ids.has(x.id));return[...n,...prev];});
     if(w)setWarehouse(w);
+    if(rc)setRecon(rc);
     setLoading(false);
   },[]);
 
@@ -137,6 +139,9 @@ export default function CommandCenter(){
   const whAlerts=(warehouse?.items||[]).filter(w=>w.stock<=w.minStock);
   const topItems=(z.topItems||[]).slice(0,10);
   const maxQ=topItems[0]?.qty||1;
+  const aggGross=recon?.total?.gross_revenue||0;
+  const aggComm=recon?.total?.total_commission||0;
+  const aggNet=recon?.total?.net_revenue||0;
 
   const resolve=useCallback(async id=>{
     setAnomalies(p=>p.map(a=>a.id===id?{...a,resolved:true,res:true}:a));
@@ -301,10 +306,12 @@ export default function CommandCenter(){
           {z.promoUsage&&Object.entries(z.promoUsage).map(([code,d])=>(
             <Row key={code} l={`Promo: ${code}`} r={fR(-(d.totalDiscount||0))} rc="#ec4899"/>
           ))}
+          <Row l="🛵 Delivery Gross (aggregator)" r={fR(aggGross)} rc="#fb7185"/>
+          <Row l="🛵 Delivery Komisi platform" r={fR(-aggComm)} rc="#ef4444"/>
           <Row l="Est. Fraud Loss" r={fR(-aLoss)} rc="#ef4444"/>
           <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0 0",borderTop:"2px solid #10b98133",marginTop:6}}>
             <span style={{fontSize:16,fontWeight:700,color:"#eee"}}>Net Profit (est.)</span>
-            <span style={{fontSize:22,fontWeight:800,fontFamily:"var(--m)",color:"#10b981"}}>{fR((zS.netRevenue||0)-aLoss)}</span>
+            <span style={{fontSize:22,fontWeight:800,fontFamily:"var(--m)",color:"#10b981"}}>{fR((zS.netRevenue||0)-aLoss+aggNet)}</span>
           </div>
         </Card>
 
