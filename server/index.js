@@ -3507,6 +3507,52 @@ const { initAuditModule, registerAuditEndpoints, auditEngine } = require("./comm
 initAuditModule(db);
 registerAuditEndpoints(app, db);
 console.log("📊 Command Center audit module loaded");
+
+// ════════════════════════════════════════════════════════════
+// BITES-KIOSK WAVE 1+2+3 INTEGRATION  (installed 2026-05-20)
+// `path`/`app`/`db` already declared above. DB_PATH points at the
+// shared server/data.db so bridge + finance see existing data.
+// ════════════════════════════════════════════════════════════
+const { setupMasterItems }      = require('./master-items-backend');
+const { setupPhase4B }          = require('./pos-phase4b-backend');
+const { setupMenuBuilder }      = require('./master-menu-builder-backend');
+const { setupProcurementGaps }  = require('./procurement-gaps-backend');
+const { setupFinance }          = require('./finance-backend');
+const { setupBridge }           = require('./procurement-finance-bridge');
+const { setupNotifications }    = require('./notifications-backend');
+const { setupProcurement }      = require('./procurement-backend');
+
+const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
+
+const procurement     = setupProcurement(app,     { dbPath: DB_PATH, mountPath: '/api/procurement' });
+const masterItems     = setupMasterItems(app,     { dbPath: DB_PATH, mountPath: '/api/master' });
+const phase4b         = setupPhase4B(app,         { dbPath: DB_PATH, mountPath: '/api/pos' });
+const menuBuilder     = setupMenuBuilder(app,     { dbPath: DB_PATH, mountPath: '/api/master' });
+const procurementGaps = setupProcurementGaps(app, { dbPath: DB_PATH, mountPath: '/api/procurement' });
+const finance         = setupFinance(app,         { dbPath: DB_PATH, mountPath: '/api/finance' });
+const bridge          = setupBridge(app,          { dbPath: DB_PATH, mountPath: '/api/bridge' });
+const notifications   = setupNotifications(app, {
+  dbPath: DB_PATH,
+  mountPath: '/api/notifications',
+  scheduler: {
+    low_stock_interval_ms: 5 * 60 * 1000,
+    anomaly_interval_ms: 60 * 1000,
+    aging_hour: 9,
+    summary_hour: 21
+  }
+});
+
+global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
+global.logPosEvent           = phase4b.logPosEvent;
+global.getConfig             = phase4b.getConfig;
+global.onGoodsReceived       = bridge.onGoodsReceived;
+global.onPaymentRecorded     = bridge.onPaymentRecorded;
+global.dispatchNotification  = notifications.dispatch;
+global.createExpense         = finance.createExpense;
+
+console.log('━━━ Bites-Kiosk Wave 1+2+3 — semua module loaded ━━━');
+// ════════════════════════════════════════════════════════════
+
 server.listen(PORT, () => {
   console.log("");
   console.log("🍽️  BINTORO BACKEND");

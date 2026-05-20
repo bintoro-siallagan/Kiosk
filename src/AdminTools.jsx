@@ -3,6 +3,8 @@
  * Route: scene "tools" from Admin sidebar
  */
 import { useState, useEffect, useCallback } from "react";
+import AdminMenuBuilder from "./Admin/AdminMenuBuilder.jsx";
+import AdminProcurementGaps from "./Admin/AdminProcurementGaps.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const TOKEN = () => localStorage.getItem("adminToken") || "";
@@ -64,6 +66,8 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "audit", label: "📋 Audit Trail", color: "#14B8A6" },
     { id: "master", label: "🍽️ Master Item", color: "#EC4899" },
     { id: "finance", label: "💰 Finance", color: "#10B981" },
+    { id: "menu_builder", label: "🧱 Menu Builder", color: "#8B5CF6" },
+    { id: "procurement_plus", label: "🚚 Procurement+", color: "#06B6D4" },
   ];
 
   return (
@@ -92,6 +96,8 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "audit" && <AuditTab />}
         {tab === "master" && <MasterItemTab showToast={showToast} />}
         {tab === "finance" && <FinanceTab showToast={showToast} />}
+        {tab === "menu_builder" && <AdminMenuBuilder />}
+        {tab === "procurement_plus" && <AdminProcurementGaps />}
       </div>
 
       {toast && <div style={S.toast}>{toast}</div>}

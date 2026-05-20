@@ -365,8 +365,10 @@ const auditEngine = {
       });
     }
 
-    // ── STOCK AUTO-DEDUCT — reduce warehouse on order complete ──
-    if (eventType === "order:new" && data.items) {
+    // ── STOCK AUTO-DEDUCT — DISABLED 2026-05-20 (Wave 1-3 install) ──
+    // Superseded by Wave 2 menu-builder consumeStockForOrderV2 (BOM-based).
+    // `false &&` keeps the legacy block for reference while preventing double-deduct.
+    if (false && eventType === "order:new" && data.items) {
       try {
         const sdb = getDb();
         const items = typeof data.items === "string" ? JSON.parse(data.items) : data.items;

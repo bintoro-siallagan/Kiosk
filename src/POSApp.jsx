@@ -5,6 +5,59 @@ import POSOrder from "./POSOrder.jsx";
 import POSSettle from "./POSSettle.jsx";
 import POSSuccess from "./POSSuccess.jsx";
 import ShiftGate from "./ShiftGate.jsx";
+import POSMenuPicker from "./POS/POSMenuPicker.jsx";
+import POSPayment from "./POS/POSPayment.jsx";
+import POSReceipt from "./POS/POSReceipt.jsx";
+
+const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
+
+// Quick Order — Wave 1-3 linear flow: master-menu pick → split payment → receipt.
+// Parallel to the existing POSOrder/settle/resume flow; does not replace it.
+function QuickOrderFlow({ cashier, onExit }) {
+  const [stage, setStage] = useState("menu");
+  const [order, setOrder] = useState(null);
+  const [payResult, setPayResult] = useState(null);
+
+  if (stage === "menu") {
+    return (
+      <>
+        <button
+          onClick={onExit}
+          style={{ position: "fixed", top: 12, left: 12, zIndex: 10000, padding: "8px 14px",
+                   background: "#1a1a1a", color: "#fff", border: "1px solid #444",
+                   borderRadius: 8, cursor: "pointer", fontSize: 13 }}
+        >← Home</button>
+        <POSMenuPicker
+          apiBase={`${API_HOST}/api/master`}
+          onCheckout={({ items, subtotal }) => {
+            setOrder({ ref: `QO-${Date.now()}`, total: subtotal, items, cashier: cashier?.name });
+            setStage("payment");
+          }}
+        />
+      </>
+    );
+  }
+  if (stage === "payment" && order) {
+    return (
+      <POSPayment
+        order={order}
+        apiBase={`${API_HOST}/api/pos`}
+        onCancel={() => setStage("menu")}
+        onComplete={(result) => { setPayResult(result); setStage("receipt"); }}
+      />
+    );
+  }
+  if (stage === "receipt" && order) {
+    return (
+      <POSReceipt
+        order={{ ...order, payments: payResult?.tenders || payResult?.payments || [] }}
+        onClose={onExit}
+        onPrintDone={() => {}}
+      />
+    );
+  }
+  return null;
+}
 
 export default function POSApp() {
   const [cashier, setCashier] = useState(() => {
@@ -41,7 +94,11 @@ export default function POSApp() {
           onNewOrder={() => setView("order")}
           onSettleTab={(tab) => { setSettlingTab(tab); setView("settle"); }}
           onResumeTab={(tab) => { setResumingTab(tab); setView("resume"); }}
+          onQuickOrder={() => setView("quickorder")}
         />
+      )}
+      {view === "quickorder" && (
+        <QuickOrderFlow cashier={cashier} onExit={() => setView("home")} />
       )}
       {view === "order" && (
         <POSOrder

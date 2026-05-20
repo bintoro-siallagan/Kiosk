@@ -65,7 +65,7 @@ async function openCDSOnSecondScreen() {
   return cdsWindowRef;
 }
 
-export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, onResumeTab }) {
+export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, onResumeTab, onQuickOrder }) {
   const [tabs, setTabs] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [mergeTab, setMergeTab] = useState(null);
@@ -192,6 +192,14 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
           <div>ORDER BARU</div>
           <div style={S.btnHint}>Mulai pesanan untuk customer</div>
         </button>
+
+        {onQuickOrder && (
+          <button style={S.bigBtn} onClick={onQuickOrder}>
+            <div style={{fontSize: 44}}>⚡</div>
+            <div>QUICK ORDER</div>
+            <div style={S.btnHint}>Pesanan cepat — menu master + bayar</div>
+          </button>
+        )}
 
         <div
 
