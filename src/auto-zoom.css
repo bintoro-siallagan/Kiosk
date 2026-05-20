@@ -1,10 +1,7 @@
-/* Auto-zoom — Retina MacBook 1280x800 effective */
-@media (min-width: 1000px) and (min-height: 700px) {
-  html { zoom: 1.15; }
+/* Auto-zoom for widescreen monitors */
+@media (min-width: 1000px) {
+  html { zoom: 1.25; }
 }
-@media (min-width: 1400px) and (min-height: 900px) {
-  html { zoom: 1.3; }
-}
-@media (min-width: 1800px) and (min-height: 1000px) {
-  html { zoom: 1.5; }
+@media (min-width: 1400px) {
+  html { zoom: 1.4; }
 }

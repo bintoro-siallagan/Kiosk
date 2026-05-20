@@ -316,7 +316,7 @@ export default function MemberList({ onBack }) {
 }
 
 const M = {
-  root:   {fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#050810",color:"#fff",minHeight:"100vh",display:"flex",flexDirection:"column"},
+  root:   {fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#050810",color:"#fff",minHeight:"100vh",display:"flex",flexDirection:"column",position:"fixed",top:0,left:0,right:0,bottom:0,overflowY:"auto",zIndex:9999},
   header: {display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 24px",background:"#080c10",borderBottom:"1px solid #0f1629",flexWrap:"wrap",gap:10},
   hLeft:  {display:"flex",alignItems:"center",gap:16},
   title:  {fontFamily:"'Space Mono',monospace",fontSize:18,fontWeight:700,color:"#F59E0B",letterSpacing:1},

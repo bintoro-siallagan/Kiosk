@@ -636,7 +636,7 @@ export default function Report({ onBack }) {
 }
 
 const R = {
-  root:   { fontFamily:"'Plus Jakarta Sans',sans-serif", background:"#080c10", color:"#fff", minHeight:"100vh", display:"flex", flexDirection:"column" },
+  root:   { fontFamily:"'Plus Jakarta Sans',sans-serif", background:"#080c10", color:"#fff", minHeight:"100vh", display:"flex", flexDirection:"column", position:"fixed", top:0, left:0, right:0, bottom:0, overflowY:"auto", zIndex:9999 },
   toast:  { position:"fixed", bottom:24, left:"50%", transform:"translateX(-50%)", border:"1px solid", borderRadius:12, padding:"12px 20px", fontSize:13, fontWeight:600, zIndex:999, animation:"notif 0.3s ease", whiteSpace:"nowrap" },
   header: { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"16px 24px", background:"#0d1117", borderBottom:"1px solid #161b22", flexWrap:"wrap", gap:12 },
   headerLeft:  { display:"flex", alignItems:"center", gap:16 },
