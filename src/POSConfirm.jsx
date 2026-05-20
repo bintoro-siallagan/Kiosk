@@ -314,6 +314,8 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
           pointsValue,
           // ── /NEW ──
           total: finalTotal,
+          cashReceived: payMethod === "CASH" ? cashReceived : null,
+          cashChange: payMethod === "CASH" ? cashChange : null,
           customerName: order.customerName || null,
           customerId: order.customerId || null,
           customerPhone: order.customerPhone || null,
