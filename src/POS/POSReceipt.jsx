@@ -32,17 +32,17 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
   const calc = useMemo(() => {
     const items = order.items || [];
     const subtotal = items.reduce((s, it) => s + (it.line_total || 0), 0);
-    let taxableBase = subtotal;
-    const taxes = taxConfig.map(t => {
-      const amount = t.inclusive ? 0 : taxableBase * t.rate;
-      return { id: t.id, name: t.name, rate: t.rate, amount, inclusive: t.inclusive, display_separately: t.display_separately };
-    });
-    const taxTotal = taxes.reduce((s, t) => s + t.amount, 0);
     const loyaltyDiscount = order.loyalty_discount || 0;
-    const grandTotal = subtotal + taxTotal - loyaltyDiscount;
+    // Harga menu sudah termasuk pajak (tax-inclusive). TOTAL = subtotal − diskon.
+    // Pajak di-extract dari TOTAL hanya buat rincian di struk, bukan ditambah.
+    const grandTotal = Math.max(0, subtotal - loyaltyDiscount);
+    const totalRate = taxConfig.reduce((s, t) => s + (t.rate || 0), 0);
+    const taxBase = totalRate > 0 ? grandTotal / (1 + totalRate) : grandTotal;
+    const taxes = taxConfig.map(t => ({ id: t.id, name: t.name, rate: t.rate, amount: taxBase * t.rate }));
+    const taxTotal = taxes.reduce((s, t) => s + t.amount, 0);
     const paid = (order.payments || []).reduce((s, p) => s + (p.amount || 0), 0);
     const change = (order.payments || []).reduce((s, p) => s + (p.change_given || 0), 0);
-    return { subtotal, taxes, taxTotal, loyaltyDiscount, grandTotal, paid, change };
+    return { subtotal, taxes, taxTotal, taxBase, loyaltyDiscount, grandTotal, paid, change };
   }, [order, taxConfig]);
 
   const browserPrint = () => {
@@ -109,13 +109,16 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
     }
     out += '--------------------------------\n';
     out += `Subtotal: ${fmtIDR(calc.subtotal).padStart(20)}\n`;
-    for (const t of calc.taxes.filter(t => t.display_separately && !t.inclusive)) {
-      out += `${t.name} ${(t.rate*100).toFixed(0)}%: ${fmtIDR(t.amount).padStart(20-t.name.length-7)}\n`;
-    }
     if (calc.loyaltyDiscount > 0) {
       out += `Diskon Loyalty: ${('-' + fmtIDR(calc.loyaltyDiscount)).padStart(16)}\n`;
     }
     out += bold + `TOTAL: ${fmtIDR(calc.grandTotal).padStart(20)}\n` + boldOff;
+    if (calc.taxes.length > 0) {
+      out += 'Harga termasuk pajak:\n';
+      for (const t of calc.taxes) {
+        out += `  ${t.name} ${(t.rate*100).toFixed(0)}%: ${fmtIDR(t.amount).padStart(12)}\n`;
+      }
+    }
     out += '--------------------------------\n';
 
     for (const p of (order.payments || [])) {
@@ -216,12 +219,6 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
 
           <hr style={dashLine}/>
           <div className="row" style={row}><span>Subtotal</span><b>{fmtIDR(calc.subtotal)}</b></div>
-          {calc.taxes.filter(t => t.display_separately && !t.inclusive).map(t => (
-            <div key={t.id} className="row" style={row}>
-              <span>{t.name} ({(t.rate*100).toFixed(0)}%)</span>
-              <span>{fmtIDR(t.amount)}</span>
-            </div>
-          ))}
           {calc.loyaltyDiscount > 0 && (
             <div className="row" style={{...row, color:'#b45309'}}>
               <span>🏅 Diskon Loyalty</span>
@@ -232,6 +229,17 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
             <b>TOTAL</b>
             <b>{fmtIDR(calc.grandTotal)}</b>
           </div>
+          {calc.taxes.length > 0 && (
+            <div style={{fontSize:10, color:'#666', marginTop:4}}>
+              <div>Harga sudah termasuk pajak:</div>
+              {calc.taxes.map(t => (
+                <div key={t.id} className="row" style={{...row, paddingLeft:12}}>
+                  <span>{t.name} ({(t.rate*100).toFixed(0)}%)</span>
+                  <span>{fmtIDR(t.amount)}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           <hr style={dashLine}/>
           {(order.payments || []).map((p, i) => (
