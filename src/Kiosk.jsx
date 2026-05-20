@@ -743,7 +743,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
       {/* Staff call modal */}
       {showStaffCall && (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}>
-          <div style={{background:"#0d1117",border:"1px solid #1a1a2e",borderRadius:20,padding:"28px",width:"100%",maxWidth:380,textAlign:"center"}}>
+          <div style={{background:"#0d1117",border:"1px solid #1a1a2e",borderRadius:20,padding:"28px",width:"100%",maxWidth:480,textAlign:"center"}}>
             {callSent ? (
               <>
                 <div style={{fontSize:56,marginBottom:12}}>✅</div>

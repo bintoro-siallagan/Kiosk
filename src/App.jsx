@@ -9,6 +9,7 @@ import CustomerInput from "./CustomerInput.jsx";
 import Payment       from "./Payment.jsx";
 import DigitalReceipt from "./DigitalReceipt.jsx";
 import CommandCenter from "./CommandCenter.jsx";
+
 import Admin         from "./Admin.jsx";
 import Report        from "./Report.jsx";
 import ESBSync       from "./ESBSync.jsx";
@@ -102,10 +103,12 @@ export default function App() {
 
   // Admin routes — check login
   const adminRoutes = ["admin","report","esb-sync","esb-notif","members","promo","shift"];
+
+
   if (adminRoutes.includes(scene) && !adminSession) return <AdminLogin onLogin={handleAdminLogin}/>;
 
   if (scene === "admin-login") return <AdminLogin onLogin={handleAdminLogin}/>;
-  if (scene === "command") return <CommandCenter />;
+  if (scene === "command") return <CommandCenter />;  // already has own zoom
   if (scene === "flow") return <FlowApp />;
   if (scene === "customer-track") return <CustomerTrackingPage orderId={trackOrderId}/>;
   if (scene === "track")       return <OrderTracking onHome={go("kiosk")}/>;

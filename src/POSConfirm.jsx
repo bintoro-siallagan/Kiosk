@@ -883,7 +883,7 @@ function POSQRISFlow({ cart, subtotal, order, onCancel, onPaid }) {
 // Styles
 // ═══════════════════════════════════════════════════════════
 const S = {
-  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Plus Jakarta Sans',sans-serif",
+  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Plus Jakarta Sans',sans-serif", 
     display:"flex", flexDirection:"column" },
   header: { display:"flex", alignItems:"center", justifyContent:"space-between",
     padding:"16px 24px", borderBottom:"1px solid #222" },

@@ -826,8 +826,8 @@ function CDSTrackQR({ state, pubConfig }) {
 }
 
 const S = {
-  root: { height:"100vh", width:"100vw", background:"#0a0a0a", color:"#fff",
-    fontFamily:"'Plus Jakarta Sans','-apple-system',sans-serif", overflow:"hidden", position:"relative",
+  root: { height:"100vh", width:"100vw", background:"#0a0a0a", color:"#fff", 
+    fontFamily:"'Plus Jakarta Sans','-apple-system',sans-serif",  position:"relative",
     display:"flex", flexDirection:"column" },
   conn: { position:"fixed", top:12, right:12, fontSize:10, padding:"3px 10px",
     border:"1px solid", borderRadius:100, background:"#0a0a0a",
