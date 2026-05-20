@@ -1,5 +1,5 @@
 import { useState } from "react";
-import POSLogin from "./POSLogin.jsx";
+import POSKasirLogin from "./POS/POSKasirLogin.jsx";
 import POSHome from "./POSHome.jsx";
 import POSOrder from "./POSOrder.jsx";
 import POSSettle from "./POSSettle.jsx";
@@ -83,7 +83,7 @@ export default function POSApp() {
     setView("home");
   };
 
-  if (!cashier) return <POSLogin onLogin={handleLogin} />;
+  if (!cashier) return <POSKasirLogin apiBase={API_HOST} onSelectKasir={handleLogin} />;
 
   return (
     <ShiftGate>
