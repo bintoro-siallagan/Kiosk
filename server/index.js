@@ -3521,6 +3521,7 @@ const { setupFinance }          = require('./finance-backend');
 const { setupBridge }           = require('./procurement-finance-bridge');
 const { setupNotifications }    = require('./notifications-backend');
 const { setupProcurement }      = require('./procurement-backend');
+const { setupShiftStaff }       = require('./shift-staff-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3541,6 +3542,8 @@ const notifications   = setupNotifications(app, {
     summary_hour: 21
   }
 });
+
+const shiftStaff = setupShiftStaff(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;

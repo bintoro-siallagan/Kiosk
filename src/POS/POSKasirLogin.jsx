@@ -72,7 +72,7 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
     setLoading(true);
     let list = null;
     // Try common endpoints — /api/auth/users is this project's real staff source
-    for (const url of ['/api/auth/users', '/api/staff', '/api/users', '/api/pos/staff']) {
+    for (const url of ['/api/staff', '/api/auth/users', '/api/users', '/api/pos/staff']) {
       try {
         const r = await fetch(`${apiBase}${url}`);
         if (r.ok) { list = await r.json(); break; }
@@ -163,6 +163,14 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
         });
       } catch {}
     }
+    // Open a real shift in pos_shifts (idempotent — backend returns 409 if already open)
+    try {
+      await fetch(`${apiBase}/api/pos/shifts/open`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staff_id: s.id })
+      });
+    } catch {}
     onSelectKasir?.(s);
   };
 

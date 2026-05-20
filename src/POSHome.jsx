@@ -65,7 +65,7 @@ async function openCDSOnSecondScreen() {
   return cdsWindowRef;
 }
 
-export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, onResumeTab, onQuickOrder }) {
+export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, onResumeTab, onQuickOrder, onCloseShift }) {
   const [tabs, setTabs] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [mergeTab, setMergeTab] = useState(null);
@@ -177,6 +177,12 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
           <span style={{...S.userRole, background: roleColors[role] || roleColors.kasir}}>
             {(cashier.role || "kasir").toUpperCase()}
           </span>
+          {onCloseShift && (
+            <button onClick={onCloseShift}
+              style={{...S.logout, background: '#f9731622', border: '1px solid #f9731655', color: '#f97316'}}>
+              🔒 Tutup Shift
+            </button>
+          )}
           <button onClick={onLogout} style={S.logout}>Logout</button>
         </div>
       </header>

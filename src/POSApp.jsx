@@ -8,6 +8,7 @@ import ShiftGate from "./ShiftGate.jsx";
 import POSMenuPicker from "./POS/POSMenuPicker.jsx";
 import POSPayment from "./POS/POSPayment.jsx";
 import POSReceipt from "./POS/POSReceipt.jsx";
+import POSShiftClose from "./POS/POSShiftClose.jsx";
 
 const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -70,6 +71,7 @@ export default function POSApp() {
   const [settlingTab, setSettlingTab] = useState(null);
   const [resumingTab, setResumingTab] = useState(null);
   const [settledResult, setSettledResult] = useState(null);
+  const [shiftCloseId, setShiftCloseId] = useState(null);
 
   const handleLogin = (user) => {
     sessionStorage.setItem("posCashier", JSON.stringify(user));
@@ -81,6 +83,24 @@ export default function POSApp() {
     sessionStorage.removeItem("posCashier");
     setCashier(null);
     setView("home");
+  };
+
+  const handleCloseShift = async () => {
+    try {
+      const active = await fetch(`${API_HOST}/api/pos/shifts/active`).then(r => r.json());
+      let id = Array.isArray(active)
+        ? (active.find(s => s.staff_id === cashier?.id) || active[0])?.id
+        : null;
+      if (!id) {
+        const opened = await fetch(`${API_HOST}/api/pos/shifts/open`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ staff_id: cashier?.id })
+        }).then(r => r.json());
+        id = opened?.id || opened?.shift_id || null;
+      }
+      if (id) setShiftCloseId(id);
+      else alert("Tidak ada shift aktif untuk ditutup.");
+    } catch (e) { console.error("close shift:", e); }
   };
 
   if (!cashier) return <POSKasirLogin apiBase={API_HOST} onSelectKasir={handleLogin} />;
@@ -95,6 +115,7 @@ export default function POSApp() {
           onSettleTab={(tab) => { setSettlingTab(tab); setView("settle"); }}
           onResumeTab={(tab) => { setResumingTab(tab); setView("resume"); }}
           onQuickOrder={() => setView("quickorder")}
+          onCloseShift={handleCloseShift}
         />
       )}
       {view === "quickorder" && (
@@ -139,6 +160,14 @@ export default function POSApp() {
           cashier={cashier}
           onDone={() => { setSettledResult(null); setSettlingTab(null); setView("home"); }}
           onAnother={() => { setSettledResult(null); setSettlingTab(null); setView("order"); }}
+        />
+      )}
+      {shiftCloseId && (
+        <POSShiftClose
+          shiftId={shiftCloseId}
+          apiBase={API_HOST}
+          onClose={() => setShiftCloseId(null)}
+          onCompleted={() => { setShiftCloseId(null); handleLogout(); }}
         />
       )}
     </ShiftGate>
