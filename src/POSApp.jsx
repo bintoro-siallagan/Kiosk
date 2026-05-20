@@ -8,6 +8,7 @@ import ShiftGate from "./ShiftGate.jsx";
 import POSMenuPicker from "./POS/POSMenuPicker.jsx";
 import POSPayment from "./POS/POSPayment.jsx";
 import POSReceipt from "./POS/POSReceipt.jsx";
+import POSSatisfaction from "./POS/POSSatisfaction.jsx";
 import POSShiftClose from "./POS/POSShiftClose.jsx";
 
 const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -53,10 +54,13 @@ function QuickOrderFlow({ cashier, onExit }) {
     return (
       <POSReceipt
         order={{ ...order, payments: payResult?.tenders || payResult?.payments || [], loyalty_discount: payResult?.loyalty_discount || 0 }}
-        onClose={onExit}
+        onClose={() => setStage("feedback")}
         onPrintDone={() => {}}
       />
     );
+  }
+  if (stage === "feedback" && order) {
+    return <POSSatisfaction order={order} apiBase={API_HOST} onDone={onExit} />;
   }
   return null;
 }

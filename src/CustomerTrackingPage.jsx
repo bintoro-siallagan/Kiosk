@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "./api.js";
+import POSSatisfaction from "./POS/POSSatisfaction.jsx";
+
+const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const STAGES = [
   { key: "waiting",   label: "Diterima",     emoji: "📝", color: "#94A3B8" },
@@ -15,6 +18,7 @@ export default function CustomerTrackingPage({ orderId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError]   = useState(null);
   const [loyalty, setLoyalty] = useState(null);
+  const [showFeedback, setShowFeedback] = useState(false);
   const intervalRef = useRef(null);
 
   const fetchOrder = async () => {
@@ -44,6 +48,14 @@ export default function CustomerTrackingPage({ orderId }) {
       clearInterval(intervalRef.current);
     }
   }, [order?.status]);
+
+  // Tracking selesai → minta feedback kepuasan (sekali per order)
+  useEffect(() => {
+    if (order?.status === "completed" && !localStorage.getItem(`fb_done_${orderId}`)) {
+      const t = setTimeout(() => setShowFeedback(true), 2500);
+      return () => clearTimeout(t);
+    }
+  }, [order?.status, orderId]);
 
   if (loading) return (
     <div style={S.root}>
@@ -182,6 +194,15 @@ export default function CustomerTrackingPage({ orderId }) {
           /* Ensure phone fills naturally */
         }
       `}</style>
+
+      {showFeedback && (
+        <POSSatisfaction
+          order={{ ref: order.id, cashier: order.cashier || order.kasir }}
+          apiBase={API_HOST}
+          source="qr"
+          onDone={() => { localStorage.setItem(`fb_done_${orderId}`, "1"); setShowFeedback(false); }}
+        />
+      )}
     </div>
   );
 }

@@ -86,6 +86,7 @@ export default function CommandCenter(){
   const [warehouse,setWarehouse]=useState(null);
   const [recon,setRecon]=useState(null);
   const [pgRecon,setPgRecon]=useState(null);
+  const [kpi,setKpi]=useState(null);
   const [loading,setLoading]=useState(true);
 
   useEffect(()=>{const t=setInterval(()=>setNow(clk()),1000);return()=>clearInterval(t);},[]);
@@ -120,12 +121,13 @@ export default function CommandCenter(){
 
   // Data polling
   const refreshData=useCallback(async()=>{
-    const[z,a,w,rc,pg]=await Promise.all([fetchApi("/api/reports/z"),fetchApi("/api/audit/anomalies"),fetchApi("/api/audit/warehouse"),fetchApi("/api/aggregator/reconcile"),fetchApi("/api/payment-gateway/reconcile")]);
+    const[z,a,w,rc,pg,k]=await Promise.all([fetchApi("/api/reports/z"),fetchApi("/api/audit/anomalies"),fetchApi("/api/audit/warehouse"),fetchApi("/api/aggregator/reconcile"),fetchApi("/api/payment-gateway/reconcile"),fetchApi("/api/cashier-kpi")]);
     if(z)setZReport(z);
     if(a?.items)setAnomalies(prev=>{const ids=new Set(prev.map(x=>x.id));const n=a.items.filter(x=>!ids.has(x.id));return[...n,...prev];});
     if(w)setWarehouse(w);
     if(rc)setRecon(rc);
     if(pg)setPgRecon(pg);
+    if(k)setKpi(k);
     setLoading(false);
   },[]);
 
@@ -146,6 +148,8 @@ export default function CommandCenter(){
   const aggNet=recon?.total?.net_revenue||0;
   const pgGross=pgRecon?.totals?.amount||0;
   const pgCount=pgRecon?.totals?.paid||0;
+  const kpiCashiers=kpi?.cashiers||[];
+  const kpiIssues=kpiCashiers.filter(c=>c.bad_count>0||(c.kpi_score!=null&&c.kpi_score<60));
 
   const resolve=useCallback(async id=>{
     setAnomalies(p=>p.map(a=>a.id===id?{...a,resolved:true,res:true}:a));
@@ -257,6 +261,42 @@ export default function CommandCenter(){
           ))}
         </Card>
       </div>
+
+      {/* ═══ KPI KASIR + ISSUE LAYANAN ═══ */}
+      <Card style={{marginTop:16}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <Label>👥 KPI Kasir — Penilaian Customer</Label>
+          {kpiIssues.length>0&&(
+            <span style={{fontSize:12,fontFamily:"var(--m)",padding:"3px 10px",borderRadius:6,background:"#450a0a",border:"1px solid #dc262666",color:"#fca5a5",fontWeight:700}}>
+              ⚠️ {kpiIssues.length} kasir perlu perhatian
+            </span>
+          )}
+        </div>
+        {kpiCashiers.length===0?(
+          <div style={{color:"#333",fontSize:14}}>Belum ada data kasir</div>
+        ):kpiCashiers.map(c=>{
+          const col=c.kpi_score==null?"#6b7280":c.kpi_score>=80?"#10b981":c.kpi_score>=60?"#f59e0b":"#ef4444";
+          const issue=c.bad_count>0||(c.kpi_score!=null&&c.kpi_score<60);
+          return(
+            <div key={c.cashier} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:"1px solid #15151e"}}>
+              <div style={{width:44,height:44,borderRadius:"50%",border:`2px solid ${col}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontFamily:"var(--m)",color:col,fontSize:15,flexShrink:0}}>
+                {c.kpi_score!=null?c.kpi_score:"—"}
+              </div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:15,fontWeight:600,color:"#e4e4e7"}}>{c.cashier}</div>
+                <div style={{fontSize:12,color:"#666",fontFamily:"var(--m)"}}>
+                  <span style={{color:"#f59e0b"}}>{"★".repeat(Math.round(c.avg_rating))||"—"}</span> {c.avg_rating||"—"} · {c.transactions} trx · {fR(c.total_sales)}
+                </div>
+              </div>
+              {issue&&(
+                <span style={{fontSize:12,fontFamily:"var(--m)",color:"#f87171",fontWeight:600}}>
+                  {c.bad_count>0?`👎 ${c.bad_count} review jelek`:"⚠️ KPI rendah"}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </Card>
     </div>}
 
     {/* ═══ TOP MENU ═══ */}

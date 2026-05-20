@@ -8,6 +8,7 @@ import AdminProcurementGaps from "./Admin/AdminProcurementGaps.jsx";
 import AdminAggregator from "./Admin/AdminAggregator.jsx";
 import AdminPaymentGateway from "./Admin/AdminPaymentGateway.jsx";
 import AdminLoyalty from "./Admin/AdminLoyalty.jsx";
+import AdminCashierKPI from "./Admin/AdminCashierKPI.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -75,6 +76,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "aggregator", label: "🛵 Aggregator", color: "#FB7185" },
     { id: "payment", label: "💳 Payment Gateway", color: "#22D3EE" },
     { id: "loyalty", label: "🏅 Loyalty", color: "#FBBF24" },
+    { id: "cashier_kpi", label: "📊 KPI Kasir", color: "#34D399" },
   ];
 
   return (
@@ -108,6 +110,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "aggregator" && <AdminAggregator apiBase={API} />}
         {tab === "payment" && <AdminPaymentGateway apiBase={API} />}
         {tab === "loyalty" && <AdminLoyalty apiBase={API} />}
+        {tab === "cashier_kpi" && <AdminCashierKPI apiBase={API} />}
       </div>
 
       {toast && <div style={S.toast}>{toast}</div>}
