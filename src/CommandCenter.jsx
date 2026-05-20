@@ -205,9 +205,9 @@ export default function CommandCenter(){
     {tab==="live"&&<div style={{animation:"si .2s ease-out"}}>
       {/* KPI Row */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:16,marginBottom:20}}>
-        <KPI label="Revenue Hari Ini" value={fK(zS.grossRevenue||0)} accent="#10b981" icon="💰" sub={`${zS.totalOrders||0} orders`}/>
-        <KPI label="Transaksi" value={zS.totalOrders||0} accent="#3b82f6" icon="🧾" sub={`avg ${fR(zS.avgTicket||0)}`}/>
-        <KPI label="PPN 11%" value={fK(zS.totalTax||0)} accent="#f59e0b" icon="🏛️"/>
+        <KPI label="Revenue Hari Ini" value={fK(zS.grossRevenue||0)} accent="#10b981" icon="💰" sub={`${zS.transactionCount||0} orders`}/>
+        <KPI label="Transaksi" value={zS.transactionCount||0} accent="#3b82f6" icon="🧾" sub={`avg ${fR(zS.avgTicket||0)}`}/>
+        <KPI label="PPN 11%" value={fK(zS.taxExtracted||0)} accent="#f59e0b" icon="🏛️"/>
         <KPI label="Anomali Open" value={unr.length} accent={critN>0?"#ef4444":"#10b981"} icon="🚨" sub={critN>0?`${critN} critical`:"clear"}/>
       </div>
 
@@ -217,7 +217,7 @@ export default function CommandCenter(){
         <Card>
           <Label>Pembayaran</Label>
           {z.payments?Object.entries(z.payments).map(([method,data])=>{
-            const pct=(zS.totalOrders||1)>0?Math.round((data.count||0)/(zS.totalOrders||1)*100):0;
+            const pct=(zS.transactionCount||1)>0?Math.round((data.count||0)/(zS.transactionCount||1)*100):0;
             const color=method.toUpperCase()==="CASH"?"#10b981":"#3b82f6";
             return(
               <div key={method} style={{display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
@@ -294,7 +294,7 @@ export default function CommandCenter(){
           <Label>📊 P&L Hari Ini</Label>
           <Row l="Gross Revenue" r={fR(zS.grossRevenue||0)} rc="#10b981"/>
           <Row l="Net Revenue" r={fR(zS.netRevenue||0)} rc="#3b82f6"/>
-          <Row l="PPN 11%" r={fR(-(zS.totalTax||0))} rc="#f59e0b"/>
+          <Row l="PPN 11%" r={fR(-(zS.taxExtracted||0))} rc="#f59e0b"/>
           {z.promoUsage&&Object.entries(z.promoUsage).map(([code,d])=>(
             <Row key={code} l={`Promo: ${code}`} r={fR(-(d.totalDiscount||0))} rc="#ec4899"/>
           ))}
