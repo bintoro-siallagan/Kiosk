@@ -84,6 +84,22 @@ function setupFeedback(app, opts = {}) {
     });
   });
 
+  // Per-channel (pos / kiosk / qr) — lihat channel mana yang ratingnya jelek.
+  router.get('/by-source', (req, res) => {
+    const from = Number(req.query.from || 0);
+    res.json(db.prepare(`
+      SELECT source,
+        COUNT(*) count,
+        COALESCE(AVG(rating), 0) avg_rating,
+        SUM(CASE WHEN rating <= 2 THEN 1 ELSE 0 END) bad_count,
+        SUM(CASE WHEN rating >= 4 THEN 1 ELSE 0 END) good_count
+      FROM customer_feedback
+      WHERE created_at >= ?
+      GROUP BY source
+      ORDER BY avg_rating ASC
+    `).all(from).map(r => ({ ...r, avg_rating: Math.round(r.avg_rating * 100) / 100 })));
+  });
+
   // Per-kasir — buat KPI kasir (feedback jelek → KPI jelek).
   router.get('/by-cashier', (req, res) => {
     const from = Number(req.query.from || 0);

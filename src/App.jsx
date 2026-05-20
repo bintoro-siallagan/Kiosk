@@ -24,7 +24,10 @@ import KDS           from "./KDS/KDS.jsx";
 import ShiftManager  from "./ShiftManager.jsx";
 
 import FlowApp from "./Flow/FlowApp.jsx";
+import POSSatisfaction from "./POS/POSSatisfaction.jsx";
 import { MenuProvider } from "./MenuContext.jsx";
+
+const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 function getScene() {
   const q = window.location.search;
   if (new URLSearchParams(q).get("command")) return "command";
@@ -164,6 +167,17 @@ export default function App() {
     return (
       <DigitalReceipt
         orderId={lastOrderId}
+        onDone={() => setScene("kiosk-feedback")}
+      />
+    );
+  }
+
+  if (scene === "kiosk-feedback") {
+    return (
+      <POSSatisfaction
+        order={{ ref: lastOrderId }}
+        apiBase={API_HOST}
+        source="kiosk"
         onDone={() => { setScene("kiosk"); setCheckout(null); setCustomer(null); setTable(null); setLastOrder(null); }}
       />
     );

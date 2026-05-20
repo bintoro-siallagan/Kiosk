@@ -163,8 +163,16 @@ export default function POSApp() {
             subtotal: settledResult.total
           }}
           cashier={cashier}
-          onDone={() => { setSettledResult(null); setSettlingTab(null); setView("home"); }}
+          onDone={() => setView("settle-feedback")}
           onAnother={() => { setSettledResult(null); setSettlingTab(null); setView("order"); }}
+        />
+      )}
+      {view === "settle-feedback" && (
+        <POSSatisfaction
+          order={{ ref: settledResult?.id || settledResult?.ref || settledResult?.order_id, cashier: cashier?.name }}
+          apiBase={API_HOST}
+          source="pos"
+          onDone={() => { setSettledResult(null); setSettlingTab(null); setView("home"); }}
         />
       )}
       {shiftCloseId && (

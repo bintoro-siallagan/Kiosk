@@ -35,6 +35,7 @@ function Stars({ value }) {
 
 export default function AdminCashierKPI({ apiBase = "" }) {
   const [data, setData] = useState(null);
+  const [bySource, setBySource] = useState([]);
   const [loading, setLoading] = useState(true);
   const [range, setRange] = useState("today");
 
@@ -44,8 +45,12 @@ export default function AdminCashierKPI({ apiBase = "" }) {
     const from = range === "today" ? Math.floor(new Date().setHours(0, 0, 0, 0) / 1000)
       : range === "7d" ? now - 7 * DAY : now - 30 * DAY;
     try {
-      const r = await fetch(`${apiBase}/api/cashier-kpi?from=${from}&to=${now}`);
-      setData(await r.json());
+      const [kpiR, srcR] = await Promise.all([
+        fetch(`${apiBase}/api/cashier-kpi?from=${from}&to=${now}`).then(r => r.json()),
+        fetch(`${apiBase}/api/feedback/by-source?from=${from}`).then(r => r.json()).catch(() => []),
+      ]);
+      setData(kpiR);
+      setBySource(Array.isArray(srcR) ? srcR : []);
     } catch { setData(null); }
     setLoading(false);
   }, [apiBase, range]);
@@ -86,6 +91,34 @@ export default function AdminCashierKPI({ apiBase = "" }) {
             {sum.total_bad_reviews || 0}
           </div>
         </div>
+      </div>
+
+      {/* Rating per sales channel */}
+      <div style={S.card}>
+        <div style={S.label}>📡 Rating per Sales Channel</div>
+        {bySource.length === 0 ? (
+          <div style={{ color: "#555", padding: 8, fontSize: 13 }}>Belum ada feedback di periode ini</div>
+        ) : (
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            {bySource.map(s => {
+              const col = s.avg_rating >= 4 ? "#34D399" : s.avg_rating >= 3 ? "#FBBF24" : "#F87171";
+              const name = { pos: "🧾 POS — Kasir/Manager", kiosk: "🖥️ Kiosk", qr: "📱 QR Order" }[s.source] || s.source;
+              return (
+                <div key={s.source} style={{ flex: "1 1 190px", background: "#0a0e16", border: `1px solid ${col}33`, borderRadius: 10, padding: 14 }}>
+                  <div style={{ fontSize: 13, color: "#aaa", marginBottom: 6 }}>{name}</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: col, fontFamily: "'Space Mono',monospace" }}>
+                    {s.avg_rating} <span style={{ fontSize: 13, color: "#f59e0b" }}>★</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#666", marginTop: 4 }}>
+                    {s.count} review · {s.bad_count > 0
+                      ? <span style={{ color: "#F87171" }}>{s.bad_count} jelek</span>
+                      : "0 jelek"}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Leaderboard */}

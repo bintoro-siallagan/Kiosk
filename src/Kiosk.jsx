@@ -1,5 +1,6 @@
 import ToppingPicker from "./ToppingPicker.jsx";
 import Screensaver from "./Screensaver.jsx";
+import KioskReviewFeed from "./KioskReviewFeed.jsx";
 import * as audio from "./audio.js";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import PromoInput from "./PromoInput.jsx";
@@ -427,6 +428,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           </button>
         </div>
         <p style={K.tapHint}>KETUK UNTUK MULAI</p>
+        <div style={{ marginTop: 22 }}><KioskReviewFeed/></div>
       </div>
     </div>
   );
