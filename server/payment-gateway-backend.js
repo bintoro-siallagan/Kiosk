@@ -26,6 +26,7 @@ const express = require('express');
 const crypto = require('crypto');
 const Database = require('better-sqlite3');
 const path = require('path');
+const { toCsv } = require('./csv-util');
 
 const DEFAULT_DB = path.join(__dirname, '..', 'data', 'kiosk.db');
 
@@ -640,6 +641,20 @@ function setupPaymentGateway(app, opts = {}) {
     const rows = db.prepare(`SELECT id, provider_code, external_id, intent_id, signature_valid, status, response_status, created_at
       FROM payment_webhook_log ORDER BY created_at DESC LIMIT 50`).all();
     res.json(rows);
+  });
+
+  // Export CSV — semua payment intent
+  router.get('/export/intents.csv', (req, res) => {
+    const rows = db.prepare(`SELECT * FROM payment_intents ORDER BY created_at DESC LIMIT 5000`).all();
+    const header = ['Doc No', 'Tanggal', 'Provider', 'Metode', 'Amount (Rp)', 'Status', 'Order Ref', 'Customer', 'External ID'];
+    const body = rows.map(r => [
+      r.doc_no, new Date((r.created_at || 0) * 1000).toLocaleString('id-ID'),
+      r.provider_code, r.payment_method, Math.round(r.amount), r.status,
+      r.order_ref || '', r.customer_name || '', r.external_id || '',
+    ]);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=payment-gateway-intents.csv');
+    res.send(toCsv(header, body));
   });
 
   const mountPath = opts.mountPath || '/api/payment-gateway';

@@ -18,6 +18,7 @@
 const express = require('express');
 const Database = require('better-sqlite3');
 const path = require('path');
+const { toCsv } = require('./csv-util');
 
 const DEFAULT_DB = path.join(__dirname, '..', 'data', 'kiosk.db');
 
@@ -603,6 +604,24 @@ function setupLoyalty(app, opts = {}) {
       processed++;
     }
     res.json({ ok: true, processed });
+  });
+
+  // Export CSV — daftar member loyalty
+  router.get('/export/customers.csv', (req, res) => {
+    const rows = db.prepare(`
+      SELECT c.*, t.name AS tier_name FROM loyalty_customers c
+      LEFT JOIN loyalty_tiers t ON t.code = c.current_tier_code
+      WHERE c.is_active = 1 ORDER BY c.lifetime_spend DESC
+    `).all();
+    const header = ['Phone', 'Nama', 'Tier', 'Poin Sekarang', 'Lifetime Poin', 'Total Belanja (Rp)', 'Kunjungan', 'Member Sejak'];
+    const body = rows.map(c => [
+      c.phone, c.name || '', c.tier_name || c.current_tier_code,
+      c.current_points, c.lifetime_points, Math.round(c.lifetime_spend),
+      c.total_visits, new Date((c.created_at || 0) * 1000).toLocaleDateString('id-ID'),
+    ]);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=loyalty-customers.csv');
+    res.send(toCsv(header, body));
   });
 
   const mountPath = opts.mountPath || '/api/loyalty';

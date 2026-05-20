@@ -29,6 +29,7 @@ const express = require('express');
 const crypto = require('crypto');
 const Database = require('better-sqlite3');
 const path = require('path');
+const { toCsv } = require('./csv-util');
 
 const DEFAULT_DB = path.join(__dirname, '..', 'data', 'kiosk.db');
 
@@ -558,6 +559,20 @@ function setupAggregator(app, opts = {}) {
     sql += ' ORDER BY created_at DESC LIMIT ?';
     params.push(Number(limit));
     res.json(db.prepare(sql).all(...params));
+  });
+
+  // Export CSV — semua order dari aggregator
+  router.get('/export/orders.csv', (req, res) => {
+    const rows = db.prepare(`SELECT * FROM aggregator_orders ORDER BY received_at DESC LIMIT 5000`).all();
+    const header = ['Doc No', 'Tanggal', 'Provider', 'Customer', 'Status', 'Gross (Rp)', 'Komisi (Rp)', 'Net (Rp)'];
+    const body = rows.map(r => [
+      r.doc_no, new Date((r.received_at || 0) * 1000).toLocaleString('id-ID'),
+      r.provider_code, r.customer_name || '', r.status,
+      Math.round(r.gross_amount), Math.round(r.commission_amount), Math.round(r.net_amount),
+    ]);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=aggregator-orders.csv');
+    res.send(toCsv(header, body));
   });
 
   const mountPath = opts.mountPath || '/api/aggregator';

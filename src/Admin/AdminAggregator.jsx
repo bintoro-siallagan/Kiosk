@@ -135,6 +135,10 @@ export default function AdminAggregator({ apiBase = '' }) {
             </button>
           ))}
         </div>
+        <button onClick={() => { const a = document.createElement('a'); a.href = `${apiBase}/api/aggregator/export/orders.csv`; a.click(); }}
+          style={{ background: '#34d39922', border: '1px solid #34d39966', color: '#34d399', borderRadius: 8, padding: '7px 13px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+          ⬇️ Export CSV
+        </button>
       </div>
 
       {/* LIVE ORDERS */}

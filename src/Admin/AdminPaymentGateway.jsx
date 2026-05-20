@@ -224,7 +224,10 @@ export default function AdminPaymentGateway({ apiBase = "" }) {
       <div style={S.card}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
           <div style={{ ...S.label, marginBottom: 0 }}>🧾 Payment Intent Terbaru ({intents.length})</div>
-          <button onClick={load} style={S.btn("#555")}>🔄 Refresh</button>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button onClick={() => { const a = document.createElement("a"); a.href = `${apiBase}/api/payment-gateway/export/intents.csv`; a.click(); }} style={S.btn("#34D399")}>⬇️ Export CSV</button>
+            <button onClick={load} style={S.btn("#555")}>🔄 Refresh</button>
+          </div>
         </div>
         {intents.length === 0
           ? <div style={{ color: "#555", padding: 12 }}>Belum ada transaksi gateway</div>
