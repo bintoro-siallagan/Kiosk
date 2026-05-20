@@ -157,7 +157,9 @@ const MidtransAdapter = {
       body: JSON.stringify(body)
     });
     const data = await r.json();
-    if (!r.ok) throw new Error(data.status_message || data.error_messages?.join(', ') || `HTTP ${r.status}`);
+    // Midtrans returns HTTP 200 even for charge-level errors — status_code carries the real result.
+    const sc = parseInt(data.status_code, 10);
+    if (!r.ok || sc >= 400) throw new Error(data.status_message || data.error_messages?.join(', ') || `HTTP ${r.status}`);
 
     const qrAction = data.actions?.find(a => a.name === 'generate-qr-code');
     const deeplink = data.actions?.find(a => a.name?.includes('deeplink'));
@@ -335,9 +337,9 @@ function setupPaymentGateway(app, opts = {}) {
     let posPaymentId = null;
     try {
       const info = db.prepare(`
-        INSERT INTO pos_payments (order_ref, tender_type, amount_applied, change_given, ref_no, actor, status, created_at)
-        VALUES (?,?,?,?,?,?, 'completed', ?)
-      `).run(intent.order_ref, intent.payment_method, intent.amount, 0,
+        INSERT INTO pos_payments (order_ref, tender_type, amount, amount_applied, change_given, ref_no, actor, status, created_at)
+        VALUES (?,?,?,?,?,?,?, 'completed', ?)
+      `).run(intent.order_ref, intent.payment_method, intent.amount, intent.amount, 0,
         intent.external_id, intent.created_by || 'gateway', nowSec());
       posPaymentId = info.lastInsertRowid;
       db.prepare(`UPDATE payment_intents SET pos_payment_id=? WHERE id=?`).run(posPaymentId, intent.id);
