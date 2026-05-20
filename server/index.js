@@ -596,6 +596,169 @@ app.patch("/api/menu/:id", (req, res) => {
   res.json(menu[idx]);
 });
 
+// ── MASTER ITEM: Create new menu item ──
+app.post("/api/menu", (req, res) => {
+  const { cat, emoji, name, desc, price, freeToppings, popular } = req.body;
+  if (!name || !price || !cat) return res.status(400).json({ error: "name, price, cat required" });
+
+  // Auto-generate next ID based on category
+  const catPrefix = { froyo: 100, smoothies: 200, yogulato: 300, takehome: 400, collab: 500 };
+  const base = catPrefix[cat] || 600;
+  const catItems = menu.filter(m => m.id >= base && m.id < base + 100);
+  const nextId = catItems.length > 0 ? Math.max(...catItems.map(m => m.id)) + 1 : base + 1;
+
+  const newItem = {
+    id: nextId,
+    cat: cat,
+    emoji: emoji || "🍽️",
+    name: name,
+    desc: desc || "",
+    price: Number(price),
+    freeToppings: Number(freeToppings) || 0,
+    popular: Boolean(popular),
+    avail: true,
+  };
+
+  menu.push(newItem);
+  db.setMenuOverride(newItem.id, true);
+  broadcast("menu:updated", newItem);
+  console.log("[Master] New item:", newItem.name, "id:", newItem.id, "cat:", newItem.cat);
+  res.json(newItem);
+});
+
+// ── MASTER ITEM: Delete menu item ──
+app.delete("/api/menu/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  const idx = menu.findIndex(m => m.id === id);
+  if (idx === -1) return res.status(404).json({ error: "Item not found" });
+
+  const removed = menu.splice(idx, 1)[0];
+  broadcast("menu:updated", { id, deleted: true });
+  console.log("[Master] Deleted:", removed.name, "id:", id);
+  res.json({ ok: true, deleted: removed });
+});
+
+// ── MASTER ITEM: Full edit (all fields) ──
+app.put("/api/menu/:id", (req, res) => {
+  const id = parseInt(req.params.id);
+  const idx = menu.findIndex(m => m.id === id);
+  if (idx === -1) return res.status(404).json({ error: "Item not found" });
+
+  const { cat, emoji, name, desc, price, freeToppings, popular, avail } = req.body;
+  if (cat !== undefined) menu[idx].cat = cat;
+  if (emoji !== undefined) menu[idx].emoji = emoji;
+  if (name !== undefined) menu[idx].name = name;
+  if (desc !== undefined) menu[idx].desc = desc;
+  if (price !== undefined) menu[idx].price = Number(price);
+  if (freeToppings !== undefined) menu[idx].freeToppings = Number(freeToppings);
+  if (popular !== undefined) menu[idx].popular = Boolean(popular);
+  if (avail !== undefined) {
+    menu[idx].avail = Boolean(avail);
+    db.setMenuOverride(menu[idx].id, menu[idx].avail);
+  }
+
+  broadcast("menu:updated", menu[idx]);
+  console.log("[Master] Updated:", menu[idx].name, "id:", id);
+  res.json(menu[idx]);
+});
+
+// ── MASTER TOPPINGS: CRUD ──
+app.get("/api/toppings", (req, res) => res.json({ items: toppings, extraPrice: EXTRA_TOPPING_PRICE }));
+
+app.post("/api/toppings", (req, res) => {
+  const { id, name, group, price } = req.body;
+  if (!name || !group) return res.status(400).json({ error: "name, group required" });
+  const newId = id || (group[0].toLowerCase() + String(toppings.filter(t => t.group === group).length + 1).padStart(2, "0"));
+  const topping = { id: newId, name, group, price: Number(price) || 0 };
+  toppings.push(topping);
+  res.json(topping);
+});
+
+app.delete("/api/toppings/:id", (req, res) => {
+  const idx = toppings.findIndex(t => t.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: "Topping not found" });
+  const removed = toppings.splice(idx, 1)[0];
+  res.json({ ok: true, deleted: removed });
+});
+
+// ── MASTER CATEGORIES ──
+app.get("/api/categories", (req, res) => res.json(categories));
+
+app.post("/api/categories", (req, res) => {
+  const { id, name, emoji, color } = req.body;
+  if (!id || !name) return res.status(400).json({ error: "id, name required" });
+  if (categories.find(c => c.id === id)) return res.status(409).json({ error: "Category already exists" });
+  const cat = { id, name, emoji: emoji || "📋", color: color || "#888" };
+  categories.push(cat);
+  res.json(cat);
+});
+
+// ── FINANCE: Expense tracking ──
+const expenses = [];
+let expenseCounter = 0;
+
+app.post("/api/finance/expenses", (req, res) => {
+  const { category, description, amount, date, notes } = req.body;
+  if (!category || !amount) return res.status(400).json({ error: "category, amount required" });
+  expenseCounter++;
+  const expense = {
+    id: "EXP" + String(expenseCounter).padStart(4, "0"),
+    category,
+    description: description || "",
+    amount: Number(amount),
+    date: date || new Date().toISOString().split("T")[0],
+    notes: notes || "",
+    createdAt: Date.now(),
+    createdBy: req.headers["x-admin-name"] || "admin",
+  };
+  expenses.push(expense);
+  console.log("[Finance] Expense:", expense.category, fIDR(expense.amount));
+  res.json(expense);
+});
+
+app.get("/api/finance/expenses", (req, res) => {
+  const { from, to } = req.query;
+  let filtered = expenses;
+  if (from) filtered = filtered.filter(e => e.date >= from);
+  if (to) filtered = filtered.filter(e => e.date <= to);
+  const total = filtered.reduce((s, e) => s + e.amount, 0);
+  res.json({ items: filtered, total, count: filtered.length });
+});
+
+// ── FINANCE: P&L Summary ──
+app.get("/api/finance/pnl", (req, res) => {
+  // Revenue from orders
+  const today = new Date().toISOString().split("T")[0];
+  const todayStart = new Date(today).getTime();
+  const todayOrders = orders.filter(o => o.time >= todayStart && o.status !== "cancelled");
+  const grossRevenue = todayOrders.reduce((s, o) => s + (o.total || 0), 0);
+  const taxRate = 0.11;
+  const netRevenue = Math.round(grossRevenue / (1 + taxRate));
+  const tax = grossRevenue - netRevenue;
+
+  // Expenses today
+  const todayExpenses = expenses.filter(e => e.date === today);
+  const totalExpenses = todayExpenses.reduce((s, e) => s + e.amount, 0);
+
+  // Expense breakdown by category
+  const expByCategory = {};
+  todayExpenses.forEach(e => {
+    if (!expByCategory[e.category]) expByCategory[e.category] = 0;
+    expByCategory[e.category] += e.amount;
+  });
+
+  const netProfit = netRevenue - totalExpenses;
+
+  res.json({
+    date: today,
+    revenue: { gross: grossRevenue, net: netRevenue, tax, orders: todayOrders.length },
+    expenses: { total: totalExpenses, count: todayExpenses.length, byCategory: expByCategory },
+    profit: { net: netProfit, margin: netRevenue > 0 ? Math.round(netProfit / netRevenue * 100) : 0 },
+  });
+});
+
+const fIDR = n => "Rp " + Math.round(n).toLocaleString("id-ID");
+
 // ── STATS ────────────────────────────────────────────────────────────────────
 app.get("/api/stats", (req, res) => {
   const completed  = orders.filter(o => o.status === "completed");
