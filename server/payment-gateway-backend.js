@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS payment_intents (
   cancelled_at INTEGER,
   customer_name TEXT,
   customer_phone TEXT,
+  items TEXT,
   request_payload TEXT,
   response_payload TEXT,
   webhook_payload TEXT,
@@ -307,6 +308,8 @@ function setupPaymentGateway(app, opts = {}) {
   const db = new Database(opts.dbPath || DEFAULT_DB);
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA_SQL);
+  // Migration for existing DBs: items column (stock deduction + kitchen tickets on paid intents)
+  try { db.exec(`ALTER TABLE payment_intents ADD COLUMN items TEXT`); } catch {}
 
   const cnt = db.prepare(`SELECT COUNT(*) c FROM payment_gateway_providers`).get().c;
   if (cnt === 0) {
@@ -345,6 +348,26 @@ function setupPaymentGateway(app, opts = {}) {
       db.prepare(`UPDATE payment_intents SET pos_payment_id=? WHERE id=?`).run(posPaymentId, intent.id);
     } catch (e) {
       console.warn('[payment-gateway] could not insert pos_payments:', e.message);
+    }
+
+    // Stock deduction + kitchen tickets — items captured at intent creation (QuickOrder gateway flow)
+    const orderItems = safeJson(intent.items);
+    if (Array.isArray(orderItems) && orderItems.length) {
+      try {
+        if (typeof global.consumeStockForOrder === 'function') {
+          global.consumeStockForOrder(orderItems, {
+            order_ref: intent.order_ref, actor: intent.created_by || 'gateway', allow_negative: true,
+          });
+        }
+      } catch (e) { console.warn('[payment-gateway] consumeStockForOrder:', e.message); }
+      try {
+        if (typeof global.createKitchenTickets === 'function') {
+          global.createKitchenTickets({
+            order_ref: intent.order_ref, items: orderItems,
+            customer_name: intent.customer_name, cashier: intent.created_by || 'gateway',
+          });
+        }
+      } catch (e) { console.warn('[payment-gateway] createKitchenTickets:', e.message); }
     }
 
     broadcast('payment-gateway:paid', { intent_id: intent.id, order_ref: intent.order_ref, amount: intent.amount, method: intent.payment_method });
@@ -451,7 +474,7 @@ function setupPaymentGateway(app, opts = {}) {
 
   // Create payment intent
   router.post('/intents', async (req, res) => {
-    const { provider_code, payment_method, amount, order_ref, customer_name, customer_phone, created_by } = req.body || {};
+    const { provider_code, payment_method, amount, order_ref, customer_name, customer_phone, created_by, items } = req.body || {};
     if (!provider_code || !payment_method || !amount) {
       return res.status(400).json({ error: 'provider_code + payment_method + amount required' });
     }
@@ -472,12 +495,13 @@ function setupPaymentGateway(app, opts = {}) {
       const info = db.prepare(`
         INSERT INTO payment_intents (doc_no, provider_code, external_id, order_ref, payment_method, amount, status,
           qr_string, qr_image_url, deeplink_url, va_number, va_bank, expires_at,
-          customer_name, customer_phone, request_payload, response_payload, created_by)
-        VALUES (?,?,?,?,?,?,'pending',?,?,?,?,?,?,?,?,?,?,?)
+          customer_name, customer_phone, items, request_payload, response_payload, created_by)
+        VALUES (?,?,?,?,?,?,'pending',?,?,?,?,?,?,?,?,?,?,?,?)
       `).run(docNo, provider_code, result.external_id, order_ref || null, payment_method, Number(amount),
         result.qr_string || null, result.qr_image_url || null, result.deeplink_url || null,
         result.va_number || null, result.va_bank || null, result.expires_at,
         customer_name || null, customer_phone || null,
+        Array.isArray(items) && items.length ? JSON.stringify(items) : null,
         JSON.stringify(intent), JSON.stringify(result.raw), created_by || null);
 
       const id = info.lastInsertRowid;

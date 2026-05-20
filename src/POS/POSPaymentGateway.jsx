@@ -29,7 +29,7 @@ const METHODS = [
   { code: 'bni_va', name: 'BNI VA', icon: '🏦', desc: 'Transfer Virtual Account BNI', providers: ['midtrans', 'xendit'] },
 ];
 
-export default function POSPaymentGateway({ orderRef, amount, customerName, customerPhone, onPaid, onCancel, apiBase = '' }) {
+export default function POSPaymentGateway({ orderRef, amount, customerName, customerPhone, items, onPaid, onCancel, apiBase = '' }) {
   const [providers, setProviders] = useState([]);
   const [step, setStep] = useState('select');
   const [selectedMethod, setSelectedMethod] = useState(null);
@@ -79,6 +79,7 @@ export default function POSPaymentGateway({ orderRef, amount, customerName, cust
           payment_method: methodCode,
           amount, order_ref: orderRef,
           customer_name: customerName, customer_phone: customerPhone,
+          items: Array.isArray(items) ? items : undefined,
           created_by: localStorage.getItem('kasir_name') || 'kasir'
         })
       });
