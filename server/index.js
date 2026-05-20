@@ -3128,6 +3128,18 @@ app.post("/api/orders/:id/cancel", (req, res) => {
       by: order.cancelledBy
     });
 
+    // Refund/Cancel anomaly tracking → pos_events + audit_anomalies
+    Promise.resolve(global.processRefundCancel?.({
+      type: 'cancel',
+      order_ref: order.id,
+      amount: order.total,
+      kasir: order.cancelledBy,
+      manager_id: order.cancelApprovedBy,
+      reason: order.cancelReason,
+      items: order.items,
+      original_sale_at: order.time ? Math.floor(order.time / 1000) : null,
+    })).catch(() => {});
+
     res.json({ ok: true, order });
   } catch (e) {
     console.error("Cancel error:", e);
@@ -3147,10 +3159,12 @@ app.post("/api/orders/:id/refund", (req, res) => {
     }
 
     // ── AUDIT: Manager PIN wajib ──
+    let refundManagerName = "Unknown";
     try {
       const { getDb } = require("./command-center-backend");
       const mgr = getDb().prepare("SELECT id, name FROM admin_users WHERE pin = ? AND role = 'manager'").get(managerPin);
       if (!mgr) return res.status(403).json({ error: "PIN Manager wajib & harus valid untuk refund" });
+      refundManagerName = mgr.name;
     } catch(e) {
       console.warn("[Audit] PIN verify fallback:", e.message);
     }
@@ -3208,6 +3222,18 @@ app.post("/api/orders/:id/refund", (req, res) => {
       reason: order.refundReason,
       by: order.refundedBy
     });
+
+    // Refund/Cancel anomaly tracking → pos_events + audit_anomalies
+    Promise.resolve(global.processRefundCancel?.({
+      type: 'refund',
+      order_ref: order.id,
+      amount: refundAmount,
+      kasir: order.refundedBy,
+      manager_id: refundManagerName,
+      reason: order.refundReason,
+      items: order.items,
+      original_sale_at: order.time ? Math.floor(order.time / 1000) : null,
+    })).catch(() => {});
 
     res.json({
       ok: true,
@@ -3542,6 +3568,7 @@ const { setupNotifications }    = require('./notifications-backend');
 const { setupProcurement }      = require('./procurement-backend');
 const { setupShiftStaff }       = require('./shift-staff-backend');
 const { setupKDS }              = require('./kds-backend');
+const { setupRefundCancel }     = require('./refund-cancel-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3565,6 +3592,7 @@ const notifications   = setupNotifications(app, {
 
 const shiftStaff = setupShiftStaff(app, { dbPath: DB_PATH });
 const kds = setupKDS(app, { dbPath: DB_PATH });
+const refundCancel = setupRefundCancel(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
@@ -3574,6 +3602,7 @@ global.onPaymentRecorded     = bridge.onPaymentRecorded;
 global.dispatchNotification  = notifications.dispatch;
 global.createExpense         = finance.createExpense;
 global.createKitchenTickets  = kds.createTicketsForOrder;
+global.processRefundCancel   = refundCancel.processEvent;
 
 console.log('━━━ Bites-Kiosk Wave 1+2+3 — semua module loaded ━━━');
 // ════════════════════════════════════════════════════════════

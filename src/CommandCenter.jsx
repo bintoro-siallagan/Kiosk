@@ -21,6 +21,15 @@ const RULES = {
   EMP_DISC:{l:"Diskon Karyawan",i:"👤",cl:"#D946EF"},
   WASTE_SPIKE:{l:"Waste Spike",i:"🗑️",cl:"#78716C"},
   STOCK_GHOST:{l:"Stok Ghost",i:"👻",cl:"#84CC16"},
+  // Refund/Cancel module (RC) anomaly types
+  cancel_event:{l:"Cancel Order",i:"❌",cl:"#F87171"},
+  refund_event:{l:"Refund Order",i:"↩️",cl:"#A78BFA"},
+  no_manager_pin:{l:"Tanpa Manager PIN",i:"🔓",cl:"#DC2626"},
+  large_amount:{l:"Refund/Cancel Besar",i:"💸",cl:"#EF4444"},
+  high_rate:{l:"Frekuensi Tinggi",i:"📈",cl:"#F97316"},
+  late_refund:{l:"Refund Telat",i:"⏰",cl:"#EAB308"},
+  self_approval:{l:"Self-Approval",i:"🪞",cl:"#EC4899"},
+  weak_reason:{l:"Alasan Lemah",i:"📝",cl:"#6366F1"},
 };
 const SV={critical:{l:"CRIT",bg:"#450a0a",bd:"#dc2626",tx:"#fca5a5"},high:{l:"HIGH",bg:"#451a03",bd:"#ea580c",tx:"#fdba74"},medium:{l:"MED",bg:"#422006",bd:"#ca8a04",tx:"#fde047"},low:{l:"LOW",bg:"#052e16",bd:"#16a34a",tx:"#86efac"}};
 
