@@ -215,6 +215,8 @@ function broadcast(event, data) {
   wss.clients.forEach(client => {
     if (client.readyState === 1) client.send(msg);
   });
+  // Audit engine — detect anomalies from WS events
+  try { if (typeof auditEngine !== 'undefined') auditEngine.check(event, data, db, broadcast); } catch(e) {}
 }
 
 wss.on("connection", (ws) => {
@@ -3167,6 +3169,12 @@ app.post("/api/orders/:id/split-settle", (req, res) => {
   }
 });
 
+
+// ─── COMMAND CENTER AUDIT MODULE ───────────────────────
+const { initAuditModule, registerAuditEndpoints, auditEngine } = require("./command-center-backend");
+initAuditModule(db);
+registerAuditEndpoints(app, db);
+console.log("📊 Command Center audit module loaded");
 server.listen(PORT, () => {
   console.log("");
   console.log("🍽️  BINTORO BACKEND");
