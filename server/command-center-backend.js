@@ -51,6 +51,28 @@ const AUDIT_SCHEMA = `
     notes TEXT
   );
 
+  CREATE TABLE IF NOT EXISTS audit_config (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS audit_waste (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    item_name TEXT NOT NULL,
+    item_id TEXT,
+    quantity REAL NOT NULL,
+    unit TEXT NOT NULL DEFAULT 'pcs',
+    reason TEXT,
+    shift_id TEXT,
+    cashier_id TEXT,
+    cashier_name TEXT,
+    outlet_id TEXT DEFAULT 'default',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_waste_created ON audit_waste(created_at);
+  CREATE INDEX IF NOT EXISTS idx_waste_shift ON audit_waste(shift_id);
+
   CREATE TABLE IF NOT EXISTS audit_warehouse (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -106,6 +128,15 @@ function initAuditModule(/* db wrapper — unused, we use our own connection */)
   const raw = getDb();
   raw.exec(AUDIT_SCHEMA);
   console.log("[Audit] Tables initialized");
+
+  // Seed config defaults
+  try {
+    raw.prepare("INSERT OR IGNORE INTO audit_config (key, value) VALUES (?, ?)").run("POINT_VALUE", "100");
+    raw.prepare("INSERT OR IGNORE INTO audit_config (key, value) VALUES (?, ?)").run("MANAGER_WA", "");
+    raw.prepare("INSERT OR IGNORE INTO audit_config (key, value) VALUES (?, ?)").run("OWNER_WA", "");
+    raw.prepare("INSERT OR IGNORE INTO audit_config (key, value) VALUES (?, ?)").run("AUTO_REPORT_ENABLED", "true");
+    console.log("[Audit] Config defaults seeded");
+  } catch(e) {}
 
   const whCount = raw.prepare("SELECT COUNT(*) as c FROM audit_warehouse").get().c;
   if (whCount === 0) {
@@ -608,6 +639,61 @@ function registerAuditEndpoints(app, _dbWrapper) {
       employeeDiscountTotal: empOrders.reduce((s, o) => s + (o.empDiscount || 0), 0),
       generatedAt: Date.now(),
     });
+  });
+
+  // ── Public Config (POINT_VALUE etc) ──
+  app.get("/api/config/public", (req, res) => {
+    const rows = db.prepare("SELECT key, value FROM audit_config").all();
+    const config = {};
+    rows.forEach(r => { config[r.key] = r.value; });
+    // Parse numbers
+    if (config.POINT_VALUE) config.POINT_VALUE = parseInt(config.POINT_VALUE) || 100;
+    res.json(config);
+  });
+
+  app.patch("/api/config/:key", (req, res) => {
+    const { key } = req.params;
+    const { value } = req.body || {};
+    if (!value && value !== 0) return res.status(400).json({ error: "Value required" });
+    db.prepare("INSERT OR REPLACE INTO audit_config (key, value, updated_at) VALUES (?, ?, datetime('now'))").run(key, String(value));
+    console.log("[Audit] Config updated:", key, "=", value);
+    res.json({ ok: true, key, value });
+  });
+
+  // ── Waste Tracking ──
+  app.post("/api/audit/waste", (req, res) => {
+    const { itemName, itemId, quantity, unit, reason, shiftId, cashierId, cashierName } = req.body || {};
+    if (!itemName || !quantity) return res.status(400).json({ error: "itemName + quantity required" });
+    db.prepare(`
+      INSERT INTO audit_waste (item_name, item_id, quantity, unit, reason, shift_id, cashier_id, cashier_name)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(itemName, itemId || null, quantity, unit || "pcs", reason || null, shiftId || null, cashierId || null, cashierName || null);
+    console.log("[Audit] Waste logged:", itemName, quantity, unit);
+    res.json({ ok: true });
+  });
+
+  app.get("/api/audit/waste", (req, res) => {
+    const limit = parseInt(req.query.limit) || 50;
+    const shiftId = req.query.shift || null;
+    let sql = "SELECT * FROM audit_waste";
+    const params = [];
+    if (shiftId) { sql += " WHERE shift_id = ?"; params.push(shiftId); }
+    sql += " ORDER BY created_at DESC LIMIT ?";
+    params.push(limit);
+    res.json({ items: db.prepare(sql).all(...params) });
+  });
+
+  // ── Shift Summary (for auto-report) ──
+  app.get("/api/audit/shift-summary", (req, res) => {
+    const shiftId = req.query.shift || null;
+    // Get anomalies count for this session
+    const anomCount = db.prepare("SELECT COUNT(*) as c FROM audit_anomalies WHERE resolved = 0").get().c;
+    // Get waste for today
+    const wasteItems = db.prepare("SELECT * FROM audit_waste WHERE created_at >= date('now') ORDER BY created_at DESC").all();
+    const wasteCost = wasteItems.reduce((s, w) => s + (w.quantity * 1000), 0); // rough estimate
+    // Stock alerts
+    const stockAlerts = db.prepare("SELECT name, stock, min_stock, unit FROM audit_warehouse WHERE stock <= min_stock").all();
+    res.json({ anomCount, wasteItems, wasteCost, stockAlerts });
   });
 
   // ── Event Log (forensic audit trail) ──

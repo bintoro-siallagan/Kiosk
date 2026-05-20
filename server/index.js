@@ -2334,6 +2334,91 @@ app.post("/api/shifts/close", (req, res) => {
   if (activeShift) db.insertShift(activeShift);
   activeShift = null;
   console.log(`🔴 Shift ditutup: ${closed.kasirName} — ${shiftOrders.length} order, Rp ${totalRevenue.toLocaleString()}`);
+
+  // ── AUTO-REPORT: Send shift summary via WhatsApp ──
+  (async () => {
+    try {
+      const { getDb } = require("./command-center-backend");
+      const auditDb = getDb();
+
+      // Get config
+      const configRows = auditDb.prepare("SELECT key, value FROM audit_config").all();
+      const cfg = {};
+      configRows.forEach(r => { cfg[r.key] = r.value; });
+
+      if (cfg.AUTO_REPORT_ENABLED !== "true") return;
+
+      const managerWA = cfg.MANAGER_WA || cfg.OWNER_WA;
+      if (!managerWA) {
+        console.log("[Auto-Report] No MANAGER_WA configured — skipped");
+        return;
+      }
+
+      // Get anomalies
+      const anomCount = auditDb.prepare("SELECT COUNT(*) as c FROM audit_anomalies WHERE resolved = 0").get().c;
+
+      // Get waste today
+      const wasteItems = auditDb.prepare("SELECT item_name, SUM(quantity) as total_qty, unit FROM audit_waste WHERE created_at >= date('now') GROUP BY item_name").all();
+
+      // Get stock alerts
+      const stockAlerts = auditDb.prepare("SELECT name, stock, unit FROM audit_warehouse WHERE stock <= min_stock").all();
+
+      // Build message
+      const fR = n => "Rp " + Math.round(n).toLocaleString("id-ID");
+      const openTime = new Date(closed.openAt || closed.openedAt || 0).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+      const closeTime = new Date(closed.closeAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+
+      let msg = "📊 *SHIFT REPORT — BINTORO*\n";
+      msg += "━━━━━━━━━━━━━━━━━━━━\n";
+      msg += "👤 Kasir: " + (closed.kasirName || "?") + "\n";
+      msg += "⏰ " + openTime + " — " + closeTime + "\n\n";
+      msg += "💰 Revenue: " + fR(totalRevenue) + "\n";
+      msg += "🧾 Orders: " + shiftOrders.length + "\n";
+      msg += "💵 Cash Closing: " + fR(Number(closingCash) || 0) + "\n";
+      if (note) msg += "📝 Note: " + note + "\n";
+      msg += "\n";
+
+      // Payment breakdown
+      const cashOrders = shiftOrders.filter(o => (o.pay || "").toUpperCase() === "CASH");
+      const qrisOrders = shiftOrders.filter(o => (o.pay || "").toUpperCase() === "QRIS");
+      msg += "📱 QRIS: " + qrisOrders.length + "× (" + fR(qrisOrders.reduce((s,o) => s + o.total, 0)) + ")\n";
+      msg += "💵 Cash: " + cashOrders.length + "× (" + fR(cashOrders.reduce((s,o) => s + o.total, 0)) + ")\n";
+      msg += "\n";
+
+      // Anomalies
+      if (anomCount > 0) {
+        msg += "🚨 *ANOMALI OPEN: " + anomCount + "*\n";
+        msg += "Cek Command Center untuk detail.\n\n";
+      }
+
+      // Stock alerts
+      if (stockAlerts.length > 0) {
+        msg += "⚠ *STOK KRITIS:*\n";
+        stockAlerts.forEach(s => {
+          msg += "  • " + s.name + ": " + s.stock + " " + s.unit + "\n";
+        });
+        msg += "\n";
+      }
+
+      // Waste
+      if (wasteItems.length > 0) {
+        msg += "🗑️ *WASTE HARI INI:*\n";
+        wasteItems.forEach(w => {
+          msg += "  • " + w.item_name + ": " + w.total_qty + " " + w.unit + "\n";
+        });
+        msg += "\n";
+      }
+
+      msg += "━━━━━━━━━━━━━━━━━━━━\n";
+      msg += "Bites & Co. Command Center";
+
+      await wa.sendMessage(managerWA, msg);
+      console.log("📱 Auto-report sent to " + managerWA);
+    } catch (e) {
+      console.warn("[Auto-Report] Failed:", e.message);
+    }
+  })();
+
   res.json(closed);
 });
 
@@ -2453,9 +2538,17 @@ app.patch("/api/staff-call/:id/resolve", (req, res) => {
 
 // ── Public config (CDS tracking URL etc) ──────────────────────────────
 app.get("/api/config/public", (_, res) => {
+  let auditConfig = {};
+  try {
+    const { getDb } = require("./command-center-backend");
+    const rows = getDb().prepare("SELECT key, value FROM audit_config").all();
+    rows.forEach(r => { auditConfig[r.key] = r.value; });
+    if (auditConfig.POINT_VALUE) auditConfig.POINT_VALUE = parseInt(auditConfig.POINT_VALUE) || 100;
+  } catch(e) {}
   res.json({
     trackingBaseUrl: process.env.TRACKING_BASE_URL || process.env.VITE_TRACKING_BASE_URL || null,
-    lanHost: process.env.LAN_HOST || null
+    lanHost: process.env.LAN_HOST || null,
+    ...auditConfig,
   });
 });
 

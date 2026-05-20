@@ -5,7 +5,13 @@ const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
 const fmt = (n) => (n || 0).toLocaleString("id-ID");
 
 // Konversi poin — TODO: fetch dari /api/config/public atau settings table
-const POINT_VALUE = 100; // 1 poin = Rp 100
+// POINT_VALUE — fetched from /api/config/public (configurable via admin)
+let _cachedPointValue = 100;
+fetch((import.meta.env.VITE_API_URL || "http://localhost:3001") + "/api/config/public")
+  .then(r => r.json())
+  .then(c => { if (c.POINT_VALUE) _cachedPointValue = c.POINT_VALUE; })
+  .catch(() => {});
+const getPointValue = () => _cachedPointValue;
 
 // Broadcast helper ke CDS (anti-fraud transparency)
 const cdsCast = (event, data) => {
@@ -54,13 +60,13 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
 
   // ─── Computed totals ───
   const promoDiscount = appliedPromo?.discount || 0;
-  const pointsValue = pointsOn ? pointsUsed * POINT_VALUE : 0;
+  const pointsValue = pointsOn ? pointsUsed * getPointValue() : 0;
   const finalTotal = Math.max(0, subtotal - promoDiscount - pointsValue);
   const cashChange = Math.max(0, cashReceived - finalTotal);
   const cashSufficient = payMethod === "CASH" ? cashReceived >= finalTotal : true;
   const maxPointsCanUse = Math.min(
     customerPoints,
-    Math.floor(Math.max(0, subtotal - promoDiscount) / POINT_VALUE)
+    Math.floor(Math.max(0, subtotal - promoDiscount) / getPointValue())
   );
   const hasDeduction = promoDiscount > 0 || pointsValue > 0;
 
@@ -202,12 +208,12 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
 
       // Recalc points if exceeded new max
       if (pointsOn && pointsUsed > 0) {
-        const newMax = Math.min(customerPoints, Math.floor((subtotal - discount) / POINT_VALUE));
+        const newMax = Math.min(customerPoints, Math.floor((subtotal - discount) / getPointValue()));
         if (pointsUsed > newMax) {
           setPointsUsed(newMax);
           cdsCast("pos:points_redeemed", {
             pointsUsed: newMax,
-            pointsValue: newMax * POINT_VALUE,
+            pointsValue: newMax * getPointValue(),
             newBalance: customerPoints - newMax
           });
         }
@@ -246,7 +252,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
     setPointsUsed(capped);
     cdsCast("pos:points_redeemed", {
       pointsUsed: capped,
-      pointsValue: capped * POINT_VALUE,
+      pointsValue: capped * getPointValue(),
       newBalance: customerPoints - capped
     });
   };
@@ -500,7 +506,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
                 <div style={S.pointsHeader}>
                   <div>
                     <div style={S.payTitle}>Bayar pakai poin</div>
-                    <div style={S.pointsHint}>{fmt(customerPoints)} poin · 1 poin = Rp {POINT_VALUE}</div>
+                    <div style={S.pointsHint}>{fmt(customerPoints)} poin · 1 poin = Rp {getPointValue()}</div>
                   </div>
                   <ToggleSwitch on={pointsOn} onChange={togglePoints} />
                 </div>
@@ -518,7 +524,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
                     />
                     <div style={S.pointsReadout}>
                       <span>Pakai <strong>{fmt(pointsUsed)}</strong> poin</span>
-                      <span style={S.pointsValueRp}>-Rp {fmt(pointsUsed * POINT_VALUE)}</span>
+                      <span style={S.pointsValueRp}>-Rp {fmt(pointsUsed * getPointValue())}</span>
                     </div>
                     <div style={S.pointsQuick}>
                       <button onClick={() => setPointsAmount(Math.round(maxPointsCanUse * 0.25))} style={S.pointsQuickBtn}>25%</button>
