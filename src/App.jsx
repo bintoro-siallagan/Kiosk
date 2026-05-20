@@ -20,6 +20,7 @@ import MemberList    from "./MemberList.jsx";
 import PromoManager  from "./PromoManager.jsx";
 import ShiftGate     from "./ShiftGate.jsx";
 import POSApp        from "./POSApp.jsx";
+import KDS           from "./KDS/KDS.jsx";
 import ShiftManager  from "./ShiftManager.jsx";
 
 import FlowApp from "./Flow/FlowApp.jsx";
@@ -39,6 +40,7 @@ function getScene() {
   if (q.includes("promo"))     return "promo";
   if (q.includes("shift"))     return "shift";
   if (q.includes("cds"))      return "cds";
+  if (q.includes("kds"))      return "kds";
   if (q.includes("pos"))       return "pos";
   // Check if table QR scan
   if (new URLSearchParams(q).get("table")) return "table-select";
@@ -169,6 +171,7 @@ export default function App() {
 
   if (scene === "pos") return <POSApp />;
   if (scene === "cds") return <POSCDS />;
+  if (scene === "kds") return <KDS apiBase={import.meta.env.VITE_API_URL || "http://localhost:3001"} wsUrl="/api/pos/broadcast/ws" />;
 
   return (
     <ShiftGate>

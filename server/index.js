@@ -439,6 +439,25 @@ app.post("/api/orders", (req, res) => {
   printKitchenTicket(order).catch(() => {});   // fire-and-forget kitchen print
   printCustomerReceipt(order).catch(() => {}); // fire-and-forget customer struk
   broadcast("order:new", order);
+
+  // Kitchen Display System — auto-create kitchen tickets from this order
+  if (typeof global.createKitchenTickets === 'function') {
+    try {
+      global.createKitchenTickets({
+        order_ref: order.id,
+        items: (order.items || []).map(it => ({
+          ...it,
+          menu_id: it.menu_id || it.id,
+          display_name: it.display_name || it.name || it.n,
+          qty: it.qty || it.q || 1,
+        })),
+        customer_name: order.customerName,
+        table_no: order.table && order.table !== '-' ? order.table : null,
+        cashier: order.kasir,
+      });
+    } catch (e) { console.error('[kds] createKitchenTickets:', e.message); }
+  }
+
   console.log(`✅ New order #${order.id} — ${order.type} — Rp ${order.total.toLocaleString()}`);
 
   // Push notif ke ESB POS (non-blocking)
@@ -3522,6 +3541,7 @@ const { setupBridge }           = require('./procurement-finance-bridge');
 const { setupNotifications }    = require('./notifications-backend');
 const { setupProcurement }      = require('./procurement-backend');
 const { setupShiftStaff }       = require('./shift-staff-backend');
+const { setupKDS }              = require('./kds-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3544,6 +3564,7 @@ const notifications   = setupNotifications(app, {
 });
 
 const shiftStaff = setupShiftStaff(app, { dbPath: DB_PATH });
+const kds = setupKDS(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
@@ -3552,6 +3573,7 @@ global.onGoodsReceived       = bridge.onGoodsReceived;
 global.onPaymentRecorded     = bridge.onPaymentRecorded;
 global.dispatchNotification  = notifications.dispatch;
 global.createExpense         = finance.createExpense;
+global.createKitchenTickets  = kds.createTicketsForOrder;
 
 console.log('━━━ Bites-Kiosk Wave 1+2+3 — semua module loaded ━━━');
 // ════════════════════════════════════════════════════════════
