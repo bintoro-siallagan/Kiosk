@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 import AdminMenuBuilder from "./Admin/AdminMenuBuilder.jsx";
 import AdminProcurementGaps from "./Admin/AdminProcurementGaps.jsx";
+import AdminAggregator from "./Admin/AdminAggregator.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -69,6 +70,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "finance", label: "💰 Finance", color: "#10B981" },
     { id: "menu_builder", label: "🧱 Menu Builder", color: "#8B5CF6" },
     { id: "procurement_plus", label: "🚚 Procurement+", color: "#06B6D4" },
+    { id: "aggregator", label: "🛵 Aggregator", color: "#FB7185" },
   ];
 
   return (
@@ -99,6 +101,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "finance" && <FinanceTab showToast={showToast} />}
         {tab === "menu_builder" && <AdminMenuBuilder />}
         {tab === "procurement_plus" && <AdminProcurementGaps />}
+        {tab === "aggregator" && <AdminAggregator apiBase={API} />}
       </div>
 
       {toast && <div style={S.toast}>{toast}</div>}

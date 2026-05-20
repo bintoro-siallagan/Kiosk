@@ -111,7 +111,7 @@ app.post("/api/reports/z/email", async (req, res) => {
   }
 });
 
-app.use(express.json({ limit: "5mb" }));
+app.use(express.json({ limit: "5mb", verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
 const db = require('./db');
 const wa = require('./whatsapp');
@@ -3569,6 +3569,7 @@ const { setupProcurement }      = require('./procurement-backend');
 const { setupShiftStaff }       = require('./shift-staff-backend');
 const { setupKDS }              = require('./kds-backend');
 const { setupRefundCancel }     = require('./refund-cancel-backend');
+const { setupAggregator }       = require('./aggregator-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3593,6 +3594,7 @@ const notifications   = setupNotifications(app, {
 const shiftStaff = setupShiftStaff(app, { dbPath: DB_PATH });
 const kds = setupKDS(app, { dbPath: DB_PATH });
 const refundCancel = setupRefundCancel(app, { dbPath: DB_PATH });
+const aggregator = setupAggregator(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
@@ -3603,6 +3605,7 @@ global.dispatchNotification  = notifications.dispatch;
 global.createExpense         = finance.createExpense;
 global.createKitchenTickets  = kds.createTicketsForOrder;
 global.processRefundCancel   = refundCancel.processEvent;
+global.persistAggregatorOrder = aggregator.persistOrder;
 
 console.log('━━━ Bites-Kiosk Wave 1+2+3 — semua module loaded ━━━');
 // ════════════════════════════════════════════════════════════
