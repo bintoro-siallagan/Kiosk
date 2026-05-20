@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3011";
 
@@ -20,7 +21,6 @@ export default function POSOrderHistory({ onClose, kasir = "Manager" }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
-  const [cancelTarget, setCancelTarget] = useState(null);
   const [refundTarget, setRefundTarget] = useState(null);
   const [toast, setToast] = useState(null);
 
@@ -47,6 +47,29 @@ export default function POSOrderHistory({ onClose, kasir = "Manager" }) {
   function showToast(msg, type = "info") {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
+  }
+
+  // Cancel order — gated behind manager PIN (replaces the old reason-only modal)
+  async function handleCancel(order) {
+    const auth = await requireManagerPin({
+      title: `Batalkan Order #${order.id}`,
+      message: `Total ${fIDR(order.total)}. Order ditandai batal & tidak bisa di-undo — cash drawer perlu reconcile manual.`,
+      requireReason: true,
+    });
+    if (!auth.ok) return;
+    try {
+      const res = await fetch(`${API}/api/orders/${order.id}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason: auth.reason, cancelledBy: auth.manager_id, managerPin: auth.pin }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Cancel failed");
+      showToast("✓ Order dibatalkan", "success");
+      loadOrders();
+    } catch (e) {
+      showToast("❌ Gagal: " + e.message, "error");
+    }
   }
 
   // Filter logic
@@ -121,26 +144,12 @@ export default function POSOrderHistory({ onClose, kasir = "Manager" }) {
             <OrderRow
               key={o.id}
               order={o}
-              onCancel={() => setCancelTarget(o)}
+              onCancel={() => handleCancel(o)}
               onRefund={() => setRefundTarget(o)}
             />
           ))}
         </div>
       </div>
-
-      {/* Cancel Modal */}
-      {cancelTarget && (
-        <CancelModal
-          order={cancelTarget}
-          kasir={kasir}
-          onClose={() => setCancelTarget(null)}
-          onSuccess={() => {
-            setCancelTarget(null);
-            showToast("✓ Order dibatalkan", "success");
-            loadOrders();
-          }}
-        />
-      )}
 
       {/* Refund Modal */}
       {refundTarget && (
@@ -239,83 +248,6 @@ function OrderRow({ order, onCancel, onRefund }) {
   );
 }
 
-function CancelModal({ order, kasir, onClose, onSuccess }) {
-  const [reason, setReason] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
-  async function handleConfirm() {
-    if (!reason.trim()) {
-      alert("Alasan wajib diisi");
-      return;
-    }
-    if (!confirm(`Yakin batalkan order #${order.id}?\nAlasan: ${reason}`)) return;
-
-    setSubmitting(true);
-    try {
-      const res = await fetch(`${API}/api/orders/${order.id}/cancel`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason: reason.trim(), cancelledBy: kasir }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Cancel failed");
-      onSuccess();
-    } catch (e) {
-      alert("❌ Gagal: " + e.message);
-      setSubmitting(false);
-    }
-  }
-
-  return (
-    <div style={S.modalOverlay}>
-      <div style={S.actionModal}>
-        <div style={S.actionHeader}>
-          <span style={{fontSize: 24}}>✕</span>
-          <div>
-            <div style={S.actionTitle}>Batalkan Order</div>
-            <div style={S.actionSub}>#{order.id} · {fIDR(order.total)}</div>
-          </div>
-        </div>
-
-        <div style={S.actionBody}>
-          <div style={S.actionWarning}>
-            ⚠️ Order akan ditandai batal. Tidak bisa di-undo. Cash drawer perlu reconcile manual.
-          </div>
-
-          <label style={S.label}>
-            Alasan pembatalan <span style={{color: "#F87171"}}>*</span>
-          </label>
-          <textarea
-            value={reason}
-            onChange={e => setReason(e.target.value)}
-            placeholder="Contoh: Customer batal, salah pesan, masalah teknis..."
-            style={S.textarea}
-            rows={3}
-            autoFocus
-          />
-
-          <div style={S.kasirInfo}>
-            Yang membatalkan: <strong>{kasir}</strong>
-          </div>
-        </div>
-
-        <div style={S.actionFooter}>
-          <button onClick={onClose} style={S.btnSecondary} disabled={submitting}>
-            Tidak Jadi
-          </button>
-          <button
-            onClick={handleConfirm}
-            style={S.btnDanger}
-            disabled={submitting || !reason.trim()}
-          >
-            {submitting ? "Memproses..." : "Konfirmasi Batal"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function RefundModal({ order, kasir, onClose, onSuccess }) {
   const total = order.total || 0;
   const alreadyRefunded = order.refundedAmount || 0;
@@ -334,11 +266,12 @@ function RefundModal({ order, kasir, onClose, onSuccess }) {
       alert("Cek amount dan alasan");
       return;
     }
-    const confirmMsg = isFullRefund
-      ? `Refund PENUH order #${order.id} sebesar ${fIDR(amountNum)}?`
-      : `Refund SEBAGIAN order #${order.id} sebesar ${fIDR(amountNum)}?\nSisa setelah refund: ${fIDR(maxRefundable - amountNum)}`;
-
-    if (!confirm(confirmMsg + "\nAlasan: " + reason)) return;
+    const auth = await requireManagerPin({
+      title: `Refund Order #${order.id}`,
+      message: `${isFullRefund ? 'Refund PENUH' : 'Refund sebagian'} ${fIDR(amountNum)}` +
+               `${isFullRefund ? '' : ` · sisa ${fIDR(maxRefundable - amountNum)}`}.`,
+    });
+    if (!auth.ok) return;
 
     setSubmitting(true);
     try {
@@ -348,8 +281,9 @@ function RefundModal({ order, kasir, onClose, onSuccess }) {
         body: JSON.stringify({
           amount: amountNum,
           reason: reason.trim(),
-          refundedBy: kasir,
-          fullRefund: isFullRefund
+          refundedBy: auth.manager_id,
+          fullRefund: isFullRefund,
+          managerPin: auth.pin
         }),
       });
       const data = await res.json();

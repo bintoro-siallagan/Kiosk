@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 import AdminMenuBuilder from "./Admin/AdminMenuBuilder.jsx";
 import AdminProcurementGaps from "./Admin/AdminProcurementGaps.jsx";
+import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const TOKEN = () => localStorage.getItem("adminToken") || "";
@@ -598,6 +599,11 @@ function MasterItemTab({ showToast }) {
     if (!form.name || !form.price) return;
     const body = { ...form, price: Number(form.price), freeToppings: Number(form.freeToppings) };
     if (editId) {
+      const auth = await requireManagerPin({
+        title: `Ubah Menu "${form.name}"`,
+        message: `Perubahan data menu master — harga baru Rp ${Number(form.price).toLocaleString('id-ID')}.`,
+      });
+      if (!auth.ok) return;
       await api("/api/menu/" + editId, { method: "PUT", body: JSON.stringify(body) });
       showToast("Item updated");
     } else {
@@ -615,6 +621,12 @@ function MasterItemTab({ showToast }) {
   };
 
   const handleDelete = async (id, name) => {
+    const auth = await requireManagerPin({
+      title: `Hapus Menu "${name}"`,
+      message: `Item master "${name}" akan dihapus permanen dari menu.`,
+      requireReason: true,
+    });
+    if (!auth.ok) return;
     await api("/api/menu/" + id, { method: "DELETE" });
     showToast(name + " dihapus");
     load();
