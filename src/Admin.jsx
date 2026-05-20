@@ -606,6 +606,20 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
           ))}
         </div>
 
+        <div style={D.sideLinks}>
+          <div style={D.sideDivider}>MANAGEMENT</div>
+          {[
+            {label:"👤 Staff & PIN", fn:() => onTools && onTools("staff")},
+            {label:"📦 Gudang & Stok", fn:() => onTools && onTools("gudang")},
+            {label:"🗑️ Log Waste", fn:() => onTools && onTools("waste")},
+            {label:"⚙️ Konfigurasi", fn:() => onTools && onTools("config")},
+            {label:"📋 Audit Trail", fn:() => onTools && onTools("audit")},
+            {label:"📊 Command Center", fn:() => onTools && onTools("command")},
+          ].map(l=>(
+            <button key={l.label} style={D.sideLink} onClick={l.fn}>{l.label}</button>
+          ))}
+        </div>
+
         <div style={D.sideBottom}>
           <div style={D.clock}>{time.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</div>
           <div style={D.clockSub}>{time.toLocaleDateString("id-ID",{weekday:"short",day:"numeric",month:"short"})}</div>

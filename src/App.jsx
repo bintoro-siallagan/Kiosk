@@ -9,6 +9,7 @@ import CustomerInput from "./CustomerInput.jsx";
 import Payment       from "./Payment.jsx";
 import DigitalReceipt from "./DigitalReceipt.jsx";
 import CommandCenter from "./CommandCenter.jsx";
+import AdminTools from "./AdminTools.jsx";
 
 import Admin         from "./Admin.jsx";
 import Report        from "./Report.jsx";
@@ -26,6 +27,7 @@ import { MenuProvider } from "./MenuContext.jsx";
 function getScene() {
   const q = window.location.search;
   if (new URLSearchParams(q).get("command")) return "command";
+  if (q.includes("tools")) return "tools";
   if (new URLSearchParams(q).get("flow")) return "flow";
   if (new URLSearchParams(q).get("trackorder")) return "customer-track";
   if (q.includes("track"))     return "track";
@@ -45,6 +47,7 @@ function getScene() {
 
 export default function App() {
   const [scene,        setScene]    = useState(getScene);
+  const [toolsTab, setToolsTab] = useState("staff");
   const [trackOrderId, setTrackOrderId] = useState(() => new URLSearchParams(window.location.search).get("trackorder"));
   const [adminSession, setAdmin]    = useState(() => {
     const token = localStorage.getItem("adminToken");
@@ -102,17 +105,18 @@ export default function App() {
   }
 
   // Admin routes — check login
-  const adminRoutes = ["admin","report","esb-sync","esb-notif","members","promo","shift","command"];
+  const adminRoutes = ["admin","report","esb-sync","esb-notif","members","promo","shift","command","tools"];
 
 
   if (adminRoutes.includes(scene) && !adminSession) return <AdminLogin onLogin={handleAdminLogin}/>;
 
   if (scene === "admin-login") return <AdminLogin onLogin={handleAdminLogin}/>;
-  if (scene === "command") return <CommandCenter />;  // already has own zoom
+  if (scene === "tools") return <AdminTools onBack={() => { setScene("admin"); }} initialTab={toolsTab} />;
+  if (scene === "command") return <CommandCenter />;
   if (scene === "flow") return <FlowApp />;
   if (scene === "customer-track") return <CustomerTrackingPage orderId={trackOrderId}/>;
   if (scene === "track")       return <OrderTracking onHome={go("kiosk")}/>;
-  if (scene === "admin")       return <Admin onExit={go("kiosk")} onReport={go("report")} onESBSync={go("esb-sync")} onESBNotif={go("esb-notif")} onMembers={go("members")} onPromo={go("promo")} onShift={go("shift")} onLogout={handleAdminLogout} adminSession={adminSession}/>;
+  if (scene === "admin")       return <Admin onExit={go("kiosk")} onReport={go("report")} onESBSync={go("esb-sync")} onESBNotif={go("esb-notif")} onMembers={go("members")} onPromo={go("promo")} onShift={go("shift")} onLogout={handleAdminLogout} adminSession={adminSession} onTools={(tab) => { if (tab === "command") { setScene("command"); } else { setToolsTab(tab); setScene("tools"); } }}/>;
   if (scene === "report")      return <Report    onBack={go("admin")}/>;
   if (scene === "esb-sync")    return <ESBSync   onBack={go("admin")}/>;
   if (scene === "esb-notif")   return <ESBNotif  onBack={go("admin")}/>;
