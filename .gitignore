@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# Verify/debug temp scripts
+_*.mjs
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
