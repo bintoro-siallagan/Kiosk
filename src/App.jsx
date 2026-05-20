@@ -69,7 +69,7 @@ export default function App() {
 
   function handleAdminLogin(session) {
     setAdmin(session);
-    setScene(getScene() || "admin");  // redirect back to original URL scene
+    const _target = getScene(); setScene(_target === "admin-login" ? "admin" : (_target || "admin"));
   }
 
   function handleAdminLogout() {
