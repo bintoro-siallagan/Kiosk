@@ -62,6 +62,8 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "waste", label: "🗑️ Log Waste", color: "#F97316" },
     { id: "config", label: "⚙️ Konfigurasi", color: "#A78BFA" },
     { id: "audit", label: "📋 Audit Trail", color: "#14B8A6" },
+    { id: "master", label: "🍽️ Master Item", color: "#EC4899" },
+    { id: "finance", label: "💰 Finance", color: "#10B981" },
   ];
 
   return (
@@ -88,6 +90,8 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "waste" && <WasteTab showToast={showToast} />}
         {tab === "config" && <ConfigTab showToast={showToast} />}
         {tab === "audit" && <AuditTab />}
+        {tab === "master" && <MasterItemTab showToast={showToast} />}
+        {tab === "finance" && <FinanceTab showToast={showToast} />}
       </div>
 
       {toast && <div style={S.toast}>{toast}</div>}
@@ -559,6 +563,229 @@ function AuditTab() {
                 </div>
               );
             })
+        }
+      </div>
+    </div>
+  );
+}
+
+
+// ═══ MASTER ITEM TAB ═══
+function MasterItemTab({ showToast }) {
+  const [items, setItems] = useState([]);
+  const [cats, setCats] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState({ cat:"froyo", emoji:"🍦", name:"", desc:"", price:"", freeToppings:"0" });
+  const [editId, setEditId] = useState(null);
+  const [filter, setFilter] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const [m, c] = await Promise.all([api("/api/menu"), api("/api/categories")]);
+    setItems(Array.isArray(m) ? m : []);
+    setCats(Array.isArray(c) ? c : []);
+    setLoading(false);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const handleSubmit = async () => {
+    if (!form.name || !form.price) return;
+    const body = { ...form, price: Number(form.price), freeToppings: Number(form.freeToppings) };
+    if (editId) {
+      await api("/api/menu/" + editId, { method: "PUT", body: JSON.stringify(body) });
+      showToast("Item updated");
+    } else {
+      await apiPost("/api/menu", body);
+      showToast(form.name + " ditambahkan");
+    }
+    setForm({ cat:"froyo", emoji:"🍦", name:"", desc:"", price:"", freeToppings:"0" });
+    setEditId(null);
+    load();
+  };
+
+  const handleEdit = (item) => {
+    setEditId(item.id);
+    setForm({ cat:item.cat, emoji:item.emoji, name:item.name, desc:item.desc||"", price:String(item.price), freeToppings:String(item.freeToppings||0) });
+  };
+
+  const handleDelete = async (id, name) => {
+    await api("/api/menu/" + id, { method: "DELETE" });
+    showToast(name + " dihapus");
+    load();
+  };
+
+  const handleToggle = async (item) => {
+    await apiPatch("/api/menu/" + item.id, { avail: !item.avail });
+    showToast(item.name + (item.avail ? " OFF" : " ON"));
+    load();
+  };
+
+  const filtered = filter ? items.filter(i => i.cat === filter) : items;
+  const grouped = {};
+  filtered.forEach(i => { if (!grouped[i.cat]) grouped[i.cat] = []; grouped[i.cat].push(i); });
+
+  return (
+    <div>
+      <div style={S.card}>
+        <div style={S.label}>{editId ? "Edit Item" : "Tambah Item Baru"}</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 2fr",gap:10,marginBottom:10}}>
+          <div>
+            <div style={{fontSize:11,color:"#666",marginBottom:4}}>Kategori</div>
+            <select style={{...S.input,cursor:"pointer"}} value={form.cat} onChange={e=>setForm(f=>({...f,cat:e.target.value}))}>
+              {cats.map(c=><option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <div style={{fontSize:11,color:"#666",marginBottom:4}}>Emoji</div>
+            <input style={S.input} value={form.emoji} onChange={e=>setForm(f=>({...f,emoji:e.target.value}))} placeholder="🍦"/>
+          </div>
+          <div>
+            <div style={{fontSize:11,color:"#666",marginBottom:4}}>Nama Produk</div>
+            <input style={S.input} value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Nama item..."/>
+          </div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr 1fr",gap:10}}>
+          <div>
+            <div style={{fontSize:11,color:"#666",marginBottom:4}}>Deskripsi</div>
+            <input style={S.input} value={form.desc} onChange={e=>setForm(f=>({...f,desc:e.target.value}))} placeholder="Deskripsi..."/>
+          </div>
+          <div>
+            <div style={{fontSize:11,color:"#666",marginBottom:4}}>Harga (Rp)</div>
+            <input style={S.input} type="number" value={form.price} onChange={e=>setForm(f=>({...f,price:e.target.value}))} placeholder="50000"/>
+          </div>
+          <div>
+            <div style={{fontSize:11,color:"#666",marginBottom:4}}>Free Topping</div>
+            <input style={S.input} type="number" value={form.freeToppings} onChange={e=>setForm(f=>({...f,freeToppings:e.target.value}))} placeholder="0"/>
+          </div>
+          <div style={{display:"flex",alignItems:"flex-end",gap:6}}>
+            <button onClick={handleSubmit} style={S.btn("#EC4899")}>{editId?"Update":"+ Tambah"}</button>
+            {editId&&<button onClick={()=>{setEditId(null);setForm({cat:"froyo",emoji:"🍦",name:"",desc:"",price:"",freeToppings:"0"});}} style={S.btnDanger}>X</button>}
+          </div>
+        </div>
+      </div>
+
+      <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
+        <button onClick={()=>setFilter("")} style={S.btn(!filter?"#EC4899":"#555")}>Semua ({items.length})</button>
+        {cats.map(c=><button key={c.id} onClick={()=>setFilter(c.id)} style={S.btn(filter===c.id?"#EC4899":"#555")}>{c.emoji} {c.name}</button>)}
+      </div>
+
+      {loading?<div style={{color:"#555"}}>Loading...</div>:
+        Object.entries(grouped).map(([cat,catItems])=>{
+          const ci=cats.find(c=>c.id===cat)||{name:cat,emoji:"📋"};
+          return(
+            <div key={cat} style={S.card}>
+              <div style={S.label}>{ci.emoji} {ci.name} ({catItems.length})</div>
+              {catItems.map(item=>(
+                <div key={item.id} style={{...S.row,opacity:item.avail?1:0.5,gap:8,flexWrap:"wrap"}}>
+                  <div style={{display:"flex",alignItems:"center",gap:8,flex:2,minWidth:180}}>
+                    <span style={{fontSize:22}}>{item.emoji}</span>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:600}}>{item.name}</div>
+                      <div style={{fontSize:11,color:"#555"}}>#{item.id} · {item.desc}</div>
+                    </div>
+                  </div>
+                  <span style={{fontSize:15,fontWeight:700,color:"#F59E0B",fontFamily:"'Space Mono',monospace",minWidth:90}}>{fR(item.price)}</span>
+                  <span style={S.badge(item.avail?"#34D399":"#F87171")}>{item.avail?"Aktif":"Off"}</span>
+                  {item.freeToppings>0&&<span style={{fontSize:11,color:"#888"}}>+{item.freeToppings} topping</span>}
+                  <div style={{display:"flex",gap:4}}>
+                    <button onClick={()=>handleToggle(item)} style={S.btn(item.avail?"#F87171":"#34D399")}>{item.avail?"Off":"On"}</button>
+                    <button onClick={()=>handleEdit(item)} style={S.btn("#3B82F6")}>Edit</button>
+                    <button onClick={()=>handleDelete(item.id,item.name)} style={S.btnDanger}>Hapus</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })
+      }
+    </div>
+  );
+}
+
+// ═══ FINANCE TAB ═══
+function FinanceTab({ showToast }) {
+  const [pnl, setPnl] = useState(null);
+  const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState({ category:"Bahan Baku", description:"", amount:"" });
+  const expCats = ["Bahan Baku","Packaging","Gaji","Sewa","Listrik & Air","Marketing","Maintenance","Lainnya"];
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const [p, e] = await Promise.all([api("/api/finance/pnl"), api("/api/finance/expenses")]);
+    setPnl(p);
+    setExpenses(e?.items || []);
+    setLoading(false);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  const handleSubmit = async () => {
+    if (!form.amount) return;
+    await apiPost("/api/finance/expenses", { ...form, amount: Number(form.amount) });
+    showToast("Expense logged");
+    setForm({ category:"Bahan Baku", description:"", amount:"" });
+    load();
+  };
+
+  return (
+    <div>
+      {pnl&&(
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12,marginBottom:16}}>
+          <div style={{...S.card,borderLeft:"4px solid #10B981",marginBottom:0}}>
+            <div style={S.label}>Revenue</div>
+            <div style={{fontSize:24,fontWeight:700,color:"#10B981",fontFamily:"'Space Mono',monospace"}}>{fR(pnl.revenue?.gross||0)}</div>
+            <div style={{fontSize:11,color:"#555"}}>{pnl.revenue?.orders||0} orders</div>
+          </div>
+          <div style={{...S.card,borderLeft:"4px solid #F59E0B",marginBottom:0}}>
+            <div style={S.label}>PPN 11%</div>
+            <div style={{fontSize:24,fontWeight:700,color:"#F59E0B",fontFamily:"'Space Mono',monospace"}}>{fR(pnl.revenue?.tax||0)}</div>
+          </div>
+          <div style={{...S.card,borderLeft:"4px solid #EF4444",marginBottom:0}}>
+            <div style={S.label}>Expenses</div>
+            <div style={{fontSize:24,fontWeight:700,color:"#EF4444",fontFamily:"'Space Mono',monospace"}}>{fR(pnl.expenses?.total||0)}</div>
+          </div>
+          <div style={{...S.card,borderLeft:"4px solid "+((pnl.profit?.net||0)>=0?"#10B981":"#EF4444"),marginBottom:0}}>
+            <div style={S.label}>Net Profit</div>
+            <div style={{fontSize:24,fontWeight:700,color:(pnl.profit?.net||0)>=0?"#10B981":"#EF4444",fontFamily:"'Space Mono',monospace"}}>{fR(pnl.profit?.net||0)}</div>
+            <div style={{fontSize:11,color:"#555"}}>Margin {pnl.profit?.margin||0}%</div>
+          </div>
+        </div>
+      )}
+
+      <div style={S.card}>
+        <div style={S.label}>+ Input Expense</div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 2fr 1fr auto",gap:10,alignItems:"flex-end"}}>
+          <div>
+            <div style={{fontSize:11,color:"#666",marginBottom:4}}>Kategori</div>
+            <select style={{...S.input,cursor:"pointer"}} value={form.category} onChange={e=>setForm(f=>({...f,category:e.target.value}))}>
+              {expCats.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <div style={{fontSize:11,color:"#666",marginBottom:4}}>Deskripsi</div>
+            <input style={S.input} value={form.description} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="Beli yogurt base 5kg..."/>
+          </div>
+          <div>
+            <div style={{fontSize:11,color:"#666",marginBottom:4}}>Amount (Rp)</div>
+            <input style={S.input} type="number" value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))} placeholder="250000"/>
+          </div>
+          <button onClick={handleSubmit} style={S.btn("#10B981")}>Simpan</button>
+        </div>
+      </div>
+
+      <div style={S.card}>
+        <div style={S.label}>Riwayat Expense ({expenses.length})</div>
+        {loading?<div style={{color:"#555"}}>Loading...</div>:
+          expenses.length===0?<div style={{color:"#555",padding:12}}>Belum ada expense</div>:
+            expenses.map((e,i)=>(
+              <div key={e.id||i} style={S.row}>
+                <div>
+                  <div style={{fontSize:14,fontWeight:600,color:"#EF4444"}}>{e.category}</div>
+                  <div style={{fontSize:11,color:"#555"}}>{e.description||"—"} · {e.date}</div>
+                </div>
+                <span style={{fontSize:15,fontWeight:700,color:"#EF4444",fontFamily:"'Space Mono',monospace"}}>{fR(e.amount)}</span>
+              </div>
+            ))
         }
       </div>
     </div>
