@@ -309,7 +309,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
           // ── NEW: discount fields ──
           promoCode: appliedPromo?.code || null,
           promoType: appliedPromo?.type || null,
-          discountAmount: promoDiscount,
+          promoDiscount,
           pointsUsed,
           pointsValue,
           // ── /NEW ──
