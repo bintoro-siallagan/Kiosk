@@ -102,7 +102,7 @@ export default function App() {
   }
 
   // Admin routes — check login
-  const adminRoutes = ["admin","report","esb-sync","esb-notif","members","promo","shift"];
+  const adminRoutes = ["admin","report","esb-sync","esb-notif","members","promo","shift","command"];
 
 
   if (adminRoutes.includes(scene) && !adminSession) return <AdminLogin onLogin={handleAdminLogin}/>;

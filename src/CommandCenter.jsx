@@ -30,8 +30,14 @@ const clk=()=>{const d=new Date();return[d.getHours(),d.getMinutes(),d.getSecond
 const ago=ts=>{const m=Math.floor((Date.now()-new Date(ts).getTime())/6e4);return m<1?"now":m<60?m+"m":Math.floor(m/60)+"h";};
 
 async function fetchApi(path){
-  try{const r=await fetch(`${API_BASE}${path}`);if(!r.ok)throw new Error(r.status);return await r.json();}
-  catch(e){return null;}
+  try{
+    const token = localStorage.getItem("adminToken") || "";
+    const r = await fetch(`${API_BASE}${path}`, {
+      headers: token ? { "Authorization": `Bearer ${token}` } : {}
+    });
+    if(!r.ok) throw new Error(r.status);
+    return await r.json();
+  } catch(e){return null;}
 }
 
 // ── UI ATOMS ────────────────────────────────────────────────

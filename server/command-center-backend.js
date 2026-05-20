@@ -609,6 +609,91 @@ function registerAuditEndpoints(app, _dbWrapper) {
     res.json({ ok: true, id });
   });
 
+  // ── Restock (PO masuk / tambah stok) ──
+  app.post("/api/audit/warehouse/:id/restock", (req, res) => {
+    const { id } = req.params;
+    const { quantity, note, supplier } = req.body || {};
+    if (!quantity || quantity <= 0) return res.status(400).json({ error: "quantity required (> 0)" });
+
+    const item = db.prepare("SELECT * FROM audit_warehouse WHERE id = ?").get(id);
+    if (!item) return res.status(404).json({ error: "Item not found" });
+
+    const newStock = item.stock + quantity;
+    db.prepare("UPDATE audit_warehouse SET stock = ?, last_restock = datetime('now'), updated_at = datetime('now') WHERE id = ?").run(newStock, id);
+
+    // Log to pos_events for audit trail
+    try {
+      db.prepare("INSERT INTO pos_events (event_type, data, order_id, amount) VALUES (?, ?, ?, ?)").run(
+        "warehouse:restock",
+        JSON.stringify({ itemId: id, itemName: item.name, quantity, previousStock: item.stock, newStock, note, supplier }),
+        null, quantity
+      );
+    } catch(e) {}
+
+    console.log("[Audit] Restock:", item.name, "+", quantity, item.unit, "→", newStock);
+    res.json({ ok: true, item: { ...item, stock: newStock } });
+  });
+
+  // ── Stock Opname (stock take — set exact stock) ──
+  app.post("/api/audit/warehouse/stock-take", (req, res) => {
+    const { items } = req.body || {};
+    if (!items || !Array.isArray(items)) return res.status(400).json({ error: "items array required [{id, actualStock}]" });
+
+    const results = [];
+    const stmt = db.prepare("UPDATE audit_warehouse SET stock = ?, updated_at = datetime('now') WHERE id = ?");
+    const logStmt = db.prepare("INSERT INTO pos_events (event_type, data, amount) VALUES (?, ?, ?)");
+
+    items.forEach(({ id, actualStock }) => {
+      const item = db.prepare("SELECT * FROM audit_warehouse WHERE id = ?").get(id);
+      if (!item) return;
+
+      const diff = actualStock - item.stock;
+      stmt.run(actualStock, id);
+
+      try {
+        logStmt.run("warehouse:stock_take", JSON.stringify({
+          itemId: id, itemName: item.name,
+          systemStock: item.stock, actualStock, difference: diff
+        }), diff);
+      } catch(e) {}
+
+      results.push({
+        id, name: item.name,
+        systemStock: item.stock, actualStock, difference: diff,
+        status: diff === 0 ? "match" : diff > 0 ? "surplus" : "shortage"
+      });
+    });
+
+    const mismatches = results.filter(r => r.difference !== 0);
+    if (mismatches.length > 0) {
+      console.log("[Audit] Stock take:", mismatches.length, "mismatches found");
+    }
+
+    res.json({ ok: true, results, mismatches: mismatches.length });
+  });
+
+  // ── Warehouse Summary (for dashboard) ──
+  app.get("/api/audit/warehouse/summary", (req, res) => {
+    const items = db.prepare("SELECT * FROM audit_warehouse ORDER BY category, name").all();
+    const critical = items.filter(i => i.stock <= i.min_stock);
+    const totalValue = items.reduce((s, i) => s + (i.stock * i.cost_per_unit), 0);
+    const totalItems = items.length;
+
+    // PPIC forecast — items running low within 7 days
+    const forecast = items.filter(i => {
+      if (i.daily_use <= 0) return false;
+      const daysLeft = Math.floor(i.stock / i.daily_use);
+      return daysLeft <= 7;
+    }).map(i => ({
+      ...i,
+      daysLeft: Math.floor(i.stock / i.daily_use),
+      orderQty: Math.max(i.max_stock - i.stock, 0),
+      orderCost: Math.max(i.max_stock - i.stock, 0) * i.cost_per_unit,
+    })).sort((a, b) => a.daysLeft - b.daysLeft);
+
+    res.json({ totalItems, critical: critical.length, totalValue, forecast, items });
+  });
+
   // ── Promo performance ──
   app.get("/api/audit/promo", (req, res) => {
     const today = new Date();
@@ -658,6 +743,24 @@ function registerAuditEndpoints(app, _dbWrapper) {
     db.prepare("INSERT OR REPLACE INTO audit_config (key, value, updated_at) VALUES (?, ?, datetime('now'))").run(key, String(value));
     console.log("[Audit] Config updated:", key, "=", value);
     res.json({ ok: true, key, value });
+  });
+
+  // ── All configs (admin view) ──
+  app.get("/api/audit/config", (req, res) => {
+    const rows = db.prepare("SELECT key, value, updated_at FROM audit_config ORDER BY key").all();
+    res.json({ items: rows });
+  });
+
+  // ── Batch config update ──
+  app.post("/api/audit/config/batch", (req, res) => {
+    const { configs } = req.body || {};
+    if (!configs || typeof configs !== "object") return res.status(400).json({ error: "configs object required" });
+    const stmt = db.prepare("INSERT OR REPLACE INTO audit_config (key, value, updated_at) VALUES (?, ?, datetime('now'))");
+    Object.entries(configs).forEach(([key, value]) => {
+      stmt.run(key, String(value));
+    });
+    console.log("[Audit] Config batch updated:", Object.keys(configs).join(", "));
+    res.json({ ok: true, updated: Object.keys(configs) });
   });
 
   // ── Waste Tracking ──

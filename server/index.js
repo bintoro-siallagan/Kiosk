@@ -3313,6 +3313,32 @@ app.post("/api/orders/:id/split-settle", (req, res) => {
 });
 
 
+// ─── AUDIT AUTH MIDDLEWARE ───────────────────────────────
+function requireAdmin(req, res, next) {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+  if (!token || !adminSessions.has(token)) {
+    return res.status(401).json({ error: "Unauthorized — admin login required" });
+  }
+  req.adminUser = adminSessions.get(token);
+  next();
+}
+
+function requireManager(req, res, next) {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+  if (!token || !adminSessions.has(token)) {
+    return res.status(401).json({ error: "Unauthorized — admin login required" });
+  }
+  const session = adminSessions.get(token);
+  if (session.role !== "manager") {
+    return res.status(403).json({ error: "Forbidden — manager role required" });
+  }
+  req.adminUser = session;
+  next();
+}
+
+// Apply auth to all /api/audit/* routes
+app.use("/api/audit", requireAdmin);
+
 // ─── COMMAND CENTER AUDIT MODULE ───────────────────────
 const { initAuditModule, registerAuditEndpoints, auditEngine } = require("./command-center-backend");
 initAuditModule(db);
