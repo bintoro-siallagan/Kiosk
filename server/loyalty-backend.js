@@ -528,6 +528,40 @@ function setupLoyalty(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // Tambah tier baru
+  router.post('/tiers', (req, res) => {
+    const b = req.body || {};
+    const code = String(b.code || '').trim().toLowerCase();
+    if (!code || !b.name) return res.status(400).json({ error: 'code + name wajib diisi' });
+    if (!/^[a-z0-9_]+$/.test(code)) return res.status(400).json({ error: 'code cuma boleh huruf kecil/angka/underscore' });
+    if (db.prepare(`SELECT code FROM loyalty_tiers WHERE code = ?`).get(code)) {
+      return res.status(409).json({ error: `tier '${code}' sudah ada` });
+    }
+    const maxOrder = db.prepare(`SELECT COALESCE(MAX(sort_order), 0) m FROM loyalty_tiers`).get().m;
+    db.prepare(`INSERT INTO loyalty_tiers (code, name, min_lifetime_spend, min_visits, earn_multiplier, color, emoji, sort_order, benefits)
+      VALUES (?,?,?,?,?,?,?,?,?)`).run(
+      code, b.name,
+      Number(b.min_lifetime_spend) || 0, Number(b.min_visits) || 0,
+      Number(b.earn_multiplier) || 1.0, b.color || '#888888', b.emoji || '🎯',
+      b.sort_order != null ? Number(b.sort_order) : maxOrder + 1,
+      b.benefits ? (typeof b.benefits === 'object' ? JSON.stringify(b.benefits) : b.benefits) : null,
+    );
+    res.json({ ok: true, code });
+  });
+
+  // Hapus tier
+  router.delete('/tiers/:code', (req, res) => {
+    const code = req.params.code;
+    if (code === 'bronze') return res.status(400).json({ error: 'tier dasar (bronze) gak bisa dihapus' });
+    if (!db.prepare(`SELECT code FROM loyalty_tiers WHERE code = ?`).get(code)) {
+      return res.status(404).json({ error: 'tier tidak ditemukan' });
+    }
+    const used = db.prepare(`SELECT COUNT(*) c FROM loyalty_customers WHERE current_tier_code = ?`).get(code).c;
+    if (used > 0) return res.status(409).json({ error: `gak bisa dihapus — masih ada ${used} member di tier ini` });
+    db.prepare(`DELETE FROM loyalty_tiers WHERE code = ?`).run(code);
+    res.json({ ok: true });
+  });
+
   // REWARDS
   router.get('/rewards', (req, res) => {
     res.json(db.prepare(`SELECT * FROM loyalty_rewards ORDER BY display_order, cost_points`).all());

@@ -17,6 +17,8 @@ export default function AdminLoyalty({ apiBase = '' }) {
   const [showRewardForm, setShowRewardForm] = useState(false);
   const [editReward, setEditReward] = useState(null);
   const [showAdjust, setShowAdjust] = useState(null);
+  const [showTierForm, setShowTierForm] = useState(false);
+  const [tierForm, setTierForm] = useState({ code: '', name: '', emoji: '🎯', color: '#888888', min_lifetime_spend: '', earn_multiplier: '' });
 
   const loadStats = useCallback(async () => {
     try { setStats(await fetch(`${apiBase}/api/loyalty/stats`).then(r => r.json())); } catch {}
@@ -36,6 +38,32 @@ export default function AdminLoyalty({ apiBase = '' }) {
   const loadRewards = useCallback(async () => {
     try { setRewards(await fetch(`${apiBase}/api/loyalty/rewards`).then(r => r.json())); } catch {}
   }, [apiBase]);
+
+  const saveTier = async () => {
+    const f = tierForm;
+    if (!f.code.trim() || !f.name.trim()) { alert('Code & nama tier wajib diisi'); return; }
+    const r = await fetch(`${apiBase}/api/loyalty/tiers`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        code: f.code, name: f.name, emoji: f.emoji, color: f.color,
+        min_lifetime_spend: Number(f.min_lifetime_spend) || 0,
+        earn_multiplier: Number(f.earn_multiplier) || 1,
+      }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { alert(d.error || 'Gagal nambah tier'); return; }
+    setShowTierForm(false);
+    setTierForm({ code: '', name: '', emoji: '🎯', color: '#888888', min_lifetime_spend: '', earn_multiplier: '' });
+    loadTiers();
+  };
+
+  const deleteTier = async (code) => {
+    if (!window.confirm(`Hapus tier "${code}"?`)) return;
+    const r = await fetch(`${apiBase}/api/loyalty/tiers/${code}`, { method: 'DELETE' });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { alert(d.error || 'Gagal hapus tier'); return; }
+    loadTiers();
+  };
 
   useEffect(() => {
     if (tab === 'dashboard') loadStats();
@@ -188,10 +216,37 @@ export default function AdminLoyalty({ apiBase = '' }) {
       {/* TIERS */}
       {tab === 'tiers' && (
         <div style={{padding: 16}}>
-          <h3 style={styles.sectionTitle}>Tier Configuration</h3>
-          <div style={{fontSize: 12, color: '#9ca3af', marginBottom: 14, padding: 10, background: '#0f1a2a', borderRadius: 6}}>
-            💡 Tier auto-promote saat customer crosses min_lifetime_spend threshold. Edit lewat API: PUT /api/loyalty/tiers/:code
+          <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12}}>
+            <h3 style={styles.sectionTitle}>Tier Configuration</h3>
+            <button onClick={() => setShowTierForm(v => !v)} style={styles.btnPrimary}>
+              {showTierForm ? '× Tutup' : '+ Tambah Tier'}
+            </button>
           </div>
+          <div style={{fontSize: 12, color: '#9ca3af', marginBottom: 14, padding: 10, background: '#0f1a2a', borderRadius: 6}}>
+            💡 Tier auto-promote saat customer lewat threshold min_lifetime_spend.
+          </div>
+
+          {showTierForm && (
+            <div style={{...styles.tierCard, borderLeft: '4px solid #f97316', marginBottom: 14}}>
+              <div style={{fontSize: 13, fontWeight: 600, marginBottom: 10}}>Tier Baru</div>
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px,1fr))', gap: 8}}>
+                {[
+                  ['code', 'Code (cth: diamond)', 'text'],
+                  ['name', 'Nama tier', 'text'],
+                  ['emoji', 'Emoji', 'text'],
+                  ['min_lifetime_spend', 'Min lifetime spend', 'number'],
+                  ['earn_multiplier', 'Earn multiplier (cth 1.5)', 'number'],
+                  ['color', 'Warna (#hex)', 'text'],
+                ].map(([k, ph, type]) => (
+                  <input key={k} type={type} placeholder={ph} value={tierForm[k]}
+                    onChange={e => setTierForm(f => ({ ...f, [k]: e.target.value }))}
+                    style={{ background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: 6, padding: '8px 10px', color: '#fff', fontSize: 13, fontFamily: 'inherit' }} />
+                ))}
+              </div>
+              <button onClick={saveTier} style={{...styles.btnPrimary, marginTop: 10}}>💾 Simpan Tier</button>
+            </div>
+          )}
+
           {tiers.map(t => (
             <div key={t.code} style={{...styles.tierCard, borderLeft: `4px solid ${t.color}`}}>
               <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start'}}>
@@ -200,8 +255,15 @@ export default function AdminLoyalty({ apiBase = '' }) {
                   <div style={{fontSize: 12, color: '#9ca3af', marginTop: 4}}>
                     Min lifetime spend: <b style={{color: '#fff'}}>{fmtIDR(t.min_lifetime_spend)}</b>
                     {' · '}Earn multiplier: <b style={{color: '#fff'}}>{t.earn_multiplier}x</b>
+                    {' · '}<span style={{color: '#6b7280'}}>code: {t.code}</span>
                   </div>
                 </div>
+                {t.code !== 'bronze' && (
+                  <button onClick={() => deleteTier(t.code)}
+                    style={{ background: '#7f1d1d', color: '#fecaca', border: 'none', borderRadius: 6, padding: '6px 12px', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    🗑 Hapus
+                  </button>
+                )}
               </div>
               {t.benefits && (
                 <div style={{fontSize: 12, color: '#9ca3af', marginTop: 10, padding: 10, background: '#0f0f0f', borderRadius: 6}}>
