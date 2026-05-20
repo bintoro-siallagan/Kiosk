@@ -3571,6 +3571,7 @@ const { setupKDS }              = require('./kds-backend');
 const { setupRefundCancel }     = require('./refund-cancel-backend');
 const { setupAggregator }       = require('./aggregator-backend');
 const { setupPaymentGateway }   = require('./payment-gateway-backend');
+const { setupLoyalty }          = require('./loyalty-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3597,6 +3598,7 @@ const kds = setupKDS(app, { dbPath: DB_PATH });
 const refundCancel = setupRefundCancel(app, { dbPath: DB_PATH });
 const aggregator = setupAggregator(app, { dbPath: DB_PATH });
 const paymentGateway = setupPaymentGateway(app, { dbPath: DB_PATH });
+const loyaltyMod = setupLoyalty(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
@@ -3608,6 +3610,8 @@ global.createExpense         = finance.createExpense;
 global.createKitchenTickets  = kds.createTicketsForOrder;
 global.processRefundCancel   = refundCancel.processEvent;
 global.persistAggregatorOrder = aggregator.persistOrder;
+global.loyaltyEarn           = loyaltyMod.earn;
+global.loyaltyRedeem         = loyaltyMod.redeem;
 
 console.log('━━━ Bites-Kiosk Wave 1+2+3 — semua module loaded ━━━');
 // ════════════════════════════════════════════════════════════

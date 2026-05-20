@@ -10,6 +10,7 @@
 //   apiBase (default '/api/pos')
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import POSPaymentGateway from './POSPaymentGateway.jsx';
+import POSLoyaltyRedeem from './POSLoyaltyRedeem.jsx';
 
 const TENDER_META = {
   cash:       { label: 'Tunai',     emoji: '💵', color: '#10b981', needsRef: false },
@@ -45,9 +46,19 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [showGateway, setShowGateway] = useState(false);
+  const [loyaltyPhone, setLoyaltyPhone] = useState('');
+  const [loyaltyCustomer, setLoyaltyCustomer] = useState(null);
+  const [loyaltyMsg, setLoyaltyMsg] = useState('');
+  const [loyaltyLoading, setLoyaltyLoading] = useState(false);
+  const [showLoyalty, setShowLoyalty] = useState(false);
+  const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
+  const [loyaltyReward, setLoyaltyReward] = useState(null);
 
-  // POSPaymentGateway nempel sendiri "/api/payment-gateway/..." — jadi ini cukup HOST aja.
+  // POSPaymentGateway + loyalty endpoints prepend their own "/api/..." — jadi ini cukup HOST aja.
   const GW_BASE = gatewayBase || import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+  // Order total dikurangi diskon loyalty = jumlah yang harus dibayar.
+  const orderDue = Math.max(0, order.total - loyaltyDiscount);
 
   // Load runtime config
   useEffect(() => {
@@ -68,16 +79,16 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
     fetch(`${apiBase}/payments/validate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ order_total: order.total, tenders })
+      body: JSON.stringify({ order_total: orderDue, tenders })
     }).then(r => r.json()).then(setValidation).catch(console.error);
-  }, [tenders, order.total, apiBase]);
+  }, [tenders, orderDue, apiBase]);
 
   const totals = useMemo(() => {
     const tendered = tenders.reduce((s, t) => s + t.amount, 0);
-    const balance = order.total - tendered;
+    const balance = orderDue - tendered;
     const change = balance < 0 ? -balance : 0;
     return { tendered, balance: Math.max(0, balance), change };
-  }, [tenders, order.total]);
+  }, [tenders, orderDue]);
 
   const addTender = useCallback(() => {
     const amount = activeTender === 'points'
@@ -101,6 +112,44 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
     if (totals.balance > 0) setInputAmount(String(totals.balance));
   };
 
+  // ── Loyalty ──────────────────────────────────────────────
+  const lookupLoyalty = useCallback(async () => {
+    const phone = loyaltyPhone.trim();
+    if (!phone) return;
+    setLoyaltyLoading(true); setLoyaltyMsg('');
+    try {
+      let r = await fetch(`${GW_BASE}/api/loyalty/customers/by-phone/${encodeURIComponent(phone)}`);
+      if (r.status === 404) {
+        // member baru → auto-register (dapat signup bonus kalau dikonfig)
+        const cr = await fetch(`${GW_BASE}/api/loyalty/customers`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone }),
+        });
+        if (!cr.ok) { setLoyaltyMsg('Gagal daftar member'); setLoyaltyLoading(false); return; }
+        r = await fetch(`${GW_BASE}/api/loyalty/customers/by-phone/${encodeURIComponent(phone)}`);
+        setLoyaltyMsg('✓ Member baru terdaftar');
+      }
+      if (r.ok) setLoyaltyCustomer(await r.json());
+      else setLoyaltyMsg('Lookup gagal');
+    } catch (e) { setLoyaltyMsg('Error: ' + e.message); }
+    setLoyaltyLoading(false);
+  }, [loyaltyPhone, GW_BASE]);
+
+  const earnLoyalty = useCallback(async () => {
+    if (!loyaltyCustomer) return;
+    try {
+      await fetch(`${GW_BASE}/api/loyalty/earn`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer_id: loyaltyCustomer.id,
+          order_total: orderDue,
+          order_ref: order.ref,
+          created_by: order.cashier || 'kasir',
+        }),
+      });
+    } catch (e) { console.warn('loyalty earn:', e.message); }
+  }, [loyaltyCustomer, orderDue, order.ref, order.cashier, GW_BASE]);
+
   const finalize = async () => {
     if (!validation?.valid) { setError('Tidak valid: ' + (validation?.errors?.[0] || '?')); return; }
     setSubmitting(true); setError(null);
@@ -110,7 +159,7 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           order_ref: order.ref,
-          order_total: order.total,
+          order_total: orderDue,
           customer_id: order.customer?.id,
           actor: order.cashier || 'kasir',
           tenders,
@@ -121,7 +170,8 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
         setError(data.errors?.join(', ') || data.error || 'Gagal');
         setSubmitting(false); return;
       }
-      onComplete?.(data);
+      await earnLoyalty();
+      onComplete?.({ ...data, tenders, loyalty_discount: loyaltyDiscount });
     } catch (e) {
       setError(e.message);
       setSubmitting(false);
@@ -144,8 +194,57 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
         </div>
 
         <div style={styles.totalBox}>
-          <div style={styles.totalLabel}>Total Order</div>
-          <div style={styles.totalAmount}>{fmtIDR(order.total)}</div>
+          <div style={styles.totalLabel}>{loyaltyDiscount > 0 ? 'Total Bayar' : 'Total Order'}</div>
+          <div style={styles.totalAmount}>{fmtIDR(orderDue)}</div>
+          {loyaltyDiscount > 0 && (
+            <div style={{ fontSize: 13, opacity: 0.9, marginTop: 2 }}>
+              <span style={{ textDecoration: 'line-through' }}>{fmtIDR(order.total)}</span>{' '}· 🏅 hemat {fmtIDR(loyaltyDiscount)}
+            </div>
+          )}
+        </div>
+
+        {/* LOYALTY MEMBER */}
+        <div style={styles.loyaltyCard}>
+          {!loyaltyCustomer ? (
+            <>
+              <div style={styles.loyaltyLabel}>🏅 Member Loyalty</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input type="tel" value={loyaltyPhone}
+                  onChange={e => setLoyaltyPhone(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') lookupLoyalty(); }}
+                  placeholder="No. HP customer" style={styles.loyaltyInput} />
+                <button onClick={lookupLoyalty} disabled={loyaltyLoading} style={styles.loyaltyBtn}>
+                  {loyaltyLoading ? '...' : 'Cek'}
+                </button>
+              </div>
+              {loyaltyMsg && <div style={styles.loyaltyMsg}>{loyaltyMsg}</div>}
+            </>
+          ) : (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14 }}>🏅 {loyaltyCustomer.name || loyaltyCustomer.phone}</div>
+                  <div style={{ fontSize: 12, color: '#92400e', marginTop: 2 }}>
+                    {loyaltyCustomer.tier?.emoji || ''} {loyaltyCustomer.tier?.name || loyaltyCustomer.current_tier_code}
+                    {' · '}{(loyaltyCustomer.current_points || 0).toLocaleString('id-ID')} poin
+                  </div>
+                </div>
+                <button onClick={() => { setLoyaltyCustomer(null); setLoyaltyDiscount(0); setLoyaltyReward(null); setLoyaltyMsg(''); }}
+                  style={styles.loyaltyClear}>×</button>
+              </div>
+              {loyaltyMsg && <div style={styles.loyaltyMsg}>{loyaltyMsg}</div>}
+              {loyaltyDiscount > 0 ? (
+                <div style={styles.loyaltyApplied}>
+                  <span>✓ {loyaltyReward?.reward?.name || 'Reward'} — diskon {fmtIDR(loyaltyDiscount)}</span>
+                  <button onClick={() => { setLoyaltyDiscount(0); setLoyaltyReward(null); setLoyaltyMsg(''); }} style={styles.loyaltyUndo}>batal</button>
+                </div>
+              ) : (
+                <button onClick={() => setShowLoyalty(true)} style={styles.loyaltyRedeemBtn}>
+                  🏅 Pakai Loyalty / Tukar Poin
+                </button>
+              )}
+            </>
+          )}
         </div>
 
         <div style={styles.runningBox}>
@@ -241,7 +340,7 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
               <button
                 onClick={() => { setError(null); setShowGateway(true); }}
                 style={styles.gatewayBtn}>
-                💳 Buka Payment Gateway · {fmtIDR(totals.balance > 0 ? totals.balance : order.total)}
+                💳 Buka Payment Gateway · {fmtIDR(totals.balance > 0 ? totals.balance : orderDue)}
               </button>
               <div style={styles.gatewayHint}>atau input manual di bawah (mode offline)</div>
             </div>
@@ -301,16 +400,19 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
       {showGateway && (
         <POSPaymentGateway
           orderRef={order.ref}
-          amount={totals.balance > 0 ? totals.balance : order.total}
+          amount={totals.balance > 0 ? totals.balance : orderDue}
           customerName={order.customer?.name}
           customerPhone={order.customer?.phone}
+          items={order.items}
           apiBase={GW_BASE}
-          onPaid={(intent) => {
+          onPaid={async (intent) => {
             setShowGateway(false);
+            await earnLoyalty();
             // Gateway sudah catat pos_payments lewat webhook — langsung ke struk,
             // gak lewat finalize() biar gak dobel-record.
             onComplete?.({
               gateway: true,
+              loyalty_discount: loyaltyDiscount,
               tenders: [
                 ...tenders,
                 {
@@ -323,6 +425,22 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
             });
           }}
           onCancel={() => setShowGateway(false)}
+        />
+      )}
+
+      {showLoyalty && loyaltyCustomer && (
+        <POSLoyaltyRedeem
+          phone={loyaltyCustomer.phone}
+          orderTotal={order.total}
+          orderRef={order.ref}
+          apiBase={GW_BASE}
+          onApplied={(r) => {
+            setLoyaltyDiscount(r.discount_amount || 0);
+            setLoyaltyReward(r);
+            setShowLoyalty(false);
+            setLoyaltyMsg(`✓ ${r.reward?.name || 'Reward'} dipakai`);
+          }}
+          onSkip={() => setShowLoyalty(false)}
         />
       )}
     </div>
@@ -441,4 +559,34 @@ const styles = {
     boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
   },
   gatewayHint: { fontSize: 11, color: '#94a3b8', textAlign: 'center' },
+  loyaltyCard: {
+    background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10,
+    padding: 12, display: 'flex', flexDirection: 'column', gap: 8,
+  },
+  loyaltyLabel: { fontSize: 12, fontWeight: 700, color: '#b45309' },
+  loyaltyInput: {
+    flex: 1, fontSize: 15, padding: '8px 10px', border: '1px solid #d1d5db',
+    borderRadius: 6, boxSizing: 'border-box',
+  },
+  loyaltyBtn: {
+    padding: '8px 16px', background: '#f59e0b', color: '#fff', border: 'none',
+    borderRadius: 6, fontWeight: 700, fontSize: 13, cursor: 'pointer',
+  },
+  loyaltyMsg: { fontSize: 12, color: '#92400e' },
+  loyaltyClear: {
+    width: 26, height: 26, borderRadius: 6, background: '#fde68a', color: '#92400e',
+    border: 'none', fontSize: 16, cursor: 'pointer', flexShrink: 0,
+  },
+  loyaltyRedeemBtn: {
+    padding: '10px 14px', background: '#f59e0b', color: '#fff', border: 'none',
+    borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: 'pointer',
+  },
+  loyaltyApplied: {
+    fontSize: 13, color: '#065f46', background: '#d1fae5', borderRadius: 6,
+    padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8,
+  },
+  loyaltyUndo: {
+    background: 'none', border: 'none', color: '#dc2626', fontSize: 12,
+    cursor: 'pointer', textDecoration: 'underline', flexShrink: 0,
+  },
 };

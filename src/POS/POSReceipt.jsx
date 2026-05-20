@@ -38,10 +38,11 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
       return { id: t.id, name: t.name, rate: t.rate, amount, inclusive: t.inclusive, display_separately: t.display_separately };
     });
     const taxTotal = taxes.reduce((s, t) => s + t.amount, 0);
-    const grandTotal = subtotal + taxTotal;
+    const loyaltyDiscount = order.loyalty_discount || 0;
+    const grandTotal = subtotal + taxTotal - loyaltyDiscount;
     const paid = (order.payments || []).reduce((s, p) => s + (p.amount || 0), 0);
     const change = (order.payments || []).reduce((s, p) => s + (p.change_given || 0), 0);
-    return { subtotal, taxes, taxTotal, grandTotal, paid, change };
+    return { subtotal, taxes, taxTotal, loyaltyDiscount, grandTotal, paid, change };
   }, [order, taxConfig]);
 
   const browserPrint = () => {
@@ -110,6 +111,9 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
     out += `Subtotal: ${fmtIDR(calc.subtotal).padStart(20)}\n`;
     for (const t of calc.taxes.filter(t => t.display_separately && !t.inclusive)) {
       out += `${t.name} ${(t.rate*100).toFixed(0)}%: ${fmtIDR(t.amount).padStart(20-t.name.length-7)}\n`;
+    }
+    if (calc.loyaltyDiscount > 0) {
+      out += `Diskon Loyalty: ${('-' + fmtIDR(calc.loyaltyDiscount)).padStart(16)}\n`;
     }
     out += bold + `TOTAL: ${fmtIDR(calc.grandTotal).padStart(20)}\n` + boldOff;
     out += '--------------------------------\n';
@@ -218,6 +222,12 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
               <span>{fmtIDR(t.amount)}</span>
             </div>
           ))}
+          {calc.loyaltyDiscount > 0 && (
+            <div className="row" style={{...row, color:'#b45309'}}>
+              <span>🏅 Diskon Loyalty</span>
+              <span>−{fmtIDR(calc.loyaltyDiscount)}</span>
+            </div>
+          )}
           <div className="row total" style={{...row, ...total}}>
             <b>TOTAL</b>
             <b>{fmtIDR(calc.grandTotal)}</b>

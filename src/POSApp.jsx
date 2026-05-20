@@ -52,7 +52,7 @@ function QuickOrderFlow({ cashier, onExit }) {
   if (stage === "receipt" && order) {
     return (
       <POSReceipt
-        order={{ ...order, payments: payResult?.tenders || payResult?.payments || [] }}
+        order={{ ...order, payments: payResult?.tenders || payResult?.payments || [], loyalty_discount: payResult?.loyalty_discount || 0 }}
         onClose={onExit}
         onPrintDone={() => {}}
       />
