@@ -3621,6 +3621,7 @@ const { setupCampaignImpact }   = require('./campaign-impact-backend');
 const { setupRBAC }             = require('./rbac-backend');
 const { setupApprovalEngine }   = require('./approval-engine-backend');
 const { setupDeviceSession }    = require('./device-session-backend');
+const { setupSecurityCenter }   = require('./security-center-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3691,6 +3692,7 @@ const campaignImpact = setupCampaignImpact(app, { dbPath: DB_PATH });
 const rbac = setupRBAC(app, { dbPath: DB_PATH });
 const approvalEngine = setupApprovalEngine(app, { dbPath: DB_PATH });
 const deviceSession = setupDeviceSession(app, { dbPath: DB_PATH });
+const securityCenter = setupSecurityCenter(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
