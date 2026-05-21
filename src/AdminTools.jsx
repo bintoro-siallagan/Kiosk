@@ -36,6 +36,7 @@ import AdminCustomerIntel from "./Admin/AdminCustomerIntel.jsx";
 import AdminMarketingBehavior from "./Admin/AdminMarketingBehavior.jsx";
 import AdminLoyaltyPromo from "./Admin/AdminLoyaltyPromo.jsx";
 import AdminFeedbackSegment from "./Admin/AdminFeedbackSegment.jsx";
+import AdminClvChurn from "./Admin/AdminClvChurn.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -135,6 +136,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "mkt_behavior", label: "📊 Behavior", color: "#22d3ee" },
     { id: "loyalty_promo", label: "🎁 Loyalty & Promo", color: "#f43f5e" },
     { id: "feedback_segment", label: "💬 Feedback", color: "#eab308" },
+    { id: "clv_churn", label: "📉 CLV & Churn", color: "#10b981" },
   ];
 
   return (
@@ -196,6 +198,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "mkt_behavior" && <AdminMarketingBehavior apiBase={API} />}
         {tab === "loyalty_promo" && <AdminLoyaltyPromo apiBase={API} />}
         {tab === "feedback_segment" && <AdminFeedbackSegment apiBase={API} />}
+        {tab === "clv_churn" && <AdminClvChurn apiBase={API} />}
       </div>
 
       {toast && <div style={S.toast}>{toast}</div>}
