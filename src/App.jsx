@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { unlockAudio, loadAudioConfig } from "./audio.js";
 import CustomerTrackingPage from "./CustomerTrackingPage.jsx";
 import PromoBroadcastBanner from "./PromoBroadcastBanner.jsx";
+import OfflineBanner from "./OfflineBanner.jsx";
 import POSCelebration from "./POS/POSCelebration.jsx";
 import POSCDS from "./POSCDS.jsx";
 import AdminLogin    from "./AdminLogin.jsx";
@@ -202,6 +203,7 @@ export default function App() {
   return (
     <ShiftGate>
       <PromoBroadcastBanner/>
+      <OfflineBanner/>
       <Kiosk
       onCheckout={handleKioskCheckout}
       onAdminAccess={go("admin-login")}

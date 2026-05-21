@@ -13,6 +13,7 @@ import POSShiftClose from "./POS/POSShiftClose.jsx";
 import POSChecklist from "./POS/POSChecklist.jsx";
 import POSCelebration from "./POS/POSCelebration.jsx";
 import PromoBroadcastBanner from "./PromoBroadcastBanner.jsx";
+import OfflineBanner from "./OfflineBanner.jsx";
 
 const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -156,6 +157,7 @@ export default function POSApp() {
   return (
     <ShiftGate>
       <PromoBroadcastBanner />
+      <OfflineBanner />
       {view === "home" && (
         <POSHome
           cashier={cashier}
