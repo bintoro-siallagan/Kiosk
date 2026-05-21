@@ -169,20 +169,22 @@ export default function CommandCenter(){
     }catch(e){}
   },[]);
 
+  // Urutan ngikutin 7 Core Indicator: Overview → Business Health →
+  // Operation → Customer → Sales&Engagement → Stock → Workforce → Risk → Analytics
   const TABS=[
     {id:"exec",lb:"👔 Executive",ac:"#fbbf24"},
     {id:"outlets",lb:"🏢 Outlets",ac:"#22d3ee"},
-    {id:"cust",lb:"😊 Customer",ac:"#22d3ee"},
-    {id:"ops",lb:"🟢 Operation",ac:"#84cc16"},
-    {id:"hris",lb:"👥 HRIS",ac:"#a78bfa"},
-    {id:"promo",lb:"🎯 Promo",ac:"#ec4899"},
-    {id:"engage",lb:"📈 Engagement",ac:"#10b981"},
-    {id:"analytics",lb:"📊 Analytics",ac:"#a78bfa"},
     {id:"live",lb:"⚡ Live Sales",ac:"#10b981"},
     {id:"menu",lb:"📊 Top Menu",ac:"#3b82f6"},
     {id:"fin",lb:"📒 Finance",ac:"#a78bfa"},
+    {id:"ops",lb:"🟢 Operation",ac:"#84cc16"},
+    {id:"cust",lb:"😊 Customer",ac:"#22d3ee"},
+    {id:"promo",lb:"🎯 Promo",ac:"#ec4899"},
+    {id:"engage",lb:"📈 Engagement",ac:"#10b981"},
     {id:"wh",lb:"📦 WH / PPIC",ac:"#f59e0b",bg:whAlerts.length},
+    {id:"hris",lb:"👥 HRIS",ac:"#a78bfa"},
     {id:"anom",lb:"🚨 Anomali",ac:"#ef4444",bg:unr.length},
+    {id:"analytics",lb:"📊 Analytics",ac:"#a78bfa"},
   ];
 
   if(loading)return(
@@ -221,7 +223,7 @@ export default function CommandCenter(){
     </div>
 
     {/* ═══ TABS ═══ */}
-    <div style={{display:"flex",gap:4,marginBottom:20,borderBottom:"1px solid #15151e",paddingBottom:0}}>
+    <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:20,borderBottom:"1px solid #15151e",paddingBottom:0}}>
       {TABS.map(t=>(
         <button key={t.id} onClick={()=>setTab(t.id)} style={{
           padding:"10px 20px",fontSize:14,fontWeight:tab===t.id?700:400,
