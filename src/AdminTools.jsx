@@ -257,15 +257,17 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "product_ver", label: "📜 Versioning", color: "#7c3aed" },
   ];
 
+  // Urutan value-chain enterprise: Operasi → Product → Inventory → Commerce
+  // → Finance → HRIS → Customer → Security. Tiap grup urut alur kerja.
   const GROUPS = [
-    { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["staff", "outlet_master", "incidents", "asset_maintenance", "notif_center", "gudang", "waste", "config", "checklist", "cashier_kpi", "audit"] },
-    { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "loyalty", "broadcast", "aggregator", "payment", "conv_fee", "quotation", "sales_order", "delivery_order", "sales_invoice", "sales_return", "b2b_customer"] },
-    { name: "Product", icon: "📦", module: "config", ids: ["item_master", "master_unit", "master_category", "item_pricing", "item_config", "item_rules", "item_intel", "product_hub", "product_ver", "food_cost", "food_cost_calc"] },
-    { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["price_list", "stock_list", "goods_delivery", "goods_received", "stock_opname", "stock_transfer", "batch_tracking", "production", "demand_forecast", "auto_reorder", "sales_stock_sync", "simple_purchase", "purchase_return", "internal_return", "petty_cash", "purchase_invoice", "procurement_plus"] },
-    { name: "Finance", icon: "💰", module: "finance", ids: ["finance", "coa", "general_ledger", "journal", "settlement", "reconciliation", "release_payment", "period_closing", "fin_statements", "finance_center", "finance_alert", "ar", "budget", "budget_plan", "franchise", "consolidation", "core_tax"] },
-    { name: "HRIS & Reward", icon: "👥", module: "hr", ids: ["hris", "shift_roster", "payroll", "reward", "reward_benefit", "motivation", "hr_command", "talenta"] },
-    { name: "Customer & Marketing", icon: "🎯", module: "marketing", ids: ["customer_intel", "mkt_behavior", "loyalty_promo", "feedback_segment", "clv_churn", "geo_engage", "campaign", "signage"] },
-    { name: "Security & Admin", icon: "🔐", module: "rbac", ids: ["rbac", "approval", "device_session", "security", "role_dash", "self_audit", "anti_fraud"] },
+    { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["outlet_master", "staff", "checklist", "cashier_kpi", "gudang", "waste", "asset_maintenance", "incidents", "notif_center", "config", "audit"] },
+    { name: "Product", icon: "📦", module: "config", ids: ["master_category", "master_unit", "item_master", "item_pricing", "item_config", "item_rules", "food_cost", "food_cost_calc", "item_intel", "product_hub", "product_ver"] },
+    { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["stock_list", "batch_tracking", "stock_opname", "stock_transfer", "production", "sales_stock_sync", "demand_forecast", "auto_reorder", "price_list", "procurement_plus", "simple_purchase", "petty_cash", "goods_delivery", "goods_received", "purchase_invoice", "purchase_return", "internal_return"] },
+    { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "payment", "conv_fee", "aggregator", "loyalty", "broadcast", "b2b_customer", "quotation", "sales_order", "delivery_order", "sales_invoice", "sales_return"] },
+    { name: "Finance", icon: "💰", module: "finance", ids: ["coa", "general_ledger", "journal", "settlement", "reconciliation", "release_payment", "ar", "finance", "fin_statements", "finance_center", "finance_alert", "budget", "budget_plan", "period_closing", "consolidation", "core_tax", "franchise"] },
+    { name: "HRIS & Reward", icon: "👥", module: "hr", ids: ["hris", "shift_roster", "payroll", "talenta", "reward", "reward_benefit", "motivation", "hr_command"] },
+    { name: "Customer & Marketing", icon: "🎯", module: "marketing", ids: ["customer_intel", "mkt_behavior", "clv_churn", "feedback_segment", "geo_engage", "loyalty_promo", "campaign", "signage"] },
+    { name: "Security & Admin", icon: "🔐", module: "rbac", ids: ["rbac", "role_dash", "approval", "device_session", "security", "anti_fraud", "self_audit"] },
   ];
   const groupOf = (id) => { const g = GROUPS.find(x => x.ids.includes(id)); return g ? g.name : GROUPS[0].name; };
   const moduleOf = (id) => { const g = GROUPS.find(x => x.ids.includes(id)); return g ? g.module : "pos"; };
