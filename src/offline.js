@@ -13,6 +13,7 @@
 const QKEY = 'offline_order_queue';
 const listeners = new Set();
 let _origFetch = null;
+let _syncing = false;   // guard anti dobel-sync (online event + interval bisa barengan)
 
 const readQ = () => { try { return JSON.parse(localStorage.getItem(QKEY) || '[]'); } catch { return []; } };
 const writeQ = (q) => { try { localStorage.setItem(QKEY, JSON.stringify(q)); } catch {} emit(); };
@@ -39,16 +40,21 @@ function enqueue(url, body) {
 
 // Sync antrian ke server (dipanggil pas online / berkala)
 export async function syncQueue() {
-  if (!_origFetch || !navigator.onLine) return;
-  for (const item of [...readQ()]) {
-    try {
-      const r = await _origFetch(item.url, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(item.body),
-      });
-      if (r && r.ok) writeQ(readQ().filter(x => x.localId !== item.localId));
-      else break;                          // server error — coba lagi nanti
-    } catch { break; }                     // masih offline — stop
+  if (!_origFetch || !navigator.onLine || _syncing) return;
+  _syncing = true;
+  try {
+    for (const item of [...readQ()]) {
+      try {
+        const r = await _origFetch(item.url, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(item.body),
+        });
+        if (r && r.ok) writeQ(readQ().filter(x => x.localId !== item.localId));
+        else break;                        // server error — coba lagi nanti
+      } catch { break; }                   // masih offline — stop
+    }
+  } finally {
+    _syncing = false;
   }
 }
 
