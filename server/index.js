@@ -3584,6 +3584,7 @@ const { setupPromoInsight }     = require('./promo-insight-backend');
 const { setupLeaderboard }      = require('./leaderboard-backend');
 const { setupBroadcast }        = require('./broadcast-backend');
 const { setupOutlets }          = require('./outlets-backend');
+const { setupEngagement }       = require('./engagement-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3623,6 +3624,7 @@ const promoInsight = setupPromoInsight(app, { dbPath: DB_PATH });
 const leaderboard = setupLeaderboard(app, { dbPath: DB_PATH });
 const promoBroadcast = setupBroadcast(app, { dbPath: DB_PATH });
 const outletsMod = setupOutlets(app, { dbPath: DB_PATH });
+const engagement = setupEngagement(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
