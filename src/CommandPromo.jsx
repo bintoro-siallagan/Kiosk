@@ -20,7 +20,7 @@ export default function CommandPromo() {
   const [err, setErr] = useState("");
 
   const load = useCallback(() => {
-    fetch(`${API}/api/promo-insight`).then(r => r.json()).then(setD).catch(e => setErr(String(e)));
+    fetch(`${API}/api/promo-insight`).then(r => r.json()).then(j => j && !j.error ? setD(j) : setErr((j && j.error) || "data tidak tersedia")).catch(e => setErr(String(e)));
   }, []);
   useEffect(() => { load(); const t = setInterval(load, 20000); return () => clearInterval(t); }, [load]);
 

@@ -36,7 +36,7 @@ export default function CommandExecutive() {
   const load = useCallback(() => {
     fetch(`${API}/api/executive`)
       .then(r => r.json())
-      .then(setD)
+      .then(j => j && !j.error ? setD(j) : setErr((j && j.error) || "data tidak tersedia"))
       .catch(e => setErr(String(e)));
   }, []);
   useEffect(() => {

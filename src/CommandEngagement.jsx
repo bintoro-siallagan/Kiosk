@@ -14,7 +14,7 @@ export default function CommandEngagement() {
   const [err, setErr] = useState("");
 
   const load = useCallback(() => {
-    fetch(`${API}/api/engagement`).then(r => r.json()).then(setD).catch(e => setErr(String(e)));
+    fetch(`${API}/api/engagement`).then(r => r.json()).then(j => j && !j.error ? setD(j) : setErr((j && j.error) || "data tidak tersedia")).catch(e => setErr(String(e)));
   }, []);
   useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
