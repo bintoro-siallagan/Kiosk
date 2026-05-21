@@ -3592,6 +3592,7 @@ const { setupPurchaseInvoice }  = require('./purchase-invoice-backend');
 const { setupSettlement }       = require('./settlement-backend');
 const { setupJournal }          = require('./journal-backend');
 const { setupFinancialStatements } = require('./financial-statements-backend');
+const { setupFinanceCenter }    = require('./finance-center-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3639,6 +3640,7 @@ const purchaseInvoice = setupPurchaseInvoice(app, { dbPath: DB_PATH });
 const settlement = setupSettlement(app, { dbPath: DB_PATH });
 const journal = setupJournal(app, { dbPath: DB_PATH });
 const finStatements = setupFinancialStatements(app, { dbPath: DB_PATH });
+const financeCenter = setupFinanceCenter(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
