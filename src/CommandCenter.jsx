@@ -8,6 +8,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import CommandExecutive from "./CommandExecutive.jsx";
 import CommandCustomer from "./CommandCustomer.jsx";
 import CommandOperation from "./CommandOperation.jsx";
+import CommandHRIS from "./CommandHRIS.jsx";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -168,6 +169,7 @@ export default function CommandCenter(){
     {id:"exec",lb:"👔 Executive",ac:"#fbbf24"},
     {id:"cust",lb:"😊 Customer",ac:"#22d3ee"},
     {id:"ops",lb:"🟢 Operation",ac:"#84cc16"},
+    {id:"hris",lb:"👥 HRIS",ac:"#a78bfa"},
     {id:"live",lb:"⚡ Live Sales",ac:"#10b981"},
     {id:"menu",lb:"📊 Top Menu",ac:"#3b82f6"},
     {id:"fin",lb:"📒 Finance",ac:"#a78bfa"},
@@ -229,6 +231,7 @@ export default function CommandCenter(){
     {tab==="exec"&&<div style={{animation:"si .2s ease-out"}}><CommandExecutive/></div>}
     {tab==="cust"&&<div style={{animation:"si .2s ease-out"}}><CommandCustomer/></div>}
     {tab==="ops"&&<div style={{animation:"si .2s ease-out"}}><CommandOperation/></div>}
+    {tab==="hris"&&<div style={{animation:"si .2s ease-out"}}><CommandHRIS/></div>}
 
     {tab==="live"&&<div style={{animation:"si .2s ease-out"}}>
       {/* KPI Row */}
