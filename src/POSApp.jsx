@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import POSKasirLogin from "./POS/POSKasirLogin.jsx";
 import POSHome from "./POSHome.jsx";
 import POSOrder from "./POSOrder.jsx";
@@ -10,6 +10,7 @@ import POSPayment from "./POS/POSPayment.jsx";
 import POSReceipt from "./POS/POSReceipt.jsx";
 import POSSatisfaction from "./POS/POSSatisfaction.jsx";
 import POSShiftClose from "./POS/POSShiftClose.jsx";
+import POSChecklist from "./POS/POSChecklist.jsx";
 
 const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -77,6 +78,18 @@ export default function POSApp() {
   const [resumingTab, setResumingTab] = useState(null);
   const [settledResult, setSettledResult] = useState(null);
   const [shiftCloseId, setShiftCloseId] = useState(null);
+  const [checklist, setChecklist] = useState(null);          // null = belum ke-load
+  const [closingChecklist, setClosingChecklist] = useState(false);
+
+  // Status checklist opening/closing hari ini
+  const reloadChecklist = useCallback(() => {
+    fetch(`${API_HOST}/api/checklist/status`)
+      .then(r => r.json())
+      .then(setChecklist)
+      .catch(() => setChecklist({ opening: { done: true }, closing: { done: true } })); // fail-open
+  }, []);
+
+  useEffect(() => { if (cashier) reloadChecklist(); }, [cashier, reloadChecklist]);
 
   const handleLogin = (user) => {
     sessionStorage.setItem("posCashier", JSON.stringify(user));
@@ -90,7 +103,7 @@ export default function POSApp() {
     setView("home");
   };
 
-  const handleCloseShift = async () => {
+  const proceedCloseShift = async () => {
     try {
       const active = await fetch(`${API_HOST}/api/pos/shifts/active`).then(r => r.json());
       let id = Array.isArray(active)
@@ -108,7 +121,18 @@ export default function POSApp() {
     } catch (e) { console.error("close shift:", e); }
   };
 
+  // Tutup shift wajib lewat closing checklist dulu
+  const handleCloseShift = () => {
+    if (checklist && !checklist.closing?.done) { setClosingChecklist(true); return; }
+    proceedCloseShift();
+  };
+
   if (!cashier) return <POSKasirLogin apiBase={API_HOST} onSelectKasir={handleLogin} />;
+
+  // GATE: opening checklist wajib kelar sebelum kasir bisa mulai transaksi
+  if (checklist && !checklist.opening?.done) {
+    return <POSChecklist type="opening" apiBase={API_HOST} cashier={cashier} onDone={reloadChecklist} />;
+  }
 
   return (
     <ShiftGate>
@@ -181,6 +205,14 @@ export default function POSApp() {
           apiBase={API_HOST}
           onClose={() => setShiftCloseId(null)}
           onCompleted={() => { setShiftCloseId(null); handleLogout(); }}
+        />
+      )}
+      {closingChecklist && (
+        <POSChecklist
+          type="closing"
+          apiBase={API_HOST}
+          cashier={cashier}
+          onDone={() => { setClosingChecklist(false); reloadChecklist(); proceedCloseShift(); }}
         />
       )}
     </ShiftGate>
