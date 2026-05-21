@@ -54,6 +54,7 @@ import AdminProductVersioning from "./Admin/AdminProductVersioning.jsx";
 import AdminGoodsReceived from "./Admin/AdminGoodsReceived.jsx";
 import AdminSimplePurchase from "./Admin/AdminSimplePurchase.jsx";
 import AdminPettyCash from "./Admin/AdminPettyCash.jsx";
+import AdminBudgetPlan from "./Admin/AdminBudgetPlan.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -158,6 +159,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "finance_alert", label: "🚨 Finance Alert", color: "#ef4444" },
     { id: "ar", label: "📥 Piutang AR", color: "#3b82f6" },
     { id: "budget", label: "🎯 Budget", color: "#a78bfa" },
+    { id: "budget_plan", label: "📋 Budget Plan", color: "#4f46e5" },
     { id: "payroll", label: "💼 Payroll", color: "#06B6D4" },
     { id: "franchise", label: "🏛️ Franchise", color: "#fbbf24" },
     { id: "food_cost", label: "🍳 Food Cost", color: "#f97316" },
@@ -194,7 +196,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "loyalty", "broadcast", "aggregator", "payment", "conv_fee"] },
     { name: "Product", icon: "📦", module: "config", ids: ["item_master", "item_pricing", "item_config", "item_rules", "item_intel", "product_hub", "product_ver", "food_cost"] },
     { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["price_list", "goods_delivery", "goods_received", "simple_purchase", "petty_cash", "purchase_invoice", "procurement_plus"] },
-    { name: "Finance", icon: "💰", module: "finance", ids: ["finance", "settlement", "journal", "fin_statements", "finance_center", "finance_alert", "ar", "budget", "franchise"] },
+    { name: "Finance", icon: "💰", module: "finance", ids: ["finance", "settlement", "journal", "fin_statements", "finance_center", "finance_alert", "ar", "budget", "budget_plan", "franchise"] },
     { name: "HRIS & Reward", icon: "👥", module: "hr", ids: ["hris", "payroll", "reward", "reward_benefit", "motivation", "hr_command", "talenta"] },
     { name: "Customer & Marketing", icon: "🎯", module: "marketing", ids: ["customer_intel", "mkt_behavior", "loyalty_promo", "feedback_segment", "clv_churn", "geo_engage", "campaign"] },
     { name: "Security & Admin", icon: "🔐", module: "rbac", ids: ["rbac", "approval", "device_session", "security", "role_dash", "anti_fraud"] },
@@ -297,6 +299,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "finance_alert" && <AdminFinanceAlert apiBase={API} />}
         {tab === "ar" && <AdminAR apiBase={API} />}
         {tab === "budget" && <AdminBudget apiBase={API} />}
+        {tab === "budget_plan" && <AdminBudgetPlan apiBase={API} />}
         {tab === "payroll" && <AdminPayroll apiBase={API} />}
         {tab === "franchise" && <AdminFranchise apiBase={API} />}
         {tab === "food_cost" && <AdminFoodCost apiBase={API} />}

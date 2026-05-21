@@ -3633,6 +3633,7 @@ const { setupProductVersioning } = require('./product-versioning-backend');
 const { setupGoodsReceived }    = require('./goods-received-backend');
 const { setupSimplePurchase }   = require('./simple-purchase-backend');
 const { setupPettyCash }        = require('./petty-cash-backend');
+const { setupBudgetPlan }       = require('./budget-plan-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3715,6 +3716,7 @@ const productVersioning = setupProductVersioning(app, { dbPath: DB_PATH });
 const goodsReceived = setupGoodsReceived(app, { dbPath: DB_PATH });
 const simplePurchase = setupSimplePurchase(app, { dbPath: DB_PATH });
 const pettyCash = setupPettyCash(app, { dbPath: DB_PATH });
+const budgetPlan = setupBudgetPlan(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
