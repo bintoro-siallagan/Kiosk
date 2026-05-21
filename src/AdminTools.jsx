@@ -73,6 +73,7 @@ import AdminB2bCustomer from "./Admin/AdminB2bCustomer.jsx";
 import AdminQuotation from "./Admin/AdminQuotation.jsx";
 import AdminDeliveryOrder from "./Admin/AdminDeliveryOrder.jsx";
 import AdminSalesInvoice from "./Admin/AdminSalesInvoice.jsx";
+import AdminSelfAudit from "./Admin/AdminSelfAudit.jsx";
 import AdminSalesStockSync from "./Admin/AdminSalesStockSync.jsx";
 import AdminSimplePurchase from "./Admin/AdminSimplePurchase.jsx";
 import AdminPettyCash from "./Admin/AdminPettyCash.jsx";
@@ -236,6 +237,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "device_session", label: "🖥️ Device & Sesi", color: "#3b82f6" },
     { id: "security", label: "🛡️ Security", color: "#e11d48" },
     { id: "role_dash", label: "📊 Role Dashboard", color: "#818cf8" },
+    { id: "self_audit", label: "🔎 Self-Audit", color: "#16a34a" },
     { id: "item_master", label: "📦 Item Master", color: "#0891b2" },
     { id: "item_pricing", label: "💲 Item Pricing", color: "#22c55e" },
     { id: "item_config", label: "🔧 Item Config", color: "#0d9488" },
@@ -253,7 +255,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { name: "Finance", icon: "💰", module: "finance", ids: ["finance", "coa", "general_ledger", "journal", "settlement", "reconciliation", "release_payment", "period_closing", "fin_statements", "finance_center", "finance_alert", "ar", "budget", "budget_plan", "franchise"] },
     { name: "HRIS & Reward", icon: "👥", module: "hr", ids: ["hris", "shift_roster", "payroll", "reward", "reward_benefit", "motivation", "hr_command", "talenta"] },
     { name: "Customer & Marketing", icon: "🎯", module: "marketing", ids: ["customer_intel", "mkt_behavior", "loyalty_promo", "feedback_segment", "clv_churn", "geo_engage", "campaign", "signage"] },
-    { name: "Security & Admin", icon: "🔐", module: "rbac", ids: ["rbac", "approval", "device_session", "security", "role_dash", "anti_fraud"] },
+    { name: "Security & Admin", icon: "🔐", module: "rbac", ids: ["rbac", "approval", "device_session", "security", "role_dash", "self_audit", "anti_fraud"] },
   ];
   const groupOf = (id) => { const g = GROUPS.find(x => x.ids.includes(id)); return g ? g.name : GROUPS[0].name; };
   const moduleOf = (id) => { const g = GROUPS.find(x => x.ids.includes(id)); return g ? g.module : "pos"; };
@@ -397,6 +399,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "quotation" && <AdminQuotation apiBase={API} />}
         {tab === "delivery_order" && <AdminDeliveryOrder apiBase={API} />}
         {tab === "sales_invoice" && <AdminSalesInvoice apiBase={API} />}
+        {tab === "self_audit" && <AdminSelfAudit apiBase={API} />}
         {tab === "sales_stock_sync" && <AdminSalesStockSync apiBase={API} />}
         {tab === "rbac" && <AdminRBAC apiBase={API} />}
         {tab === "approval" && <AdminApproval apiBase={API} />}

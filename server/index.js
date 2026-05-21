@@ -3666,6 +3666,7 @@ const { setupB2bCustomer }      = require('./b2b-customer-backend');
 const { setupSalesInvoice }     = require('./sales-invoice-backend');
 const { setupQuotation }        = require('./quotation-backend');
 const { setupDeliveryOrder }    = require('./delivery-order-backend');
+const { setupSelfAudit }        = require('./self-audit-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3776,6 +3777,7 @@ const b2bCustomer = setupB2bCustomer(app, { dbPath: DB_PATH });
 const salesInvoice = setupSalesInvoice(app, { dbPath: DB_PATH });
 const quotation = setupQuotation(app, { dbPath: DB_PATH });
 const deliveryOrder = setupDeliveryOrder(app, { dbPath: DB_PATH });
+const selfAudit = setupSelfAudit(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
