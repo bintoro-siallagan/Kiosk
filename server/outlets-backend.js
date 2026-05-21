@@ -33,6 +33,13 @@ CREATE TABLE IF NOT EXISTS outlet_issues (
   resolved_by TEXT,
   created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
+CREATE TABLE IF NOT EXISTS outlet_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  outlet_id INTEGER NOT NULL,
+  text TEXT NOT NULL,
+  author TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
 `;
 
 const ISSUE_POOL = [
@@ -145,7 +152,27 @@ function setupOutlets(app, opts = {}) {
         critical: openIssues.filter(x => x.severity === 'critical').length,
         list: openIssues,
       },
+      notes: db.prepare(`SELECT id, text, author, created_at FROM outlet_notes
+        WHERE outlet_id=? ORDER BY created_at DESC, id DESC`).all(o.id),
     });
+  });
+
+  // ── Catatan cabang (note per outlet) ──
+  router.post('/:id/notes', (req, res) => {
+    const o = db.prepare(`SELECT id FROM outlets WHERE id=?`).get(req.params.id);
+    if (!o) return res.status(404).json({ error: 'outlet tidak ditemukan' });
+    const text = ((req.body && req.body.text) || '').trim();
+    if (!text) return res.status(400).json({ error: 'catatan kosong' });
+    const author = (((req.body && req.body.by) || 'Manager') + '').trim() || 'Manager';
+    const r = db.prepare(`INSERT INTO outlet_notes (outlet_id, text, author) VALUES (?,?,?)`)
+      .run(o.id, text.slice(0, 500), author);
+    res.json({ ok: true, id: r.lastInsertRowid });
+  });
+
+  router.delete('/:id/notes/:noteId', (req, res) => {
+    db.prepare(`DELETE FROM outlet_notes WHERE id=? AND outlet_id=?`)
+      .run(req.params.noteId, req.params.id);
+    res.json({ ok: true });
   });
 
   // ── Resolve issue (klik dari Outlet Detail) ──

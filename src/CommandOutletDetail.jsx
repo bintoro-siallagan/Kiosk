@@ -16,11 +16,20 @@ const STATUS = {
 };
 const SEV = { critical: "#ef4444", warning: "#f59e0b", info: "#3b82f6" };
 const scoreCol = (s) => (s >= 80 ? "#10b981" : s >= 60 ? "#f59e0b" : "#ef4444");
+const fmtTime = (ts) => {
+  const diff = Date.now() / 1000 - ts;
+  if (diff < 60) return "baru aja";
+  if (diff < 3600) return Math.floor(diff / 60) + " mnt lalu";
+  if (diff < 86400) return Math.floor(diff / 3600) + " jam lalu";
+  return new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+};
 
 export default function CommandOutletDetail({ outletId, onBack }) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState("");
   const [resolving, setResolving] = useState(null);
+  const [noteText, setNoteText] = useState("");
+  const [savingNote, setSavingNote] = useState(false);
 
   const load = useCallback(() => {
     fetch(`${API}/api/outlets/${outletId}`).then(r => r.json())
@@ -34,6 +43,21 @@ export default function CommandOutletDetail({ outletId, onBack }) {
     fetch(`${API}/api/outlets/${outletId}/issues/${issueId}/resolve`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
     }).then(r => r.json()).then(() => load()).catch(() => {}).finally(() => setResolving(null));
+  };
+
+  const addNote = () => {
+    const text = noteText.trim();
+    if (!text) return;
+    setSavingNote(true);
+    fetch(`${API}/api/outlets/${outletId}/notes`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text }),
+    }).then(r => r.json()).then(() => { setNoteText(""); load(); })
+      .catch(() => {}).finally(() => setSavingNote(false));
+  };
+  const deleteNote = (noteId) => {
+    fetch(`${API}/api/outlets/${outletId}/notes/${noteId}`, { method: "DELETE" })
+      .then(() => load()).catch(() => {});
   };
 
   if (err) return <div style={S.msg}>Gagal memuat detail: {err} <button onClick={onBack} style={S.back}>← Kembali</button></div>;
@@ -114,6 +138,31 @@ export default function CommandOutletDetail({ outletId, onBack }) {
               style={{ background: "#10b9811f", border: "1px solid #10b98155", color: "#10b981", fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 7, cursor: resolving === it.id ? "wait" : "pointer", fontFamily: MONO, flexShrink: 0 }}>
               {resolving === it.id ? "…" : "✓ Resolve"}
             </button>
+          </div>
+        ))}
+      </div>
+
+      <div style={S.card}>
+        <div style={S.kicker}>📝 CATATAN CABANG — {d.notes.length}</div>
+        <div style={{ display: "flex", gap: 8, marginBottom: d.notes.length ? 12 : 0 }}>
+          <input value={noteText} onChange={e => setNoteText(e.target.value)}
+            onKeyDown={e => { if (e.key === "Enter") addNote(); }}
+            placeholder="Tulis catatan buat cabang ini…"
+            style={{ flex: 1, background: "#08080b", border: "1px solid #1c1c25", borderRadius: 8, padding: "9px 12px", color: "#e4e4e7", fontSize: 13, fontFamily: "inherit", outline: "none" }} />
+          <button onClick={addNote} disabled={savingNote || !noteText.trim()}
+            style={{ background: "#22d3ee1f", border: "1px solid #22d3ee55", color: "#22d3ee", fontSize: 12, fontWeight: 700, padding: "9px 16px", borderRadius: 8, cursor: savingNote ? "wait" : "pointer", fontFamily: MONO, flexShrink: 0 }}>
+            {savingNote ? "…" : "+ Tambah"}
+          </button>
+        </div>
+        {d.notes.map(n => (
+          <div key={n.id} style={{ display: "flex", gap: 9, padding: "9px 0", borderBottom: "1px solid #15151e" }}>
+            <span style={{ fontSize: 14, flexShrink: 0 }}>🗒️</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, color: "#ddd" }}>{n.text}</div>
+              <div style={{ fontSize: 10, color: "#666", fontFamily: MONO, marginTop: 2 }}>{n.author} · {fmtTime(n.created_at)}</div>
+            </div>
+            <button onClick={() => deleteNote(n.id)} title="Hapus catatan"
+              style={{ background: "transparent", border: "none", color: "#555", fontSize: 16, cursor: "pointer", flexShrink: 0, lineHeight: 1 }}>×</button>
           </div>
         ))}
       </div>
