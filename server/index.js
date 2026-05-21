@@ -3641,6 +3641,7 @@ const { setupPeriodClosing }    = require('./period-closing-backend');
 const { setupStockOpname }      = require('./stock-opname-backend');
 const { setupProduction }       = require('./production-backend');
 const { setupStockTransfer }    = require('./stock-transfer-backend');
+const { setupBatchTracking }    = require('./batch-tracking-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3731,6 +3732,7 @@ const periodClosing = setupPeriodClosing(app, { dbPath: DB_PATH });
 const stockOpname = setupStockOpname(app, { dbPath: DB_PATH });
 const production = setupProduction(app, { dbPath: DB_PATH });
 const stockTransfer = setupStockTransfer(app, { dbPath: DB_PATH });
+const batchTracking = setupBatchTracking(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
