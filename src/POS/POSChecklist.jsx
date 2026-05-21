@@ -15,10 +15,20 @@ const COPY = {
   closing: { kicker: 'CHECKLIST TUTUP TOKO', title: 'Sebelum Tutup Shift', cta: 'Lanjut Tutup Shift →', accent: '#f97316' },
 };
 
+const MOODS = [
+  { v: 1, emoji: '😟', label: 'Lelah' },
+  { v: 2, emoji: '😐', label: 'Biasa' },
+  { v: 3, emoji: '🙂', label: 'Oke' },
+  { v: 4, emoji: '😄', label: 'Senang' },
+  { v: 5, emoji: '🤩', label: 'Semangat' },
+];
+
 export default function POSChecklist({ type = 'opening', apiBase = '', cashier, onDone }) {
   const [items, setItems] = useState([]);
   const [checked, setChecked] = useState({});
   const [notes, setNotes] = useState('');
+  const [target, setTarget] = useState('');
+  const [mood, setMood] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -41,7 +51,11 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
     try {
       const r = await fetch(`${apiBase}/api/checklist/submit`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ type, staff_name: cashier?.name, checked: items.map(i => i.id), notes }),
+        body: JSON.stringify({
+          type, staff_name: cashier?.name, checked: items.map(i => i.id), notes,
+          target: type === 'opening' ? (Number(target) || 0) : undefined,
+          mood: type === 'opening' ? (mood || undefined) : undefined,
+        }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { setError(d.error || 'Gagal submit checklist'); setSubmitting(false); return; }
@@ -59,6 +73,16 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
           {new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' })}
         </div>
 
+        {type === 'closing' && (
+          <div style={S.cheerBox}>
+            <div style={{ fontSize: 34 }}>👏</div>
+            <div style={S.cheerText}>
+              {cashier?.name ? `${cashier.name}, ` : ''}kamu udah kerja keras hari ini!
+            </div>
+            <div style={S.cheerSub}>Makasih ya 🙌 Istirahat yang cukup, sampai ketemu besok!</div>
+          </div>
+        )}
+
         {loading ? (
           <div style={S.muted}>Memuat checklist…</div>
         ) : items.length === 0 ? (
@@ -73,6 +97,33 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
                 <span style={{ fontSize: 16 }}>{i.label}</span>
               </label>
             ))}
+          </div>
+        )}
+
+        {type === 'opening' && (
+          <div style={S.moodBox}>
+            <div style={S.moodLabel}>😊 Moodmu hari ini gimana?</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {MOODS.map(m => (
+                <button key={m.v} onClick={() => setMood(m.v)}
+                  style={{ ...S.moodBtn, ...(mood === m.v ? S.moodBtnOn : {}) }}>
+                  <div style={{ fontSize: 30 }}>{m.emoji}</div>
+                  <div style={{ fontSize: 10, color: mood === m.v ? '#fff' : '#9ca3af', marginTop: 2 }}>{m.label}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {type === 'opening' && (
+          <div style={S.targetBox}>
+            <div style={S.targetLabel}>🎯 Target penjualan hari ini</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ color: '#9ca3af', fontSize: 17 }}>Rp</span>
+              <input type="number" value={target} onChange={e => setTarget(e.target.value)}
+                placeholder="contoh: 3000000" style={S.targetInput} />
+            </div>
+            <div style={S.targetHint}>Jadi KPI tim hari ini — actual vs target dipantau di dashboard.</div>
           </div>
         )}
 
@@ -102,7 +153,18 @@ const S = {
   muted: { color: '#6b7280', textAlign: 'center', padding: 24 },
   item: { display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 10, background: '#0f0f0f', border: '1px solid #2a2a2a', marginBottom: 8, cursor: 'pointer', color: '#e5e7eb' },
   itemOn: { background: '#0f1f17', border: '1px solid #14532d' },
-  notes: { width: '100%', boxSizing: 'border-box', background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, fontFamily: 'inherit', resize: 'vertical' },
+  notes: { width: '100%', boxSizing: 'border-box', background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 13, fontFamily: 'inherit', resize: 'vertical', marginTop: 8 },
+  targetBox: { background: '#1a1407', border: '1px solid #78350f', borderRadius: 10, padding: '12px 14px' },
+  targetLabel: { fontSize: 13, fontWeight: 700, color: '#fbbf24', marginBottom: 6 },
+  targetInput: { flex: 1, background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: 8, padding: '10px 12px', color: '#fff', fontSize: 18, fontWeight: 700, fontFamily: 'inherit' },
+  targetHint: { fontSize: 11, color: '#9ca3af', marginTop: 6 },
+  moodBox: { background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: 10, padding: '12px 14px', marginBottom: 8 },
+  moodLabel: { fontSize: 13, fontWeight: 700, color: '#e5e7eb', marginBottom: 8 },
+  moodBtn: { flex: 1, background: '#161616', border: '1px solid #2a2a2a', borderRadius: 8, padding: '8px 4px', cursor: 'pointer', fontFamily: 'inherit' },
+  moodBtnOn: { background: '#1d4ed8', border: '1px solid #3b82f6' },
+  cheerBox: { textAlign: 'center', background: 'linear-gradient(135deg,#1a1407,#1f1206)', border: '1px solid #78350f', borderRadius: 12, padding: '16px 18px', margin: '14px 0 4px' },
+  cheerText: { fontSize: 17, fontWeight: 700, color: '#fbbf24', marginTop: 6 },
+  cheerSub: { fontSize: 12, color: '#9ca3af', marginTop: 4 },
   err: { marginTop: 10, padding: 10, background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderRadius: 6, fontSize: 13, textAlign: 'center' },
   cta: { width: '100%', marginTop: 14, padding: '15px', color: '#fff', border: 'none', borderRadius: 10, fontSize: 16, fontWeight: 700 },
 };

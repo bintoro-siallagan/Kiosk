@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS checklist_submissions (
   staff_name TEXT,
   items TEXT,
   notes TEXT,
+  target REAL,
+  mood INTEGER,
   created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
 CREATE INDEX IF NOT EXISTS idx_cl_sub_created ON checklist_submissions(created_at);
@@ -58,6 +60,9 @@ function setupChecklist(app, opts = {}) {
   const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
+  // Migration DB lama: kolom target (sales target harian dari opening checklist)
+  try { db.exec(`ALTER TABLE checklist_submissions ADD COLUMN target REAL`); } catch {}
+  try { db.exec(`ALTER TABLE checklist_submissions ADD COLUMN mood INTEGER`); } catch {}
 
   if (db.prepare(`SELECT COUNT(*) c FROM checklist_items`).get().c === 0) {
     const s = db.prepare(`INSERT INTO checklist_items (type, label, sort_order) VALUES (?,?,?)`);
@@ -118,8 +123,11 @@ function setupChecklist(app, opts = {}) {
       return res.status(400).json({ error: `${missing.length} item belum di-ceklis`, missing: missing.map(m => m.label) });
     }
     const snapshot = items.map(i => ({ id: i.id, label: i.label, checked: true }));
-    const info = db.prepare(`INSERT INTO checklist_submissions (type, staff_name, items, notes) VALUES (?,?,?,?)`)
-      .run(type, staff_name || null, JSON.stringify(snapshot), (notes || '').trim() || null);
+    const target = (type === 'opening' && Number(req.body.target) > 0) ? Number(req.body.target) : null;
+    const moodN = Number(req.body.mood);
+    const mood = (type === 'opening' && moodN >= 1 && moodN <= 5) ? moodN : null;
+    const info = db.prepare(`INSERT INTO checklist_submissions (type, staff_name, items, notes, target, mood) VALUES (?,?,?,?,?,?)`)
+      .run(type, staff_name || null, JSON.stringify(snapshot), (notes || '').trim() || null, target, mood);
     try {
       if (typeof global.logPosEvent === 'function') global.logPosEvent({
         event_type: 'checklist_' + type, event_subtype: 'store',
@@ -133,12 +141,12 @@ function setupChecklist(app, opts = {}) {
   router.get('/status', (req, res) => {
     const from = dayStart();
     const latest = (t) => db.prepare(
-      `SELECT staff_name, created_at FROM checklist_submissions WHERE type = ? AND created_at >= ? ORDER BY id DESC LIMIT 1`
+      `SELECT staff_name, created_at, target FROM checklist_submissions WHERE type = ? AND created_at >= ? ORDER BY id DESC LIMIT 1`
     ).get(t, from);
     const o = latest('opening'), c = latest('closing');
     res.json({
       date: new Date().toISOString().slice(0, 10),
-      opening: { done: !!o, by: o?.staff_name || null, at: o?.created_at || null },
+      opening: { done: !!o, by: o?.staff_name || null, at: o?.created_at || null, target: o?.target || null },
       closing: { done: !!c, by: c?.staff_name || null, at: c?.created_at || null },
     });
   });

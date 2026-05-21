@@ -128,6 +128,43 @@ export default function AdminCashierKPI({ apiBase = "" }) {
         <button onClick={load} style={S.btn(false)}>🔄 Refresh</button>
       </div>
 
+      {/* Target hari ini (dari opening checklist) */}
+      {data?.daily_target && (() => {
+        const dt = data.daily_target;
+        const pct = dt.achievement_pct || 0;
+        const col = !dt.target ? "#6b7280" : pct >= 100 ? "#34D399" : pct >= 70 ? "#FBBF24" : "#F87171";
+        return (
+          <div style={{ ...S.card, borderLeft: `4px solid ${col}` }}>
+            <div style={S.label}>🎯 Target Penjualan Hari Ini — KPI Tim</div>
+            {dt.target ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 28, flexWrap: "wrap" }}>
+                <div>
+                  <div style={{ fontSize: 11, color: "#555" }}>Target</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, fontFamily: "'Space Mono',monospace" }}>{fR(dt.target)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: "#555" }}>Actual</div>
+                  <div style={{ fontSize: 22, fontWeight: 700, color: "#34D399", fontFamily: "'Space Mono',monospace" }}>{fR(dt.actual)}</div>
+                </div>
+                <div style={{ flex: 1, minWidth: 220 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 5 }}>
+                    <span style={{ color: "#888" }}>Pencapaian</span>
+                    <span style={{ fontWeight: 700, color: col, fontFamily: "'Space Mono',monospace" }}>{pct}%</span>
+                  </div>
+                  <div style={{ height: 12, background: "#161b22", borderRadius: 6, overflow: "hidden" }}>
+                    <div style={{ width: Math.min(100, pct) + "%", height: "100%", background: col }} />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div style={{ color: "#6b7280", fontSize: 13 }}>
+                Target belum diset hari ini — kasir isi pas opening checklist (buka toko).
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
       {/* Summary */}
       <div style={S.grid4}>
         <div style={{ ...S.card, marginBottom: 0, borderLeft: "4px solid #3B82F6" }}>

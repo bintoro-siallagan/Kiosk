@@ -97,7 +97,19 @@ function setupCashierKpi(app, opts = {}) {
 
   router.get('/', (req, res) => {
     const { from, to } = rangeOf(req);
-    res.json(computeKpi(db, from, to));
+    const result = computeKpi(db, from, to);
+    // Target hari ini (dari opening checklist) vs actual sales hari ini
+    const ds = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
+    let target = null, actual = 0;
+    try {
+      const t = db.prepare(`SELECT target FROM checklist_submissions WHERE type='opening' AND target IS NOT NULL AND created_at >= ? ORDER BY id DESC LIMIT 1`).get(ds);
+      target = t?.target || null;
+    } catch (e) { /* checklist belum ada */ }
+    try {
+      actual = db.prepare(`SELECT COALESCE(SUM(amount_applied), 0) s FROM pos_payments WHERE status='completed' AND created_at >= ?`).get(ds).s;
+    } catch (e) { /* pos_payments belum ada */ }
+    result.daily_target = { target, actual, achievement_pct: target ? Math.round((actual / target) * 100) : null };
+    res.json(result);
   });
 
   // Export CSV — buat HRD: review performa + keputusan reward
