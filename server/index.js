@@ -3588,6 +3588,7 @@ const { setupEngagement }       = require('./engagement-backend');
 const { setupAnalytics }        = require('./analytics-backend');
 const { setupPriceList }        = require('./price-list-backend');
 const { setupGoodsDelivery }    = require('./goods-delivery-backend');
+const { setupPurchaseInvoice }  = require('./purchase-invoice-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3631,6 +3632,7 @@ const engagement = setupEngagement(app, { dbPath: DB_PATH });
 const analytics = setupAnalytics(app, { dbPath: DB_PATH });
 const priceList = setupPriceList(app, { dbPath: DB_PATH });
 const goodsDelivery = setupGoodsDelivery(app, { dbPath: DB_PATH });
+const purchaseInvoice = setupPurchaseInvoice(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
