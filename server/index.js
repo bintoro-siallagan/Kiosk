@@ -3607,6 +3607,7 @@ const { setupFranchise }        = require('./franchise-backend');
 const { setupFoodCost }         = require('./food-cost-backend');
 const { setupConvenienceFee }   = require('./convenience-fee-backend');
 const { setupRewards }          = require('./reward-backend');
+const { setupRewardBenefits }   = require('./reward-benefit-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3663,6 +3664,7 @@ const franchise = setupFranchise(app, { dbPath: DB_PATH });
 const foodCost = setupFoodCost(app, { dbPath: DB_PATH });
 const convenienceFee = setupConvenienceFee(app, { dbPath: DB_PATH });
 const rewards = setupRewards(app, { dbPath: DB_PATH });
+const rewardBenefits = setupRewardBenefits(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
