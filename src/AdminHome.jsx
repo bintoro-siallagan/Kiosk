@@ -18,6 +18,7 @@ const QUEUE = [
 export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   const [now, setNow] = useState(new Date());
   const [orders, setOrders] = useState([]);
+  const [allOrders, setAllOrders] = useState([]);
   const [k, setK] = useState({ revenue: null, orders: null, active: null, alerts: null, crit: 0, health: null });
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
       const today = arr.filter(x => (x.time || 0) >= start);
       const done = today.filter(x => x.status === "completed");
       const active = arr.filter(x => !["completed", "cancelled", "refunded", "partial_refund"].includes(x.status));
-      setOrders(active);
+      setOrders(active); setAllOrders(arr);
       setK(p => ({ ...p, revenue: done.reduce((s, x) => s + (x.total || 0), 0), orders: today.length, active: active.length }));
     }).catch(() => {});
     loadOrders();
@@ -52,6 +53,22 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   const greet = hour < 11 ? "Selamat pagi" : hour < 15 ? "Selamat siang" : hour < 19 ? "Selamat sore" : "Selamat malam";
   const vv = (x, f) => x == null ? "…" : (f ? f(x) : x);
   const openTab = (q) => window.open(window.location.pathname + q, "_blank");
+
+  // ── data penjualan ──
+  const dayRev = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i);
+    const s0 = d.getTime();
+    dayRev.push({ d: d.toLocaleDateString("id-ID", { weekday: "short" }),
+      rev: allOrders.filter(o => o.status === "completed" && o.time >= s0 && o.time < s0 + 864e5).reduce((a, o) => a + (o.total || 0), 0) });
+  }
+  const maxRev = Math.max(1, ...dayRev.map(x => x.rev));
+  const itemMap = {};
+  allOrders.filter(o => o.status !== "cancelled").forEach(o => (o.items || []).forEach(it => {
+    const n = it.n || "?"; (itemMap[n] = itemMap[n] || { qty: 0, e: it.e || "🍽️" }).qty += (it.q || 0);
+  }));
+  const topItems = Object.entries(itemMap).sort((a, b) => b[1].qty - a[1].qty).slice(0, 5);
+  const weekRev = dayRev.reduce((s, x) => s + x.rev, 0);
 
   const kpis = [
     { label: "Penjualan Hari Ini", val: vv(k.revenue, fmtRp), c: "#10b981", icon: "💰" },
@@ -148,6 +165,41 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
         })}
       </div>
 
+      {/* Data penjualan — revenue 7 hari + menu terlaris */}
+      <div style={S.sectionLabel}>DATA PENJUALAN</div>
+      <div style={S.salesRow}>
+        <div style={S.salesCard}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <span style={S.cardKick}>📈 REVENUE 7 HARI</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: "#10b981", fontFamily: "'Space Mono',monospace" }}>{fmtRp(weekRev)}</span>
+          </div>
+          <div style={S.barRow}>
+            {dayRev.map((x, i) => (
+              <div key={i} style={S.barCol}>
+                <div style={S.barVal}>{x.rev > 0 ? fmtK(x.rev) : ""}</div>
+                <div style={{ width: "100%", borderRadius: "4px 4px 0 0", height: Math.max(3, (x.rev / maxRev) * 78), background: i === 6 ? "#10b981" : "#10b98155" }} />
+                <div style={S.barLbl}>{x.d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={S.salesCard}>
+          <div style={S.cardKick}>🏆 MENU TERLARIS</div>
+          <div style={{ marginTop: 8 }}>
+            {topItems.length === 0
+              ? <div style={{ fontSize: 11, color: "#5b6470" }}>Belum ada data penjualan</div>
+              : topItems.map(([n, d], i) => (
+                  <div key={n} style={S.topRow}>
+                    <span style={{ width: 16, color: "#5b6470", fontFamily: "'Space Mono',monospace", fontSize: 10 }}>#{i + 1}</span>
+                    <span style={{ fontSize: 14 }}>{d.e}</span>
+                    <span style={{ flex: 1, fontSize: 12, color: "#cdd5df", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n}</span>
+                    <span style={{ fontFamily: "'Space Mono',monospace", fontWeight: 700, color: "#10b981", fontSize: 12 }}>{d.qty}×</span>
+                  </div>
+                ))}
+          </div>
+        </div>
+      </div>
+
       {/* Akses utama */}
       <div style={S.sectionLabel}>AKSES UTAMA</div>
       <div style={S.primaryRow}>
@@ -214,6 +266,14 @@ const S = {
   queueRow: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 },
   queueCol: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 11, padding: "10px 13px", minHeight: 96 },
   orderChip: { display: "flex", alignItems: "center", gap: 7, fontSize: 11.5, background: "#0a0e16", border: "1px solid #161b22", borderRadius: 7, padding: "5px 9px" },
+  salesRow: { display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 12 },
+  salesCard: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 11, padding: "11px 14px" },
+  cardKick: { fontSize: 10, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  barRow: { display: "flex", alignItems: "flex-end", gap: 8, height: 104, marginTop: 6 },
+  barCol: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 },
+  barVal: { fontSize: 9, color: "#10b981", fontFamily: "'Space Mono',monospace" },
+  barLbl: { fontSize: 10, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  topRow: { display: "flex", alignItems: "center", gap: 9, padding: "4px 0" },
   primaryRow: { display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 12 },
   primaryTile: { display: "flex", alignItems: "center", gap: 13, background: "#0d1117", border: "1px solid #161b22", borderRadius: 13, padding: "11px 18px", fontFamily: "inherit" },
   cols: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, alignItems: "start" },
