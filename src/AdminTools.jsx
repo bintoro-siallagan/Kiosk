@@ -49,6 +49,7 @@ import AdminItemPricing from "./Admin/AdminItemPricing.jsx";
 import AdminItemConfig from "./Admin/AdminItemConfig.jsx";
 import AdminItemRules from "./Admin/AdminItemRules.jsx";
 import AdminItemIntel from "./Admin/AdminItemIntel.jsx";
+import AdminProductHub from "./Admin/AdminProductHub.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -161,6 +162,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "item_config", label: "🔧 Item Config", color: "#0d9488" },
     { id: "item_rules", label: "🍽️ Item Rules", color: "#ea580c" },
     { id: "item_intel", label: "🩺 Item Health", color: "#16a34a" },
+    { id: "product_hub", label: "🛍️ Product Hub", color: "#8b5cf6" },
   ];
 
   return (
@@ -235,6 +237,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "item_config" && <AdminItemConfig apiBase={API} />}
         {tab === "item_rules" && <AdminItemRules apiBase={API} />}
         {tab === "item_intel" && <AdminItemIntel apiBase={API} />}
+        {tab === "product_hub" && <AdminProductHub apiBase={API} />}
       </div>
 
       {toast && <div style={S.toast}>{toast}</div>}

@@ -3628,6 +3628,7 @@ const { setupItemPricing }      = require('./item-pricing-backend');
 const { setupItemConfig }       = require('./item-config-backend');
 const { setupItemRules }        = require('./item-rules-backend');
 const { setupItemIntel }        = require('./item-intel-backend');
+const { setupProductHub }       = require('./product-hub-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3705,6 +3706,7 @@ const itemPricing = setupItemPricing(app, { dbPath: DB_PATH });
 const itemConfig = setupItemConfig(app, { dbPath: DB_PATH });
 const itemRules = setupItemRules(app, { dbPath: DB_PATH });
 const itemIntel = setupItemIntel(app, { dbPath: DB_PATH });
+const productHub = setupProductHub(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
