@@ -3,7 +3,7 @@
 // Detail operasional satu cabang: health breakdown, sales, workforce,
 // stock, issue.
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const MONO = "var(--m)";
@@ -20,13 +20,21 @@ const scoreCol = (s) => (s >= 80 ? "#10b981" : s >= 60 ? "#f59e0b" : "#ef4444");
 export default function CommandOutletDetail({ outletId, onBack }) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState("");
+  const [resolving, setResolving] = useState(null);
 
-  useEffect(() => {
-    setD(null); setErr("");
+  const load = useCallback(() => {
     fetch(`${API}/api/outlets/${outletId}`).then(r => r.json())
       .then(j => j.error ? setErr(j.error) : setD(j))
       .catch(e => setErr(String(e)));
   }, [outletId]);
+  useEffect(() => { setD(null); setErr(""); load(); }, [outletId, load]);
+
+  const resolveIssue = (issueId) => {
+    setResolving(issueId);
+    fetch(`${API}/api/outlets/${outletId}/issues/${issueId}/resolve`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
+    }).then(r => r.json()).then(() => load()).catch(() => {}).finally(() => setResolving(null));
+  };
 
   if (err) return <div style={S.msg}>Gagal memuat detail: {err} <button onClick={onBack} style={S.back}>← Kembali</button></div>;
   if (!d) return <div style={S.msg}>Memuat detail outlet…</div>;
@@ -95,13 +103,17 @@ export default function CommandOutletDetail({ outletId, onBack }) {
 
       <div style={S.card}>
         <div style={S.kicker}>⚠️ ISSUE & RISK — {d.issues.open} OPEN · {d.issues.critical} KRITIS</div>
-        {d.issues.recent.length === 0 ? (
-          <div style={{ color: "#10b981", fontSize: 13 }}>✓ Tidak ada issue — outlet bersih</div>
-        ) : d.issues.recent.map((it, i) => (
-          <div key={i} style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 0", borderBottom: "1px solid #15151e" }}>
+        {d.issues.list.length === 0 ? (
+          <div style={{ color: "#10b981", fontSize: 13 }}>✓ Semua issue beres — outlet bersih! 🎉</div>
+        ) : d.issues.list.map(it => (
+          <div key={it.id} style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 0", borderBottom: "1px solid #15151e" }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: SEV[it.severity], flexShrink: 0 }} />
-            <span style={{ fontSize: 13, color: "#ddd" }}>{it.text}</span>
-            <span style={{ marginLeft: "auto", fontSize: 10, color: SEV[it.severity], fontFamily: MONO, textTransform: "uppercase" }}>{it.severity}</span>
+            <span style={{ fontSize: 13, color: "#ddd", flex: 1 }}>{it.text}</span>
+            <span style={{ fontSize: 10, color: SEV[it.severity], fontFamily: MONO, textTransform: "uppercase" }}>{it.severity}</span>
+            <button onClick={() => resolveIssue(it.id)} disabled={resolving === it.id}
+              style={{ background: "#10b9811f", border: "1px solid #10b98155", color: "#10b981", fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 7, cursor: resolving === it.id ? "wait" : "pointer", fontFamily: MONO, flexShrink: 0 }}>
+              {resolving === it.id ? "…" : "✓ Resolve"}
+            </button>
           </div>
         ))}
       </div>

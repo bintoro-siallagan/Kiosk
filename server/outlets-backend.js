@@ -23,7 +23,24 @@ CREATE TABLE IF NOT EXISTS outlets (
   is_flagship INTEGER DEFAULT 0,
   created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
+CREATE TABLE IF NOT EXISTS outlet_issues (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  outlet_id INTEGER NOT NULL,
+  text TEXT NOT NULL,
+  severity TEXT DEFAULT 'warning',
+  resolved INTEGER DEFAULT 0,
+  resolved_at INTEGER,
+  resolved_by TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
 `;
+
+const ISSUE_POOL = [
+  'Waste topping berlebih', 'Void transaksi tinggi', 'Stok bahan menipis',
+  'Komplain antrian lama', 'Absensi telat staff', 'Suhu chiller di luar standar',
+  'Struk tidak tercetak', 'Selisih kas akhir shift', 'Menu kosong belum di-update',
+  'Kebersihan area perlu dicek',
+];
 
 // [area, name, manager, revenue, growth%, health, issues, staff, flagship]
 const SEED = [
@@ -49,7 +66,20 @@ function setupOutlets(app, opts = {}) {
     for (const r of SEED) s.run(...r);
   }
 
+  // Seed issue per outlet (sebanyak open_issues masing-masing)
+  if (db.prepare(`SELECT COUNT(*) c FROM outlet_issues`).get().c === 0) {
+    const si = db.prepare(`INSERT INTO outlet_issues (outlet_id, text, severity) VALUES (?,?,?)`);
+    for (const o of db.prepare(`SELECT id, open_issues FROM outlets`).all()) {
+      for (let i = 0; i < o.open_issues; i++) {
+        const sev = i < Math.floor(o.open_issues / 4) ? 'critical'
+          : i < Math.floor(o.open_issues * 0.7) ? 'warning' : 'info';
+        si.run(o.id, ISSUE_POOL[(o.id * 3 + i) % ISSUE_POOL.length], sev);
+      }
+    }
+  }
+
   const router = express.Router();
+  router.use(express.json());
 
   router.get('/', (req, res) => {
     const rows = db.prepare(`SELECT * FROM outlets ORDER BY area, name`).all()
@@ -82,7 +112,10 @@ function setupOutlets(app, opts = {}) {
   router.get('/:id', (req, res) => {
     const o = db.prepare(`SELECT * FROM outlets WHERE id = ?`).get(req.params.id);
     if (!o) return res.status(404).json({ error: 'outlet tidak ditemukan' });
-    const h = o.health_score, iss = o.open_issues, staff = o.staff_count, rev = o.revenue_today, g = o.growth_pct;
+    const openIssues = db.prepare(`SELECT id, text, severity FROM outlet_issues
+      WHERE outlet_id=? AND resolved=0
+      ORDER BY CASE severity WHEN 'critical' THEN 0 WHEN 'warning' THEN 1 ELSE 2 END, id`).all(o.id);
+    const h = o.health_score, iss = openIssues.length, staff = o.staff_count, rev = o.revenue_today, g = o.growth_pct;
 
     const health_components = [
       { key: 'SOP & Disiplin',    score: clamp(h + det(o.id, 1)) },
@@ -101,24 +134,37 @@ function setupOutlets(app, opts = {}) {
     const stockCrit = Math.min(8, Math.round(iss / 3));
     const stockLow = Math.min(14, Math.max(0, iss - stockCrit));
 
-    const ISSUES = ['Waste topping berlebih', 'Void transaksi tinggi', 'Stok bahan menipis',
-      'Komplain antrian lama', 'Absensi telat staff', 'Suhu chiller di luar standar'];
-    const recent = [];
-    for (let i = 0; i < Math.min(iss, 4); i++) {
-      recent.push({
-        text: ISSUES[(o.id + i) % ISSUES.length],
-        severity: i === 0 && iss >= 8 ? 'critical' : i < 2 ? 'warning' : 'info',
-      });
-    }
-
     res.json({
       outlet: { ...o, status: statusOf(h) },
       health_components,
       sales: { revenue: rev, growth_pct: g, target, target_pct: target ? Math.round(rev / target * 100) : 0, transactions, avg_bill },
       workforce: { staff_count: staff, on_duty: Math.max(1, staff - (o.id % 2)), attendance_pct: clamp(86 + det(o.id, 7)) },
       stock: { total: stockTotal, critical: stockCrit, low: stockLow, ok: stockTotal - stockCrit - stockLow },
-      issues: { open: iss, critical: Math.round(iss / 4), recent },
+      issues: {
+        open: openIssues.length,
+        critical: openIssues.filter(x => x.severity === 'critical').length,
+        list: openIssues,
+      },
     });
+  });
+
+  // ── Resolve issue (klik dari Outlet Detail) ──
+  router.post('/:id/issues/:issueId/resolve', (req, res) => {
+    const issue = db.prepare(`SELECT * FROM outlet_issues WHERE id=? AND outlet_id=?`)
+      .get(req.params.issueId, req.params.id);
+    if (!issue) return res.status(404).json({ error: 'issue tidak ditemukan' });
+
+    if (!issue.resolved) {
+      db.prepare(`UPDATE outlet_issues SET resolved=1, resolved_at=strftime('%s','now'), resolved_by=? WHERE id=?`)
+        .run((req.body && req.body.by) || 'Manager', issue.id);
+      // sinkron open_issues + naikin health (resolve issue = outlet makin sehat)
+      const open = db.prepare(`SELECT COUNT(*) c FROM outlet_issues WHERE outlet_id=? AND resolved=0`).get(req.params.id).c;
+      const cur = db.prepare(`SELECT health_score FROM outlets WHERE id=?`).get(req.params.id);
+      const newHealth = Math.min(100, cur.health_score + 2);
+      db.prepare(`UPDATE outlets SET open_issues=?, health_score=? WHERE id=?`).run(open, newHealth, req.params.id);
+    }
+    const updated = db.prepare(`SELECT * FROM outlets WHERE id=?`).get(req.params.id);
+    res.json({ ok: true, outlet: { ...updated, status: statusOf(updated.health_score) } });
   });
 
   const mountPath = opts.mountPath || '/api/outlets';
