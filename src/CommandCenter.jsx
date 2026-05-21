@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import CommandExecutive from "./CommandExecutive.jsx";
+import CommandOutlets from "./CommandOutlets.jsx";
 import CommandCustomer from "./CommandCustomer.jsx";
 import CommandOperation from "./CommandOperation.jsx";
 import CommandHRIS from "./CommandHRIS.jsx";
@@ -168,6 +169,7 @@ export default function CommandCenter(){
 
   const TABS=[
     {id:"exec",lb:"👔 Executive",ac:"#fbbf24"},
+    {id:"outlets",lb:"🏢 Outlets",ac:"#22d3ee"},
     {id:"cust",lb:"😊 Customer",ac:"#22d3ee"},
     {id:"ops",lb:"🟢 Operation",ac:"#84cc16"},
     {id:"hris",lb:"👥 HRIS",ac:"#a78bfa"},
@@ -231,6 +233,7 @@ export default function CommandCenter(){
 
     {/* ═══ LIVE SALES ═══ */}
     {tab==="exec"&&<div style={{animation:"si .2s ease-out"}}><CommandExecutive/></div>}
+    {tab==="outlets"&&<div style={{animation:"si .2s ease-out"}}><CommandOutlets/></div>}
     {tab==="cust"&&<div style={{animation:"si .2s ease-out"}}><CommandCustomer/></div>}
     {tab==="ops"&&<div style={{animation:"si .2s ease-out"}}><CommandOperation/></div>}
     {tab==="hris"&&<div style={{animation:"si .2s ease-out"}}><CommandHRIS/></div>}
