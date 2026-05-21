@@ -122,6 +122,9 @@ db.exec(`
 try { db.exec("ALTER TABLE customers ADD COLUMN points INTEGER DEFAULT 0"); console.log("🎁 customers.points column added"); }
 catch (e) { /* column already exists */ }
 
+try { db.exec("ALTER TABLE orders ADD COLUMN convenience_fee INTEGER DEFAULT 0"); console.log("🧾 orders.convenience_fee added"); }
+catch (e) { /* column already exists */ }
+
 const stmts = {
   insert: db.prepare(`
     INSERT OR REPLACE INTO orders (
@@ -129,13 +132,13 @@ const stmts = {
       subtotal, tax, total,
       customer_id, customer_name, customer_phone,
       promo_code, promo_discount, promo_free_items,
-      midtrans_id, cash_received, cash_change, points_redeemed, points_discount, points_earned, kasir, source
+      midtrans_id, cash_received, cash_change, points_redeemed, points_discount, points_earned, kasir, source, convenience_fee
     ) VALUES (
       @id, @time, @type, @table, @status, @pay, @items, @addons,
       @subtotal, @tax, @total,
       @customer_id, @customer_name, @customer_phone,
       @promo_code, @promo_discount, @promo_free_items,
-      @midtrans_id, @cash_received, @cash_change, @points_redeemed, @points_discount, @points_earned, @kasir, @source
+      @midtrans_id, @cash_received, @cash_change, @points_redeemed, @points_discount, @points_earned, @kasir, @source, @convenience_fee
     )
   `),
   updateStatus: db.prepare(`UPDATE orders SET status = ? WHERE id = ?`),
@@ -170,6 +173,7 @@ function orderToRow(o) {
     points_earned:   o.pointsEarned   ?? 0,
     kasir:           o.kasir || null,
     source:          o.source || null,
+    convenience_fee: o.convenienceFee ?? 0,
   };
 }
 
@@ -200,6 +204,7 @@ function rowToOrder(r) {
     pointsEarned:   r.points_earned   || 0,
     kasir: r.kasir || null,
     source: r.source || null,
+    convenienceFee: r.convenience_fee || 0,
     cancelledAt:    r.cancelled_at || null,
     cancelReason:   r.cancel_reason || null,
     cancelledBy:    r.cancelled_by || null,
