@@ -3656,6 +3656,7 @@ const { setupShiftRoster }      = require('./shift-roster-backend');
 const { setupNotificationCenter } = require('./notification-center-backend');
 const { setupAutoReorder }      = require('./auto-reorder-backend');
 const { setupSalesStockSync }   = require('./sales-stock-sync-backend');
+const { setupCoa }              = require('./coa-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3756,6 +3757,7 @@ const shiftRoster = setupShiftRoster(app, { dbPath: DB_PATH });
 const notificationCenter = setupNotificationCenter(app, { dbPath: DB_PATH });
 const autoReorder = setupAutoReorder(app, { dbPath: DB_PATH });
 const salesStockSync = setupSalesStockSync(app, { dbPath: DB_PATH });
+const coa = setupCoa(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
