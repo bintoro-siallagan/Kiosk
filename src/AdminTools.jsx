@@ -11,6 +11,7 @@ import AdminLoyalty from "./Admin/AdminLoyalty.jsx";
 import AdminCashierKPI from "./Admin/AdminCashierKPI.jsx";
 import AdminChecklist from "./Admin/AdminChecklist.jsx";
 import AdminHRIS from "./Admin/AdminHRIS.jsx";
+import AdminBroadcast from "./Admin/AdminBroadcast.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -85,6 +86,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "cashier_kpi", label: "📊 KPI Kasir", color: "#34D399" },
     { id: "checklist", label: "✅ Checklist", color: "#10B981" },
     { id: "hris", label: "👥 HRIS", color: "#A78BFA" },
+    { id: "broadcast", label: "📣 Broadcast", color: "#f97316" },
   ];
 
   return (
@@ -121,6 +123,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "cashier_kpi" && <AdminCashierKPI apiBase={API} />}
         {tab === "checklist" && <AdminChecklist apiBase={API} />}
         {tab === "hris" && <AdminHRIS apiBase={API} />}
+        {tab === "broadcast" && <AdminBroadcast apiBase={API} />}
       </div>
 
       {toast && <div style={S.toast}>{toast}</div>}

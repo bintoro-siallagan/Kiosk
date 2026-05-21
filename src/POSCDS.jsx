@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useMenu } from "./MenuContext.jsx";
+import PromoBroadcastBanner from "./PromoBroadcastBanner.jsx";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
 const WS_URL = API_BASE.replace(/^http/, "ws");
@@ -168,6 +169,7 @@ export default function POSCDS() {
 
   return (
     <>
+      <PromoBroadcastBanner />
       <style>{`
         @keyframes ssFadeIn {
           from { opacity: 0; transform: scale(0.95); }

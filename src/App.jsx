@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { unlockAudio, loadAudioConfig } from "./audio.js";
 import CustomerTrackingPage from "./CustomerTrackingPage.jsx";
+import PromoBroadcastBanner from "./PromoBroadcastBanner.jsx";
 import POSCDS from "./POSCDS.jsx";
 import AdminLogin    from "./AdminLogin.jsx";
 import Kiosk         from "./Kiosk.jsx";
@@ -119,7 +120,7 @@ export default function App() {
   if (scene === "tools") return <AdminTools onBack={() => { setScene("admin"); }} initialTab={toolsTab} />;
   if (scene === "command") return <CommandCenter />;
   if (scene === "flow") return <FlowApp />;
-  if (scene === "customer-track") return <CustomerTrackingPage orderId={trackOrderId}/>;
+  if (scene === "customer-track") return <><PromoBroadcastBanner/><CustomerTrackingPage orderId={trackOrderId}/></>;
   if (scene === "track")       return <OrderTracking onHome={go("kiosk")}/>;
   if (scene === "admin")       return <Admin onExit={go("kiosk")} onReport={go("report")} onESBSync={go("esb-sync")} onESBNotif={go("esb-notif")} onMembers={go("members")} onPromo={go("promo")} onShift={go("shift")} onLogout={handleAdminLogout} adminSession={adminSession} onTools={(tab) => { if (tab === "command") { setScene("command"); } else { setToolsTab(tab); setScene("tools"); } }}/>;
   if (scene === "report")      return <Report    onBack={go("admin")}/>;
@@ -189,6 +190,7 @@ export default function App() {
 
   return (
     <ShiftGate>
+      <PromoBroadcastBanner/>
       <Kiosk
       onCheckout={handleKioskCheckout}
       onAdminAccess={go("admin-login")}
