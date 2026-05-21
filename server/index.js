@@ -3616,6 +3616,7 @@ const { setupMarketingBehavior } = require('./marketing-behavior-backend');
 const { setupLoyaltyPromo }     = require('./loyalty-promo-backend');
 const { setupFeedbackSegment }  = require('./feedback-segment-backend');
 const { setupClvChurn }         = require('./clv-churn-backend');
+const { setupGeoEngagement }    = require('./geo-engagement-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3681,6 +3682,7 @@ const marketingBehavior = setupMarketingBehavior(app, { dbPath: DB_PATH });
 const loyaltyPromo = setupLoyaltyPromo(app, { dbPath: DB_PATH });
 const feedbackSegment = setupFeedbackSegment(app, { dbPath: DB_PATH });
 const clvChurn = setupClvChurn(app, { dbPath: DB_PATH });
+const geoEngagement = setupGeoEngagement(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
