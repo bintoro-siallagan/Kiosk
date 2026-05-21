@@ -71,6 +71,15 @@ export default function Payment({ cart, orderType, promo, tableData, customerDat
       .catch(() => setEnabledMethods({ cash: true, qris: true })); // fallback
   }, []);
 
+  // === Convenience fee — biaya layanan transaksi digital (QRIS) ===
+  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+  const [convFee, setConvFee] = useState({ enabled: 0, amount: 0, label: "Biaya Layanan" });
+  useEffect(() => {
+    fetch(`${API_BASE}/api/convenience-fee`).then(r => r.json())
+      .then(c => c && setConvFee(c)).catch(() => {});
+  }, [API_BASE]);
+  const qrisFee = convFee.enabled ? Math.round(convFee.amount) : 0;
+
   // Auto-select if only ONE method enabled (skip selector)
   useEffect(() => {
     if (!enabledMethods || method) return;
@@ -200,7 +209,7 @@ export default function Payment({ cart, orderType, promo, tableData, customerDat
             <div style={S.methodCard} onClick={() => setMethod('qris')} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>
               <div style={S.methodIcon}>📱</div>
               <div style={S.methodLabel}>QRIS / GoPay</div>
-              <div style={S.methodSub}>Scan & bayar</div>
+              <div style={S.methodSub}>Scan & bayar{qrisFee > 0 ? ` · +${convFee.label} Rp ${qrisFee.toLocaleString('id-ID')}` : ''}</div>
             </div>
           )}
 
@@ -258,11 +267,13 @@ export default function Payment({ cart, orderType, promo, tableData, customerDat
     );
   }
 
-  // === QRIS ===
+  // === QRIS — total + biaya layanan ===
   return (
     <QRISPayment
       items={items}
-      amount={amount}
+      amount={amount + qrisFee}
+      convenienceFee={qrisFee}
+      convenienceLabel={convFee.label}
       customerInfo={{ name: customerData?.name, phone: customerData?.phone }}
       orderType={orderType}
       orderNum={orderNum}

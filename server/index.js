@@ -342,7 +342,10 @@ app.post("/api/orders", (req, res) => {
 
   const subtotalAfterPromo = Math.max(0, subtotal - promoDisc - pointsDiscount);
   const tax = Math.round(subtotalAfterPromo * 11 / 111);  // extract tax portion (inclusive)
-  const total = subtotalAfterPromo;                        // no addition — already gross
+  // biaya layanan transaksi digital (QRIS dll) — nutup MDR; tunai & POS kasir bebas
+  const convenienceFee = (typeof global.getConvenienceFee === 'function')
+    ? global.getConvenienceFee(pay, source) : 0;
+  const total = subtotalAfterPromo + convenienceFee;       // gross + biaya layanan
 
   const order = {
     id:       `A${String(++orderCounter).padStart(2, "0")}`,
@@ -357,6 +360,7 @@ app.post("/api/orders", (req, res) => {
     addons:   addons || {},
     subtotal,
     tax,
+    convenienceFee,
     total,
     customerId,
     customerName,
@@ -2666,7 +2670,8 @@ Terima kasih sudah memesan di *BINTORO* 🍽️`
 app.get("/api/receipt/:orderId", (req, res) => {
   const order = orders.find(o => o.id === req.params.orderId);
   if (!order) return res.status(404).json({ error: "Order not found" });
-  const tax = Math.round(order.total * 11 / 111);  // B17: inclusive PPN post-discount
+  const convenienceFee = order.convenienceFee || 0;
+  const tax = Math.round((order.total - convenienceFee) * 11 / 111);  // PPN goods only — biaya layanan non-taxable
   res.json({
     receiptNo:    `RCP-${order.id}-${Date.now().toString(36).toUpperCase()}`,
     orderId:      order.id,
@@ -2680,6 +2685,7 @@ app.get("/api/receipt/:orderId", (req, res) => {
     promoDiscount:order.promoDiscount || 0,
     promoFreeItems: order.promoFreeItems || null,
     tax,
+    convenienceFee,
     total:        order.total,
     payment: order.pay === "CASH" ? "TUNAI" : "QRIS",
     midtransId:   order.midtransId || null,
@@ -3599,6 +3605,7 @@ const { setupBudget }           = require('./budget-backend');
 const { setupPayroll }          = require('./payroll-backend');
 const { setupFranchise }        = require('./franchise-backend');
 const { setupFoodCost }         = require('./food-cost-backend');
+const { setupConvenienceFee }   = require('./convenience-fee-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3653,6 +3660,7 @@ const budget = setupBudget(app, { dbPath: DB_PATH });
 const payroll = setupPayroll(app, { dbPath: DB_PATH });
 const franchise = setupFranchise(app, { dbPath: DB_PATH });
 const foodCost = setupFoodCost(app, { dbPath: DB_PATH });
+const convenienceFee = setupConvenienceFee(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
