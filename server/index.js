@@ -3595,6 +3595,7 @@ const { setupFinancialStatements } = require('./financial-statements-backend');
 const { setupFinanceCenter }    = require('./finance-center-backend');
 const { setupFinanceAlerts }    = require('./finance-alert-backend');
 const { setupAR }               = require('./ar-backend');
+const { setupBudget }           = require('./budget-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3645,6 +3646,7 @@ const finStatements = setupFinancialStatements(app, { dbPath: DB_PATH });
 const financeCenter = setupFinanceCenter(app, { dbPath: DB_PATH });
 const financeAlerts = setupFinanceAlerts(app, { dbPath: DB_PATH });
 const ar = setupAR(app, { dbPath: DB_PATH });
+const budget = setupBudget(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
