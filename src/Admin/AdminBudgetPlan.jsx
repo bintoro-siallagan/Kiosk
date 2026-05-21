@@ -69,11 +69,11 @@ export default function AdminBudgetPlan({ apiBase = "" }) {
           <span style={S.kicker}>📅 PERIODE:</span>
           {d.periods.map(p => (
             <button key={p.id} onClick={() => { setPeriod(p.id); load(p.id); }}
-              style={{ ...S.chip, ...(p.id === period ? { background: AC, borderColor: AC, color: "#fff" } : {}) }}>
+              style={{ ...S.chip, ...(p.id === period ? { background: AC, border: `1px solid ${AC}`, color: "#fff" } : {}) }}>
               {p.name} {p.status === "active" ? "●" : ""}
             </button>
           ))}
-          <button onClick={newPeriod} style={{ ...S.chip, color: "#818cf8", borderColor: "#4f46e555" }}>+ Periode Baru</button>
+          <button onClick={newPeriod} style={{ ...S.chip, color: "#818cf8", border: "1px solid #4f46e555" }}>+ Periode Baru</button>
           {msg ? <span style={{ marginLeft: "auto", fontSize: 12, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</span> : null}
         </div>
       </div>
