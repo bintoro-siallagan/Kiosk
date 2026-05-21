@@ -1,6 +1,6 @@
 // src/AdminHome.jsx
-// Dashboard Baru — home utama. KPI · antrian order live · data
-// penjualan · akses Tools / Management / fitur outlet & manajemen.
+// Dashboard Baru — home. Layout 2 bagian: panel modul vertikal (kiri)
+// + konten dashboard KPI / antrian / penjualan (kanan).
 
 import { useState, useEffect } from "react";
 
@@ -54,7 +54,6 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   const vv = (x, f) => x == null ? "…" : (f ? f(x) : x);
   const openTab = (q) => window.open(window.location.pathname + q, "_blank");
 
-  // ── data penjualan ──
   const dayRev = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i);
@@ -82,18 +81,18 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
     { label: "Management", desc: "Command Center — 13 dashboard realtime monitoring", icon: "📊", c: "#3b82f6", on: () => openTab("?command=1") },
   ];
   const columns = [
-    { title: "Outlet", items: [
+    { title: "Outlet", accent: "#22d3ee", items: [
       { label: "Transaksi Outlet", icon: "🧾", c: "#10b981", on: () => onNav("admin", "orders") },
       { label: "Menu & Stok", icon: "🍔", c: "#f59e0b", on: () => onNav("admin", "menu") },
       { label: "QR Meja", icon: "🪑", c: "#a855f7", on: () => onNav("admin", "qrgen") },
       { label: "Pengaturan", icon: "⚙️", c: "#7d8590", on: () => onNav("admin", "settings") },
     ] },
-    { title: "Surface Operasional", items: [
+    { title: "Surface Operasional", accent: "#10b981", items: [
       { label: "POS Kasir", icon: "🧾", c: "#10b981", on: () => openTab("?pos=1") },
       { label: "KDS Dapur", icon: "👨‍🍳", c: "#f97316", on: () => openTab("?kds=1") },
       { label: "CDS Display", icon: "📺", c: "#a855f7", on: () => openTab("?cds=1") },
     ] },
-    { title: "Manajemen & Data", items: [
+    { title: "Manajemen & Data", accent: "#3b82f6", items: [
       { label: "Member & Customer", icon: "👥", c: "#3b82f6", on: () => onNav("members") },
       { label: "Promo Code", icon: "🏷️", c: "#ec4899", on: () => onNav("promo") },
       { label: "Operasional / Shift", icon: "📋", c: "#f59e0b", on: () => onNav("shift") },
@@ -103,8 +102,8 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
     ] },
   ];
 
-  const Section = ({ label, accent = "#f59e0b", right }) => (
-    <div style={S.sectionHead}>
+  const Section = ({ label, accent = "#f59e0b", right, mt }) => (
+    <div style={{ ...S.sectionHead, marginTop: mt == null ? 16 : mt }}>
       <span style={{ width: 3, height: 13, background: accent, borderRadius: 2 }} />
       <span style={S.sectionLabel}>{label}</span>
       <span style={{ flex: 1 }} />
@@ -132,123 +131,129 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
         </div>
       </div>
 
-      {/* KPI */}
-      <div style={S.kpiRow}>
-        {kpis.map(x => (
-          <div key={x.label} className="card" style={S.kpi}>
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ ...S.chip, background: `${x.c}1a`, color: x.c, border: `1px solid ${x.c}33` }}>{x.icon}</div>
-              <div style={S.kpiLabel}>{x.label}</div>
-            </div>
-            <div style={{ ...S.kpiVal, color: x.c }}>{x.val}</div>
-            <div style={S.kpiSub}>{x.sub}</div>
-            <div style={{ ...S.kpiGlow, background: x.c }} />
-          </div>
-        ))}
-      </div>
+      {/* Body — 2 bagian */}
+      <div style={S.body}>
 
-      {/* Akses utama */}
-      <Section label="AKSES UTAMA" />
-      <div style={S.primaryRow}>
-        {primary.map(t => (
-          <button key={t.label} className="tile" style={{ ...S.primaryTile, background: `linear-gradient(135deg, ${t.c}12, #0d1117 60%)`, borderColor: `${t.c}3a` }} onClick={t.on}>
-            <div style={{ ...S.chip, width: 46, height: 46, fontSize: 25, background: `${t.c}1f`, color: t.c, border: `1px solid ${t.c}44` }}>{t.icon}</div>
-            <div style={{ flex: 1, textAlign: "left" }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#e6edf3" }}>{t.label}</div>
-              <div style={{ fontSize: 11.5, color: "#7d8590", marginTop: 2 }}>{t.desc}</div>
+        {/* ── KIRI: panel modul vertikal ── */}
+        <aside style={S.left}>
+          {columns.map((col, ci) => (
+            <div key={col.title}>
+              <Section label={col.title.toUpperCase()} accent={col.accent} mt={ci === 0 ? 0 : 14} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {col.items.map(t => (
+                  <button key={t.label} className="tile" style={S.rowTile} onClick={t.on}>
+                    <div style={{ ...S.chip, width: 30, height: 30, fontSize: 14, background: `${t.c}1a`, color: t.c, border: `1px solid ${t.c}33` }}>{t.icon}</div>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: "#e6edf3", flex: 1, textAlign: "left" }}>{t.label}</span>
+                    <span style={{ color: "#5b6470", fontSize: 13 }}>→</span>
+                  </button>
+                ))}
+              </div>
             </div>
-            <span style={{ ...S.arrow, background: `${t.c}1a`, color: t.c }}>→</span>
-          </button>
-        ))}
-      </div>
+          ))}
+        </aside>
 
-      {/* Antrian order + data penjualan */}
-      <div style={S.dataGrid}>
-        <div className="card" style={S.bigCard}>
-          <Section label="ANTRIAN ORDER LIVE" accent="#3b82f6"
-            right={<button onClick={() => onNav("admin", "overview")} style={S.linkBtn}>dashboard outlet →</button>} />
-          <div style={S.queueRow}>
-            {QUEUE.map(q => {
-              const list = orders.filter(o => o.status === q.key);
-              return (
-                <div key={q.key} style={{ ...S.queueCol, borderTop: `2px solid ${q.c}` }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 7 }}>
-                    <span style={{ fontSize: 11.5, fontWeight: 700, color: q.c }}>● {q.label}</span>
-                    <span style={{ fontSize: 14, fontWeight: 800, color: q.c, fontFamily: "'Space Mono',monospace" }}>{list.length}</span>
-                  </div>
-                  {list.length === 0
-                    ? <div style={{ fontSize: 11, color: "#5b6470", padding: "4px 0" }}>Tidak ada order</div>
-                    : <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                        {list.slice(0, 4).map(o => (
-                          <div key={o.id} style={S.orderChip}>
-                            <span style={{ fontFamily: "'Space Mono',monospace", fontWeight: 700, color: "#e6edf3" }}>#{o.id}</span>
-                            <span style={{ color: "#7d8590" }}>{o.type === "dine" ? `🪑${o.table}` : "🛍️"}</span>
-                            <span style={{ flex: 1, textAlign: "right", color: "#9da7b3", fontFamily: "'Space Mono',monospace" }}>{fmtK(o.total)}</span>
-                            <span style={{ color: "#5b6470", fontSize: 10 }}>{ago(o.time)}</span>
-                          </div>
-                        ))}
-                        {list.length > 4 && <div style={{ fontSize: 10, color: "#5b6470" }}>+{list.length - 4} order lagi…</div>}
-                      </div>}
+        {/* ── KANAN: konten dashboard ── */}
+        <main style={S.right}>
+          {/* KPI */}
+          <div style={S.kpiRow}>
+            {kpis.map(x => (
+              <div key={x.label} className="card" style={S.kpi}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ ...S.chip, background: `${x.c}1a`, color: x.c, border: `1px solid ${x.c}33` }}>{x.icon}</div>
+                  <div style={S.kpiLabel}>{x.label}</div>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="card" style={S.bigCard}>
-          <Section label="REVENUE 7 HARI" accent="#10b981"
-            right={<span style={{ fontSize: 13, fontWeight: 800, color: "#10b981", fontFamily: "'Space Mono',monospace" }}>{fmtRp(weekRev)}</span>} />
-          <div style={S.barRow}>
-            {dayRev.map((x, i) => (
-              <div key={i} style={S.barCol}>
-                <div style={S.barVal}>{x.rev > 0 ? fmtK(x.rev) : ""}</div>
-                <div style={{ width: "100%", borderRadius: "4px 4px 0 0", height: Math.max(3, (x.rev / maxRev) * 70),
-                  background: i === 6 ? "linear-gradient(180deg,#10b981,#10b98155)" : "#10b98140" }} />
-                <div style={S.barLbl}>{x.d}</div>
+                <div style={{ ...S.kpiVal, color: x.c }}>{x.val}</div>
+                <div style={S.kpiSub}>{x.sub}</div>
+                <div style={{ ...S.kpiGlow, background: x.c }} />
               </div>
             ))}
           </div>
-        </div>
-      </div>
 
-      {/* Menu terlaris */}
-      <Section label="MENU TERLARIS" accent="#f59e0b" />
-      <div className="card" style={{ ...S.bigCard, padding: "12px 16px" }}>
-        {topItems.length === 0
-          ? <div style={{ fontSize: 11, color: "#5b6470" }}>Belum ada data penjualan</div>
-          : <div style={S.topGrid}>
-              {topItems.map(([n, d], i) => (
-                <div key={n} style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: i === 0 ? "#f59e0b" : "#5b6470", fontFamily: "'Space Mono',monospace", width: 18 }}>#{i + 1}</span>
-                  <span style={{ fontSize: 16 }}>{d.e}</span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 12, color: "#cdd5df", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n}</div>
-                    <div style={{ height: 3, background: "#161b22", borderRadius: 2, marginTop: 3 }}>
-                      <div style={{ height: "100%", width: (d.qty / maxQty * 100) + "%", background: "#f59e0b", borderRadius: 2 }} />
-                    </div>
-                  </div>
-                  <span style={{ fontFamily: "'Space Mono',monospace", fontWeight: 700, color: "#f59e0b", fontSize: 12 }}>{d.qty}×</span>
+          {/* Akses utama */}
+          <Section label="AKSES UTAMA" mt={14} />
+          <div style={S.primaryRow}>
+            {primary.map(t => (
+              <button key={t.label} className="tile" style={{ ...S.primaryTile, background: `linear-gradient(135deg, ${t.c}12, #0d1117 60%)`, borderColor: `${t.c}3a` }} onClick={t.on}>
+                <div style={{ ...S.chip, width: 44, height: 44, fontSize: 24, background: `${t.c}1f`, color: t.c, border: `1px solid ${t.c}44` }}>{t.icon}</div>
+                <div style={{ flex: 1, textAlign: "left" }}>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: "#e6edf3" }}>{t.label}</div>
+                  <div style={{ fontSize: 11, color: "#7d8590", marginTop: 2 }}>{t.desc}</div>
                 </div>
-              ))}
-            </div>}
-      </div>
+                <span style={{ ...S.arrow, background: `${t.c}1a`, color: t.c }}>→</span>
+              </button>
+            ))}
+          </div>
 
-      {/* Modul — 3 kolom */}
-      <div style={S.cols}>
-        {columns.map((col, ci) => (
-          <div key={col.title}>
-            <Section label={col.title.toUpperCase()} accent={["#22d3ee", "#10b981", "#3b82f6"][ci]} />
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {col.items.map(t => (
-                <button key={t.label} className="tile" style={S.rowTile} onClick={t.on}>
-                  <div style={{ ...S.chip, width: 32, height: 32, fontSize: 15, background: `${t.c}1a`, color: t.c, border: `1px solid ${t.c}33` }}>{t.icon}</div>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#e6edf3", flex: 1, textAlign: "left" }}>{t.label}</span>
-                  <span style={{ color: "#5b6470", fontSize: 14 }}>→</span>
-                </button>
-              ))}
+          {/* Antrian order + revenue */}
+          <div style={S.dataGrid}>
+            <div className="card" style={S.bigCard}>
+              <Section label="ANTRIAN ORDER LIVE" accent="#3b82f6" mt={6}
+                right={<button onClick={() => onNav("admin", "overview")} style={S.linkBtn}>dashboard outlet →</button>} />
+              <div style={S.queueRow}>
+                {QUEUE.map(q => {
+                  const list = orders.filter(o => o.status === q.key);
+                  return (
+                    <div key={q.key} style={{ ...S.queueCol, borderTop: `2px solid ${q.c}` }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 7 }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: q.c }}>● {q.label}</span>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: q.c, fontFamily: "'Space Mono',monospace" }}>{list.length}</span>
+                      </div>
+                      {list.length === 0
+                        ? <div style={{ fontSize: 10.5, color: "#5b6470", padding: "4px 0" }}>Tidak ada order</div>
+                        : <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                            {list.slice(0, 4).map(o => (
+                              <div key={o.id} style={S.orderChip}>
+                                <span style={{ fontFamily: "'Space Mono',monospace", fontWeight: 700, color: "#e6edf3" }}>#{o.id}</span>
+                                <span style={{ flex: 1, textAlign: "right", color: "#9da7b3", fontFamily: "'Space Mono',monospace" }}>{fmtK(o.total)}</span>
+                                <span style={{ color: "#5b6470", fontSize: 10 }}>{ago(o.time)}</span>
+                              </div>
+                            ))}
+                            {list.length > 4 && <div style={{ fontSize: 10, color: "#5b6470" }}>+{list.length - 4} lagi…</div>}
+                          </div>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="card" style={S.bigCard}>
+              <Section label="REVENUE 7 HARI" accent="#10b981" mt={6}
+                right={<span style={{ fontSize: 12.5, fontWeight: 800, color: "#10b981", fontFamily: "'Space Mono',monospace" }}>{fmtRp(weekRev)}</span>} />
+              <div style={S.barRow}>
+                {dayRev.map((x, i) => (
+                  <div key={i} style={S.barCol}>
+                    <div style={S.barVal}>{x.rev > 0 ? fmtK(x.rev) : ""}</div>
+                    <div style={{ width: "100%", borderRadius: "4px 4px 0 0", height: Math.max(3, (x.rev / maxRev) * 66),
+                      background: i === 6 ? "linear-gradient(180deg,#10b981,#10b98155)" : "#10b98140" }} />
+                    <div style={S.barLbl}>{x.d}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        ))}
+
+          {/* Menu terlaris */}
+          <Section label="MENU TERLARIS" mt={14} />
+          <div className="card" style={{ ...S.bigCard, padding: "12px 16px" }}>
+            {topItems.length === 0
+              ? <div style={{ fontSize: 11, color: "#5b6470" }}>Belum ada data penjualan</div>
+              : <div style={S.topGrid}>
+                  {topItems.map(([n, d], i) => (
+                    <div key={n} style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: i === 0 ? "#f59e0b" : "#5b6470", fontFamily: "'Space Mono',monospace", width: 18 }}>#{i + 1}</span>
+                      <span style={{ fontSize: 15 }}>{d.e}</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, color: "#cdd5df", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n}</div>
+                        <div style={{ height: 3, background: "#161b22", borderRadius: 2, marginTop: 3 }}>
+                          <div style={{ height: "100%", width: (d.qty / maxQty * 100) + "%", background: "#f59e0b", borderRadius: 2 }} />
+                        </div>
+                      </div>
+                      <span style={{ fontFamily: "'Space Mono',monospace", fontWeight: 700, color: "#f59e0b", fontSize: 12 }}>{d.qty}×</span>
+                    </div>
+                  ))}
+                </div>}
+          </div>
+        </main>
       </div>
 
       <div style={S.footer}>
@@ -270,38 +275,40 @@ const CSS = `
 
 const S = {
   root: { minHeight: "100vh", background: "radial-gradient(ellipse 900px 380px at 50% -120px, #f59e0b14, transparent), #080a0f", color: "#cdd5df", fontFamily: "'Geist','Plus Jakarta Sans',system-ui,sans-serif", padding: "16px 28px 22px", boxSizing: "border-box" },
-  topbar: { display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 14, marginBottom: 14, borderBottom: "1px solid #161b22" },
+  topbar: { display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 14, marginBottom: 4, borderBottom: "1px solid #161b22" },
   logo: { width: 40, height: 40, borderRadius: 11, background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "#1a1205", fontWeight: 900, fontSize: 23, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 22px #f59e0b3a", flexShrink: 0 },
   brand: { fontSize: 22, fontWeight: 800, color: "#e6edf3", letterSpacing: -0.5, lineHeight: 1 },
   brandSub: { fontSize: 9, color: "#5b6470", fontFamily: "'Space Mono',monospace", letterSpacing: 2, marginTop: 4 },
   clock: { fontSize: 21, fontWeight: 700, color: "#e6edf3", fontFamily: "'Space Mono',monospace", lineHeight: 1 },
   greetLine: { fontSize: 11.5, color: "#5b6470", marginTop: 5 },
   role: { fontSize: 9, fontWeight: 700, color: "#f59e0b", background: "#f59e0b1a", border: "1px solid #f59e0b44", borderRadius: 4, padding: "1px 6px", marginLeft: 8, fontFamily: "'Space Mono',monospace", textTransform: "uppercase" },
-  kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 13 },
-  kpi: { position: "relative", overflow: "hidden", background: "#0d1117", border: "1px solid #1e2530", borderRadius: 14, padding: "13px 15px" },
+  body: { display: "grid", gridTemplateColumns: "270px 1fr", gap: 18, alignItems: "start" },
+  left: { display: "flex", flexDirection: "column" },
+  right: { display: "flex", flexDirection: "column" },
+  kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginTop: 16 },
+  kpi: { position: "relative", overflow: "hidden", background: "#0d1117", border: "1px solid #1e2530", borderRadius: 14, padding: "12px 14px" },
   kpiGlow: { position: "absolute", top: -34, right: -34, width: 80, height: 80, borderRadius: "50%", opacity: 0.12, filter: "blur(6px)" },
   chip: { width: 30, height: 30, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 },
-  kpiLabel: { fontSize: 10, color: "#7d8590", fontFamily: "'Space Mono',monospace", letterSpacing: 0.5, textTransform: "uppercase" },
-  kpiVal: { fontSize: 23, fontWeight: 800, fontFamily: "'Space Mono',monospace", margin: "9px 0 1px" },
-  kpiSub: { fontSize: 10.5, color: "#5b6470" },
+  kpiLabel: { fontSize: 9.5, color: "#7d8590", fontFamily: "'Space Mono',monospace", letterSpacing: 0.5, textTransform: "uppercase" },
+  kpiVal: { fontSize: 22, fontWeight: 800, fontFamily: "'Space Mono',monospace", margin: "8px 0 1px" },
+  kpiSub: { fontSize: 10, color: "#5b6470" },
   sectionHead: { display: "flex", alignItems: "center", gap: 8, margin: "16px 2px 9px" },
   sectionLabel: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#9da7b3", fontFamily: "'Space Mono',monospace" },
   linkBtn: { background: "transparent", border: "none", color: "#3b82f6", fontSize: 10.5, fontWeight: 700, cursor: "pointer", fontFamily: "'Space Mono',monospace" },
-  primaryRow: { display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 13 },
-  primaryTile: { display: "flex", alignItems: "center", gap: 13, border: "1px solid #1e2530", borderRadius: 14, padding: "13px 18px", fontFamily: "inherit" },
+  primaryRow: { display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 12 },
+  primaryTile: { display: "flex", alignItems: "center", gap: 13, border: "1px solid #1e2530", borderRadius: 14, padding: "12px 16px", fontFamily: "inherit" },
   arrow: { width: 30, height: 30, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, flexShrink: 0 },
-  dataGrid: { display: "grid", gridTemplateColumns: "1.55fr 1fr", gap: 13 },
-  bigCard: { background: "#0d1117", border: "1px solid #1e2530", borderRadius: 14, padding: "4px 16px 14px" },
-  queueRow: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 },
-  queueCol: { background: "#0a0e16", border: "1px solid #161b22", borderRadius: 10, padding: "9px 11px", minHeight: 92 },
-  orderChip: { display: "flex", alignItems: "center", gap: 7, fontSize: 11, background: "#0d1117", border: "1px solid #1e2530", borderRadius: 7, padding: "5px 9px" },
-  barRow: { display: "flex", alignItems: "flex-end", gap: 8, height: 96, marginTop: 10 },
+  dataGrid: { display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 12 },
+  bigCard: { background: "#0d1117", border: "1px solid #1e2530", borderRadius: 14, padding: "0 16px 13px" },
+  queueRow: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 9 },
+  queueCol: { background: "#0a0e16", border: "1px solid #161b22", borderRadius: 10, padding: "9px 10px", minHeight: 90 },
+  orderChip: { display: "flex", alignItems: "center", gap: 7, fontSize: 11, background: "#0d1117", border: "1px solid #1e2530", borderRadius: 7, padding: "5px 8px" },
+  barRow: { display: "flex", alignItems: "flex-end", gap: 7, height: 92, marginTop: 8 },
   barCol: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 },
   barVal: { fontSize: 9, color: "#10b981", fontFamily: "'Space Mono',monospace" },
-  barLbl: { fontSize: 10, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
-  topGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "7px 28px", marginTop: 4 },
-  cols: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, alignItems: "start" },
-  rowTile: { display: "flex", alignItems: "center", gap: 10, background: "#0d1117", border: "1px solid #1e2530", borderRadius: 10, padding: "7px 12px", fontFamily: "inherit", width: "100%" },
+  barLbl: { fontSize: 9.5, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  topGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "7px 28px", marginTop: 2 },
+  rowTile: { display: "flex", alignItems: "center", gap: 10, background: "#0d1117", border: "1px solid #1e2530", borderRadius: 10, padding: "7px 11px", fontFamily: "inherit", width: "100%" },
   footer: { display: "flex", alignItems: "center", gap: 10, marginTop: 18, paddingTop: 13, borderTop: "1px solid #161b22" },
   footBtn: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 9, padding: "7px 16px", color: "#9da7b3", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   footNote: { fontSize: 10, color: "#3a4150", fontFamily: "'Space Mono',monospace" },
