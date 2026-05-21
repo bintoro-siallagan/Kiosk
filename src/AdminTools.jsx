@@ -59,6 +59,7 @@ import AdminBatchTracking from "./Admin/AdminBatchTracking.jsx";
 import AdminOutletMaster from "./Admin/AdminOutletMaster.jsx";
 import AdminIncidents from "./Admin/AdminIncidents.jsx";
 import AdminSignage from "./Admin/AdminSignage.jsx";
+import AdminDemandForecast from "./Admin/AdminDemandForecast.jsx";
 import AdminSimplePurchase from "./Admin/AdminSimplePurchase.jsx";
 import AdminPettyCash from "./Admin/AdminPettyCash.jsx";
 import AdminBudgetPlan from "./Admin/AdminBudgetPlan.jsx";
@@ -167,6 +168,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "outlet_master", label: "🏪 Outlet Master", color: "#15803d" },
     { id: "incidents", label: "🚨 Incident", color: "#dc2626" },
     { id: "signage", label: "📺 Digital Signage", color: "#9333ea" },
+    { id: "demand_forecast", label: "📈 Demand Forecast", color: "#0284c7" },
     { id: "simple_purchase", label: "🛒 Simple Purchase", color: "#65a30d" },
     { id: "petty_cash", label: "💵 Petty Cash", color: "#d97706" },
     { id: "purchase_invoice", label: "🧾 Invoice", color: "#a78bfa" },
@@ -217,7 +219,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["staff", "outlet_master", "incidents", "gudang", "waste", "config", "checklist", "cashier_kpi", "audit"] },
     { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "loyalty", "broadcast", "aggregator", "payment", "conv_fee"] },
     { name: "Product", icon: "📦", module: "config", ids: ["item_master", "item_pricing", "item_config", "item_rules", "item_intel", "product_hub", "product_ver", "food_cost"] },
-    { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["price_list", "goods_delivery", "goods_received", "stock_opname", "stock_transfer", "batch_tracking", "production", "simple_purchase", "petty_cash", "purchase_invoice", "procurement_plus"] },
+    { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["price_list", "goods_delivery", "goods_received", "stock_opname", "stock_transfer", "batch_tracking", "production", "demand_forecast", "simple_purchase", "petty_cash", "purchase_invoice", "procurement_plus"] },
     { name: "Finance", icon: "💰", module: "finance", ids: ["finance", "settlement", "journal", "general_ledger", "reconciliation", "release_payment", "period_closing", "fin_statements", "finance_center", "finance_alert", "ar", "budget", "budget_plan", "franchise"] },
     { name: "HRIS & Reward", icon: "👥", module: "hr", ids: ["hris", "payroll", "reward", "reward_benefit", "motivation", "hr_command", "talenta"] },
     { name: "Customer & Marketing", icon: "🎯", module: "marketing", ids: ["customer_intel", "mkt_behavior", "loyalty_promo", "feedback_segment", "clv_churn", "geo_engage", "campaign", "signage"] },
@@ -350,6 +352,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "geo_engage" && <AdminGeoEngagement apiBase={API} />}
         {tab === "campaign" && <AdminCampaign apiBase={API} />}
         {tab === "signage" && <AdminSignage apiBase={API} />}
+        {tab === "demand_forecast" && <AdminDemandForecast apiBase={API} />}
         {tab === "rbac" && <AdminRBAC apiBase={API} />}
         {tab === "approval" && <AdminApproval apiBase={API} />}
         {tab === "device_session" && <AdminDeviceSession apiBase={API} />}
