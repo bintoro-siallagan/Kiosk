@@ -58,6 +58,7 @@ function getScene() {
 export default function App() {
   const [scene,        setScene]    = useState(getScene);
   const [toolsTab, setToolsTab] = useState("staff");
+  const [adminTab, setAdminTab] = useState("overview");
   const [trackOrderId, setTrackOrderId] = useState(() => new URLSearchParams(window.location.search).get("trackorder"));
   const [adminSession, setAdmin]    = useState(() => {
     const token = localStorage.getItem("adminToken");
@@ -121,19 +122,19 @@ export default function App() {
   if (adminRoutes.includes(scene) && !adminSession) return <AdminLogin onLogin={handleAdminLogin}/>;
 
   if (scene === "admin-login") return <AdminLogin onLogin={handleAdminLogin}/>;
-  if (scene === "home") return <AdminHome adminSession={adminSession} onLogout={handleAdminLogout} onExit={go("kiosk")} onNav={(s) => { if (s === "tools") { setToolsTab("staff"); setScene("tools"); } else setScene(s); }} />;
+  if (scene === "home") return <AdminHome adminSession={adminSession} onLogout={handleAdminLogout} onExit={go("kiosk")} onNav={(s, arg) => { if (s === "tools") { setToolsTab(arg || "staff"); setScene("tools"); } else if (s === "admin") { setAdminTab(arg || "overview"); setScene("admin"); } else setScene(s); }} />;
   if (scene === "tools") return <AdminTools onBack={() => { setScene("home"); }} initialTab={toolsTab} />;
   if (scene === "command") return <CommandCenter />;
   if (scene === "flow") return <FlowApp />;
   if (scene === "customer-track") return <><PromoBroadcastBanner/><CustomerTrackingPage orderId={trackOrderId}/></>;
   if (scene === "track")       return <OrderTracking onHome={go("kiosk")}/>;
-  if (scene === "admin")       return <Admin onExit={go("kiosk")} onReport={go("report")} onESBSync={go("esb-sync")} onESBNotif={go("esb-notif")} onMembers={go("members")} onPromo={go("promo")} onShift={go("shift")} onLogout={handleAdminLogout} adminSession={adminSession} onTools={(tab) => { if (tab === "command") { setScene("command"); } else { setToolsTab(tab); setScene("tools"); } }}/>;
-  if (scene === "report")      return <Report    onBack={go("admin")}/>;
-  if (scene === "esb-sync")    return <ESBSync   onBack={go("admin")}/>;
-  if (scene === "esb-notif")   return <ESBNotif  onBack={go("admin")}/>;
-  if (scene === "members")     return <MemberList onBack={go("admin")}/>;
-  if (scene === "promo")       return <PromoManager onBack={go("admin")}/>;
-  if (scene === "shift")       return <ShiftManager onBack={go("admin")}/>;
+  if (scene === "admin")       return <Admin initialTab={adminTab} onExit={go("home")} onReport={go("report")} onESBSync={go("esb-sync")} onESBNotif={go("esb-notif")} onMembers={go("members")} onPromo={go("promo")} onShift={go("shift")} onLogout={handleAdminLogout} adminSession={adminSession} onTools={(tab) => { if (tab === "command") { setScene("command"); } else { setToolsTab(tab); setScene("tools"); } }}/>;
+  if (scene === "report")      return <Report    onBack={go("home")}/>;
+  if (scene === "esb-sync")    return <ESBSync   onBack={go("home")}/>;
+  if (scene === "esb-notif")   return <ESBNotif  onBack={go("home")}/>;
+  if (scene === "members")     return <MemberList onBack={go("home")}/>;
+  if (scene === "promo")       return <PromoManager onBack={go("home")}/>;
+  if (scene === "shift")       return <ShiftManager onBack={go("home")}/>;
 
   if (scene === "table-select" && checkoutData) {
     return (

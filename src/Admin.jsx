@@ -115,7 +115,7 @@ const btnStyle = (color, bg) => ({
   fontSize:11, fontWeight:700, fontFamily:"'Plus Jakarta Sans',sans-serif",
 });
 
-export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembers, onPromo, onShift, onLogout, adminSession, onTools }) {
+export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembers, onPromo, onShift, onLogout, adminSession, onTools, initialTab }) {
   const [orders, setOrders]     = useState([]);
   const [showZReport, setShowZReport] = useState(false);
   const [printerConfig, setPrinterConfig] = useState({ debug: true, kitchen: { ip:"", port:9100 }, customer: { ip:"", port:9100 } });
@@ -438,7 +438,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
   const [stats, setStats]       = useState(null);
   const [loading, setLoading]   = useState(true);
   const [connected, setConn]    = useState(false);
-  const [activeTab, setTab]     = useState("overview");
+  const [activeTab, setTab]     = useState(initialTab || "overview");
   const [toast, setToast]       = useState(null);
   const [now, setNow]           = useState(Date.now());
   const [editPrice, setEditPrice] = useState(null);
@@ -614,7 +614,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
             </div>
           )}
           <div style={{display:"flex",gap:6}}>
-            <button style={{...D.exitBtn,flex:1}} onClick={onExit}>← Kiosk</button>
+            <button style={{...D.exitBtn,flex:1}} onClick={onExit}>← Home</button>
             {onLogout && <button style={{...D.exitBtn,flex:1,color:"#F87171",borderColor:"#F8717133"}} onClick={onLogout}>Logout</button>}
           </div>
         </div>

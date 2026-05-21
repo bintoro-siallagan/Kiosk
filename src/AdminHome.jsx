@@ -1,12 +1,11 @@
 // src/AdminHome.jsx
-// Dashboard Baru — home / landing utama. KPI ringkas + akses cepat ke
-// Tools, Management (Command Center) & semua surface operasional.
+// Dashboard Baru — home / landing utama. KPI ringkas + akses ke semua
+// fitur: Tools, Outlet, surface operasional & manajemen lama.
 
 import { useState, useEffect } from "react";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
-const fmtShort = (n) => n >= 1e6 ? (n / 1e6).toFixed(1) + " jt" : n >= 1e3 ? Math.round(n / 1e3) + " rb" : String(n || 0);
 
 export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   const [now, setNow] = useState(new Date());
@@ -52,18 +51,42 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
     { label: "Tools", desc: "Admin Tools — 107 modul operasi, produk, finance, HR", icon: "🛠️", c: "#f59e0b", on: () => onNav("tools") },
     { label: "Management", desc: "Command Center — 13 dashboard realtime monitoring", icon: "📊", c: "#3b82f6", on: () => openTab("?command=1") },
   ];
-  const secondary = [
+  const outlet = [
+    { label: "Dashboard Outlet", icon: "🏪", c: "#22d3ee", on: () => onNav("admin", "overview") },
+    { label: "Transaksi Outlet", icon: "🧾", c: "#10b981", on: () => onNav("admin", "orders") },
+    { label: "Menu & Stok", icon: "🍔", c: "#f59e0b", on: () => onNav("admin", "menu") },
+    { label: "QR Meja", icon: "🪑", c: "#a855f7", on: () => onNav("admin", "qrgen") },
+    { label: "Pengaturan", icon: "⚙️", c: "#7d8590", on: () => onNav("admin", "settings") },
+  ];
+  const surface = [
     { label: "POS Kasir", icon: "🧾", c: "#10b981", on: () => openTab("?pos=1") },
     { label: "KDS Dapur", icon: "👨‍🍳", c: "#f97316", on: () => openTab("?kds=1") },
     { label: "CDS Display", icon: "📺", c: "#a855f7", on: () => openTab("?cds=1") },
-    { label: "Dashboard Outlet", icon: "🏪", c: "#22d3ee", on: () => onNav("admin") },
   ];
+  const manajemen = [
+    { label: "Member & Customer", icon: "👥", c: "#3b82f6", on: () => onNav("members") },
+    { label: "Promo Code", icon: "🏷️", c: "#ec4899", on: () => onNav("promo") },
+    { label: "Operasional / Shift", icon: "📋", c: "#f59e0b", on: () => onNav("shift") },
+    { label: "Laporan", icon: "📊", c: "#10b981", on: () => onNav("report") },
+    { label: "ESB Sync", icon: "🔗", c: "#22d3ee", on: () => onNav("esb-sync") },
+    { label: "Push Notif", icon: "🔔", c: "#a855f7", on: () => onNav("esb-notif") },
+  ];
+
+  const Compact = ({ items }) => (
+    <div style={S.compactGrid}>
+      {items.map(t => (
+        <button key={t.label} className="tile" style={{ ...S.compactTile, borderColor: `${t.c}33` }} onClick={t.on}>
+          <div style={{ ...S.tileIcon, background: `${t.c}1f`, width: 40, height: 40, fontSize: 19 }}>{t.icon}</div>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: "#e6edf3" }}>{t.label}</div>
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <div style={S.root}>
       <style>{CSS}</style>
 
-      {/* Header */}
       <div style={S.header}>
         <div>
           <div style={S.brand}>karya<span style={{ color: "#f59e0b" }}>OS</span></div>
@@ -75,13 +98,11 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
         </div>
       </div>
 
-      {/* Greeting */}
       <div style={S.greet}>
         {greet}, <b style={{ color: "#e6edf3" }}>{adminSession?.name || "Admin"}</b>
         <span style={S.role}>{adminSession?.role || "—"}</span>
       </div>
 
-      {/* KPI */}
       <div style={S.kpiRow}>
         {kpis.map(x => (
           <div key={x.label} style={{ ...S.kpi, borderTop: `2px solid ${x.c}` }}>
@@ -95,7 +116,6 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
         ))}
       </div>
 
-      {/* Primary access */}
       <div style={S.sectionLabel}>AKSES UTAMA</div>
       <div style={S.primaryRow}>
         {primary.map(t => (
@@ -110,18 +130,15 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
         ))}
       </div>
 
-      {/* Secondary access */}
-      <div style={S.sectionLabel}>SURFACE OPERASIONAL</div>
-      <div style={S.secondaryRow}>
-        {secondary.map(t => (
-          <button key={t.label} className="tile" style={{ ...S.secondaryTile, borderColor: `${t.c}33` }} onClick={t.on}>
-            <div style={{ ...S.tileIcon, background: `${t.c}1f`, fontSize: 22 }}>{t.icon}</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "#e6edf3" }}>{t.label}</div>
-          </button>
-        ))}
-      </div>
+      <div style={S.sectionLabel}>OUTLET</div>
+      <Compact items={outlet} />
 
-      {/* Footer */}
+      <div style={S.sectionLabel}>SURFACE OPERASIONAL</div>
+      <Compact items={surface} />
+
+      <div style={S.sectionLabel}>MANAJEMEN & DATA</div>
+      <Compact items={manajemen} />
+
       <div style={S.footer}>
         <button style={S.footBtn} onClick={onExit}>← Kiosk</button>
         {onLogout && <button style={{ ...S.footBtn, color: "#f87171", borderColor: "#f8717133" }} onClick={onLogout}>Logout</button>}
@@ -147,18 +164,18 @@ const S = {
   date: { fontSize: 12, color: "#5b6470", marginTop: 2 },
   greet: { fontSize: 15, color: "#7d8590", marginBottom: 18 },
   role: { fontSize: 10, fontWeight: 700, color: "#f59e0b", background: "#f59e0b1f", border: "1px solid #f59e0b44", borderRadius: 5, padding: "2px 8px", marginLeft: 10, fontFamily: "'Space Mono',monospace", textTransform: "uppercase" },
-  kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 24 },
+  kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 22 },
   kpi: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: "14px 16px" },
   kpiLabel: { fontSize: 10, color: "#5b6470", fontFamily: "'Space Mono',monospace", letterSpacing: 0.5, textTransform: "uppercase" },
   kpiVal: { fontSize: 24, fontWeight: 800, fontFamily: "'Space Mono',monospace", margin: "8px 0 2px" },
   kpiSub: { fontSize: 11, color: "#5b6470" },
-  sectionLabel: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#5b6470", fontFamily: "'Space Mono',monospace", margin: "4px 2px 10px" },
-  primaryRow: { display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 14, marginBottom: 24 },
+  sectionLabel: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#5b6470", fontFamily: "'Space Mono',monospace", margin: "18px 2px 10px" },
+  primaryRow: { display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 14 },
   primaryTile: { display: "flex", alignItems: "center", gap: 16, background: "#0d1117", border: "1px solid #161b22", borderRadius: 14, padding: "20px 22px", fontFamily: "inherit" },
-  secondaryRow: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 },
-  secondaryTile: { display: "flex", flexDirection: "column", alignItems: "center", gap: 9, background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: "20px 14px", fontFamily: "inherit" },
+  compactGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(180px,1fr))", gap: 12 },
+  compactTile: { display: "flex", alignItems: "center", gap: 12, background: "#0d1117", border: "1px solid #161b22", borderRadius: 11, padding: "13px 15px", fontFamily: "inherit", textAlign: "left" },
   tileIcon: { width: 52, height: 52, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  footer: { display: "flex", alignItems: "center", gap: 10, marginTop: 30, paddingTop: 16, borderTop: "1px solid #161b22" },
+  footer: { display: "flex", alignItems: "center", gap: 10, marginTop: 28, paddingTop: 16, borderTop: "1px solid #161b22" },
   footBtn: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 8, padding: "8px 16px", color: "#9da7b3", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   footNote: { fontSize: 10, color: "#3a4150", fontFamily: "'Space Mono',monospace" },
 };
