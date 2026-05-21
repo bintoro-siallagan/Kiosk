@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { unlockAudio, loadAudioConfig } from "./audio.js";
 import CustomerTrackingPage from "./CustomerTrackingPage.jsx";
 import PromoBroadcastBanner from "./PromoBroadcastBanner.jsx";
+import POSCelebration from "./POS/POSCelebration.jsx";
 import POSCDS from "./POSCDS.jsx";
 import AdminLogin    from "./AdminLogin.jsx";
 import Kiosk         from "./Kiosk.jsx";
@@ -179,6 +180,16 @@ export default function App() {
         order={{ ref: lastOrderId }}
         apiBase={API_HOST}
         source="kiosk"
+        onDone={() => setScene("kiosk-celebration")}
+      />
+    );
+  }
+
+  if (scene === "kiosk-celebration") {
+    return (
+      <POSCelebration
+        order={{ ref: lastOrderId }}
+        apiBase={API_HOST}
         onDone={() => { setScene("kiosk"); setCheckout(null); setCustomer(null); setTable(null); setLastOrder(null); }}
       />
     );

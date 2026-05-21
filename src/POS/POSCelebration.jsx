@@ -18,16 +18,24 @@ export default function POSCelebration({ order, apiBase = '', onDone }) {
   useEffect(() => {
     if (recorded.current) return;   // cegah dobel-catat (StrictMode dev)
     recorded.current = true;
-    fetch(`${apiBase}/api/leaderboard/record`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: order?.customerName || order?.customer || 'Tamu',
-        amount: order?.total || 0,
-      }),
-    })
-      .then(r => r.json())
-      .then(res => { if (res && res.title) setD(res); else setErr(true); })
-      .catch(() => setErr(true));
+    const record = (amount) => {
+      if (!amount || amount <= 0) { setErr(true); return; }
+      fetch(`${apiBase}/api/leaderboard/record`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: order?.customerName || order?.customer || 'Tamu', amount }),
+      })
+        .then(r => r.json())
+        .then(res => { if (res && res.title) setD(res); else setErr(true); })
+        .catch(() => setErr(true));
+    };
+    // total bisa langsung (POS) atau di-fetch dari order id (kiosk/QR)
+    if (order?.total > 0) record(order.total);
+    else if (order?.id || order?.ref) {
+      fetch(`${apiBase}/api/orders/${order.id || order.ref}`)
+        .then(r => r.json())
+        .then(o => record(o?.total || o?.subtotal || 0))
+        .catch(() => setErr(true));
+    } else setErr(true);
   }, [apiBase, order]);
 
   if (err) {

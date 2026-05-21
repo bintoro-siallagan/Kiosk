@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "./api.js";
 import POSSatisfaction from "./POS/POSSatisfaction.jsx";
+import POSCelebration from "./POS/POSCelebration.jsx";
 
 const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -19,6 +20,7 @@ export default function CustomerTrackingPage({ orderId }) {
   const [error, setError]   = useState(null);
   const [loyalty, setLoyalty] = useState(null);
   const [showFeedback, setShowFeedback] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   const intervalRef = useRef(null);
 
   const fetchOrder = async () => {
@@ -200,7 +202,14 @@ export default function CustomerTrackingPage({ orderId }) {
           order={{ ref: order.id, cashier: order.cashier || order.kasir }}
           apiBase={API_HOST}
           source="qr"
-          onDone={() => { localStorage.setItem(`fb_done_${orderId}`, "1"); setShowFeedback(false); }}
+          onDone={() => { localStorage.setItem(`fb_done_${orderId}`, "1"); setShowFeedback(false); setShowCelebration(true); }}
+        />
+      )}
+      {showCelebration && (
+        <POSCelebration
+          order={{ ref: order.id, total: order.total || order.subtotal, customer: order.customer_name || order.customerName }}
+          apiBase={API_HOST}
+          onDone={() => setShowCelebration(false)}
         />
       )}
     </div>
