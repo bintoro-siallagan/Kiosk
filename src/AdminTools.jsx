@@ -70,6 +70,9 @@ import AdminStockList from "./Admin/AdminStockList.jsx";
 import AdminSalesOrder from "./Admin/AdminSalesOrder.jsx";
 import AdminSalesReturn from "./Admin/AdminSalesReturn.jsx";
 import AdminB2bCustomer from "./Admin/AdminB2bCustomer.jsx";
+import AdminQuotation from "./Admin/AdminQuotation.jsx";
+import AdminDeliveryOrder from "./Admin/AdminDeliveryOrder.jsx";
+import AdminSalesInvoice from "./Admin/AdminSalesInvoice.jsx";
 import AdminSalesStockSync from "./Admin/AdminSalesStockSync.jsx";
 import AdminSimplePurchase from "./Admin/AdminSimplePurchase.jsx";
 import AdminPettyCash from "./Admin/AdminPettyCash.jsx";
@@ -188,7 +191,10 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "purchase_return", label: "↩️ Purchase Return", color: "#be123c" },
     { id: "internal_return", label: "🔁 Internal Return", color: "#9f1239" },
     { id: "stock_list", label: "📃 Stock List", color: "#155e75" },
+    { id: "quotation", label: "💬 Quotation", color: "#6366f1" },
     { id: "sales_order", label: "📑 Sales Order", color: "#6d28d9" },
+    { id: "delivery_order", label: "🚛 Delivery Order", color: "#0891b2" },
+    { id: "sales_invoice", label: "🧾 Sales Invoice", color: "#4338ca" },
     { id: "sales_return", label: "↪️ Sales Return", color: "#7e22ce" },
     { id: "b2b_customer", label: "🏢 B2B Customer", color: "#5b21b6" },
     { id: "sales_stock_sync", label: "🔗 Sales→Stock Sync", color: "#14b8a6" },
@@ -241,7 +247,7 @@ export default function AdminTools({ onBack, initialTab }) {
 
   const GROUPS = [
     { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["staff", "outlet_master", "incidents", "asset_maintenance", "notif_center", "gudang", "waste", "config", "checklist", "cashier_kpi", "audit"] },
-    { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "loyalty", "broadcast", "aggregator", "payment", "conv_fee", "sales_order", "sales_return", "b2b_customer"] },
+    { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "loyalty", "broadcast", "aggregator", "payment", "conv_fee", "quotation", "sales_order", "delivery_order", "sales_invoice", "sales_return", "b2b_customer"] },
     { name: "Product", icon: "📦", module: "config", ids: ["item_master", "item_pricing", "item_config", "item_rules", "item_intel", "product_hub", "product_ver", "food_cost"] },
     { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["price_list", "stock_list", "goods_delivery", "goods_received", "stock_opname", "stock_transfer", "batch_tracking", "production", "demand_forecast", "auto_reorder", "sales_stock_sync", "simple_purchase", "purchase_return", "internal_return", "petty_cash", "purchase_invoice", "procurement_plus"] },
     { name: "Finance", icon: "💰", module: "finance", ids: ["finance", "coa", "general_ledger", "journal", "settlement", "reconciliation", "release_payment", "period_closing", "fin_statements", "finance_center", "finance_alert", "ar", "budget", "budget_plan", "franchise"] },
@@ -388,6 +394,9 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "sales_order" && <AdminSalesOrder apiBase={API} />}
         {tab === "sales_return" && <AdminSalesReturn apiBase={API} />}
         {tab === "b2b_customer" && <AdminB2bCustomer apiBase={API} />}
+        {tab === "quotation" && <AdminQuotation apiBase={API} />}
+        {tab === "delivery_order" && <AdminDeliveryOrder apiBase={API} />}
+        {tab === "sales_invoice" && <AdminSalesInvoice apiBase={API} />}
         {tab === "sales_stock_sync" && <AdminSalesStockSync apiBase={API} />}
         {tab === "rbac" && <AdminRBAC apiBase={API} />}
         {tab === "approval" && <AdminApproval apiBase={API} />}
