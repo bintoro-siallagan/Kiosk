@@ -98,6 +98,10 @@ function setupNotificationCenter(app, opts = {}) {
       else if (days <= 60) n.push({ key: `ctr-${ct.title}`, category: 'Operasi', priority: 'medium', icon: '📄',
         title: `Kontrak segera berakhir — ${ct.type}`, detail: `${ct.title} · ${ct.counterparty} · ${days} hari lagi`, source: 'Contract' });
     }
+    // Komplain pelanggan prioritas tinggi — tiket helpdesk
+    for (const tk of many(`SELECT ticket_no, subject, outlet FROM helpdesk_tickets WHERE priority='high' AND status IN ('open','in_progress')`))
+      n.push({ key: `tkt-${tk.ticket_no}`, category: 'Customer', priority: 'high', icon: '🎫',
+        title: `Komplain prioritas tinggi — ${tk.outlet}`, detail: `${tk.ticket_no} · ${tk.subject}`, source: 'Helpdesk' });
     return n;
   };
 

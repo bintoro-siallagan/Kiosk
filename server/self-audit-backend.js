@@ -90,6 +90,8 @@ function setupSelfAudit(app, opts = {}) {
           return C('Kontrak kedaluwarsa', c === 0 ? 'ok' : 'warning', c === 0 ? 'Semua kontrak aktif' : `${c} kontrak lewat masa berlaku`); })(),
         (() => { const c = cnt(`SELECT COUNT(*) c FROM risk_register WHERE status!='closed' AND likelihood*impact>=15`);
           return C('Risiko kritis terbuka', c === 0 ? 'ok' : 'critical', c === 0 ? 'Tidak ada risiko kritis' : `${c} risiko level Critical belum tertangani`); })(),
+        (() => { const c = cnt(`SELECT COUNT(*) c FROM quality_inspections WHERE score<70`);
+          return C('Inspeksi mutu gagal', c === 0 ? 'ok' : 'warning', c === 0 ? 'Semua inspeksi mutu lulus' : `${c} inspeksi mutu / food-safety gagal`); })(),
       ],
     });
 

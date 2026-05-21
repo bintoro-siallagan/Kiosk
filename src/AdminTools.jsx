@@ -84,6 +84,10 @@ import AdminSalesPipeline from "./Admin/AdminSalesPipeline.jsx";
 import AdminContract from "./Admin/AdminContract.jsx";
 import AdminRfq from "./Admin/AdminRfq.jsx";
 import AdminRisk from "./Admin/AdminRisk.jsx";
+import AdminQuality from "./Admin/AdminQuality.jsx";
+import AdminInternalAudit from "./Admin/AdminInternalAudit.jsx";
+import AdminDocumentHub from "./Admin/AdminDocumentHub.jsx";
+import AdminHelpdesk from "./Admin/AdminHelpdesk.jsx";
 import AdminMasterUnit from "./Admin/AdminMasterUnit.jsx";
 import AdminMasterCategory from "./Admin/AdminMasterCategory.jsx";
 import AdminFoodCostCalc from "./Admin/AdminFoodCostCalc.jsx";
@@ -240,6 +244,10 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "contract", label: "📄 Contract Mgmt", color: "#ca8a04" },
     { id: "rfq", label: "📨 RFQ / Tender", color: "#0891b2" },
     { id: "risk", label: "⚠️ Risk Management", color: "#dc2626" },
+    { id: "quality", label: "🛡️ Quality & Food Safety", color: "#16a34a" },
+    { id: "internal_audit", label: "🔍 Internal Audit", color: "#7c3aed" },
+    { id: "document_hub", label: "📚 Document / SOP Hub", color: "#0891b2" },
+    { id: "helpdesk", label: "🎫 Helpdesk / Complaint", color: "#f97316" },
     { id: "food_cost", label: "🍳 Food Cost", color: "#f97316" },
     { id: "conv_fee", label: "🧾 Biaya Layanan", color: "#fb923c" },
     { id: "reward", label: "🎮 Reward", color: "#a855f7" },
@@ -276,14 +284,14 @@ export default function AdminTools({ onBack, initialTab }) {
   // Urutan value-chain enterprise: Operasi → Product → Inventory → Commerce
   // → Finance → HRIS → Customer → Security. Tiap grup urut alur kerja.
   const GROUPS = [
-    { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["outlet_master", "staff", "checklist", "cashier_kpi", "gudang", "waste", "asset_maintenance", "incidents", "compliance", "notif_center", "config", "audit"] },
+    { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["outlet_master", "staff", "checklist", "cashier_kpi", "gudang", "waste", "asset_maintenance", "quality", "incidents", "compliance", "document_hub", "notif_center", "config", "audit"] },
     { name: "Product", icon: "📦", module: "config", ids: ["master_category", "master_unit", "item_master", "item_pricing", "item_config", "item_rules", "food_cost", "food_cost_calc", "item_intel", "product_hub", "product_ver"] },
     { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["stock_list", "batch_tracking", "stock_opname", "stock_transfer", "production", "sales_stock_sync", "demand_forecast", "auto_reorder", "supplier_master", "rfq", "price_list", "procurement_plus", "simple_purchase", "petty_cash", "goods_delivery", "goods_received", "purchase_invoice", "purchase_return", "internal_return"] },
     { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "payment", "conv_fee", "aggregator", "loyalty", "broadcast", "sales_pipeline", "b2b_customer", "quotation", "sales_order", "delivery_order", "sales_invoice", "sales_return"] },
     { name: "Finance", icon: "💰", module: "finance", ids: ["coa", "general_ledger", "journal", "settlement", "reconciliation", "release_payment", "ar", "ap_aging", "finance", "fin_statements", "cash_flow", "finance_center", "finance_alert", "budget", "budget_plan", "period_closing", "consolidation", "core_tax", "franchise"] },
     { name: "HRIS & Reward", icon: "👥", module: "hr", ids: ["hris", "shift_roster", "payroll", "talenta", "reward", "reward_benefit", "motivation", "hr_command"] },
-    { name: "Customer & Marketing", icon: "🎯", module: "marketing", ids: ["customer_intel", "mkt_behavior", "clv_churn", "feedback_segment", "geo_engage", "loyalty_promo", "campaign", "signage"] },
-    { name: "Security & Admin", icon: "🔐", module: "rbac", ids: ["rbac", "role_dash", "approval", "device_session", "security", "contract", "risk", "anti_fraud", "self_audit"] },
+    { name: "Customer & Marketing", icon: "🎯", module: "marketing", ids: ["customer_intel", "mkt_behavior", "clv_churn", "feedback_segment", "geo_engage", "loyalty_promo", "campaign", "signage", "helpdesk"] },
+    { name: "Security & Admin", icon: "🔐", module: "rbac", ids: ["rbac", "role_dash", "approval", "device_session", "security", "contract", "risk", "internal_audit", "anti_fraud", "self_audit"] },
   ];
   const groupOf = (id) => { const g = GROUPS.find(x => x.ids.includes(id)); return g ? g.name : GROUPS[0].name; };
   const moduleOf = (id) => { const g = GROUPS.find(x => x.ids.includes(id)); return g ? g.module : "pos"; };
@@ -438,6 +446,10 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "contract" && <AdminContract apiBase={API} />}
         {tab === "rfq" && <AdminRfq apiBase={API} />}
         {tab === "risk" && <AdminRisk apiBase={API} />}
+        {tab === "quality" && <AdminQuality apiBase={API} />}
+        {tab === "internal_audit" && <AdminInternalAudit apiBase={API} />}
+        {tab === "document_hub" && <AdminDocumentHub apiBase={API} />}
+        {tab === "helpdesk" && <AdminHelpdesk apiBase={API} />}
         {tab === "sales_stock_sync" && <AdminSalesStockSync apiBase={API} />}
         {tab === "rbac" && <AdminRBAC apiBase={API} />}
         {tab === "approval" && <AdminApproval apiBase={API} />}

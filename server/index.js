@@ -3680,6 +3680,10 @@ const { setupSalesPipeline }    = require('./sales-pipeline-backend');
 const { setupContract }         = require('./contract-backend');
 const { setupRfq }              = require('./rfq-backend');
 const { setupRisk }             = require('./risk-backend');
+const { setupQuality }          = require('./quality-backend');
+const { setupInternalAudit }    = require('./internal-audit-backend');
+const { setupDocumentHub }      = require('./document-hub-backend');
+const { setupHelpdesk }         = require('./helpdesk-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3804,6 +3808,10 @@ const salesPipeline = setupSalesPipeline(app, { dbPath: DB_PATH });
 const contract = setupContract(app, { dbPath: DB_PATH });
 const rfq = setupRfq(app, { dbPath: DB_PATH });
 const risk = setupRisk(app, { dbPath: DB_PATH });
+const quality = setupQuality(app, { dbPath: DB_PATH });
+const internalAudit = setupInternalAudit(app, { dbPath: DB_PATH });
+const documentHub = setupDocumentHub(app, { dbPath: DB_PATH });
+const helpdesk = setupHelpdesk(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
