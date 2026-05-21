@@ -51,6 +51,23 @@ function setupGoodsDelivery(app, opts = {}) {
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
 
+  // seed contoh GD (sekali)
+  if (db.prepare(`SELECT COUNT(*) c FROM goods_deliveries`).get().c === 0) {
+    const N = nowSec(); let n = 1;
+    const insGd = db.prepare(`INSERT INTO goods_deliveries (gd_number, po_ref, to_outlet, status, shipped_by, shipped_at, received_by, received_at, notes) VALUES (?,?,?,?,?,?,?,?,?)`);
+    const insIt = db.prepare(`INSERT INTO gd_items (gd_id, sku, item_name, unit, qty_delivered, qty_received) VALUES (?,?,?,?,?,?)`);
+    [
+      ['Paskal', 'PO-2026-008', 'in_transit', [['RM01', 'Yogurt Base Plain', 'kg', 20], ['PK01', 'Cup 12oz', 'pcs', 200]], 1, null, null],
+      ['Dago', 'PO-2026-009', 'received', [['TP01', 'Granola', 'kg', 5]], 3, 'Outlet Dago', 2],
+      ['Sudirman', 'PO-2026-010', 'received', [['RM05', 'Buah Strawberry', 'kg', 8]], 4, 'Outlet Sudirman', 3],
+      ['Kemang', 'PO-2026-006', 'closed', [['RM03', 'Susu Skim UHT', 'liter', 10]], 8, 'Outlet Kemang', 7],
+    ].forEach(([outlet, po, st, items, shipD, recvBy, recvD]) => {
+      const info = insGd.run(`GD-202605-${String(n++).padStart(4, '0')}`, po, outlet, st, 'Warehouse',
+        N - shipD * 86400, recvBy, recvD != null ? N - recvD * 86400 : null, '');
+      for (const [sku, name, unit, qty] of items) insIt.run(info.lastInsertRowid, sku, name, unit, qty, st === 'in_transit' ? 0 : qty);
+    });
+  }
+
   const router = express.Router();
   router.use(express.json());
 
@@ -119,6 +136,16 @@ function setupGoodsDelivery(app, opts = {}) {
         .run(b.received_by || 'Outlet', nowSec(), gd.id);
     });
     tx();
+    res.json({ ok: true });
+  });
+
+  // Tutup / finalisasi GD — kunci dokumen setelah barang diterima
+  router.post('/:id/close', (req, res) => {
+    const gd = db.prepare(`SELECT * FROM goods_deliveries WHERE id=?`).get(req.params.id);
+    if (!gd) return res.status(404).json({ error: 'GD tidak ditemukan' });
+    if (gd.status === 'closed') return res.status(409).json({ error: 'GD sudah ditutup' });
+    if (gd.status !== 'received') return res.status(409).json({ error: 'hanya GD yang sudah diterima bisa ditutup' });
+    db.prepare(`UPDATE goods_deliveries SET status='closed' WHERE id=?`).run(gd.id);
     res.json({ ok: true });
   });
 

@@ -71,8 +71,14 @@ export default function AdminGoodsDelivery({ apiBase = "" }) {
     ...s, [gdId]: { ...(s[gdId] || {}), [itId]: { ...((s[gdId] || {})[itId] || {}), [field]: val } },
   }));
 
+  const closeGd = (gd) => {
+    fetch(`${apiBase}/api/goods-delivery/${gd.id}/close`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
+      .then(r => r.json()).then(j => { if (j.ok) { setMsg("✓ " + gd.gd_number + " ditutup — dokumen final"); load(); } else setMsg(j.error || "gagal"); }).catch(e => setMsg(String(e)));
+  };
+
   const inTransit = gds.filter(g => g.status === "in_transit");
   const received = gds.filter(g => g.status === "received");
+  const closed = gds.filter(g => g.status === "closed");
 
   return (
     <div>
@@ -143,14 +149,21 @@ export default function AdminGoodsDelivery({ apiBase = "" }) {
         ))}
       </div>
 
-      {/* RIWAYAT */}
-      {received.length > 0 && (
+      {/* RIWAYAT — diterima (bisa ditutup) & ditutup */}
+      {(received.length + closed.length) > 0 && (
         <div style={{ ...S.card, marginTop: 14 }}>
-          <div style={S.kicker}>✅ RIWAYAT PENERIMAAN — {received.length}</div>
-          {received.slice(0, 12).map(gd => (
-            <div key={gd.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "7px 0", borderTop: "1px solid #161b22", color: "#9da7b3" }}>
-              <span>{gd.gd_number} → {gd.to_outlet}</span>
-              <span style={{ color: "#10b981" }}>✓ diterima {fmtDate(gd.received_at)} · {gd.items.length} item</span>
+          <div style={S.kicker}>✅ DITERIMA & DITUTUP — {received.length + closed.length}</div>
+          {[...received, ...closed].slice(0, 16).map(gd => (
+            <div key={gd.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, padding: "8px 0", borderTop: "1px solid #161b22", color: "#9da7b3" }}>
+              <span>{gd.gd_number} → {gd.to_outlet} <span style={{ color: "#5b6470" }}>· {gd.items.length} item</span></span>
+              <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                {gd.status === "closed"
+                  ? <span style={{ color: "#5b6470", fontWeight: 700, fontFamily: "'Space Mono',monospace", fontSize: 11 }}>🔒 DITUTUP</span>
+                  : <>
+                      <span style={{ color: "#10b981" }}>✓ diterima {fmtDate(gd.received_at)}</span>
+                      <button onClick={() => closeGd(gd)} style={S.btnClose}>🔒 Tutup GD</button>
+                    </>}
+              </span>
             </div>
           ))}
         </div>
@@ -169,4 +182,5 @@ const S = {
   btnReceive: { background: "#10b981", color: "#04130d", border: "none", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   btnGhost: { background: "#161b22", color: "#e6edf3", border: "1px solid #21262d", borderRadius: 7, padding: "8px 14px", fontSize: 13, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
   x: { background: "transparent", border: "none", color: "#f87171", fontSize: 14, cursor: "pointer" },
+  btnClose: { background: "#161b22", color: "#9da7b3", border: "1px solid #21262d", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
 };
