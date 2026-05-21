@@ -55,6 +55,7 @@ import AdminGoodsReceived from "./Admin/AdminGoodsReceived.jsx";
 import AdminSimplePurchase from "./Admin/AdminSimplePurchase.jsx";
 import AdminPettyCash from "./Admin/AdminPettyCash.jsx";
 import AdminBudgetPlan from "./Admin/AdminBudgetPlan.jsx";
+import AdminGeneralLedger from "./Admin/AdminGeneralLedger.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -154,6 +155,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "purchase_invoice", label: "🧾 Invoice", color: "#a78bfa" },
     { id: "settlement", label: "🧮 Settlement", color: "#10b981" },
     { id: "journal", label: "📓 Jurnal", color: "#a78bfa" },
+    { id: "general_ledger", label: "📒 General Ledger", color: "#0369a1" },
     { id: "fin_statements", label: "📊 Lap. Keuangan", color: "#10b981" },
     { id: "finance_center", label: "💹 Finance Center", color: "#10b981" },
     { id: "finance_alert", label: "🚨 Finance Alert", color: "#ef4444" },
@@ -196,7 +198,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "loyalty", "broadcast", "aggregator", "payment", "conv_fee"] },
     { name: "Product", icon: "📦", module: "config", ids: ["item_master", "item_pricing", "item_config", "item_rules", "item_intel", "product_hub", "product_ver", "food_cost"] },
     { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["price_list", "goods_delivery", "goods_received", "simple_purchase", "petty_cash", "purchase_invoice", "procurement_plus"] },
-    { name: "Finance", icon: "💰", module: "finance", ids: ["finance", "settlement", "journal", "fin_statements", "finance_center", "finance_alert", "ar", "budget", "budget_plan", "franchise"] },
+    { name: "Finance", icon: "💰", module: "finance", ids: ["finance", "settlement", "journal", "general_ledger", "fin_statements", "finance_center", "finance_alert", "ar", "budget", "budget_plan", "franchise"] },
     { name: "HRIS & Reward", icon: "👥", module: "hr", ids: ["hris", "payroll", "reward", "reward_benefit", "motivation", "hr_command", "talenta"] },
     { name: "Customer & Marketing", icon: "🎯", module: "marketing", ids: ["customer_intel", "mkt_behavior", "loyalty_promo", "feedback_segment", "clv_churn", "geo_engage", "campaign"] },
     { name: "Security & Admin", icon: "🔐", module: "rbac", ids: ["rbac", "approval", "device_session", "security", "role_dash", "anti_fraud"] },
@@ -294,6 +296,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "purchase_invoice" && <AdminPurchaseInvoice apiBase={API} />}
         {tab === "settlement" && <AdminSettlement apiBase={API} />}
         {tab === "journal" && <AdminJournal apiBase={API} />}
+        {tab === "general_ledger" && <AdminGeneralLedger apiBase={API} />}
         {tab === "fin_statements" && <AdminFinancialStatements apiBase={API} />}
         {tab === "finance_center" && <AdminFinanceCenter apiBase={API} />}
         {tab === "finance_alert" && <AdminFinanceAlert apiBase={API} />}
