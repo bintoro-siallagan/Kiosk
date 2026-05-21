@@ -3576,6 +3576,7 @@ const { setupFeedback }         = require('./feedback-backend');
 const { setupCashierKpi }       = require('./cashier-kpi-backend');
 const { setupChecklist }        = require('./checklist-backend');
 const { setupPosBehavior }      = require('./pos-behavior-backend');
+const { setupExecutive }        = require('./executive-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3607,6 +3608,7 @@ const feedback = setupFeedback(app, { dbPath: DB_PATH });
 const cashierKpi = setupCashierKpi(app, { dbPath: DB_PATH });
 const checklist = setupChecklist(app, { dbPath: DB_PATH });
 const posBehavior = setupPosBehavior(app, { dbPath: DB_PATH });
+const executive = setupExecutive(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
