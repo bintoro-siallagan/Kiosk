@@ -413,10 +413,16 @@ export default function CommandCenter(){
           <Row l="🛵 Delivery Komisi platform" r={fR(-aggComm)} rc="#ef4444"/>
           <Row l={`💳 Payment Gateway (${pgCount}× QRIS/e-wallet)`} r={fR(pgGross)} rc="#22d3ee"/>
           <Row l="Est. Fraud Loss" r={fR(-aLoss)} rc="#ef4444"/>
-          <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0 0",borderTop:"2px solid #10b98133",marginTop:6}}>
+          {(() => {
+            const np = (zS.netRevenue||0)-aLoss+aggNet+pgGross;
+            const npc = np >= 0 ? "#10b981" : "#ef4444";
+            return (
+          <div style={{display:"flex",justifyContent:"space-between",padding:"10px 0 0",borderTop:`2px solid ${npc}33`,marginTop:6}}>
             <span style={{fontSize:16,fontWeight:700,color:"#eee"}}>Net Profit (est.)</span>
-            <span style={{fontSize:22,fontWeight:800,fontFamily:"var(--m)",color:"#10b981"}}>{fR((zS.netRevenue||0)-aLoss+aggNet+pgGross)}</span>
+            <span style={{fontSize:22,fontWeight:800,fontFamily:"var(--m)",color:npc}}>{fR(np)}</span>
           </div>
+            );
+          })()}
         </Card>
 
         <Card>
