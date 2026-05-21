@@ -91,8 +91,10 @@ export default function CommandExecutive() {
 
       {/* ── BUSINESS SUMMARY ── */}
       <div style={S.kpiRow}>
-        <Kpi label="Revenue Hari Ini" value={fmtK(summary.revenue)} accent="#10b981"
-          sub={`${summary.transactions} transaksi`} />
+        <Kpi label="Total Sales Hari Ini" value={"Rp " + fmtK(summary.revenue)} accent="#10b981"
+          sub={summary.channels
+            ? `POS ${fmtK(summary.channels.pos)} + Aggregator ${fmtK(summary.channels.aggregator)}`
+            : `${summary.transactions} transaksi`} />
         <Kpi label="Growth vs Kemarin"
           value={summary.growth_pct == null ? "—" : (summary.growth_pct >= 0 ? "+" : "") + summary.growth_pct + "%"}
           accent={(summary.growth_pct || 0) >= 0 ? "#10b981" : "#ef4444"}

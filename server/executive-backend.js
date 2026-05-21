@@ -35,25 +35,32 @@ function setupExecutive(app, opts = {}) {
     const today = dayStartTs(0);
     const yStart = dayStartTs(-1);
 
-    // ═══ SUMMARY ═══
-    const rev = one(`SELECT COALESCE(SUM(amount_applied),0) v, COUNT(*) c FROM pos_payments WHERE status='completed' AND created_at>=?`, today) || { v: 0, c: 0 };
-    const revY = one(`SELECT COALESCE(SUM(amount_applied),0) v FROM pos_payments WHERE status='completed' AND created_at>=? AND created_at<?`, yStart, today) || { v: 0 };
-    const revenue = rev.v, transactions = rev.c;
-    const growthPct = revY.v > 0 ? Math.round((revenue - revY.v) / revY.v * 100) : null;
+    // ═══ SUMMARY — roll-up TOTAL sales semua channel ═══
+    // POS (pos_payments — termasuk transaksi yg dibayar via payment gateway,
+    // gateway nulis ke pos_payments pas webhook sukses) + Aggregator (GoFood dll).
+    const pos = one(`SELECT COALESCE(SUM(amount_applied),0) v, COUNT(*) c FROM pos_payments WHERE status='completed' AND created_at>=?`, today) || { v: 0, c: 0 };
+    const agg = one(`SELECT COALESCE(SUM(gross_amount),0) v, COUNT(*) c FROM aggregator_orders WHERE received_at>=?`, today) || { v: 0, c: 0 };
+    const posY = one(`SELECT COALESCE(SUM(amount_applied),0) v FROM pos_payments WHERE status='completed' AND created_at>=? AND created_at<?`, yStart, today) || { v: 0 };
+    const aggY = one(`SELECT COALESCE(SUM(gross_amount),0) v FROM aggregator_orders WHERE received_at>=? AND received_at<?`, yStart, today) || { v: 0 };
+
+    const posRev = pos.v, aggRev = agg.v;
+    const revenue = posRev + aggRev;                       // TOTAL sales semua channel
+    const transactions = pos.c + agg.c;
+    const revYtotal = posY.v + aggY.v;
+    const growthPct = revYtotal > 0 ? Math.round((revenue - revYtotal) / revYtotal * 100) : null;
     const target = (one(`SELECT target FROM checklist_submissions WHERE type='opening' AND target IS NOT NULL AND created_at>=? ORDER BY id DESC LIMIT 1`, today) || {}).target || null;
     const targetPct = target ? Math.round(revenue / target * 100) : null;
     const openIssues = (one(`SELECT COUNT(*) c FROM audit_anomalies WHERE resolved=0`) || { c: 0 }).c;
     const critIssues = (one(`SELECT COUNT(*) c FROM audit_anomalies WHERE resolved=0 AND severity='critical'`) || { c: 0 }).c;
-    const aggToday = (one(`SELECT COUNT(*) c FROM aggregator_orders WHERE received_at>=?`, today) || { c: 0 }).c;
-    const totalCh = transactions + aggToday;
 
     const summary = {
       revenue, growth_pct: growthPct,
       target, target_pct: targetPct,
       transactions, avg_trx: transactions ? Math.round(revenue / transactions) : 0,
       open_issues: openIssues, critical_issues: critIssues,
-      online_pct: totalCh ? Math.round(aggToday / totalCh * 100) : 0,
-      offline_pct: totalCh ? Math.round(transactions / totalCh * 100) : 100,
+      channels: { pos: posRev, aggregator: aggRev },       // breakdown per channel
+      online_pct: revenue ? Math.round(aggRev / revenue * 100) : 0,
+      offline_pct: revenue ? Math.round(posRev / revenue * 100) : 100,
     };
 
     // ═══ HEALTH SCORE ═══
