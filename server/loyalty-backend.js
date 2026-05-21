@@ -434,6 +434,26 @@ function setupLoyalty(app, opts = {}) {
     }
   });
 
+  // Bulk import member dari CSV (upload)
+  router.post('/customers/import', (req, res) => {
+    const list = req.body && req.body.customers;
+    if (!Array.isArray(list) || !list.length) return res.status(400).json({ error: 'daftar customer kosong' });
+    const ins = db.prepare(`INSERT INTO loyalty_customers (phone, name, email, referral_code, current_points) VALUES (?,?,?,?,0)`);
+    let created = 0, skipped = 0;
+    const errors = [];
+    for (const c of list) {
+      const phone = String((c && c.phone) || '').trim();
+      if (!phone) { skipped++; continue; }
+      if (db.prepare(`SELECT id FROM loyalty_customers WHERE phone = ?`).get(phone)) { skipped++; continue; }
+      try {
+        ins.run(phone, (c.name || '').trim() || null, (c.email || '').trim() || null, generateReferralCode(phone));
+        created++;
+      } catch (e) { errors.push(`${phone}: ${e.message}`); }
+    }
+    logEvent({ event_type: 'loyalty_import', payload: { created, skipped }, severity: 'info' });
+    res.json({ ok: true, created, skipped, errors: errors.slice(0, 20) });
+  });
+
   router.put('/customers/:id', (req, res) => {
     const b = req.body || {};
     const allowed = ['name', 'email', 'birthday', 'notes', 'is_active'];

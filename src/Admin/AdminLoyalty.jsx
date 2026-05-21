@@ -93,6 +93,40 @@ export default function AdminLoyalty({ apiBase = '' }) {
     loadRewards();
   };
 
+  // Parse CSV → array {phone,name,email}. Header opsional (auto-detect).
+  const parseCsv = (text) => {
+    const lines = String(text).split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (!lines.length) return [];
+    const first = lines[0].toLowerCase();
+    const start = (first.includes('phone') || first.includes('hp') || first.includes('nama')) ? 1 : 0;
+    return lines.slice(start).map(l => {
+      const c = l.split(',').map(s => s.trim().replace(/^"|"$/g, ''));
+      return { phone: c[0], name: c[1] || '', email: c[2] || '' };
+    }).filter(x => x.phone);
+  };
+
+  const handleUploadCsv = (e) => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const customers = parseCsv(reader.result);
+      if (!customers.length) { alert('CSV kosong / format salah.\nUrutan kolom: phone, name, email'); return; }
+      try {
+        const r = await fetch(`${apiBase}/api/loyalty/customers/import`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ customers }),
+        });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { alert(d.error || 'Import gagal'); return; }
+        alert(`Import selesai:\n✓ ${d.created} member ditambah\n• ${d.skipped} dilewati (duplikat/kosong)`);
+        loadCustomers();
+      } catch (err) { alert('Error: ' + err.message); }
+    };
+    reader.readAsText(file);
+  };
+
   useEffect(() => {
     if (tab === 'dashboard') loadStats();
     if (tab === 'customers') { loadCustomers(); loadTiers(); }
@@ -197,12 +231,17 @@ export default function AdminLoyalty({ apiBase = '' }) {
       {/* CUSTOMERS */}
       {tab === 'customers' && (
         <div style={{padding: 16}}>
-          <div style={{display: 'flex', gap: 8, marginBottom: 16}}>
+          <div style={{display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap'}}>
             <input value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Cari nama / phone / email..."
               onKeyDown={e => e.key === 'Enter' && loadCustomers()}
               style={{...styles.input, flex: 1, maxWidth: 400}} />
             <button onClick={loadCustomers} style={styles.btnPrimary}>Search</button>
+            <label style={{ background: '#1e3a5f', color: '#93c5fd', borderRadius: 6, padding: '8px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              ⬆️ Upload CSV
+              <input type="file" accept=".csv,text/csv" onChange={handleUploadCsv} style={{ display: 'none' }} />
+            </label>
+            <span style={{ fontSize: 11, color: '#6b7280' }}>kolom: phone, name, email</span>
           </div>
 
           <table style={styles.table}>
