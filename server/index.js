@@ -3614,6 +3614,7 @@ const { setupAntiFraud }        = require('./anti-fraud-backend');
 const { setupCustomerIntel }    = require('./customer-intel-backend');
 const { setupMarketingBehavior } = require('./marketing-behavior-backend');
 const { setupLoyaltyPromo }     = require('./loyalty-promo-backend');
+const { setupFeedbackSegment }  = require('./feedback-segment-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3677,6 +3678,7 @@ const antiFraud = setupAntiFraud(app, { dbPath: DB_PATH });
 const customerIntel = setupCustomerIntel(app, { dbPath: DB_PATH });
 const marketingBehavior = setupMarketingBehavior(app, { dbPath: DB_PATH });
 const loyaltyPromo = setupLoyaltyPromo(app, { dbPath: DB_PATH });
+const feedbackSegment = setupFeedbackSegment(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
