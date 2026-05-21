@@ -3647,6 +3647,7 @@ const { setupIncidents }        = require('./incident-backend');
 const { setupSignage }          = require('./signage-backend');
 const { setupDemandForecast }   = require('./demand-forecast-backend');
 const { setupAssetMaintenance } = require('./asset-maintenance-backend');
+const { setupShiftRoster }      = require('./shift-roster-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3743,6 +3744,7 @@ const incidents = setupIncidents(app, { dbPath: DB_PATH });
 const signage = setupSignage(app, { dbPath: DB_PATH });
 const demandForecast = setupDemandForecast(app, { dbPath: DB_PATH });
 const assetMaintenance = setupAssetMaintenance(app, { dbPath: DB_PATH });
+const shiftRoster = setupShiftRoster(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
