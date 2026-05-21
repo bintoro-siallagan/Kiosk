@@ -1,14 +1,23 @@
 // src/AdminHome.jsx
-// Dashboard Baru — home / landing utama. KPI ringkas + akses ke semua
-// fitur dalam 3 kolom (Outlet · Surface · Manajemen) — muat 1 layar.
+// Dashboard Baru — home. KPI + dashboard outlet (antrian order live)
+// tampil langsung, plus akses ke Tools / Management / fitur lain.
 
 import { useState, useEffect } from "react";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+const fmtK = (n) => n >= 1e6 ? (n / 1e6).toFixed(1) + "jt" : n >= 1e3 ? Math.round(n / 1e3) + "rb" : String(n || 0);
+const ago = (t) => { const s = Math.floor((Date.now() - t) / 60000); return s < 1 ? "baru" : s < 60 ? s + "m" : Math.floor(s / 60) + "j"; };
+
+const QUEUE = [
+  { key: "waiting", label: "Menunggu", c: "#f59e0b" },
+  { key: "preparing", label: "Diproses", c: "#3b82f6" },
+  { key: "ready", label: "Siap Ambil", c: "#10b981" },
+];
 
 export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   const [now, setNow] = useState(new Date());
+  const [orders, setOrders] = useState([]);
   const [k, setK] = useState({ revenue: null, orders: null, active: null, alerts: null, crit: 0, health: null });
 
   useEffect(() => {
@@ -19,13 +28,16 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   useEffect(() => {
     const t0 = new Date(); t0.setHours(0, 0, 0, 0);
     const start = t0.getTime();
-    fetch(`${API}/api/orders`).then(r => r.json()).then(o => {
+    const loadOrders = () => fetch(`${API}/api/orders`).then(r => r.json()).then(o => {
       const arr = Array.isArray(o) ? o : [];
       const today = arr.filter(x => (x.time || 0) >= start);
       const done = today.filter(x => x.status === "completed");
       const active = arr.filter(x => !["completed", "cancelled", "refunded", "partial_refund"].includes(x.status));
+      setOrders(active);
       setK(p => ({ ...p, revenue: done.reduce((s, x) => s + (x.total || 0), 0), orders: today.length, active: active.length }));
     }).catch(() => {});
+    loadOrders();
+    const iv = setInterval(loadOrders, 15000);
     fetch(`${API}/api/notification-center`).then(r => r.json()).then(d => {
       const n = d.notifications || [];
       setK(p => ({ ...p, alerts: n.length, crit: n.filter(x => x.priority === "high" || x.priority === "critical").length }));
@@ -33,23 +45,23 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
     fetch(`${API}/api/self-audit`).then(r => r.json()).then(d => {
       setK(p => ({ ...p, health: d.health_score }));
     }).catch(() => {});
+    return () => clearInterval(iv);
   }, []);
 
   const hour = now.getHours();
   const greet = hour < 11 ? "Selamat pagi" : hour < 15 ? "Selamat siang" : hour < 19 ? "Selamat sore" : "Selamat malam";
-  const v = (x, f) => x == null ? "…" : (f ? f(x) : x);
+  const vv = (x, f) => x == null ? "…" : (f ? f(x) : x);
   const openTab = (q) => window.open(window.location.pathname + q, "_blank");
 
   const kpis = [
-    { label: "Penjualan Hari Ini", val: v(k.revenue, fmtRp), c: "#10b981", icon: "💰" },
-    { label: "Order Hari Ini", val: v(k.orders), sub: k.active != null ? `${k.active} aktif` : "", c: "#3b82f6", icon: "🧾" },
-    { label: "Alert Aktif", val: v(k.alerts), sub: k.crit ? `${k.crit} mendesak` : "aman", c: k.crit > 0 ? "#ef4444" : "#f59e0b", icon: "🔔" },
+    { label: "Penjualan Hari Ini", val: vv(k.revenue, fmtRp), c: "#10b981", icon: "💰" },
+    { label: "Order Hari Ini", val: vv(k.orders), sub: k.active != null ? `${k.active} aktif` : "", c: "#3b82f6", icon: "🧾" },
+    { label: "Alert Aktif", val: vv(k.alerts), sub: k.crit ? `${k.crit} mendesak` : "aman", c: k.crit > 0 ? "#ef4444" : "#f59e0b", icon: "🔔" },
     { label: "System Health", val: k.health == null ? "…" : k.health + "/100", c: k.health >= 75 ? "#10b981" : k.health >= 50 ? "#f59e0b" : "#ef4444", icon: "🔎" },
   ];
   const primary = [
-    { label: "Tools", desc: "Admin Tools — 107 modul", icon: "🛠️", c: "#f59e0b", on: () => onNav("tools") },
-    { label: "Dashboard Outlet", desc: "Dashboard lama — order, menu & KPI outlet", icon: "🏪", c: "#22d3ee", on: () => onNav("admin", "overview") },
-    { label: "Management", desc: "Command Center — 13 dashboard", icon: "📊", c: "#3b82f6", on: () => openTab("?command=1") },
+    { label: "Tools", desc: "Admin Tools — 107 modul operasi, produk, finance, HR", icon: "🛠️", c: "#f59e0b", on: () => onNav("tools") },
+    { label: "Management", desc: "Command Center — 13 dashboard realtime monitoring", icon: "📊", c: "#3b82f6", on: () => openTab("?command=1") },
   ];
   const columns = [
     { title: "OUTLET", items: [
@@ -104,6 +116,38 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
         ))}
       </div>
 
+      {/* Dashboard Outlet — antrian order live, tampil langsung */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+        <div style={S.sectionLabel}>DASHBOARD OUTLET — ANTRIAN ORDER</div>
+        <button onClick={() => onNav("admin", "overview")} style={S.linkBtn}>buka penuh →</button>
+      </div>
+      <div style={S.queueRow}>
+        {QUEUE.map(q => {
+          const list = orders.filter(o => o.status === q.key);
+          return (
+            <div key={q.key} style={{ ...S.queueCol, borderTop: `2px solid ${q.c}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: q.c }}>● {q.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: q.c, fontFamily: "'Space Mono',monospace" }}>{list.length}</span>
+              </div>
+              {list.length === 0
+                ? <div style={{ fontSize: 11, color: "#5b6470", padding: "6px 0" }}>Tidak ada order</div>
+                : <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                    {list.slice(0, 4).map(o => (
+                      <div key={o.id} style={S.orderChip}>
+                        <span style={{ fontFamily: "'Space Mono',monospace", fontWeight: 700, color: "#e6edf3" }}>#{o.id}</span>
+                        <span style={{ color: "#7d8590" }}>{o.type === "dine" ? `🪑${o.table}` : "🛍️"}</span>
+                        <span style={{ flex: 1, textAlign: "right", color: "#9da7b3", fontFamily: "'Space Mono',monospace" }}>{fmtK(o.total)}</span>
+                        <span style={{ color: "#5b6470", fontSize: 10 }}>{ago(o.time)}</span>
+                      </div>
+                    ))}
+                    {list.length > 4 && <div style={{ fontSize: 10, color: "#5b6470" }}>+{list.length - 4} lagi…</div>}
+                  </div>}
+            </div>
+          );
+        })}
+      </div>
+
       {/* Akses utama */}
       <div style={S.sectionLabel}>AKSES UTAMA</div>
       <div style={S.primaryRow}>
@@ -119,7 +163,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
         ))}
       </div>
 
-      {/* 3 kolom — semua kelihatan tanpa scroll */}
+      {/* 3 kolom akses */}
       <div style={S.cols}>
         {columns.map(col => (
           <div key={col.title}>
@@ -154,24 +198,28 @@ const CSS = `
 `;
 
 const S = {
-  root: { minHeight: "100vh", background: "#080a0f", color: "#cdd5df", fontFamily: "'Geist','Plus Jakarta Sans',system-ui,sans-serif", padding: "12px 26px", boxSizing: "border-box" },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 },
+  root: { minHeight: "100vh", background: "#080a0f", color: "#cdd5df", fontFamily: "'Geist','Plus Jakarta Sans',system-ui,sans-serif", padding: "14px 26px", boxSizing: "border-box" },
+  header: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 },
   brand: { fontSize: 24, fontWeight: 800, color: "#e6edf3", letterSpacing: -0.5 },
   brandSub: { fontSize: 10, color: "#5b6470", fontFamily: "'Space Mono',monospace", letterSpacing: 2, marginTop: 2 },
   clock: { fontSize: 20, fontWeight: 700, color: "#e6edf3", fontFamily: "'Space Mono',monospace" },
   date: { fontSize: 11.5, color: "#5b6470", marginTop: 3 },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 4 },
-  kpi: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: "9px 13px" },
+  kpi: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: "10px 13px" },
   kpiLabel: { fontSize: 10, color: "#5b6470", fontFamily: "'Space Mono',monospace", letterSpacing: 0.5, textTransform: "uppercase" },
   kpiVal: { fontSize: 21, fontWeight: 800, fontFamily: "'Space Mono',monospace", margin: "3px 0 0" },
   kpiSub: { fontSize: 11, color: "#5b6470" },
-  sectionLabel: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#5b6470", fontFamily: "'Space Mono',monospace", margin: "10px 2px 6px" },
-  primaryRow: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 },
-  primaryTile: { display: "flex", alignItems: "center", gap: 13, background: "#0d1117", border: "1px solid #161b22", borderRadius: 13, padding: "10px 16px", fontFamily: "inherit" },
+  sectionLabel: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#5b6470", fontFamily: "'Space Mono',monospace", margin: "12px 2px 7px" },
+  linkBtn: { background: "transparent", border: "none", color: "#3b82f6", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'Space Mono',monospace" },
+  queueRow: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 },
+  queueCol: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 11, padding: "10px 13px", minHeight: 96 },
+  orderChip: { display: "flex", alignItems: "center", gap: 7, fontSize: 11.5, background: "#0a0e16", border: "1px solid #161b22", borderRadius: 7, padding: "5px 9px" },
+  primaryRow: { display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 12 },
+  primaryTile: { display: "flex", alignItems: "center", gap: 13, background: "#0d1117", border: "1px solid #161b22", borderRadius: 13, padding: "11px 18px", fontFamily: "inherit" },
   cols: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, alignItems: "start" },
-  rowTile: { display: "flex", alignItems: "center", gap: 11, background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "6px 11px", fontFamily: "inherit", width: "100%" },
+  rowTile: { display: "flex", alignItems: "center", gap: 11, background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "7px 12px", fontFamily: "inherit", width: "100%" },
   tileIcon: { borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
-  footer: { display: "flex", alignItems: "center", gap: 10, marginTop: 11, paddingTop: 9, borderTop: "1px solid #161b22" },
+  footer: { display: "flex", alignItems: "center", gap: 10, marginTop: 14, paddingTop: 11, borderTop: "1px solid #161b22" },
   footBtn: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 8, padding: "7px 15px", color: "#9da7b3", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   footNote: { fontSize: 10, color: "#3a4150", fontFamily: "'Space Mono',monospace" },
 };
