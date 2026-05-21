@@ -3579,6 +3579,7 @@ const { setupPosBehavior }      = require('./pos-behavior-backend');
 const { setupExecutive }        = require('./executive-backend');
 const { setupSections }         = require('./sections-backend');
 const { setupHris }             = require('./hris-backend');
+const { setupTalenta }          = require('./talenta-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3613,6 +3614,7 @@ const posBehavior = setupPosBehavior(app, { dbPath: DB_PATH });
 const executive = setupExecutive(app, { dbPath: DB_PATH });
 const sections = setupSections(app, { dbPath: DB_PATH });
 const hris = setupHris(app, { dbPath: DB_PATH });
+const talenta = setupTalenta(app, {});
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;

@@ -118,6 +118,40 @@ function setupHris(app, opts = {}) {
     res.send(toCsv(header, body));
   });
 
+  // ── RECAP (rentang tanggal) — buat HRD lihat per periode ──
+  router.get('/recap', (req, res) => {
+    const to = req.query.to || todayStr();
+    const from = req.query.from || to;
+    const rows = db.prepare(`
+      SELECT staff_name, role,
+        COUNT(*) work_days,
+        SUM(CASE WHEN status='present' THEN 1 ELSE 0 END) present_days,
+        SUM(CASE WHEN status='late' THEN 1 ELSE 0 END) late_days,
+        SUM(CASE WHEN status='absent' THEN 1 ELSE 0 END) absent_days,
+        COALESCE(SUM(late_minutes),0) total_late,
+        COALESCE(SUM(overtime_minutes),0) total_ot,
+        ROUND(AVG(productivity_score)) avg_prod
+      FROM hris_attendance
+      WHERE work_date BETWEEN ? AND ?
+      GROUP BY staff_name, role
+      ORDER BY staff_name
+    `).all(from, to);
+    const staff = rows.map(r => ({
+      ...r,
+      attendance_rate: r.work_days ? Math.round((r.present_days + r.late_days) / r.work_days * 100) : 0,
+    }));
+    res.json({
+      from, to,
+      staff,
+      totals: {
+        staff_count: staff.length,
+        total_late_incidents: staff.reduce((s, x) => s + x.late_days, 0),
+        total_overtime_min: staff.reduce((s, x) => s + x.total_ot, 0),
+        avg_attendance: staff.length ? Math.round(staff.reduce((s, x) => s + x.attendance_rate, 0) / staff.length) : 0,
+      },
+    });
+  });
+
   const mountPath = opts.mountPath || '/api/hris';
   app.use(mountPath, router);
   console.log(`[hris] mounted at ${mountPath} — attendance + workforce`);

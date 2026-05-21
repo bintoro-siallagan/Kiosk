@@ -1,6 +1,6 @@
 /**
- * AdminHRIS.jsx — HRIS & Workforce dashboard buat admin / HRD.
- * Tab di AdminTools. Endpoint: /api/hris
+ * AdminHRIS.jsx — HRIS & Workforce buat admin / HRD.
+ * Recap absensi per rentang tanggal + integrasi Talenta (Mekari HRIS).
  *
  * Props: apiBase — HOST backend.
  */
@@ -8,31 +8,51 @@ import { useState, useEffect, useCallback } from "react";
 
 const MONO = "'Space Mono',monospace";
 const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-const fmtTime = (ts) => ts ? new Date(ts * 1000).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "—";
 const fmtH = (m) => m >= 60 ? (m / 60).toFixed(1) + " jam" : (m || 0) + " mnt";
-const STATUS = { present: { l: "Hadir", c: "#34D399" }, late: { l: "Telat", c: "#F59E0B" }, absent: { l: "Absen", c: "#F87171" } };
 const prodCol = (n) => n >= 85 ? "#34D399" : n >= 70 ? "#F59E0B" : "#F87171";
+const rateCol = (n) => n >= 95 ? "#34D399" : n >= 80 ? "#F59E0B" : "#F87171";
 
 const S = {
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 14, padding: 18, marginBottom: 16 },
   label: { fontSize: 11, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10, fontFamily: MONO },
   kpi: (c) => ({ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 12, padding: "12px 14px" }),
-  th: { fontSize: 10, color: "#555", fontFamily: MONO, textTransform: "uppercase", textAlign: "left", padding: "6px 8px" },
+  th: { fontSize: 10, color: "#555", fontFamily: MONO, textTransform: "uppercase", textAlign: "left", padding: "7px 8px" },
   td: { fontSize: 13, color: "#c9d1d9", padding: "9px 8px", borderTop: "1px solid #161b22" },
+  date: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 8, padding: "7px 10px", color: "#fff", fontSize: 13, fontFamily: "inherit", colorScheme: "dark" },
+  btn: (active) => ({ background: active ? "#A78BFA22" : "transparent", border: `1px solid ${active ? "#A78BFA66" : "#21262d"}`, borderRadius: 8, padding: "7px 13px", color: active ? "#A78BFA" : "#8b949e", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }),
+};
+
+const TALENTA_STATE = {
+  belum_dikonfigurasi: { c: "#F87171", dot: "🔴", l: "Belum dikonfigurasi" },
+  terhubung:           { c: "#34D399", dot: "🟢", l: "Terhubung" },
+  kredensial_ditolak:  { c: "#F59E0B", dot: "🟡", l: "Kredensial ditolak" },
+  gagal:               { c: "#F59E0B", dot: "🟡", l: "Gagal konek" },
 };
 
 export default function AdminHRIS({ apiBase = "" }) {
-  const [d, setD] = useState(null);
-  const [date, setDate] = useState(() => fmtDate(new Date()));
+  const [recap, setRecap] = useState(null);
+  const [talenta, setTalenta] = useState(null);
+  const [fromDate, setFromDate] = useState(() => { const d = new Date(); d.setDate(d.getDate() - 6); return fmtDate(d); });
+  const [toDate, setToDate] = useState(() => fmtDate(new Date()));
+  const [preset, setPreset] = useState("7d");
   const [err, setErr] = useState("");
 
   const load = useCallback(() => {
     setErr("");
-    fetch(`${apiBase}/api/hris/summary?date=${date}`)
-      .then(r => r.json()).then(setD).catch(e => setErr(String(e)));
-  }, [apiBase, date]);
+    fetch(`${apiBase}/api/hris/recap?from=${fromDate}&to=${toDate}`)
+      .then(r => r.json()).then(setRecap).catch(e => setErr(String(e)));
+  }, [apiBase, fromDate, toDate]);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    fetch(`${apiBase}/api/talenta/status`).then(r => r.json()).then(setTalenta).catch(() => {});
+  }, [apiBase]);
 
+  const applyPreset = (key) => {
+    const today = new Date(), f = new Date(today);
+    if (key === "7d") f.setDate(f.getDate() - 6);
+    else if (key === "30d") f.setDate(f.getDate() - 29);
+    setFromDate(fmtDate(f)); setToDate(fmtDate(today)); setPreset(key);
+  };
   const exportCsv = () => {
     const a = document.createElement("a");
     a.href = `${apiBase}/api/hris/export.csv`;
@@ -40,83 +60,92 @@ export default function AdminHRIS({ apiBase = "" }) {
   };
 
   if (err) return <div style={{ padding: 30, color: "#888" }}>Gagal memuat HRIS: {err}</div>;
-  if (!d) return <div style={{ padding: 30, color: "#888" }}>Memuat HRIS…</div>;
+  if (!recap) return <div style={{ padding: 30, color: "#888" }}>Memuat HRIS…</div>;
 
-  const staffCol = d.staffing.level >= 100 ? "#34D399" : d.staffing.level >= 80 ? "#F59E0B" : "#F87171";
+  const t = recap.totals;
+  const st = talenta ? (TALENTA_STATE[talenta.state] || TALENTA_STATE.gagal) : null;
 
   return (
     <div>
-      <div style={{ ...S.card, background: "#0a1422", border: "1px solid #15324d", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ flex: 1, minWidth: 220 }}>
-          <div style={{ ...S.label, color: "#5fa8d3", marginBottom: 4 }}>👥 HRIS & Workforce</div>
-          <div style={{ fontSize: 13, color: "#8b949e" }}>Absensi, keterlambatan, lembur, produktivitas & payroll staff. Kasir auto check-in saat login POS.</div>
+      <div style={{ ...S.card, background: "#0a1422", border: "1px solid #15324d" }}>
+        <div style={{ ...S.label, color: "#5fa8d3", marginBottom: 4 }}>👥 HRIS & Workforce</div>
+        <div style={{ fontSize: 13, color: "#8b949e", marginBottom: 12 }}>
+          Recap absensi, keterlambatan, lembur & produktivitas staff per periode. Kasir auto check-in saat login POS.
         </div>
-        <input type="date" value={date} max={fmtDate(new Date())} onChange={e => setDate(e.target.value)}
-          style={{ background: "#0a0e16", border: "1px solid #21262d", borderRadius: 8, padding: "8px 11px", color: "#fff", fontSize: 13, fontFamily: "inherit", colorScheme: "dark" }} />
-        <button onClick={exportCsv}
-          style={{ background: "#34D39922", border: "1px solid #34D39966", borderRadius: 8, padding: "9px 15px", color: "#34D399", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
-          ⬇️ Export CSV
-        </button>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          {[["today", "Hari Ini"], ["7d", "7 Hari"], ["30d", "30 Hari"]].map(([k, l]) => (
+            <button key={k} onClick={() => applyPreset(k)} style={S.btn(preset === k)}>{l}</button>
+          ))}
+          <span style={{ color: "#555", fontSize: 12, marginLeft: 4 }}>Dari</span>
+          <input type="date" value={fromDate} max={toDate} onChange={e => { setFromDate(e.target.value); setPreset(""); }} style={S.date} />
+          <span style={{ color: "#555", fontSize: 12 }}>s/d</span>
+          <input type="date" value={toDate} min={fromDate} max={fmtDate(new Date())} onChange={e => { setToDate(e.target.value); setPreset(""); }} style={S.date} />
+          <button onClick={exportCsv}
+            style={{ marginLeft: "auto", background: "#34D39922", border: "1px solid #34D39966", borderRadius: 8, padding: "8px 14px", color: "#34D399", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+            ⬇️ Export CSV
+          </button>
+        </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 16 }}>
-        <Kpi c="#34D399" label="Kehadiran" value={`${d.attendance.on_duty}/${d.attendance.total}`}
-          sub={`${d.attendance.present} hadir · ${d.attendance.late} telat`} />
-        <Kpi c={d.attendance.late > 0 ? "#F59E0B" : "#34D399"} label="Telat Check-in" value={String(d.attendance.late)}
-          sub={d.attendance.late > 0 ? "perlu perhatian" : "tepat waktu semua"} />
-        <Kpi c={staffCol} label="Staffing Level" value={d.staffing.level + "%"}
-          sub={`${d.staffing.on_duty}/${d.staffing.needed} dibutuhkan`} />
-        <Kpi c="#A78BFA" label="Lembur" value={fmtH(d.overtime.total_minutes)}
-          sub={`${d.overtime.staff_count} staff lembur`} />
+        <Kpi c={rateCol(t.avg_attendance)} label="Rata-rata Kehadiran" value={t.avg_attendance + "%"} sub={`${t.staff_count} staff`} />
+        <Kpi c={t.total_late_incidents > 0 ? "#F59E0B" : "#34D399"} label="Total Telat" value={String(t.total_late_incidents)} sub="kejadian di periode ini" />
+        <Kpi c="#A78BFA" label="Total Lembur" value={fmtH(t.total_overtime_min)} sub="akumulasi periode" />
+        <Kpi c="#3B82F6" label="Periode" value={`${recap.staff.reduce((s, x) => s + x.work_days, 0) || 0}`} sub={`${recap.from} → ${recap.to}`} />
       </div>
 
       <div style={S.card}>
-        <div style={S.label}>Roster & Absensi — {d.date}</div>
-        {d.roster.length === 0 ? (
-          <div style={{ color: "#555", fontSize: 13, padding: 8 }}>Belum ada absensi tanggal ini</div>
+        <div style={S.label}>Recap Absensi per Staff</div>
+        {recap.staff.length === 0 ? (
+          <div style={{ color: "#555", fontSize: 13, padding: 8 }}>Belum ada data absensi di rentang ini</div>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr>
-              {["Staff", "Role", "Jadwal", "Masuk", "Keluar", "Status", "Telat", "Lembur", "Produktivitas"].map(h => (
+              {["Staff", "Role", "Hari Kerja", "Hadir", "Telat", "Total Telat", "Lembur", "Produktivitas", "Kehadiran"].map(h => (
                 <th key={h} style={S.th}>{h}</th>
               ))}
             </tr></thead>
             <tbody>
-              {d.roster.map(r => {
-                const st = STATUS[r.status] || STATUS.absent;
-                return (
-                  <tr key={r.id}>
-                    <td style={{ ...S.td, fontWeight: 600, color: "#fff" }}>{r.staff_name}</td>
-                    <td style={S.td}>{r.role || "—"}</td>
-                    <td style={{ ...S.td, fontFamily: MONO }}>{r.scheduled_in || "—"}</td>
-                    <td style={{ ...S.td, fontFamily: MONO }}>{fmtTime(r.check_in_at)}</td>
-                    <td style={{ ...S.td, fontFamily: MONO }}>{fmtTime(r.check_out_at)}</td>
-                    <td style={S.td}><span style={{ color: st.c, fontWeight: 600 }}>● {st.l}</span></td>
-                    <td style={{ ...S.td, fontFamily: MONO, color: r.late_minutes > 0 ? "#F59E0B" : "#555" }}>
-                      {r.late_minutes > 0 ? r.late_minutes + "m" : "—"}
-                    </td>
-                    <td style={{ ...S.td, fontFamily: MONO, color: r.overtime_minutes > 0 ? "#A78BFA" : "#555" }}>
-                      {r.overtime_minutes > 0 ? r.overtime_minutes + "m" : "—"}
-                    </td>
-                    <td style={{ ...S.td, fontFamily: MONO, color: prodCol(r.productivity_score || 0), fontWeight: 700 }}>
-                      {r.productivity_score ?? "—"}
-                    </td>
-                  </tr>
-                );
-              })}
+              {recap.staff.map(s => (
+                <tr key={s.staff_name}>
+                  <td style={{ ...S.td, fontWeight: 600, color: "#fff" }}>{s.staff_name}</td>
+                  <td style={S.td}>{s.role || "—"}</td>
+                  <td style={{ ...S.td, fontFamily: MONO }}>{s.work_days}</td>
+                  <td style={{ ...S.td, fontFamily: MONO, color: "#34D399" }}>{s.present_days}</td>
+                  <td style={{ ...S.td, fontFamily: MONO, color: s.late_days > 0 ? "#F59E0B" : "#555" }}>{s.late_days}</td>
+                  <td style={{ ...S.td, fontFamily: MONO, color: s.total_late > 0 ? "#F59E0B" : "#555" }}>{s.total_late > 0 ? s.total_late + "m" : "—"}</td>
+                  <td style={{ ...S.td, fontFamily: MONO, color: s.total_ot > 0 ? "#A78BFA" : "#555" }}>{s.total_ot > 0 ? fmtH(s.total_ot) : "—"}</td>
+                  <td style={{ ...S.td, fontFamily: MONO, color: prodCol(s.avg_prod || 0), fontWeight: 700 }}>{s.avg_prod ?? "—"}</td>
+                  <td style={{ ...S.td, fontFamily: MONO, color: rateCol(s.attendance_rate), fontWeight: 700 }}>{s.attendance_rate}%</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}
       </div>
 
       <div style={S.card}>
-        <div style={S.label}>💰 Payroll Status</div>
-        <div style={{ display: "flex", gap: 28, flexWrap: "wrap", fontSize: 13 }}>
-          <div><span style={{ color: "#555" }}>Periode: </span><b style={{ color: "#c9d1d9" }}>{d.payroll.period}</b></div>
-          <div><span style={{ color: "#555" }}>Status: </span><b style={{ color: "#F59E0B", textTransform: "capitalize" }}>{d.payroll.status}</b></div>
-          <div><span style={{ color: "#555" }}>Penggajian berikutnya: </span><b style={{ color: "#c9d1d9" }}>{d.payroll.next_run}</b></div>
-          <div><span style={{ color: "#555" }}>Produktivitas tim: </span><b style={{ color: prodCol(d.productivity.avg_score || 0) }}>{d.productivity.avg_score ?? "—"}</b></div>
-        </div>
+        <div style={S.label}>🔗 Integrasi Talenta (Mekari HRIS)</div>
+        {!talenta ? (
+          <div style={{ color: "#555", fontSize: 13 }}>Cek status…</div>
+        ) : (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+              <span style={{ fontSize: 16 }}>{st.dot}</span>
+              <b style={{ color: st.c, fontSize: 14 }}>{st.l}</b>
+            </div>
+            <div style={{ fontSize: 12, color: "#8b949e", lineHeight: 1.6 }}>{talenta.message}</div>
+            {!talenta.configured && (
+              <div style={{ fontSize: 12, color: "#666", marginTop: 10, lineHeight: 1.8 }}>
+                <b style={{ color: "#8b949e" }}>Cara aktifin:</b><br />
+                1. Email <span style={{ color: "#5fa8d3" }}>talenta-integration@mekari.com</span> (email + nama perusahaan + company_id)<br />
+                2. Daftar Mekari Developer → Create Application → centang scope <b>employee</b><br />
+                3. Isi <span style={{ color: "#5fa8d3" }}>TALENTA_CLIENT_ID</span> &amp; <span style={{ color: "#5fa8d3" }}>TALENTA_CLIENT_SECRET</span> di .env server → restart<br />
+                4. Status jadi 🟢 → data karyawan dipakai buat verifikasi <b>diskon karyawan</b>.
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
