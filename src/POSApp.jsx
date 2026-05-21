@@ -11,6 +11,7 @@ import POSReceipt from "./POS/POSReceipt.jsx";
 import POSSatisfaction from "./POS/POSSatisfaction.jsx";
 import POSShiftClose from "./POS/POSShiftClose.jsx";
 import POSChecklist from "./POS/POSChecklist.jsx";
+import POSCelebration from "./POS/POSCelebration.jsx";
 
 const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -57,10 +58,13 @@ function QuickOrderFlow({ cashier, onExit }) {
     return (
       <POSReceipt
         order={{ ...order, payments: payResult?.tenders || payResult?.payments || [], loyalty_discount: payResult?.loyalty_discount || 0 }}
-        onClose={() => setStage("feedback")}
+        onClose={() => setStage("celebration")}
         onPrintDone={() => {}}
       />
     );
+  }
+  if (stage === "celebration" && order) {
+    return <POSCelebration order={order} apiBase={API_HOST} onDone={() => setStage("feedback")} />;
   }
   if (stage === "feedback" && order) {
     return <POSSatisfaction order={order} apiBase={API_HOST} onDone={onExit} />;

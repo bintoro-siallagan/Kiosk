@@ -3581,6 +3581,7 @@ const { setupSections }         = require('./sections-backend');
 const { setupHris }             = require('./hris-backend');
 const { setupTalenta }          = require('./talenta-backend');
 const { setupPromoInsight }     = require('./promo-insight-backend');
+const { setupLeaderboard }      = require('./leaderboard-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3617,6 +3618,7 @@ const sections = setupSections(app, { dbPath: DB_PATH });
 const hris = setupHris(app, { dbPath: DB_PATH });
 const talenta = setupTalenta(app, {});
 const promoInsight = setupPromoInsight(app, { dbPath: DB_PATH });
+const leaderboard = setupLeaderboard(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
