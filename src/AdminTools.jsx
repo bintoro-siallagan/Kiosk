@@ -15,6 +15,7 @@ import AdminBroadcast from "./Admin/AdminBroadcast.jsx";
 import AdminPriceList from "./Admin/AdminPriceList.jsx";
 import AdminGoodsDelivery from "./Admin/AdminGoodsDelivery.jsx";
 import AdminPurchaseInvoice from "./Admin/AdminPurchaseInvoice.jsx";
+import AdminSettlement from "./Admin/AdminSettlement.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -93,6 +94,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "price_list", label: "💲 Price List", color: "#10b981" },
     { id: "goods_delivery", label: "🚚 Good Delivery", color: "#06B6D4" },
     { id: "purchase_invoice", label: "🧾 Invoice", color: "#a78bfa" },
+    { id: "settlement", label: "🧮 Settlement", color: "#10b981" },
   ];
 
   return (
@@ -133,6 +135,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "price_list" && <AdminPriceList apiBase={API} />}
         {tab === "goods_delivery" && <AdminGoodsDelivery apiBase={API} />}
         {tab === "purchase_invoice" && <AdminPurchaseInvoice apiBase={API} />}
+        {tab === "settlement" && <AdminSettlement apiBase={API} />}
       </div>
 
       {toast && <div style={S.toast}>{toast}</div>}
