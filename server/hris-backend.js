@@ -9,6 +9,7 @@
 const express = require('express');
 const Database = require('better-sqlite3');
 const path = require('path');
+const { toCsv } = require('./csv-util');
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS hris_attendance (
@@ -98,6 +99,21 @@ function setupHris(app, opts = {}) {
       productivity: { avg_score: prod.length ? Math.round(prod.reduce((a, b) => a + b, 0) / prod.length) : null },
       payroll: { period: 'Mei 2026', status: 'berjalan', next_run: '1 Jun 2026' },
     });
+  });
+
+  // ── EXPORT CSV (buat HRD) ──
+  router.get('/export.csv', (req, res) => {
+    const rows = db.prepare(`SELECT * FROM hris_attendance ORDER BY work_date DESC, check_in_at`).all();
+    const fmt = (ts) => ts ? new Date(ts * 1000).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '';
+    const header = ['Tanggal', 'Staff', 'Role', 'Jadwal Masuk', 'Check-in', 'Check-out', 'Status', 'Telat (menit)', 'Lembur (menit)', 'Produktivitas'];
+    const body = rows.map(r => [
+      r.work_date, r.staff_name, r.role || '', r.scheduled_in || '',
+      fmt(r.check_in_at), fmt(r.check_out_at), r.status,
+      r.late_minutes || 0, r.overtime_minutes || 0, r.productivity_score ?? '',
+    ]);
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename=hris-attendance.csv');
+    res.send(toCsv(header, body));
   });
 
   const mountPath = opts.mountPath || '/api/hris';

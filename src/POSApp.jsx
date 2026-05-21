@@ -97,9 +97,21 @@ export default function POSApp() {
     sessionStorage.setItem("posCashier", JSON.stringify(user));
     setCashier(user);
     setView("home");
+    // HRIS — auto check-in absensi pas kasir login POS (409 = sudah check-in, diabaikan)
+    fetch(`${API_HOST}/api/hris/checkin`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ staff_name: user?.name, role: user?.role }),
+    }).catch(() => {});
   };
 
   const handleLogout = () => {
+    // HRIS — auto check-out absensi pas kasir keluar
+    if (cashier?.name) {
+      fetch(`${API_HOST}/api/hris/checkout`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ staff_name: cashier.name }),
+      }).catch(() => {});
+    }
     sessionStorage.removeItem("posCashier");
     setCashier(null);
     setView("home");
