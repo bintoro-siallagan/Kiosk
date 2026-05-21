@@ -45,6 +45,7 @@ import AdminDeviceSession from "./Admin/AdminDeviceSession.jsx";
 import AdminSecurityCenter from "./Admin/AdminSecurityCenter.jsx";
 import AdminRoleDashboard from "./Admin/AdminRoleDashboard.jsx";
 import AdminItemMaster from "./Admin/AdminItemMaster.jsx";
+import AdminItemPricing from "./Admin/AdminItemPricing.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -153,6 +154,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "security", label: "🛡️ Security", color: "#e11d48" },
     { id: "role_dash", label: "📊 Role Dashboard", color: "#818cf8" },
     { id: "item_master", label: "📦 Item Master", color: "#0891b2" },
+    { id: "item_pricing", label: "💲 Item Pricing", color: "#22c55e" },
   ];
 
   return (
@@ -223,6 +225,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "security" && <AdminSecurityCenter apiBase={API} />}
         {tab === "role_dash" && <AdminRoleDashboard apiBase={API} />}
         {tab === "item_master" && <AdminItemMaster apiBase={API} />}
+        {tab === "item_pricing" && <AdminItemPricing apiBase={API} />}
       </div>
 
       {toast && <div style={S.toast}>{toast}</div>}
