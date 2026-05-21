@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
-const MONO = "'Space Mono', ui-monospace, monospace";
+const MONO = "var(--m)";
 
 const MOOD = { 1: "😟 Lelah", 2: "😐 Biasa", 3: "🙂 Oke", 4: "😄 Senang", 5: "🤩 Semangat" };
 const fmtTime = (ts) => ts ? new Date(ts * 1000).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "—";
@@ -115,9 +115,9 @@ function Kpi({ label, value, accent, sub }) {
 const S = {
   wrap: { display: "flex", flexDirection: "column", gap: 14 },
   msg: { padding: 40, textAlign: "center", color: "#666", fontSize: 14 },
-  card: { background: "#121212", border: "1px solid #262626", borderRadius: 14, padding: 18 },
+  card: { background: "#0e0e13", border: "1px solid #1c1c25", borderRadius: 14, padding: 18 },
   kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#888", fontFamily: MONO, marginBottom: 12 },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
-  kpi: { background: "#121212", border: "1px solid #262626", borderRadius: 12, padding: "12px 14px" },
-  row: { display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: "1px solid #1c1c1c" },
+  kpi: { background: "#0e0e13", border: "1px solid #1c1c25", borderRadius: 12, padding: "12px 14px" },
+  row: { display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: "1px solid #15151e" },
 };

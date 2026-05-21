@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
-const MONO = "'Space Mono', ui-monospace, monospace";
+const MONO = "var(--m)";
 
 const STATUS = {
   present: { label: "Hadir", col: "#10b981" },
@@ -48,13 +48,13 @@ export default function CommandHRIS() {
 
       <div style={S.card}>
         <div style={S.kicker}>👥 ROSTER & ABSENSI — {d.date}</div>
-        <div style={{ ...S.gridRow, padding: "4px 0", borderBottom: "1px solid #262626", fontSize: 10, color: "#666", fontFamily: MONO, textTransform: "uppercase" }}>
+        <div style={{ ...S.gridRow, padding: "4px 0", borderBottom: "1px solid #1c1c25", fontSize: 10, color: "#666", fontFamily: MONO, textTransform: "uppercase" }}>
           <span>Staff</span><span>Role</span><span>Masuk</span><span>Telat</span><span>Lembur</span><span>Produktivitas</span>
         </div>
         {d.roster.map(r => {
           const st = STATUS[r.status] || STATUS.absent;
           return (
-            <div key={r.id} style={{ ...S.gridRow, padding: "10px 0", borderBottom: "1px solid #1c1c1c", alignItems: "center" }}>
+            <div key={r.id} style={{ ...S.gridRow, padding: "10px 0", borderBottom: "1px solid #15151e", alignItems: "center" }}>
               <span style={{ fontSize: 14, color: "#eee", fontWeight: 600, display: "flex", gap: 7, alignItems: "center" }}>
                 <span style={{ width: 8, height: 8, borderRadius: 8, background: st.col, flexShrink: 0 }} />
                 {r.staff_name}
@@ -68,7 +68,7 @@ export default function CommandHRIS() {
                 {r.overtime_minutes > 0 ? r.overtime_minutes + "m" : "—"}
               </span>
               <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ flex: 1, height: 6, background: "#262626", borderRadius: 3, overflow: "hidden" }}>
+                <span style={{ flex: 1, height: 6, background: "#1c1c25", borderRadius: 3, overflow: "hidden" }}>
                   <span style={{ display: "block", height: "100%", width: (r.productivity_score || 0) + "%", background: prodCol(r.productivity_score || 0) }} />
                 </span>
                 <b style={{ fontFamily: MONO, fontSize: 12, color: "#ccc", width: 24, textAlign: "right" }}>{r.productivity_score ?? "—"}</b>
@@ -102,7 +102,7 @@ export default function CommandHRIS() {
 
 function Row({ k, v, vc }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #1c1c1c", fontSize: 13 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #15151e", fontSize: 13 }}>
       <span style={{ color: "#888" }}>{k}</span>
       <b style={{ color: vc || "#ddd", textTransform: "capitalize" }}>{v}</b>
     </div>
@@ -122,9 +122,9 @@ function Kpi({ label, value, accent, sub }) {
 const S = {
   wrap: { display: "flex", flexDirection: "column", gap: 14 },
   msg: { padding: 40, textAlign: "center", color: "#666", fontSize: 14 },
-  card: { background: "#121212", border: "1px solid #262626", borderRadius: 14, padding: 18 },
+  card: { background: "#0e0e13", border: "1px solid #1c1c25", borderRadius: 14, padding: 18 },
   kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#888", fontFamily: MONO, marginBottom: 12 },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
-  kpi: { background: "#121212", border: "1px solid #262626", borderRadius: 12, padding: "12px 14px" },
+  kpi: { background: "#0e0e13", border: "1px solid #1c1c25", borderRadius: 12, padding: "12px 14px" },
   gridRow: { display: "grid", gridTemplateColumns: GRID, gap: 8 },
 };
