@@ -1,10 +1,12 @@
 // server/leaderboard-backend.js
 // Customer spend gamification — "Sultan Leaderboard".
 // Setelah transaksi: customer dapet gelar (Sultan/Crazy Rich/dll) +
-// lihat peringkat belanja hari ini. Bikin customer senang & balik lagi.
+// lihat peringkat belanja JAM INI. Reset tiap 1 jam → tiap jam ada
+// Sultan baru. Layar celebration didesain biar enak di-screenshot &
+// dishare ke WA Story / Instagram (apresiasi customer).
 //
-//   POST /api/leaderboard/record  — { name, amount } → gelar + rank + top
-//   GET  /api/leaderboard         — leaderboard belanja hari ini
+//   POST /api/leaderboard/record  — { name, amount } → gelar + rank + top + stats
+//   GET  /api/leaderboard         — leaderboard belanja jam ini
 
 const express = require('express');
 const Database = require('better-sqlite3');
@@ -29,7 +31,13 @@ const TITLES = [
   { min: 0,      title: 'Hemat Pejuang',  emoji: '🌱', color: '#a3e635' },
 ];
 const titleFor = (amt) => TITLES.find(t => amt >= t.min) || TITLES[TITLES.length - 1];
-const dayStart = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return Math.floor(d.getTime() / 1000); };
+
+// Reset tiap 1 jam — window = jam berjalan (mis. 14:00–14:59)
+const hourStart = () => { const d = new Date(); d.setMinutes(0, 0, 0); return Math.floor(d.getTime() / 1000); };
+const hourLabel = () => {
+  const h = new Date().getHours();
+  return `${String(h).padStart(2, '0')}.00–${String(h).padStart(2, '0')}.59`;
+};
 
 function setupLeaderboard(app, opts = {}) {
   const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
@@ -39,42 +47,51 @@ function setupLeaderboard(app, opts = {}) {
   const router = express.Router();
   router.use(express.json());
 
-  const topToday = (limit) => {
-    const rows = db.prepare(
-      `SELECT name, amount FROM spend_leaderboard WHERE created_at >= ? ORDER BY amount DESC, id ASC LIMIT ?`
-    ).all(dayStart(), limit);
-    return rows.map((r, i) => ({ rank: i + 1, name: r.name || 'Tamu', amount: r.amount, ...titleFor(r.amount) }));
+  const topNow = (limit) => db.prepare(
+    `SELECT name, amount FROM spend_leaderboard WHERE created_at >= ? ORDER BY amount DESC, id ASC LIMIT ?`
+  ).all(hourStart(), limit)
+    .map((r, i) => ({ rank: i + 1, name: r.name || 'Tamu', amount: r.amount, ...titleFor(r.amount) }));
+
+  const statsNow = () => {
+    const s = db.prepare(
+      `SELECT COALESCE(MAX(amount),0) top_transaction, COALESCE(AVG(amount),0) avg_bill, COUNT(*) count
+       FROM spend_leaderboard WHERE created_at >= ?`
+    ).get(hourStart());
+    return { top_transaction: Math.round(s.top_transaction), avg_bill: Math.round(s.avg_bill), count: s.count };
   };
 
-  // GET — leaderboard belanja hari ini
+  // GET — leaderboard belanja jam ini
   router.get('/', (req, res) => {
     res.json({
-      date: new Date().toISOString().slice(0, 10),
-      top: topToday(Math.min(Number(req.query.limit) || 10, 50)),
+      window: hourLabel(),
+      top: topNow(Math.min(Number(req.query.limit) || 10, 50)),
+      stats: statsNow(),
     });
   });
 
-  // POST — catat transaksi, balikin gelar + rank + leaderboard
+  // POST — catat transaksi, balikin gelar + rank + leaderboard + stats jam ini
   router.post('/record', (req, res) => {
     const { name, amount } = req.body || {};
     const amt = Number(amount) || 0;
     if (amt <= 0) return res.status(400).json({ error: 'amount tidak valid' });
     db.prepare(`INSERT INTO spend_leaderboard (name, amount) VALUES (?,?)`)
       .run((name || '').trim() || 'Tamu', amt);
-    const all = db.prepare(`SELECT amount FROM spend_leaderboard WHERE created_at >= ?`).all(dayStart());
+    const all = db.prepare(`SELECT amount FROM spend_leaderboard WHERE created_at >= ?`).all(hourStart());
     const rank = all.filter(r => r.amount > amt).length + 1;
     res.json({
+      window: hourLabel(),
       title: titleFor(amt),
       amount: amt,
       rank,
-      total_today: all.length,
-      top: topToday(8),
+      total_hour: all.length,
+      top: topNow(8),
+      stats: statsNow(),
     });
   });
 
   const mountPath = opts.mountPath || '/api/leaderboard';
   app.use(mountPath, router);
-  console.log(`[leaderboard] mounted at ${mountPath} — customer spend gamification`);
+  console.log(`[leaderboard] mounted at ${mountPath} — hourly Sultan leaderboard`);
 
   return { router, db };
 }
