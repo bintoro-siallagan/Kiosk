@@ -17,6 +17,7 @@ export default function AdminLoyalty({ apiBase = '' }) {
   const [showRewardForm, setShowRewardForm] = useState(false);
   const [editReward, setEditReward] = useState(null);
   const [showAdjust, setShowAdjust] = useState(null);
+  const [editCust, setEditCust] = useState(null);
   const [showTierForm, setShowTierForm] = useState(false);
   const [tierForm, setTierForm] = useState({ code: '', name: '', emoji: '🎯', color: '#888888', min_lifetime_spend: '', earn_multiplier: '' });
   const [editTierCode, setEditTierCode] = useState(null);
@@ -304,6 +305,7 @@ export default function AdminLoyalty({ apiBase = '' }) {
                   <td style={{...styles.td, textAlign: 'right'}}>{c.total_visits}</td>
                   <td style={styles.td}>{fmtDateTime(c.last_visit_at)}</td>
                   <td style={styles.td}>
+                    <button onClick={(e) => { e.stopPropagation(); setEditCust(c); }} style={{ ...styles.adjustBtn, marginRight: 6 }}>Edit</button>
                     <button onClick={(e) => { e.stopPropagation(); setShowAdjust(c); }} style={styles.adjustBtn}>Adjust</button>
                   </td>
                 </tr>
@@ -436,6 +438,13 @@ export default function AdminLoyalty({ apiBase = '' }) {
         <AdjustModal customer={showAdjust} onSubmit={submitAdjust} onCancel={() => setShowAdjust(null)} />
       )}
 
+      {/* EDIT CUSTOMER MODAL */}
+      {editCust && (
+        <EditCustomerModal customer={editCust} apiBase={apiBase}
+          onSaved={() => { setEditCust(null); loadCustomers(); }}
+          onCancel={() => setEditCust(null)} />
+      )}
+
       {/* REWARD FORM MODAL */}
       {showRewardForm && (
         <RewardForm reward={editReward} tiers={tiers} onSave={saveReward} onCancel={() => { setShowRewardForm(false); setEditReward(null); }} />
@@ -520,6 +529,48 @@ function CustomerDrill({ customer, transactions, onClose, apiBase }) {
 // ============================================================
 // ADJUST MODAL
 // ============================================================
+function EditCustomerModal({ customer, apiBase, onSaved, onCancel }) {
+  const [name, setName] = useState(customer.name || '');
+  const [email, setEmail] = useState(customer.email || '');
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const r = await fetch(`${apiBase}/api/loyalty/customers/${customer.id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), email: email.trim() }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) { alert(d.error || 'Gagal simpan member'); setSaving(false); return; }
+      onSaved();
+    } catch (e) { alert(e.message); setSaving(false); }
+  };
+
+  return (
+    <div style={styles.overlay} onClick={onCancel}>
+      <div style={styles.modalBox} onClick={e => e.stopPropagation()}>
+        <h3 style={{ color: '#fff', marginTop: 0 }}>Edit Member</h3>
+        <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 14, fontFamily: 'monospace' }}>{customer.phone}</div>
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Nama</label>
+          <input value={name} onChange={e => setName(e.target.value)} style={styles.input} placeholder="Nama member" />
+        </div>
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Email (opsional)</label>
+          <input value={email} onChange={e => setEmail(e.target.value)} style={styles.input} placeholder="email@contoh.com" />
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={onCancel} style={{ ...styles.btn, flex: 1 }}>Batal</button>
+          <button onClick={save} disabled={saving} style={{ ...styles.btnPrimary, flex: 2 }}>
+            {saving ? 'Menyimpan…' : '💾 Simpan'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AdjustModal({ customer, onSubmit, onCancel }) {
   const [points, setPoints] = useState('');
   const [description, setDescription] = useState('');
