@@ -445,7 +445,7 @@ export default function CommandCenter(){
                 <div style={{fontSize:15,fontWeight:600,color:"#fca5a5"}}>{w.name}</div>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
                   <span style={{fontSize:12,color:"#666",fontFamily:"var(--m)"}}>{w.id}</span>
-                  <span style={{fontSize:18,fontWeight:700,fontFamily:"var(--m)",color:"#ef4444"}}>{w.stock} <span style={{fontSize:12,color:"#888"}}>{w.unit}</span></span>
+                  <span style={{fontSize:18,fontWeight:700,fontFamily:"var(--m)",color:"#ef4444"}}>{Math.round(w.stock*10)/10} <span style={{fontSize:12,color:"#888"}}>{w.unit}</span></span>
                   <span style={{fontSize:13,fontFamily:"var(--m)",color:dl<=2?"#ef4444":"#f59e0b"}}>{dl}d left</span>
                 </div>
               </div>
