@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#0369a1";
-const TYPE_C = { Aset: "#10b981", Kewajiban: "#f59e0b", Ekuitas: "#a855f7", Pendapatan: "#3b82f6", Beban: "#ef4444" };
+const TYPE_C = { Aset: "#10b981", Kewajiban: "#f59e0b", Ekuitas: "#a855f7", Pendapatan: "#3b82f6", HPP: "#ec4899", Beban: "#ef4444" };
 
 export default function AdminGeneralLedger({ apiBase = "" }) {
   const [d, setD] = useState(null);

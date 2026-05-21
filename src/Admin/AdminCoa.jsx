@@ -29,6 +29,15 @@ export default function AdminCoa({ apiBase = "" }) {
     post("", form, `✓ Akun ${form.code} ditambah`);
     setForm({ code: "", name: "", account_type: "Beban", account_group: "" });
   };
+  const edit = (a) => {
+    const name = window.prompt(`Edit nama akun — ${a.code}`, a.name);
+    if (name == null || !name.trim()) return;
+    const type = window.prompt(`Tipe akun (${d.types.join(" / ")})`, a.account_type);
+    if (type == null || !d.types.includes(type.trim())) { setMsg("⚠ Tipe akun tidak valid"); return; }
+    const group = window.prompt("Grup akun", a.account_group);
+    if (group == null) return;
+    post(a.code, { name: name.trim(), account_type: type.trim(), account_group: group.trim() }, `✓ Akun ${a.code} diperbarui`);
+  };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Chart of Accounts…</div>;
   const s = d.summary;
@@ -85,6 +94,7 @@ export default function AdminCoa({ apiBase = "" }) {
                   <span style={{ width: 64, fontFamily: "'Space Mono',monospace", color: TYPE_C[g.type] }}>{a.code}</span>
                   <span style={{ flex: 1, color: a.is_active ? "#e6edf3" : "#5b6470", textDecoration: a.is_active ? "none" : "line-through" }}>{a.name}</span>
                   <span style={{ fontSize: 9, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{a.normal_balance.toUpperCase()}</span>
+                  <button onClick={() => edit(a)} style={{ fontSize: 10, color: "#60a5fa", background: "#1d4ed81f", border: "1px solid #1d4ed855", borderRadius: 5, padding: "3px 8px", cursor: "pointer", fontFamily: "inherit" }}>✎ Edit</button>
                   <button onClick={() => post(`${a.code}/toggle`, null, `✓ ${a.code} ${a.is_active ? "dinonaktifkan" : "diaktifkan"}`)}
                     style={{ width: 78, fontSize: 9, fontWeight: 700, color: a.is_active ? "#10b981" : "#5b6470", background: (a.is_active ? "#10b981" : "#5b6470") + "1f", border: `1px solid ${(a.is_active ? "#10b981" : "#5b6470")}55`, borderRadius: 5, padding: "3px 6px", fontFamily: "'Space Mono',monospace", cursor: "pointer" }}>
                     {a.is_active ? "● AKTIF" : "○ OFF"}

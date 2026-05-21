@@ -115,6 +115,18 @@ function setupCoa(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // edit akun — nama, grup, tipe, deskripsi (kode tetap)
+  router.post('/:code', (req, res) => {
+    const a = db.prepare(`SELECT * FROM coa_accounts WHERE code = ?`).get(req.params.code);
+    if (!a) return res.status(404).json({ error: 'akun tidak ditemukan' });
+    const b = req.body || {};
+    const type = TYPES.includes(b.account_type) ? b.account_type : a.account_type;
+    db.prepare(`UPDATE coa_accounts SET name = ?, account_type = ?, account_group = ?, normal_balance = ?, description = ? WHERE code = ?`)
+      .run((b.name || a.name).trim(), type, (b.account_group || a.account_group).trim(),
+        NORMAL[type], (b.description != null ? b.description : a.description || '').trim(), a.code);
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/coa';
   app.use(mountPath, router);
   console.log(`[coa] mounted at ${mountPath} — chart of accounts master`);
