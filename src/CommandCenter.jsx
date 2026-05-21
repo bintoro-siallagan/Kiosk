@@ -12,6 +12,7 @@ import CommandOperation from "./CommandOperation.jsx";
 import CommandHRIS from "./CommandHRIS.jsx";
 import CommandPromo from "./CommandPromo.jsx";
 import CommandEngagement from "./CommandEngagement.jsx";
+import CommandAnalytics from "./CommandAnalytics.jsx";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -176,6 +177,7 @@ export default function CommandCenter(){
     {id:"hris",lb:"👥 HRIS",ac:"#a78bfa"},
     {id:"promo",lb:"🎯 Promo",ac:"#ec4899"},
     {id:"engage",lb:"📈 Engagement",ac:"#10b981"},
+    {id:"analytics",lb:"📊 Analytics",ac:"#a78bfa"},
     {id:"live",lb:"⚡ Live Sales",ac:"#10b981"},
     {id:"menu",lb:"📊 Top Menu",ac:"#3b82f6"},
     {id:"fin",lb:"📒 Finance",ac:"#a78bfa"},
@@ -241,6 +243,7 @@ export default function CommandCenter(){
     {tab==="hris"&&<div style={{animation:"si .2s ease-out"}}><CommandHRIS/></div>}
     {tab==="promo"&&<div style={{animation:"si .2s ease-out"}}><CommandPromo/></div>}
     {tab==="engage"&&<div style={{animation:"si .2s ease-out"}}><CommandEngagement/></div>}
+    {tab==="analytics"&&<div style={{animation:"si .2s ease-out"}}><CommandAnalytics/></div>}
 
     {tab==="live"&&<div style={{animation:"si .2s ease-out"}}>
       {/* KPI Row */}
