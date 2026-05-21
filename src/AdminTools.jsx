@@ -24,6 +24,7 @@ import AdminAR from "./Admin/AdminAR.jsx";
 import AdminBudget from "./Admin/AdminBudget.jsx";
 import AdminPayroll from "./Admin/AdminPayroll.jsx";
 import AdminFranchise from "./Admin/AdminFranchise.jsx";
+import AdminFoodCost from "./Admin/AdminFoodCost.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -111,6 +112,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "budget", label: "🎯 Budget", color: "#a78bfa" },
     { id: "payroll", label: "💼 Payroll", color: "#06B6D4" },
     { id: "franchise", label: "🏛️ Franchise", color: "#fbbf24" },
+    { id: "food_cost", label: "🍳 Food Cost", color: "#f97316" },
   ];
 
   return (
@@ -160,6 +162,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "budget" && <AdminBudget apiBase={API} />}
         {tab === "payroll" && <AdminPayroll apiBase={API} />}
         {tab === "franchise" && <AdminFranchise apiBase={API} />}
+        {tab === "food_cost" && <AdminFoodCost apiBase={API} />}
       </div>
 
       {toast && <div style={S.toast}>{toast}</div>}

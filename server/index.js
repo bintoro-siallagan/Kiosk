@@ -3598,6 +3598,7 @@ const { setupAR }               = require('./ar-backend');
 const { setupBudget }           = require('./budget-backend');
 const { setupPayroll }          = require('./payroll-backend');
 const { setupFranchise }        = require('./franchise-backend');
+const { setupFoodCost }         = require('./food-cost-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3651,6 +3652,7 @@ const ar = setupAR(app, { dbPath: DB_PATH });
 const budget = setupBudget(app, { dbPath: DB_PATH });
 const payroll = setupPayroll(app, { dbPath: DB_PATH });
 const franchise = setupFranchise(app, { dbPath: DB_PATH });
+const foodCost = setupFoodCost(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
