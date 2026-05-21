@@ -47,12 +47,12 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
     { label: "System Health", val: k.health == null ? "…" : k.health + "/100", c: k.health >= 75 ? "#10b981" : k.health >= 50 ? "#f59e0b" : "#ef4444", icon: "🔎" },
   ];
   const primary = [
-    { label: "Tools", desc: "Admin Tools — 107 modul operasi, produk, finance, HR", icon: "🛠️", c: "#f59e0b", on: () => onNav("tools") },
-    { label: "Management", desc: "Command Center — 13 dashboard realtime monitoring", icon: "📊", c: "#3b82f6", on: () => openTab("?command=1") },
+    { label: "Tools", desc: "Admin Tools — 107 modul", icon: "🛠️", c: "#f59e0b", on: () => onNav("tools") },
+    { label: "Dashboard Outlet", desc: "Dashboard lama — order, menu & KPI outlet", icon: "🏪", c: "#22d3ee", on: () => onNav("admin", "overview") },
+    { label: "Management", desc: "Command Center — 13 dashboard", icon: "📊", c: "#3b82f6", on: () => openTab("?command=1") },
   ];
   const columns = [
     { title: "OUTLET", items: [
-      { label: "Dashboard Outlet", icon: "🏪", c: "#22d3ee", on: () => onNav("admin", "overview") },
       { label: "Transaksi Outlet", icon: "🧾", c: "#10b981", on: () => onNav("admin", "orders") },
       { label: "Menu & Stok", icon: "🍔", c: "#f59e0b", on: () => onNav("admin", "menu") },
       { label: "QR Meja", icon: "🪑", c: "#a855f7", on: () => onNav("admin", "qrgen") },
@@ -166,7 +166,7 @@ const S = {
   kpiVal: { fontSize: 21, fontWeight: 800, fontFamily: "'Space Mono',monospace", margin: "3px 0 0" },
   kpiSub: { fontSize: 11, color: "#5b6470" },
   sectionLabel: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#5b6470", fontFamily: "'Space Mono',monospace", margin: "10px 2px 6px" },
-  primaryRow: { display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 12 },
+  primaryRow: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 },
   primaryTile: { display: "flex", alignItems: "center", gap: 13, background: "#0d1117", border: "1px solid #161b22", borderRadius: 13, padding: "10px 16px", fontFamily: "inherit" },
   cols: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16, alignItems: "start" },
   rowTile: { display: "flex", alignItems: "center", gap: 11, background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "6px 11px", fontFamily: "inherit", width: "100%" },
