@@ -87,6 +87,7 @@ export default function CommandCenter(){
   const [recon,setRecon]=useState(null);
   const [pgRecon,setPgRecon]=useState(null);
   const [kpi,setKpi]=useState(null);
+  const [posBeh,setPosBeh]=useState(null);
   const [loading,setLoading]=useState(true);
 
   useEffect(()=>{const t=setInterval(()=>setNow(clk()),1000);return()=>clearInterval(t);},[]);
@@ -121,13 +122,14 @@ export default function CommandCenter(){
 
   // Data polling
   const refreshData=useCallback(async()=>{
-    const[z,a,w,rc,pg,k]=await Promise.all([fetchApi("/api/reports/z"),fetchApi("/api/audit/anomalies"),fetchApi("/api/audit/warehouse"),fetchApi("/api/aggregator/reconcile"),fetchApi("/api/payment-gateway/reconcile"),fetchApi("/api/cashier-kpi")]);
+    const[z,a,w,rc,pg,k,pb]=await Promise.all([fetchApi("/api/reports/z"),fetchApi("/api/audit/anomalies"),fetchApi("/api/audit/warehouse"),fetchApi("/api/aggregator/reconcile"),fetchApi("/api/payment-gateway/reconcile"),fetchApi("/api/cashier-kpi"),fetchApi("/api/pos-behavior/summary")]);
     if(z)setZReport(z);
     if(a?.items)setAnomalies(prev=>{const ids=new Set(prev.map(x=>x.id));const n=a.items.filter(x=>!ids.has(x.id));return[...n,...prev];});
     if(w)setWarehouse(w);
     if(rc)setRecon(rc);
     if(pg)setPgRecon(pg);
     if(k)setKpi(k);
+    if(pb)setPosBeh(pb);
     setLoading(false);
   },[]);
 
@@ -296,6 +298,33 @@ export default function CommandCenter(){
             </div>
           );
         })}
+      </Card>
+
+      {/* ═══ PERILAKU KASIR — deteksi main-main tombol POS ═══ */}
+      <Card style={{marginTop:16}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+          <Label>🎮 Perilaku Kasir — Hapus Item Sebelum Bayar</Label>
+          {(posBeh?.flagged_count||0)>0&&(
+            <span style={{fontSize:12,fontFamily:"var(--m)",padding:"3px 10px",borderRadius:6,background:"#450a0a",border:"1px solid #dc262666",color:"#fca5a5",fontWeight:700}}>
+              ⚠️ {posBeh.flagged_count} kasir kebanyakan hapus
+            </span>
+          )}
+        </div>
+        {!(posBeh?.cashiers?.length)?(
+          <div style={{color:"#333",fontSize:14}}>Belum ada aktivitas hapus item hari ini</div>
+        ):posBeh.cashiers.map(c=>(
+          <div key={c.cashier} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:"1px solid #15151e"}}>
+            <div style={{flex:1,fontSize:15,fontWeight:600,color:c.flagged?"#f87171":"#e4e4e7"}}>{c.cashier}</div>
+            <div style={{fontSize:12,color:"#666",fontFamily:"var(--m)"}}>
+              🗑 {c.remove_item} item{c.remove_topping>0?` · ${c.remove_topping} topping`:""}
+            </div>
+            <div style={{fontSize:17,fontWeight:800,fontFamily:"var(--m)",color:c.flagged?"#ef4444":"#10b981",minWidth:46,textAlign:"right"}}>{c.total}×</div>
+            {c.flagged&&<span style={{fontSize:11,color:"#f87171",fontFamily:"var(--m)",fontWeight:600}}>⚠️ gak fokus</span>}
+          </div>
+        ))}
+        <div style={{fontSize:11,color:"#3a3a44",marginTop:8,fontFamily:"var(--m)"}}>
+          Flag otomatis kalau lewat {posBeh?.threshold||15}× hapus/hari — indikator kasir main-main tombol.
+        </div>
       </Card>
     </div>}
 

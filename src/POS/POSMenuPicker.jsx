@@ -15,7 +15,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 const fmtIDR = (n) => new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', maximumFractionDigits:0}).format(Math.round(n||0));
 const API_HOST = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-export default function POSMenuPicker({ onCheckout, apiBase = '/api/master' }) {
+export default function POSMenuPicker({ onCheckout, apiBase = '/api/master', cashier, behaviorBase = '' }) {
   const [data, setData] = useState({ menus: [], packages: [] });
   const [categories, setCategories] = useState([]);
   const [extras, setExtras] = useState([]);
@@ -52,7 +52,20 @@ export default function POSMenuPicker({ onCheckout, apiBase = '/api/master' }) {
     }).filter(Boolean));
   };
 
-  const removeFromCart = (uid) => setCart(prev => prev.filter(c => c.uid !== uid));
+  // Log perilaku kasir — item dihapus sebelum bayar (deteksi "main-main tombol")
+  const logBehavior = (action, detail) => {
+    if (!behaviorBase) return;
+    fetch(`${behaviorBase}/api/pos-behavior`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cashier: cashier?.name, action, detail }),
+    }).catch(() => {});
+  };
+
+  const removeFromCart = (uid) => {
+    const it = cart.find(c => c.uid === uid);
+    setCart(prev => prev.filter(c => c.uid !== uid));
+    if (it) logBehavior('remove_item', it.display_name);
+  };
 
   const checkout = () => {
     if (cart.length === 0) return;

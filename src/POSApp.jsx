@@ -32,6 +32,8 @@ function QuickOrderFlow({ cashier, onExit }) {
         >← Home</button>
         <POSMenuPicker
           apiBase={`${API_HOST}/api/master`}
+          cashier={cashier}
+          behaviorBase={API_HOST}
           onCheckout={({ items, subtotal }) => {
             setOrder({ ref: `QO-${Date.now()}`, total: subtotal, items, cashier: cashier?.name });
             setStage("payment");
