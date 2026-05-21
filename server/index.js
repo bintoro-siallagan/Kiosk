@@ -3660,6 +3660,9 @@ const { setupCoa }              = require('./coa-backend');
 const { setupPurchaseReturn }   = require('./purchase-return-backend');
 const { setupInternalReturn }   = require('./internal-return-backend');
 const { setupStockList }        = require('./stock-list-backend');
+const { setupSalesOrder }       = require('./sales-order-backend');
+const { setupSalesReturn }      = require('./sales-return-backend');
+const { setupB2bCustomer }      = require('./b2b-customer-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3764,6 +3767,9 @@ const coa = setupCoa(app, { dbPath: DB_PATH });
 const purchaseReturn = setupPurchaseReturn(app, { dbPath: DB_PATH });
 const internalReturn = setupInternalReturn(app, { dbPath: DB_PATH });
 const stockList = setupStockList(app, { dbPath: DB_PATH });
+const salesOrder = setupSalesOrder(app, { dbPath: DB_PATH });
+const salesReturn = setupSalesReturn(app, { dbPath: DB_PATH });
+const b2bCustomer = setupB2bCustomer(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
