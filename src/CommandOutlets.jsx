@@ -3,6 +3,7 @@
 // Owner multi-cabang lihat semua outlet sekaligus, dikelompokin per Area.
 
 import { useState, useEffect, useCallback } from "react";
+import CommandOutletDetail from "./CommandOutletDetail.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const MONO = "var(--m)";
@@ -18,12 +19,14 @@ const fmtK = (n) => (n >= 1e6 ? (n / 1e6).toFixed(2).replace(/\.?0+$/, "") + "jt
 export default function CommandOutlets() {
   const [d, setD] = useState(null);
   const [err, setErr] = useState("");
+  const [selectedId, setSelectedId] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${API}/api/outlets`).then(r => r.json()).then(setD).catch(e => setErr(String(e)));
   }, []);
   useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
+  if (selectedId) return <CommandOutletDetail outletId={selectedId} onBack={() => setSelectedId(null)} />;
   if (err) return <div style={S.msg}>Gagal memuat Multi-Outlet Overview: {err}</div>;
   if (!d) return <div style={S.msg}>Memuat Multi-Outlet Overview…</div>;
   const s = d.summary;
@@ -49,7 +52,8 @@ export default function CommandOutlets() {
             {a.outlets.map(o => {
               const st = STATUS[o.status] || STATUS.attention;
               return (
-                <div key={o.id} style={{ ...S.outlet, borderLeft: `3px solid ${st.col}` }}>
+                <div key={o.id} onClick={() => setSelectedId(o.id)}
+                  style={{ ...S.outlet, borderLeft: `3px solid ${st.col}`, cursor: "pointer" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
                     <span style={{ fontSize: 14 }}>{st.dot}</span>
                     <span style={{ fontSize: 15, fontWeight: 700, color: "#e4e4e7", flex: 1 }}>{o.name}</span>
@@ -64,6 +68,7 @@ export default function CommandOutlets() {
                       valColor={o.open_issues >= 8 ? "#ef4444" : o.open_issues >= 4 ? "#f59e0b" : "#10b981"} />
                     <Metric label="Staff" value={String(o.staff_count)} />
                   </div>
+                  <div style={{ textAlign: "right", fontSize: 10, color: "#71717a", fontFamily: MONO, marginTop: 9 }}>lihat detail →</div>
                 </div>
               );
             })}

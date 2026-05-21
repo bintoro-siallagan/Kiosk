@@ -75,9 +75,55 @@ function setupOutlets(app, opts = {}) {
     });
   });
 
+  // ── Outlet Detail (Level 3 drill-down) ──
+  const clamp = (n) => Math.max(0, Math.min(100, Math.round(n)));
+  const det = (id, salt) => ((id * 31 + salt * 17) % 17) - 8;   // -8..8 deterministik
+
+  router.get('/:id', (req, res) => {
+    const o = db.prepare(`SELECT * FROM outlets WHERE id = ?`).get(req.params.id);
+    if (!o) return res.status(404).json({ error: 'outlet tidak ditemukan' });
+    const h = o.health_score, iss = o.open_issues, staff = o.staff_count, rev = o.revenue_today, g = o.growth_pct;
+
+    const health_components = [
+      { key: 'SOP & Disiplin',    score: clamp(h + det(o.id, 1)) },
+      { key: 'Sales vs Target',   score: clamp(58 + g * 2.4) },
+      { key: 'Customer Feedback', score: clamp(h + det(o.id, 2)) },
+      { key: 'Stock & Supply',    score: clamp(h + det(o.id, 3) - Math.min(iss, 12)) },
+      { key: 'Issue & Risk',      score: clamp(100 - iss * 5) },
+      { key: 'Workforce',         score: clamp(56 + staff * 6) },
+    ];
+
+    const avg_bill = 48000 + det(o.id, 4) * 2200;
+    const transactions = Math.round(rev / avg_bill);
+    const target = Math.round(rev / ((88 + det(o.id, 5)) / 100) / 10000) * 10000;
+
+    const stockTotal = 42 + det(o.id, 8);
+    const stockCrit = Math.min(8, Math.round(iss / 3));
+    const stockLow = Math.min(14, Math.max(0, iss - stockCrit));
+
+    const ISSUES = ['Waste topping berlebih', 'Void transaksi tinggi', 'Stok bahan menipis',
+      'Komplain antrian lama', 'Absensi telat staff', 'Suhu chiller di luar standar'];
+    const recent = [];
+    for (let i = 0; i < Math.min(iss, 4); i++) {
+      recent.push({
+        text: ISSUES[(o.id + i) % ISSUES.length],
+        severity: i === 0 && iss >= 8 ? 'critical' : i < 2 ? 'warning' : 'info',
+      });
+    }
+
+    res.json({
+      outlet: { ...o, status: statusOf(h) },
+      health_components,
+      sales: { revenue: rev, growth_pct: g, target, target_pct: target ? Math.round(rev / target * 100) : 0, transactions, avg_bill },
+      workforce: { staff_count: staff, on_duty: Math.max(1, staff - (o.id % 2)), attendance_pct: clamp(86 + det(o.id, 7)) },
+      stock: { total: stockTotal, critical: stockCrit, low: stockLow, ok: stockTotal - stockCrit - stockLow },
+      issues: { open: iss, critical: Math.round(iss / 4), recent },
+    });
+  });
+
   const mountPath = opts.mountPath || '/api/outlets';
   app.use(mountPath, router);
-  console.log(`[outlets] mounted at ${mountPath} — multi-outlet overview`);
+  console.log(`[outlets] mounted at ${mountPath} — multi-outlet overview + detail`);
 
   return { router, db };
 }
