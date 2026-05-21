@@ -13,6 +13,7 @@ import CommandHRIS from "./CommandHRIS.jsx";
 import CommandPromo from "./CommandPromo.jsx";
 import CommandEngagement from "./CommandEngagement.jsx";
 import CommandAnalytics from "./CommandAnalytics.jsx";
+import CommandReorderModal from "./CommandReorderModal.jsx";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -92,6 +93,8 @@ export default function CommandCenter(){
   const [zReport,setZReport]=useState(null);
   const [anomalies,setAnomalies]=useState([]);
   const [warehouse,setWarehouse]=useState(null);
+  const [reorderItem,setReorderItem]=useState(null);
+  const [reorderedSet,setReorderedSet]=useState(()=>new Set());
   const [recon,setRecon]=useState(null);
   const [pgRecon,setPgRecon]=useState(null);
   const [kpi,setKpi]=useState(null);
@@ -150,7 +153,7 @@ export default function CommandCenter(){
   const aLoss=unr.reduce((s,a)=>s+(a.amount||a.amt||0),0);
   const aByT=useMemo(()=>{const m={};Object.keys(RULES).forEach(k=>{m[k]=0;});unr.forEach(a=>{const t=a.type;if(m[t]!==undefined)m[t]++;});return m;},[unr]);
   const fltA=useMemo(()=>unr.filter(a=>!aF||a.type===aF),[unr,aF]);
-  const whAlerts=(warehouse?.items||[]).filter(w=>w.stock<=w.minStock);
+  const whAlerts=(warehouse?.items||[]).filter(w=>w.stock<=w.minStock||(w.dailyUse>0&&w.stock/w.dailyUse<=7));
   const topItems=(z.topItems||[]).slice(0,10);
   const maxQ=topItems[0]?.qty||1;
   const aggGross=recon?.total?.gross_revenue||0;
@@ -441,12 +444,16 @@ export default function CommandCenter(){
           {whAlerts.map((w,i)=>{
             const dl=w.dailyUse>0?Math.floor(w.stock/w.dailyUse):999;
             return(
-              <div key={w.id||i} style={{padding:"8px 0",borderBottom:i<whAlerts.length-1?"1px solid #1a1114":"none"}}>
+              <div key={w.id||i} onClick={()=>setReorderItem(w)}
+                style={{padding:"8px 2px",borderBottom:i<whAlerts.length-1?"1px solid #1a1114":"none",cursor:"pointer"}}>
                 <div style={{fontSize:15,fontWeight:600,color:"#fca5a5"}}>{w.name}</div>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
                   <span style={{fontSize:12,color:"#666",fontFamily:"var(--m)"}}>{w.id}</span>
                   <span style={{fontSize:18,fontWeight:700,fontFamily:"var(--m)",color:"#ef4444"}}>{Math.round(w.stock*10)/10} <span style={{fontSize:12,color:"#888"}}>{w.unit}</span></span>
                   <span style={{fontSize:13,fontFamily:"var(--m)",color:dl<=2?"#ef4444":"#f59e0b"}}>{dl}d left</span>
+                </div>
+                <div style={{fontSize:11,fontFamily:"var(--m)",marginTop:3,color:reorderedSet.has(w.id)?"#10b981":"#f59e0b"}}>
+                  {reorderedSet.has(w.id)?"✓ PR restock sudah dibuat":"🛒 klik buat reorder →"}
                 </div>
               </div>
             );
@@ -462,7 +469,7 @@ export default function CommandCenter(){
               const low=w.stock<=w.minStock;
               const dl=w.dailyUse>0?Math.floor(w.stock/w.dailyUse):999;
               return(
-                <div key={w.id||i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",background:low?"#1a0a0a":"#0a0a0f",borderRadius:8,border:`1px solid ${low?"#dc262622":"#15151e"}`}}>
+                <div key={w.id||i} onClick={()=>setReorderItem(w)} title="Klik buat reorder" style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",background:low?"#1a0a0a":"#0a0a0f",borderRadius:8,border:`1px solid ${reorderedSet.has(w.id)?"#10b98155":low?"#dc262622":"#15151e"}`,cursor:"pointer"}}>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:500,color:low?"#fca5a5":"#ccc",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{w.name}</div>
                     <Bar pct={pct} color={low?"#ef4444":pct>60?"#10b981":"#eab308"} h={4}/>
@@ -475,6 +482,9 @@ export default function CommandCenter(){
           </div>
         </Card>
       </div>
+      {reorderItem&&<CommandReorderModal item={reorderItem} apiBase={API_BASE}
+        onClose={()=>setReorderItem(null)}
+        onDone={(id)=>setReorderedSet(s=>new Set(s).add(id))}/>}
     </div>}
 
     {/* ═══ ANOMALI ═══ */}
