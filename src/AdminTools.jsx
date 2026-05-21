@@ -43,6 +43,7 @@ import AdminRBAC from "./Admin/AdminRBAC.jsx";
 import AdminApproval from "./Admin/AdminApproval.jsx";
 import AdminDeviceSession from "./Admin/AdminDeviceSession.jsx";
 import AdminSecurityCenter from "./Admin/AdminSecurityCenter.jsx";
+import AdminRoleDashboard from "./Admin/AdminRoleDashboard.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -149,6 +150,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "approval", label: "⚖️ Approval", color: "#f59e0b" },
     { id: "device_session", label: "🖥️ Device & Sesi", color: "#3b82f6" },
     { id: "security", label: "🛡️ Security", color: "#e11d48" },
+    { id: "role_dash", label: "📊 Role Dashboard", color: "#818cf8" },
   ];
 
   return (
@@ -217,6 +219,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "approval" && <AdminApproval apiBase={API} />}
         {tab === "device_session" && <AdminDeviceSession apiBase={API} />}
         {tab === "security" && <AdminSecurityCenter apiBase={API} />}
+        {tab === "role_dash" && <AdminRoleDashboard apiBase={API} />}
       </div>
 
       {toast && <div style={S.toast}>{toast}</div>}
