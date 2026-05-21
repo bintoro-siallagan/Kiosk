@@ -90,6 +90,14 @@ function setupNotificationCenter(app, opts = {}) {
       else if (days <= 60) n.push({ key: `lic-${lc.name}-${lc.outlet}`, category: 'Operasi', priority: 'medium', icon: '📋',
         title: `Izin segera habis — ${lc.type}`, detail: `${lc.name} · ${lc.outlet} · ${days} hari lagi`, source: 'Compliance' });
     }
+    // Kontrak — alert masa berlaku
+    for (const ct of many(`SELECT title, type, counterparty, end_date FROM contract_docs WHERE is_active = 1`)) {
+      const days = Math.floor((ct.end_date - N) / DAY);
+      if (days < 0) n.push({ key: `ctr-${ct.title}`, category: 'Operasi', priority: 'high', icon: '📄',
+        title: `Kontrak kedaluwarsa — ${ct.type}`, detail: `${ct.title} · ${ct.counterparty} · lewat ${-days} hari`, source: 'Contract' });
+      else if (days <= 60) n.push({ key: `ctr-${ct.title}`, category: 'Operasi', priority: 'medium', icon: '📄',
+        title: `Kontrak segera berakhir — ${ct.type}`, detail: `${ct.title} · ${ct.counterparty} · ${days} hari lagi`, source: 'Contract' });
+    }
     return n;
   };
 

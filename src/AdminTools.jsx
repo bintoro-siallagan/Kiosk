@@ -80,6 +80,10 @@ import AdminCashFlow from "./Admin/AdminCashFlow.jsx";
 import AdminApAging from "./Admin/AdminApAging.jsx";
 import AdminSupplierMaster from "./Admin/AdminSupplierMaster.jsx";
 import AdminCompliance from "./Admin/AdminCompliance.jsx";
+import AdminSalesPipeline from "./Admin/AdminSalesPipeline.jsx";
+import AdminContract from "./Admin/AdminContract.jsx";
+import AdminRfq from "./Admin/AdminRfq.jsx";
+import AdminRisk from "./Admin/AdminRisk.jsx";
 import AdminMasterUnit from "./Admin/AdminMasterUnit.jsx";
 import AdminMasterCategory from "./Admin/AdminMasterCategory.jsx";
 import AdminFoodCostCalc from "./Admin/AdminFoodCostCalc.jsx";
@@ -232,6 +236,10 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "ap_aging", label: "📑 AP Aging", color: "#dc2626" },
     { id: "supplier_master", label: "🏭 Supplier Master", color: "#8b5cf6" },
     { id: "compliance", label: "📋 Compliance & Izin", color: "#15803d" },
+    { id: "sales_pipeline", label: "🎯 Sales Pipeline", color: "#6366f1" },
+    { id: "contract", label: "📄 Contract Mgmt", color: "#ca8a04" },
+    { id: "rfq", label: "📨 RFQ / Tender", color: "#0891b2" },
+    { id: "risk", label: "⚠️ Risk Management", color: "#dc2626" },
     { id: "food_cost", label: "🍳 Food Cost", color: "#f97316" },
     { id: "conv_fee", label: "🧾 Biaya Layanan", color: "#fb923c" },
     { id: "reward", label: "🎮 Reward", color: "#a855f7" },
@@ -270,12 +278,12 @@ export default function AdminTools({ onBack, initialTab }) {
   const GROUPS = [
     { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["outlet_master", "staff", "checklist", "cashier_kpi", "gudang", "waste", "asset_maintenance", "incidents", "compliance", "notif_center", "config", "audit"] },
     { name: "Product", icon: "📦", module: "config", ids: ["master_category", "master_unit", "item_master", "item_pricing", "item_config", "item_rules", "food_cost", "food_cost_calc", "item_intel", "product_hub", "product_ver"] },
-    { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["stock_list", "batch_tracking", "stock_opname", "stock_transfer", "production", "sales_stock_sync", "demand_forecast", "auto_reorder", "supplier_master", "price_list", "procurement_plus", "simple_purchase", "petty_cash", "goods_delivery", "goods_received", "purchase_invoice", "purchase_return", "internal_return"] },
-    { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "payment", "conv_fee", "aggregator", "loyalty", "broadcast", "b2b_customer", "quotation", "sales_order", "delivery_order", "sales_invoice", "sales_return"] },
+    { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["stock_list", "batch_tracking", "stock_opname", "stock_transfer", "production", "sales_stock_sync", "demand_forecast", "auto_reorder", "supplier_master", "rfq", "price_list", "procurement_plus", "simple_purchase", "petty_cash", "goods_delivery", "goods_received", "purchase_invoice", "purchase_return", "internal_return"] },
+    { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "payment", "conv_fee", "aggregator", "loyalty", "broadcast", "sales_pipeline", "b2b_customer", "quotation", "sales_order", "delivery_order", "sales_invoice", "sales_return"] },
     { name: "Finance", icon: "💰", module: "finance", ids: ["coa", "general_ledger", "journal", "settlement", "reconciliation", "release_payment", "ar", "ap_aging", "finance", "fin_statements", "cash_flow", "finance_center", "finance_alert", "budget", "budget_plan", "period_closing", "consolidation", "core_tax", "franchise"] },
     { name: "HRIS & Reward", icon: "👥", module: "hr", ids: ["hris", "shift_roster", "payroll", "talenta", "reward", "reward_benefit", "motivation", "hr_command"] },
     { name: "Customer & Marketing", icon: "🎯", module: "marketing", ids: ["customer_intel", "mkt_behavior", "clv_churn", "feedback_segment", "geo_engage", "loyalty_promo", "campaign", "signage"] },
-    { name: "Security & Admin", icon: "🔐", module: "rbac", ids: ["rbac", "role_dash", "approval", "device_session", "security", "anti_fraud", "self_audit"] },
+    { name: "Security & Admin", icon: "🔐", module: "rbac", ids: ["rbac", "role_dash", "approval", "device_session", "security", "contract", "risk", "anti_fraud", "self_audit"] },
   ];
   const groupOf = (id) => { const g = GROUPS.find(x => x.ids.includes(id)); return g ? g.name : GROUPS[0].name; };
   const moduleOf = (id) => { const g = GROUPS.find(x => x.ids.includes(id)); return g ? g.module : "pos"; };
@@ -426,6 +434,10 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "ap_aging" && <AdminApAging apiBase={API} />}
         {tab === "supplier_master" && <AdminSupplierMaster apiBase={API} />}
         {tab === "compliance" && <AdminCompliance apiBase={API} />}
+        {tab === "sales_pipeline" && <AdminSalesPipeline apiBase={API} />}
+        {tab === "contract" && <AdminContract apiBase={API} />}
+        {tab === "rfq" && <AdminRfq apiBase={API} />}
+        {tab === "risk" && <AdminRisk apiBase={API} />}
         {tab === "sales_stock_sync" && <AdminSalesStockSync apiBase={API} />}
         {tab === "rbac" && <AdminRBAC apiBase={API} />}
         {tab === "approval" && <AdminApproval apiBase={API} />}

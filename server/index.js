@@ -3676,6 +3676,10 @@ const { setupCashFlow }         = require('./cash-flow-backend');
 const { setupSupplierMaster }   = require('./supplier-master-backend');
 const { setupApAging }          = require('./ap-aging-backend');
 const { setupCompliance }       = require('./compliance-backend');
+const { setupSalesPipeline }    = require('./sales-pipeline-backend');
+const { setupContract }         = require('./contract-backend');
+const { setupRfq }              = require('./rfq-backend');
+const { setupRisk }             = require('./risk-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3796,6 +3800,10 @@ const cashFlow = setupCashFlow(app, { dbPath: DB_PATH });
 const supplierMaster = setupSupplierMaster(app, { dbPath: DB_PATH });
 const apAging = setupApAging(app, { dbPath: DB_PATH });
 const compliance = setupCompliance(app, { dbPath: DB_PATH });
+const salesPipeline = setupSalesPipeline(app, { dbPath: DB_PATH });
+const contract = setupContract(app, { dbPath: DB_PATH });
+const rfq = setupRfq(app, { dbPath: DB_PATH });
+const risk = setupRisk(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;

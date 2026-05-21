@@ -86,6 +86,10 @@ function setupSelfAudit(app, opts = {}) {
           return C('Periode belum ditutup', 'ok', `${c} periode masih terbuka`); })(),
         (() => { const c = cnt(`SELECT COUNT(*) c FROM compliance_licenses WHERE is_active=1 AND expiry_date<${now}`);
           return C('Izin & sertifikat kedaluwarsa', c === 0 ? 'ok' : 'critical', c === 0 ? 'Semua izin masih berlaku' : `${c} izin kedaluwarsa — risiko hukum`); })(),
+        (() => { const c = cnt(`SELECT COUNT(*) c FROM contract_docs WHERE is_active=1 AND end_date<${now}`);
+          return C('Kontrak kedaluwarsa', c === 0 ? 'ok' : 'warning', c === 0 ? 'Semua kontrak aktif' : `${c} kontrak lewat masa berlaku`); })(),
+        (() => { const c = cnt(`SELECT COUNT(*) c FROM risk_register WHERE status!='closed' AND likelihood*impact>=15`);
+          return C('Risiko kritis terbuka', c === 0 ? 'ok' : 'critical', c === 0 ? 'Tidak ada risiko kritis' : `${c} risiko level Critical belum tertangani`); })(),
       ],
     });
 
