@@ -13,6 +13,7 @@ import Payment       from "./Payment.jsx";
 import DigitalReceipt from "./DigitalReceipt.jsx";
 import CommandCenter from "./CommandCenter.jsx";
 import AdminTools from "./AdminTools.jsx";
+import AdminHome from "./AdminHome.jsx";
 
 import Admin         from "./Admin.jsx";
 import Report        from "./Report.jsx";
@@ -35,6 +36,7 @@ function getScene() {
   const q = window.location.search;
   if (new URLSearchParams(q).get("command")) return "command";
   if (q.includes("tools")) return "tools";
+  if (q.includes("home")) return "home";
   if (new URLSearchParams(q).get("flow")) return "flow";
   if (new URLSearchParams(q).get("trackorder")) return "customer-track";
   if (q.includes("track"))     return "track";
@@ -80,7 +82,7 @@ export default function App() {
 
   function handleAdminLogin(session) {
     setAdmin(session);
-    const _target = getScene(); setScene(_target === "admin-login" ? "admin" : (_target || "admin"));
+    const _target = getScene(); setScene(_target === "admin-login" ? "home" : (_target || "home"));
   }
 
   function handleAdminLogout() {
@@ -113,13 +115,14 @@ export default function App() {
   }
 
   // Admin routes — check login
-  const adminRoutes = ["admin","report","esb-sync","esb-notif","members","promo","shift","command","tools"];
+  const adminRoutes = ["home","admin","report","esb-sync","esb-notif","members","promo","shift","command","tools"];
 
 
   if (adminRoutes.includes(scene) && !adminSession) return <AdminLogin onLogin={handleAdminLogin}/>;
 
   if (scene === "admin-login") return <AdminLogin onLogin={handleAdminLogin}/>;
-  if (scene === "tools") return <AdminTools onBack={() => { setScene("admin"); }} initialTab={toolsTab} />;
+  if (scene === "home") return <AdminHome adminSession={adminSession} onLogout={handleAdminLogout} onExit={go("kiosk")} onNav={(s) => { if (s === "tools") { setToolsTab("staff"); setScene("tools"); } else setScene(s); }} />;
+  if (scene === "tools") return <AdminTools onBack={() => { setScene("home"); }} initialTab={toolsTab} />;
   if (scene === "command") return <CommandCenter />;
   if (scene === "flow") return <FlowApp />;
   if (scene === "customer-track") return <><PromoBroadcastBanner/><CustomerTrackingPage orderId={trackOrderId}/></>;
