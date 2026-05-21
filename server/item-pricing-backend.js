@@ -15,8 +15,8 @@ CREATE TABLE IF NOT EXISTS item_pricing (
   price_dinein REAL, price_takeaway REAL, price_online REAL,
   price_kiosk REAL, price_employee REAL, price_franchise REAL,
   channels TEXT, tax_type TEXT DEFAULT 'PPN 11%',
-  sales_account TEXT DEFAULT '4-100 Pendapatan Penjualan',
-  cogs_account TEXT DEFAULT '5-100 HPP'
+  sales_account TEXT DEFAULT '4-1100 · Penjualan',
+  cogs_account TEXT DEFAULT '5-1100 · HPP Bahan Baku'
 );
 `;
 const CHANNELS = ['POS', 'QR Order', 'Kiosk', 'Delivery', 'Cinema', 'Signage'];
@@ -27,6 +27,11 @@ function setupItemPricing(app, opts = {}) {
   const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
+  // migrasi referensi akun lama → kode Chart of Accounts
+  try {
+    db.prepare(`UPDATE item_pricing SET sales_account='4-1100 · Penjualan' WHERE sales_account LIKE '4-100%'`).run();
+    db.prepare(`UPDATE item_pricing SET cogs_account='5-1100 · HPP Bahan Baku' WHERE cogs_account LIKE '5-100%'`).run();
+  } catch { /* noop */ }
   const many = (s) => { try { return db.prepare(s).all(); } catch { return []; } };
 
   // Seed pricing per finished-goods item

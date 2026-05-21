@@ -39,8 +39,8 @@ export default function AdminJournal({ apiBase = "" }) {
       <PeriodPicker onChange={setRange} defaultPreset="30d" />
 
       <ReportActions title="Jurnal Akuntansi" subtitle="Jurnal umum — entri double-entry"
-        columns={["Ref", "Deskripsi", "Akun", "Debit", "Kredit"]}
-        rows={d.entries.flatMap(e => e.lines.map(l => [e.ref, e.description, l.account, l.debit || "", l.credit || ""]))} />
+        columns={["Ref", "Deskripsi", "Kode COA", "Akun", "Debit", "Kredit"]}
+        rows={d.entries.flatMap(e => e.lines.map(l => [e.ref, e.description, l.coa_code || "—", l.account, l.debit || "", l.credit || ""]))} />
 
       <div style={{ ...S.card, marginBottom: 14, borderColor: t.balanced ? "#10b98155" : "#ef444455", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
         <span style={{ fontSize: 14, fontWeight: 800, color: t.balanced ? "#10b981" : "#ef4444" }}>
@@ -65,7 +65,9 @@ export default function AdminJournal({ apiBase = "" }) {
               <tbody>
                 {[...e.lines].sort((a, b) => (b.debit - a.debit)).map((l, j) => (
                   <tr key={j} style={{ fontSize: 13 }}>
-                    <td style={{ padding: "3px 8px", color: "#cdd5df", paddingLeft: l.credit > 0 ? 34 : 14 }}>{l.account}</td>
+                    <td style={{ padding: "3px 8px", color: "#cdd5df", paddingLeft: l.credit > 0 ? 34 : 14 }}>
+                      {l.coa_code ? <span style={{ color: "#5b6470", fontFamily: "'Space Mono',monospace", fontSize: 11 }}>{l.coa_code} </span> : null}{l.account}
+                    </td>
                     <td style={{ padding: "3px 8px", textAlign: "right", fontFamily: "'Space Mono',monospace", color: "#10b981", width: 150 }}>{l.debit > 0 ? fmtRp(l.debit) : ""}</td>
                     <td style={{ padding: "3px 8px", textAlign: "right", fontFamily: "'Space Mono',monospace", color: "#f59e0b", width: 150 }}>{l.credit > 0 ? fmtRp(l.credit) : ""}</td>
                   </tr>
@@ -81,12 +83,13 @@ export default function AdminJournal({ apiBase = "" }) {
         <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
           <thead>
             <tr style={{ color: "#5b6470", fontSize: 10, textAlign: "left" }}>
-              {["AKUN", "DEBIT", "KREDIT", "SALDO"].map(h => <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>)}
+              {["KODE", "AKUN", "DEBIT", "KREDIT", "SALDO"].map(h => <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>)}
             </tr>
           </thead>
           <tbody>
             {d.ledger.map((l, i) => (
               <tr key={i} style={{ borderTop: "1px solid #161b22", fontSize: 13 }}>
+                <td style={{ padding: "8px", color: "#5b6470", fontFamily: "'Space Mono',monospace", fontSize: 11 }}>{l.coa_code || "—"}</td>
                 <td style={{ padding: "8px", color: "#e6edf3", fontWeight: 600 }}>{l.account}</td>
                 <td style={{ padding: "8px", textAlign: "right", fontFamily: "'Space Mono',monospace", color: "#9da7b3" }}>{l.debit > 0 ? fmtRp(l.debit) : "—"}</td>
                 <td style={{ padding: "8px", textAlign: "right", fontFamily: "'Space Mono',monospace", color: "#9da7b3" }}>{l.credit > 0 ? fmtRp(l.credit) : "—"}</td>

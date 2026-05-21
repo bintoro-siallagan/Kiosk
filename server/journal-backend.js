@@ -17,6 +17,23 @@ const POS_CH = {
 };
 const AGG = { gofood: 'GoFood', grabfood: 'GrabFood', shopeefood: 'ShopeeFood', traveloka: 'Traveloka' };
 
+// pemetaan nama akun jurnal → kode Chart of Accounts (coa_accounts)
+const COA_MAP = {
+  'Kas': '1-1100', 'Bank': '1-1200',
+  'Piutang Payment Gateway': '1-1300', 'Piutang Aggregator': '1-1300',
+  'Pendapatan Penjualan': '4-1100', 'Beban MDR': '6-1700', 'Beban Komisi Platform': '6-1700',
+};
+const coaCodeOf = (name) => {
+  if (COA_MAP[name]) return COA_MAP[name];
+  if (/sewa/i.test(name)) return '6-1200';
+  if (/gaji|payroll/i.test(name)) return '6-1100';
+  if (/listrik|air|utilit/i.test(name)) return '6-1300';
+  if (/marketing|promo/i.test(name)) return '6-1400';
+  if (/maintenance|repair/i.test(name)) return '6-1500';
+  if (/^beban/i.test(name)) return '6-1900';
+  return '';
+};
+
 function setupJournal(app, opts = {}) {
   const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
   db.pragma('journal_mode = WAL');
@@ -31,13 +48,14 @@ function setupJournal(app, opts = {}) {
 
     const entries = [];
     const ledger = {};
-    const post = (acc, dr, cr) => {
-      ledger[acc] = ledger[acc] || { debit: 0, credit: 0 };
+    const post = (acc, dr, cr, code) => {
+      ledger[acc] = ledger[acc] || { debit: 0, credit: 0, coa_code: code || '' };
       ledger[acc].debit += dr; ledger[acc].credit += cr;
     };
     const addEntry = (ref, desc, lines) => {
-      entries.push({ ref, description: desc, lines });
-      lines.forEach(l => post(l.account, l.debit || 0, l.credit || 0));
+      const tagged = lines.map(l => ({ account: l.account, coa_code: coaCodeOf(l.account), debit: l.debit || 0, credit: l.credit || 0 }));
+      entries.push({ ref, description: desc, lines: tagged });
+      tagged.forEach(l => post(l.account, l.debit, l.credit, l.coa_code));
     };
 
     // ── PENJUALAN — POS ──
@@ -80,7 +98,7 @@ function setupJournal(app, opts = {}) {
     }
 
     const ledgerArr = Object.entries(ledger)
-      .map(([account, v]) => ({ account, debit: v.debit, credit: v.credit, balance: v.debit - v.credit }))
+      .map(([account, v]) => ({ account, coa_code: v.coa_code, debit: v.debit, credit: v.credit, balance: v.debit - v.credit }))
       .sort((a, b) => (b.debit + b.credit) - (a.debit + a.credit));
     const totalDebit = ledgerArr.reduce((s, l) => s + l.debit, 0);
     const totalCredit = ledgerArr.reduce((s, l) => s + l.credit, 0);
