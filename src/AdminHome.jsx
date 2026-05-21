@@ -76,6 +76,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   }));
   const topItems = Object.entries(itemMap).sort((a, b) => b[1].qty - a[1].qty).slice(0, 5);
   const maxQty = Math.max(1, ...topItems.map(([, d]) => d.qty));
+  const recentSales = [...allOrders].sort((a, b) => (b.time || 0) - (a.time || 0)).slice(0, 14);
 
   const kpis = [
     { label: "Penjualan Hari Ini", val: vv(k.revenue, fmtRp), sub: "transaksi selesai", c: "#10b981", icon: "💰" },
@@ -89,7 +90,8 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   ];
   const columns = [
     { title: "Outlet", accent: "#22d3ee", items: [
-      { label: "Transaksi Outlet", icon: "🧾", c: "#10b981", on: () => onNav("admin", "orders") },
+      { label: "Dashboard Outlet", icon: "🏪", c: "#22d3ee", on: () => onNav("admin", "overview") },
+      { label: "Pesanan / Transaksi", icon: "🧾", c: "#10b981", on: () => onNav("admin", "orders") },
       { label: "Menu & Stok", icon: "🍔", c: "#f59e0b", on: () => onNav("admin", "menu") },
       { label: "QR Meja", icon: "🪑", c: "#a855f7", on: () => onNav("admin", "qrgen") },
       { label: "Pengaturan", icon: "⚙️", c: "#7d8590", on: () => onNav("admin", "settings") },
@@ -189,6 +191,33 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
                 <span style={{ ...S.arrow, background: `${t.c}1a`, color: t.c }}>→</span>
               </button>
             ))}
+          </div>
+
+          {/* Live sales — ticker transaksi terbaru */}
+          <Section label="LIVE SALES" accent="#10b981" mt={14}
+            right={<span style={{ fontSize: 10.5, color: "#5b6470", fontFamily: "'Space Mono',monospace", display: "flex", alignItems: "center", gap: 6 }}>
+              <span className="livedot" style={{ width: 7, height: 7, borderRadius: "50%", background: "#10b981", display: "inline-block", boxShadow: "0 0 6px #10b981" }} />
+              LIVE · {k.orders ?? 0} transaksi hari ini</span>} />
+          <div className="card" style={{ ...S.bigCard, padding: "12px 14px" }}>
+            {recentSales.length === 0
+              ? <div style={{ fontSize: 11, color: "#5b6470" }}>Belum ada transaksi</div>
+              : <div style={S.ticker}>
+                  {recentSales.map(o => {
+                    const st = o.status === "completed" ? "#10b981" : o.status === "cancelled" ? "#ef4444" : "#f59e0b";
+                    return (
+                      <div key={o.id} style={S.saleCard}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <span style={{ fontFamily: "'Space Mono',monospace", fontWeight: 700, fontSize: 11, color: "#9da7b3" }}>#{o.id}</span>
+                          <span style={{ fontSize: 12 }}>{o.type === "dine" ? "🪑" : "🛍️"}</span>
+                        </div>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "#10b981", fontFamily: "'Space Mono',monospace", margin: "5px 0 3px" }}>{fmtRp(o.total)}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "#5b6470" }}>
+                          <span style={{ width: 5, height: 5, borderRadius: "50%", background: st }} />{ago(o.time)} lalu
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>}
           </div>
 
           {/* Antrian order + revenue */}
@@ -302,6 +331,8 @@ const CSS = `
 .tile { cursor:pointer; transition: border-color .15s, transform .1s, background .15s, box-shadow .15s; }
 .tile:hover { transform: translateY(-2px); background:#11161d !important; box-shadow:0 6px 20px #0006; }
 .tile:active { transform: translateY(0); }
+@keyframes lp { 0%,100%{opacity:1} 50%{opacity:.25} }
+.livedot { animation: lp 1.4s infinite; }
 `;
 
 const S = {
@@ -315,7 +346,7 @@ const S = {
   role: { fontSize: 9, fontWeight: 700, color: "#f59e0b", background: "#f59e0b1a", border: "1px solid #f59e0b44", borderRadius: 4, padding: "1px 6px", marginLeft: 8, fontFamily: "'Space Mono',monospace", textTransform: "uppercase" },
   body: { display: "grid", gridTemplateColumns: "270px 1fr", gap: 18, alignItems: "start" },
   left: { display: "flex", flexDirection: "column" },
-  right: { display: "flex", flexDirection: "column" },
+  right: { display: "flex", flexDirection: "column", minWidth: 0 },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginTop: 16 },
   kpi: { position: "relative", overflow: "hidden", background: "#0d1117", border: "1px solid #1e2530", borderRadius: 14, padding: "12px 14px" },
   kpiGlow: { position: "absolute", top: -34, right: -34, width: 80, height: 80, borderRadius: "50%", opacity: 0.12, filter: "blur(6px)" },
@@ -330,7 +361,7 @@ const S = {
   primaryTile: { display: "flex", alignItems: "center", gap: 13, border: "1px solid #1e2530", borderRadius: 14, padding: "12px 16px", fontFamily: "inherit" },
   arrow: { width: 30, height: 30, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, flexShrink: 0 },
   dataGrid: { display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 12 },
-  bigCard: { background: "#0d1117", border: "1px solid #1e2530", borderRadius: 14, padding: "0 16px 13px" },
+  bigCard: { background: "#0d1117", border: "1px solid #1e2530", borderRadius: 14, padding: "0 16px 13px", minWidth: 0 },
   queueRow: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 9 },
   queueCol: { background: "#0a0e16", border: "1px solid #161b22", borderRadius: 10, padding: "9px 10px", minHeight: 90 },
   orderChip: { display: "flex", alignItems: "center", gap: 7, fontSize: 11, background: "#0d1117", border: "1px solid #1e2530", borderRadius: 7, padding: "5px 8px" },
@@ -339,6 +370,8 @@ const S = {
   barVal: { fontSize: 9, color: "#10b981", fontFamily: "'Space Mono',monospace" },
   barLbl: { fontSize: 9.5, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
   topGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "7px 28px", marginTop: 2 },
+  ticker: { display: "flex", gap: 9, overflowX: "auto", paddingBottom: 4 },
+  saleCard: { minWidth: 124, flexShrink: 0, background: "#0a0e16", border: "1px solid #1e2530", borderRadius: 9, padding: "9px 11px" },
   feed: { display: "flex", flexDirection: "column", gap: 5, maxHeight: 232, overflowY: "auto" },
   feedRow: { display: "flex", alignItems: "center", gap: 9, background: "#0a0e16", border: "1px solid #161b22", borderRadius: 8, padding: "6px 10px" },
   prioBadge: { fontSize: 8.5, fontWeight: 800, borderRadius: 4, padding: "2px 6px", fontFamily: "'Space Mono',monospace", letterSpacing: 0.5, flexShrink: 0, width: 44, textAlign: "center" },
