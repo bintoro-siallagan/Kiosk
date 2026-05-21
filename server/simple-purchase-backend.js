@@ -89,6 +89,10 @@ function setupSimplePurchase(app, opts = {}) {
         stockPosted = upd.changes > 0;
       } catch { /* noop */ }
     }
+    // bayar pakai Petty Cash → auto-log expense ke kas kecil outlet
+    if (b.payment_method === 'Petty Cash' && typeof global.logPettyCash === 'function') {
+      global.logPettyCash((b.outlet || '-').trim(), total, 'Beli: ' + String(b.item_name).trim());
+    }
     res.json({ ok: true, id: r.lastInsertRowid, total, stock_posted: stockPosted });
   });
 

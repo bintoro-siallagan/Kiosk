@@ -53,6 +53,7 @@ import AdminProductHub from "./Admin/AdminProductHub.jsx";
 import AdminProductVersioning from "./Admin/AdminProductVersioning.jsx";
 import AdminGoodsReceived from "./Admin/AdminGoodsReceived.jsx";
 import AdminSimplePurchase from "./Admin/AdminSimplePurchase.jsx";
+import AdminPettyCash from "./Admin/AdminPettyCash.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -148,6 +149,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "goods_delivery", label: "🚚 Good Delivery", color: "#06B6D4" },
     { id: "goods_received", label: "📥 Good Received", color: "#0e7490" },
     { id: "simple_purchase", label: "🛒 Simple Purchase", color: "#65a30d" },
+    { id: "petty_cash", label: "💵 Petty Cash", color: "#d97706" },
     { id: "purchase_invoice", label: "🧾 Invoice", color: "#a78bfa" },
     { id: "settlement", label: "🧮 Settlement", color: "#10b981" },
     { id: "journal", label: "📓 Jurnal", color: "#a78bfa" },
@@ -191,7 +193,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["staff", "gudang", "waste", "config", "checklist", "cashier_kpi", "audit"] },
     { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "loyalty", "broadcast", "aggregator", "payment", "conv_fee"] },
     { name: "Product", icon: "📦", module: "config", ids: ["item_master", "item_pricing", "item_config", "item_rules", "item_intel", "product_hub", "product_ver", "food_cost"] },
-    { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["price_list", "goods_delivery", "goods_received", "simple_purchase", "purchase_invoice", "procurement_plus"] },
+    { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["price_list", "goods_delivery", "goods_received", "simple_purchase", "petty_cash", "purchase_invoice", "procurement_plus"] },
     { name: "Finance", icon: "💰", module: "finance", ids: ["finance", "settlement", "journal", "fin_statements", "finance_center", "finance_alert", "ar", "budget", "franchise"] },
     { name: "HRIS & Reward", icon: "👥", module: "hr", ids: ["hris", "payroll", "reward", "reward_benefit", "motivation", "hr_command", "talenta"] },
     { name: "Customer & Marketing", icon: "🎯", module: "marketing", ids: ["customer_intel", "mkt_behavior", "loyalty_promo", "feedback_segment", "clv_churn", "geo_engage", "campaign"] },
@@ -286,6 +288,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "goods_delivery" && <AdminGoodsDelivery apiBase={API} />}
         {tab === "goods_received" && <AdminGoodsReceived apiBase={API} />}
         {tab === "simple_purchase" && <AdminSimplePurchase apiBase={API} />}
+        {tab === "petty_cash" && <AdminPettyCash apiBase={API} />}
         {tab === "purchase_invoice" && <AdminPurchaseInvoice apiBase={API} />}
         {tab === "settlement" && <AdminSettlement apiBase={API} />}
         {tab === "journal" && <AdminJournal apiBase={API} />}
