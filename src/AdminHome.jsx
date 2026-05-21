@@ -19,6 +19,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   const [now, setNow] = useState(new Date());
   const [orders, setOrders] = useState([]);
   const [allOrders, setAllOrders] = useState([]);
+  const [notifs, setNotifs] = useState([]);
   const [k, setK] = useState({ revenue: null, orders: null, active: null, alerts: null, crit: 0, health: null });
 
   useEffect(() => {
@@ -39,15 +40,21 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
     }).catch(() => {});
     loadOrders();
     const iv = setInterval(loadOrders, 15000);
-    fetch(`${API}/api/notification-center`).then(r => r.json()).then(d => {
+    const loadNotif = () => fetch(`${API}/api/notification-center`).then(r => r.json()).then(d => {
       const n = d.notifications || [];
+      setNotifs(n);
       setK(p => ({ ...p, alerts: n.length, crit: n.filter(x => x.priority === "high" || x.priority === "critical").length }));
     }).catch(() => {});
+    loadNotif();
+    const ivN = setInterval(loadNotif, 20000);
     fetch(`${API}/api/self-audit`).then(r => r.json()).then(d => {
       setK(p => ({ ...p, health: d.health_score }));
     }).catch(() => {});
-    return () => clearInterval(iv);
+    return () => { clearInterval(iv); clearInterval(ivN); };
   }, []);
+
+  const PRIO = { critical: { o: 0, c: "#dc2626", l: "KRITIS" }, high: { o: 1, c: "#ef4444", l: "TINGGI" }, medium: { o: 2, c: "#f59e0b", l: "SEDANG" }, low: { o: 3, c: "#5b6470", l: "RENDAH" } };
+  const feed = [...notifs].sort((a, b) => (PRIO[a.priority]?.o ?? 9) - (PRIO[b.priority]?.o ?? 9));
 
   const hour = now.getHours();
   const greet = hour < 11 ? "Selamat pagi" : hour < 15 ? "Selamat siang" : hour < 19 ? "Selamat sore" : "Selamat malam";
@@ -232,6 +239,30 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
             </div>
           </div>
 
+          {/* Monitoring realtime — live alert feed */}
+          <Section label="MONITORING REALTIME" accent="#ef4444" mt={14}
+            right={<span style={{ fontSize: 10.5, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{notifs.length} alert · {k.crit || 0} mendesak</span>} />
+          <div className="card" style={{ ...S.bigCard, padding: "12px 14px" }}>
+            {feed.length === 0
+              ? <div style={{ fontSize: 11, color: "#10b981" }}>✓ Tidak ada alert — semua aman</div>
+              : <div style={S.feed}>
+                  {feed.map((x, i) => {
+                    const pr = PRIO[x.priority] || PRIO.low;
+                    return (
+                      <div key={i} style={{ ...S.feedRow, borderLeft: `3px solid ${pr.c}` }}>
+                        <span style={{ ...S.prioBadge, color: pr.c, background: `${pr.c}1a`, border: `1px solid ${pr.c}44` }}>{pr.l}</span>
+                        <span style={{ fontSize: 14, flexShrink: 0 }}>{x.icon || "🔔"}</span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 12, color: "#e6edf3", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.title}</div>
+                          <div style={{ fontSize: 10.5, color: "#5b6470", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.detail}</div>
+                        </div>
+                        <span style={{ fontSize: 9.5, color: "#5b6470", fontFamily: "'Space Mono',monospace", flexShrink: 0 }}>{x.source}</span>
+                      </div>
+                    );
+                  })}
+                </div>}
+          </div>
+
           {/* Menu terlaris */}
           <Section label="MENU TERLARIS" mt={14} />
           <div className="card" style={{ ...S.bigCard, padding: "12px 16px" }}>
@@ -308,6 +339,9 @@ const S = {
   barVal: { fontSize: 9, color: "#10b981", fontFamily: "'Space Mono',monospace" },
   barLbl: { fontSize: 9.5, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
   topGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "7px 28px", marginTop: 2 },
+  feed: { display: "flex", flexDirection: "column", gap: 5, maxHeight: 232, overflowY: "auto" },
+  feedRow: { display: "flex", alignItems: "center", gap: 9, background: "#0a0e16", border: "1px solid #161b22", borderRadius: 8, padding: "6px 10px" },
+  prioBadge: { fontSize: 8.5, fontWeight: 800, borderRadius: 4, padding: "2px 6px", fontFamily: "'Space Mono',monospace", letterSpacing: 0.5, flexShrink: 0, width: 44, textAlign: "center" },
   rowTile: { display: "flex", alignItems: "center", gap: 10, background: "#0d1117", border: "1px solid #1e2530", borderRadius: 10, padding: "7px 11px", fontFamily: "inherit", width: "100%" },
   footer: { display: "flex", alignItems: "center", gap: 10, marginTop: 18, paddingTop: 13, borderTop: "1px solid #161b22" },
   footBtn: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 9, padding: "7px 16px", color: "#9da7b3", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
