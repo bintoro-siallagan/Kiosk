@@ -46,10 +46,14 @@ const S = {
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 14, padding: 20, marginBottom: 16 },
   label: { fontSize: 11, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8, fontFamily: "'Space Mono',monospace" },
   input: { width: "100%", background: "#0a0e16", border: "1px solid #21262d", borderRadius: 8, padding: "10px 12px", color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" },
-  btn: (color = "#F59E0B") => ({
-    background: color + "18", border: `1px solid ${color}44`, borderRadius: 8,
-    padding: "10px 18px", color, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-  }),
+  btn: (color = "#F59E0B") => {
+    // normalize 3-digit hex → 6-digit, biar +"18"/"44" alpha valid (bukan #55518)
+    const c = color.length === 4 ? "#" + color.slice(1).split("").map(x => x + x).join("") : color;
+    return {
+      background: c + "18", border: `1px solid ${c}44`, borderRadius: 8,
+      padding: "10px 18px", color: c, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+    };
+  },
   btnDanger: { background: "#F8717118", border: "1px solid #F8717144", borderRadius: 8, padding: "8px 14px", color: "#F87171", fontSize: 12, cursor: "pointer", fontFamily: "inherit" },
   row: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #0f1629" },
   grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 },
@@ -701,8 +705,8 @@ function MasterItemTab({ showToast }) {
       </div>
 
       <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
-        <button onClick={()=>setFilter("")} style={S.btn(!filter?"#EC4899":"#555")}>Semua ({items.length})</button>
-        {cats.map(c=><button key={c.id} onClick={()=>setFilter(c.id)} style={S.btn(filter===c.id?"#EC4899":"#555")}>{c.emoji} {c.name}</button>)}
+        <button onClick={()=>setFilter("")} style={S.btn(!filter?"#EC4899":"#8b8b95")}>Semua ({items.length})</button>
+        {cats.map(c=><button key={c.id} onClick={()=>setFilter(c.id)} style={S.btn(filter===c.id?"#EC4899":"#8b8b95")}>{c.emoji} {c.name}</button>)}
       </div>
 
       {loading?<div style={{color:"#555"}}>Loading...</div>:

@@ -27,8 +27,8 @@ export default function AdminProcurementGaps() {
   ];
   return (
     <div className="proc-gaps" style={{padding:16}}>
-      <h2 style={{marginTop:0}}>Procurement — Wave 2</h2>
-      <div style={{display:'flex', gap:4, borderBottom:'1px solid #e5e7eb', marginBottom:16, flexWrap:'wrap'}}>
+      <h2 style={{marginTop:0,color:'#d4d4d8'}}>Procurement — Wave 2</h2>
+      <div style={{display:'flex', gap:4, borderBottom:'1px solid #1c1c25', marginBottom:16, flexWrap:'wrap'}}>
         {tabs.map(t => (
           <button key={t.k} onClick={()=>setTab(t.k)} style={tabBtn(tab===t.k)}>{t.l}</button>
         ))}
@@ -59,7 +59,7 @@ function Dashboard() {
           {k:'b1', l:'0-30 hari', color:'#f59e0b'},
           {k:'b2', l:'31-60 hari', color:'#f97316'},
           {k:'b3', l:'61-90 hari', color:'#ef4444'},
-          {k:'b4', l:'90+ kritis', color:'#991b1b'},
+          {k:'b4', l:'90+ kritis', color:'#f87171'},
         ].map(b => (
           <div key={b.k} style={{...card, borderTop:`3px solid ${b.color}`}}>
             <div style={cardLabel}>{b.l}</div>
@@ -67,8 +67,8 @@ function Dashboard() {
           </div>
         ))}
       </div>
-      <div style={{padding:12, background:'#f9fafb', borderRadius:8, marginBottom:20}}>
-        Total Outstanding AP: <b style={{fontSize:20, color: ag.b4 > 0 ? '#dc2626' : '#1f2937'}}>{fmtIDR(ag.total_outstanding||0)}</b>
+      <div style={{padding:12, background:'#15151e', borderRadius:8, marginBottom:20}}>
+        Total Outstanding AP: <b style={{fontSize:20, color: ag.b4 > 0 ? '#f87171' : '#d4d4d8'}}>{fmtIDR(ag.total_outstanding||0)}</b>
       </div>
 
       <h3>Urgent PR Suggestions</h3>
@@ -77,11 +77,11 @@ function Dashboard() {
           <thead><tr><th>SKU</th><th>Current</th><th>Avg/Day</th><th>Suggested</th><th>Reasoning</th></tr></thead>
           <tbody>
             {data.urgent_pr_suggestions.map(s => (
-              <tr key={s.sku} style={{background:'#fef2f2'}}>
-                <td><b>{s.sku}</b><br/><span style={{fontSize:11, color:'#6b7280'}}>{s.name}</span></td>
+              <tr key={s.sku} style={{background:'#2a1214'}}>
+                <td><b>{s.sku}</b><br/><span style={{fontSize:11, color:'#8b8b95'}}>{s.name}</span></td>
                 <td>{s.current_stock?.toFixed(1)} {s.unit}</td>
                 <td>{s.avg_daily_consumption?.toFixed(2)}</td>
-                <td><b style={{color:'#dc2626'}}>{s.suggested_qty.toFixed(0)} {s.unit}</b></td>
+                <td><b style={{color:'#f87171'}}>{s.suggested_qty.toFixed(0)} {s.unit}</b></td>
                 <td style={{fontSize:12}}>{s.reasoning}</td>
               </tr>
             ))}
@@ -386,7 +386,7 @@ function InvoiceAging() {
   const [data, setData] = useState(null);
   useEffect(()=>{ api('/invoice-aging').then(setData).catch(console.error); }, []);
   if (!data) return <div>Loading...</div>;
-  if (data.error) return <div style={{padding:20, background:'#fef2f2', color:'#991b1b', borderRadius:8}}>
+  if (data.error) return <div style={{padding:20, background:'#2a1214', color:'#f87171', borderRadius:8}}>
     Error: {data.error}<br/><span style={{fontSize:12}}>{data.hint}</span></div>;
 
   return (
@@ -396,13 +396,13 @@ function InvoiceAging() {
         <thead><tr><th>Supplier</th><th>Current</th><th>0-30</th><th>31-60</th><th>61-90</th><th>90+</th><th>Total</th></tr></thead>
         <tbody>
           {data.by_supplier.map(s => (
-            <tr key={s.id} style={{background: s.b4 > 0 ? '#fef2f2' : 'transparent'}}>
+            <tr key={s.id} style={{background: s.b4 > 0 ? '#2a1214' : 'transparent'}}>
               <td><b>{s.name}</b></td>
               <td>{fmtIDR(s.current)}</td>
-              <td style={{color: s.b1 > 0 ? '#f59e0b' : '#6b7280'}}>{fmtIDR(s.b1)}</td>
-              <td style={{color: s.b2 > 0 ? '#f97316' : '#6b7280'}}>{fmtIDR(s.b2)}</td>
-              <td style={{color: s.b3 > 0 ? '#ef4444' : '#6b7280'}}>{fmtIDR(s.b3)}</td>
-              <td style={{color: s.b4 > 0 ? '#991b1b' : '#6b7280', fontWeight:600}}>{fmtIDR(s.b4)}</td>
+              <td style={{color: s.b1 > 0 ? '#f59e0b' : '#8b8b95'}}>{fmtIDR(s.b1)}</td>
+              <td style={{color: s.b2 > 0 ? '#f97316' : '#8b8b95'}}>{fmtIDR(s.b2)}</td>
+              <td style={{color: s.b3 > 0 ? '#ef4444' : '#8b8b95'}}>{fmtIDR(s.b3)}</td>
+              <td style={{color: s.b4 > 0 ? '#f87171' : '#8b8b95', fontWeight:600}}>{fmtIDR(s.b4)}</td>
               <td><b>{fmtIDR(s.total)}</b></td>
             </tr>
           ))}
@@ -484,12 +484,12 @@ function PRSuggest() {
         <thead><tr><th>SKU</th><th>Current</th><th>Avg/Day</th><th>Forecast Usage</th><th>Stock After</th><th>Suggested</th><th>Urgency</th><th>Reasoning</th></tr></thead>
         <tbody>
           {filtered.map(s => (
-            <tr key={s.sku} style={{background: s.urgency==='high' ? '#fef2f2' : s.urgency==='medium' ? '#fef3c7' : 'transparent'}}>
-              <td><b>{s.sku}</b><br/><span style={{fontSize:11, color:'#6b7280'}}>{s.name}</span></td>
+            <tr key={s.sku} style={{background: s.urgency==='high' ? '#2a1214' : s.urgency==='medium' ? '#2a1f0a' : 'transparent'}}>
+              <td><b>{s.sku}</b><br/><span style={{fontSize:11, color:'#8b8b95'}}>{s.name}</span></td>
               <td>{s.current_stock?.toFixed(1)} {s.unit}</td>
               <td>{s.avg_daily_consumption?.toFixed(2)}</td>
               <td>{s.forecast_usage_for_period?.toFixed(1)}</td>
-              <td style={{color: s.stock_after_forecast < 0 ? '#dc2626' : '#10b981'}}>{s.stock_after_forecast?.toFixed(1)}</td>
+              <td style={{color: s.stock_after_forecast < 0 ? '#f87171' : '#10b981'}}>{s.stock_after_forecast?.toFixed(1)}</td>
               <td><b>{s.suggested_qty > 0 ? `${s.suggested_qty} ${s.unit}` : '-'}</b></td>
               <td><UrgencyPill v={s.urgency} /></td>
               <td style={{fontSize:12}}>{s.reasoning}</td>
@@ -506,42 +506,42 @@ function PRSuggest() {
 // ============================================================
 function StatusPill({v}) {
   const map = {
-    draft:'#9ca3af', finalized:'#10b981', voided:'#dc2626',
-    pending:'#f59e0b', applied:'#10b981', partial:'#f97316', refunded:'#6b7280'
+    draft:'#9ca3af', finalized:'#10b981', voided:'#f87171',
+    pending:'#f59e0b', applied:'#10b981', partial:'#f97316', refunded:'#8b8b95'
   };
   return <span style={{padding:'2px 8px', borderRadius:4, fontSize:10, fontWeight:600, textTransform:'uppercase',
-    background: (map[v] || '#9ca3af')+'33', color: map[v] || '#374151'}}>{v}</span>;
+    background: (map[v] || '#9ca3af')+'33', color: map[v] || '#d4d4d8'}}>{v}</span>;
 }
 
 function UrgencyPill({v}) {
-  const map = {high:{bg:'#fee2e2', c:'#991b1b'}, medium:{bg:'#fef3c7', c:'#92400e'}, low:{bg:'#d1fae5', c:'#065f46'}};
-  const m = map[v] || {bg:'#f3f4f6', c:'#374151'};
+  const map = {high:{bg:'#2a1214', c:'#f87171'}, medium:{bg:'#2a1f0a', c:'#fbbf24'}, low:{bg:'#0f1f17', c:'#34d399'}};
+  const m = map[v] || {bg:'#1c1c25', c:'#d4d4d8'};
   return <span style={{padding:'2px 8px', borderRadius:4, fontSize:11, fontWeight:600, textTransform:'uppercase', background:m.bg, color:m.c}}>{v}</span>;
 }
 
 const tabBtn = (active) => ({padding:'8px 14px', border:'none', background:'transparent',
   borderBottom: active ? '2px solid #3b82f6' : '2px solid transparent',
-  color: active ? '#3b82f6' : '#374151', fontWeight: active ? 600 : 400, cursor:'pointer'});
-const card = {background:'#fff', border:'1px solid #e5e7eb', borderRadius:8, padding:12};
-const cardLabel = {fontSize:10, textTransform:'uppercase', color:'#6b7280', letterSpacing:'0.05em', fontWeight:700};
+  color: active ? '#3b82f6' : '#d4d4d8', fontWeight: active ? 600 : 400, cursor:'pointer'});
+const card = {background:'#0e0e13', border:'1px solid #1c1c25', borderRadius:8, padding:12};
+const cardLabel = {fontSize:10, textTransform:'uppercase', color:'#8b8b95', letterSpacing:'0.05em', fontWeight:700};
 const cardAmount = {fontSize:22, fontWeight:700, marginTop:4};
-const tableStyle = {width:'100%', borderCollapse:'collapse', background:'#fff', fontSize:13};
-const btn = {padding:'6px 14px', background:'#f3f4f6', border:'1px solid #d1d5db', borderRadius:4, cursor:'pointer', fontSize:13};
+const tableStyle = {width:'100%', borderCollapse:'collapse', background:'#0e0e13', fontSize:13};
+const btn = {padding:'6px 14px', background:'#1c1c25', border:'1px solid #1c1c25', borderRadius:4, cursor:'pointer', fontSize:13};
 const btnPrimary = {padding:'6px 14px', background:'#3b82f6', color:'#fff', border:'none', borderRadius:4, cursor:'pointer', fontWeight:600};
-const btnDanger = {padding:'4px 10px', background:'#fee2e2', color:'#dc2626', border:'1px solid #fca5a5', borderRadius:4, cursor:'pointer', fontSize:12};
-const btnSmall = {padding:'4px 10px', background:'#dbeafe', color:'#1e40af', border:'1px solid #93c5fd', borderRadius:4, cursor:'pointer', fontSize:12};
+const btnDanger = {padding:'4px 10px', background:'#2a1214', color:'#f87171', border:'1px solid #7f1d1d', borderRadius:4, cursor:'pointer', fontSize:12};
+const btnSmall = {padding:'4px 10px', background:'#0a1422', color:'#93c5fd', border:'1px solid #93c5fd', borderRadius:4, cursor:'pointer', fontSize:12};
 const formGrid = {display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:12};
 const modalOverlay = {position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000};
-const modalBox = {background:'#fff', borderRadius:8, padding:20, maxWidth:'95vw', maxHeight:'90vh', overflow:'auto', minWidth:700};
+const modalBox = {background:'#0e0e13', borderRadius:8, padding:20, maxWidth:'95vw', maxHeight:'90vh', overflow:'auto', minWidth:700};
 
 if (typeof document !== 'undefined' && !document.getElementById('proc-gaps-styles')) {
   const s = document.createElement('style');
   s.id = 'proc-gaps-styles';
   s.textContent = `
-    .proc-gaps table th { background:#f3f4f6; padding:8px; text-align:left; border-bottom:1px solid #e5e7eb; font-size:11px; text-transform:uppercase; color:#6b7280; }
-    .proc-gaps table td { padding:8px; border-bottom:1px solid #f3f4f6; vertical-align:top; }
-    .proc-gaps input, .proc-gaps select, .proc-gaps textarea { padding:6px 8px; border:1px solid #d1d5db; border-radius:4px; font-size:13px; box-sizing:border-box; }
-    .proc-gaps label { display:block; font-size:12px; color:#374151; font-weight:500; margin-bottom:4px; }
+    .proc-gaps table th { background:#1c1c25; padding:8px; text-align:left; border-bottom:1px solid #1c1c25; font-size:11px; text-transform:uppercase; color:#8b8b95; }
+    .proc-gaps table td { padding:8px; border-bottom:1px solid #1c1c25; vertical-align:top; }
+    .proc-gaps input, .proc-gaps select, .proc-gaps textarea { padding:6px 8px; border:1px solid #1c1c25; border-radius:4px; font-size:13px; box-sizing:border-box; }
+    .proc-gaps label { display:block; font-size:12px; color:#d4d4d8; font-weight:500; margin-bottom:4px; }
     .proc-gaps label input, .proc-gaps label select, .proc-gaps label textarea { width:100%; margin-top:4px; }
   `;
   document.head.appendChild(s);
