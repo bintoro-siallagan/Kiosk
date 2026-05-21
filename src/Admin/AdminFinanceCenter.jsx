@@ -43,7 +43,7 @@ export default function AdminFinanceCenter({ apiBase = "" }) {
         <Kpi label="Total Beban" v={fmtRp(k.expense)} c="#f59e0b" />
         <Kpi label="Cashflow Bersih" v={fmtRp(k.cash_net)} c={k.cash_net >= 0 ? "#10b981" : "#f87171"} sub={`in ${fmtK(k.cash_in)} · out ${fmtK(k.cash_out)}`} />
         <Kpi label="Hutang — AP" v={fmtRp(k.ap_total)} c={k.ap_total > 0 ? "#ef4444" : "#10b981"} sub={`${k.ap_count} invoice`} />
-        <Kpi label="Piutang — AR" v={fmtRp(k.ar_total)} c="#5b6470" sub="modul AR belum ada" />
+        <Kpi label="Piutang — AR" v={fmtRp(k.ar_total)} c={k.ar_total > 0 ? "#3b82f6" : "#10b981"} sub="outstanding" />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 }}>

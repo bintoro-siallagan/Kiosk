@@ -62,7 +62,8 @@ function setupFinanceCenter(app, opts = {}) {
         margin_pct: revenue ? Math.round(laba / revenue * 100) : 0,
         cash_in: posCash, cash_out: cashOut, cash_net: posCash - cashOut,
         ap_total: Math.round(apRow.t), ap_count: apRow.c,
-        ar_total: 0, ar_note: 'modul AR belum ada',
+        ar_total: Math.round((one(`SELECT COALESCE(SUM(amount - paid_amount),0) t
+          FROM ar_invoices WHERE status != 'paid'`) || { t: 0 }).t),
       },
       settlement: {
         total_gross: revenue,
