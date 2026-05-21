@@ -58,6 +58,7 @@ import AdminStockTransfer from "./Admin/AdminStockTransfer.jsx";
 import AdminBatchTracking from "./Admin/AdminBatchTracking.jsx";
 import AdminOutletMaster from "./Admin/AdminOutletMaster.jsx";
 import AdminIncidents from "./Admin/AdminIncidents.jsx";
+import AdminSignage from "./Admin/AdminSignage.jsx";
 import AdminSimplePurchase from "./Admin/AdminSimplePurchase.jsx";
 import AdminPettyCash from "./Admin/AdminPettyCash.jsx";
 import AdminBudgetPlan from "./Admin/AdminBudgetPlan.jsx";
@@ -165,6 +166,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "batch_tracking", label: "📅 Batch & Expiry", color: "#ca8a04" },
     { id: "outlet_master", label: "🏪 Outlet Master", color: "#15803d" },
     { id: "incidents", label: "🚨 Incident", color: "#dc2626" },
+    { id: "signage", label: "📺 Digital Signage", color: "#9333ea" },
     { id: "simple_purchase", label: "🛒 Simple Purchase", color: "#65a30d" },
     { id: "petty_cash", label: "💵 Petty Cash", color: "#d97706" },
     { id: "purchase_invoice", label: "🧾 Invoice", color: "#a78bfa" },
@@ -218,7 +220,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["price_list", "goods_delivery", "goods_received", "stock_opname", "stock_transfer", "batch_tracking", "production", "simple_purchase", "petty_cash", "purchase_invoice", "procurement_plus"] },
     { name: "Finance", icon: "💰", module: "finance", ids: ["finance", "settlement", "journal", "general_ledger", "reconciliation", "release_payment", "period_closing", "fin_statements", "finance_center", "finance_alert", "ar", "budget", "budget_plan", "franchise"] },
     { name: "HRIS & Reward", icon: "👥", module: "hr", ids: ["hris", "payroll", "reward", "reward_benefit", "motivation", "hr_command", "talenta"] },
-    { name: "Customer & Marketing", icon: "🎯", module: "marketing", ids: ["customer_intel", "mkt_behavior", "loyalty_promo", "feedback_segment", "clv_churn", "geo_engage", "campaign"] },
+    { name: "Customer & Marketing", icon: "🎯", module: "marketing", ids: ["customer_intel", "mkt_behavior", "loyalty_promo", "feedback_segment", "clv_churn", "geo_engage", "campaign", "signage"] },
     { name: "Security & Admin", icon: "🔐", module: "rbac", ids: ["rbac", "approval", "device_session", "security", "role_dash", "anti_fraud"] },
   ];
   const groupOf = (id) => { const g = GROUPS.find(x => x.ids.includes(id)); return g ? g.name : GROUPS[0].name; };
@@ -347,6 +349,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "clv_churn" && <AdminClvChurn apiBase={API} />}
         {tab === "geo_engage" && <AdminGeoEngagement apiBase={API} />}
         {tab === "campaign" && <AdminCampaign apiBase={API} />}
+        {tab === "signage" && <AdminSignage apiBase={API} />}
         {tab === "rbac" && <AdminRBAC apiBase={API} />}
         {tab === "approval" && <AdminApproval apiBase={API} />}
         {tab === "device_session" && <AdminDeviceSession apiBase={API} />}
