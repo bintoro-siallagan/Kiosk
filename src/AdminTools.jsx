@@ -82,6 +82,21 @@ const S = {
     cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
   }),
   body: { flex: 1, padding: "20px 28px", overflowY: "auto" },
+  main: { display: "flex", flex: 1, overflow: "hidden", marginTop: 14, borderTop: "1px solid #0f1629" },
+  sidebar: { width: 236, flexShrink: 0, borderRight: "1px solid #0f1629", padding: "12px 10px", overflowY: "auto" },
+  search: { width: "100%", background: "#0a0e16", border: "1px solid #21262d", borderRadius: 8, padding: "8px 10px", color: "#fff", fontSize: 12, fontFamily: "inherit", boxSizing: "border-box", marginBottom: 10, outline: "none" },
+  groupHead: (open) => ({
+    display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 10px",
+    fontSize: 11.5, fontWeight: 700, color: open ? "#e6edf3" : "#7d8590", cursor: "pointer",
+    borderRadius: 7, background: open ? "#0d1117" : "transparent", letterSpacing: 0.3,
+  }),
+  navItem: (active, color) => ({
+    padding: "7px 10px 7px 24px", fontSize: 12, fontWeight: active ? 700 : 400,
+    color: active ? "#fff" : "#9da7b3", background: active ? color + "22" : "transparent",
+    borderLeft: active ? `3px solid ${color}` : "3px solid transparent",
+    cursor: "pointer", borderRadius: "0 6px 6px 0", marginBottom: 1, whiteSpace: "nowrap",
+    overflow: "hidden", textOverflow: "ellipsis",
+  }),
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 14, padding: 20, marginBottom: 16 },
   label: { fontSize: 11, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8, fontFamily: "'Space Mono',monospace" },
   input: { width: "100%", background: "#0a0e16", border: "1px solid #21262d", borderRadius: 8, padding: "10px 12px", color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" },
@@ -165,6 +180,24 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "product_hub", label: "🛍️ Product Hub", color: "#8b5cf6" },
   ];
 
+  const GROUPS = [
+    { name: "Operasi & Outlet", icon: "🛰️", ids: ["staff", "gudang", "waste", "config", "checklist", "cashier_kpi", "audit"] },
+    { name: "Commerce", icon: "🛒", ids: ["master", "menu_builder", "loyalty", "broadcast", "aggregator", "payment", "conv_fee"] },
+    { name: "Product", icon: "📦", ids: ["item_master", "item_pricing", "item_config", "item_rules", "item_intel", "product_hub", "food_cost"] },
+    { name: "Inventory & Procurement", icon: "🚚", ids: ["price_list", "goods_delivery", "purchase_invoice", "procurement_plus"] },
+    { name: "Finance", icon: "💰", ids: ["finance", "settlement", "journal", "fin_statements", "finance_center", "finance_alert", "ar", "budget", "franchise"] },
+    { name: "HRIS & Reward", icon: "👥", ids: ["hris", "payroll", "reward", "reward_benefit", "motivation", "hr_command", "talenta"] },
+    { name: "Customer & Marketing", icon: "🎯", ids: ["customer_intel", "mkt_behavior", "loyalty_promo", "feedback_segment", "clv_churn", "geo_engage", "campaign"] },
+    { name: "Security & Admin", icon: "🔐", ids: ["rbac", "approval", "device_session", "security", "role_dash", "anti_fraud"] },
+  ];
+  const groupOf = (id) => { const g = GROUPS.find(x => x.ids.includes(id)); return g ? g.name : GROUPS[0].name; };
+  const [search, setSearch] = useState("");
+  const [openGroup, setOpenGroup] = useState(() => groupOf(initialTab || "staff"));
+  const navItem = (t) => t ? (
+    <div key={t.id} onClick={() => { setTab(t.id); setOpenGroup(groupOf(t.id)); setSearch(""); }}
+      style={S.navItem(tab === t.id, t.color)}>{t.label}</div>
+  ) : null;
+
   return (
     <div style={S.root}>
       <div style={S.header}>
@@ -175,15 +208,23 @@ export default function AdminTools({ onBack, initialTab }) {
         <button onClick={onBack} style={S.btn()}>← Kembali</button>
       </div>
 
-      <div style={S.tabs}>
-        {TABS.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={S.tab(tab === t.id, t.color)}>
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <div style={S.main}>
+        <div style={S.sidebar}>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Cari menu…" style={S.search} />
+          {search.trim()
+            ? TABS.filter(t => t.label.toLowerCase().includes(search.toLowerCase())).map(navItem)
+            : GROUPS.map(g => (
+              <div key={g.name} style={{ marginBottom: 2 }}>
+                <div onClick={() => setOpenGroup(openGroup === g.name ? "" : g.name)} style={S.groupHead(openGroup === g.name)}>
+                  <span>{g.icon} {g.name}</span>
+                  <span style={{ fontSize: 9, color: "#5b6470" }}>{openGroup === g.name ? "▾" : "▸"}</span>
+                </div>
+                {openGroup === g.name && g.ids.map(id => navItem(TABS.find(t => t.id === id)))}
+              </div>
+            ))}
+        </div>
 
-      <div style={S.body}>
+        <div style={S.body}>
         {tab === "staff" && <StaffTab showToast={showToast} />}
         {tab === "gudang" && <GudangTab showToast={showToast} />}
         {tab === "waste" && <WasteTab showToast={showToast} />}
@@ -238,6 +279,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "item_rules" && <AdminItemRules apiBase={API} />}
         {tab === "item_intel" && <AdminItemIntel apiBase={API} />}
         {tab === "product_hub" && <AdminProductHub apiBase={API} />}
+        </div>
       </div>
 
       {toast && <div style={S.toast}>{toast}</div>}
