@@ -19,6 +19,7 @@ import AdminSettlement from "./Admin/AdminSettlement.jsx";
 import AdminJournal from "./Admin/AdminJournal.jsx";
 import AdminFinancialStatements from "./Admin/AdminFinancialStatements.jsx";
 import AdminFinanceCenter from "./Admin/AdminFinanceCenter.jsx";
+import AdminFinanceAlert from "./Admin/AdminFinanceAlert.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -101,6 +102,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "journal", label: "📓 Jurnal", color: "#a78bfa" },
     { id: "fin_statements", label: "📊 Lap. Keuangan", color: "#10b981" },
     { id: "finance_center", label: "💹 Finance Center", color: "#10b981" },
+    { id: "finance_alert", label: "🚨 Finance Alert", color: "#ef4444" },
   ];
 
   return (
@@ -145,6 +147,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "journal" && <AdminJournal apiBase={API} />}
         {tab === "fin_statements" && <AdminFinancialStatements apiBase={API} />}
         {tab === "finance_center" && <AdminFinanceCenter apiBase={API} />}
+        {tab === "finance_alert" && <AdminFinanceAlert apiBase={API} />}
       </div>
 
       {toast && <div style={S.toast}>{toast}</div>}
