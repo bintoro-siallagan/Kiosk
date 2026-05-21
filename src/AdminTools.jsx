@@ -56,6 +56,7 @@ import AdminStockOpname from "./Admin/AdminStockOpname.jsx";
 import AdminProduction from "./Admin/AdminProduction.jsx";
 import AdminStockTransfer from "./Admin/AdminStockTransfer.jsx";
 import AdminBatchTracking from "./Admin/AdminBatchTracking.jsx";
+import AdminOutletMaster from "./Admin/AdminOutletMaster.jsx";
 import AdminSimplePurchase from "./Admin/AdminSimplePurchase.jsx";
 import AdminPettyCash from "./Admin/AdminPettyCash.jsx";
 import AdminBudgetPlan from "./Admin/AdminBudgetPlan.jsx";
@@ -161,6 +162,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "production", label: "🏭 Production", color: "#9a3412" },
     { id: "stock_transfer", label: "🔄 Stock Transfer", color: "#2563eb" },
     { id: "batch_tracking", label: "📅 Batch & Expiry", color: "#ca8a04" },
+    { id: "outlet_master", label: "🏪 Outlet Master", color: "#15803d" },
     { id: "simple_purchase", label: "🛒 Simple Purchase", color: "#65a30d" },
     { id: "petty_cash", label: "💵 Petty Cash", color: "#d97706" },
     { id: "purchase_invoice", label: "🧾 Invoice", color: "#a78bfa" },
@@ -208,7 +210,7 @@ export default function AdminTools({ onBack, initialTab }) {
   ];
 
   const GROUPS = [
-    { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["staff", "gudang", "waste", "config", "checklist", "cashier_kpi", "audit"] },
+    { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["staff", "outlet_master", "gudang", "waste", "config", "checklist", "cashier_kpi", "audit"] },
     { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "loyalty", "broadcast", "aggregator", "payment", "conv_fee"] },
     { name: "Product", icon: "📦", module: "config", ids: ["item_master", "item_pricing", "item_config", "item_rules", "item_intel", "product_hub", "product_ver", "food_cost"] },
     { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["price_list", "goods_delivery", "goods_received", "stock_opname", "stock_transfer", "batch_tracking", "production", "simple_purchase", "petty_cash", "purchase_invoice", "procurement_plus"] },
@@ -309,6 +311,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "production" && <AdminProduction apiBase={API} />}
         {tab === "stock_transfer" && <AdminStockTransfer apiBase={API} />}
         {tab === "batch_tracking" && <AdminBatchTracking apiBase={API} />}
+        {tab === "outlet_master" && <AdminOutletMaster apiBase={API} />}
         {tab === "simple_purchase" && <AdminSimplePurchase apiBase={API} />}
         {tab === "petty_cash" && <AdminPettyCash apiBase={API} />}
         {tab === "purchase_invoice" && <AdminPurchaseInvoice apiBase={API} />}
