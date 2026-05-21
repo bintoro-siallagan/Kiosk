@@ -3623,6 +3623,7 @@ const { setupApprovalEngine }   = require('./approval-engine-backend');
 const { setupDeviceSession }    = require('./device-session-backend');
 const { setupSecurityCenter }   = require('./security-center-backend');
 const { setupRoleDashboard }    = require('./role-dashboard-backend');
+const { setupItemMaster }       = require('./item-master-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3695,6 +3696,7 @@ const approvalEngine = setupApprovalEngine(app, { dbPath: DB_PATH });
 const deviceSession = setupDeviceSession(app, { dbPath: DB_PATH });
 const securityCenter = setupSecurityCenter(app, { dbPath: DB_PATH });
 const roleDashboard = setupRoleDashboard(app, { dbPath: DB_PATH });
+const itemMaster = setupItemMaster(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
