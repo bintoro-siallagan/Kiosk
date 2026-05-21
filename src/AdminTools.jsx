@@ -50,6 +50,7 @@ import AdminItemConfig from "./Admin/AdminItemConfig.jsx";
 import AdminItemRules from "./Admin/AdminItemRules.jsx";
 import AdminItemIntel from "./Admin/AdminItemIntel.jsx";
 import AdminProductHub from "./Admin/AdminProductHub.jsx";
+import AdminProductVersioning from "./Admin/AdminProductVersioning.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -179,12 +180,13 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "item_rules", label: "🍽️ Item Rules", color: "#ea580c" },
     { id: "item_intel", label: "🩺 Item Health", color: "#16a34a" },
     { id: "product_hub", label: "🛍️ Product Hub", color: "#8b5cf6" },
+    { id: "product_ver", label: "📜 Versioning", color: "#7c3aed" },
   ];
 
   const GROUPS = [
     { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["staff", "gudang", "waste", "config", "checklist", "cashier_kpi", "audit"] },
     { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "loyalty", "broadcast", "aggregator", "payment", "conv_fee"] },
-    { name: "Product", icon: "📦", module: "config", ids: ["item_master", "item_pricing", "item_config", "item_rules", "item_intel", "product_hub", "food_cost"] },
+    { name: "Product", icon: "📦", module: "config", ids: ["item_master", "item_pricing", "item_config", "item_rules", "item_intel", "product_hub", "product_ver", "food_cost"] },
     { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["price_list", "goods_delivery", "purchase_invoice", "procurement_plus"] },
     { name: "Finance", icon: "💰", module: "finance", ids: ["finance", "settlement", "journal", "fin_statements", "finance_center", "finance_alert", "ar", "budget", "franchise"] },
     { name: "HRIS & Reward", icon: "👥", module: "hr", ids: ["hris", "payroll", "reward", "reward_benefit", "motivation", "hr_command", "talenta"] },
@@ -314,6 +316,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "item_rules" && <AdminItemRules apiBase={API} />}
         {tab === "item_intel" && <AdminItemIntel apiBase={API} />}
         {tab === "product_hub" && <AdminProductHub apiBase={API} />}
+        {tab === "product_ver" && <AdminProductVersioning apiBase={API} />}
         </div>
       </div>
 
