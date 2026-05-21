@@ -3,7 +3,7 @@
 // bikin Purchase Request ke modul Procurement. Biar stok ke-order
 // sebelum habis (target: gak kehabisan dalam 1 minggu ke depan).
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const MONO = "var(--m)";
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
@@ -15,9 +15,17 @@ export default function CommandReorderModal({ item, apiBase = "", onClose, onDon
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(null);
   const [err, setErr] = useState("");
+  const [locked, setLocked] = useState(null);
+
+  useEffect(() => {
+    fetch(`${apiBase}/api/price-list/lookup?sku=${encodeURIComponent(item.id)}`)
+      .then(r => r.json()).then(setLocked).catch(() => setLocked({ found: false }));
+  }, [apiBase, item.id]);
 
   const priority = daysLeft <= 3 ? "urgent" : daysLeft <= 7 ? "high" : "normal";
-  const estTotal = qty * (item.costPerUnit || 0);
+  // harga di-LOCK dari price list — kalau belum ada, fallback ke harga estimasi
+  const unitPrice = locked && locked.found ? locked.price : (item.costPerUnit || 0);
+  const estTotal = qty * unitPrice;
 
   const submit = () => {
     if (qty <= 0 || saving) return;
@@ -33,7 +41,7 @@ export default function CommandReorderModal({ item, apiBase = "", onClose, onDon
         notes: `Quick reorder — stok ${item.name} menipis (sisa ${daysLeft >= 999 ? "?" : daysLeft} hari)`,
         items: [{
           sku: item.id, item_name: item.name, quantity: qty, unit: item.unit,
-          estimated_price: item.costPerUnit || 0, notes: "auto-reorder dari indikator WH/PPIC",
+          estimated_price: unitPrice, notes: "auto-reorder dari indikator WH/PPIC",
         }],
       }),
     })
@@ -88,6 +96,12 @@ export default function CommandReorderModal({ item, apiBase = "", onClose, onDon
               <button onClick={() => setQty(suggested)} style={S.suggBtn}>saran {suggested}</button>
             </div>
 
+            <div style={S.priceSrc}>
+              {locked === null ? "memuat harga…"
+                : locked.found
+                  ? <>🔒 Harga <b style={{ color: "#10b981" }}>locked</b> dari Price List — {fmtRp(unitPrice)}/{item.unit} · {locked.supplier || "vendor"}</>
+                  : <span style={{ color: "#fcd34d" }}>⚠ Item belum ada di Price List — pakai harga estimasi {fmtRp(unitPrice)}</span>}
+            </div>
             <div style={S.estRow}>
               <span style={{ color: "#9ca3af", fontSize: 13 }}>Estimasi biaya</span>
               <span style={{ fontSize: 18, fontWeight: 800, color: "#10b981", fontFamily: MONO }}>{fmtRp(estTotal)}</span>
@@ -124,7 +138,8 @@ const S = {
   qbtn: { width: 38, height: 38, background: "#15151e", border: "1px solid #2a2a35", color: "#e4e4e7", fontSize: 18, fontWeight: 700, borderRadius: 8, cursor: "pointer", flexShrink: 0 },
   qinput: { flex: 1, background: "#08080b", border: "1px solid #2a2a35", borderRadius: 8, padding: "9px 12px", color: "#fff", fontSize: 16, fontWeight: 700, fontFamily: MONO, textAlign: "center", outline: "none", minWidth: 0 },
   suggBtn: { background: "#22d3ee1f", border: "1px solid #22d3ee55", color: "#22d3ee", fontSize: 11, fontWeight: 700, padding: "9px 10px", borderRadius: 8, cursor: "pointer", fontFamily: MONO, flexShrink: 0 },
-  estRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14, padding: "10px 12px", background: "#08080b", border: "1px solid #1c1c25", borderRadius: 10 },
+  priceSrc: { marginTop: 12, fontSize: 11, color: "#9ca3af", lineHeight: 1.5 },
+  estRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, padding: "10px 12px", background: "#08080b", border: "1px solid #1c1c25", borderRadius: 10 },
   cta: { width: "100%", marginTop: 14, padding: "13px", background: "#f59e0b", color: "#1a1006", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" },
   cancel: { width: "100%", marginTop: 8, padding: "9px", background: "transparent", color: "#777", border: "none", fontSize: 12, cursor: "pointer", fontFamily: "inherit" },
 };
