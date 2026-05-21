@@ -59,16 +59,16 @@ function QuickOrderFlow({ cashier, onExit }) {
     return (
       <POSReceipt
         order={{ ...order, payments: payResult?.tenders || payResult?.payments || [], loyalty_discount: payResult?.loyalty_discount || 0 }}
-        onClose={() => setStage("celebration")}
+        onClose={() => setStage("feedback")}
         onPrintDone={() => {}}
       />
     );
   }
-  if (stage === "celebration" && order) {
-    return <POSCelebration order={order} apiBase={API_HOST} onDone={() => setStage("feedback")} />;
-  }
   if (stage === "feedback" && order) {
-    return <POSSatisfaction order={order} apiBase={API_HOST} onDone={onExit} />;
+    return <POSSatisfaction order={order} apiBase={API_HOST} onDone={() => setStage("celebration")} />;
+  }
+  if (stage === "celebration" && order) {
+    return <POSCelebration order={order} apiBase={API_HOST} onDone={onExit} />;
   }
   return null;
 }
@@ -216,6 +216,13 @@ export default function POSApp() {
           order={{ ref: settledResult?.id || settledResult?.ref || settledResult?.order_id, cashier: cashier?.name }}
           apiBase={API_HOST}
           source="pos"
+          onDone={() => setView("settle-celebration")}
+        />
+      )}
+      {view === "settle-celebration" && (
+        <POSCelebration
+          order={{ total: settledResult?.total || 0, customer: settledResult?.customer_name || settledResult?.customerName }}
+          apiBase={API_HOST}
           onDone={() => { setSettledResult(null); setSettlingTab(null); setView("home"); }}
         />
       )}
