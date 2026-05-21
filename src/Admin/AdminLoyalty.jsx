@@ -20,6 +20,7 @@ export default function AdminLoyalty({ apiBase = '' }) {
   const [showTierForm, setShowTierForm] = useState(false);
   const [tierForm, setTierForm] = useState({ code: '', name: '', emoji: '🎯', color: '#888888', min_lifetime_spend: '', earn_multiplier: '' });
   const [editTierCode, setEditTierCode] = useState(null);
+  const [configForm, setConfigForm] = useState(null);
 
   const loadStats = useCallback(async () => {
     try { setStats(await fetch(`${apiBase}/api/loyalty/stats`).then(r => r.json())); } catch {}
@@ -127,6 +128,30 @@ export default function AdminLoyalty({ apiBase = '' }) {
     reader.readAsText(file);
   };
 
+  // Seed form config dari stats (sekali)
+  useEffect(() => {
+    if (stats?.config && !configForm) {
+      const c = stats.config;
+      setConfigForm({
+        point_per_amount: c.point_per_amount, point_value_idr: c.point_value_idr,
+        point_expiry_months: c.point_expiry_months, signup_bonus: c.signup_bonus,
+        referral_bonus_referrer: c.referral_bonus_referrer, referral_bonus_referred: c.referral_bonus_referred,
+      });
+    }
+  }, [stats, configForm]);
+
+  const saveConfig = async () => {
+    if (!configForm) return;
+    const r = await fetch(`${apiBase}/api/loyalty/config`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(configForm),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { alert(d.error || 'Gagal simpan config'); return; }
+    alert('✓ Config loyalty disimpan');
+    loadStats();
+  };
+
   useEffect(() => {
     if (tab === 'dashboard') loadStats();
     if (tab === 'customers') { loadCustomers(); loadTiers(); }
@@ -216,14 +241,22 @@ export default function AdminLoyalty({ apiBase = '' }) {
 
           <h3 style={styles.sectionTitle}>Config Loyalty</h3>
           <div style={styles.configBox}>
-            <div style={styles.configRow}><span>1 poin earned per belanja Rp</span><b>{stats.config.point_per_amount?.toLocaleString('id-ID')}</b></div>
-            <div style={styles.configRow}><span>1 poin redeem value</span><b>{fmtIDR(stats.config.point_value_idr)}</b></div>
-            <div style={styles.configRow}><span>Point expiry</span><b>{stats.config.point_expiry_months} bulan</b></div>
-            <div style={styles.configRow}><span>Signup bonus</span><b>{stats.config.signup_bonus} poin</b></div>
-            <div style={styles.configRow}><span>Referral bonus referrer/referred</span><b>{stats.config.referral_bonus_referrer} / {stats.config.referral_bonus_referred} poin</b></div>
-            <div style={{fontSize: 11, color: '#6b7280', marginTop: 8}}>
-              Edit via pos_config: PUT /api/pos/config/LOYALTY_POINT_PER_AMOUNT (atau LOYALTY_POINT_VALUE_IDR, dll)
-            </div>
+            {configForm && [
+              ['point_per_amount', '1 poin earned per belanja Rp'],
+              ['point_value_idr', 'Nilai 1 poin saat redeem (Rp)'],
+              ['point_expiry_months', 'Point expiry (bulan)'],
+              ['signup_bonus', 'Signup bonus (poin)'],
+              ['referral_bonus_referrer', 'Referral bonus — pengajak (poin)'],
+              ['referral_bonus_referred', 'Referral bonus — yang diajak (poin)'],
+            ].map(([k, label]) => (
+              <div key={k} style={styles.configRow}>
+                <span>{label}</span>
+                <input type="number" value={configForm[k] ?? ''}
+                  onChange={e => setConfigForm(f => ({ ...f, [k]: e.target.value }))}
+                  style={{ width: 130, background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: 6, padding: '6px 9px', color: '#fff', fontSize: 13, textAlign: 'right', fontFamily: 'inherit' }} />
+              </div>
+            ))}
+            <button onClick={saveConfig} style={{ ...styles.btnPrimary, marginTop: 12 }}>💾 Simpan Config</button>
           </div>
         </div>
       )}

@@ -628,6 +628,32 @@ function setupLoyalty(app, opts = {}) {
     res.json({ ok: true, deleted: true });
   });
 
+  // Edit config loyalty (earn rate, signup bonus, dll) — disimpan ke pos_config
+  router.put('/config', (req, res) => {
+    const b = req.body || {};
+    const KEYS = {
+      point_per_amount: 'POINT_PER_AMOUNT',
+      point_value_idr: 'POINT_VALUE_IDR',
+      signup_bonus: 'LOYALTY_SIGNUP_BONUS',
+      point_expiry_months: 'LOYALTY_POINT_EXPIRY_MONTHS',
+      birthday_bonus_base: 'LOYALTY_BIRTHDAY_BONUS_BASE',
+      referral_bonus_referrer: 'LOYALTY_REFERRAL_BONUS_REFERRER',
+      referral_bonus_referred: 'LOYALTY_REFERRAL_BONUS_REFERRED',
+    };
+    const up = db.prepare(`INSERT INTO pos_config (key, value, type, category, updated_at)
+      VALUES (?,?,'number','loyalty',?)
+      ON CONFLICT(key) DO UPDATE SET value=excluded.value, updated_at=excluded.updated_at`);
+    let n = 0;
+    for (const [field, key] of Object.entries(KEYS)) {
+      if (b[field] !== undefined && b[field] !== '' && !isNaN(Number(b[field]))) {
+        up.run(key, String(Number(b[field])), nowSec());
+        n++;
+      }
+    }
+    if (!n) return res.status(400).json({ error: 'tidak ada field valid' });
+    res.json({ ok: true, updated: n, config: loadConfig() });
+  });
+
   // DASHBOARD STATS
   router.get('/stats', (req, res) => {
     const totalCustomers = db.prepare(`SELECT COUNT(*) c FROM loyalty_customers WHERE is_active = 1`).get().c;
