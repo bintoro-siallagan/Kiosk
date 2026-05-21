@@ -55,6 +55,41 @@ function setupFinanceCenter(app, opts = {}) {
     // ── Outlet snapshot ──
     const outlets = many(`SELECT name, area, revenue_today, health_score FROM outlets ORDER BY revenue_today DESC`);
 
+    // ── AI Finance Insight (rule-based) ──
+    const fk = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1) + 'jt' : n >= 1e3 ? Math.round(n / 1e3) + 'rb' : String(Math.round(n || 0)));
+    const insights = [];
+    const I = (tone, icon, title, text) => insights.push({ tone, icon, title, text });
+    const margin = revenue ? Math.round(laba / revenue * 100) : 0;
+    I(margin >= 12 ? 'good' : margin >= 5 ? 'neutral' : 'attention', margin >= 12 ? '✅' : '⚠️',
+      `Net margin ${margin}%`,
+      margin >= 12 ? 'Margin sehat untuk F&B — pertahankan kontrol biaya.'
+        : margin >= 5 ? 'Margin tipis — cek beban operasional & food cost.'
+        : 'Margin kritis — bisnis nyaris break-even, evaluasi harga/biaya.');
+    if (aggGross > 0 && revenue > 0) {
+      I('neutral', '🛵', `Channel online ${Math.round(aggGross / revenue * 100)}% dari revenue`,
+        `Penjualan platform Rp ${fk(aggGross)} — komisi ~20%, margin channel ini lebih tipis dari POS langsung.`);
+    }
+    const topExp = one(`SELECT c.name n, SUM(e.amount) v FROM finance_expenses e
+      LEFT JOIN expense_categories c ON c.id = e.category_id
+      WHERE e.voided_at IS NULL AND e.expense_date BETWEEN ? AND ?
+      GROUP BY e.category_id ORDER BY v DESC LIMIT 1`, from, to);
+    if (topExp && topExp.v > 0) {
+      I('neutral', '💸', `Beban terbesar: ${topExp.n || 'Operasional'}`,
+        `Rp ${fk(topExp.v)} — ${Math.round(topExp.v / (opex || 1) * 100)}% dari total beban operasional.`);
+    }
+    I(posCash - cashOut >= 0 ? 'good' : 'attention', '💵', `Cashflow bersih Rp ${fk(posCash - cashOut)}`,
+      posCash - cashOut >= 0 ? 'Kas masuk > kas keluar — likuiditas aman.'
+        : 'Kas keluar tunai melebihi kas masuk — pantau likuiditas.');
+    const arOver = Math.round((one(`SELECT COALESCE(SUM(amount - paid_amount),0) v FROM ar_invoices
+      WHERE status != 'paid' AND due_date < ?`, to) || { v: 0 }).v);
+    if (arOver > 0) I('attention', '📥', `Piutang overdue Rp ${fk(arOver)}`,
+      'Ada piutang lewat jatuh tempo — tagih ke customer biar cashflow gak nyangkut.');
+    if (outlets.length >= 2) {
+      const top = outlets[0], low = outlets[outlets.length - 1];
+      I('neutral', '🏢', `Outlet ${top.name} revenue tertinggi`,
+        `${top.name} Rp ${fk(top.revenue_today)} vs ${low.name} Rp ${fk(low.revenue_today)} — gap ${Math.round((top.revenue_today / (low.revenue_today || 1) - 1) * 100)}%.`);
+    }
+
     res.json({
       period: { days, from, to },
       kpi: {
@@ -77,6 +112,7 @@ function setupFinanceCenter(app, opts = {}) {
         paid: invByStatus.paid || 0,
       },
       outlets,
+      insights,
     });
   });
 

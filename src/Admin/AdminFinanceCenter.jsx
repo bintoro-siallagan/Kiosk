@@ -46,6 +46,24 @@ export default function AdminFinanceCenter({ apiBase = "" }) {
         <Kpi label="Piutang — AR" v={fmtRp(k.ar_total)} c={k.ar_total > 0 ? "#3b82f6" : "#10b981"} sub="outstanding" />
       </div>
 
+      <div style={{ ...S.card, marginTop: 14 }}>
+        <div style={S.kicker}>🧠 AI FINANCE INSIGHT</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(320px,1fr))", gap: 10, marginTop: 10 }}>
+          {(d.insights || []).map((it, i) => {
+            const tc = it.tone === "good" ? "#10b981" : it.tone === "attention" ? "#ef4444" : "#3b82f6";
+            return (
+              <div key={i} style={{ display: "flex", gap: 10, background: "#0a0e16", border: "1px solid #161b22", borderLeft: `3px solid ${tc}`, borderRadius: 8, padding: "10px 12px" }}>
+                <span style={{ fontSize: 20, flexShrink: 0 }}>{it.icon}</span>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#e6edf3" }}>{it.title}</div>
+                  <div style={{ fontSize: 11, color: "#9da7b3", marginTop: 2, lineHeight: 1.5 }}>{it.text}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14 }}>
         <div style={S.card}>
           <div style={S.kicker}>🧮 SETTLEMENT</div>
