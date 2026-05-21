@@ -34,6 +34,7 @@ import AdminAntiFraud from "./Admin/AdminAntiFraud.jsx";
 import AdminTalenta from "./Admin/AdminTalenta.jsx";
 import AdminCustomerIntel from "./Admin/AdminCustomerIntel.jsx";
 import AdminMarketingBehavior from "./Admin/AdminMarketingBehavior.jsx";
+import AdminLoyaltyPromo from "./Admin/AdminLoyaltyPromo.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -131,6 +132,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "talenta", label: "🔗 Talenta", color: "#0ea5e9" },
     { id: "customer_intel", label: "🎯 Customer Intel", color: "#d946ef" },
     { id: "mkt_behavior", label: "📊 Behavior", color: "#22d3ee" },
+    { id: "loyalty_promo", label: "🎁 Loyalty & Promo", color: "#f43f5e" },
   ];
 
   return (
@@ -190,6 +192,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "talenta" && <AdminTalenta apiBase={API} />}
         {tab === "customer_intel" && <AdminCustomerIntel apiBase={API} />}
         {tab === "mkt_behavior" && <AdminMarketingBehavior apiBase={API} />}
+        {tab === "loyalty_promo" && <AdminLoyaltyPromo apiBase={API} />}
       </div>
 
       {toast && <div style={S.toast}>{toast}</div>}
