@@ -8,6 +8,9 @@ import { useState, useEffect, useCallback } from "react";
 
 const fR = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const DAY = 86400;
+const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const tsStart = (s) => Math.floor(new Date(s + "T00:00:00").getTime() / 1000);
+const tsEnd = (s) => Math.floor(new Date(s + "T23:59:59").getTime() / 1000);
 
 const S = {
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 14, padding: 18, marginBottom: 14 },
@@ -37,40 +40,47 @@ export default function AdminCashierKPI({ apiBase = "" }) {
   const [data, setData] = useState(null);
   const [bySource, setBySource] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [range, setRange] = useState("today");
+  const [fromDate, setFromDate] = useState(() => fmtDate(new Date()));
+  const [toDate, setToDate] = useState(() => fmtDate(new Date()));
+  const [preset, setPreset] = useState("today");
 
   const load = useCallback(async () => {
     setLoading(true);
-    const now = Math.floor(Date.now() / 1000);
-    const from = range === "today" ? Math.floor(new Date().setHours(0, 0, 0, 0) / 1000)
-      : range === "7d" ? now - 7 * DAY : now - 30 * DAY;
+    const from = tsStart(fromDate), to = tsEnd(toDate);
     try {
       const [kpiR, srcR] = await Promise.all([
-        fetch(`${apiBase}/api/cashier-kpi?from=${from}&to=${now}`).then(r => r.json()),
-        fetch(`${apiBase}/api/feedback/by-source?from=${from}`).then(r => r.json()).catch(() => []),
+        fetch(`${apiBase}/api/cashier-kpi?from=${from}&to=${to}`).then(r => r.json()),
+        fetch(`${apiBase}/api/feedback/by-source?from=${from}&to=${to}`).then(r => r.json()).catch(() => []),
       ]);
       setData(kpiR);
       setBySource(Array.isArray(srcR) ? srcR : []);
     } catch { setData(null); }
     setLoading(false);
-  }, [apiBase, range]);
+  }, [apiBase, fromDate, toDate]);
 
   useEffect(() => { load(); }, [load]);
 
+  const applyPreset = (key) => {
+    const today = new Date();
+    const fromD = new Date(today);
+    if (key === "7d") fromD.setDate(fromD.getDate() - 6);
+    else if (key === "30d") fromD.setDate(fromD.getDate() - 29);
+    setFromDate(fmtDate(fromD));
+    setToDate(fmtDate(today));
+    setPreset(key);
+  };
+
   // Download CSV (buat HRD — review performa + reward) sesuai rentang aktif
   const exportCsv = (path) => {
-    const now = Math.floor(Date.now() / 1000);
-    const from = range === "today" ? Math.floor(new Date().setHours(0, 0, 0, 0) / 1000)
-      : range === "7d" ? now - 7 * DAY : now - 30 * DAY;
     const a = document.createElement("a");
-    a.href = `${apiBase}${path}?from=${from}&to=${now}`;
+    a.href = `${apiBase}${path}?from=${tsStart(fromDate)}&to=${tsEnd(toDate)}`;
     document.body.appendChild(a); a.click(); a.remove();
   };
 
   // Laporan KPI print-friendly (kertas putih) buat rapat review HRD
   const printReport = () => {
     if (!data) return;
-    const rangeLabel = { today: "Hari Ini", "7d": "7 Hari Terakhir", "30d": "30 Hari Terakhir" }[range];
+    const rangeLabel = fromDate === toDate ? fromDate : `${fromDate} s/d ${toDate}`;
     const rows = (data.cashiers || []).map((c, i) => `<tr>
       <td>${i + 1}</td><td>${c.cashier}</td>
       <td class="c">${c.kpi_score == null ? "-" : c.kpi_score}</td>
@@ -109,10 +119,18 @@ export default function AdminCashierKPI({ apiBase = "" }) {
 
   return (
     <div>
-      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+      <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center", flexWrap: "wrap" }}>
         {[["today", "Hari Ini"], ["7d", "7 Hari"], ["30d", "30 Hari"]].map(([k, l]) => (
-          <button key={k} onClick={() => setRange(k)} style={S.btn(range === k)}>{l}</button>
+          <button key={k} onClick={() => applyPreset(k)} style={S.btn(preset === k)}>{l}</button>
         ))}
+        <span style={{ color: "#666", fontSize: 12, marginLeft: 4 }}>Dari</span>
+        <input type="date" value={fromDate} max={toDate}
+          onChange={e => { setFromDate(e.target.value); setPreset(""); }}
+          style={{ background: "#0a0e16", border: "1px solid #21262d", borderRadius: 8, padding: "7px 10px", color: "#fff", fontSize: 13, fontFamily: "inherit", colorScheme: "dark" }} />
+        <span style={{ color: "#666", fontSize: 12 }}>s/d</span>
+        <input type="date" value={toDate} min={fromDate} max={fmtDate(new Date())}
+          onChange={e => { setToDate(e.target.value); setPreset(""); }}
+          style={{ background: "#0a0e16", border: "1px solid #21262d", borderRadius: 8, padding: "7px 10px", color: "#fff", fontSize: 13, fontFamily: "inherit", colorScheme: "dark" }} />
         <button onClick={() => exportCsv("/api/cashier-kpi/export.csv")}
           style={{ marginLeft: "auto", background: "#34D39922", border: "1px solid #34D39966", borderRadius: 8, padding: "8px 14px", color: "#34D399", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
           ⬇️ Export KPI (CSV)

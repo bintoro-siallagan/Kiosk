@@ -87,6 +87,7 @@ function setupFeedback(app, opts = {}) {
   // Per-channel (pos / kiosk / qr) — lihat channel mana yang ratingnya jelek.
   router.get('/by-source', (req, res) => {
     const from = Number(req.query.from || 0);
+    const to = Number(req.query.to || Math.floor(Date.now() / 1000));
     res.json(db.prepare(`
       SELECT source,
         COUNT(*) count,
@@ -94,10 +95,10 @@ function setupFeedback(app, opts = {}) {
         SUM(CASE WHEN rating <= 2 THEN 1 ELSE 0 END) bad_count,
         SUM(CASE WHEN rating >= 4 THEN 1 ELSE 0 END) good_count
       FROM customer_feedback
-      WHERE created_at >= ?
+      WHERE created_at >= ? AND created_at <= ?
       GROUP BY source
       ORDER BY avg_rating ASC
-    `).all(from).map(r => ({ ...r, avg_rating: Math.round(r.avg_rating * 100) / 100 })));
+    `).all(from, to).map(r => ({ ...r, avg_rating: Math.round(r.avg_rating * 100) / 100 })));
   });
 
   // Per-kasir — buat KPI kasir (feedback jelek → KPI jelek).
