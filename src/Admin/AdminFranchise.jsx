@@ -3,6 +3,7 @@
 // consolidated reporting, perbandingan outlet.
 
 import { useState, useEffect, useCallback } from "react";
+import ReportActions from "./ReportActions.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 
@@ -24,6 +25,10 @@ export default function AdminFranchise({ apiBase = "" }) {
         🏛️ <b style={{ color: "#fbbf24" }}>FRANCHISE FINANCE LAYER</b> — view HQ: royalty <b>{pct}%</b> dari
         revenue outlet franchise, nilai franchise fee, consolidated reporting. Outlet flagship = HQ-owned (gak bayar royalty).
       </div>
+
+      <ReportActions title="Franchise Finance" subtitle="Royalty & franchise fee per outlet"
+        columns={["Outlet", "Area", "Tipe", "Revenue", "Royalty", "Franchise Fee", "Income ke HQ"]}
+        rows={d.outlets.map(o => [o.name, o.area, o.type, o.revenue, o.royalty, o.franchise_fee, o.hq_income])} />
 
       <div style={S.kpiRow}>
         <Kpi label="Network Revenue" v={fmtRp(s.network_revenue)} c="#3b82f6" sub={`${s.total_outlet} outlet`} />

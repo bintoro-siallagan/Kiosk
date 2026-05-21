@@ -3,6 +3,7 @@
 // resep × harga bahan live. Klik menu → lihat rincian resep.
 
 import { useState, useEffect, useCallback } from "react";
+import ReportActions from "./ReportActions.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fcColor = (p) => (p > 40 ? "#ef4444" : p >= 35 ? "#f59e0b" : "#10b981");
@@ -26,6 +27,10 @@ export default function AdminFoodCost({ apiBase = "" }) {
         🍳 <b style={{ color: "#f97316" }}>REAL-TIME FOOD COST</b> — tiap menu punya resep (bahan + qty).
         Food cost dihitung <b>live</b> dari harga bahan di warehouse — harga bahan naik, food cost &amp; margin langsung ikut update.
       </div>
+
+      <ReportActions title="Food Cost" subtitle="Food cost & margin per menu"
+        columns={["Menu", "Kategori", "Harga Jual", "Food Cost", "Food Cost %", "Margin %"]}
+        rows={d.items.map(i => [i.name, i.category, i.price, i.food_cost, i.food_cost_pct + "%", i.margin_pct + "%"])} />
 
       <div style={S.kpiRow}>
         <Kpi label="Total Menu" v={String(s.total_menu)} c="#3b82f6" sub="punya resep" />

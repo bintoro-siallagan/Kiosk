@@ -3,6 +3,7 @@
 // (budget vs actual).
 
 import { useState, useEffect, useCallback } from "react";
+import ReportActions from "./ReportActions.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const ST = {
@@ -45,6 +46,10 @@ export default function AdminBudget({ apiBase = "" }) {
         🎯 <b style={{ color: "#a78bfa" }}>BUDGET MANAGEMENT</b> — set budget per kategori beban,
         sistem lacak realisasi otomatis dari pengeluaran. Periode <b>{d.period}</b>.
       </div>
+
+      <ReportActions title={`Budget ${d.period}`} subtitle="Budget vs realisasi per kategori"
+        columns={["Kategori", "Budget", "Realisasi", "Sisa", "%", "Status"]}
+        rows={d.budgets.map(b => [b.category_name, b.amount, b.actual, b.remaining, b.pct + "%", b.status])} />
 
       <div style={S.kpiRow}>
         <Kpi label="Total Budget" v={fmtRp(s.total_budget)} c="#a78bfa" />

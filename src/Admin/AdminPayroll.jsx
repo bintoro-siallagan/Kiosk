@@ -3,6 +3,7 @@
 // PPh21 + lembur. Proses → posting otomatis ke finance.
 
 import { useState, useEffect, useCallback } from "react";
+import ReportActions from "./ReportActions.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 
@@ -36,6 +37,10 @@ export default function AdminPayroll({ apiBase = "" }) {
         💼 <b style={{ color: "#06B6D4" }}>PAYROLL</b> — gaji otomatis dari HRIS: gaji pokok + lembur
         (dari attendance OT) − BPJS − PPh21. Proses → langsung posting ke Finance. Periode <b>{d.period}</b>.
       </div>
+
+      <ReportActions title={`Payroll ${d.period}`} subtitle="Rincian gaji staff"
+        columns={["Staff", "Role", "Gaji Pokok", "Lembur", "Bruto", "BPJS", "PPh21", "THP"]}
+        rows={d.lines.map(l => [l.name, l.role, l.gaji_pokok, l.lembur, l.bruto, l.bpjs, l.pph21, l.thp])} />
 
       <div style={S.kpiRow}>
         <Kpi label="Total THP" v={fmtRp(s.total_thp)} c="#10b981" sub={`${s.staff_count} staff`} />

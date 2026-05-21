@@ -3,6 +3,7 @@
 // partner, aging, tracking pembayaran masuk.
 
 import { useState, useEffect, useCallback } from "react";
+import ReportActions from "./ReportActions.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" }) : "—";
@@ -56,6 +57,10 @@ export default function AdminAR({ apiBase = "" }) {
         📥 <b style={{ color: "#3b82f6" }}>ACCOUNTS RECEIVABLE</b> — piutang dari customer korporat,
         event booking &amp; partner. Aging + tracking pembayaran masuk.
       </div>
+
+      <ReportActions title="Accounts Receivable" subtitle="Daftar piutang customer + aging"
+        columns={["Invoice", "Customer", "Tipe", "Jumlah", "Dibayar", "Outstanding", "Jatuh Tempo", "Status"]}
+        rows={d.invoices.map(v => [v.invoice_number, v.customer, v.customer_type, v.amount, v.paid_amount, v.outstanding, fmtDate(v.due_date), v.status])} />
 
       <div style={S.kpiRow}>
         <Kpi label="Total Piutang" v={fmtRp(s.total_outstanding)} c="#3b82f6" sub="outstanding" />

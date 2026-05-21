@@ -3,6 +3,7 @@
 // Jurnal Umum + Buku Besar ringkas. Tiap entri balance (D = K).
 
 import { useState, useEffect, useCallback } from "react";
+import ReportActions from "./ReportActions.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const PRESETS = [
@@ -43,6 +44,10 @@ export default function AdminJournal({ apiBase = "" }) {
           <button key={p.k} onClick={() => setPreset(p.k)} style={preset === p.k ? S.pillOn : S.pill}>{p.label}</button>
         ))}
       </div>
+
+      <ReportActions title="Jurnal Akuntansi" subtitle="Jurnal umum — entri double-entry"
+        columns={["Ref", "Deskripsi", "Akun", "Debit", "Kredit"]}
+        rows={d.entries.flatMap(e => e.lines.map(l => [e.ref, e.description, l.account, l.debit || "", l.credit || ""]))} />
 
       <div style={{ ...S.card, marginBottom: 14, borderColor: t.balanced ? "#10b98155" : "#ef444455", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
         <span style={{ fontSize: 14, fontWeight: 800, color: t.balanced ? "#10b981" : "#ef4444" }}>

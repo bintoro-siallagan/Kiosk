@@ -4,6 +4,7 @@
 // status settlement.
 
 import { useState, useEffect, useCallback } from "react";
+import ReportActions from "./ReportActions.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const PRESETS = [
@@ -45,6 +46,10 @@ export default function AdminSettlement({ apiBase = "" }) {
           <button key={p.k} onClick={() => setPreset(p.k)} style={preset === p.k ? S.pillOn : S.pill}>{p.label}</button>
         ))}
       </div>
+
+      <ReportActions title={`Settlement ${preset}`} subtitle="Laporan settlement transaksi — POS & platform"
+        columns={["Channel", "Grup", "Transaksi", "Bruto", "Fee/Komisi", "Neto", "Settlement"]}
+        rows={d.channels.map(c => [c.channel, c.group, c.count, c.gross, c.fee, c.net, c.settle])} />
 
       <div style={S.kpiRow}>
         <Kpi label="Total Bruto" v={fmtRp(s.total_gross)} c="#3b82f6" sub={`${s.txn_count} transaksi`} />
