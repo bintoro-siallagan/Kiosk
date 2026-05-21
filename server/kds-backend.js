@@ -297,6 +297,20 @@ function setupKDS(app, opts = {}) {
     res.json(result);
   });
 
+  // Sync status KDS ticket → tabel orders, biar customer tracking
+  // (kiosk receipt & QR order) update LIVE pas dapur majuin order.
+  const syncOrderStatus = (orderRef, status) => {
+    if (!orderRef) return;
+    try {
+      // lewat global hook index.js — update in-memory orders + persist
+      if (typeof global.updateOrderStatusFromKds === 'function') {
+        global.updateOrderStatusFromKds(orderRef, status);
+      } else {
+        db.prepare(`UPDATE orders SET status = ? WHERE id = ?`).run(status, orderRef);
+      }
+    } catch (e) { /* order_ref mungkin bukan order biasa — abaikan */ }
+  };
+
   // Status transitions
   router.put('/tickets/:id/start', (req, res) => {
     const { actor } = req.body || {};
@@ -306,6 +320,7 @@ function setupKDS(app, opts = {}) {
 
     db.prepare(`UPDATE kds_tickets SET status='preparing', started_at=? WHERE id=?`).run(nowSec(), req.params.id);
     broadcast('kds:ticket-updated', { ticket_id: t.id, status: 'preparing', station_id: t.station_id });
+    syncOrderStatus(t.order_ref, 'preparing');
     logEvent({ type: 'kds_ticket_start', payload: { ticket_id: t.id, order_ref: t.order_ref }, order_ref: t.order_ref, actor });
     res.json({ ok: true });
   });
@@ -322,6 +337,7 @@ function setupKDS(app, opts = {}) {
       .run(now, prepSec, req.params.id);
 
     broadcast('kds:ticket-ready', { ticket_id: t.id, order_ref: t.order_ref, station_id: t.station_id, customer_name: t.customer_name, table_no: t.table_no, prep_seconds: prepSec });
+    syncOrderStatus(t.order_ref, 'ready');
     logEvent({ type: 'kds_ticket_ready', payload: { ticket_id: t.id, prep_sec: prepSec }, order_ref: t.order_ref, actor });
     res.json({ ok: true, prep_seconds: prepSec });
   });
@@ -334,6 +350,7 @@ function setupKDS(app, opts = {}) {
 
     db.prepare(`UPDATE kds_tickets SET status='served', served_at=? WHERE id=?`).run(nowSec(), req.params.id);
     broadcast('kds:ticket-served', { ticket_id: t.id, order_ref: t.order_ref, station_id: t.station_id });
+    syncOrderStatus(t.order_ref, 'completed');
     logEvent({ type: 'kds_ticket_served', payload: { ticket_id: t.id }, order_ref: t.order_ref, actor });
     res.json({ ok: true });
   });

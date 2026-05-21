@@ -3632,6 +3632,13 @@ global.onPaymentRecorded     = bridge.onPaymentRecorded;
 global.dispatchNotification  = notifications.dispatch;
 global.createExpense         = finance.createExpense;
 global.createKitchenTickets  = kds.createTicketsForOrder;
+// Sinkron status order pas KDS majuin ticket → customer tracking (kiosk/QR) live
+global.updateOrderStatusFromKds = (orderRef, status) => {
+  const idx = orders.findIndex(o => o.id === orderRef);
+  if (idx === -1) return;
+  orders[idx] = { ...orders[idx], status, updatedAt: Date.now() };
+  try { db.updateOrderStatus(orderRef, status); } catch (e) {}
+};
 global.processRefundCancel   = refundCancel.processEvent;
 global.persistAggregatorOrder = aggregator.persistOrder;
 global.loyaltyEarn           = loyaltyMod.earn;
