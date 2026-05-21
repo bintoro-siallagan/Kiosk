@@ -22,6 +22,7 @@ import AdminFinanceCenter from "./Admin/AdminFinanceCenter.jsx";
 import AdminFinanceAlert from "./Admin/AdminFinanceAlert.jsx";
 import AdminAR from "./Admin/AdminAR.jsx";
 import AdminBudget from "./Admin/AdminBudget.jsx";
+import AdminPayroll from "./Admin/AdminPayroll.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -107,6 +108,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "finance_alert", label: "🚨 Finance Alert", color: "#ef4444" },
     { id: "ar", label: "📥 Piutang AR", color: "#3b82f6" },
     { id: "budget", label: "🎯 Budget", color: "#a78bfa" },
+    { id: "payroll", label: "💼 Payroll", color: "#06B6D4" },
   ];
 
   return (
@@ -154,6 +156,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "finance_alert" && <AdminFinanceAlert apiBase={API} />}
         {tab === "ar" && <AdminAR apiBase={API} />}
         {tab === "budget" && <AdminBudget apiBase={API} />}
+        {tab === "payroll" && <AdminPayroll apiBase={API} />}
       </div>
 
       {toast && <div style={S.toast}>{toast}</div>}
