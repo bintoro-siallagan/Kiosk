@@ -64,6 +64,7 @@ import AdminAssetMaintenance from "./Admin/AdminAssetMaintenance.jsx";
 import AdminShiftRoster from "./Admin/AdminShiftRoster.jsx";
 import AdminNotificationCenter from "./Admin/AdminNotificationCenter.jsx";
 import AdminAutoReorder from "./Admin/AdminAutoReorder.jsx";
+import AdminSalesStockSync from "./Admin/AdminSalesStockSync.jsx";
 import AdminSimplePurchase from "./Admin/AdminSimplePurchase.jsx";
 import AdminPettyCash from "./Admin/AdminPettyCash.jsx";
 import AdminBudgetPlan from "./Admin/AdminBudgetPlan.jsx";
@@ -177,6 +178,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "shift_roster", label: "📆 Shift Roster", color: "#059669" },
     { id: "notif_center", label: "🔔 Notification Center", color: "#db2777" },
     { id: "auto_reorder", label: "🔁 Auto-Reorder", color: "#3730a3" },
+    { id: "sales_stock_sync", label: "🔗 Sales→Stock Sync", color: "#14b8a6" },
     { id: "simple_purchase", label: "🛒 Simple Purchase", color: "#65a30d" },
     { id: "petty_cash", label: "💵 Petty Cash", color: "#d97706" },
     { id: "purchase_invoice", label: "🧾 Invoice", color: "#a78bfa" },
@@ -227,7 +229,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["staff", "outlet_master", "incidents", "asset_maintenance", "notif_center", "gudang", "waste", "config", "checklist", "cashier_kpi", "audit"] },
     { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "loyalty", "broadcast", "aggregator", "payment", "conv_fee"] },
     { name: "Product", icon: "📦", module: "config", ids: ["item_master", "item_pricing", "item_config", "item_rules", "item_intel", "product_hub", "product_ver", "food_cost"] },
-    { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["price_list", "goods_delivery", "goods_received", "stock_opname", "stock_transfer", "batch_tracking", "production", "demand_forecast", "auto_reorder", "simple_purchase", "petty_cash", "purchase_invoice", "procurement_plus"] },
+    { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["price_list", "goods_delivery", "goods_received", "stock_opname", "stock_transfer", "batch_tracking", "production", "demand_forecast", "auto_reorder", "sales_stock_sync", "simple_purchase", "petty_cash", "purchase_invoice", "procurement_plus"] },
     { name: "Finance", icon: "💰", module: "finance", ids: ["finance", "settlement", "journal", "general_ledger", "reconciliation", "release_payment", "period_closing", "fin_statements", "finance_center", "finance_alert", "ar", "budget", "budget_plan", "franchise"] },
     { name: "HRIS & Reward", icon: "👥", module: "hr", ids: ["hris", "shift_roster", "payroll", "reward", "reward_benefit", "motivation", "hr_command", "talenta"] },
     { name: "Customer & Marketing", icon: "🎯", module: "marketing", ids: ["customer_intel", "mkt_behavior", "loyalty_promo", "feedback_segment", "clv_churn", "geo_engage", "campaign", "signage"] },
@@ -365,6 +367,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "shift_roster" && <AdminShiftRoster apiBase={API} />}
         {tab === "notif_center" && <AdminNotificationCenter apiBase={API} />}
         {tab === "auto_reorder" && <AdminAutoReorder apiBase={API} />}
+        {tab === "sales_stock_sync" && <AdminSalesStockSync apiBase={API} />}
         {tab === "rbac" && <AdminRBAC apiBase={API} />}
         {tab === "approval" && <AdminApproval apiBase={API} />}
         {tab === "device_session" && <AdminDeviceSession apiBase={API} />}

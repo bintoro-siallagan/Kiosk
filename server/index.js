@@ -462,6 +462,11 @@ app.post("/api/orders", (req, res) => {
     } catch (e) { console.error('[kds] createKitchenTickets:', e.message); }
   }
 
+  // Sales → Stock — konsumsi bahan baku resep dari gudang (live integration hook)
+  if (typeof global.consumeRecipeStock === 'function') {
+    try { global.consumeRecipeStock(order); } catch (e) { console.error('[sales-stock]', e.message); }
+  }
+
   console.log(`✅ New order #${order.id} — ${order.type} — Rp ${order.total.toLocaleString()}`);
 
   // Push notif ke ESB POS (non-blocking)
@@ -3650,6 +3655,7 @@ const { setupAssetMaintenance } = require('./asset-maintenance-backend');
 const { setupShiftRoster }      = require('./shift-roster-backend');
 const { setupNotificationCenter } = require('./notification-center-backend');
 const { setupAutoReorder }      = require('./auto-reorder-backend');
+const { setupSalesStockSync }   = require('./sales-stock-sync-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3749,6 +3755,7 @@ const assetMaintenance = setupAssetMaintenance(app, { dbPath: DB_PATH });
 const shiftRoster = setupShiftRoster(app, { dbPath: DB_PATH });
 const notificationCenter = setupNotificationCenter(app, { dbPath: DB_PATH });
 const autoReorder = setupAutoReorder(app, { dbPath: DB_PATH });
+const salesStockSync = setupSalesStockSync(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
