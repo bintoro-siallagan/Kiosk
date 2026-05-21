@@ -74,6 +74,7 @@ import AdminQuotation from "./Admin/AdminQuotation.jsx";
 import AdminDeliveryOrder from "./Admin/AdminDeliveryOrder.jsx";
 import AdminSalesInvoice from "./Admin/AdminSalesInvoice.jsx";
 import AdminSelfAudit from "./Admin/AdminSelfAudit.jsx";
+import AdminConsolidation from "./Admin/AdminConsolidation.jsx";
 import AdminSalesStockSync from "./Admin/AdminSalesStockSync.jsx";
 import AdminSimplePurchase from "./Admin/AdminSimplePurchase.jsx";
 import AdminPettyCash from "./Admin/AdminPettyCash.jsx";
@@ -217,6 +218,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "budget_plan", label: "📋 Budget Plan", color: "#4f46e5" },
     { id: "payroll", label: "💼 Payroll", color: "#06B6D4" },
     { id: "franchise", label: "🏛️ Franchise", color: "#fbbf24" },
+    { id: "consolidation", label: "🏛️ Konsolidasi", color: "#1e40af" },
     { id: "food_cost", label: "🍳 Food Cost", color: "#f97316" },
     { id: "conv_fee", label: "🧾 Biaya Layanan", color: "#fb923c" },
     { id: "reward", label: "🎮 Reward", color: "#a855f7" },
@@ -252,7 +254,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "loyalty", "broadcast", "aggregator", "payment", "conv_fee", "quotation", "sales_order", "delivery_order", "sales_invoice", "sales_return", "b2b_customer"] },
     { name: "Product", icon: "📦", module: "config", ids: ["item_master", "item_pricing", "item_config", "item_rules", "item_intel", "product_hub", "product_ver", "food_cost"] },
     { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["price_list", "stock_list", "goods_delivery", "goods_received", "stock_opname", "stock_transfer", "batch_tracking", "production", "demand_forecast", "auto_reorder", "sales_stock_sync", "simple_purchase", "purchase_return", "internal_return", "petty_cash", "purchase_invoice", "procurement_plus"] },
-    { name: "Finance", icon: "💰", module: "finance", ids: ["finance", "coa", "general_ledger", "journal", "settlement", "reconciliation", "release_payment", "period_closing", "fin_statements", "finance_center", "finance_alert", "ar", "budget", "budget_plan", "franchise"] },
+    { name: "Finance", icon: "💰", module: "finance", ids: ["finance", "coa", "general_ledger", "journal", "settlement", "reconciliation", "release_payment", "period_closing", "fin_statements", "finance_center", "finance_alert", "ar", "budget", "budget_plan", "franchise", "consolidation"] },
     { name: "HRIS & Reward", icon: "👥", module: "hr", ids: ["hris", "shift_roster", "payroll", "reward", "reward_benefit", "motivation", "hr_command", "talenta"] },
     { name: "Customer & Marketing", icon: "🎯", module: "marketing", ids: ["customer_intel", "mkt_behavior", "loyalty_promo", "feedback_segment", "clv_churn", "geo_engage", "campaign", "signage"] },
     { name: "Security & Admin", icon: "🔐", module: "rbac", ids: ["rbac", "approval", "device_session", "security", "role_dash", "self_audit", "anti_fraud"] },
@@ -400,6 +402,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "delivery_order" && <AdminDeliveryOrder apiBase={API} />}
         {tab === "sales_invoice" && <AdminSalesInvoice apiBase={API} />}
         {tab === "self_audit" && <AdminSelfAudit apiBase={API} />}
+        {tab === "consolidation" && <AdminConsolidation apiBase={API} />}
         {tab === "sales_stock_sync" && <AdminSalesStockSync apiBase={API} />}
         {tab === "rbac" && <AdminRBAC apiBase={API} />}
         {tab === "approval" && <AdminApproval apiBase={API} />}
