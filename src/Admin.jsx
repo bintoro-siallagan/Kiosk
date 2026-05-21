@@ -593,32 +593,15 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
         </nav>
 
         <div style={D.sideLinks}>
-          <div style={D.sideDivider}>TOOLS</div>
+          <div style={D.sideDivider}>AKSES</div>
           {[
-            {label:"👥 Member & Customer", fn:onMembers},
-            {label:"🏷️ Promo Code", fn:onPromo},
-            {label:"⚙️ Operasional", fn:onShift},
-            {label:"📊 Laporan", fn:() => setShowZReport(true)},
-            {label:"🔗 ESB Sync", fn:onESBSync},
-            {label:"🔔 Push Notif", fn:onESBNotif},
+            {label:"🛠️  Tools", sub:"Admin Tools — semua modul", fn:() => onTools && onTools("staff")},
+            {label:"📊  Management", sub:"Command Center — dashboard", fn:() => window.open(window.location.pathname + "?command=1", "_blank")},
           ].map(l=>(
-            <button key={l.label} style={D.sideLink} onClick={l.fn}>{l.label}</button>
-          ))}
-        </div>
-
-        <div style={D.sideLinks}>
-          <div style={D.sideDivider}>MANAGEMENT</div>
-          {[
-            {label:"👤 Staff & PIN", fn:() => onTools && onTools("staff")},
-            {label:"📦 Gudang & Stok", fn:() => onTools && onTools("gudang")},
-            {label:"🗑️ Log Waste", fn:() => onTools && onTools("waste")},
-            {label:"⚙️ Konfigurasi", fn:() => onTools && onTools("config")},
-            {label:"📋 Audit Trail", fn:() => onTools && onTools("audit")},
-            {label:"🍽️ Master Item", fn:() => onTools && onTools("master")},
-            {label:"💰 Finance", fn:() => onTools && onTools("finance")},
-            {label:"📊 Command Center", fn:() => window.open(window.location.pathname + "?command=1", "_blank")},
-          ].map(l=>(
-            <button key={l.label} style={D.sideLink} onClick={l.fn}>{l.label}</button>
+            <button key={l.label} style={{...D.sideLink, fontWeight:700, fontSize:13, padding:"11px 12px", display:"flex", flexDirection:"column", alignItems:"flex-start", gap:2}} onClick={l.fn}>
+              <span>{l.label}</span>
+              <span style={{fontSize:10, fontWeight:400, color:"#555"}}>{l.sub}</span>
+            </button>
           ))}
         </div>
 
