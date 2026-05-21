@@ -76,7 +76,30 @@ function setupHRCommand(app, opts = {}) {
     const tierCount = { bronze: 0, silver: 0, gold: 0, elite: 0 };
     for (const c of withEng) tierCount[c.tier]++;
 
+    // ── AI Reward Insight (narrative) ──
+    const insights = [];
+    const I = (tone, icon, title, text) => insights.push({ tone, icon, title, text });
+    const topPct = crew.length ? Math.round((tierCount.gold + tierCount.elite) / crew.length * 100) : 0;
+    I(topPct >= 40 ? 'good' : 'neutral', '📈', `${topPct}% crew di tier Gold ke atas`,
+      topPct >= 40 ? 'Budaya growth kuat — mayoritas crew berkembang ke level tinggi.'
+        : 'Masih banyak ruang naik level — dorong lewat achievement & XP harian.');
+    if (outletMorale[0]) I('good', '🏆', `Outlet ${outletMorale[0].outlet} engagement tertinggi`,
+      `Morale ${outletMorale[0].morale} — outlet dengan reward engagement tinggi cenderung komplain lebih rendah & service lebih konsisten.`);
+    const avgStreak = crew.length ? Math.round(crew.reduce((s, c) => s + (c.streak_days || 0), 0) / crew.length) : 0;
+    I(avgStreak >= 6 ? 'good' : 'neutral', '🔥', `Rata-rata streak ${avgStreak} hari`,
+      avgStreak >= 6 ? 'Konsistensi kehadiran kuat — crew yang konsisten cenderung produktivitas lebih stabil.'
+        : 'Streak rata-rata rendah — streak reward bisa dorong konsistensi crew.');
+    const roleModels = withEng.filter(c => c.ach >= 3).length;
+    if (roleModels) I('good', '🌟', `${roleModels} crew jadi role model`,
+      `${roleModels} crew punya 3+ achievement — pasangkan sebagai mentor untuk crew baru.`);
+    I(redemptions >= 4 ? 'good' : 'attention', '🎁', `${redemptions} benefit sudah ditukar`,
+      redemptions >= 4 ? 'Crew aktif manfaatin reward — engagement program reward sehat.'
+        : 'Redemption rendah — promosikan katalog benefit biar reward terasa nyata.');
+    if (tierCount.bronze) I('attention', '🤝', `${tierCount.bronze} crew masih Bronze`,
+      'Peluang mentoring — kasih quick-win achievement & encouragement biar cepat naik level.');
+
     res.json({
+      insights,
       workforce_health: { score: workforceHealth, label: healthLabel, engagement_avg: avgEng },
       top_performers: topPerformers,
       burnout_risk: burnoutRisk,

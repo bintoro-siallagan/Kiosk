@@ -54,6 +54,24 @@ export default function AdminHRCommand({ apiBase = "" }) {
       </div>
 
       <div style={{ ...S.card, marginTop: 14 }}>
+        <div style={S.kicker}>🤖 AI REWARD INSIGHT</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 10, marginTop: 10 }}>
+          {(d.insights || []).map((it, i) => {
+            const tc = it.tone === "good" ? "#10b981" : it.tone === "attention" ? "#f59e0b" : "#3b82f6";
+            return (
+              <div key={i} style={{ display: "flex", gap: 10, background: "#0a0e16", border: "1px solid #161b22", borderLeft: `3px solid ${tc}`, borderRadius: 8, padding: "10px 12px" }}>
+                <span style={{ fontSize: 19, flexShrink: 0 }}>{it.icon}</span>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#e6edf3" }}>{it.title}</div>
+                  <div style={{ fontSize: 11, color: "#9da7b3", marginTop: 2, lineHeight: 1.5 }}>{it.text}</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ ...S.card, marginTop: 14 }}>
         <div style={S.kicker}>⭐ TOP PERFORMER</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 10, marginTop: 10 }}>
           {d.top_performers.map((p, i) => (
