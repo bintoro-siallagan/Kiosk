@@ -45,10 +45,18 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
 
       <div style={S.kpiRow}>
         <Kpi label="Menunggu Diterima" v={String(s.pending)} c={s.pending > 0 ? "#f59e0b" : "#10b981"} />
-        <Kpi label="Sudah Diterima" v={String(s.received)} c="#10b981" />
+        <Kpi label="⚠ Outlet Lupa GR" v={String(s.overdue || 0)} c={s.overdue > 0 ? "#ef4444" : "#10b981"} sub="pending ≥ 3 hari" />
         <Kpi label="Ada Selisih" v={String(s.discrepancy)} c={s.discrepancy > 0 ? "#ef4444" : "#5b6470"} />
-        <Kpi label="Total Item Masuk" v={String(Math.round(s.items_received))} c="#22d3ee" />
+        <Kpi label="Sudah Diterima" v={String(s.received)} c="#10b981" />
       </div>
+      {s.overdue > 0 && (
+        <div style={{ ...S.card, marginTop: 10, borderColor: "#ef444455", background: "#1a0d0f" }}>
+          <div style={{ fontSize: 13, color: "#fca5a5" }}>
+            🚨 <b>{s.overdue} GR belum dikonfirmasi ≥ 3 hari</b> — outlet lupa konfirmasi terima.
+            Stok belum masuk sistem &amp; finance belum bisa tarik invoice. Cek juga 🔔 Notification Center.
+          </div>
+        </div>
+      )}
       {msg ? <div style={{ fontSize: 12, margin: "8px 2px", color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
 
       {/* Pending */}
@@ -59,10 +67,15 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
         ) : (
           <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
             {d.pending.map(gr => (
-              <div key={gr.id} style={{ background: "#0a0e16", border: "1px solid #161b22", borderLeft: "3px solid #f59e0b", borderRadius: 9, padding: "12px 14px" }}>
+              <div key={gr.id} style={{ background: "#0a0e16", border: "1px solid #161b22", borderLeft: `3px solid ${gr.overdue ? "#ef4444" : "#f59e0b"}`, borderRadius: 9, padding: "12px 14px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "#e6edf3" }}>{gr.gr_number} <span style={{ color: "#5b6470", fontWeight: 400, fontSize: 11 }}>· {gr.outlet}</span></div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#e6edf3" }}>
+                      {gr.gr_number} <span style={{ color: "#5b6470", fontWeight: 400, fontSize: 11 }}>· {gr.outlet}</span>
+                      {gr.overdue
+                        ? <span style={{ marginLeft: 8, fontSize: 9, fontWeight: 700, color: "#ef4444", background: "#ef444420", border: "1px solid #ef444455", borderRadius: 5, padding: "2px 7px", fontFamily: "'Space Mono',monospace" }}>⚠ LUPA {gr.days_pending} HARI</span>
+                        : gr.days_pending > 0 ? <span style={{ marginLeft: 8, fontSize: 9, color: "#f59e0b", fontFamily: "'Space Mono',monospace" }}>pending {gr.days_pending} hari</span> : null}
+                    </div>
                     <div style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{gr.gd_ref} · {gr.po_ref}</div>
                   </div>
                   <button onClick={() => confirm(gr)} disabled={busy === gr.id} style={S.btn}>
@@ -114,11 +127,12 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
   );
 }
 
-function Kpi({ label, v, c }) {
+function Kpi({ label, v, c, sub }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
       <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
+      <div style={{ fontSize: 10, color: "#5b6470" }}>{sub || " "}</div>
     </div>
   );
 }

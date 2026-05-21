@@ -51,10 +51,14 @@ function setupNotificationCenter(app, opts = {}) {
     for (const p of many(`SELECT payee, amount FROM payment_releases WHERE status = 'pending' AND due_date < ${N}`))
       n.push({ key: `pay-${p.payee}`, category: 'Finance', priority: 'high', icon: '💸',
         title: `Pembayaran telat — ${p.payee}`, detail: `Rp ${Math.round(p.amount).toLocaleString('id-ID')}`, source: 'Release Payment' });
-    // GR pending
-    const grPending = many(`SELECT gr_number FROM goods_received WHERE status = 'pending'`);
-    if (grPending.length) n.push({ key: 'gr-pending', category: 'Inventory', priority: 'medium', icon: '📥',
-      title: `${grPending.length} Good Received menunggu konfirmasi`, detail: 'Outlet perlu konfirmasi penerimaan', source: 'Good Received' });
+    // GR belum dikonfirmasi — outlet suka lupa konfirmasi GR
+    for (const gr of many(`SELECT gr_number, outlet, created_at FROM goods_received WHERE status = 'pending'`)) {
+      const days = Math.floor((N - gr.created_at) / DAY);
+      if (days >= 3) n.push({ key: `gr-${gr.gr_number}`, category: 'Inventory', priority: 'high', icon: '📥',
+        title: `Outlet lupa konfirmasi GR — ${gr.outlet}`, detail: `${gr.gr_number} · pending ${days} hari, stok belum masuk`, source: 'Good Received' });
+      else if (days >= 1) n.push({ key: `gr-${gr.gr_number}`, category: 'Inventory', priority: 'medium', icon: '📥',
+        title: `GR belum dikonfirmasi — ${gr.outlet}`, detail: `${gr.gr_number} · pending ${days} hari`, source: 'Good Received' });
+    }
     // Periode belum ditutup
     for (const pc of many(`SELECT period_name, closing_type FROM period_closings WHERE status = 'open'`))
       n.push({ key: `period-${pc.closing_type}-${pc.period_name}`, category: 'Finance', priority: 'low', icon: '🔒',

@@ -34,11 +34,11 @@ function setupGoodsReceived(app, opts = {}) {
     // [gr, gd, po, outlet, items[[sku,name,qtyOrder,qtyRecv,unit]], status, disc, by, recvDaysAgo, createdDaysAgo]
     const seed = [
       ['GR-2026-001', 'GD-2026-014', 'PO-2026-008', 'Paskal',
-        [['RM01', 'Yogurt Base Plain', 20, null, 'kg'], ['PK01', 'Cup 12oz', 500, null, 'pcs'], ['TP01', 'Granola', 5, null, 'kg']], 'pending', 0, null, null, 1],
+        [['RM01', 'Yogurt Base Plain', 20, null, 'kg'], ['PK01', 'Cup 12oz', 500, null, 'pcs'], ['TP01', 'Granola', 5, null, 'kg']], 'pending', 0, null, null, 5],
       ['GR-2026-002', 'GD-2026-015', 'PO-2026-009', 'Sudirman',
-        [['RM05', 'Buah Strawberry', 10, null, 'kg'], ['RM06', 'Buah Mango', 10, null, 'kg']], 'pending', 0, null, null, 0],
+        [['RM05', 'Buah Strawberry', 10, null, 'kg'], ['RM06', 'Buah Mango', 10, null, 'kg']], 'pending', 0, null, null, 4],
       ['GR-2026-003', 'GD-2026-016', 'PO-2026-010', 'BSD City',
-        [['PK02', 'Cup 16oz', 300, null, 'pcs'], ['PK03', 'Lid Dome', 300, null, 'pcs'], ['PK04', 'Sendok Froyo', 500, null, 'pcs']], 'pending', 0, null, null, 0],
+        [['PK02', 'Cup 16oz', 300, null, 'pcs'], ['PK03', 'Lid Dome', 300, null, 'pcs'], ['PK04', 'Sendok Froyo', 500, null, 'pcs']], 'pending', 0, null, null, 1],
       ['GR-2026-004', 'GD-2026-011', 'PO-2026-006', 'Paskal',
         [['RM02', 'Yogurt Base Charcoal', 15, 15, 'kg'], ['RM03', 'Susu Skim UHT', 20, 20, 'liter']], 'received', 0, 'Outlet Manager', N - 3 * 86400, 4],
       ['GR-2026-005', 'GD-2026-012', 'PO-2026-007', 'Kemang',
@@ -54,13 +54,21 @@ function setupGoodsReceived(app, opts = {}) {
   router.use(express.json());
 
   router.get('/', (req, res) => {
-    const rows = db.prepare(`SELECT * FROM goods_received ORDER BY created_at DESC`).all()
-      .map(r => ({ ...r, items: J(r.items), has_discrepancy: !!r.has_discrepancy }));
+    const N = nowSec();
+    const rows = db.prepare(`SELECT * FROM goods_received ORDER BY created_at DESC`).all().map(r => {
+      const daysPending = Math.floor((N - r.created_at) / 86400);
+      return {
+        ...r, items: J(r.items), has_discrepancy: !!r.has_discrepancy,
+        days_pending: r.status === 'pending' ? daysPending : 0,
+        overdue: r.status === 'pending' && daysPending >= 3,    // outlet lupa konfirmasi
+      };
+    });
+    const pending = rows.filter(r => r.status === 'pending');
     res.json({
-      pending: rows.filter(r => r.status === 'pending'),
-      received: rows.filter(r => r.status === 'received'),
+      pending, received: rows.filter(r => r.status === 'received'),
       summary: {
-        pending: rows.filter(r => r.status === 'pending').length,
+        pending: pending.length,
+        overdue: pending.filter(p => p.overdue).length,
         received: rows.filter(r => r.status === 'received').length,
         discrepancy: rows.filter(r => r.has_discrepancy).length,
         items_received: rows.filter(r => r.status === 'received')
