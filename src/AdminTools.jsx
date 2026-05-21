@@ -40,6 +40,7 @@ import AdminClvChurn from "./Admin/AdminClvChurn.jsx";
 import AdminGeoEngagement from "./Admin/AdminGeoEngagement.jsx";
 import AdminCampaign from "./Admin/AdminCampaign.jsx";
 import AdminRBAC from "./Admin/AdminRBAC.jsx";
+import AdminApproval from "./Admin/AdminApproval.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -143,6 +144,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "geo_engage", label: "🗺️ Geo & Journey", color: "#6366f1" },
     { id: "campaign", label: "📡 Campaign", color: "#fb7185" },
     { id: "rbac", label: "🔐 Roles & Akses", color: "#a855f7" },
+    { id: "approval", label: "⚖️ Approval", color: "#f59e0b" },
   ];
 
   return (
@@ -208,6 +210,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "geo_engage" && <AdminGeoEngagement apiBase={API} />}
         {tab === "campaign" && <AdminCampaign apiBase={API} />}
         {tab === "rbac" && <AdminRBAC apiBase={API} />}
+        {tab === "approval" && <AdminApproval apiBase={API} />}
       </div>
 
       {toast && <div style={S.toast}>{toast}</div>}
