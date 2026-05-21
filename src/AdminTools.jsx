@@ -76,6 +76,7 @@ import AdminSalesInvoice from "./Admin/AdminSalesInvoice.jsx";
 import AdminSelfAudit from "./Admin/AdminSelfAudit.jsx";
 import AdminConsolidation from "./Admin/AdminConsolidation.jsx";
 import AdminCoreTax from "./Admin/AdminCoreTax.jsx";
+import AdminMasterUnit from "./Admin/AdminMasterUnit.jsx";
 import AdminSalesStockSync from "./Admin/AdminSalesStockSync.jsx";
 import AdminSimplePurchase from "./Admin/AdminSimplePurchase.jsx";
 import AdminPettyCash from "./Admin/AdminPettyCash.jsx";
@@ -243,6 +244,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "role_dash", label: "📊 Role Dashboard", color: "#818cf8" },
     { id: "self_audit", label: "🔎 Self-Audit", color: "#16a34a" },
     { id: "item_master", label: "📦 Item Master", color: "#0891b2" },
+    { id: "master_unit", label: "📐 Master Unit", color: "#0e7490" },
     { id: "item_pricing", label: "💲 Item Pricing", color: "#22c55e" },
     { id: "item_config", label: "🔧 Item Config", color: "#0d9488" },
     { id: "item_rules", label: "🍽️ Item Rules", color: "#ea580c" },
@@ -254,7 +256,7 @@ export default function AdminTools({ onBack, initialTab }) {
   const GROUPS = [
     { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["staff", "outlet_master", "incidents", "asset_maintenance", "notif_center", "gudang", "waste", "config", "checklist", "cashier_kpi", "audit"] },
     { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "loyalty", "broadcast", "aggregator", "payment", "conv_fee", "quotation", "sales_order", "delivery_order", "sales_invoice", "sales_return", "b2b_customer"] },
-    { name: "Product", icon: "📦", module: "config", ids: ["item_master", "item_pricing", "item_config", "item_rules", "item_intel", "product_hub", "product_ver", "food_cost"] },
+    { name: "Product", icon: "📦", module: "config", ids: ["item_master", "master_unit", "item_pricing", "item_config", "item_rules", "item_intel", "product_hub", "product_ver", "food_cost"] },
     { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["price_list", "stock_list", "goods_delivery", "goods_received", "stock_opname", "stock_transfer", "batch_tracking", "production", "demand_forecast", "auto_reorder", "sales_stock_sync", "simple_purchase", "purchase_return", "internal_return", "petty_cash", "purchase_invoice", "procurement_plus"] },
     { name: "Finance", icon: "💰", module: "finance", ids: ["finance", "coa", "general_ledger", "journal", "settlement", "reconciliation", "release_payment", "period_closing", "fin_statements", "finance_center", "finance_alert", "ar", "budget", "budget_plan", "franchise", "consolidation", "core_tax"] },
     { name: "HRIS & Reward", icon: "👥", module: "hr", ids: ["hris", "shift_roster", "payroll", "reward", "reward_benefit", "motivation", "hr_command", "talenta"] },
@@ -413,6 +415,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "security" && <AdminSecurityCenter apiBase={API} />}
         {tab === "role_dash" && <AdminRoleDashboard apiBase={API} />}
         {tab === "item_master" && <AdminItemMaster apiBase={API} />}
+        {tab === "master_unit" && <AdminMasterUnit apiBase={API} />}
         {tab === "item_pricing" && <AdminItemPricing apiBase={API} />}
         {tab === "item_config" && <AdminItemConfig apiBase={API} />}
         {tab === "item_rules" && <AdminItemRules apiBase={API} />}

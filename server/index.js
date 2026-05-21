@@ -3669,6 +3669,7 @@ const { setupDeliveryOrder }    = require('./delivery-order-backend');
 const { setupSelfAudit }        = require('./self-audit-backend');
 const { setupConsolidation }    = require('./consolidation-backend');
 const { setupCoreTax }          = require('./core-tax-backend');
+const { setupMasterUnit }       = require('./master-unit-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3782,6 +3783,7 @@ const deliveryOrder = setupDeliveryOrder(app, { dbPath: DB_PATH });
 const selfAudit = setupSelfAudit(app, { dbPath: DB_PATH });
 const consolidation = setupConsolidation(app, { dbPath: DB_PATH });
 const coreTax = setupCoreTax(app, { dbPath: DB_PATH });
+const masterUnit = setupMasterUnit(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
