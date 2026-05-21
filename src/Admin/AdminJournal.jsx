@@ -4,29 +4,26 @@
 
 import { useState, useEffect, useCallback } from "react";
 import ReportActions from "./ReportActions.jsx";
+import PeriodPicker from "./PeriodPicker.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
-const PRESETS = [
-  { k: "today", label: "Hari Ini", days: 0 },
-  { k: "7d", label: "7 Hari", days: 7 },
-  { k: "30d", label: "30 Hari", days: 30 },
-];
 
 export default function AdminJournal({ apiBase = "" }) {
-  const [preset, setPreset] = useState("30d");
+  const [range, setRange] = useState(() => {
+    const t = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
+    return { from: t - 30 * 86400, to: Math.floor(Date.now() / 1000) };
+  });
   const [d, setD] = useState(null);
   const [err, setErr] = useState("");
 
   const load = useCallback(() => {
-    const now = Math.floor(Date.now() / 1000);
-    const p = PRESETS.find(x => x.k === preset) || PRESETS[0];
-    const startToday = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
-    const from = p.days === 0 ? startToday : startToday - p.days * 86400;
-    fetch(`${apiBase}/api/journal?from=${from}&to=${now}`)
+    if (!range) return;
+    setD(null); setErr("");
+    fetch(`${apiBase}/api/journal?from=${range.from}&to=${range.to}`)
       .then(r => r.json()).then(j => j && j.totals ? setD(j) : setErr("data tidak tersedia"))
       .catch(e => setErr(String(e)));
-  }, [apiBase, preset]);
-  useEffect(() => { setD(null); setErr(""); load(); }, [load]);
+  }, [apiBase, range]);
+  useEffect(() => { load(); }, [load]);
 
   if (err) return <div style={{ padding: 30, color: "#f87171" }}>Gagal memuat: {err}</div>;
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat jurnal…</div>;
@@ -39,11 +36,7 @@ export default function AdminJournal({ apiBase = "" }) {
         transaksi: penjualan (settlement POS + platform) &amp; beban. Tiap entri <b>balance</b> — total Debit = total Kredit.
       </div>
 
-      <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-        {PRESETS.map(p => (
-          <button key={p.k} onClick={() => setPreset(p.k)} style={preset === p.k ? S.pillOn : S.pill}>{p.label}</button>
-        ))}
-      </div>
+      <PeriodPicker onChange={setRange} defaultPreset="30d" />
 
       <ReportActions title="Jurnal Akuntansi" subtitle="Jurnal umum — entri double-entry"
         columns={["Ref", "Deskripsi", "Akun", "Debit", "Kredit"]}
