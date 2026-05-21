@@ -82,6 +82,14 @@ function setupNotificationCenter(app, opts = {}) {
           title: `${t.tax_type} belum disetor`, detail: `${t.label} · ${fmt(t.amount)} · ${days < 0 ? `TELAT ${-days} hari` : `${days} hari lagi`}`, source: 'Core Tax' });
       }
     }
+    // Izin & sertifikat — alert masa berlaku
+    for (const lc of many(`SELECT type, name, outlet, expiry_date FROM compliance_licenses WHERE is_active = 1`)) {
+      const days = Math.floor((lc.expiry_date - N) / DAY);
+      if (days < 0) n.push({ key: `lic-${lc.name}-${lc.outlet}`, category: 'Operasi', priority: 'high', icon: '📋',
+        title: `Izin kedaluwarsa — ${lc.type}`, detail: `${lc.name} · ${lc.outlet} · lewat ${-days} hari`, source: 'Compliance' });
+      else if (days <= 60) n.push({ key: `lic-${lc.name}-${lc.outlet}`, category: 'Operasi', priority: 'medium', icon: '📋',
+        title: `Izin segera habis — ${lc.type}`, detail: `${lc.name} · ${lc.outlet} · ${days} hari lagi`, source: 'Compliance' });
+    }
     return n;
   };
 

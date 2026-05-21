@@ -1,0 +1,121 @@
+// src/Admin/AdminSupplierMaster.jsx
+// Supplier/Vendor Master — registry vendor + scorecard.
+
+import { useState, useEffect, useCallback } from "react";
+
+const AC = "#8b5cf6";
+const GRADE_C = { A: "#10b981", B: "#3b82f6", C: "#f59e0b", D: "#ef4444" };
+
+export default function AdminSupplierMaster({ apiBase = "" }) {
+  const [d, setD] = useState(null);
+  const [msg, setMsg] = useState("");
+  const [form, setForm] = useState({ name: "", category: "Bahan Baku", contact: "", phone: "", payment_terms: "NET 30" });
+
+  const load = useCallback(() => {
+    fetch(`${apiBase}/api/supplier-master`).then(r => r.json()).then(setD).catch(() => {});
+  }, [apiBase]);
+  useEffect(() => { load(); }, [load]);
+
+  const add = () => {
+    if (!form.name.trim()) { setMsg("⚠ Nama vendor wajib"); return; }
+    fetch(`${apiBase}/api/supplier-master`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
+    }).then(r => r.json()).then(j => {
+      if (j.ok) { setMsg("✓ Vendor ditambah"); setForm({ ...form, name: "", contact: "", phone: "" }); load(); }
+      else setMsg(j.error || "gagal");
+    }).catch(e => setMsg(String(e)));
+  };
+  const toggle = (v) => {
+    fetch(`${apiBase}/api/supplier-master/${v.id}/toggle`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
+      .then(r => r.json()).then(j => { if (j.ok) load(); }).catch(() => {});
+  };
+
+  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Supplier Master…</div>;
+  const s = d.summary;
+
+  return (
+    <div>
+      <div style={S.intro}>
+        🏭 <b style={{ color: "#a78bfa" }}>SUPPLIER / VENDOR MASTER</b> — registry vendor terpusat +
+        scorecard: on-time delivery, kualitas &amp; harga → grade A/B/C/D.
+      </div>
+
+      <div style={S.kpiRow}>
+        <Kpi label="Total Vendor" v={String(s.total)} c={AC} />
+        <Kpi label="Aktif" v={String(s.active)} c="#10b981" />
+        <Kpi label="Avg Score" v={String(s.avg_score)} c={s.avg_score >= 85 ? "#10b981" : "#f59e0b"} />
+        <Kpi label="Grade A" v={String(s.grade_a)} c="#10b981" />
+      </div>
+
+      <div style={{ ...S.card, marginTop: 14 }}>
+        <div style={S.kicker}>➕ TAMBAH VENDOR</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1.1fr 1.1fr 1fr 0.9fr auto", gap: 8, marginTop: 10 }}>
+          <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Nama vendor" style={S.input} />
+          <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} style={S.input}>
+            {d.categories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
+          <input value={form.contact} onChange={e => setForm({ ...form, contact: e.target.value })} placeholder="Kontak" style={S.input} />
+          <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} placeholder="Telepon" style={S.input} />
+          <input value={form.payment_terms} onChange={e => setForm({ ...form, payment_terms: e.target.value })} placeholder="Termin" style={S.input} />
+          <button onClick={add} style={S.btn}>+ Vendor</button>
+        </div>
+        {msg ? <div style={{ fontSize: 12, marginTop: 8, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
+      </div>
+
+      <div style={{ ...S.card, marginTop: 14 }}>
+        <div style={S.kicker}>🏭 DAFTAR VENDOR + SCORECARD — {d.suppliers.length}</div>
+        <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
+          <thead>
+            <tr style={{ color: "#5b6470", fontSize: 10, textAlign: "left" }}>
+              {["VENDOR", "KATEGORI", "TERMIN", "ON-TIME", "KUALITAS", "HARGA", "SCORE", "STATUS"].map(h => <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {d.suppliers.map(v => (
+              <tr key={v.id} style={{ borderTop: "1px solid #161b22", fontSize: 12, opacity: v.is_active ? 1 : 0.45 }}>
+                <td style={{ ...S.td }}>
+                  <div style={{ color: "#e6edf3", fontWeight: 600 }}>{v.name}</div>
+                  <div style={{ fontSize: 10, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{v.code} · {v.contact}</div>
+                </td>
+                <td style={{ ...S.td, color: "#9da7b3" }}>{v.category}</td>
+                <td style={{ ...S.td, ...S.mono, color: "#5b6470" }}>{v.payment_terms}</td>
+                <td style={{ ...S.td, ...S.mono, color: "#9da7b3" }}>{v.on_time_pct}%</td>
+                <td style={{ ...S.td, ...S.mono, color: "#9da7b3" }}>{v.quality_score}</td>
+                <td style={{ ...S.td, ...S.mono, color: "#9da7b3" }}>{v.price_score}</td>
+                <td style={S.td}>
+                  <span style={{ fontSize: 12, fontWeight: 800, fontFamily: "'Space Mono',monospace", color: GRADE_C[v.grade] }}>{v.total_score} </span>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: "#fff", background: GRADE_C[v.grade], borderRadius: 4, padding: "1px 6px" }}>{v.grade}</span>
+                </td>
+                <td style={S.td}>
+                  <button onClick={() => toggle(v)} style={{ fontSize: 9, fontWeight: 700, color: v.is_active ? "#10b981" : "#5b6470", background: (v.is_active ? "#10b981" : "#5b6470") + "1f", border: `1px solid ${(v.is_active ? "#10b981" : "#5b6470")}55`, borderRadius: 5, padding: "3px 8px", fontFamily: "'Space Mono',monospace", cursor: "pointer" }}>
+                    {v.is_active ? "● AKTIF" : "○ OFF"}
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function Kpi({ label, v, c }) {
+  return (
+    <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+    </div>
+  );
+}
+
+const S = {
+  intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
+  card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
+  td: { padding: "7px 8px" },
+  mono: { fontFamily: "'Space Mono',monospace" },
+  input: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 9px", color: "#e6edf3", fontSize: 12, fontFamily: "inherit", outline: "none", boxSizing: "border-box" },
+  btn: { background: "#8b5cf6", color: "#fff", border: "none", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
+};

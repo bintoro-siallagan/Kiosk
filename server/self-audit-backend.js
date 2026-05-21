@@ -84,6 +84,8 @@ function setupSelfAudit(app, opts = {}) {
           return C('Aset rusak / telat service', c === 0 ? 'ok' : 'warning', c === 0 ? 'Semua aset terawat' : `${c} aset perlu perhatian`); })(),
         (() => { const c = cnt(`SELECT COUNT(*) c FROM period_closings WHERE status='open'`);
           return C('Periode belum ditutup', 'ok', `${c} periode masih terbuka`); })(),
+        (() => { const c = cnt(`SELECT COUNT(*) c FROM compliance_licenses WHERE is_active=1 AND expiry_date<${now}`);
+          return C('Izin & sertifikat kedaluwarsa', c === 0 ? 'ok' : 'critical', c === 0 ? 'Semua izin masih berlaku' : `${c} izin kedaluwarsa — risiko hukum`); })(),
       ],
     });
 

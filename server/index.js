@@ -3672,6 +3672,10 @@ const { setupCoreTax }          = require('./core-tax-backend');
 const { setupMasterUnit }       = require('./master-unit-backend');
 const { setupMasterCategory }   = require('./master-category-backend');
 const { setupFoodCostCalc }     = require('./food-cost-calc-backend');
+const { setupCashFlow }         = require('./cash-flow-backend');
+const { setupSupplierMaster }   = require('./supplier-master-backend');
+const { setupApAging }          = require('./ap-aging-backend');
+const { setupCompliance }       = require('./compliance-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3788,6 +3792,10 @@ const coreTax = setupCoreTax(app, { dbPath: DB_PATH });
 const masterUnit = setupMasterUnit(app, { dbPath: DB_PATH });
 const masterCategory = setupMasterCategory(app, { dbPath: DB_PATH });
 const foodCostCalc = setupFoodCostCalc(app, { dbPath: DB_PATH });
+const cashFlow = setupCashFlow(app, { dbPath: DB_PATH });
+const supplierMaster = setupSupplierMaster(app, { dbPath: DB_PATH });
+const apAging = setupApAging(app, { dbPath: DB_PATH });
+const compliance = setupCompliance(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
