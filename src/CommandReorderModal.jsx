@@ -130,16 +130,16 @@ function Stat({ label, value, col }) {
 
 const S = {
   root: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.82)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000, fontFamily: "var(--s),system-ui,sans-serif", padding: 20 },
-  box: { background: "#0e0e13", border: "1px solid #1c1c25", borderRadius: 16, padding: "22px 24px", width: "min(420px,96vw)" },
+  box: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 16, padding: "22px 24px", width: "min(420px,96vw)" },
   kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#f59e0b", fontFamily: MONO },
-  statRow: { display: "flex", gap: 8, marginTop: 14, background: "#08080b", border: "1px solid #1c1c25", borderRadius: 10, padding: "10px 6px" },
+  statRow: { display: "flex", gap: 8, marginTop: 14, background: "#080a0f", border: "1px solid #21262d", borderRadius: 10, padding: "10px 6px" },
   warn: { marginTop: 12, background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.4)", borderRadius: 8, padding: "8px 11px", fontSize: 12, color: "#fcd34d", lineHeight: 1.45 },
   lbl: { display: "block", fontSize: 10, color: "#888", fontFamily: MONO, letterSpacing: 1, marginTop: 14 },
-  qbtn: { width: 38, height: 38, background: "#15151e", border: "1px solid #2a2a35", color: "#e4e4e7", fontSize: 18, fontWeight: 700, borderRadius: 8, cursor: "pointer", flexShrink: 0 },
-  qinput: { flex: 1, background: "#08080b", border: "1px solid #2a2a35", borderRadius: 8, padding: "9px 12px", color: "#fff", fontSize: 16, fontWeight: 700, fontFamily: MONO, textAlign: "center", outline: "none", minWidth: 0 },
+  qbtn: { width: 38, height: 38, background: "#161b22", border: "1px solid #2d333b", color: "#e4e4e7", fontSize: 18, fontWeight: 700, borderRadius: 8, cursor: "pointer", flexShrink: 0 },
+  qinput: { flex: 1, background: "#080a0f", border: "1px solid #2d333b", borderRadius: 8, padding: "9px 12px", color: "#fff", fontSize: 16, fontWeight: 700, fontFamily: MONO, textAlign: "center", outline: "none", minWidth: 0 },
   suggBtn: { background: "#22d3ee1f", border: "1px solid #22d3ee55", color: "#22d3ee", fontSize: 11, fontWeight: 700, padding: "9px 10px", borderRadius: 8, cursor: "pointer", fontFamily: MONO, flexShrink: 0 },
   priceSrc: { marginTop: 12, fontSize: 11, color: "#9ca3af", lineHeight: 1.5 },
-  estRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, padding: "10px 12px", background: "#08080b", border: "1px solid #1c1c25", borderRadius: 10 },
+  estRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, padding: "10px 12px", background: "#080a0f", border: "1px solid #21262d", borderRadius: 10 },
   cta: { width: "100%", marginTop: 14, padding: "13px", background: "#f59e0b", color: "#1a1006", border: "none", borderRadius: 10, fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" },
   cancel: { width: "100%", marginTop: 8, padding: "9px", background: "transparent", color: "#777", border: "none", fontSize: 12, cursor: "pointer", fontFamily: "inherit" },
 };

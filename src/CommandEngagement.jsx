@@ -42,7 +42,7 @@ export default function CommandEngagement() {
               {c.label}
               {c.self_service && <span style={{ fontSize: 9, color: "#10b981", marginLeft: 6, fontFamily: MONO }}>SELF</span>}
             </span>
-            <div style={{ flex: 1, height: 10, background: "#15151e", borderRadius: 5, overflow: "hidden" }}>
+            <div style={{ flex: 1, height: 10, background: "#161b22", borderRadius: 5, overflow: "hidden" }}>
               <div style={{ height: "100%", width: Math.round(c.orders / maxOrders * 100) + "%", background: c.self_service ? "#10b981" : "#3b82f6" }} />
             </div>
             <span style={{ width: 56, textAlign: "right", fontFamily: MONO, fontSize: 13, fontWeight: 700, color: "#fff", flexShrink: 0 }}>{c.orders}</span>
@@ -75,7 +75,7 @@ export default function CommandEngagement() {
 
 function Row({ k, v }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #15151e", fontSize: 13 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #161b22", fontSize: 13 }}>
       <span style={{ color: "#888" }}>{k}</span>
       <b style={{ color: "#e4e4e7", fontFamily: MONO }}>{v}</b>
     </div>
@@ -95,9 +95,9 @@ function Kpi({ label, value, accent, sub }) {
 const S = {
   wrap: { display: "flex", flexDirection: "column", gap: 14 },
   msg: { padding: 40, textAlign: "center", color: "#666", fontSize: 14 },
-  card: { background: "#0e0e13", border: "1px solid #1c1c25", borderRadius: 14, padding: 18 },
+  card: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 14, padding: 18 },
   kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#888", fontFamily: MONO, marginBottom: 12 },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
-  kpi: { background: "#0e0e13", border: "1px solid #1c1c25", borderRadius: 12, padding: "12px 14px" },
-  chRow: { display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: "1px solid #15151e" },
+  kpi: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 12, padding: "12px 14px" },
+  chRow: { display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: "1px solid #161b22" },
 };

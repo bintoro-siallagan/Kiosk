@@ -41,7 +41,7 @@ export default function CommandAnalytics() {
         <div style={S.kicker}>🤖 AI INSIGHT — POLA &amp; REKOMENDASI OTOMATIS</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 10 }}>
           {d.insights.map((it, i) => (
-            <div key={i} style={{ display: "flex", gap: 10, background: "#08080b", border: "1px solid #1c1c25", borderLeft: `3px solid ${TONE[it.tone] || "#22d3ee"}`, borderRadius: 8, padding: "10px 12px" }}>
+            <div key={i} style={{ display: "flex", gap: 10, background: "#080a0f", border: "1px solid #21262d", borderLeft: `3px solid ${TONE[it.tone] || "#22d3ee"}`, borderRadius: 8, padding: "10px 12px" }}>
               <span style={{ fontSize: 20, flexShrink: 0 }}>{it.icon}</span>
               <div>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#e4e4e7" }}>{it.title}</div>
@@ -72,7 +72,7 @@ export default function CommandAnalytics() {
           {d.dow.map(x => (
             <div key={x.dow} style={S.barRow}>
               <span style={{ width: 56, fontSize: 12, color: "#aaa", flexShrink: 0 }}>{x.label}</span>
-              <div style={{ flex: 1, height: 14, background: "#15151e", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ flex: 1, height: 14, background: "#161b22", borderRadius: 4, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: Math.round(x.avg_revenue / maxDow * 100) + "%", background: "#34d399" }} />
               </div>
               <span style={{ width: 56, textAlign: "right", fontSize: 11, fontFamily: MONO, color: "#ddd", flexShrink: 0 }}>{fmtK(x.avg_revenue)}</span>
@@ -109,9 +109,9 @@ function Kpi({ label, value, accent, sub }) {
 const S = {
   wrap: { display: "flex", flexDirection: "column", gap: 14 },
   msg: { padding: 40, textAlign: "center", color: "#666", fontSize: 14 },
-  card: { background: "#0e0e13", border: "1px solid #1c1c25", borderRadius: 14, padding: 18 },
+  card: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 14, padding: 18 },
   kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#888", fontFamily: MONO, marginBottom: 14 },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
-  kpi: { background: "#0e0e13", border: "1px solid #1c1c25", borderRadius: 12, padding: "12px 14px" },
+  kpi: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 12, padding: "12px 14px" },
   barRow: { display: "flex", alignItems: "center", gap: 10, padding: "6px 0" },
 };

@@ -60,7 +60,7 @@ export default function CommandExecutive() {
         <div style={S.healthRow}>
           <div style={{ position: "relative", width: 150, height: 150, flexShrink: 0 }}>
             <svg width="150" height="150">
-              <circle cx="75" cy="75" r={R} stroke="#15151e" strokeWidth="13" fill="none" />
+              <circle cx="75" cy="75" r={R} stroke="#161b22" strokeWidth="13" fill="none" />
               <circle cx="75" cy="75" r={R} stroke={h.col} strokeWidth="13" fill="none"
                 strokeDasharray={C} strokeDashoffset={C * (1 - health.score / 100)}
                 strokeLinecap="round" transform="rotate(-90 75 75)"
@@ -151,13 +151,13 @@ function Kpi({ label, value, accent, sub }) {
 const S = {
   wrap: { display: "flex", flexDirection: "column", gap: 14 },
   msg: { padding: 40, textAlign: "center", color: "#666", fontSize: 14 },
-  card: { background: "#0e0e13", border: "1px solid #1c1c25", borderRadius: 14, padding: 18 },
+  card: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 14, padding: 18 },
   kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#888", fontFamily: MONO, marginBottom: 12 },
   healthRow: { display: "flex", gap: 22, alignItems: "center", flexWrap: "wrap" },
   gaugeCtr: { position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" },
   compGrid: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8 },
-  comp: { display: "flex", alignItems: "center", gap: 7, background: "#08080b", border: "1px solid #1c1c25", borderRadius: 8, padding: "7px 10px" },
+  comp: { display: "flex", alignItems: "center", gap: 7, background: "#080a0f", border: "1px solid #21262d", borderRadius: 8, padding: "7px 10px" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(5,minmax(0,1fr))", gap: 12 },
-  kpi: { background: "#0e0e13", border: "1px solid #1c1c25", borderRadius: 12, padding: "12px 14px" },
-  tlRow: { display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: "1px solid #15151e" },
+  kpi: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 12, padding: "12px 14px" },
+  tlRow: { display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: "1px solid #161b22" },
 };

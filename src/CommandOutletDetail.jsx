@@ -92,7 +92,7 @@ export default function CommandOutletDetail({ outletId, onBack }) {
         {d.health_components.map(c => (
           <div key={c.key} style={S.barRow}>
             <span style={{ width: 160, fontSize: 12, color: "#ccc", flexShrink: 0 }}>{c.key}</span>
-            <div style={{ flex: 1, height: 14, background: "#15151e", borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ flex: 1, height: 14, background: "#161b22", borderRadius: 4, overflow: "hidden" }}>
               <div style={{ height: "100%", width: c.score + "%", background: scoreCol(c.score) }} />
             </div>
             <span style={{ width: 38, textAlign: "right", fontFamily: MONO, fontSize: 13, fontWeight: 700, color: scoreCol(c.score), flexShrink: 0 }}>{c.score}</span>
@@ -130,7 +130,7 @@ export default function CommandOutletDetail({ outletId, onBack }) {
         {d.issues.list.length === 0 ? (
           <div style={{ color: "#10b981", fontSize: 13 }}>✓ Semua issue beres — outlet bersih! 🎉</div>
         ) : d.issues.list.map(it => (
-          <div key={it.id} style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 0", borderBottom: "1px solid #15151e" }}>
+          <div key={it.id} style={{ display: "flex", alignItems: "center", gap: 9, padding: "9px 0", borderBottom: "1px solid #161b22" }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: SEV[it.severity], flexShrink: 0 }} />
             <span style={{ fontSize: 13, color: "#ddd", flex: 1 }}>{it.text}</span>
             <span style={{ fontSize: 10, color: SEV[it.severity], fontFamily: MONO, textTransform: "uppercase" }}>{it.severity}</span>
@@ -148,14 +148,14 @@ export default function CommandOutletDetail({ outletId, onBack }) {
           <input value={noteText} onChange={e => setNoteText(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") addNote(); }}
             placeholder="Tulis catatan buat cabang ini…"
-            style={{ flex: 1, background: "#08080b", border: "1px solid #1c1c25", borderRadius: 8, padding: "9px 12px", color: "#e4e4e7", fontSize: 13, fontFamily: "inherit", outline: "none" }} />
+            style={{ flex: 1, background: "#080a0f", border: "1px solid #21262d", borderRadius: 8, padding: "9px 12px", color: "#e4e4e7", fontSize: 13, fontFamily: "inherit", outline: "none" }} />
           <button onClick={addNote} disabled={savingNote || !noteText.trim()}
             style={{ background: "#22d3ee1f", border: "1px solid #22d3ee55", color: "#22d3ee", fontSize: 12, fontWeight: 700, padding: "9px 16px", borderRadius: 8, cursor: savingNote ? "wait" : "pointer", fontFamily: MONO, flexShrink: 0 }}>
             {savingNote ? "…" : "+ Tambah"}
           </button>
         </div>
         {d.notes.map(n => (
-          <div key={n.id} style={{ display: "flex", gap: 9, padding: "9px 0", borderBottom: "1px solid #15151e" }}>
+          <div key={n.id} style={{ display: "flex", gap: 9, padding: "9px 0", borderBottom: "1px solid #161b22" }}>
             <span style={{ fontSize: 14, flexShrink: 0 }}>🗒️</span>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, color: "#ddd" }}>{n.text}</div>
@@ -175,7 +175,7 @@ function Big({ v, c }) {
 }
 function Row({ k, v, c }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid #15151e", fontSize: 12 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderBottom: "1px solid #161b22", fontSize: 12 }}>
       <span style={{ color: "#888" }}>{k}</span>
       <b style={{ color: c || "#e4e4e7", fontFamily: MONO }}>{v}</b>
     </div>
@@ -185,8 +185,8 @@ function Row({ k, v, c }) {
 const S = {
   wrap: { display: "flex", flexDirection: "column", gap: 14 },
   msg: { padding: 40, textAlign: "center", color: "#666", fontSize: 14 },
-  card: { background: "#0e0e13", border: "1px solid #1c1c25", borderRadius: 14, padding: 18 },
+  card: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 14, padding: 18 },
   kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#888", fontFamily: MONO, marginBottom: 12 },
   barRow: { display: "flex", alignItems: "center", gap: 10, padding: "6px 0" },
-  back: { background: "#15151e", border: "1px solid #2a2a35", color: "#cbd5e1", fontSize: 12, fontWeight: 700, padding: "8px 14px", borderRadius: 8, cursor: "pointer", alignSelf: "flex-start", fontFamily: MONO },
+  back: { background: "#161b22", border: "1px solid #2d333b", color: "#cbd5e1", fontSize: 12, fontWeight: 700, padding: "8px 14px", borderRadius: 8, cursor: "pointer", alignSelf: "flex-start", fontFamily: MONO },
 };

@@ -61,22 +61,22 @@ async function fetchApi(path){
 // ── UI ATOMS ────────────────────────────────────────────────
 const SevBadge=({s})=>{const v=SV[s];return v?<span style={{background:v.bg,border:`1px solid ${v.bd}`,color:v.tx,padding:"2px 8px",borderRadius:4,fontSize:11,fontWeight:700,letterSpacing:1,fontFamily:"var(--m)"}}>{v.l}</span>:null;};
 
-const Card=({children,style:sx,...p})=><div style={{background:"#0e0e13",border:"1px solid #1c1c25",borderRadius:14,padding:16,...sx}} {...p}>{children}</div>;
+const Card=({children,style:sx,...p})=><div style={{background:"#0d1117",border:"1px solid #21262d",borderRadius:14,padding:16,...sx}} {...p}>{children}</div>;
 
-const Label=({children})=><div style={{fontSize:11,color:"#4a4a58",fontFamily:"var(--m)",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8,fontWeight:600}}>{children}</div>;
+const Label=({children})=><div style={{fontSize:11,color:"#636e7b",fontFamily:"var(--m)",textTransform:"uppercase",letterSpacing:1.5,marginBottom:8,fontWeight:600}}>{children}</div>;
 
-const Bar=({pct,color,h=6})=><div style={{height:h,background:"#1c1c25",borderRadius:h,overflow:"hidden",flex:1}}><div style={{width:`${Math.min(Math.max(pct,1),100)}%`,height:"100%",background:color,borderRadius:h,transition:"width .5s ease-out"}}/></div>;
+const Bar=({pct,color,h=6})=><div style={{height:h,background:"#21262d",borderRadius:h,overflow:"hidden",flex:1}}><div style={{width:`${Math.min(Math.max(pct,1),100)}%`,height:"100%",background:color,borderRadius:h,transition:"width .5s ease-out"}}/></div>;
 
 const KPI=({label,value,sub,accent,icon})=>(
   <Card style={{borderLeft:`4px solid ${accent}`,flex:1}}>
-    <div style={{fontSize:11,color:"#4a4a58",fontFamily:"var(--m)",letterSpacing:1,marginBottom:4}}>{icon} {label}</div>
+    <div style={{fontSize:11,color:"#636e7b",fontFamily:"var(--m)",letterSpacing:1,marginBottom:4}}>{icon} {label}</div>
     <div style={{fontSize:28,fontWeight:700,color:accent,fontFamily:"var(--m)",lineHeight:1}}>{value}</div>
     {sub&&<div style={{fontSize:12,color:"#333",fontFamily:"var(--m)",marginTop:4}}>{sub}</div>}
   </Card>
 );
 
 const Row=({l,r,rc="#888"})=>(
-  <div style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #15151e"}}>
+  <div style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #161b22"}}>
     <span style={{fontSize:14,color:"#aaa"}}>{l}</span>
     <span style={{fontSize:14,fontWeight:600,fontFamily:"var(--m)",color:rc}}>{r}</span>
   </div>
@@ -191,21 +191,21 @@ export default function CommandCenter(){
   ];
 
   if(loading)return(
-    <div style={{minHeight:"100vh",background:"#08080b",display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <div style={{color:"#4a4a58",fontSize:16,fontFamily:"monospace"}}>Connecting to Bites-Kiosk...</div>
+    <div style={{minHeight:"100vh",background:"#080a0f",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{color:"#636e7b",fontSize:16,fontFamily:"monospace"}}>Connecting to Bites-Kiosk...</div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 
   return(
-  <div style={{minHeight:"100vh",background:"#08080b",color:"#d4d4d8",position:"fixed",top:0,left:0,right:0,bottom:0,overflowY:"auto",zIndex:9999,"--m":"'Geist Mono',ui-monospace,monospace","--s":"'Geist','Segoe UI',system-ui,sans-serif",fontFamily:"var(--s)",padding:"20px 28px"}}>
+  <div style={{minHeight:"100vh",background:"#080a0f",color:"#d4d4d8",position:"fixed",top:0,left:0,right:0,bottom:0,overflowY:"auto",zIndex:9999,"--m":"'Geist Mono',ui-monospace,monospace","--s":"'Geist','Segoe UI',system-ui,sans-serif",fontFamily:"var(--s)",padding:"20px 28px"}}>
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap');
       @font-face{font-family:'Geist';src:url('https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/Geist-Regular.woff2') format('woff2');font-weight:400}
       @font-face{font-family:'Geist';src:url('https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/Geist-Medium.woff2') format('woff2');font-weight:500}
       @font-face{font-family:'Geist';src:url('https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/Geist-Bold.woff2') format('woff2');font-weight:700}
       *{box-sizing:border-box;margin:0;padding:0}
-      ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#2a2a35;border-radius:2px}
+      ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#2d333b;border-radius:2px}
       @keyframes pp{0%,100%{opacity:1}50%{opacity:.25}}
       @keyframes si{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
     `}</style>
@@ -216,7 +216,7 @@ export default function CommandCenter(){
         <div style={{width:10,height:10,borderRadius:"50%",background:"#10b981",boxShadow:"0 0 10px #10b981",animation:"pp 2s infinite"}}/>
         <div>
           <h1 style={{fontSize:22,fontWeight:700,letterSpacing:-1,color:"#fafafa"}}>Bites & Co. Command Center</h1>
-          <p style={{fontSize:12,color:"#3a3a44",fontFamily:"var(--m)",letterSpacing:1}}>REALTIME MONITORING DASHBOARD</p>
+          <p style={{fontSize:12,color:"#4a5568",fontFamily:"var(--m)",letterSpacing:1}}>REALTIME MONITORING DASHBOARD</p>
         </div>
       </div>
       <div style={{display:"flex",alignItems:"center",gap:16}}>
@@ -226,11 +226,11 @@ export default function CommandCenter(){
     </div>
 
     {/* ═══ TABS ═══ */}
-    <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:20,borderBottom:"1px solid #15151e",paddingBottom:0}}>
+    <div style={{display:"flex",flexWrap:"wrap",gap:4,marginBottom:20,borderBottom:"1px solid #161b22",paddingBottom:0}}>
       {TABS.map(t=>(
         <button key={t.id} onClick={()=>setTab(t.id)} style={{
           padding:"10px 20px",fontSize:14,fontWeight:tab===t.id?700:400,
-          color:tab===t.id?t.ac:"#4a4a58",background:"transparent",border:"none",
+          color:tab===t.id?t.ac:"#636e7b",background:"transparent",border:"none",
           borderBottom:tab===t.id?`3px solid ${t.ac}`:"3px solid transparent",
           cursor:"pointer",fontFamily:"var(--s)",position:"relative",
         }}>
@@ -287,8 +287,8 @@ export default function CommandCenter(){
         <Card style={{maxHeight:300,overflowY:"auto"}}>
           <Label>WebSocket Live Feed</Label>
           {feed.slice(0,15).map((e,i)=>(
-            <div key={i} style={{fontSize:13,fontFamily:"var(--m)",color:e.k==="err"?"#f87171":e.k==="ok"?"#34d399":e.k==="sys"?"#60a5fa":"#3a3a44",padding:"3px 0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
-              <span style={{color:"#2a2a35",marginRight:8}}>{e.t}</span>{e.x}
+            <div key={i} style={{fontSize:13,fontFamily:"var(--m)",color:e.k==="err"?"#f87171":e.k==="ok"?"#34d399":e.k==="sys"?"#60a5fa":"#4a5568",padding:"3px 0",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>
+              <span style={{color:"#2d333b",marginRight:8}}>{e.t}</span>{e.x}
             </div>
           ))}
         </Card>
@@ -310,7 +310,7 @@ export default function CommandCenter(){
           const col=c.kpi_score==null?"#6b7280":c.kpi_score>=80?"#10b981":c.kpi_score>=60?"#f59e0b":"#ef4444";
           const issue=c.bad_count>0||(c.kpi_score!=null&&c.kpi_score<60);
           return(
-            <div key={c.cashier} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:"1px solid #15151e"}}>
+            <div key={c.cashier} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:"1px solid #161b22"}}>
               <div style={{width:44,height:44,borderRadius:"50%",border:`2px solid ${col}`,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontFamily:"var(--m)",color:col,fontSize:15,flexShrink:0}}>
                 {c.kpi_score!=null?c.kpi_score:"—"}
               </div>
@@ -343,7 +343,7 @@ export default function CommandCenter(){
         {!(posBeh?.cashiers?.length)?(
           <div style={{color:"#333",fontSize:14}}>Belum ada aktivitas hapus item hari ini</div>
         ):posBeh.cashiers.map(c=>(
-          <div key={c.cashier} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:"1px solid #15151e"}}>
+          <div key={c.cashier} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:"1px solid #161b22"}}>
             <div style={{flex:1,fontSize:15,fontWeight:600,color:c.flagged?"#f87171":"#e4e4e7"}}>{c.cashier}</div>
             <div style={{fontSize:12,color:"#666",fontFamily:"var(--m)"}}>
               🗑 {c.remove_item} item{c.remove_topping>0?` · ${c.remove_topping} topping`:""}
@@ -352,7 +352,7 @@ export default function CommandCenter(){
             {c.flagged&&<span style={{fontSize:11,color:"#f87171",fontFamily:"var(--m)",fontWeight:600}}>⚠️ gak fokus</span>}
           </div>
         ))}
-        <div style={{fontSize:11,color:"#3a3a44",marginTop:8,fontFamily:"var(--m)"}}>
+        <div style={{fontSize:11,color:"#4a5568",marginTop:8,fontFamily:"var(--m)"}}>
           Flag otomatis kalau lewat {posBeh?.threshold||15}× hapus/hari — indikator kasir main-main tombol.
         </div>
       </Card>
@@ -365,7 +365,7 @@ export default function CommandCenter(){
         <Card>
           <Label>Top Menu — Qty Sold</Label>
           {topItems.length>0?topItems.map((it,i)=>(
-            <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<topItems.length-1?"1px solid #15151e":"none",animation:`si .2s ease-out ${i*.03}s both`}}>
+            <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<topItems.length-1?"1px solid #161b22":"none",animation:`si .2s ease-out ${i*.03}s both`}}>
               <span style={{width:28,fontSize:16,fontWeight:700,textAlign:"center",fontFamily:"var(--m)",color:i<3?["#fbbf24","#94a3b8","#d97706"][i]:"#555"}}>{i+1}</span>
               <div style={{flex:1}}>
                 <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
@@ -469,7 +469,7 @@ export default function CommandCenter(){
               const low=w.stock<=w.minStock;
               const dl=w.dailyUse>0?Math.floor(w.stock/w.dailyUse):999;
               return(
-                <div key={w.id||i} onClick={()=>setReorderItem(w)} title="Klik buat reorder" style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",background:low?"#1a0a0a":"#0a0a0f",borderRadius:8,border:`1px solid ${reorderedSet.has(w.id)?"#10b98155":low?"#dc262622":"#15151e"}`,cursor:"pointer"}}>
+                <div key={w.id||i} onClick={()=>setReorderItem(w)} title="Klik buat reorder" style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",background:low?"#1a0a0a":"#0a0a0f",borderRadius:8,border:`1px solid ${reorderedSet.has(w.id)?"#10b98155":low?"#dc262622":"#161b22"}`,cursor:"pointer"}}>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:500,color:low?"#fca5a5":"#ccc",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{w.name}</div>
                     <Bar pct={pct} color={low?"#ef4444":pct>60?"#10b981":"#eab308"} h={4}/>
@@ -498,9 +498,9 @@ export default function CommandCenter(){
 
       {/* Filters */}
       <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:12}}>
-        <button onClick={()=>setAF(null)} style={{padding:"5px 12px",borderRadius:6,fontSize:13,fontWeight:!aF?700:400,background:!aF?"#1c1c25":"#0e0e13",border:`1px solid ${!aF?"#555":"#1c1c25"}`,color:!aF?"#eee":"#555",cursor:"pointer",fontFamily:"var(--m)"}}>ALL</button>
+        <button onClick={()=>setAF(null)} style={{padding:"5px 12px",borderRadius:6,fontSize:13,fontWeight:!aF?700:400,background:!aF?"#21262d":"#0d1117",border:`1px solid ${!aF?"#555":"#21262d"}`,color:!aF?"#eee":"#555",cursor:"pointer",fontFamily:"var(--m)"}}>ALL</button>
         {Object.entries(RULES).map(([k,r])=>(
-          <button key={k} onClick={()=>setAF(aF===k?null:k)} style={{padding:"5px 10px",borderRadius:6,fontSize:13,fontWeight:aF===k?700:400,background:aF===k?r.cl+"18":"#0e0e13",border:`1px solid ${aF===k?r.cl+"55":"#1c1c25"}`,color:aF===k?r.cl:"#555",cursor:"pointer",fontFamily:"var(--m)"}}>
+          <button key={k} onClick={()=>setAF(aF===k?null:k)} style={{padding:"5px 10px",borderRadius:6,fontSize:13,fontWeight:aF===k?700:400,background:aF===k?r.cl+"18":"#0d1117",border:`1px solid ${aF===k?r.cl+"55":"#21262d"}`,color:aF===k?r.cl:"#555",cursor:"pointer",fontFamily:"var(--m)"}}>
             {r.i} {aByT[k]||0}
           </button>
         ))}
@@ -508,7 +508,7 @@ export default function CommandCenter(){
 
       {/* Anomaly Grid */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-        {fltA.length===0&&<div style={{gridColumn:"1/3",textAlign:"center",padding:30,color:"#2a2a35",fontFamily:"var(--m)",fontSize:14}}>Tidak ada anomali</div>}
+        {fltA.length===0&&<div style={{gridColumn:"1/3",textAlign:"center",padding:30,color:"#2d333b",fontFamily:"var(--m)",fontSize:14}}>Tidak ada anomali</div>}
         {fltA.slice(0,20).map((a,idx)=>{
           const r=RULES[a.type];if(!r)return null;
           const isO=exp===a.id;const sev=a.severity||a.sev;
@@ -517,7 +517,7 @@ export default function CommandCenter(){
           const olName=a.outlet_id||a.ol||"?";
           const amt=a.amount||a.amt||0;
           return(
-            <Card key={a.id} onClick={()=>setExp(isO?null:a.id)} style={{cursor:"pointer",borderLeft:`4px solid ${r.cl}`,background:a.nw?"#ef444406":"#0e0e13",border:`1px solid ${isO?r.cl+"44":"#1c1c25"}`,transition:"all .15s"}}>
+            <Card key={a.id} onClick={()=>setExp(isO?null:a.id)} style={{cursor:"pointer",borderLeft:`4px solid ${r.cl}`,background:a.nw?"#ef444406":"#0d1117",border:`1px solid ${isO?r.cl+"44":"#21262d"}`,transition:"all .15s"}}>
               <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:4}}>
                 <span style={{fontSize:18}}>{r.i}</span>
                 <span style={{fontSize:14,fontWeight:600,color:r.cl,flex:1}}>{r.l}</span>
@@ -528,7 +528,7 @@ export default function CommandCenter(){
                 <span>{ago(a.created_at||a.ts)}</span>
               </div>
               {amt>0&&<div style={{fontSize:18,fontWeight:700,fontFamily:"var(--m)",color:"#f59e0b"}}>{fR(amt)}</div>}
-              {isO&&<div style={{marginTop:8,background:"#08080b",borderRadius:8,border:"1px solid #15151e",padding:12,animation:"si .15s ease-out"}}>
+              {isO&&<div style={{marginTop:8,background:"#080a0f",borderRadius:8,border:"1px solid #161b22",padding:12,animation:"si .15s ease-out"}}>
                 <p style={{fontSize:13,color:"#aaa",lineHeight:1.6,marginBottom:8}}>{det}</p>
                 <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
                   <button onClick={e=>{e.stopPropagation();resolve(a.id);}} style={{padding:"6px 14px",borderRadius:6,border:"1px solid #16a34a",background:"#16a34a15",color:"#10b981",fontSize:13,cursor:"pointer",fontWeight:600,fontFamily:"var(--m)"}}>✓ Resolve</button>
@@ -542,7 +542,7 @@ export default function CommandCenter(){
     </div>}
 
     {/* ═══ FOOTER ═══ */}
-    <div style={{marginTop:24,padding:"12px 0",borderTop:"1px solid #15151e",textAlign:"center",fontSize:11,color:"#222",fontFamily:"var(--m)",letterSpacing:1}}>
+    <div style={{marginTop:24,padding:"12px 0",borderTop:"1px solid #161b22",textAlign:"center",fontSize:11,color:"#222",fontFamily:"var(--m)",letterSpacing:1}}>
       BITES & CO. COMMAND CENTER v4 · 12 RULES · REALTIME · LANDSCAPE
     </div>
   </div>);

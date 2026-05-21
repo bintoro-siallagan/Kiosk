@@ -58,11 +58,11 @@ export default function CommandPromo() {
             <div key={p.code} style={S.row}>
               <span style={{ width: 9, height: 9, borderRadius: 9, background: st.col, flexShrink: 0 }} />
               <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: "#e4e4e7", width: 116, flexShrink: 0 }}>{p.code}</span>
-              <span style={{ fontSize: 10, fontFamily: MONO, color: "#8b8b95", border: "1px solid #1c1c25", borderRadius: 4, padding: "2px 6px", flexShrink: 0 }}>
+              <span style={{ fontSize: 10, fontFamily: MONO, color: "#8b8b95", border: "1px solid #21262d", borderRadius: 4, padding: "2px 6px", flexShrink: 0 }}>
                 {p.type === "percent" ? p.value + "%" : p.type === "fixed" ? "Rp" + fmtK(p.value) : "BOGO"}
               </span>
               <span style={{ flex: 1, fontSize: 12, color: "#9ca3af", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.desc}</span>
-              <div style={{ width: 84, flexShrink: 0, height: 6, background: "#15151e", borderRadius: 3, overflow: "hidden" }}>
+              <div style={{ width: 84, flexShrink: 0, height: 6, background: "#161b22", borderRadius: 3, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: barW + "%", background: st.col }} />
               </div>
               <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 800, color: st.col, width: 46, textAlign: "right", flexShrink: 0 }}>{p.used_count}×</span>
@@ -71,7 +71,7 @@ export default function CommandPromo() {
             </div>
           );
         })}
-        <div style={{ fontSize: 11, color: "#3a3a44", marginTop: 8, fontFamily: MONO }}>
+        <div style={{ fontSize: 11, color: "#4a5568", marginTop: 8, fontFamily: MONO }}>
           🟢 Efektif (≥10×) · 🟡 Rendah (1-9×) · 🔴 Idle (0× — pertimbangkan stop/ganti)
         </div>
       </div>
@@ -92,9 +92,9 @@ function Kpi({ label, value, accent, sub }) {
 const S = {
   wrap: { display: "flex", flexDirection: "column", gap: 14 },
   msg: { padding: 40, textAlign: "center", color: "#666", fontSize: 14 },
-  card: { background: "#0e0e13", border: "1px solid #1c1c25", borderRadius: 14, padding: 18 },
+  card: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 14, padding: 18 },
   kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#888", fontFamily: MONO, marginBottom: 12 },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
-  kpi: { background: "#0e0e13", border: "1px solid #1c1c25", borderRadius: 12, padding: "12px 14px" },
-  row: { display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: "1px solid #15151e" },
+  kpi: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 12, padding: "12px 14px" },
+  row: { display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: "1px solid #161b22" },
 };
