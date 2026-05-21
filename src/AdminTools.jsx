@@ -31,6 +31,7 @@ import AdminRewardBenefit from "./Admin/AdminRewardBenefit.jsx";
 import AdminMotivation from "./Admin/AdminMotivation.jsx";
 import AdminHRCommand from "./Admin/AdminHRCommand.jsx";
 import AdminAntiFraud from "./Admin/AdminAntiFraud.jsx";
+import AdminTalenta from "./Admin/AdminTalenta.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -125,6 +126,7 @@ export default function AdminTools({ onBack, initialTab }) {
     { id: "motivation", label: "🧠 Motivasi", color: "#22c55e" },
     { id: "hr_command", label: "🏥 HR Command", color: "#14b8a6" },
     { id: "anti_fraud", label: "🛡️ Anti-Fraud", color: "#ef4444" },
+    { id: "talenta", label: "🔗 Talenta", color: "#0ea5e9" },
   ];
 
   return (
@@ -181,6 +183,7 @@ export default function AdminTools({ onBack, initialTab }) {
         {tab === "motivation" && <AdminMotivation apiBase={API} />}
         {tab === "hr_command" && <AdminHRCommand apiBase={API} />}
         {tab === "anti_fraud" && <AdminAntiFraud apiBase={API} />}
+        {tab === "talenta" && <AdminTalenta apiBase={API} />}
       </div>
 
       {toast && <div style={S.toast}>{toast}</div>}
