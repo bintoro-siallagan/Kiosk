@@ -17,8 +17,8 @@ async function api(p, opts={}) {
 export default function AdminMenuBuilder() {
   const [tab, setTab] = useState('sizes');
   return (
-    <div className="menu-builder" style={{padding:16}}>
-      <h2 style={{marginTop:0}}>Menu Builder</h2>
+    <div className="menu-builder" style={{padding:16, color:'#d4d4d8'}}>
+      <h2 style={{marginTop:0, color:'#d4d4d8'}}>Menu Builder</h2>
       <div style={{display:'flex', gap:4, borderBottom:'1px solid #e5e7eb', marginBottom:16}}>
         {[{k:'sizes',l:'Size Variants'},{k:'packages',l:'Packages / Bundles'}].map(t => (
           <button key={t.k} onClick={()=>setTab(t.k)} style={tabBtn(tab===t.k)}>{t.l}</button>
@@ -98,7 +98,7 @@ function SizesManager() {
 
       {selectedMenu && menuObj && (
         <div>
-          <div style={{padding:12, background:'#f9fafb', borderRadius:8, marginBottom:12}}>
+          <div style={{padding:12, background:'#15151e', borderRadius:8, marginBottom:12}}>
             <b>{menuObj.emoji} {menuObj.name}</b> — base price: {fmtIDR(menuObj.price)}
           </div>
 
@@ -133,7 +133,7 @@ function SizesManager() {
 
           <button onClick={saveVariants} style={{...btnPrimary, marginTop:12}}>💾 Save Variants</button>
 
-          <div style={{marginTop:16, padding:12, background:'#eff6ff', borderRadius:8, fontSize:12, color:'#1e40af'}}>
+          <div style={{marginTop:16, padding:12, background:'#0a1422', borderRadius:8, fontSize:12, color:'#93c5fd'}}>
             <b>Cara kerja:</b> Pas customer pilih size <code>large</code>, harga = base + price_adjustment. BOM consumption = qty × bom_multiplier (mis. large = 1.4× artinya pakai 40% lebih banyak bahan). Set <code>is_default</code> di salah satu size supaya jadi default pilihan UI.
           </div>
         </div>
@@ -167,8 +167,8 @@ function PackagesManager() {
         <tbody>
           {list.map(p => (
             <tr key={p.id}>
-              <td style={{fontSize:11, color:'#6b7280'}}>{p.id}</td>
-              <td><b>{p.emoji} {p.name}</b><br/><span style={{fontSize:11, color:'#6b7280'}}>{p.description}</span></td>
+              <td style={{fontSize:11, color:'#8b8b95'}}>{p.id}</td>
+              <td><b>{p.emoji} {p.name}</b><br/><span style={{fontSize:11, color:'#8b8b95'}}>{p.description}</span></td>
               <td>{p.item_count}</td>
               <td>{fmtIDR(p.package_price)}</td>
               <td>{p.is_active ? '✓' : '✗'}</td>
@@ -284,13 +284,13 @@ function PackageForm({initial, onClose}) {
         </table>
         <button onClick={addItem} style={btn}>+ Item</button>
 
-        <div style={{marginTop:12, padding:12, background: savings > 0 ? '#f0fdf4' : '#fef2f2', borderRadius:8, border:`1px solid ${savings > 0 ? '#86efac' : '#fca5a5'}`}}>
+        <div style={{marginTop:12, padding:12, background: savings > 0 ? '#0f1f17' : '#2a1214', borderRadius:8, border:`1px solid ${savings > 0 ? '#14532d' : '#7f1d1d'}`}}>
           <b>Pricing Analysis:</b><br/>
           Individual total: {fmtIDR(individualTotal)} → Package price: {fmtIDR(f.package_price)} →{' '}
-          <b style={{color: savings > 0 ? '#10b981' : '#dc2626'}}>
+          <b style={{color: savings > 0 ? '#34d399' : '#f87171'}}>
             Savings {fmtIDR(savings)} ({savingsPct.toFixed(1)}%)
           </b>
-          {savings < 0 && <div style={{color:'#dc2626', fontSize:12, marginTop:4}}>⚠️ Package price LEBIH MAHAL dari individual!</div>}
+          {savings < 0 && <div style={{color:'#f87171', fontSize:12, marginTop:4}}>⚠️ Package price LEBIH MAHAL dari individual!</div>}
         </div>
 
         <div style={{marginTop:16}}>
@@ -299,7 +299,7 @@ function PackageForm({initial, onClose}) {
           {!isNew && <button onClick={remove} style={{...btnDanger, float:'right'}}>Hapus</button>}
         </div>
 
-        <div style={{marginTop:16, padding:12, background:'#eff6ff', borderRadius:8, fontSize:12, color:'#1e40af'}}>
+        <div style={{marginTop:16, padding:12, background:'#0a1422', borderRadius:8, fontSize:12, color:'#93c5fd'}}>
           <b>Cara kerja:</b> Pas package terjual, sistem auto-expand → consume BOM dari setiap menu items × qty. Stock di warehouse otomatis berkurang sesuai recipe gabungan. <code>is_swappable</code> reserved untuk fitur masa depan (customer ganti item dengan kategori sama).
         </div>
       </div>
@@ -308,28 +308,28 @@ function PackageForm({initial, onClose}) {
 }
 
 // ============================================================
-// STYLES
+// STYLES — dark theme (selaras Command Center)
 // ============================================================
 const tabBtn = (active) => ({padding:'8px 14px', border:'none', background:'transparent',
   borderBottom: active ? '2px solid #3b82f6' : '2px solid transparent',
-  color: active ? '#3b82f6' : '#374151', fontWeight: active ? 600 : 400, cursor:'pointer'});
-const tableStyle = {width:'100%', borderCollapse:'collapse', background:'#fff', fontSize:13};
-const btn = {padding:'6px 14px', background:'#f3f4f6', border:'1px solid #d1d5db', borderRadius:4, cursor:'pointer', fontSize:13};
+  color: active ? '#60a5fa' : '#8b8b95', fontWeight: active ? 600 : 400, cursor:'pointer'});
+const tableStyle = {width:'100%', borderCollapse:'collapse', background:'#0e0e13', fontSize:13};
+const btn = {padding:'6px 14px', background:'#1c1c25', color:'#d4d4d8', border:'1px solid #1c1c25', borderRadius:4, cursor:'pointer', fontSize:13};
 const btnPrimary = {padding:'6px 14px', background:'#3b82f6', color:'#fff', border:'none', borderRadius:4, cursor:'pointer', fontWeight:600};
-const btnDanger = {padding:'4px 10px', background:'#fee2e2', color:'#dc2626', border:'1px solid #fca5a5', borderRadius:4, cursor:'pointer', fontSize:12};
-const btnSmall = {padding:'4px 10px', background:'#f3f4f6', border:'1px solid #d1d5db', borderRadius:4, cursor:'pointer', fontSize:12};
+const btnDanger = {padding:'4px 10px', background:'#2a1214', color:'#f87171', border:'1px solid #7f1d1d', borderRadius:4, cursor:'pointer', fontSize:12};
+const btnSmall = {padding:'4px 10px', background:'#1c1c25', color:'#d4d4d8', border:'1px solid #1c1c25', borderRadius:4, cursor:'pointer', fontSize:12};
 const formGrid = {display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:12};
-const modalOverlay = {position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000};
-const modalBox = {background:'#fff', borderRadius:8, padding:20, maxWidth:'95vw', maxHeight:'90vh', overflow:'auto', minWidth:700};
+const modalOverlay = {position:'fixed', inset:0, background:'rgba(0,0,0,0.75)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000};
+const modalBox = {background:'#0e0e13', color:'#d4d4d8', border:'1px solid #1c1c25', borderRadius:8, padding:20, maxWidth:'95vw', maxHeight:'90vh', overflow:'auto', minWidth:700};
 
 if (typeof document !== 'undefined' && !document.getElementById('menu-builder-styles')) {
   const s = document.createElement('style');
   s.id = 'menu-builder-styles';
   s.textContent = `
-    .menu-builder table th { background:#f3f4f6; padding:8px; text-align:left; border-bottom:1px solid #e5e7eb; font-size:11px; text-transform:uppercase; color:#6b7280; }
-    .menu-builder table td { padding:8px; border-bottom:1px solid #f3f4f6; vertical-align:top; }
-    .menu-builder input, .menu-builder select, .menu-builder textarea { padding:6px 8px; border:1px solid #d1d5db; border-radius:4px; font-size:13px; box-sizing:border-box; }
-    .menu-builder label { display:block; font-size:12px; color:#374151; font-weight:500; margin-bottom:4px; }
+    .menu-builder table th { background:#15151e; padding:8px; text-align:left; border-bottom:1px solid #1c1c25; font-size:11px; text-transform:uppercase; color:#8b8b95; }
+    .menu-builder table td { padding:8px; border-bottom:1px solid #15151e; vertical-align:top; }
+    .menu-builder input, .menu-builder select, .menu-builder textarea { padding:6px 8px; background:#08080b; color:#d4d4d8; border:1px solid #1c1c25; border-radius:4px; font-size:13px; box-sizing:border-box; }
+    .menu-builder label { display:block; font-size:12px; color:#9ca3af; font-weight:500; margin-bottom:4px; }
     .menu-builder label input, .menu-builder label select, .menu-builder label textarea { width:100%; margin-top:4px; }
   `;
   document.head.appendChild(s);
