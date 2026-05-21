@@ -47,8 +47,10 @@ function setupHris(app, opts = {}) {
     const { staff_name, role, scheduled_in } = req.body || {};
     if (!staff_name) return res.status(400).json({ error: 'staff_name wajib' });
     const date = todayStr();
-    if (db.prepare(`SELECT id FROM hris_attendance WHERE staff_name=? AND work_date=?`).get(staff_name, date)) {
-      return res.status(409).json({ error: 'sudah check-in hari ini' });
+    // Idempoten — kalau sudah check-in hari ini, no-op (bukan error)
+    const existing = db.prepare(`SELECT * FROM hris_attendance WHERE staff_name=? AND work_date=?`).get(staff_name, date);
+    if (existing) {
+      return res.json({ ok: true, already: true, status: existing.status, late_minutes: existing.late_minutes });
     }
     const now = Math.floor(Date.now() / 1000);
     const sched = scheduled_in || '08:00';
