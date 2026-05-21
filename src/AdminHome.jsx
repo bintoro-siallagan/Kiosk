@@ -1,26 +1,30 @@
 // src/AdminHome.jsx
-// Dashboard Baru — home. Layout 2 bagian: panel modul vertikal (kiri)
-// + konten dashboard KPI / antrian / penjualan (kanan).
+// Dashboard Baru — home. Status operasional · KPI (period + tren +
+// target) · performa outlet · live sales · monitoring · penjualan.
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
-const fmtK = (n) => n >= 1e6 ? (n / 1e6).toFixed(1) + "jt" : n >= 1e3 ? Math.round(n / 1e3) + "rb" : String(n || 0);
+const fmtK = (n) => n >= 1e6 ? (n / 1e6).toFixed(1) + "jt" : n >= 1e3 ? Math.round(n / 1e3) + "rb" : String(Math.round(n) || 0);
 const ago = (t) => { const s = Math.floor((Date.now() - t) / 60000); return s < 1 ? "baru" : s < 60 ? s + "m" : Math.floor(s / 60) + "j"; };
+const DAY = 864e5;
 
 const QUEUE = [
   { key: "waiting", label: "Menunggu", c: "#f59e0b" },
   { key: "preparing", label: "Diproses", c: "#3b82f6" },
   { key: "ready", label: "Siap Ambil", c: "#10b981" },
 ];
+const PERIODS = [{ k: "today", l: "Hari Ini", d: 1 }, { k: "7d", l: "7 Hari", d: 7 }, { k: "30d", l: "30 Hari", d: 30 }];
 
 export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   const [now, setNow] = useState(new Date());
   const [orders, setOrders] = useState([]);
   const [allOrders, setAllOrders] = useState([]);
   const [notifs, setNotifs] = useState([]);
-  const [k, setK] = useState({ revenue: null, orders: null, active: null, alerts: null, crit: 0, health: null });
+  const [outlets, setOutlets] = useState([]);
+  const [period, setPeriod] = useState("today");
+  const [health, setHealth] = useState(null);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -28,48 +32,48 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   }, []);
 
   useEffect(() => {
-    const t0 = new Date(); t0.setHours(0, 0, 0, 0);
-    const start = t0.getTime();
     const loadOrders = () => fetch(`${API}/api/orders`).then(r => r.json()).then(o => {
       const arr = Array.isArray(o) ? o : [];
-      const today = arr.filter(x => (x.time || 0) >= start);
-      const done = today.filter(x => x.status === "completed");
-      const active = arr.filter(x => !["completed", "cancelled", "refunded", "partial_refund"].includes(x.status));
-      setOrders(active); setAllOrders(arr);
-      setK(p => ({ ...p, revenue: done.reduce((s, x) => s + (x.total || 0), 0), orders: today.length, active: active.length }));
+      setAllOrders(arr);
+      setOrders(arr.filter(x => !["completed", "cancelled", "refunded", "partial_refund"].includes(x.status)));
     }).catch(() => {});
     loadOrders();
     const iv = setInterval(loadOrders, 15000);
-    const loadNotif = () => fetch(`${API}/api/notification-center`).then(r => r.json()).then(d => {
-      const n = d.notifications || [];
-      setNotifs(n);
-      setK(p => ({ ...p, alerts: n.length, crit: n.filter(x => x.priority === "high" || x.priority === "critical").length }));
-    }).catch(() => {});
+    const loadNotif = () => fetch(`${API}/api/notification-center`).then(r => r.json()).then(d => setNotifs(d.notifications || [])).catch(() => {});
     loadNotif();
     const ivN = setInterval(loadNotif, 20000);
-    fetch(`${API}/api/self-audit`).then(r => r.json()).then(d => {
-      setK(p => ({ ...p, health: d.health_score }));
-    }).catch(() => {});
+    fetch(`${API}/api/self-audit`).then(r => r.json()).then(d => setHealth(d.health_score)).catch(() => {});
+    fetch(`${API}/api/outlet-master`).then(r => r.json()).then(d => setOutlets(d.outlets || [])).catch(() => {});
     return () => { clearInterval(iv); clearInterval(ivN); };
   }, []);
 
-  const PRIO = { critical: { o: 0, c: "#dc2626", l: "KRITIS" }, high: { o: 1, c: "#ef4444", l: "TINGGI" }, medium: { o: 2, c: "#f59e0b", l: "SEDANG" }, low: { o: 3, c: "#5b6470", l: "RENDAH" } };
-  const feed = [...notifs].sort((a, b) => (PRIO[a.priority]?.o ?? 9) - (PRIO[b.priority]?.o ?? 9));
-
   const hour = now.getHours();
   const greet = hour < 11 ? "Selamat pagi" : hour < 15 ? "Selamat siang" : hour < 19 ? "Selamat sore" : "Selamat malam";
-  const vv = (x, f) => x == null ? "…" : (f ? f(x) : x);
   const openTab = (q) => window.open(window.location.pathname + q, "_blank");
 
+  // ── period KPI + tren ──
+  const winDays = PERIODS.find(p => p.k === period).d;
+  const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+  const startCur = t0.getTime() - (winDays - 1) * DAY;
+  const rev = (arr) => arr.filter(o => o.status === "completed").reduce((s, o) => s + (o.total || 0), 0);
+  const curOrders = allOrders.filter(o => (o.time || 0) >= startCur);
+  const prevOrders = allOrders.filter(o => (o.time || 0) >= startCur - winDays * DAY && (o.time || 0) < startCur);
+  const curRev = rev(curOrders), prevRev = rev(prevOrders);
+  const revDelta = prevRev > 0 ? Math.round((curRev - prevRev) / prevRev * 100) : (curRev > 0 ? 100 : 0);
+  const ordDelta = prevOrders.length > 0 ? Math.round((curOrders.length - prevOrders.length) / prevOrders.length * 100) : (curOrders.length > 0 ? 100 : 0);
+  const target = winDays * 3000000;
+  const targetPct = Math.round(curRev / target * 100);
+  const periodLabel = PERIODS.find(p => p.k === period).l;
+
+  // ── revenue 7 hari + menu ──
   const dayRev = [];
   for (let i = 6; i >= 0; i--) {
     const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - i);
     const s0 = d.getTime();
     dayRev.push({ d: d.toLocaleDateString("id-ID", { weekday: "short" }),
-      rev: allOrders.filter(o => o.status === "completed" && o.time >= s0 && o.time < s0 + 864e5).reduce((a, o) => a + (o.total || 0), 0) });
+      rev: allOrders.filter(o => o.status === "completed" && o.time >= s0 && o.time < s0 + DAY).reduce((a, o) => a + (o.total || 0), 0) });
   }
   const maxRev = Math.max(1, ...dayRev.map(x => x.rev));
-  const weekRev = dayRev.reduce((s, x) => s + x.rev, 0);
   const itemMap = {};
   allOrders.filter(o => o.status !== "cancelled").forEach(o => (o.items || []).forEach(it => {
     const n = it.n || "?"; (itemMap[n] = itemMap[n] || { qty: 0, e: it.e || "🍽️" }).qty += (it.q || 0);
@@ -78,14 +82,27 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   const maxQty = Math.max(1, ...topItems.map(([, d]) => d.qty));
   const recentSales = [...allOrders].sort((a, b) => (b.time || 0) - (a.time || 0)).slice(0, 14);
 
+  // ── outlet performa ──
+  const outletRank = [...outlets].sort((a, b) => (b.revenue_today || 0) - (a.revenue_today || 0));
+  const maxOutRev = Math.max(1, ...outletRank.map(o => o.revenue_today || 0));
+  const activeOutlets = outlets.filter(o => o.status === "active").length;
+
+  // ── status operasional ──
+  const isOpen = hour >= 8 && hour < 22;
+  const shift = hour < 14 ? { n: "Pagi", t: "08:00–14:00", c: "#f59e0b" } : hour < 22 ? { n: "Siang", t: "14:00–22:00", c: "#3b82f6" } : { n: "Malam", t: "22:00–08:00", c: "#a855f7" };
+
+  const crit = notifs.filter(x => x.priority === "high" || x.priority === "critical").length;
+  const PRIO = { critical: { o: 0, c: "#dc2626", l: "KRITIS" }, high: { o: 1, c: "#ef4444", l: "TINGGI" }, medium: { o: 2, c: "#f59e0b", l: "SEDANG" }, low: { o: 3, c: "#5b6470", l: "RENDAH" } };
+  const feed = [...notifs].sort((a, b) => (PRIO[a.priority]?.o ?? 9) - (PRIO[b.priority]?.o ?? 9));
+
   const kpis = [
-    { label: "Penjualan Hari Ini", val: vv(k.revenue, fmtRp), sub: "transaksi selesai", c: "#10b981", icon: "💰" },
-    { label: "Order Hari Ini", val: vv(k.orders), sub: k.active != null ? `${k.active} masih aktif` : "—", c: "#3b82f6", icon: "🧾" },
-    { label: "Alert Aktif", val: vv(k.alerts), sub: k.crit ? `${k.crit} perlu tindakan` : "semua aman", c: k.crit > 0 ? "#ef4444" : "#f59e0b", icon: "🔔" },
-    { label: "System Health", val: k.health == null ? "…" : k.health + " / 100", sub: "self-audit score", c: k.health >= 75 ? "#10b981" : k.health >= 50 ? "#f59e0b" : "#ef4444", icon: "🔎" },
+    { label: `Penjualan ${periodLabel}`, val: fmtRp(curRev), c: "#10b981", icon: "💰", delta: revDelta, progress: targetPct, sub: `target ${fmtK(target)}` },
+    { label: `Order ${periodLabel}`, val: String(curOrders.length), c: "#3b82f6", icon: "🧾", delta: ordDelta, sub: `${orders.length} aktif sekarang` },
+    { label: "Alert Aktif", val: String(notifs.length), c: crit > 0 ? "#ef4444" : "#f59e0b", icon: "🔔", sub: crit ? `${crit} perlu tindakan` : "semua aman" },
+    { label: "System Health", val: health == null ? "…" : health + " / 100", c: health >= 75 ? "#10b981" : health >= 50 ? "#f59e0b" : "#ef4444", icon: "🔎", sub: "self-audit score" },
   ];
   const primary = [
-    { label: "Tools", desc: "Admin Tools — 107 modul operasi, produk, finance & HR", icon: "🛠️", c: "#f59e0b", on: () => onNav("tools") },
+    { label: "Tools", desc: "Admin Tools — 115 modul operasi, produk, finance & HR", icon: "🛠️", c: "#f59e0b", on: () => onNav("tools") },
     { label: "Management", desc: "Command Center — 13 dashboard realtime monitoring", icon: "📊", c: "#3b82f6", on: () => openTab("?command=1") },
   ];
   const columns = [
@@ -119,6 +136,11 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
       {right}
     </div>
   );
+  const Delta = ({ v }) => v == null ? null : (
+    <span style={{ fontSize: 10.5, fontWeight: 700, fontFamily: "'Space Mono',monospace", color: v >= 0 ? "#10b981" : "#ef4444" }}>
+      {v >= 0 ? "▲" : "▼"} {Math.abs(v)}%
+    </span>
+  );
 
   return (
     <div style={S.root}>
@@ -140,10 +162,26 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
         </div>
       </div>
 
+      {/* Status operasional strip */}
+      <div style={S.opStrip}>
+        <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <span className="livedot" style={{ width: 8, height: 8, borderRadius: "50%", background: isOpen ? "#10b981" : "#ef4444", display: "inline-block", boxShadow: `0 0 7px ${isOpen ? "#10b981" : "#ef4444"}` }} />
+          <b style={{ color: isOpen ? "#10b981" : "#ef4444" }}>{isOpen ? "OUTLET BEROPERASI" : "DI LUAR JAM OPERASIONAL"}</b>
+        </span>
+        <span style={S.opDot} />
+        <span>Shift <b style={{ color: shift.c }}>{shift.n}</b> <span style={{ color: "#5b6470" }}>{shift.t}</span></span>
+        <span style={S.opDot} />
+        <span>🏪 <b style={{ color: "#22d3ee" }}>{activeOutlets}/{outlets.length || 6}</b> outlet aktif</span>
+        <span style={S.opDot} />
+        <span>🧾 <b style={{ color: "#f59e0b" }}>{orders.length}</b> order berjalan</span>
+        <span style={{ flex: 1 }} />
+        <span style={{ color: "#5b6470" }}>{now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</span>
+      </div>
+
       {/* Body — 2 bagian */}
       <div style={S.body}>
 
-        {/* ── KIRI: panel modul vertikal ── */}
+        {/* KIRI: panel modul */}
         <aside style={S.left}>
           {columns.map((col, ci) => (
             <div key={col.title}>
@@ -161,18 +199,32 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
           ))}
         </aside>
 
-        {/* ── KANAN: konten dashboard ── */}
+        {/* KANAN: konten */}
         <main style={S.right}>
-          {/* KPI */}
+          {/* Period selector + KPI */}
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+            <div style={S.segWrap}>
+              {PERIODS.map(p => (
+                <button key={p.k} onClick={() => setPeriod(p.k)}
+                  style={{ ...S.seg, ...(period === p.k ? S.segOn : {}) }}>{p.l}</button>
+              ))}
+            </div>
+          </div>
           <div style={S.kpiRow}>
             {kpis.map(x => (
               <div key={x.label} className="card" style={S.kpi}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
                   <div style={{ ...S.chip, background: `${x.c}1a`, color: x.c, border: `1px solid ${x.c}33` }}>{x.icon}</div>
-                  <div style={S.kpiLabel}>{x.label}</div>
+                  <div style={{ ...S.kpiLabel, flex: 1 }}>{x.label}</div>
+                  <Delta v={x.delta} />
                 </div>
                 <div style={{ ...S.kpiVal, color: x.c }}>{x.val}</div>
                 <div style={S.kpiSub}>{x.sub}</div>
+                {x.progress != null && (
+                  <div style={{ height: 4, background: "#161b22", borderRadius: 2, marginTop: 5 }}>
+                    <div style={{ height: "100%", width: Math.min(100, x.progress) + "%", background: x.progress >= 100 ? "#10b981" : x.progress >= 60 ? "#f59e0b" : "#ef4444", borderRadius: 2 }} />
+                  </div>
+                )}
                 <div style={{ ...S.kpiGlow, background: x.c }} />
               </div>
             ))}
@@ -193,14 +245,36 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
             ))}
           </div>
 
-          {/* Live sales — ticker transaksi terbaru */}
+          {/* Performa outlet */}
+          <Section label="PERFORMA OUTLET — HARI INI" accent="#22d3ee" mt={14}
+            right={<button onClick={() => onNav("tools", "outlet_master")} style={S.linkBtn}>kelola outlet →</button>} />
+          <div className="card" style={{ ...S.bigCard, padding: "10px 14px 12px" }}>
+            {outletRank.length === 0 ? <div style={{ fontSize: 11, color: "#5b6470" }}>Memuat data outlet…</div>
+              : outletRank.map((o, i) => (
+                <div key={o.id} style={{ display: "flex", alignItems: "center", gap: 11, padding: "7px 0", borderTop: i ? "1px solid #161b22" : "none" }}>
+                  <span style={{ width: 18, fontSize: 11, fontWeight: 800, color: i === 0 ? "#f59e0b" : "#5b6470", fontFamily: "'Space Mono',monospace" }}>#{i + 1}</span>
+                  <span style={{ width: 7, height: 7, borderRadius: "50%", background: o.status === "active" ? "#10b981" : "#5b6470", flexShrink: 0 }} />
+                  <div style={{ width: 130 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: "#e6edf3" }}>{o.name}</div>
+                    <div style={{ fontSize: 9.5, color: "#5b6470" }}>{o.area}</div>
+                  </div>
+                  <div style={{ flex: 1, height: 9, background: "#0a0e16", borderRadius: 4, overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: ((o.revenue_today || 0) / maxOutRev * 100) + "%", background: i === 0 ? "#f59e0b" : "#22d3ee" }} />
+                  </div>
+                  <span style={{ width: 70, textAlign: "right", fontSize: 12, fontWeight: 700, fontFamily: "'Space Mono',monospace", color: "#cdd5df" }}>{fmtK(o.revenue_today)}</span>
+                  <span style={{ width: 56, textAlign: "right", fontSize: 10.5, color: "#5b6470" }}>{o.orders_today} order</span>
+                  <span style={{ width: 48, textAlign: "right" }}><Delta v={o.trend_pct} /></span>
+                </div>
+              ))}
+          </div>
+
+          {/* Live sales */}
           <Section label="LIVE SALES" accent="#10b981" mt={14}
             right={<span style={{ fontSize: 10.5, color: "#5b6470", fontFamily: "'Space Mono',monospace", display: "flex", alignItems: "center", gap: 6 }}>
               <span className="livedot" style={{ width: 7, height: 7, borderRadius: "50%", background: "#10b981", display: "inline-block", boxShadow: "0 0 6px #10b981" }} />
-              LIVE · {k.orders ?? 0} transaksi hari ini</span>} />
+              LIVE · {curOrders.length} transaksi {periodLabel.toLowerCase()}</span>} />
           <div className="card" style={{ ...S.bigCard, padding: "12px 14px" }}>
-            {recentSales.length === 0
-              ? <div style={{ fontSize: 11, color: "#5b6470" }}>Belum ada transaksi</div>
+            {recentSales.length === 0 ? <div style={{ fontSize: 11, color: "#5b6470" }}>Belum ada transaksi</div>
               : <div style={S.ticker}>
                   {recentSales.map(o => {
                     const st = o.status === "completed" ? "#10b981" : o.status === "cancelled" ? "#ef4444" : "#f59e0b";
@@ -220,7 +294,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
                 </div>}
           </div>
 
-          {/* Antrian order + revenue */}
+          {/* Antrian + revenue */}
           <div style={S.dataGrid}>
             <div className="card" style={S.bigCard}>
               <Section label="ANTRIAN ORDER LIVE" accent="#3b82f6" mt={6}
@@ -234,8 +308,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
                         <span style={{ fontSize: 11, fontWeight: 700, color: q.c }}>● {q.label}</span>
                         <span style={{ fontSize: 14, fontWeight: 800, color: q.c, fontFamily: "'Space Mono',monospace" }}>{list.length}</span>
                       </div>
-                      {list.length === 0
-                        ? <div style={{ fontSize: 10.5, color: "#5b6470", padding: "4px 0" }}>Tidak ada order</div>
+                      {list.length === 0 ? <div style={{ fontSize: 10.5, color: "#5b6470", padding: "4px 0" }}>Tidak ada order</div>
                         : <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                             {list.slice(0, 4).map(o => (
                               <div key={o.id} style={S.orderChip}>
@@ -251,10 +324,9 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
                 })}
               </div>
             </div>
-
             <div className="card" style={S.bigCard}>
               <Section label="REVENUE 7 HARI" accent="#10b981" mt={6}
-                right={<span style={{ fontSize: 12.5, fontWeight: 800, color: "#10b981", fontFamily: "'Space Mono',monospace" }}>{fmtRp(weekRev)}</span>} />
+                right={<span style={{ fontSize: 12.5, fontWeight: 800, color: "#10b981", fontFamily: "'Space Mono',monospace" }}>{fmtRp(dayRev.reduce((s, x) => s + x.rev, 0))}</span>} />
               <div style={S.barRow}>
                 {dayRev.map((x, i) => (
                   <div key={i} style={S.barCol}>
@@ -268,12 +340,11 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
             </div>
           </div>
 
-          {/* Monitoring realtime — live alert feed */}
+          {/* Monitoring realtime */}
           <Section label="MONITORING REALTIME" accent="#ef4444" mt={14}
-            right={<span style={{ fontSize: 10.5, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{notifs.length} alert · {k.crit || 0} mendesak</span>} />
+            right={<span style={{ fontSize: 10.5, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{notifs.length} alert · {crit} mendesak</span>} />
           <div className="card" style={{ ...S.bigCard, padding: "12px 14px" }}>
-            {feed.length === 0
-              ? <div style={{ fontSize: 11, color: "#10b981" }}>✓ Tidak ada alert — semua aman</div>
+            {feed.length === 0 ? <div style={{ fontSize: 11, color: "#10b981" }}>✓ Tidak ada alert — semua aman</div>
               : <div style={S.feed}>
                   {feed.map((x, i) => {
                     const pr = PRIO[x.priority] || PRIO.low;
@@ -295,8 +366,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
           {/* Menu terlaris */}
           <Section label="MENU TERLARIS" mt={14} />
           <div className="card" style={{ ...S.bigCard, padding: "12px 16px" }}>
-            {topItems.length === 0
-              ? <div style={{ fontSize: 11, color: "#5b6470" }}>Belum ada data penjualan</div>
+            {topItems.length === 0 ? <div style={{ fontSize: 11, color: "#5b6470" }}>Belum ada data penjualan</div>
               : <div style={S.topGrid}>
                   {topItems.map(([n, d], i) => (
                     <div key={n} style={{ display: "flex", alignItems: "center", gap: 9 }}>
@@ -320,7 +390,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
         <button className="tile" style={S.footBtn} onClick={onExit}>← Kiosk</button>
         {onLogout && <button className="tile" style={{ ...S.footBtn, color: "#f87171", borderColor: "#f8717133" }} onClick={onLogout}>Logout</button>}
         <span style={{ flex: 1 }} />
-        <span style={S.footNote}>karyaOS · 107 modul backend · v4</span>
+        <span style={S.footNote}>karyaOS · 115 modul backend · v4</span>
       </div>
     </div>
   );
@@ -337,22 +407,27 @@ const CSS = `
 
 const S = {
   root: { minHeight: "100vh", background: "radial-gradient(ellipse 900px 380px at 50% -120px, #f59e0b14, transparent), #080a0f", color: "#cdd5df", fontFamily: "'Geist','Plus Jakarta Sans',system-ui,sans-serif", padding: "16px 28px 22px", boxSizing: "border-box" },
-  topbar: { display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 14, marginBottom: 4, borderBottom: "1px solid #161b22" },
+  topbar: { display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 13, borderBottom: "1px solid #161b22" },
   logo: { width: 40, height: 40, borderRadius: 11, background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "#1a1205", fontWeight: 900, fontSize: 23, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 22px #f59e0b3a", flexShrink: 0 },
   brand: { fontSize: 22, fontWeight: 800, color: "#e6edf3", letterSpacing: -0.5, lineHeight: 1 },
   brandSub: { fontSize: 9, color: "#5b6470", fontFamily: "'Space Mono',monospace", letterSpacing: 2, marginTop: 4 },
   clock: { fontSize: 21, fontWeight: 700, color: "#e6edf3", fontFamily: "'Space Mono',monospace", lineHeight: 1 },
   greetLine: { fontSize: 11.5, color: "#5b6470", marginTop: 5 },
   role: { fontSize: 9, fontWeight: 700, color: "#f59e0b", background: "#f59e0b1a", border: "1px solid #f59e0b44", borderRadius: 4, padding: "1px 6px", marginLeft: 8, fontFamily: "'Space Mono',monospace", textTransform: "uppercase" },
-  body: { display: "grid", gridTemplateColumns: "270px 1fr", gap: 18, alignItems: "start" },
+  opStrip: { display: "flex", alignItems: "center", gap: 11, fontSize: 11.5, color: "#9da7b3", background: "#0d1117", border: "1px solid #1e2530", borderRadius: 10, padding: "8px 14px", margin: "12px 0 4px" },
+  opDot: { width: 3, height: 3, borderRadius: "50%", background: "#3a4150" },
+  body: { display: "grid", gridTemplateColumns: "270px 1fr", gap: 18, alignItems: "start", marginTop: 10 },
   left: { display: "flex", flexDirection: "column" },
   right: { display: "flex", flexDirection: "column", minWidth: 0 },
-  kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginTop: 16 },
+  segWrap: { display: "flex", gap: 3, background: "#0d1117", border: "1px solid #1e2530", borderRadius: 8, padding: 3 },
+  seg: { background: "transparent", border: "none", color: "#7d8590", fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit" },
+  segOn: { background: "#f59e0b", color: "#1a1205" },
+  kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 },
   kpi: { position: "relative", overflow: "hidden", background: "#0d1117", border: "1px solid #1e2530", borderRadius: 14, padding: "12px 14px" },
   kpiGlow: { position: "absolute", top: -34, right: -34, width: 80, height: 80, borderRadius: "50%", opacity: 0.12, filter: "blur(6px)" },
   chip: { width: 30, height: 30, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 },
   kpiLabel: { fontSize: 9.5, color: "#7d8590", fontFamily: "'Space Mono',monospace", letterSpacing: 0.5, textTransform: "uppercase" },
-  kpiVal: { fontSize: 22, fontWeight: 800, fontFamily: "'Space Mono',monospace", margin: "8px 0 1px" },
+  kpiVal: { fontSize: 21, fontWeight: 800, fontFamily: "'Space Mono',monospace", margin: "8px 0 1px" },
   kpiSub: { fontSize: 10, color: "#5b6470" },
   sectionHead: { display: "flex", alignItems: "center", gap: 8, margin: "16px 2px 9px" },
   sectionLabel: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, color: "#9da7b3", fontFamily: "'Space Mono',monospace" },
@@ -369,14 +444,14 @@ const S = {
   barCol: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 },
   barVal: { fontSize: 9, color: "#10b981", fontFamily: "'Space Mono',monospace" },
   barLbl: { fontSize: 9.5, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
-  topGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "7px 28px", marginTop: 2 },
   ticker: { display: "flex", gap: 9, overflowX: "auto", paddingBottom: 4 },
   saleCard: { minWidth: 124, flexShrink: 0, background: "#0a0e16", border: "1px solid #1e2530", borderRadius: 9, padding: "9px 11px" },
   feed: { display: "flex", flexDirection: "column", gap: 5, maxHeight: 232, overflowY: "auto" },
   feedRow: { display: "flex", alignItems: "center", gap: 9, background: "#0a0e16", border: "1px solid #161b22", borderRadius: 8, padding: "6px 10px" },
   prioBadge: { fontSize: 8.5, fontWeight: 800, borderRadius: 4, padding: "2px 6px", fontFamily: "'Space Mono',monospace", letterSpacing: 0.5, flexShrink: 0, width: 44, textAlign: "center" },
+  topGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "7px 28px", marginTop: 2 },
   rowTile: { display: "flex", alignItems: "center", gap: 10, background: "#0d1117", border: "1px solid #1e2530", borderRadius: 10, padding: "7px 11px", fontFamily: "inherit", width: "100%" },
-  footer: { display: "flex", alignItems: "center", gap: 10, marginTop: 18, paddingTop: 13, borderTop: "1px solid #161b22" },
-  footBtn: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 9, padding: "7px 16px", color: "#9da7b3", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
+  footer: { display: "flex", alignItems: "center", gap: 10, marginTop: 14, paddingTop: 11, borderTop: "1px solid #161b22" },
+  footBtn: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 8, padding: "7px 15px", color: "#9da7b3", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   footNote: { fontSize: 10, color: "#3a4150", fontFamily: "'Space Mono',monospace" },
 };
