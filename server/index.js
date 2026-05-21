@@ -3638,6 +3638,7 @@ const { setupGeneralLedger }    = require('./general-ledger-backend');
 const { setupReconciliation }   = require('./reconciliation-backend');
 const { setupReleasePayment }   = require('./release-payment-backend');
 const { setupPeriodClosing }    = require('./period-closing-backend');
+const { setupStockOpname }      = require('./stock-opname-backend');
 
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
@@ -3725,6 +3726,7 @@ const generalLedger = setupGeneralLedger(app, { dbPath: DB_PATH });
 const reconciliation = setupReconciliation(app, { dbPath: DB_PATH });
 const releasePayment = setupReleasePayment(app, { dbPath: DB_PATH });
 const periodClosing = setupPeriodClosing(app, { dbPath: DB_PATH });
+const stockOpname = setupStockOpname(app, { dbPath: DB_PATH });
 
 global.consumeStockForOrder  = menuBuilder.consumeStockForOrderV2;
 global.logPosEvent           = phase4b.logPosEvent;
