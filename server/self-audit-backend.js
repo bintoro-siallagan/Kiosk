@@ -34,6 +34,8 @@ function setupSelfAudit(app, opts = {}) {
           return C('Invoice jatuh tempo', c === 0 ? 'ok' : 'critical', c === 0 ? 'Tidak ada invoice telat' : `${c} invoice lewat jatuh tempo`); })(),
         (() => { const c = cnt(`SELECT COUNT(*) c FROM payment_releases WHERE status='pending' AND due_date<${now}`);
           return C('Pembayaran vendor telat', c === 0 ? 'ok' : 'warning', c === 0 ? 'Semua pembayaran on-track' : `${c} pembayaran lewat tempo`); })(),
+        (() => { const c = cnt(`SELECT COUNT(*) c FROM tax_records WHERE flow IN ('output','pph') AND status!='paid'`);
+          return C('Pajak belum disetor', c === 0 ? 'ok' : 'warning', c === 0 ? 'Semua kewajiban pajak lunas' : `${c} pajak belum disetor — jangan lupa bayar`); })(),
       ],
     });
 

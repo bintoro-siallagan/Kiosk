@@ -63,6 +63,25 @@ function setupNotificationCenter(app, opts = {}) {
     for (const pc of many(`SELECT period_name, closing_type FROM period_closings WHERE status = 'open'`))
       n.push({ key: `period-${pc.closing_type}-${pc.period_name}`, category: 'Finance', priority: 'low', icon: '🔒',
         title: `Periode ${pc.closing_type} belum ditutup`, detail: pc.period_name, source: 'Period Closing' });
+    // Pajak belum disetor — jangan lupa bayar pajak (PPN & PPh)
+    const taxRows = many(`SELECT label, amount, status, due_date, tax_type, flow FROM tax_records`);
+    if (taxRows.length) {
+      const fmt = (v) => 'Rp ' + Math.round(v).toLocaleString('id-ID');
+      const ppnOut = taxRows.filter(t => t.tax_type === 'PPN' && t.flow === 'output');
+      const ppnIn = taxRows.filter(t => t.tax_type === 'PPN' && t.flow === 'input').reduce((s, t) => s + t.amount, 0);
+      const ppnPayable = ppnOut.reduce((s, t) => s + t.amount, 0) - ppnIn;
+      const ppnDue = (ppnOut[0] || {}).due_date || N;
+      if (ppnPayable > 0 && ppnOut.some(t => t.status !== 'paid')) {
+        const days = Math.floor((ppnDue - N) / DAY);
+        n.push({ key: 'tax-ppn', category: 'Finance', priority: days <= 7 ? 'high' : 'medium', icon: '🧾',
+          title: 'PPN kurang bayar belum disetor', detail: `${fmt(ppnPayable)} · ${days < 0 ? `TELAT ${-days} hari` : `jatuh tempo ${days} hari lagi`}`, source: 'Core Tax' });
+      }
+      for (const t of taxRows.filter(x => x.flow === 'pph' && x.status !== 'paid')) {
+        const days = Math.floor((t.due_date - N) / DAY);
+        n.push({ key: `tax-${t.label}`, category: 'Finance', priority: days <= 7 ? 'high' : 'medium', icon: '🧾',
+          title: `${t.tax_type} belum disetor`, detail: `${t.label} · ${fmt(t.amount)} · ${days < 0 ? `TELAT ${-days} hari` : `${days} hari lagi`}`, source: 'Core Tax' });
+      }
+    }
     return n;
   };
 
