@@ -24,6 +24,7 @@ const fmtIDRcompact = (n) => {
 };
 const fmtPct = (n) => `${(n||0).toFixed(1)}%`;
 const fmtDelta = (n) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
+const num = (v) => (typeof v === 'number' && isFinite(v)) ? v : 0;
 
 const PERIODS = [
   { key: 'today', label: 'Hari Ini', days: 0 },
@@ -61,7 +62,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
   const [lastRefresh, setLastRefresh] = useState(Date.now());
   const [data, setData] = useState({
     finance: null, refundCancel: null, kds: null, aggregator: null,
-    loyalty: null, employees: null, gl: null
+    loyalty: null, employees: null, financeTender: null, financeTopItems: null
   });
   const [loading, setLoading] = useState(true);
   const fetchControllerRef = useRef(null);
@@ -85,7 +86,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
       const [
         financeDash, financeTrend, financeChannels,
         rc, kdsStats, aggregatorRecon,
-        loyalty, hrEmployees, glIS
+        loyalty, hrEmployees, financeTender, financeTopItems
       ] = await Promise.all([
         safeJson(`/api/finance/dashboard?from=${range.from}&to=${range.to}`),
         safeJson(`/api/finance/revenue-trend?days=30`),
@@ -96,7 +97,8 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
         // Try /stats first (existing backend), fallback to /summary
         safeJson(`/api/loyalty/stats`).then(r => r || safeJson(`/api/loyalty/summary`)),
         safeJson(`/api/hr/employees`),
-        safeJson(`/api/gl/income-statement?from=${new Date(range.from*1000).toISOString().slice(0,10)}&to=${new Date(range.to*1000).toISOString().slice(0,10)}`)
+        safeJson(`/api/finance/by-tender?from=${range.from}&to=${range.to}`),
+        safeJson(`/api/finance/top-items?from=${range.from}&to=${range.to}&limit=8`)
       ]);
 
       // /api/loyalty/stats uses {tier_distribution:[{tier,count}], outstanding_points};
@@ -107,7 +109,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
         current_outstanding: loyalty.current_outstanding ?? loyalty.outstanding_points ?? 0,
       } : loyalty;
 
-      setData({ finance: financeDash, financeTrend, financeChannels, refundCancel: rc, kds: kdsStats, aggregator: aggregatorRecon, loyalty: loyaltyNorm, employees: hrEmployees, gl: glIS });
+      setData({ finance: financeDash, financeTrend, financeChannels, refundCancel: rc, kds: kdsStats, aggregator: aggregatorRecon, loyalty: loyaltyNorm, employees: hrEmployees, financeTender, financeTopItems });
       setLastRefresh(Date.now());
     } catch (e) { console.warn('[dashboard] fetch error:', e.message); }
     setLoading(false);
@@ -124,16 +126,20 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
   // ============================================================
   // DERIVED METRICS
   // ============================================================
-  const heroKpis = useMemo(() => {
-    if (!data.finance) return null;
+  // Wave-2 /api/finance/dashboard returns period buckets {today, yesterday, this_month}
+  // and ignores from/to. Map the selected period to its closest bucket; if a future
+  // backend returns a flat shape, `data.finance` itself is used as the bucket.
+  const financeBucket = useMemo(() => {
     const f = data.finance;
-    // Wave-2 /api/finance/dashboard returns period buckets {today, yesterday, this_month}
-    // and ignores from/to. Map the selected period to its closest bucket; if a future
-    // backend returns a flat shape, `f` itself is used as the bucket.
-    const bucket = (period.key === 'yesterday' && f.yesterday) ? f.yesterday
-      : ((period.mtd || period.key === 'month') && f.this_month) ? f.this_month
-      : (f.today || f);
-    const num = (v) => (typeof v === 'number' && isFinite(v)) ? v : 0;
+    if (!f) return null;
+    if (period.key === 'yesterday' && f.yesterday) return f.yesterday;
+    if ((period.mtd || period.key === 'month') && f.this_month) return f.this_month;
+    return f.today || f;
+  }, [data.finance, period]);
+
+  const heroKpis = useMemo(() => {
+    const f = data.finance, bucket = financeBucket;
+    if (!f || !bucket) return null;
     const rev = num(bucket.revenue?.net ?? bucket.revenue?.gross ?? f.revenue);
     const orders = num(bucket.revenue?.order_count ?? f.order_count);
     const avgTicket = num(bucket.revenue?.avg_order_value) || (orders > 0 ? rev / orders : 0);
@@ -150,7 +156,26 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
       cash: { value: cashPosition, label: 'Cash Position', subtext: `AP outstanding ${fmtIDRcompact(apOutstanding)}` },
       anomaly: { value: anomalyCount, label: 'Anomali', subtext: anomalyCount > 0 ? 'butuh review' : 'all clear', isCount: true, isAlert: anomalyCount > 0 }
     };
-  }, [data, period]);
+  }, [data, financeBucket]);
+
+  // P&L derived from the finance bucket — /api/finance/dashboard already carries
+  // revenue / cogs / expenses.by_category / tax for the selected period.
+  const plSummary = useMemo(() => {
+    const b = financeBucket;
+    if (!b || !b.revenue) return null;
+    const revTotal = num(b.revenue.net ?? b.revenue.gross);
+    const expItems = (b.expenses?.by_category || []).map(e => ({ name: e.name, amount: num(e.amount) }));
+    const cogs = num(b.cogs?.total);
+    if (cogs > 0) expItems.unshift({ name: 'COGS / HPP', amount: cogs });
+    const tax = num(b.tax?.total);
+    if (tax > 0) expItems.push({ name: 'Pajak', amount: tax });
+    const expTotal = expItems.reduce((s, e) => s + e.amount, 0);
+    return {
+      revenue: { total: revTotal, items: [{ name: 'Penjualan (Net)', amount: revTotal }] },
+      expenses: { total: expTotal, items: expItems },
+      net_income: revTotal - expTotal
+    };
+  }, [financeBucket]);
 
   const channelMix = useMemo(() => {
     if (!data.financeChannels && !data.aggregator) return [];
@@ -166,7 +191,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
     ].filter(c => c.amount > 0);
   }, [data]);
 
-  const topItems = useMemo(() => data.finance?.top_items?.slice(0, 8) || [], [data]);
+  const topItems = useMemo(() => data.financeTopItems?.items?.slice(0, 8) || [], [data.financeTopItems]);
 
   return (
     <div style={styles.root}>
@@ -255,7 +280,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
         </Panel>
 
         <Panel title="Payment Method Mix" onClick={() => onNavigate?.('payment_gateway')}>
-          <PaymentMethodMix data={data.finance?.by_tender || []} />
+          <PaymentMethodMix data={data.financeTender?.tenders || []} />
         </Panel>
       </div>
 
@@ -292,9 +317,9 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
       </div>
 
       {/* FINANCIAL DEEP */}
-      <div style={styles.sectionLabel}>FINANCIAL — INCOME STATEMENT YTD</div>
+      <div style={styles.sectionLabel}>FINANCIAL — INCOME STATEMENT ({range.label})</div>
       <Panel title="P&L Summary" onClick={() => onNavigate?.('gl')}>
-        <PLSummary data={data.gl} />
+        <PLSummary data={plSummary} />
       </Panel>
 
       {/* AGGREGATOR DEEP */}

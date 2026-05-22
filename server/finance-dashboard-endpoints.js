@@ -5,6 +5,8 @@
 // Endpoint yang ditambah:
 //   GET  /api/finance/revenue-trend?days=30   — daily revenue series buat sparkline + main chart
 //   GET  /api/finance/by-channel?from=&to=    — revenue breakdown per channel (direct vs aggregator)
+//   GET  /api/finance/by-tender?from=&to=     — payment-method breakdown (Payment Method Mix panel)
+//   GET  /api/finance/top-items?from=&to=     — top menu by revenue (Top Items panel)
 //
 // Setup di server/index.js:
 //   const { setupFinanceDashboard } = require('./finance-dashboard-endpoints');
@@ -131,6 +133,63 @@ function setupFinanceDashboard(app, opts = {}) {
   });
 
   // ============================================================
+  // GET /api/finance/by-tender?from=&to=
+  // Return: { tenders: [{ tender_type, amount, count }] }
+  // Payment-method breakdown buat panel "Payment Method Mix".
+  // ============================================================
+  app.get('/api/finance/by-tender', (req, res) => {
+    const now = Math.floor(Date.now() / 1000);
+    const from = Number(req.query.from) || (now - 86400);
+    const to = Number(req.query.to) || now;
+
+    let tenders = [];
+    try {
+      tenders = db.prepare(`
+        SELECT tender_type,
+               COALESCE(SUM(amount_applied), 0) AS amount,
+               COUNT(*) AS count
+        FROM pos_payments
+        WHERE status = 'completed' AND created_at >= ? AND created_at <= ?
+        GROUP BY tender_type
+        ORDER BY amount DESC
+      `).all(from, to);
+    } catch {}
+
+    res.json({ tenders, from, to });
+  });
+
+  // ============================================================
+  // GET /api/finance/top-items?from=&to=&limit=8
+  // Return: { items: [{ name, qty, revenue }] }
+  // Top menu by revenue — items disimpan sbg JSON array di orders.items
+  // (field n=name, q=qty, p=unit price). orders.time = epoch MILLISECONDS.
+  // ============================================================
+  app.get('/api/finance/top-items', (req, res) => {
+    const now = Math.floor(Date.now() / 1000);
+    const from = Number(req.query.from) || (now - 86400);
+    const to = Number(req.query.to) || now;
+    const limit = Math.min(Math.max(Number(req.query.limit) || 8, 1), 50);
+
+    let items = [];
+    try {
+      items = db.prepare(`
+        SELECT json_extract(value, '$.n') AS name,
+               COALESCE(SUM(json_extract(value, '$.q')), 0) AS qty,
+               COALESCE(SUM(json_extract(value, '$.q') * json_extract(value, '$.p')), 0) AS revenue
+        FROM orders, json_each(orders.items)
+        WHERE orders.status IN ('completed', 'partial_refund')
+          AND orders.time >= ? AND orders.time <= ?
+          AND json_extract(value, '$.n') IS NOT NULL
+        GROUP BY name
+        ORDER BY revenue DESC
+        LIMIT ?
+      `).all(from * 1000, to * 1000, limit);
+    } catch {}
+
+    res.json({ items, from, to });
+  });
+
+  // ============================================================
   // (Optional) GET /api/finance/dashboard fallback
   // Pastiin endpoint dasar ada — kalau Wave 2 udah ada, ini gak akan override karena Express ambil yang pertama match
   // ============================================================
@@ -169,7 +228,7 @@ function setupFinanceDashboard(app, opts = {}) {
     });
   });
 
-  console.log('[finance-dashboard-endpoints] mounted /api/finance/revenue-trend + /by-channel');
+  console.log('[finance-dashboard-endpoints] mounted /api/finance/revenue-trend + /by-channel + /by-tender + /top-items');
   return { db };
 }
 
