@@ -83,7 +83,9 @@ export default function App() {
 
   function handleAdminLogin(session) {
     setAdmin(session);
-    const _target = getScene(); setScene(_target === "admin-login" ? "home" : (_target || "home"));
+    // Simple enterprise flow: login lands straight on the Owner Dashboard
+    // (AdminTools default tab). A deep-linked scene is still honored.
+    const _target = getScene(); setScene(_target === "admin-login" ? "tools" : (_target || "tools"));
   }
 
   function handleAdminLogout() {
