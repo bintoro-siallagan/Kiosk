@@ -1,0 +1,181 @@
+// server/cinema-backend.js
+// Cinema Operations — film catalog, studios/screens, and showtimes.
+// karyaOS extension for the cinema vertical (FlowOS Stage 1 — operational data).
+//
+// Endpoints under /api/cinema/*:
+//   GET    /summary               — counts (films now-showing, studios, showtimes today)
+//   GET    /films                 — film catalog
+//   POST   /films                 — add film
+//   DELETE /films/:id             — remove film
+//   GET    /studios               — studios / screens
+//   POST   /studios               — add studio
+//   DELETE /studios/:id           — remove studio
+//   GET    /showtimes?date=       — showtimes (joined with film + studio)
+//   POST   /showtimes             — schedule a showtime
+//   DELETE /showtimes/:id         — remove showtime
+//
+// Setup in server/index.js:
+//   const { setupCinema } = require('./cinema-backend');
+//   setupCinema(app, { dbPath: DB_PATH });
+
+const express = require('express');
+const Database = require('better-sqlite3');
+const path = require('path');
+
+const SCHEMA = `
+CREATE TABLE IF NOT EXISTS cinema_films (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  genre TEXT,
+  duration_min INTEGER DEFAULT 0,
+  rating TEXT DEFAULT 'SU',
+  status TEXT DEFAULT 'now_showing' CHECK (status IN ('now_showing','coming_soon','archived')),
+  synopsis TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE TABLE IF NOT EXISTS cinema_studios (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  studio_type TEXT DEFAULT 'Regular',
+  rows INTEGER DEFAULT 8,
+  cols INTEGER DEFAULT 12,
+  outlet TEXT,
+  is_active INTEGER DEFAULT 1,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE TABLE IF NOT EXISTS cinema_showtimes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  film_id INTEGER NOT NULL,
+  studio_id INTEGER NOT NULL,
+  show_date TEXT NOT NULL,
+  start_time TEXT NOT NULL,
+  price INTEGER DEFAULT 0,
+  status TEXT DEFAULT 'scheduled' CHECK (status IN ('scheduled','cancelled')),
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_cinema_showtime_date ON cinema_showtimes(show_date);
+`;
+
+const SEED_FILMS = [
+  ['Sang Penjaga Rimba', 'Action / Adventure', 128, '13+', 'now_showing', 'Seorang ranger melawan sindikat perdagangan satwa di hutan Kalimantan.'],
+  ['Cinta di Ujung Senja', 'Drama / Romance', 105, '13+', 'now_showing', 'Dua orang asing bertemu di kota tua dan menemukan arti pulang.'],
+  ['Petualangan Si Kancil', 'Animation', 95, 'SU', 'now_showing', 'Si Kancil dan teman-temannya menyelamatkan mata air desa.'],
+  ['Teror Tengah Malam', 'Horror', 110, '17+', 'coming_soon', 'Sebuah keluarga pindah ke rumah tua dengan masa lalu kelam.'],
+];
+const SEED_STUDIOS = [
+  ['Studio 1', 'Regular', 8, 12, 'Paskal'],
+  ['Studio 2', 'Regular', 8, 14, 'Paskal'],
+  ['Studio 3', 'IMAX', 10, 16, 'Paskal'],
+  ['Studio 4', 'Premiere', 5, 8, 'Paskal'],
+];
+
+function today() { return new Date().toISOString().slice(0, 10); }
+
+function setupCinema(app, opts = {}) {
+  const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
+  db.pragma('journal_mode = WAL');
+  db.exec(SCHEMA);
+
+  // ── seed demo data on first run ──
+  if (db.prepare(`SELECT COUNT(*) c FROM cinema_films`).get().c === 0) {
+    const sf = db.prepare(`INSERT INTO cinema_films (title, genre, duration_min, rating, status, synopsis) VALUES (?,?,?,?,?,?)`);
+    for (const f of SEED_FILMS) sf.run(...f);
+  }
+  if (db.prepare(`SELECT COUNT(*) c FROM cinema_studios`).get().c === 0) {
+    const ss = db.prepare(`INSERT INTO cinema_studios (name, studio_type, rows, cols, outlet) VALUES (?,?,?,?,?)`);
+    for (const s of SEED_STUDIOS) ss.run(...s);
+  }
+  if (db.prepare(`SELECT COUNT(*) c FROM cinema_showtimes`).get().c === 0) {
+    const films = db.prepare(`SELECT id FROM cinema_films`).all().map(r => r.id);
+    const studios = db.prepare(`SELECT id FROM cinema_studios`).all().map(r => r.id);
+    if (films.length && studios.length) {
+      const sh = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price) VALUES (?,?,?,?,?)`);
+      const d = today();
+      [[0, 0, '13:00', 45000], [1, 1, '14:30', 45000], [0, 2, '16:00', 65000], [2, 0, '11:00', 40000], [1, 3, '19:00', 90000]]
+        .forEach(([fi, si, t, p]) => { if (films[fi] && studios[si]) sh.run(films[fi], studios[si], d, t, p); });
+    }
+  }
+
+  const router = express.Router();
+  router.use(express.json());
+
+  // ── SUMMARY ──
+  router.get('/summary', (req, res) => {
+    res.json({
+      films_now_showing: db.prepare(`SELECT COUNT(*) c FROM cinema_films WHERE status = 'now_showing'`).get().c,
+      films_total: db.prepare(`SELECT COUNT(*) c FROM cinema_films`).get().c,
+      studios: db.prepare(`SELECT COUNT(*) c FROM cinema_studios WHERE is_active = 1`).get().c,
+      showtimes_today: db.prepare(`SELECT COUNT(*) c FROM cinema_showtimes WHERE show_date = ? AND status = 'scheduled'`).get(today()).c,
+    });
+  });
+
+  // ── FILMS ──
+  router.get('/films', (req, res) => {
+    res.json({ films: db.prepare(`SELECT * FROM cinema_films ORDER BY status, title`).all() });
+  });
+  router.post('/films', (req, res) => {
+    const b = req.body || {};
+    if (!b.title || !String(b.title).trim()) return res.status(400).json({ error: 'title wajib diisi' });
+    const status = ['now_showing', 'coming_soon', 'archived'].includes(b.status) ? b.status : 'now_showing';
+    const info = db.prepare(`INSERT INTO cinema_films (title, genre, duration_min, rating, status, synopsis) VALUES (?,?,?,?,?,?)`)
+      .run(String(b.title).trim(), b.genre || '', Number(b.duration_min) || 0, b.rating || 'SU', status, b.synopsis || '');
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+  router.delete('/films/:id', (req, res) => {
+    db.prepare(`DELETE FROM cinema_showtimes WHERE film_id = ?`).run(req.params.id);
+    db.prepare(`DELETE FROM cinema_films WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
+  // ── STUDIOS ──
+  router.get('/studios', (req, res) => {
+    const rows = db.prepare(`SELECT * FROM cinema_studios ORDER BY name`).all();
+    res.json({ studios: rows.map(s => ({ ...s, capacity: (s.rows || 0) * (s.cols || 0) })) });
+  });
+  router.post('/studios', (req, res) => {
+    const b = req.body || {};
+    if (!b.name || !String(b.name).trim()) return res.status(400).json({ error: 'name wajib diisi' });
+    const info = db.prepare(`INSERT INTO cinema_studios (name, studio_type, rows, cols, outlet) VALUES (?,?,?,?,?)`)
+      .run(String(b.name).trim(), b.studio_type || 'Regular', Number(b.rows) || 8, Number(b.cols) || 12, b.outlet || '');
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+  router.delete('/studios/:id', (req, res) => {
+    db.prepare(`DELETE FROM cinema_showtimes WHERE studio_id = ?`).run(req.params.id);
+    db.prepare(`DELETE FROM cinema_studios WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
+  // ── SHOWTIMES ──
+  router.get('/showtimes', (req, res) => {
+    let sql = `SELECT s.*, f.title AS film_title, f.rating AS film_rating, f.duration_min,
+                      st.name AS studio_name, st.studio_type, (st.rows * st.cols) AS capacity
+               FROM cinema_showtimes s
+               LEFT JOIN cinema_films f ON f.id = s.film_id
+               LEFT JOIN cinema_studios st ON st.id = s.studio_id`;
+    const p = [];
+    if (req.query.date) { sql += ` WHERE s.show_date = ?`; p.push(req.query.date); }
+    sql += ` ORDER BY s.show_date, s.start_time`;
+    res.json({ showtimes: db.prepare(sql).all(...p) });
+  });
+  router.post('/showtimes', (req, res) => {
+    const b = req.body || {};
+    if (!b.film_id || !b.studio_id || !b.show_date || !b.start_time) {
+      return res.status(400).json({ error: 'film_id, studio_id, show_date, start_time wajib diisi' });
+    }
+    const info = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price) VALUES (?,?,?,?,?)`)
+      .run(Number(b.film_id), Number(b.studio_id), String(b.show_date), String(b.start_time), Number(b.price) || 0);
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+  router.delete('/showtimes/:id', (req, res) => {
+    db.prepare(`DELETE FROM cinema_showtimes WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
+  const mountPath = opts.mountPath || '/api/cinema';
+  app.use(mountPath, router);
+  console.log(`[cinema] mounted at ${mountPath} — films, studios, showtimes`);
+
+  return { router, db };
+}
+
+module.exports = { setupCinema };
