@@ -4,6 +4,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 import CommandCenter from "./CommandCenter.jsx";
+import AdminTools from "./AdminTools.jsx";
+import Admin from "./Admin.jsx";
+import Report from "./Report.jsx";
+import ESBSync from "./ESBSync.jsx";
+import ESBNotif from "./ESBNotif.jsx";
+import MemberList from "./MemberList.jsx";
+import PromoManager from "./PromoManager.jsx";
+import ShiftManager from "./ShiftManager.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
@@ -28,6 +36,9 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   const [health, setHealth] = useState(null);
   const [openSub, setOpenSub] = useState(null);
   const [rightView, setRightView] = useState("home");
+  const [rightArg, setRightArg] = useState(null);
+  const openRight = (kind, arg) => { setRightView(kind); setRightArg(arg || null); };
+  const closeRight = () => { setRightView("home"); setRightArg(null); };
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -106,11 +117,11 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   ];
   const columns = [
     { title: "Outlet", accent: "#22d3ee", items: [
-      { label: "Dashboard Outlet", icon: "🏪", c: "#22d3ee", on: () => onNav("tools", "dashboard") },
-      { label: "Pesanan / Transaksi", icon: "🧾", c: "#10b981", on: () => onNav("admin", "orders") },
-      { label: "Menu & Stok", icon: "🍔", c: "#f59e0b", on: () => onNav("admin", "menu") },
-      { label: "QR Meja", icon: "🪑", c: "#a855f7", on: () => onNav("admin", "qrgen") },
-      { label: "Pengaturan", icon: "⚙️", c: "#7d8590", on: () => onNav("admin", "settings") },
+      { label: "Dashboard Outlet", icon: "🏪", c: "#22d3ee", on: () => openRight("tools", "dashboard") },
+      { label: "Pesanan / Transaksi", icon: "🧾", c: "#10b981", on: () => openRight("admin", "orders") },
+      { label: "Menu & Stok", icon: "🍔", c: "#f59e0b", on: () => openRight("admin", "menu") },
+      { label: "QR Meja", icon: "🪑", c: "#a855f7", on: () => openRight("admin", "qrgen") },
+      { label: "Pengaturan", icon: "⚙️", c: "#7d8590", on: () => openRight("admin", "settings") },
     ] },
     { title: "Surface Operasional", accent: "#10b981", items: [
       { label: "POS Kasir", icon: "🧾", c: "#10b981", on: () => openTab("?pos=1") },
@@ -118,24 +129,24 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
       { label: "CDS Display", icon: "📺", c: "#a855f7", on: () => openTab("?cds=1") },
     ] },
     { title: "Manajemen & Data", accent: "#3b82f6", items: [
-      { label: "Member & Customer", icon: "👥", c: "#3b82f6", on: () => onNav("members") },
-      { label: "Promo Code", icon: "🏷️", c: "#ec4899", on: () => onNav("promo") },
-      { label: "Operasional / Shift", icon: "📋", c: "#f59e0b", on: () => onNav("shift") },
-      { label: "Laporan", icon: "📊", c: "#10b981", on: () => onNav("report") },
-      { label: "ESB Sync", icon: "🔗", c: "#22d3ee", on: () => onNav("esb-sync") },
-      { label: "Push Notif", icon: "🔔", c: "#a855f7", on: () => onNav("esb-notif") },
+      { label: "Member & Customer", icon: "👥", c: "#3b82f6", on: () => openRight("members") },
+      { label: "Promo Code", icon: "🏷️", c: "#ec4899", on: () => openRight("promo") },
+      { label: "Operasional / Shift", icon: "📋", c: "#f59e0b", on: () => openRight("shift") },
+      { label: "Laporan", icon: "📊", c: "#10b981", on: () => openRight("report") },
+      { label: "ESB Sync", icon: "🔗", c: "#22d3ee", on: () => openRight("esb-sync") },
+      { label: "Push Notif", icon: "🔔", c: "#a855f7", on: () => openRight("esb-notif") },
       { label: "Tools", icon: "🛠️", c: "#f59e0b", sub: [
-        { label: "📊 Dashboard", on: () => onNav("tools", "dashboard") },
-        { label: "🛰️ Operasi & Outlet", on: () => onNav("tools", "outlet_master") },
-        { label: "📦 Product", on: () => onNav("tools", "master_category") },
-        { label: "🚚 Inventory & Procurement", on: () => onNav("tools", "stock_list") },
-        { label: "🛒 Commerce", on: () => onNav("tools", "master") },
-        { label: "💰 Finance", on: () => onNav("tools", "coa") },
-        { label: "👥 HRIS & Reward", on: () => onNav("tools", "hris") },
-        { label: "🎯 Customer & Marketing", on: () => onNav("tools", "customer_intel") },
-        { label: "🔐 Security & Admin", on: () => onNav("tools", "rbac") },
+        { label: "📊 Dashboard", on: () => openRight("tools", "dashboard") },
+        { label: "🛰️ Operasi & Outlet", on: () => openRight("tools", "outlet_master") },
+        { label: "📦 Product", on: () => openRight("tools", "master_category") },
+        { label: "🚚 Inventory & Procurement", on: () => openRight("tools", "stock_list") },
+        { label: "🛒 Commerce", on: () => openRight("tools", "master") },
+        { label: "💰 Finance", on: () => openRight("tools", "coa") },
+        { label: "👥 HRIS & Reward", on: () => openRight("tools", "hris") },
+        { label: "🎯 Customer & Marketing", on: () => openRight("tools", "customer_intel") },
+        { label: "🔐 Security & Admin", on: () => openRight("tools", "rbac") },
       ] },
-      { label: "Management", icon: "📊", c: "#3b82f6", on: () => setRightView("command") },
+      { label: "Management", icon: "📊", c: "#3b82f6", on: () => openRight("command") },
     ] },
   ];
 
@@ -230,14 +241,22 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
 
         {/* KANAN: konten */}
         <main style={S.right}>
-          {rightView === "command" ? (
+          {rightView !== "home" ? (
             <div style={{ marginTop: 4 }}>
               <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
-                <button onClick={() => setRightView("home")} title="Tutup Command Center"
+                <button onClick={closeRight} title="Tutup panel"
                   style={{ background: "#161b22", border: "1px solid #30363d", borderRadius: 8, color: "#e6edf3", fontSize: 12, fontWeight: 700, padding: "7px 14px", cursor: "pointer", fontFamily: "inherit" }}>✕ Tutup</button>
               </div>
-              <div style={{ position: "relative", transform: "translateZ(0)", height: "80vh", overflow: "hidden", borderRadius: 14, border: "1px solid #1e1f23" }}>
-                <CommandCenter />
+              <div style={{ position: "relative", transform: "translateZ(0)", height: "calc(100vh - 150px)", overflow: "hidden", borderRadius: 14, border: "1px solid #1e1f23" }}>
+                {rightView === "tools" && <AdminTools initialTab={rightArg || "dashboard"} onBack={closeRight} />}
+                {rightView === "admin" && <Admin initialTab={rightArg || "orders"} adminSession={adminSession} onLogout={onLogout} onExit={closeRight} onReport={() => openRight("report")} onESBSync={() => openRight("esb-sync")} onESBNotif={() => openRight("esb-notif")} onMembers={() => openRight("members")} onPromo={() => openRight("promo")} onShift={() => openRight("shift")} onTools={(t) => openRight(t === "command" ? "command" : "tools", t)} />}
+                {rightView === "command" && <CommandCenter />}
+                {rightView === "report" && <Report onBack={closeRight} />}
+                {rightView === "members" && <MemberList onBack={closeRight} />}
+                {rightView === "promo" && <PromoManager onBack={closeRight} />}
+                {rightView === "shift" && <ShiftManager onBack={closeRight} />}
+                {rightView === "esb-sync" && <ESBSync onBack={closeRight} />}
+                {rightView === "esb-notif" && <ESBNotif onBack={closeRight} />}
               </div>
             </div>
           ) : (<>
@@ -271,7 +290,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
 
           {/* Performa outlet */}
           <Section label="PERFORMA OUTLET — HARI INI" accent="#22d3ee" mt={14}
-            right={<button onClick={() => onNav("tools", "outlet_master")} style={S.linkBtn}>kelola outlet →</button>} />
+            right={<button onClick={() => openRight("tools", "outlet_master")} style={S.linkBtn}>kelola outlet →</button>} />
           <div className="card" style={{ ...S.bigCard, padding: "10px 14px 12px" }}>
             {outletRank.length === 0 ? <div style={{ fontSize: 11, color: "#5b6470" }}>Memuat data outlet…</div>
               : outletRank.map((o, i) => (
@@ -322,7 +341,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
           <div style={S.dataGrid}>
             <div className="card" style={S.bigCard}>
               <Section label="ANTRIAN ORDER LIVE" accent="#3b82f6" mt={6}
-                right={<button onClick={() => onNav("tools", "dashboard")} style={S.linkBtn}>dashboard outlet →</button>} />
+                right={<button onClick={() => openRight("tools", "dashboard")} style={S.linkBtn}>dashboard outlet →</button>} />
               <div style={S.queueRow}>
                 {QUEUE.map(q => {
                   const list = orders.filter(o => o.status === q.key);

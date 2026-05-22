@@ -121,7 +121,7 @@ async function apiPatch(path, body) {
 
 // ── Styles ──
 const S = {
-  root: { fontFamily: "'Plus Jakarta Sans',sans-serif", background: "#050810", color: "#fff", minHeight: "100vh", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, overflowY: "auto", zIndex: 9999 },
+  root: { fontFamily: "'Plus Jakarta Sans',sans-serif", background: "#050810", color: "#fff", minHeight: "100%", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, overflowY: "auto", zIndex: 9999 },
   header: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 28px 0" },
   title: { fontFamily: "'Space Mono',monospace", fontSize: 20, fontWeight: 700, letterSpacing: 2 },
   sub: { fontSize: 12, color: "#555", marginTop: 2 },
