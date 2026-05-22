@@ -29,9 +29,11 @@ const PERIODS = [{ k: "today", l: "Hari Ini", d: 1 }, { k: "7d", l: "7 Hari", d:
 
 // Recursive rail menu node — supports nested groups (Tools → category → module).
 function RailNode({ node, depth, open, onToggle }) {
+  const [q, setQ] = useState("");
   const k = node._k || node.label;
-  const hasSub = !!(node.sub && node.sub.length);
+  const hasSub = !!(node.sub || node.getSub);
   const isOpen = open.has(k);
+  const children = !hasSub ? [] : (node.getSub ? node.getSub(q) : node.sub);
   return (
     <div>
       <button className="tile" style={{ ...S.rowTile, paddingLeft: 12 + depth * 14 }}
@@ -44,7 +46,11 @@ function RailNode({ node, depth, open, onToggle }) {
       </button>
       {hasSub && isOpen ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
-          {node.sub.map(c => <RailNode key={c._k || c.label} node={c} depth={depth + 1} open={open} onToggle={onToggle} />)}
+          {node.searchable ? (
+            <input value={q} onChange={e => setQ(e.target.value)} placeholder="🔍 Cari modul…"
+              style={{ background: "#0a0e16", border: "1px solid #26272b", borderRadius: 8, padding: "7px 10px", color: "#fff", fontSize: 11.5, fontFamily: "inherit", boxSizing: "border-box", outline: "none", marginLeft: 14 }} />
+          ) : null}
+          {children.map(c => <RailNode key={c._k || c.label} node={c} depth={depth + 1} open={open} onToggle={onToggle} />)}
         </div>
       ) : null}
     </div>
@@ -149,6 +155,9 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     }),
   }));
   const columns = [
+    { title: "Dashboard", accent: "#f59e0b", items: [
+      { label: "Owner Dashboard", icon: "📊", c: "#f59e0b", on: () => openRight("tools", "dashboard") },
+    ] },
     { title: "Outlet", accent: "#22d3ee", items: [
       { label: "Pesanan / Transaksi", icon: "🧾", c: "#10b981", on: () => openRight("admin", "orders") },
       { label: "Menu & Stok", icon: "🍔", c: "#f59e0b", on: () => openRight("admin", "menu") },
@@ -161,7 +170,6 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "CDS Display", icon: "📺", c: "#a855f7", on: () => openTab("?cds=1") },
       { label: "Kiosk", icon: "🖥️", c: "#06b6d4", on: () => openTab("?kiosk=1") },
       { label: "Tracking", icon: "📍", c: "#f59e0b", on: () => openTab("?track=1") },
-      { label: "QR Barcode", icon: "🔳", c: "#8b5cf6", on: () => openRight("admin", "qrgen") },
     ] },
     { title: "Manajemen & Data", accent: "#3b82f6", items: [
       { label: "Member & Customer", icon: "👥", c: "#3b82f6", on: () => openRight("members") },
@@ -170,7 +178,11 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "Laporan", icon: "📊", c: "#10b981", on: () => openRight("report") },
       { label: "ESB Sync", icon: "🔗", c: "#22d3ee", on: () => openRight("esb-sync") },
       { label: "Push Notif", icon: "🔔", c: "#a855f7", on: () => openRight("esb-notif") },
-      { label: "Tools", icon: "🛠️", c: "#f59e0b", sub: toolsSub },
+      { label: "Tools", icon: "🛠️", c: "#f59e0b", searchable: true,
+        getSub: (q) => q.trim()
+          ? TABS.filter(t => t.label.toLowerCase().includes(q.trim().toLowerCase()))
+              .map(t => ({ _k: "m:" + t.id, label: t.label, on: () => openRight("tools", t.id) }))
+          : toolsSub },
       { label: "Management", icon: "📊", c: "#3b82f6", on: () => openRight("command") },
     ] },
   ];
