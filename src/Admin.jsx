@@ -115,7 +115,7 @@ const btnStyle = (color, bg) => ({
   fontSize:11, fontWeight:700, fontFamily:"'Plus Jakarta Sans',sans-serif",
 });
 
-export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembers, onPromo, onShift, onLogout, adminSession, onTools, initialTab }) {
+export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembers, onPromo, onShift, onLogout, adminSession, onTools, initialTab, embedded }) {
   const [orders, setOrders]     = useState([]);
   const [showZReport, setShowZReport] = useState(false);
   const [printerConfig, setPrinterConfig] = useState({ debug: true, kitchen: { ip:"", port:9100 }, customer: { ip:"", port:9100 } });
@@ -564,7 +564,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
       )}
 
       {/* ── SIDEBAR ── */}
-      <aside style={D.sidebar}>
+      {!embedded && (<aside style={D.sidebar}>
         <div style={D.sideTop}>
           <div style={D.logo}>🍽️</div>
           <div style={D.brand}>BINTORO</div>
@@ -616,7 +616,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
             {onLogout && <button style={{...D.exitBtn,flex:1,color:"#F87171",borderColor:"#F8717133"}} onClick={onLogout}>Logout</button>}
           </div>
         </div>
-      </aside>
+      </aside>)}
 
       {/* ── MAIN ── */}
       <main style={D.main}>

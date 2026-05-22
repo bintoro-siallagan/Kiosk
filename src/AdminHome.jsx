@@ -117,7 +117,6 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   ];
   const columns = [
     { title: "Outlet", accent: "#22d3ee", items: [
-      { label: "Dashboard Outlet", icon: "🏪", c: "#22d3ee", on: () => openRight("tools", "dashboard") },
       { label: "Pesanan / Transaksi", icon: "🧾", c: "#10b981", on: () => openRight("admin", "orders") },
       { label: "Menu & Stok", icon: "🍔", c: "#f59e0b", on: () => openRight("admin", "menu") },
       { label: "QR Meja", icon: "🪑", c: "#a855f7", on: () => openRight("admin", "qrgen") },
@@ -251,8 +250,8 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
                   style={{ background: "#161b22", border: "1px solid #30363d", borderRadius: 8, color: "#e6edf3", fontSize: 12, fontWeight: 700, padding: "7px 14px", cursor: "pointer", fontFamily: "inherit" }}>✕ Tutup</button>
               </div>
               <div style={{ position: "relative", transform: "translateZ(0)", height: "calc(100vh - 150px)", overflow: "hidden", borderRadius: 14, border: "1px solid #1e1f23" }}>
-                {rightView === "tools" && <AdminTools initialTab={rightArg || "dashboard"} onBack={closeRight} />}
-                {rightView === "admin" && <Admin initialTab={rightArg || "orders"} adminSession={adminSession} onLogout={onLogout} onExit={closeRight} onReport={() => openRight("report")} onESBSync={() => openRight("esb-sync")} onESBNotif={() => openRight("esb-notif")} onMembers={() => openRight("members")} onPromo={() => openRight("promo")} onShift={() => openRight("shift")} onTools={(t) => openRight(t === "command" ? "command" : "tools", t)} />}
+                {rightView === "tools" && <AdminTools key={rightArg} embedded initialTab={rightArg || "dashboard"} onBack={closeRight} />}
+                {rightView === "admin" && <Admin key={rightArg} embedded initialTab={rightArg || "orders"} adminSession={adminSession} onLogout={onLogout} onExit={closeRight} onReport={() => openRight("report")} onESBSync={() => openRight("esb-sync")} onESBNotif={() => openRight("esb-notif")} onMembers={() => openRight("members")} onPromo={() => openRight("promo")} onShift={() => openRight("shift")} onTools={(t) => openRight(t === "command" ? "command" : "tools", t)} />}
                 {rightView === "command" && <CommandCenter />}
                 {rightView === "report" && <Report onBack={closeRight} />}
                 {rightView === "members" && <MemberList onBack={closeRight} />}

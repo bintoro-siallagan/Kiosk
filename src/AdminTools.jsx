@@ -191,7 +191,7 @@ const adminToolsCss = `
 @media print { .at-hamburger, .at-backdrop { display: none !important; } }
 `;
 
-export default function AdminTools({ onBack, initialTab }) {
+export default function AdminTools({ onBack, initialTab, embedded }) {
   const [tab, setTab] = useState(initialTab || "dashboard");
   const [toast, setToast] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -358,7 +358,7 @@ export default function AdminTools({ onBack, initialTab }) {
   return (
     <div style={S.root}>
       <style>{adminToolsCss}</style>
-      <div style={S.header} className="no-print">
+      {!embedded && (<div style={S.header} className="no-print">
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <button className="at-hamburger" style={S.hamburger}
             onClick={() => setSidebarOpen(o => !o)} aria-label="Menu" title="Buka menu">☰</button>
@@ -367,9 +367,10 @@ export default function AdminTools({ onBack, initialTab }) {
             <div style={S.sub}>Staff · Gudang · Waste · Config · Audit</div>
           </div>
         </div>
-      </div>
+      </div>)}
 
       <div style={S.main}>
+        {!embedded && (<>
         <div className="at-backdrop no-print" data-open={sidebarOpen} onClick={() => setSidebarOpen(false)} />
         <div style={S.sidebar} className={`at-sidebar no-print${sidebarOpen ? " at-sidebar-open" : ""}`}>
           <select value={viewRole} onChange={e => setViewRole(e.target.value)} style={S.roleSelect} title="Lihat menu sebagai role">
@@ -391,6 +392,7 @@ export default function AdminTools({ onBack, initialTab }) {
             <div style={{ fontSize: 11, color: "#5b6470", padding: "12px 10px", lineHeight: 1.5 }}>Role ini belum punya akses modul admin.</div>
           ) : null}
         </div>
+        </>)}
 
         <div style={S.body}>
         {tab === "dashboard" && <OwnerDashboard apiBase={API} onNavigate={(key) => {
