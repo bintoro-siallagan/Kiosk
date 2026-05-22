@@ -68,7 +68,7 @@ function statusOf(s) {
 }
 
 const SOURCE_META = {
-  customer_portal: { label: "FlowOS", color: BRAND },
+  customer_portal: { label: "KaryaOS", color: BRAND },
   kiosk: { label: "Kiosk", color: "#3B82F6" },
   pos: { label: "Kasir", color: "#8B5CF6" },
 };
