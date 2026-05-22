@@ -134,7 +134,7 @@ const S = {
   }),
   body: { flex: 1, padding: "20px 28px", overflowY: "auto" },
   main: { display: "flex", flex: 1, overflow: "hidden", marginTop: 14, borderTop: "1px solid #0f1629" },
-  sidebar: { width: 236, flexShrink: 0, borderRight: "1px solid #0f1629", padding: "12px 10px", overflowY: "auto" },
+  sidebar: { width: 236, flexShrink: 0, borderRight: "1px solid #0f1629", padding: "12px 10px", overflowY: "auto", background: "#050810" },
   search: { width: "100%", background: "#0a0e16", border: "1px solid #21262d", borderRadius: 8, padding: "8px 10px", color: "#fff", fontSize: 12, fontFamily: "inherit", boxSizing: "border-box", marginBottom: 10, outline: "none" },
   roleSelect: { width: "100%", background: "#0d1117", border: "1px solid #a855f755", borderRadius: 8, padding: "8px 10px", color: "#c9a8ff", fontSize: 12, fontWeight: 700, fontFamily: "inherit", boxSizing: "border-box", marginBottom: 8, outline: "none", cursor: "pointer" },
   groupHead: (open) => ({
@@ -167,11 +167,34 @@ const S = {
   badge: (color) => ({ background: color + "22", color, padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 600 }),
   toast: { position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: "#34D39915", border: "1px solid #34D39944", color: "#34D399", borderRadius: 10, padding: "10px 20px", fontSize: 13, fontWeight: 600, zIndex: 9999 },
   bar: (pct, color) => ({ height: 6, background: "#161b22", borderRadius: 3, overflow: "hidden", flex: 1, children: null }),
+  hamburger: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 8, color: "#e6edf3", fontSize: 17, lineHeight: 1, padding: "7px 11px", cursor: "pointer", fontFamily: "inherit" },
 };
+
+// Responsive shell — the 236px sidebar becomes an off-canvas drawer on phones.
+const adminToolsCss = `
+.at-hamburger { display: none; }
+.at-backdrop { display: none; }
+@media (max-width: 768px) {
+  .at-hamburger { display: inline-flex !important; align-items: center; }
+  .at-sidebar {
+    position: fixed !important; left: 0; top: 0; bottom: 0;
+    width: 264px !important; z-index: 10001;
+    transform: translateX(-100%); transition: transform .22s ease;
+    box-shadow: 2px 0 28px rgba(0,0,0,.65);
+  }
+  .at-sidebar.at-sidebar-open { transform: translateX(0); }
+  .at-backdrop[data-open="true"] {
+    display: block !important; position: fixed; inset: 0;
+    background: rgba(0,0,0,.55); z-index: 10000;
+  }
+}
+@media print { .at-hamburger, .at-backdrop { display: none !important; } }
+`;
 
 export default function AdminTools({ onBack, initialTab }) {
   const [tab, setTab] = useState(initialTab || "dashboard");
   const [toast, setToast] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
 
@@ -328,22 +351,28 @@ export default function AdminTools({ onBack, initialTab }) {
     }
   }, [viewRole, rbacMap]); // eslint-disable-line
   const navItem = (t) => t ? (
-    <div key={t.id} onClick={() => { setTab(t.id); setOpenGroup(groupOf(t.id)); setSearch(""); }}
+    <div key={t.id} onClick={() => { setTab(t.id); setOpenGroup(groupOf(t.id)); setSearch(""); setSidebarOpen(false); }}
       style={S.navItem(tab === t.id, t.color)}>{t.label}</div>
   ) : null;
 
   return (
     <div style={S.root}>
+      <style>{adminToolsCss}</style>
       <div style={S.header} className="no-print">
-        <div>
-          <div style={S.title}>🛠️ ADMIN TOOLS</div>
-          <div style={S.sub}>Staff · Gudang · Waste · Config · Audit</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <button className="at-hamburger" style={S.hamburger}
+            onClick={() => setSidebarOpen(o => !o)} aria-label="Menu" title="Buka menu">☰</button>
+          <div>
+            <div style={S.title}>🛠️ ADMIN TOOLS</div>
+            <div style={S.sub}>Staff · Gudang · Waste · Config · Audit</div>
+          </div>
         </div>
         <button onClick={onBack} style={S.btn()}>← Kembali</button>
       </div>
 
       <div style={S.main}>
-        <div style={S.sidebar} className="no-print">
+        <div className="at-backdrop no-print" data-open={sidebarOpen} onClick={() => setSidebarOpen(false)} />
+        <div style={S.sidebar} className={`at-sidebar no-print${sidebarOpen ? " at-sidebar-open" : ""}`}>
           <select value={viewRole} onChange={e => setViewRole(e.target.value)} style={S.roleSelect} title="Lihat menu sebagai role">
             {ALL_ROLES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
           </select>

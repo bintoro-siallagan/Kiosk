@@ -107,7 +107,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   ];
   const columns = [
     { title: "Outlet", accent: "#22d3ee", items: [
-      { label: "Dashboard Outlet", icon: "🏪", c: "#22d3ee", on: () => onNav("admin", "overview") },
+      { label: "Dashboard Outlet", icon: "🏪", c: "#22d3ee", on: () => onNav("tools", "dashboard") },
       { label: "Pesanan / Transaksi", icon: "🧾", c: "#10b981", on: () => onNav("admin", "orders") },
       { label: "Menu & Stok", icon: "🍔", c: "#f59e0b", on: () => onNav("admin", "menu") },
       { label: "QR Meja", icon: "🪑", c: "#a855f7", on: () => onNav("admin", "qrgen") },
@@ -298,7 +298,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
           <div style={S.dataGrid}>
             <div className="card" style={S.bigCard}>
               <Section label="ANTRIAN ORDER LIVE" accent="#3b82f6" mt={6}
-                right={<button onClick={() => onNav("admin", "overview")} style={S.linkBtn}>dashboard outlet →</button>} />
+                right={<button onClick={() => onNav("tools", "dashboard")} style={S.linkBtn}>dashboard outlet →</button>} />
               <div style={S.queueRow}>
                 {QUEUE.map(q => {
                   const list = orders.filter(o => o.status === q.key);
