@@ -122,33 +122,8 @@ async function apiPatch(path, body) {
 // ── Styles ──
 const S = {
   root: { fontFamily: "'Plus Jakarta Sans',sans-serif", background: "#050810", color: "#fff", minHeight: "100%", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, overflowY: "auto", zIndex: 9999 },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 28px 0" },
-  title: { fontFamily: "'Space Mono',monospace", fontSize: 20, fontWeight: 700, letterSpacing: 2 },
-  sub: { fontSize: 12, color: "#555", marginTop: 2 },
-  tabs: { display: "flex", gap: 4, padding: "16px 28px 0", borderBottom: "1px solid #0f1629", overflowX: "auto" },
-  tab: (active, color) => ({
-    padding: "10px 18px", fontSize: 13, fontWeight: active ? 700 : 400,
-    color: active ? color : "#555", background: "transparent", border: "none",
-    borderBottom: active ? `3px solid ${color}` : "3px solid transparent",
-    cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
-  }),
   body: { flex: 1, padding: "20px 28px", overflowY: "auto" },
   main: { display: "flex", flex: 1, overflow: "hidden", marginTop: 14, borderTop: "1px solid #0f1629" },
-  sidebar: { width: 236, flexShrink: 0, borderRight: "1px solid #0f1629", padding: "12px 10px", overflowY: "auto", background: "#050810" },
-  search: { width: "100%", background: "#0a0e16", border: "1px solid #21262d", borderRadius: 8, padding: "8px 10px", color: "#fff", fontSize: 12, fontFamily: "inherit", boxSizing: "border-box", marginBottom: 10, outline: "none" },
-  roleSelect: { width: "100%", background: "#0d1117", border: "1px solid #a855f755", borderRadius: 8, padding: "8px 10px", color: "#c9a8ff", fontSize: 12, fontWeight: 700, fontFamily: "inherit", boxSizing: "border-box", marginBottom: 8, outline: "none", cursor: "pointer" },
-  groupHead: (open) => ({
-    display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 10px",
-    fontSize: 11.5, fontWeight: 700, color: open ? "#e6edf3" : "#7d8590", cursor: "pointer",
-    borderRadius: 7, background: open ? "#0d1117" : "transparent", letterSpacing: 0.3,
-  }),
-  navItem: (active, color) => ({
-    padding: "7px 10px 7px 24px", fontSize: 12, fontWeight: active ? 700 : 400,
-    color: active ? "#fff" : "#9da7b3", background: active ? color + "22" : "transparent",
-    borderLeft: active ? `3px solid ${color}` : "3px solid transparent",
-    cursor: "pointer", borderRadius: "0 6px 6px 0", marginBottom: 1, whiteSpace: "nowrap",
-    overflow: "hidden", textOverflow: "ellipsis",
-  }),
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 14, padding: 20, marginBottom: 16 },
   label: { fontSize: 11, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8, fontFamily: "'Space Mono',monospace" },
   input: { width: "100%", background: "#0a0e16", border: "1px solid #21262d", borderRadius: 8, padding: "10px 12px", color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" },
@@ -166,8 +141,6 @@ const S = {
   grid3: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 },
   badge: (color) => ({ background: color + "22", color, padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 600 }),
   toast: { position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: "#34D39915", border: "1px solid #34D39944", color: "#34D399", borderRadius: 10, padding: "10px 20px", fontSize: 13, fontWeight: 600, zIndex: 9999 },
-  bar: (pct, color) => ({ height: 6, background: "#161b22", borderRadius: 3, overflow: "hidden", flex: 1, children: null }),
-  hamburger: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 8, color: "#e6edf3", fontSize: 17, lineHeight: 1, padding: "7px 11px", cursor: "pointer", fontFamily: "inherit" },
 };
 
 export default function AdminTools({ initialTab }) {

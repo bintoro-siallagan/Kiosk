@@ -115,7 +115,7 @@ const btnStyle = (color, bg) => ({
   fontSize:11, fontWeight:700, fontFamily:"'Plus Jakarta Sans',sans-serif",
 });
 
-export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembers, onPromo, onShift, onLogout, adminSession, onTools, initialTab, embedded }) {
+export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembers, onPromo, onShift, onLogout, adminSession, onTools, initialTab }) {
   const [orders, setOrders]     = useState([]);
   const [showZReport, setShowZReport] = useState(false);
   const [printerConfig, setPrinterConfig] = useState({ debug: true, kitchen: { ip:"", port:9100 }, customer: { ip:"", port:9100 } });
@@ -562,61 +562,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
           {toast.msg}
         </div>
       )}
-
-      {/* ── SIDEBAR ── */}
-      {!embedded && (<aside style={D.sidebar}>
-        <div style={D.sideTop}>
-          <div style={D.logo}>🍽️</div>
-          <div style={D.brand}>BINTORO</div>
-          <div style={D.brandSub}>COMMAND CENTER</div>
-          <div style={{...D.livePill, borderColor: connected?"#34D39933":"#F8717133", color:connected?"#34D399":"#F87171"}}>
-            <span style={{...D.liveDot,background:connected?"#34D399":"#F87171"}}/>
-            {connected?"LIVE":"OFFLINE"}
-          </div>
-        </div>
-
-        <nav style={D.nav}>
-          {[
-            {id:"orders",   icon:"⊞", label:"Pesanan",  badge: active.length||null},
-            {id:"menu",     icon:"≡",  label:"Menu",     badge: menu.filter(m=>!m.avail).length||null},
-            {id:"settings", icon:"⚙", label:"Pengaturan"},
-            {id:"qrgen",   icon:"⬡", label:"QR Meja"},
-          ].map(n=>(
-            <button key={n.id} className={`nav-item${activeTab===n.id?" active":""}`}
-              onClick={()=>setTab(n.id)} style={D.navItem}>
-              <span style={D.navIcon}>{n.icon}</span>
-              <span style={D.navLabel}>{n.label}</span>
-              {n.badge ? <span style={D.navBadge}>{n.badge}</span> : null}
-            </button>
-          ))}
-        </nav>
-
-        <div style={D.sideLinks}>
-          <div style={D.sideDivider}>AKSES</div>
-          {[
-            {label:"🛠️  Tools", sub:"Admin Tools — semua modul", fn:() => onTools && onTools("staff")},
-            {label:"📊  Management", sub:"Command Center — dashboard", fn:() => window.open(window.location.pathname + "?command=1", "_blank")},
-          ].map(l=>(
-            <button key={l.label} style={{...D.sideLink, fontWeight:700, fontSize:13, padding:"11px 12px", display:"flex", flexDirection:"column", alignItems:"flex-start", gap:2}} onClick={l.fn}>
-              <span>{l.label}</span>
-              <span style={{fontSize:10, fontWeight:400, color:"#555"}}>{l.sub}</span>
-            </button>
-          ))}
-        </div>
-
-        <div style={D.sideBottom}>
-          <div style={D.clock}>{time.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</div>
-          <div style={D.clockSub}>{time.toLocaleDateString("id-ID",{weekday:"short",day:"numeric",month:"short"})}</div>
-          {adminSession && (
-            <div style={{fontSize:11,color:"#555",marginBottom:6,fontFamily:"'Space Mono',monospace"}}>
-              {adminSession.name} · {adminSession.role}
-            </div>
-          )}
-          <div style={{display:"flex",gap:6}}>
-            {onLogout && <button style={{...D.exitBtn,flex:1,color:"#F87171",borderColor:"#F8717133"}} onClick={onLogout}>Logout</button>}
-          </div>
-        </div>
-      </aside>)}
 
       {/* ── MAIN ── */}
       <main style={D.main}>

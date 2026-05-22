@@ -264,7 +264,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
               </div>
               <div style={{ position: "relative", transform: "translateZ(0)", height: "calc(100vh - 150px)", overflow: "hidden", borderRadius: 14, border: "1px solid #1e1f23" }}>
                 {rightView === "tools" && <AdminTools key={rightArg} initialTab={rightArg || "dashboard"} />}
-                {rightView === "admin" && <Admin key={rightArg} embedded initialTab={rightArg || "orders"} adminSession={adminSession} onLogout={onLogout} onExit={closeRight} onReport={() => openRight("report")} onESBSync={() => openRight("esb-sync")} onESBNotif={() => openRight("esb-notif")} onMembers={() => openRight("members")} onPromo={() => openRight("promo")} onShift={() => openRight("shift")} onTools={(t) => openRight(t === "command" ? "command" : "tools", t)} />}
+                {rightView === "admin" && <Admin key={rightArg} initialTab={rightArg || "orders"} adminSession={adminSession} onLogout={onLogout} onExit={closeRight} onReport={() => openRight("report")} onESBSync={() => openRight("esb-sync")} onESBNotif={() => openRight("esb-notif")} onMembers={() => openRight("members")} onPromo={() => openRight("promo")} onShift={() => openRight("shift")} onTools={(t) => openRight(t === "command" ? "command" : "tools", t)} />}
                 {rightView === "command" && <CommandCenter />}
                 {rightView === "report" && <Report onBack={closeRight} />}
                 {rightView === "members" && <MemberList onBack={closeRight} />}
