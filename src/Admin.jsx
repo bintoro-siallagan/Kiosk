@@ -438,7 +438,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
   const [stats, setStats]       = useState(null);
   const [loading, setLoading]   = useState(true);
   const [connected, setConn]    = useState(false);
-  const [activeTab, setTab]     = useState(initialTab || "overview");
+  const [activeTab, setTab]     = useState(initialTab || "orders");
   const [toast, setToast]       = useState(null);
   const [now, setNow]           = useState(Date.now());
   const [editPrice, setEditPrice] = useState(null);
@@ -577,7 +577,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
 
         <nav style={D.nav}>
           {[
-            {id:"overview", icon:"◉", label:"Overview"},
             {id:"orders",   icon:"⊞", label:"Pesanan",  badge: active.length||null},
             {id:"menu",     icon:"≡",  label:"Menu",     badge: menu.filter(m=>!m.avail).length||null},
             {id:"settings", icon:"⚙", label:"Pengaturan"},
@@ -622,164 +621,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
 
       {/* ── MAIN ── */}
       <main style={D.main}>
-
-        {/* ════════ OVERVIEW TAB ════════ */}
-        {activeTab==="overview" && (
-          <div style={{animation:"fadeUp 0.3s ease"}}>
-            <div style={D.pageHeader}>
-              <div>
-                <div style={D.pageTitle}>Dashboard Overview</div>
-                <div style={D.pageSub}>
-                  {time.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}
-                </div>
-              </div>
-              <button style={D.refreshBtn} onClick={()=>window.location.reload()}>↺ Refresh</button>
-            </div>
-
-            <div style={D.kpiRow}>
-              {[
-                {label:"Pendapatan",  val:fIDR(revenue),          sub:`dari ${completed.length} transaksi`, color:"#F59E0B", data:hourData, icon:"💰"},
-                {label:"Order Aktif", val:active.length,           sub:`${waiting.length} menunggu · ${preparing.length} proses`, color:"#38BDF8", data:[1,2,3,2,4,3,active.length], icon:"🔥"},
-                {label:"Siap Ambil",  val:ready.length,            sub:"perlu diserahkan ke customer", color:"#34D399", data:[0,1,0,2,1,0,ready.length], icon:"✅"},
-                {label:"Rata-rata",   val:`${avgTime} mnt`,        sub:"waktu selesai per pesanan", color:"#A78BFA", data:[12,15,14,13,16,14,avgTime], icon:"⏱️"},
-              ].map((k,i)=>(
-                <div key={i} style={{...D.kpiCard, borderColor:`${k.color}22`}} className="kpi-card">
-                  <div style={D.kpiTop}>
-                    <div>
-                      <div style={D.kpiLabel}>{k.label}</div>
-                      <div style={{...D.kpiVal, color:k.color}}>{k.val}</div>
-                      <div style={D.kpiSub}>{k.sub}</div>
-                    </div>
-                    <div style={{...D.kpiIcon, background:`${k.color}15`}}>{k.icon}</div>
-                  </div>
-                  <Sparkline data={k.data} color={k.color} height={36}/>
-                </div>
-              ))}
-            </div>
-
-            <div style={D.mainGrid}>
-              <div style={D.gridCard}>
-                <div style={D.cardHead}>
-                  <div style={D.cardTitle}>⊞ Order Queue</div>
-                  <button style={D.seeAllBtn} onClick={()=>setTab("orders")}>Lihat semua →</button>
-                </div>
-                <div style={D.kanban}>
-                  {[
-                    {key:"waiting",   label:"Menunggu",  orders:waiting,   color:"#F59E0B"},
-                    {key:"preparing", label:"Diproses",  orders:preparing, color:"#38BDF8"},
-                    {key:"ready",     label:"Siap Ambil",orders:ready,     color:"#34D399"},
-                  ].map(col=>(
-                    <div key={col.key} style={D.kanbanCol}>
-                      <div style={{...D.kanbanHead, color:col.color}}>
-                        <span style={{...D.kanbanDot,background:col.color}}/>
-                        {col.label}
-                        <span style={{...D.kanbanCount,background:`${col.color}22`,color:col.color}}>{col.orders.length}</span>
-                      </div>
-                      <div style={D.kanbanBody}>
-                        {col.orders.length===0 && <div style={D.kanbanEmpty}>Tidak ada</div>}
-                        {col.orders.map(o=>(
-                          <OrderCard key={o.id} order={o} onStatus={setStatus} compact/>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div style={{display:"flex",flexDirection:"column",gap:16}}>
-                <div style={D.gridCard}>
-                  <div style={D.cardHead}>
-                    <div style={D.cardTitle}>💰 Revenue (8 jam)</div>
-                  </div>
-                  <div style={{display:"flex",alignItems:"flex-end",gap:6,height:80,padding:"0 4px"}}>
-                    {hourData.map((v,i)=>{
-                      const maxV = Math.max(...hourData,1);
-                      const h = Math.max(4, (v/maxV)*72);
-                      const hLabel = new Date(now-(7-i)*3600000).getHours();
-                      return (
-                        <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-                          <div style={{fontSize:9,color:v>0?"#F59E0B":"transparent",fontFamily:"'Space Mono',monospace"}}>{v>0?`${v.toFixed(0)}k`:""}</div>
-                          <div title={`${hLabel}:00`} style={{width:"100%",height:h,borderRadius:"4px 4px 0 0",
-                            background: i===hourData.length-1?"#F59E0B":`${v>0?"#F59E0B":"#1a1a2e"}${v>0?"66":""}`,
-                            transition:"height 0.4s ease"}}/>
-                          <div style={{fontSize:9,color:"#444"}}>{hLabel}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div style={D.gridCard}>
-                  <div style={D.cardHead}>
-                    <div style={D.cardTitle}>👥 Tipe Kunjungan</div>
-                  </div>
-                  <div style={{display:"flex",alignItems:"center",gap:20}}>
-                    <Donut size={90} segments={[
-                      {val:orders.filter(o=>o.type==="dine").length,     color:"#38BDF8"},
-                      {val:orders.filter(o=>o.type==="takeaway").length, color:"#F59E0B"},
-                    ]}/>
-                    <div style={{flex:1}}>
-                      {[
-                        {label:"Makan di Sini", count:orders.filter(o=>o.type==="dine").length,     color:"#38BDF8"},
-                        {label:"Bawa Pulang",   count:orders.filter(o=>o.type==="takeaway").length, color:"#F59E0B"},
-                      ].map((t,i)=>(
-                        <div key={i} style={{marginBottom:10}}>
-                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                            <span style={{fontSize:12,color:"#aaa"}}>{t.label}</span>
-                            <span style={{fontSize:13,fontWeight:700,color:t.color,fontFamily:"'Space Mono',monospace"}}>{t.count}</span>
-                          </div>
-                          <div style={{height:4,background:"#1a1a2e",borderRadius:2,overflow:"hidden"}}>
-                            <div style={{height:"100%",width:`${orders.length?(t.count/orders.length)*100:0}%`,background:t.color,borderRadius:2,transition:"width 0.5s"}}/>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={D.gridCard}>
-                  <div style={D.cardHead}>
-                    <div style={D.cardTitle}>🏆 Item Terlaris</div>
-                  </div>
-                  {topItems.map(([name,d],i)=>(
-                    <div key={name} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-                      <span style={{fontSize:10,color:"#555",fontFamily:"'Space Mono',monospace",width:16}}>#{i+1}</span>
-                      <span style={{fontSize:18}}>{d.e}</span>
-                      <span style={{flex:1,fontSize:12,color:"#ccc"}}>{name}</span>
-                      <span style={{fontSize:12,fontWeight:700,color:"#F59E0B",fontFamily:"'Space Mono',monospace"}}>{d.qty}x</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div style={{...D.gridCard,marginTop:16}}>
-              <div style={D.cardHead}>
-                <div style={D.cardTitle}>📡 Live Order Feed</div>
-                <div style={{display:"flex",alignItems:"center",gap:6,fontSize:11,color:connected?"#34D399":"#555"}}>
-                  <span style={{width:6,height:6,borderRadius:"50%",background:connected?"#34D399":"#555",animation:connected?"pulse 1.5s infinite":"none",display:"inline-block"}}/>
-                  {connected?"Real-time":"Simulasi"}
-                </div>
-              </div>
-              <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
-                {orders.slice(0,10).map(o=>{
-                  const st=STATUS[o.status];
-                  return (
-                    <div key={o.id} style={{flexShrink:0,background:"#0d1117",border:`1px solid ${st.color}22`,borderRadius:10,padding:"10px 14px",minWidth:160}}>
-                      <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                        <span style={{fontFamily:"'Space Mono',monospace",fontSize:12,fontWeight:700}}>#{o.id}</span>
-                        <span style={{fontSize:10,color:st.color,fontWeight:700}}>{st.short}</span>
-                      </div>
-                      <div style={{fontSize:11,color:"#888",marginBottom:2}}>{o.type==="dine"?`🪑${o.table}`:"🛍️"}</div>
-                      <div style={{fontSize:12,fontWeight:700,color:"#F59E0B"}}>{fIDR(o.total)}</div>
-                      <div style={{fontSize:10,color:"#555",marginTop:2}}>{fAgo(o.time)}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* ════════ ORDERS TAB ════════ */}
         {activeTab==="orders" && (
