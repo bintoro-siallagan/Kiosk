@@ -7,6 +7,7 @@ import POSCelebration from "./POS/POSCelebration.jsx";
 import POSCDS from "./POSCDS.jsx";
 import AdminLogin    from "./AdminLogin.jsx";
 import Kiosk         from "./Kiosk.jsx";
+import CinemaKiosk   from "./CinemaKiosk.jsx";
 import TableSelector from "./TableSelector.jsx";
 import CustomerInput from "./CustomerInput.jsx";
 import Payment       from "./Payment.jsx";
@@ -25,6 +26,7 @@ const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 function getScene() {
   const q = window.location.search;
   if (new URLSearchParams(q).get("command")) return "command";
+  if (q.includes("cinema")) return "cinema";
   if (q.includes("tools")) return "tools";
   if (q.includes("home")) return "home";
   if (new URLSearchParams(q).get("flow")) return "flow";
@@ -112,6 +114,7 @@ export default function App() {
   if (scene === "admin-login") return <AdminLogin onLogin={handleAdminLogin}/>;
   if (adminRoutes.includes(scene)) return <AdminHome initialView={scene} adminSession={adminSession} onLogout={handleAdminLogout} onExit={() => setScene("kiosk")} />;
   if (scene === "flow") return <FlowApp />;
+  if (scene === "cinema") return <CinemaKiosk apiBase={API_HOST} />;
   if (scene === "customer-track") return <><PromoBroadcastBanner/><CustomerTrackingPage orderId={trackOrderId}/></>;
   if (scene === "track")       return <OrderTracking onHome={go("kiosk")}/>;
 
