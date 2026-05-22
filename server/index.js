@@ -3574,6 +3574,7 @@ const { setupPhase4B }          = require('./pos-phase4b-backend');
 const { setupMenuBuilder }      = require('./master-menu-builder-backend');
 const { setupProcurementGaps }  = require('./procurement-gaps-backend');
 const { setupFinance }          = require('./finance-backend');
+const { setupFinanceDashboard } = require('./finance-dashboard-endpoints');
 const { setupBridge }           = require('./procurement-finance-bridge');
 const { setupNotifications }    = require('./notifications-backend');
 const { setupProcurement }      = require('./procurement-backend');
@@ -3693,6 +3694,7 @@ const phase4b         = setupPhase4B(app,         { dbPath: DB_PATH, mountPath: 
 const menuBuilder     = setupMenuBuilder(app,     { dbPath: DB_PATH, mountPath: '/api/master' });
 const procurementGaps = setupProcurementGaps(app, { dbPath: DB_PATH, mountPath: '/api/procurement' });
 const finance         = setupFinance(app,         { dbPath: DB_PATH, mountPath: '/api/finance' });
+setupFinanceDashboard(app, { dbPath: DB_PATH });
 const bridge          = setupBridge(app,          { dbPath: DB_PATH, mountPath: '/api/bridge' });
 const notifications   = setupNotifications(app, {
   dbPath: DB_PATH,
