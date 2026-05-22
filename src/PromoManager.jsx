@@ -206,7 +206,6 @@ export default function PromoManager({ onBack }) {
       {/* HEADER */}
       <div style={M.header}>
         <div style={{display:"flex",alignItems:"center",gap:16}}>
-          <button style={M.backBtn} onClick={onBack}>← Kembali</button>
           <div>
             <div style={M.title}>🏷️ MANAJEMEN PROMO</div>
             <div style={M.sub}>Buat & kelola kode promo untuk customer</div>

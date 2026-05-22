@@ -365,7 +365,6 @@ export default function Report({ onBack }) {
       {/* HEADER */}
       <div style={R.header}>
         <div style={R.headerLeft}>
-          <button style={R.backBtn} onClick={onBack}>← Kembali</button>
           <div>
             <div style={R.headerTitle}>📊 LAPORAN</div>
             <div style={R.headerSub}>BINTORO Self Order Kiosk</div>

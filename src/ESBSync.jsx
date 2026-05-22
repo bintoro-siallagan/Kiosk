@@ -221,7 +221,6 @@ export default function ESBSync({ onBack }) {
       {/* HEADER */}
       <div style={S.header}>
         <div style={S.hLeft}>
-          <button style={S.backBtn} onClick={onBack}>← Kembali</button>
           <div>
             <div style={S.title}>🔗 ESB ORDER QS — INTEGRASI MENU</div>
             <div style={S.sub}>Ambil menu dari ESB atau push menu ke ESB</div>
