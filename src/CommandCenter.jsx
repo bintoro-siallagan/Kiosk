@@ -198,7 +198,7 @@ export default function CommandCenter(){
   );
 
   return(
-  <div style={{minHeight:"100vh",background:"#080a0f",color:"#d4d4d8",position:"fixed",top:0,left:0,right:0,bottom:0,overflowY:"auto",zIndex:9999,"--m":"'Geist Mono',ui-monospace,monospace","--s":"'Geist','Segoe UI',system-ui,sans-serif",fontFamily:"var(--s)",padding:"20px 28px"}}>
+  <div style={{minHeight:"100%",background:"#080a0f",color:"#d4d4d8",position:"fixed",top:0,left:0,right:0,bottom:0,overflowY:"auto",zIndex:9999,"--m":"'Geist Mono',ui-monospace,monospace","--s":"'Geist','Segoe UI',system-ui,sans-serif",fontFamily:"var(--s)",padding:"20px 28px"}}>
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700&display=swap');
       @font-face{font-family:'Geist';src:url('https://cdn.jsdelivr.net/npm/geist@1.3.0/dist/fonts/geist-sans/Geist-Regular.woff2') format('woff2');font-weight:400}
