@@ -54,6 +54,16 @@ CREATE TABLE IF NOT EXISTS cinema_showtimes (
   created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
 CREATE INDEX IF NOT EXISTS idx_cinema_showtime_date ON cinema_showtimes(show_date);
+CREATE TABLE IF NOT EXISTS cinema_tickets (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  showtime_id INTEGER NOT NULL,
+  seat TEXT NOT NULL,
+  price INTEGER DEFAULT 0,
+  buyer TEXT,
+  sold_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  UNIQUE(showtime_id, seat)
+);
+CREATE INDEX IF NOT EXISTS idx_cinema_ticket_showtime ON cinema_tickets(showtime_id);
 `;
 
 const SEED_FILMS = [
@@ -106,6 +116,7 @@ function setupCinema(app, opts = {}) {
       films_total: db.prepare(`SELECT COUNT(*) c FROM cinema_films`).get().c,
       studios: db.prepare(`SELECT COUNT(*) c FROM cinema_studios WHERE is_active = 1`).get().c,
       showtimes_today: db.prepare(`SELECT COUNT(*) c FROM cinema_showtimes WHERE show_date = ? AND status = 'scheduled'`).get(today()).c,
+      tickets_today: db.prepare(`SELECT COUNT(*) c FROM cinema_tickets WHERE date(sold_at,'unixepoch','localtime') = date('now','localtime')`).get().c,
     });
   });
 
@@ -167,7 +178,47 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: true, id: info.lastInsertRowid });
   });
   router.delete('/showtimes/:id', (req, res) => {
+    db.prepare(`DELETE FROM cinema_tickets WHERE showtime_id = ?`).run(req.params.id);
     db.prepare(`DELETE FROM cinema_showtimes WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
+  // ── TICKETS / seat map ──
+  router.get('/showtimes/:id/seats', (req, res) => {
+    const st = db.prepare(`SELECT s.*, f.title AS film_title, st.name AS studio_name,
+                                  st.rows AS rows, st.cols AS cols, st.studio_type
+                           FROM cinema_showtimes s
+                           LEFT JOIN cinema_films f ON f.id = s.film_id
+                           LEFT JOIN cinema_studios st ON st.id = s.studio_id
+                           WHERE s.id = ?`).get(req.params.id);
+    if (!st) return res.status(404).json({ error: 'showtime tidak ditemukan' });
+    const sold = db.prepare(`SELECT seat FROM cinema_tickets WHERE showtime_id = ?`).all(req.params.id).map(r => r.seat);
+    const capacity = (st.rows || 0) * (st.cols || 0);
+    res.json({ showtime: st, rows: st.rows || 0, cols: st.cols || 0, capacity, sold, sold_count: sold.length });
+  });
+  router.get('/tickets', (req, res) => {
+    let sql = `SELECT * FROM cinema_tickets`;
+    const p = [];
+    if (req.query.showtime) { sql += ` WHERE showtime_id = ?`; p.push(req.query.showtime); }
+    sql += ` ORDER BY sold_at DESC`;
+    res.json({ tickets: db.prepare(sql).all(...p) });
+  });
+  router.post('/tickets', (req, res) => {
+    const b = req.body || {};
+    const seats = Array.isArray(b.seats) ? b.seats.map(String) : [];
+    if (!b.showtime_id || !seats.length) return res.status(400).json({ error: 'showtime_id + seats wajib diisi' });
+    const st = db.prepare(`SELECT * FROM cinema_showtimes WHERE id = ?`).get(b.showtime_id);
+    if (!st) return res.status(404).json({ error: 'showtime tidak ditemukan' });
+    const ins = db.prepare(`INSERT INTO cinema_tickets (showtime_id, seat, price, buyer) VALUES (?,?,?,?)`);
+    try {
+      db.transaction(() => { for (const s of seats) ins.run(st.id, s, st.price || 0, b.buyer || ''); })();
+    } catch (e) {
+      return res.status(409).json({ error: 'sebagian kursi sudah terjual — muat ulang peta kursi' });
+    }
+    res.json({ ok: true, count: seats.length, total: seats.length * (st.price || 0) });
+  });
+  router.delete('/tickets/:id', (req, res) => {
+    db.prepare(`DELETE FROM cinema_tickets WHERE id = ?`).run(req.params.id);
     res.json({ ok: true });
   });
 
