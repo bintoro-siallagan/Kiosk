@@ -35,6 +35,7 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
   const [system, setSystem] = useState({ network: 'checking', printer: 'unknown', last_sync: null });
   const [pinModal, setPinModal] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dayClosed, setDayClosed] = useState(false);
 
   // CLOCK — refresh every 30s
   useEffect(() => {
@@ -113,6 +114,26 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
   }, [apiBase]);
 
   useEffect(() => { loadStaff(); }, [loadStaff]);
+
+  // Business-day gate — if the day is closed, no shift can be opened.
+  const checkDay = useCallback(() => {
+    fetch(`${apiBase}/api/day/status`).then(r => r.json())
+      .then(d => setDayClosed(!!d.closed)).catch(() => {});
+  }, [apiBase]);
+  useEffect(() => {
+    checkDay();
+    const t = setInterval(checkDay, 20000);
+    return () => clearInterval(t);
+  }, [checkDay]);
+  async function handleOpenDay() {
+    try {
+      await fetch(`${apiBase}/api/day/open`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ by: "Manager" }),
+      });
+    } catch {}
+    setDayClosed(false);
+  }
 
   // SYSTEM HEALTH — network + printer + last sync
   useEffect(() => {
@@ -230,6 +251,15 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
         <StatCard label="Anomali" value={stats.anomalies} color={stats.anomalies > 0 ? '#fbbf24' : '#4ade80'} />
       </div>
 
+      {dayClosed ? (
+        <div style={{textAlign:'center', padding:'48px 24px'}}>
+          <div style={{fontSize:72, marginBottom:12}}>🌙</div>
+          <div style={{fontSize:26, fontWeight:800, color:'#f59e0b', letterSpacing:1, marginBottom:10}}>HARI DITUTUP</div>
+          <div style={{fontSize:14, color:'#9ca3af', lineHeight:1.6, marginBottom:30}}>Operasional hari ini sudah ditutup Manager.<br/>Buka hari dulu untuk mulai melayani lagi.</div>
+          <button onClick={handleOpenDay} style={{background:'#f59e0b', color:'#111', border:'none', borderRadius:14, padding:'16px 40px', fontSize:16, fontWeight:800, cursor:'pointer'}}>☀️ Buka Hari</button>
+        </div>
+      ) : (
+      <>
       <div style={styles.prompt}>Pilih Kasir untuk Memulai</div>
 
       {loading ? (
@@ -242,6 +272,8 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
               onClick={() => handleSelectStaff(s)} />
           ))}
         </div>
+      )}
+      </>
       )}
 
       {pinModal && (

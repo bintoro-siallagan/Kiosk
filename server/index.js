@@ -2439,6 +2439,87 @@ function normalizeShift(s) {
   };
 }
 
+// ── BUSINESS DAY (End Day) — the day must be open before any shift can start ──
+const DAY_STATE_FILE = require("path").join(__dirname, "day-state.json");
+let dayState = { closed: false, closedAt: null, closedBy: null };
+try { dayState = { ...dayState, ...JSON.parse(require("fs").readFileSync(DAY_STATE_FILE, "utf8")) }; } catch {}
+function saveDayState() {
+  try { require("fs").writeFileSync(DAY_STATE_FILE, JSON.stringify(dayState)); }
+  catch (e) { console.warn("[day] save failed:", e.message); }
+}
+console.log(`📅 Business day: ${dayState.closed ? "CLOSED" : "open"}`);
+
+app.get("/api/day/status", (_, res) => res.json(dayState));
+
+function dayReportHtml(r) {
+  const f = n => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+  const s = r.summary || {};
+  const payRows = Object.entries(r.payments || {})
+    .map(([k, v]) => `<tr><td style="padding:4px 0">${k}</td><td style="text-align:center">${v.count}</td><td style="text-align:right">${f(v.total)}</td></tr>`).join("");
+  const itemRows = (r.topItems || []).slice(0, 8)
+    .map(it => `<tr><td style="padding:4px 0">${it.name}</td><td style="text-align:center">${it.qty}</td><td style="text-align:right">${f(it.revenue)}</td></tr>`).join("");
+  return `<div style="font-family:Arial,sans-serif;max-width:580px;margin:0 auto;color:#111">
+    <h2 style="color:#F59E0B;margin:0">🌙 KaryaOS — Tutup Hari</h2>
+    <p style="color:#888;margin:2px 0 16px;font-size:13px">${(r.period && r.period.label) || ""} · dicetak ${new Date().toLocaleString("id-ID")}</p>
+    <table style="width:100%;border-collapse:collapse;font-size:14px">
+      <tr><td style="padding:4px 0">Total Transaksi</td><td style="text-align:right"><b>${s.transactionCount || 0}</b></td></tr>
+      <tr><td style="padding:4px 0">Omzet Kotor</td><td style="text-align:right"><b>${f(s.grossRevenue)}</b></td></tr>
+      <tr><td style="padding:4px 0">PPN</td><td style="text-align:right">${f(s.taxExtracted)}</td></tr>
+      <tr><td style="padding:4px 0">Omzet Bersih</td><td style="text-align:right">${f(s.netRevenue)}</td></tr>
+      <tr><td style="padding:4px 0">Diskon Promo</td><td style="text-align:right">${f(s.promoDiscount)}</td></tr>
+      <tr><td style="padding:4px 0">Rata-rata Struk</td><td style="text-align:right">${f(s.avgTicket)}</td></tr>
+    </table>
+    <h3 style="margin:18px 0 4px;border-bottom:1px solid #ddd;padding-bottom:4px">Pembayaran</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">${payRows || '<tr><td style="color:#999">— belum ada —</td></tr>'}</table>
+    <h3 style="margin:18px 0 4px;border-bottom:1px solid #ddd;padding-bottom:4px">Item Terlaris</h3>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">${itemRows || '<tr><td style="color:#999">— belum ada —</td></tr>'}</table>
+    <hr style="margin-top:20px"/><p style="font-size:11px;color:#888">Laporan otomatis KaryaOS · Tutup Hari oleh ${r._closedBy || "Manager"}</p>
+  </div>`;
+}
+
+app.post("/api/day/close", async (req, res) => {
+  dayState = { closed: true, closedAt: Date.now(), closedBy: (req.body && req.body.by) || "Manager" };
+  saveDayState();
+  // Closing the day also ends any active shift so ordering is fully blocked.
+  if (activeShift) {
+    activeShift = { ...activeShift, closeAt: Date.now(), active: false, note: "auto-closed (tutup hari)" };
+    shifts.push({ ...activeShift });
+    try { db.insertShift(activeShift); } catch {}
+    activeShift = null;
+  }
+  // End-of-day summary report (today's transactions)
+  let report = null, reportHtml = "", emailed = false;
+  try {
+    const ds = new Date(); ds.setHours(0, 0, 0, 0);
+    report = generateZReport(ds.getTime(), Date.now(), "Tutup Hari " + new Date().toLocaleDateString("id-ID"));
+    report._closedBy = dayState.closedBy;
+    reportHtml = dayReportHtml(report);
+  } catch (e) { console.warn("[day] report failed:", e.message); }
+  // Email the summary — only if email is enabled & has recipients
+  try {
+    const cfg = emailModule.getConfig();
+    const recipients = (req.body && Array.isArray(req.body.recipients) && req.body.recipients.length)
+      ? req.body.recipients : (cfg.recipients || []);
+    if (cfg.enabled && recipients.length && reportHtml) {
+      await emailModule.sendEmail({
+        to: recipients,
+        subject: `Tutup Hari — KaryaOS — ${new Date().toLocaleDateString("id-ID")}`,
+        html: reportHtml,
+      });
+      emailed = true;
+    }
+  } catch (e) { console.warn("[day] email failed:", e.message); }
+  console.log(`🌙 Hari ditutup oleh ${dayState.closedBy} — emailed: ${emailed}`);
+  res.json({ ...dayState, report, reportHtml, emailed });
+});
+
+app.post("/api/day/open", (req, res) => {
+  dayState = { closed: false, closedAt: null, closedBy: null, openedAt: Date.now(), openedBy: (req.body && req.body.by) || "Manager" };
+  saveDayState();
+  console.log(`☀️ Hari dibuka oleh ${dayState.openedBy}`);
+  res.json(dayState);
+});
+
 app.get("/api/shifts", (req, res) => res.json(shifts.map(normalizeShift)));
 app.get("/api/shifts/active", (req, res) => {
   if (!activeShift) return res.json({ active: false });
@@ -2483,6 +2564,7 @@ app.post("/api/shifts/force-close", (req, res) => {
 });
 
 app.post("/api/shifts/open", (req, res) => {
+  if (dayState.closed) return res.status(403).json({ error: "Hari sudah ditutup. Manager harus Buka Hari dulu." });
   if (activeShift) return res.status(409).json({ error: "Shift sudah terbuka" });
   const { kasirName, openingCash } = req.body;
   const openedAtTs = Date.now();
