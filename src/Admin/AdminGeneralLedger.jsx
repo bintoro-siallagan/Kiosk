@@ -54,12 +54,12 @@ export default function AdminGeneralLedger({ apiBase = "" }) {
             <div key={g.type} style={{ background: "#0a0e16", border: "1px solid #161b22", borderTop: `2px solid ${TYPE_C[g.type]}`, borderRadius: 9, padding: "11px 13px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: TYPE_C[g.type] }}>{g.type}</span>
-                <span style={{ fontSize: 12, fontWeight: 800, color: "#e6edf3", fontFamily: "'Space Mono',monospace" }}>{fmtRp(g.total)}</span>
+                <span style={{ fontSize: 12, fontWeight: 800, color: "#e6edf3", fontFamily: "'Geist Mono',monospace" }}>{fmtRp(g.total)}</span>
               </div>
               {g.accounts.map(a => (
                 <div key={a.code} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "2px 0", color: "#9da7b3" }}>
-                  <span><span style={{ color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{a.code}</span> {a.name}</span>
-                  <span style={{ fontFamily: "'Space Mono',monospace" }}>{fmtRp(a.balance)}</span>
+                  <span><span style={{ color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>{a.code}</span> {a.name}</span>
+                  <span style={{ fontFamily: "'Geist Mono',monospace" }}>{fmtRp(a.balance)}</span>
                 </div>
               ))}
             </div>
@@ -93,10 +93,10 @@ export default function AdminGeneralLedger({ apiBase = "" }) {
           <div key={m.id} style={{ padding: "10px 0", borderTop: "1px solid #161b22" }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
               <span style={{ color: "#e6edf3", fontWeight: 700 }}>{m.ref} <span style={{ color: "#9da7b3", fontWeight: 400 }}>· {m.description}</span></span>
-              <span style={{ fontFamily: "'Space Mono',monospace", color: "#38bdf8", fontWeight: 700 }}>{fmtRp(m.total)}</span>
+              <span style={{ fontFamily: "'Geist Mono',monospace", color: "#38bdf8", fontWeight: 700 }}>{fmtRp(m.total)}</span>
             </div>
             {m.lines.map((l, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "1px 0 1px 16px", color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "1px 0 1px 16px", color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>
                 <span>{l.account_code} {l.name}</span>
                 <span>{l.debit > 0 ? "D " + fmtRp(l.debit) : "K " + fmtRp(l.credit)}</span>
               </div>
@@ -111,8 +111,8 @@ export default function AdminGeneralLedger({ apiBase = "" }) {
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{v}</div>
     </div>
   );
 }
@@ -120,7 +120,7 @@ function Kpi({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   input: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 9px", color: "#e6edf3", fontSize: 12, fontFamily: "inherit", outline: "none", boxSizing: "border-box" },
   btn: { background: "#0369a1", color: "#fff", border: "none", borderRadius: 7, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },

@@ -53,7 +53,7 @@ export default function POSCelebration({ order, apiBase = '', onDone }) {
   return (
     <div style={S.root}>
       <div style={{ ...S.box, borderColor: t.color + '66' }}>
-        <div style={S.brand}>🍦 BINTORO</div>
+        <div style={S.brand}>🍦 KaryaOS</div>
         <div style={S.kicker}>🎉 TRANSAKSI SELESAI</div>
         <div style={{ fontSize: 76, lineHeight: 1, margin: '4px 0' }}>{t.emoji}</div>
         <div style={{ fontSize: 12, color: '#9ca3af' }}>Gelar kamu jam ini</div>

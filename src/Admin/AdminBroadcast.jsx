@@ -6,7 +6,7 @@
  */
 import { useState, useEffect, useCallback } from "react";
 
-const MONO = "'Space Mono',monospace";
+const MONO = "'Geist Mono',monospace";
 const ACCENTS = ["#f97316", "#ef4444", "#10b981", "#3b82f6", "#a855f7", "#eab308"];
 const DURATIONS = [[30, "30 menit"], [60, "1 jam"], [120, "2 jam"], [0, "Sampai distop"]];
 const TEMPLATES = [

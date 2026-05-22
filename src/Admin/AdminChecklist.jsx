@@ -8,7 +8,7 @@ import { useState, useEffect, useCallback } from "react";
 
 const S = {
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 14, padding: 18, marginBottom: 16 },
-  label: { fontSize: 11, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10, fontFamily: "'Space Mono',monospace" },
+  label: { fontSize: 11, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10, fontFamily: "'Geist Mono',monospace" },
   input: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 8, padding: "9px 11px", color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" },
   btn: (c = "#34D399") => ({ background: c + "18", border: `1px solid ${c}44`, borderRadius: 8, padding: "7px 12px", color: c, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }),
   row: { display: "flex", alignItems: "center", gap: 8, padding: "8px 0", borderBottom: "1px solid #0f1629" },

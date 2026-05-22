@@ -126,11 +126,11 @@ async function apiPatch(path, body) {
 
 // ── Styles ──
 const S = {
-  root: { fontFamily: "'Plus Jakarta Sans',sans-serif", background: "#050810", color: "#fff", minHeight: "100%", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, overflowY: "auto", zIndex: 9999 },
+  root: { fontFamily: "'Inter',sans-serif", background: "#050810", color: "#fff", minHeight: "100%", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, overflowY: "auto", zIndex: 9999 },
   body: { flex: 1, padding: "20px 28px", overflowY: "auto" },
   main: { display: "flex", flex: 1, overflow: "hidden", marginTop: 14, borderTop: "1px solid #0f1629" },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 14, padding: 20, marginBottom: 16 },
-  label: { fontSize: 11, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8, fontFamily: "'Space Mono',monospace" },
+  label: { fontSize: 11, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8, fontFamily: "'Geist Mono',monospace" },
   input: { width: "100%", background: "#0a0e16", border: "1px solid #21262d", borderRadius: 8, padding: "10px 12px", color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" },
   btn: (color = "#F59E0B") => {
     // normalize 3-digit hex → 6-digit, biar +"18"/"44" alpha valid (bukan #55518)
@@ -417,15 +417,15 @@ function GudangTab({ showToast }) {
       <div style={{ ...S.grid3, marginBottom: 16 }}>
         <div style={{ ...S.card, borderLeft: "4px solid #3B82F6", marginBottom: 0 }}>
           <div style={S.label}>Total SKU</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: "#3B82F6", fontFamily: "'Space Mono',monospace" }}>{items.length}</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: "#3B82F6", fontFamily: "'Geist Mono',monospace" }}>{items.length}</div>
         </div>
         <div style={{ ...S.card, borderLeft: "4px solid #EF4444", marginBottom: 0 }}>
           <div style={S.label}>Kritis</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: "#EF4444", fontFamily: "'Space Mono',monospace" }}>{critical.length}</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: "#EF4444", fontFamily: "'Geist Mono',monospace" }}>{critical.length}</div>
         </div>
         <div style={{ ...S.card, borderLeft: "4px solid #10B981", marginBottom: 0 }}>
           <div style={S.label}>Aman</div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: "#10B981", fontFamily: "'Space Mono',monospace" }}>{items.length - critical.length}</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: "#10B981", fontFamily: "'Geist Mono',monospace" }}>{items.length - critical.length}</div>
         </div>
       </div>
 
@@ -451,7 +451,7 @@ function GudangTab({ showToast }) {
                   <div style={{ fontSize: 11, color: "#666" }}>{w.id} · use {w.dailyUse}/{w.unit}/day</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <span style={{ fontSize: 18, fontWeight: 700, color: "#EF4444", fontFamily: "'Space Mono',monospace" }}>{Math.round(w.stock * 10) / 10}</span>
+                  <span style={{ fontSize: 18, fontWeight: 700, color: "#EF4444", fontFamily: "'Geist Mono',monospace" }}>{Math.round(w.stock * 10) / 10}</span>
                   <span style={{ fontSize: 12, color: "#888" }}> {w.unit}</span>
                   <div style={{ fontSize: 11, color: dl <= 2 ? "#EF4444" : "#F59E0B" }}>{dl} hari lagi</div>
                 </div>
@@ -486,7 +486,7 @@ function GudangTab({ showToast }) {
                       onChange={e => setOpnameData(d => ({ ...d, [w.id]: e.target.value }))}
                     />
                   ) : (
-                    <span style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Space Mono',monospace", color: low ? "#EF4444" : "#ddd" }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, fontFamily: "'Geist Mono',monospace", color: low ? "#EF4444" : "#ddd" }}>
                       {Math.round(w.stock * 10) / 10} <span style={{ fontSize: 11, color: "#666" }}>{w.unit}</span>
                     </span>
                   )}
@@ -592,7 +592,7 @@ function WasteTab({ showToast }) {
                   <div style={{ fontSize: 11, color: "#555" }}>{w.reason || "—"} · {w.cashier_name || "?"}</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <span style={{ fontSize: 16, fontWeight: 700, color: "#F97316", fontFamily: "'Space Mono',monospace" }}>{w.quantity}</span>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: "#F97316", fontFamily: "'Geist Mono',monospace" }}>{w.quantity}</span>
                   <span style={{ fontSize: 12, color: "#666" }}> {w.unit}</span>
                   <div style={{ fontSize: 10, color: "#444" }}>{new Date(w.created_at).toLocaleString("id-ID")}</div>
                 </div>
@@ -661,7 +661,7 @@ function ConfigTab({ showToast }) {
             return (
               <div key={c.key} style={{ ...S.row, flexWrap: "wrap", gap: 8 }}>
                 <div style={{ flex: 2, minWidth: 200 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: "#F59E0B", fontFamily: "'Space Mono',monospace" }}>{c.key}</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#F59E0B", fontFamily: "'Geist Mono',monospace" }}>{c.key}</div>
                   <div style={{ fontSize: 11, color: "#555" }}>{descriptions[c.key] || ""}</div>
                   {c.updated_at && <div style={{ fontSize: 10, color: "#333" }}>Updated: {new Date(c.updated_at).toLocaleString("id-ID")}</div>}
                 </div>
@@ -732,11 +732,11 @@ function AuditTab() {
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={S.badge(e.event_type?.includes("void") ? "#EF4444" : "#14B8A6")}>{e.event_type}</span>
                       {e.cashier_name && <span style={{ fontSize: 12, color: "#888" }}>{e.cashier_name}</span>}
-                      {e.order_id && <span style={{ fontSize: 11, color: "#555", fontFamily: "'Space Mono',monospace" }}>{e.order_id}</span>}
+                      {e.order_id && <span style={{ fontSize: 11, color: "#555", fontFamily: "'Geist Mono',monospace" }}>{e.order_id}</span>}
                     </div>
                     <div style={{ fontSize: 11, color: "#444" }}>{new Date(e.created_at).toLocaleString("id-ID")}</div>
                   </div>
-                  {e.amount > 0 && <div style={{ fontSize: 13, color: "#F59E0B", fontFamily: "'Space Mono',monospace" }}>{fR(e.amount)}</div>}
+                  {e.amount > 0 && <div style={{ fontSize: 13, color: "#F59E0B", fontFamily: "'Geist Mono',monospace" }}>{fR(e.amount)}</div>}
                   {parsed.reason && <div style={{ fontSize: 11, color: "#888" }}>Reason: {parsed.reason}</div>}
                   {parsed.approvedBy && <div style={{ fontSize: 11, color: "#10B981" }}>Approved: {parsed.approvedBy}</div>}
                 </div>
@@ -874,7 +874,7 @@ function MasterItemTab({ showToast }) {
                       <div style={{fontSize:11,color:"#555"}}>#{item.id} · {item.desc}</div>
                     </div>
                   </div>
-                  <span style={{fontSize:15,fontWeight:700,color:"#F59E0B",fontFamily:"'Space Mono',monospace",minWidth:90}}>{fR(item.price)}</span>
+                  <span style={{fontSize:15,fontWeight:700,color:"#F59E0B",fontFamily:"'Geist Mono',monospace",minWidth:90}}>{fR(item.price)}</span>
                   <span style={S.badge(item.avail?"#34D399":"#F87171")}>{item.avail?"Aktif":"Off"}</span>
                   {item.freeToppings>0&&<span style={{fontSize:11,color:"#888"}}>+{item.freeToppings} topping</span>}
                   <div style={{display:"flex",gap:4}}>
@@ -923,20 +923,20 @@ function FinanceTab({ showToast }) {
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12,marginBottom:16}}>
           <div style={{...S.card,borderLeft:"4px solid #10B981",marginBottom:0}}>
             <div style={S.label}>Revenue</div>
-            <div style={{fontSize:24,fontWeight:700,color:"#10B981",fontFamily:"'Space Mono',monospace"}}>{fR(pnl.revenue?.gross||0)}</div>
+            <div style={{fontSize:24,fontWeight:700,color:"#10B981",fontFamily:"'Geist Mono',monospace"}}>{fR(pnl.revenue?.gross||0)}</div>
             <div style={{fontSize:11,color:"#555"}}>{pnl.revenue?.orders||0} orders</div>
           </div>
           <div style={{...S.card,borderLeft:"4px solid #F59E0B",marginBottom:0}}>
             <div style={S.label}>PPN 11%</div>
-            <div style={{fontSize:24,fontWeight:700,color:"#F59E0B",fontFamily:"'Space Mono',monospace"}}>{fR(pnl.revenue?.tax||0)}</div>
+            <div style={{fontSize:24,fontWeight:700,color:"#F59E0B",fontFamily:"'Geist Mono',monospace"}}>{fR(pnl.revenue?.tax||0)}</div>
           </div>
           <div style={{...S.card,borderLeft:"4px solid #EF4444",marginBottom:0}}>
             <div style={S.label}>Expenses</div>
-            <div style={{fontSize:24,fontWeight:700,color:"#EF4444",fontFamily:"'Space Mono',monospace"}}>{fR(pnl.expenses?.total||0)}</div>
+            <div style={{fontSize:24,fontWeight:700,color:"#EF4444",fontFamily:"'Geist Mono',monospace"}}>{fR(pnl.expenses?.total||0)}</div>
           </div>
           <div style={{...S.card,borderLeft:"4px solid "+((pnl.profit?.net||0)>=0?"#10B981":"#EF4444"),marginBottom:0}}>
             <div style={S.label}>Net Profit</div>
-            <div style={{fontSize:24,fontWeight:700,color:(pnl.profit?.net||0)>=0?"#10B981":"#EF4444",fontFamily:"'Space Mono',monospace"}}>{fR(pnl.profit?.net||0)}</div>
+            <div style={{fontSize:24,fontWeight:700,color:(pnl.profit?.net||0)>=0?"#10B981":"#EF4444",fontFamily:"'Geist Mono',monospace"}}>{fR(pnl.profit?.net||0)}</div>
             <div style={{fontSize:11,color:"#555"}}>Margin {pnl.profit?.margin||0}%</div>
           </div>
         </div>
@@ -973,7 +973,7 @@ function FinanceTab({ showToast }) {
                   <div style={{fontSize:14,fontWeight:600,color:"#EF4444"}}>{e.category}</div>
                   <div style={{fontSize:11,color:"#555"}}>{e.description||"—"} · {e.date}</div>
                 </div>
-                <span style={{fontSize:15,fontWeight:700,color:"#EF4444",fontFamily:"'Space Mono',monospace"}}>{fR(e.amount)}</span>
+                <span style={{fontSize:15,fontWeight:700,color:"#EF4444",fontFamily:"'Geist Mono',monospace"}}>{fR(e.amount)}</span>
               </div>
             ))
         }

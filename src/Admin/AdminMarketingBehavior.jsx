@@ -60,7 +60,7 @@ export default function AdminMarketingBehavior({ apiBase = "" }) {
             <div style={{ flex: 1, height: 12, background: "#0a0e16", borderRadius: 6, overflow: "hidden" }}>
               <div style={{ height: "100%", width: Math.round(x.count / maxDay * 100) + "%", background: x.day === s.peak_day ? "#f59e0b" : AC }} />
             </div>
-            <span style={{ width: 36, textAlign: "right", fontFamily: "'Space Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{x.count}</span>
+            <span style={{ width: 36, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{x.count}</span>
           </div>
         ))}
       </div>
@@ -87,7 +87,7 @@ export default function AdminMarketingBehavior({ apiBase = "" }) {
             <div key={i} style={{ padding: "7px 0", borderTop: i ? "1px solid #161b22" : "none" }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 3 }}>
                 <span style={{ color: "#e6edf3", fontWeight: 600 }}>{i + 1}. {m.name}</span>
-                <span style={{ color: "#9da7b3", fontFamily: "'Space Mono',monospace" }}>{m.qty}× · {fmtRp(m.revenue)}</span>
+                <span style={{ color: "#9da7b3", fontFamily: "'Geist Mono',monospace" }}>{m.qty}× · {fmtRp(m.revenue)}</span>
               </div>
               <div style={{ height: 6, background: "#0a0e16", borderRadius: 3, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: Math.round(m.qty / maxSell * 100) + "%", background: AC }} />
@@ -100,7 +100,7 @@ export default function AdminMarketingBehavior({ apiBase = "" }) {
           {d.slow_moving.map((m, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "7px 0", borderTop: i ? "1px solid #161b22" : "none" }}>
               <span style={{ color: "#9da7b3" }}>{m.name}</span>
-              <span style={{ color: "#f59e0b", fontFamily: "'Space Mono',monospace" }}>{m.qty}×</span>
+              <span style={{ color: "#f59e0b", fontFamily: "'Geist Mono',monospace" }}>{m.qty}×</span>
             </div>
           ))}
           <div style={{ fontSize: 10, color: "#5b6470", marginTop: 8 }}>Kandidat promo bundling / evaluasi menu.</div>
@@ -117,15 +117,15 @@ function Row({ label, v, pct, c }) {
       <div style={{ flex: 1, height: 14, background: "#0a0e16", borderRadius: 7, overflow: "hidden" }}>
         <div style={{ height: "100%", width: pct + "%", background: c }} />
       </div>
-      <span style={{ width: 78, textAlign: "right", fontFamily: "'Space Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{v} · {pct}%</span>
+      <span style={{ width: 78, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{v} · {pct}%</span>
     </div>
   );
 }
 function Kpi({ label, v, c, sub }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
       <div style={{ fontSize: 10, color: "#5b6470" }}>{sub || " "}</div>
     </div>
   );
@@ -134,6 +134,6 @@ function Kpi({ label, v, c, sub }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
 };

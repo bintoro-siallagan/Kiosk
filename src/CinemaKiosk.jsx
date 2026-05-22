@@ -48,14 +48,14 @@ export default function CinemaKiosk({ apiBase }) {
   const price = show ? (show.price || 0) : 0;
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: BG, color: "#e6edf3", fontFamily: "'Plus Jakarta Sans',sans-serif", overflowY: "auto", display: "flex", flexDirection: "column" }}>
+    <div style={{ position: "fixed", inset: 0, background: BG, color: "#e6edf3", fontFamily: "'Inter',sans-serif", overflowY: "auto", display: "flex", flexDirection: "column" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "18px 24px", borderBottom: "1px solid #161b22", flexShrink: 0 }}>
         {step !== "films" && step !== "done" && (
           <button onClick={() => setStep(step === "seats" ? "showtimes" : "films")}
             style={{ background: "#161b22", border: "1px solid #2a2b30", borderRadius: 10, color: "#e6edf3", fontSize: 16, padding: "8px 14px", cursor: "pointer", fontFamily: "inherit" }}>←</button>
         )}
-        <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 20, fontWeight: 700, letterSpacing: 1 }}>🎬 karya<span style={{ color: "#a855f7" }}>OS</span> Cinema</div>
+        <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 20, fontWeight: 700, letterSpacing: 1 }}>🎬 karya<span style={{ color: "#a855f7" }}>OS</span> Cinema</div>
         <div style={{ flex: 1 }} />
         <div style={{ fontSize: 12, color: "#5b6470" }}>
           {["films", "showtimes", "seats"].map((s, i) => (
@@ -93,7 +93,7 @@ export default function CinemaKiosk({ apiBase }) {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 12 }}>
               {filmShows.map(s => (
                 <button key={s.id} onClick={() => pickShow(s)} style={card()}>
-                  <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 22, fontWeight: 700 }}>{s.start_time}</div>
+                  <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 22, fontWeight: 700 }}>{s.start_time}</div>
                   <div style={{ fontSize: 12.5, color: "#7d8590", marginTop: 4 }}>{s.show_date}</div>
                   <div style={{ fontSize: 12.5, color: "#7d8590" }}>{s.studio_name} · {s.studio_type}</div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: "#10b981", marginTop: 8 }}>{rp(s.price)}</div>
@@ -114,21 +114,21 @@ export default function CinemaKiosk({ apiBase }) {
             <div style={{ background: "#0d1117", border: "1px solid #1b212c", borderRadius: 14, padding: "18px 14px", overflowX: "auto" }}>
               <div style={{ textAlign: "center", marginBottom: 16 }}>
                 <div style={{ height: 5, background: "linear-gradient(90deg,transparent,#a855f7,transparent)", borderRadius: 4, marginBottom: 5 }} />
-                <span style={{ fontSize: 11, color: "#5b6470", letterSpacing: 4, fontFamily: "'Space Mono',monospace" }}>L A Y A R</span>
+                <span style={{ fontSize: 11, color: "#5b6470", letterSpacing: 4, fontFamily: "'Geist Mono',monospace" }}>L A Y A R</span>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 7, alignItems: "center" }}>
                 {Array.from({ length: seatData.rows }).map((_, ri) => {
                   const letter = String.fromCharCode(65 + ri);
                   return (
                     <div key={ri} style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                      <span style={{ width: 18, fontSize: 12, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{letter}</span>
+                      <span style={{ width: 18, fontSize: 12, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>{letter}</span>
                       {Array.from({ length: seatData.cols }).map((_, ci) => {
                         const seat = `${letter}${ci + 1}`;
                         const sold = seatData.sold.includes(seat);
                         const sel = seats.has(seat);
                         return (
                           <button key={ci} onClick={() => toggleSeat(seat)} disabled={sold} title={seat}
-                            style={{ width: 30, height: 30, borderRadius: 6, fontSize: 10, fontWeight: 700, fontFamily: "'Space Mono',monospace",
+                            style={{ width: 30, height: 30, borderRadius: 6, fontSize: 10, fontWeight: 700, fontFamily: "'Geist Mono',monospace",
                               background: sold ? "#ef444433" : sel ? "#10b981" : "#1b212c",
                               border: `1px solid ${sold ? "#ef444455" : sel ? "#10b981" : "#2a2b30"}`,
                               color: sold ? "#ef4444" : sel ? "#04130c" : "#7d8590",
@@ -154,7 +154,7 @@ export default function CinemaKiosk({ apiBase }) {
               <Line k="Jadwal" v={`${done.show.show_date} ${done.show.start_time}`} />
               <Line k="Kursi" v={done.seats.join(", ")} />
               <div style={{ borderTop: "1px solid #1b212c", marginTop: 10, paddingTop: 10, display: "flex", justifyContent: "space-between" }}>
-                <b>Total</b><b style={{ color: "#10b981", fontFamily: "'Space Mono',monospace" }}>{rp(done.total)}</b>
+                <b>Total</b><b style={{ color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>{rp(done.total)}</b>
               </div>
             </div>
             <button onClick={reset} style={{ marginTop: 22, background: "#a855f7", border: "none", borderRadius: 12, padding: "14px 30px", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
@@ -168,11 +168,11 @@ export default function CinemaKiosk({ apiBase }) {
       {step === "seats" && seatData && (
         <div style={{ flexShrink: 0, borderTop: "1px solid #161b22", background: "#0a0e16", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div style={{ fontSize: 13, color: "#7d8590" }}>
-            <b style={{ color: "#fff", fontSize: 17, fontFamily: "'Space Mono',monospace" }}>{seats.size}</b> kursi
+            <b style={{ color: "#fff", fontSize: 17, fontFamily: "'Geist Mono',monospace" }}>{seats.size}</b> kursi
             {seats.size > 0 && <span> · {[...seats].sort().join(", ")}</span>}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 18, fontWeight: 700, color: "#10b981" }}>{rp(seats.size * price)}</div>
+            <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 18, fontWeight: 700, color: "#10b981" }}>{rp(seats.size * price)}</div>
             <button onClick={buy} disabled={!seats.size}
               style={{ background: seats.size ? "#10b981" : "#1b212c", border: "none", borderRadius: 12, padding: "13px 28px",
                 color: seats.size ? "#04130c" : "#5b6470", fontSize: 15, fontWeight: 700, cursor: seats.size ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
@@ -186,7 +186,7 @@ export default function CinemaKiosk({ apiBase }) {
 }
 
 function H({ children }) {
-  return <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 17, fontWeight: 700, letterSpacing: 1, marginBottom: 14 }}>{children}</div>;
+  return <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 17, fontWeight: 700, letterSpacing: 1, marginBottom: 14 }}>{children}</div>;
 }
 function Line({ k, v }) {
   return (

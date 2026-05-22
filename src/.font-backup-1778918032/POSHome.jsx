@@ -42,7 +42,7 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab }) 
   return (
     <div style={S.root}>
       <header style={S.header}>
-        <div style={S.brand}>☕ BINTORO POS</div>
+        <div style={S.brand}>☕ KaryaOS POS</div>
         <div style={S.user}>
           <span style={S.userIcon}>👤</span>
           <span style={S.userName}>{cashier.name}</span>
@@ -134,11 +134,11 @@ const roleColors = {
 };
 
 const S = {
-  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'DM Sans',sans-serif" },
+  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Inter',sans-serif" },
   header: { display:"flex", alignItems:"center", justifyContent:"space-between",
     padding:"14px 24px", borderBottom:"1px solid #222", background:"#0a0a0a",
     position:"sticky", top:0, zIndex:10 },
-  brand: { fontFamily:"'Bebas Neue',cursive", fontSize:28, letterSpacing:3, color:"#F59E0B" },
+  brand: { fontFamily:"'Inter',cursive", fontSize:28, letterSpacing:3, color:"#F59E0B" },
   user: { display:"flex", alignItems:"center", gap:10, fontSize:14 },
   userIcon: { fontSize:20 },
   userName: { fontWeight:700 },
@@ -169,8 +169,8 @@ const S = {
     cursor:"pointer", transition:"all 0.15s", textAlign:"left",
     display:"flex", flexDirection:"column", gap:8 },
   tabHeaderRow: { display:"flex", justifyContent:"space-between", alignItems:"baseline" },
-  tabId: { fontSize:18, fontWeight:800, color:"#F59E0B", fontFamily:"'Bebas Neue',cursive", letterSpacing:2 },
-  tabTotal: { fontFamily:"'Bebas Neue',cursive", fontSize:20, color:"#fff", letterSpacing:1 },
+  tabId: { fontSize:18, fontWeight:800, color:"#F59E0B", fontFamily:"'Inter',cursive", letterSpacing:2 },
+  tabTotal: { fontFamily:"'Inter',cursive", fontSize:20, color:"#fff", letterSpacing:1 },
   tabMidRow: { fontSize:13, color:"#ccc", display:"flex", gap:4, flexWrap:"wrap" },
   tabType: { fontWeight:600 },
   tabTable: { color:"#aaa" },
@@ -182,7 +182,7 @@ const S = {
   settleCta: { marginLeft:"auto", color:"#F59E0B", fontWeight:700, fontSize:12, letterSpacing:1 },
   statsGrid: { display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:12 },
   statCard: { background:"#1a1a1a", border:"1px solid #222", borderRadius:12, padding:24, textAlign:"center" },
-  statValue: { fontSize:32, fontWeight:800, fontFamily:"'Bebas Neue',cursive",
+  statValue: { fontSize:32, fontWeight:800, fontFamily:"'Inter',cursive",
     color:"#F59E0B", letterSpacing:2, lineHeight:1 },
   statLabel: { fontSize:10, color:"#888", letterSpacing:1.5, fontWeight:700, marginTop:6 }
 };

@@ -40,7 +40,7 @@ export function printReport(title, subtitle, columns, rows) {
     <h1>${cell(title)}</h1>
     <div class="sub">${cell(subtitle)} &middot; dicetak ${new Date().toLocaleString('id-ID')}</div>
     <table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>
-    <div class="ft">BINTORO POS — karyaOS</div>
+    <div class="ft">KaryaOS POS — karyaOS</div>
     <script>window.onload=function(){window.print();}<\/script>
   </body></html>`);
   w.document.close();

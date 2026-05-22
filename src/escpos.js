@@ -71,7 +71,7 @@ export function buildReceipt(receipt) {
   const r = new Receipt();
   
   // Header
-  r.align("center").bold(true).size("dbl").line("BINTORO")
+  r.align("center").bold(true).size("dbl").line("KaryaOS")
    .size("normal").line("Self Order Kiosk").bold(false)
    .line("Jakarta, Indonesia").feed();
   r.align("left").hr("=");

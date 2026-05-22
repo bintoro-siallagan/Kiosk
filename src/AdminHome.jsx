@@ -232,7 +232,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     </div>
   );
   const Delta = ({ v }) => v == null ? null : (
-    <span style={{ fontSize: 10.5, fontWeight: 700, fontFamily: "'Space Mono',monospace", color: v >= 0 ? "#10b981" : "#ef4444" }}>
+    <span style={{ fontSize: 10.5, fontWeight: 700, fontFamily: "'Geist Mono',monospace", color: v >= 0 ? "#10b981" : "#ef4444" }}>
       {v >= 0 ? "▲" : "▼"} {Math.abs(v)}%
     </span>
   );
@@ -353,7 +353,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
             {outletRank.length === 0 ? <div style={{ fontSize: 11, color: "#5b6470" }}>Memuat data outlet…</div>
               : outletRank.map((o, i) => (
                 <div key={o.id} style={{ display: "flex", alignItems: "center", gap: 11, padding: "7px 0", borderTop: i ? "1px solid #161b22" : "none" }}>
-                  <span style={{ width: 18, fontSize: 11, fontWeight: 800, color: i === 0 ? "#f59e0b" : "#5b6470", fontFamily: "'Space Mono',monospace" }}>#{i + 1}</span>
+                  <span style={{ width: 18, fontSize: 11, fontWeight: 800, color: i === 0 ? "#f59e0b" : "#5b6470", fontFamily: "'Geist Mono',monospace" }}>#{i + 1}</span>
                   <span style={{ width: 7, height: 7, borderRadius: "50%", background: o.status === "active" ? "#10b981" : "#5b6470", flexShrink: 0 }} />
                   <div style={{ width: 130 }}>
                     <div style={{ fontSize: 12.5, fontWeight: 700, color: "#e6edf3" }}>{o.name}</div>
@@ -362,7 +362,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
                   <div style={{ flex: 1, height: 9, background: "#0a0e16", borderRadius: 4, overflow: "hidden" }}>
                     <div style={{ height: "100%", width: ((o.revenue_today || 0) / maxOutRev * 100) + "%", background: i === 0 ? "#f59e0b" : "#22d3ee" }} />
                   </div>
-                  <span style={{ width: 70, textAlign: "right", fontSize: 12, fontWeight: 700, fontFamily: "'Space Mono',monospace", color: "#cdd5df" }}>{fmtK(o.revenue_today)}</span>
+                  <span style={{ width: 70, textAlign: "right", fontSize: 12, fontWeight: 700, fontFamily: "'Geist Mono',monospace", color: "#cdd5df" }}>{fmtK(o.revenue_today)}</span>
                   <span style={{ width: 56, textAlign: "right", fontSize: 10.5, color: "#5b6470" }}>{o.orders_today} order</span>
                   <span style={{ width: 48, textAlign: "right" }}><Delta v={o.trend_pct} /></span>
                 </div>
@@ -371,7 +371,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
 
           {/* Live sales */}
           <Section label="LIVE SALES" accent="#10b981" mt={14}
-            right={<span style={{ fontSize: 10.5, color: "#5b6470", fontFamily: "'Space Mono',monospace", display: "flex", alignItems: "center", gap: 6 }}>
+            right={<span style={{ fontSize: 10.5, color: "#5b6470", fontFamily: "'Geist Mono',monospace", display: "flex", alignItems: "center", gap: 6 }}>
               <span className="livedot" style={{ width: 7, height: 7, borderRadius: "50%", background: "#10b981", display: "inline-block", boxShadow: "0 0 6px #10b981" }} />
               LIVE · {curOrders.length} transaksi {periodLabel.toLowerCase()}</span>} />
           <div className="card" style={{ ...S.bigCard, padding: "12px 14px" }}>
@@ -382,10 +382,10 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
                     return (
                       <div key={o.id} style={S.saleCard}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontFamily: "'Space Mono',monospace", fontWeight: 700, fontSize: 11, color: "#9da7b3" }}>#{o.id}</span>
+                          <span style={{ fontFamily: "'Geist Mono',monospace", fontWeight: 700, fontSize: 11, color: "#9da7b3" }}>#{o.id}</span>
                           <span style={{ fontSize: 12 }}>{o.type === "dine" ? "🪑" : "🛍️"}</span>
                         </div>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: "#10b981", fontFamily: "'Space Mono',monospace", margin: "5px 0 3px" }}>{fmtRp(o.total)}</div>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "#10b981", fontFamily: "'Geist Mono',monospace", margin: "5px 0 3px" }}>{fmtRp(o.total)}</div>
                         <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "#5b6470" }}>
                           <span style={{ width: 5, height: 5, borderRadius: "50%", background: st }} />{ago(o.time)} lalu
                         </div>
@@ -407,14 +407,14 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
                     <div key={q.key} style={{ ...S.queueCol, borderTop: `2px solid ${q.c}` }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 7 }}>
                         <span style={{ fontSize: 11, fontWeight: 700, color: q.c }}>● {q.label}</span>
-                        <span style={{ fontSize: 14, fontWeight: 800, color: q.c, fontFamily: "'Space Mono',monospace" }}>{list.length}</span>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: q.c, fontFamily: "'Geist Mono',monospace" }}>{list.length}</span>
                       </div>
                       {list.length === 0 ? <div style={{ fontSize: 10.5, color: "#5b6470", padding: "4px 0" }}>Tidak ada order</div>
                         : <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                             {list.slice(0, 4).map(o => (
                               <div key={o.id} style={S.orderChip}>
-                                <span style={{ fontFamily: "'Space Mono',monospace", fontWeight: 700, color: "#e6edf3" }}>#{o.id}</span>
-                                <span style={{ flex: 1, textAlign: "right", color: "#9da7b3", fontFamily: "'Space Mono',monospace" }}>{fmtK(o.total)}</span>
+                                <span style={{ fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "#e6edf3" }}>#{o.id}</span>
+                                <span style={{ flex: 1, textAlign: "right", color: "#9da7b3", fontFamily: "'Geist Mono',monospace" }}>{fmtK(o.total)}</span>
                                 <span style={{ color: "#5b6470", fontSize: 10 }}>{ago(o.time)}</span>
                               </div>
                             ))}
@@ -427,7 +427,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
             </div>
             <div className="card" style={S.bigCard}>
               <Section label="REVENUE 7 HARI" accent="#10b981" mt={6}
-                right={<span style={{ fontSize: 12.5, fontWeight: 800, color: "#10b981", fontFamily: "'Space Mono',monospace" }}>{fmtRp(dayRev.reduce((s, x) => s + x.rev, 0))}</span>} />
+                right={<span style={{ fontSize: 12.5, fontWeight: 800, color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>{fmtRp(dayRev.reduce((s, x) => s + x.rev, 0))}</span>} />
               <div style={S.barRow}>
                 {dayRev.map((x, i) => (
                   <div key={i} style={S.barCol}>
@@ -443,7 +443,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
 
           {/* Monitoring realtime */}
           <Section label="MONITORING REALTIME" accent="#ef4444" mt={14}
-            right={<span style={{ fontSize: 10.5, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{notifs.length} alert · {crit} mendesak</span>} />
+            right={<span style={{ fontSize: 10.5, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>{notifs.length} alert · {crit} mendesak</span>} />
           <div className="card" style={{ ...S.bigCard, padding: "12px 14px" }}>
             {feed.length === 0 ? <div style={{ fontSize: 11, color: "#10b981" }}>✓ Tidak ada alert — semua aman</div>
               : <div style={S.feed}>
@@ -457,7 +457,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
                           <div style={{ fontSize: 12, color: "#e6edf3", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.title}</div>
                           <div style={{ fontSize: 10.5, color: "#5b6470", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{x.detail}</div>
                         </div>
-                        <span style={{ fontSize: 9.5, color: "#5b6470", fontFamily: "'Space Mono',monospace", flexShrink: 0 }}>{x.source}</span>
+                        <span style={{ fontSize: 9.5, color: "#5b6470", fontFamily: "'Geist Mono',monospace", flexShrink: 0 }}>{x.source}</span>
                       </div>
                     );
                   })}
@@ -471,7 +471,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
               : <div style={S.topGrid}>
                   {topItems.map(([n, d], i) => (
                     <div key={n} style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                      <span style={{ fontSize: 11, fontWeight: 800, color: i === 0 ? "#f59e0b" : "#5b6470", fontFamily: "'Space Mono',monospace", width: 18 }}>#{i + 1}</span>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: i === 0 ? "#f59e0b" : "#5b6470", fontFamily: "'Geist Mono',monospace", width: 18 }}>#{i + 1}</span>
                       <span style={{ fontSize: 15 }}>{d.e}</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 12, color: "#cdd5df", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n}</div>
@@ -479,7 +479,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
                           <div style={{ height: "100%", width: (d.qty / maxQty * 100) + "%", background: "#f59e0b", borderRadius: 2 }} />
                         </div>
                       </div>
-                      <span style={{ fontFamily: "'Space Mono',monospace", fontWeight: 700, color: "#f59e0b", fontSize: 12 }}>{d.qty}×</span>
+                      <span style={{ fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "#f59e0b", fontSize: 12 }}>{d.qty}×</span>
                     </div>
                   ))}
                 </div>}
@@ -532,14 +532,14 @@ const CSS = `
 // Premium dark — Linear/Vercel: flat near-black, hairline borders,
 // calm neutrals, depth via subtle inset highlight (di CSS .card).
 const S = {
-  root: { minHeight: "100vh", background: "#08090a", color: "#c3c4c9", fontFamily: "'Geist','Plus Jakarta Sans',system-ui,sans-serif", padding: "16px 28px 24px", boxSizing: "border-box" },
+  root: { minHeight: "100vh", background: "#08090a", color: "#c3c4c9", fontFamily: "'Geist','Inter',system-ui,sans-serif", padding: "16px 28px 24px", boxSizing: "border-box" },
   topbar: { display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 14, borderBottom: "1px solid #1a1b1e" },
   logo: { width: 38, height: 38, borderRadius: 10, background: "linear-gradient(160deg,#f5a623,#d97706)", color: "#1a1205", fontWeight: 900, fontSize: 21, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   brand: { fontSize: 21, fontWeight: 750, color: "#f0f0f2", letterSpacing: -0.4, lineHeight: 1 },
-  brandSub: { fontSize: 9, color: "#55565d", fontFamily: "'Space Mono',monospace", letterSpacing: 2, marginTop: 4 },
-  clock: { fontSize: 20, fontWeight: 700, color: "#f0f0f2", fontFamily: "'Space Mono',monospace", lineHeight: 1 },
+  brandSub: { fontSize: 9, color: "#55565d", fontFamily: "'Geist Mono',monospace", letterSpacing: 2, marginTop: 4 },
+  clock: { fontSize: 20, fontWeight: 700, color: "#f0f0f2", fontFamily: "'Geist Mono',monospace", lineHeight: 1 },
   greetLine: { fontSize: 11.5, color: "#62636b", marginTop: 5 },
-  role: { fontSize: 9, fontWeight: 700, color: "#f5a623", background: "#f5a6231a", border: "1px solid #f5a62338", borderRadius: 4, padding: "1px 6px", marginLeft: 8, fontFamily: "'Space Mono',monospace", textTransform: "uppercase" },
+  role: { fontSize: 9, fontWeight: 700, color: "#f5a623", background: "#f5a6231a", border: "1px solid #f5a62338", borderRadius: 4, padding: "1px 6px", marginLeft: 8, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase" },
   opStrip: { display: "flex", alignItems: "center", gap: 11, fontSize: 11.5, color: "#9a9ba1", background: "#0e0e11", border: "1px solid #1e1f23", borderRadius: 10, padding: "9px 14px", margin: "13px 0 2px" },
   opDot: { width: 3, height: 3, borderRadius: "50%", background: "#3a3b40" },
   body: { display: "grid", gridTemplateColumns: "264px 1fr", gap: 20, alignItems: "start", marginTop: 12 },
@@ -551,12 +551,12 @@ const S = {
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 13 },
   kpi: { background: "#0e0e11", border: "1px solid #1e1f23", borderRadius: 13, padding: "13px 15px" },
   chip: { width: 30, height: 30, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, flexShrink: 0 },
-  kpiLabel: { fontSize: 9.5, color: "#7a7b82", fontFamily: "'Space Mono',monospace", letterSpacing: 0.5, textTransform: "uppercase" },
-  kpiVal: { fontSize: 21, fontWeight: 750, fontFamily: "'Space Mono',monospace", margin: "9px 0 2px", letterSpacing: -0.3 },
+  kpiLabel: { fontSize: 9.5, color: "#7a7b82", fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5, textTransform: "uppercase" },
+  kpiVal: { fontSize: 21, fontWeight: 750, fontFamily: "'Geist Mono',monospace", margin: "9px 0 2px", letterSpacing: -0.3 },
   kpiSub: { fontSize: 10.5, color: "#62636b" },
   sectionHead: { display: "flex", alignItems: "center", gap: 8, margin: "18px 2px 10px" },
-  sectionLabel: { fontSize: 10.5, fontWeight: 700, letterSpacing: 1.6, color: "#86878e", fontFamily: "'Space Mono',monospace" },
-  linkBtn: { background: "transparent", border: "none", color: "#6b7280", fontSize: 10.5, fontWeight: 600, cursor: "pointer", fontFamily: "'Space Mono',monospace" },
+  sectionLabel: { fontSize: 10.5, fontWeight: 700, letterSpacing: 1.6, color: "#86878e", fontFamily: "'Geist Mono',monospace" },
+  linkBtn: { background: "transparent", border: "none", color: "#6b7280", fontSize: 10.5, fontWeight: 600, cursor: "pointer", fontFamily: "'Geist Mono',monospace" },
   primaryRow: { display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 13 },
   primaryTile: { display: "flex", alignItems: "center", gap: 13, background: "#0e0e11", border: "1px solid #1e1f23", borderRadius: 13, padding: "13px 17px", fontFamily: "inherit" },
   arrow: { width: 29, height: 29, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 15, fontWeight: 700, flexShrink: 0 },
@@ -567,16 +567,16 @@ const S = {
   orderChip: { display: "flex", alignItems: "center", gap: 7, fontSize: 11, background: "#0e0e11", border: "1px solid #1e1f23", borderRadius: 7, padding: "5px 9px" },
   barRow: { display: "flex", alignItems: "flex-end", gap: 7, height: 92, marginTop: 8 },
   barCol: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 },
-  barVal: { fontSize: 9, color: "#10b981", fontFamily: "'Space Mono',monospace" },
-  barLbl: { fontSize: 9.5, color: "#62636b", fontFamily: "'Space Mono',monospace" },
+  barVal: { fontSize: 9, color: "#10b981", fontFamily: "'Geist Mono',monospace" },
+  barLbl: { fontSize: 9.5, color: "#62636b", fontFamily: "'Geist Mono',monospace" },
   ticker: { display: "flex", gap: 9, overflowX: "auto", paddingBottom: 4 },
   saleCard: { minWidth: 124, flexShrink: 0, background: "#121214", border: "1px solid #1c1d20", borderRadius: 10, padding: "9px 11px" },
   feed: { display: "flex", flexDirection: "column", gap: 5, maxHeight: 232, overflowY: "auto" },
   feedRow: { display: "flex", alignItems: "center", gap: 9, background: "#121214", border: "1px solid #1c1d20", borderRadius: 8, padding: "6px 10px" },
-  prioBadge: { fontSize: 8.5, fontWeight: 800, borderRadius: 4, padding: "2px 6px", fontFamily: "'Space Mono',monospace", letterSpacing: 0.5, flexShrink: 0, width: 44, textAlign: "center" },
+  prioBadge: { fontSize: 8.5, fontWeight: 800, borderRadius: 4, padding: "2px 6px", fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5, flexShrink: 0, width: 44, textAlign: "center" },
   topGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 30px", marginTop: 2 },
   rowTile: { display: "flex", alignItems: "center", gap: 10, background: "#0e0e11", border: "1px solid #1e1f23", borderRadius: 10, padding: "8px 12px", fontFamily: "inherit", width: "100%" },
   footer: { display: "flex", alignItems: "center", gap: 10, marginTop: 18, paddingTop: 14, borderTop: "1px solid #1a1b1e" },
   footBtn: { background: "#0e0e11", border: "1px solid #26272b", borderRadius: 8, padding: "7px 15px", color: "#9a9ba1", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" },
-  footNote: { fontSize: 10, color: "#3c3d42", fontFamily: "'Space Mono',monospace" },
+  footNote: { fontSize: 10, color: "#3c3d42", fontFamily: "'Geist Mono',monospace" },
 };

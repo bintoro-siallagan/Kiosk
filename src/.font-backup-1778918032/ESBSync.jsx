@@ -367,7 +367,7 @@ export default function ESBSync({ onBack }) {
             {esbMenu.length === 0 && getStatus !== LOADING && (
               <div style={S.emptyState}>
                 <div style={{ fontSize:56, marginBottom:12 }}>⬇️</div>
-                <div style={{ fontFamily:"'Bebas Neue',cursive", fontSize:22, letterSpacing:3, color:"#444", marginBottom:8 }}>
+                <div style={{ fontFamily:"'Inter',cursive", fontSize:22, letterSpacing:3, color:"#444", marginBottom:8 }}>
                   BELUM ADA DATA
                 </div>
                 <div style={{ fontSize:13, color:"#555", marginBottom:20 }}>
@@ -543,30 +543,30 @@ export default function ESBSync({ onBack }) {
 }
 
 const S = {
-  root:     { fontFamily:"'DM Sans',sans-serif", background:"#080c10", color:"#fff", minHeight:"100vh", display:"flex", flexDirection:"column" },
+  root:     { fontFamily:"'Inter',sans-serif", background:"#080c10", color:"#fff", minHeight:"100vh", display:"flex", flexDirection:"column" },
   header:   { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"16px 24px", background:"#0d1117", borderBottom:"1px solid #161b22", flexWrap:"wrap", gap:12 },
   hLeft:    { display:"flex", alignItems:"center", gap:16 },
-  title:    { fontFamily:"'Bebas Neue',cursive", fontSize:22, letterSpacing:3, color:"#FF6B35" },
+  title:    { fontFamily:"'Inter',cursive", fontSize:22, letterSpacing:3, color:"#FF6B35" },
   sub:      { fontSize:11, color:"#555" },
   backBtn:  { background:"transparent", border:"1px solid #333", borderRadius:10, padding:"8px 14px", color:"#888", cursor:"pointer", fontSize:12 },
   tabBar:   { display:"flex", gap:4, padding:"12px 24px", background:"#0d1117", borderBottom:"1px solid #161b22", flexWrap:"wrap" },
-  tab:      { background:"transparent", border:"1px solid #21262d", borderRadius:10, padding:"8px 18px", color:"#666", cursor:"pointer", fontSize:13, fontWeight:600, fontFamily:"'DM Sans',sans-serif" },
+  tab:      { background:"transparent", border:"1px solid #21262d", borderRadius:10, padding:"8px 18px", color:"#666", cursor:"pointer", fontSize:13, fontWeight:600, fontFamily:"'Inter',sans-serif" },
   tabActive:{ background:"#FF6B35", border:"1px solid #FF6B35", color:"#fff" },
   body:     { flex:1, padding:"20px 24px", overflowY:"auto" },
   actionBar:{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:16, flexWrap:"wrap", gap:12 },
-  sectionTitle:{ fontFamily:"'Bebas Neue',cursive", fontSize:20, letterSpacing:2, color:"#fff", marginBottom:4 },
+  sectionTitle:{ fontFamily:"'Inter',cursive", fontSize:20, letterSpacing:2, color:"#fff", marginBottom:4 },
   sectionSub:  { fontSize:12, color:"#555" },
   statusBar:{ padding:"10px 16px", borderRadius:10, border:"1px solid", fontSize:13, fontWeight:600, marginBottom:14, display:"flex", alignItems:"center", gap:8 },
   chips:    { display:"flex", gap:6, flexWrap:"wrap", marginBottom:14 },
-  chip:     { background:"#0d1117", border:"1px solid #21262d", borderRadius:20, padding:"5px 14px", color:"#666", cursor:"pointer", fontSize:12, fontWeight:600, fontFamily:"'DM Sans',sans-serif" },
+  chip:     { background:"#0d1117", border:"1px solid #21262d", borderRadius:20, padding:"5px 14px", color:"#666", cursor:"pointer", fontSize:12, fontWeight:600, fontFamily:"'Inter',sans-serif" },
   chipActive:{ background:"#FF6B35", border:"1px solid #FF6B35", color:"#fff" },
   importBar:{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10, flexWrap:"wrap", gap:8 },
   tableWrap:{ background:"#0d1117", border:"1px solid #161b22", borderRadius:14, overflow:"hidden", marginBottom:16 },
   thead:    { display:"flex", alignItems:"center", padding:"10px 20px", background:"#080c10", fontSize:11, color:"#555", letterSpacing:1, textTransform:"uppercase", gap:8, borderBottom:"1px solid #161b22" },
   trow:     { display:"flex", alignItems:"center", padding:"11px 20px", borderBottom:"1px solid #0a0e14", gap:8 },
-  btnPrimary:  { background:"linear-gradient(90deg,#FF6B35,#FF3B30)", border:"none", borderRadius:10, padding:"10px 20px", color:"#fff", cursor:"pointer", fontSize:13, fontWeight:700, letterSpacing:1, fontFamily:"'Bebas Neue',cursive", display:"flex", alignItems:"center", gap:6 },
-  btnSecondary:{ background:"#0d1117", border:"1px solid #21262d", borderRadius:10, padding:"10px 16px", color:"#aaa", cursor:"pointer", fontSize:12, fontWeight:600, fontFamily:"'DM Sans',sans-serif" },
-  btnImport:   { background:"linear-gradient(90deg,#00C896,#00a07a)", border:"none", borderRadius:10, padding:"10px 20px", color:"#fff", cursor:"pointer", fontSize:13, fontWeight:700, letterSpacing:1, fontFamily:"'Bebas Neue',cursive", display:"flex", alignItems:"center", gap:6 },
+  btnPrimary:  { background:"linear-gradient(90deg,#FF6B35,#FF3B30)", border:"none", borderRadius:10, padding:"10px 20px", color:"#fff", cursor:"pointer", fontSize:13, fontWeight:700, letterSpacing:1, fontFamily:"'Inter',cursive", display:"flex", alignItems:"center", gap:6 },
+  btnSecondary:{ background:"#0d1117", border:"1px solid #21262d", borderRadius:10, padding:"10px 16px", color:"#aaa", cursor:"pointer", fontSize:12, fontWeight:600, fontFamily:"'Inter',sans-serif" },
+  btnImport:   { background:"linear-gradient(90deg,#00C896,#00a07a)", border:"none", borderRadius:10, padding:"10px 20px", color:"#fff", cursor:"pointer", fontSize:13, fontWeight:700, letterSpacing:1, fontFamily:"'Inter',cursive", display:"flex", alignItems:"center", gap:6 },
   pushOneBtn:  { background:"#1a1a1a", border:"1px solid #FF6B35", borderRadius:8, padding:"4px 10px", color:"#FF6B35", cursor:"pointer", fontSize:11, fontWeight:700 },
   spin:     { display:"inline-block", width:14, height:14, border:"2px solid #333", borderTop:"2px solid #FF6B35", borderRadius:"50%", animation:"spin 0.8s linear infinite", flexShrink:0 },
   emptyState:{ textAlign:"center", padding:"60px 20px" },
@@ -578,7 +578,7 @@ const S = {
   formGrid: { display:"flex", flexDirection:"column", gap:14, marginBottom:20 },
   field:    { display:"flex", flexDirection:"column", gap:5 },
   label:    { fontSize:12, fontWeight:600, color:"#aaa" },
-  input:    { background:"#080c10", border:"1px solid #21262d", borderRadius:10, padding:"10px 14px", color:"#fff", fontSize:13, fontFamily:"'DM Sans',sans-serif" },
+  input:    { background:"#080c10", border:"1px solid #21262d", borderRadius:10, padding:"10px 14px", color:"#fff", fontSize:13, fontFamily:"'Inter',sans-serif" },
   hint:     { fontSize:11, color:"#444" },
-  testBtn:  { background:"linear-gradient(90deg,#FF6B35,#FF3B30)", border:"none", borderRadius:10, padding:"11px 24px", color:"#fff", cursor:"pointer", fontSize:13, fontWeight:700, letterSpacing:1, fontFamily:"'Bebas Neue',cursive", display:"flex", alignItems:"center", gap:8 },
+  testBtn:  { background:"linear-gradient(90deg,#FF6B35,#FF3B30)", border:"none", borderRadius:10, padding:"11px 24px", color:"#fff", cursor:"pointer", fontSize:13, fontWeight:700, letterSpacing:1, fontFamily:"'Inter',cursive", display:"flex", alignItems:"center", gap:8 },
 };

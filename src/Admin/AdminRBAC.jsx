@@ -60,7 +60,7 @@ export default function AdminRBAC({ apiBase = "" }) {
             {l}
           </span>
         ))}
-        {msg ? <span style={{ marginLeft: "auto", fontSize: 11, color: "#10b981", fontFamily: "'Space Mono',monospace" }}>{msg}</span> : null}
+        {msg ? <span style={{ marginLeft: "auto", fontSize: 11, color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>{msg}</span> : null}
       </div>
 
       {/* Matrix */}
@@ -91,7 +91,7 @@ export default function AdminRBAC({ apiBase = "" }) {
                       <button onClick={() => cycle(r.id, m.id)} title={`${r.name} · ${m.name} → ${level}`}
                         style={{ width: 38, height: 30, borderRadius: 5, cursor: "pointer", border: "1px solid #21262d",
                           background: LV_C[level], color: level === "none" ? "#5b6470" : "#fff",
-                          fontSize: 11, fontWeight: 700, fontFamily: "'Space Mono',monospace" }}>
+                          fontSize: 11, fontWeight: 700, fontFamily: "'Geist Mono',monospace" }}>
                         {LV_AB[level]}
                       </button>
                     </td>
@@ -112,8 +112,8 @@ export default function AdminRBAC({ apiBase = "" }) {
 function Kpi({ label, v, c, sub }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
       <div style={{ fontSize: 10, color: "#5b6470" }}>{sub || " "}</div>
     </div>
   );
@@ -123,7 +123,7 @@ const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
-  cornerTh: { textAlign: "left", padding: "6px 8px", fontSize: 9, color: "#5b6470", fontFamily: "'Space Mono',monospace", minWidth: 180, position: "sticky", left: 0, background: "#0d1117" },
+  cornerTh: { textAlign: "left", padding: "6px 8px", fontSize: 9, color: "#5b6470", fontFamily: "'Geist Mono',monospace", minWidth: 180, position: "sticky", left: 0, background: "#0d1117" },
   modTh: { padding: "4px 2px", textAlign: "center", minWidth: 42 },
   roleTd: { padding: "6px 8px", borderTop: "1px solid #161b22", position: "sticky", left: 0, background: "#0d1117" },
 };

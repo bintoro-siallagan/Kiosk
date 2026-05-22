@@ -286,7 +286,7 @@ function SlideWelcome() {
   return (
     <div style={S.ssCenter}>
       <div style={S.ssLogo}>☕</div>
-      <div style={S.ssBrand}>BINTORO</div>
+      <div style={S.ssBrand}>KaryaOS</div>
       <div style={S.ssTagline}>Selamat datang!</div>
       <div style={S.ssHint}>Tap kasir untuk mulai order</div>
     </div>
@@ -437,7 +437,7 @@ function CDSWelcoming({ state }) {
 
         <div style={{
           fontSize: "min(72px,8vh,7vw)", fontWeight: 800,
-          fontFamily: "'Montserrat', sans-serif",
+          fontFamily: "'Inter', sans-serif",
           color: "#fff", textAlign: "center",
           letterSpacing: 1, lineHeight: 1.1,
           maxWidth: 900, wordBreak: "break-word"
@@ -457,7 +457,7 @@ function CDSWelcoming({ state }) {
               <div style={{ fontSize: 14, color: "#FCD34D", letterSpacing: 2, textTransform: "uppercase", fontWeight: 600 }}>
                 Saldo Poin
               </div>
-              <div style={{ fontSize: 36, color: "#F59E0B", fontWeight: 800, fontFamily: "'Montserrat', sans-serif" }}>
+              <div style={{ fontSize: 36, color: "#F59E0B", fontWeight: 800, fontFamily: "'Inter', sans-serif" }}>
                 {customer.points.toLocaleString("id-ID")}
               </div>
             </div>
@@ -558,7 +558,7 @@ function CDSCart({ state }) {
       <header style={S.header}>
         <div style={S.headerLeft}>
           <span style={S.logoSmall}>☕</span>
-          <span style={S.brandSmall}>BINTORO</span>
+          <span style={S.brandSmall}>KaryaOS</span>
         </div>
         <div>
           {orderType && <span style={S.tag}>{orderType === "dine-in" ? "🍽️ Dine-in" : "🛍️ Take-away"}</span>}
@@ -676,7 +676,7 @@ function CDSCart({ state }) {
                   fontSize: 18, marginTop: 12, color: "#fff",
                   background: "rgba(255,255,255,0.1)",
                   padding: "12px 20px", borderRadius: 12,
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
+                  fontFamily: "'Inter', sans-serif",
                   fontWeight: 600,
                 }}>
                   📊 {state.paymentBreakdown}
@@ -735,7 +735,7 @@ function CDSQR({ state }) {
       <header style={S.header}>
         <div style={S.headerLeft}>
           <span style={S.logoSmall}>☕</span>
-          <span style={S.brandSmall}>BINTORO</span>
+          <span style={S.brandSmall}>KaryaOS</span>
         </div>
         <div style={S.tag}>💳 QRIS Payment</div>
       </header>
@@ -799,7 +799,7 @@ function CDSTrackQR({ state, pubConfig }) {
       <header style={S.header}>
         <div style={S.headerLeft}>
           <span style={S.logoSmall}>☕</span>
-          <span style={S.brandSmall}>BINTORO</span>
+          <span style={S.brandSmall}>KaryaOS</span>
         </div>
         <div style={S.tag}>Order #{orderId}</div>
       </header>
@@ -838,7 +838,7 @@ function CDSTrackQR({ state, pubConfig }) {
 
 const S = {
   root: { height:"100vh", width:"100vw", background:"#0a0a0a", color:"#fff",
-    fontFamily:"'Plus Jakarta Sans','-apple-system',sans-serif", position:"fixed", top:0, left:0,
+    fontFamily:"'Inter','-apple-system',sans-serif", position:"fixed", top:0, left:0,
     display:"flex", flexDirection:"column" },
   conn: { position:"fixed", top:12, right:12, fontSize:10, padding:"3px 10px",
     border:"1px solid", borderRadius:100, background:"#0a0a0a",
@@ -849,9 +849,9 @@ const S = {
     justifyContent:"center", gap:16, padding:40, textAlign:"center" },
   logo: { fontSize:120, marginBottom:8 },
   logoSmall: { fontSize:32 },
-  brand: { fontSize:96, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+  brand: { fontSize:96, fontFamily:"'Inter',sans-serif", color:"#FF6B35",
     letterSpacing:4, marginBottom:24, fontWeight:800 },
-  brandSmall: { fontSize:36, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+  brandSmall: { fontSize:36, fontFamily:"'Inter',sans-serif", color:"#FF6B35",
     letterSpacing:4 },
 
   idleTagline: { fontSize:32, color:"#fff", marginBottom:12, fontWeight:300 },
@@ -867,7 +867,7 @@ const S = {
     textAlign:"center", padding:"60px 80px", maxWidth:"none", width:"100%", gap:20, justifyContent:"space-evenly", minHeight:"100vh" },
 
   ssLogo: { fontSize:"min(240px,22vh)", lineHeight:1, marginBottom:12 },
-  ssBrand: { fontSize:"min(150px,13vh,11vw)", fontFamily:"'Montserrat',sans-serif", color:"#FF6B35", letterSpacing:4, marginBottom:8, fontWeight:900, lineHeight:1, textShadow:"0 0 80px rgba(255,107,53,0.5)" },
+  ssBrand: { fontSize:"min(150px,13vh,11vw)", fontFamily:"'Inter',sans-serif", color:"#FF6B35", letterSpacing:4, marginBottom:8, fontWeight:900, lineHeight:1, textShadow:"0 0 80px rgba(255,107,53,0.5)" },
   ssTagline: { fontSize:"min(56px,6vh)", color:"#fff", marginBottom:12, fontWeight:700, letterSpacing:1 },
   ssHint: { fontSize:24, color:"#666", marginTop:8, letterSpacing:4 },
 
@@ -879,12 +879,12 @@ const S = {
   ssItemName: { fontSize:"min(80px,9vh,8vw)", fontWeight:800, marginBottom:8, lineHeight:1.1, color:"#fff" },
   ssItemDesc: { fontSize:30, color:"#ccc", marginBottom:24, lineHeight:1.5, fontWeight:500,
     maxWidth:600 },
-  ssItemPrice: { fontSize:"min(90px,9vh)", fontWeight:900, color:"#FF6B35", fontFamily:"'Montserrat',sans-serif", letterSpacing:1, marginBottom:4 },
+  ssItemPrice: { fontSize:"min(90px,9vh)", fontWeight:900, color:"#FF6B35", fontFamily:"'Inter',sans-serif", letterSpacing:1, marginBottom:4 },
   ssItemExtra: { fontSize:22, color:"#34D399", fontWeight:700, padding:"8px 20px", background:"rgba(52,211,153,0.1)", borderRadius:100, letterSpacing:1 },
 
   ssPromoEmoji: { fontSize:"min(100px,12vh)", lineHeight:1, marginBottom:4 },
   ssPromoBigTitle: { fontSize:"min(148px,13vh,11vw)", fontWeight:900, color:"#FF6B35",
-    fontFamily:"'Montserrat',sans-serif", letterSpacing:2, marginBottom:8,
+    fontFamily:"'Inter',sans-serif", letterSpacing:2, marginBottom:8,
     lineHeight:1, textShadow:"0 0 60px rgba(255,107,53,0.5), 0 0 120px rgba(255,107,53,0.2)" },
   ssPromoTag: { padding:"10px 24px", background:"rgba(59,130,246,0.2)",
     color:"#60A5FA", borderRadius:100, fontSize:18, fontWeight:800,
@@ -900,7 +900,7 @@ const S = {
     background:"rgba(255,107,53,0.08)", border:"2px dashed #FF6B35",
     borderRadius:20, boxShadow:"0 0 40px rgba(255,107,53,0.15)" },
   ssPromoCodeLabel: { fontSize:16, color:"#FF6B35", letterSpacing:6, fontWeight:700 },
-  ssPromoCodeValue: { fontSize:48, fontFamily:"'Montserrat',sans-serif",
+  ssPromoCodeValue: { fontSize:48, fontFamily:"'Inter',sans-serif",
     color:"#FF6B35", letterSpacing:8, marginTop:8, fontSize:56 },
 
   ssMemberIcon: { fontSize:200, lineHeight:1, marginBottom:24 },
@@ -923,9 +923,9 @@ const S = {
     display:"flex", flexDirection:"column" },
   cartTitleRow: { display:"flex", justifyContent:"space-between",
     alignItems:"baseline", marginBottom:24 },
-  cartTitle: { fontSize:56, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+  cartTitle: { fontSize:56, fontFamily:"'Inter',sans-serif", color:"#FF6B35",
     letterSpacing:4 },
-  customerName: { fontSize:24, color:"#888", marginLeft:12, fontFamily:"'Plus Jakarta Sans',sans-serif" },
+  customerName: { fontSize:24, color:"#888", marginLeft:12, fontFamily:"'Inter',sans-serif" },
   itemCountTag: { fontSize:13, padding:"6px 14px", borderRadius:100,
     background:"rgba(245,158,11,0.1)", color:"#FF6B35", fontWeight:700, letterSpacing:1 },
   cartList: { display:"flex", flexDirection:"column", gap:14, marginBottom:32 },
@@ -951,7 +951,7 @@ const S = {
   itemQty: { fontSize:20, fontWeight:800, color:"#888", width:50, textAlign:"center",
     paddingTop:4 },
   itemPrice: { fontSize:32, color:"#FF6B35", minWidth:140, textAlign:"right",
-    fontFamily:"'Montserrat',sans-serif", letterSpacing:2, paddingTop:4 },
+    fontFamily:"'Inter',sans-serif", letterSpacing:2, paddingTop:4 },
 
   summaryInline: { background:"#0a0a0a", border:"1px solid #222",
     borderRadius:18, padding:"20px 28px", marginTop:8 },
@@ -962,7 +962,7 @@ const S = {
   summaryLabelMuted: { fontSize:13, color:"#666" },
   summaryDivider: { height:1, background:"#222", margin:"12px 0" },
   totalLabel: { fontSize:18, color:"#fff", fontWeight:800, letterSpacing:1 },
-  totalValue: { fontSize:64, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+  totalValue: { fontSize:64, fontFamily:"'Inter',sans-serif", color:"#FF6B35",
     letterSpacing:3, fontWeight:600 },
   cartHint: { textAlign:"center", color:"#555", fontSize:13, marginTop:24,
     padding:"12px", letterSpacing:1 },
@@ -974,7 +974,7 @@ const S = {
   },
   deductionLabel: { fontSize: 17, fontWeight: 600 },
   deductionValue: { fontSize: 20, fontWeight: 800, color: "#34D399",
-    fontFamily:"'Montserrat',sans-serif", letterSpacing: 1 },
+    fontFamily:"'Inter',sans-serif", letterSpacing: 1 },
   coveredBanner: {
     marginTop: 18, padding: "16px 22px",
     background: "rgba(16,185,129,0.12)",
@@ -1019,7 +1019,7 @@ const S = {
   cashTrLabel: { fontSize: 18, color: "#fff", fontWeight: 500 },
   cashTrValue: {
     fontSize: 22, color: "#fff", fontWeight: 700,
-    fontFamily: "'Montserrat',sans-serif", letterSpacing: 1
+    fontFamily: "'Inter',sans-serif", letterSpacing: 1
   },
   cashTransparencyChange: {
     display: "flex", justifyContent: "space-between",
@@ -1031,7 +1031,7 @@ const S = {
   },
   cashTrChangeValue: {
     fontSize: 48, color: "#34D399", fontWeight: 900,
-    fontFamily: "'Montserrat',sans-serif", letterSpacing: 2
+    fontFamily: "'Inter',sans-serif", letterSpacing: 2
   },
   cashTransparencyShort: {
     marginTop: 12, padding: "10px 16px",
@@ -1053,7 +1053,7 @@ const S = {
 
   qrMain: { flex:1, display:"flex", flexDirection:"column", alignItems:"center",
     justifyContent:"center", gap:16, padding:40, textAlign:"center" },
-  qrTitle: { fontSize:56, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+  qrTitle: { fontSize:56, fontFamily:"'Inter',sans-serif", color:"#FF6B35",
     letterSpacing:4, marginBottom:80 },
   qrFrame: { padding:24, background:"#fff", borderRadius:24,
     boxShadow:"0 0 60px rgba(245,158,11,0.3)" },
@@ -1066,20 +1066,20 @@ const S = {
     background:"#111", border:"2px solid #F59E0B", borderRadius:16,
     display:"flex", flexDirection:"column", alignItems:"center" },
   subLabel: { fontSize:14, color:"#888", letterSpacing:2, fontWeight:600 },
-  qrAmount: { fontSize:72, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+  qrAmount: { fontSize:72, fontFamily:"'Inter',sans-serif", color:"#FF6B35",
     letterSpacing:4, marginTop:4 },
 
   successCheck: { fontSize:72, lineHeight:1, marginBottom:8 },
-  successTitle: { fontSize:48, fontFamily:"'Montserrat',sans-serif", color:"#10B981",
+  successTitle: { fontSize:48, fontFamily:"'Inter',sans-serif", color:"#10B981",
     letterSpacing:5, marginBottom:16 },
   successOrderId: { fontSize:24, color:"#888", marginBottom:8 },
-  successAmount: { fontSize:60, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+  successAmount: { fontSize:60, fontFamily:"'Inter',sans-serif", color:"#FF6B35",
     letterSpacing:5, marginBottom:24 },
   successThanks: { fontSize:28, color:"#fff", marginBottom:40 },
 
   trackQrMain: { flex:1, padding:"32px 60px", display:"flex", flexDirection:"column",
     alignItems:"center", textAlign:"center", overflowY:"auto" },
-  trackQrTitle: { fontSize:64, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+  trackQrTitle: { fontSize:64, fontFamily:"'Inter',sans-serif", color:"#FF6B35",
     letterSpacing:4, marginBottom:80 },
   trackQrSubtitle: { fontSize:20, color:"#fff", marginBottom:32 },
   trackQrFrame: { padding:20, background:"#fff", borderRadius:24,
@@ -1095,6 +1095,6 @@ const S = {
     fontFamily:"monospace", marginBottom:24, wordBreak:"break-all", maxWidth:540 },
   totalRow: { display:"flex", flexDirection:"column", alignItems:"center",
     marginTop:8 },
-  totalBig: { fontSize:64, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35",
+  totalBig: { fontSize:64, fontFamily:"'Inter',sans-serif", color:"#FF6B35",
     letterSpacing:4, marginTop:4 }
 };

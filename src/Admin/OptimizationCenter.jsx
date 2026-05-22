@@ -39,10 +39,10 @@ export default function OptimizationCenter({ apiBase }) {
   const opportunities = ranked.filter(o => o.gap <= -20);
 
   return (
-    <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#e6edf3" }}>
+    <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14, marginBottom: 18 }}>
         <div>
-          <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>📈 Optimization Center</div>
+          <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>📈 Optimization Center</div>
           <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>FlowOS Tahap 5 — Optimization · deteksi pola &amp; benchmark</div>
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -55,7 +55,7 @@ export default function OptimizationCenter({ apiBase }) {
       {loading ? <div style={{ color: C.dim, fontSize: 13, padding: "24px 0" }}>Memuat…</div> : (
         <>
           {/* Anomaly detection */}
-          <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Space Mono',monospace", marginBottom: 8 }}>
+          <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>
             DETEKSI ANOMALI — REVENUE ±2σ <span style={{ color: C.dim }}>· {(trend || []).length} hari · σ {rp(sd)}</span>
           </div>
           {anomalies.length === 0 ? (
@@ -71,10 +71,10 @@ export default function OptimizationCenter({ apiBase }) {
                     <div style={{ fontSize: 20 }}>{spike ? "📈" : "📉"}</div>
                     <div style={{ flex: 1, minWidth: 150 }}>
                       <div style={{ fontSize: 13, fontWeight: 700 }}>{spike ? "Lonjakan" : "Penurunan"} revenue</div>
-                      <div style={{ fontSize: 11.5, color: C.sub, fontFamily: "'Space Mono',monospace", marginTop: 2 }}>{a.date} · {a.orders || 0} order</div>
+                      <div style={{ fontSize: 11.5, color: C.sub, fontFamily: "'Geist Mono',monospace", marginTop: 2 }}>{a.date} · {a.orders || 0} order</div>
                     </div>
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 13, fontWeight: 700 }}>{rp(a.revenue)}</div>
+                      <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 13, fontWeight: 700 }}>{rp(a.revenue)}</div>
                       <div style={{ fontSize: 11, fontWeight: 700, color: spike ? "#10b981" : "#ef4444", marginTop: 2 }}>
                         {a.dev > 0 ? "+" : ""}{a.dev.toFixed(1)}σ dari rata-rata
                       </div>
@@ -86,18 +86,18 @@ export default function OptimizationCenter({ apiBase }) {
           )}
 
           {/* Benchmark */}
-          <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Space Mono',monospace", marginBottom: 8 }}>
+          <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>
             BENCHMARK OUTLET <span style={{ color: C.dim }}>· rata-rata {rp(avg)}</span>
           </div>
           <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "6px 14px" }}>
             {ranked.length === 0 ? <div style={{ color: C.sub, fontSize: 13, padding: "16px 0" }}>Belum ada data outlet.</div> : ranked.map((o, i) => (
               <div key={o.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < ranked.length - 1 ? `1px solid ${C.border}` : "none" }}>
-                <div style={{ width: 22, fontFamily: "'Space Mono',monospace", fontSize: 12, color: C.dim }}>#{i + 1}</div>
+                <div style={{ width: 22, fontFamily: "'Geist Mono',monospace", fontSize: 12, color: C.dim }}>#{i + 1}</div>
                 <div style={{ width: 130, flexShrink: 0, fontSize: 12.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.name}</div>
                 <div style={{ flex: 1, minWidth: 80, height: 8, background: "#161b22", borderRadius: 4, overflow: "hidden" }}>
                   <div style={{ height: "100%", width: `${Math.max(2, (o.revenue_today || 0) / best * 100)}%`, background: o.gap <= -20 ? "#f97316" : o.gap >= 0 ? "#10b981" : "#22d3ee", borderRadius: 4 }} />
                 </div>
-                <div style={{ width: 96, textAlign: "right", fontFamily: "'Space Mono',monospace", fontSize: 12 }}>{rp(o.revenue_today)}</div>
+                <div style={{ width: 96, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 12 }}>{rp(o.revenue_today)}</div>
                 <div style={{ width: 80, textAlign: "right", fontSize: 11, fontWeight: 700, color: o.gap >= 0 ? "#10b981" : o.gap <= -20 ? "#f97316" : C.sub }}>
                   {o.gap >= 0 ? "+" : ""}{o.gap.toFixed(0)}% {o.gap <= -20 ? "⚠" : ""}
                 </div>
@@ -118,7 +118,7 @@ export default function OptimizationCenter({ apiBase }) {
 function Stat({ label, value, color }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #1b212c", borderRadius: 10, padding: "8px 14px", textAlign: "center", minWidth: 92 }}>
-      <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 17, fontWeight: 700, color }}>{value}</div>
+      <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 17, fontWeight: 700, color }}>{value}</div>
       <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 0.5, marginTop: 1 }}>{label}</div>
     </div>
   );

@@ -46,7 +46,7 @@ export default function Screensaver({ onDismiss }) {
       {/* Bottom tagline */}
       <div style={{
         position:"absolute", bottom:60, left:0, right:0, textAlign:"center",
-        color:"#fff", fontSize:24, letterSpacing:6, fontFamily:"'Bebas Neue', cursive",
+        color:"#fff", fontSize:24, letterSpacing:6, fontFamily:"'Inter', cursive",
         textShadow:"0 2px 12px rgba(0,0,0,0.8), 0 0 30px rgba(0,0,0,0.5)",
         animation:"screensaverPulse 2.5s ease-in-out infinite", pointerEvents:"none",
       }}>

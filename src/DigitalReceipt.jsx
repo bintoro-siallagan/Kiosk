@@ -30,7 +30,7 @@ export default function DigitalReceipt({ orderId, onDone }) {
 
 
   if (loading) return (
-    <div style={{textAlign:"center",padding:60,color:"#555",fontFamily:"'Plus Jakarta Sans',sans-serif"}}>
+    <div style={{textAlign:"center",padding:60,color:"#555",fontFamily:"'Inter',sans-serif"}}>
       <div style={{width:32,height:32,border:"2px solid #333",borderTop:"2px solid #F59E0B",borderRadius:"50%",animation:"spin 0.8s linear infinite",margin:"0 auto 12px"}}/>
       Membuat struk...
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
@@ -41,7 +41,7 @@ export default function DigitalReceipt({ orderId, onDone }) {
     <div style={{...R.root,justifyContent:"center",flexDirection:"column",textAlign:"center",gap:16}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@700&family=DM+Sans:wght@400;700&display=swap');*{box-sizing:border-box;margin:0;padding:0}`}</style>
       <div style={{fontSize:72}}>✅</div>
-      <div style={{fontFamily:"'Space Mono',monospace",fontSize:24,color:"#34D399",letterSpacing:3}}>PEMBAYARAN BERHASIL!</div>
+      <div style={{fontFamily:"'Geist Mono',monospace",fontSize:24,color:"#34D399",letterSpacing:3}}>PEMBAYARAN BERHASIL!</div>
       <div style={{fontSize:13,color:"#555"}}>Struk tidak tersedia saat ini</div>
       <button style={{...R.doneBtn,maxWidth:240,margin:"20px auto 0"}} onClick={onDone}>SELESAI →</button>
     </div>
@@ -66,7 +66,7 @@ export default function DigitalReceipt({ orderId, onDone }) {
           {/* Header */}
           <div style={R.rHeader}>
             <div style={R.rLogo}>🍽️</div>
-            <div style={R.rBrand}>BINTORO</div>
+            <div style={R.rBrand}>KaryaOS</div>
             <div style={R.rAddr}>Self Order Kiosk</div>
             <div style={R.rAddr}>Jakarta, Indonesia</div>
             <div style={R.divider}>{'─'.repeat(32)}</div>
@@ -203,9 +203,9 @@ export default function DigitalReceipt({ orderId, onDone }) {
 }
 
 const R = {
-  root:      {fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#050810",color:"#fff",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"},
+  root:      {fontFamily:"'Inter',sans-serif",background:"#050810",color:"#fff",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"},
   wrap:      {width:"100%",maxWidth:420,animation:"fadeUp 0.3s ease"},
-  paper:     {background:"#fff",color:"#111",borderRadius:12,padding:"24px 20px",boxShadow:"0 20px 60px rgba(0,0,0,0.5)",fontFamily:"'Space Mono',monospace",fontSize:12},
+  paper:     {background:"#fff",color:"#111",borderRadius:12,padding:"24px 20px",boxShadow:"0 20px 60px rgba(0,0,0,0.5)",fontFamily:"'Geist Mono',monospace",fontSize:12},
   rHeader:   {textAlign:"center",marginBottom:12},
   rLogo:     {fontSize:32,marginBottom:4},
   rBrand:    {fontSize:22,fontWeight:700,letterSpacing:4},
@@ -224,5 +224,5 @@ const R = {
   footer:    {textAlign:"center",fontSize:12,color:"#555",marginTop:4,lineHeight:1.6},
   actions:   {display:"flex",gap:10},
   printBtn:  {flex:1,background:"#0d1117",border:"1px solid #1a1a2e",borderRadius:12,padding:"14px",color:"#aaa",fontSize:13,fontWeight:600},
-  doneBtn:   {flex:2,background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:12,padding:"14px",color:"#050810",fontSize:15,fontWeight:700,letterSpacing:1,fontFamily:"'Space Mono',monospace"},
+  doneBtn:   {flex:2,background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:12,padding:"14px",color:"#050810",fontSize:15,fontWeight:700,letterSpacing:1,fontFamily:"'Geist Mono',monospace"},
 };

@@ -297,7 +297,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
           sub={`${data.kds?.active_now?.preparing || 0} preparing · ${data.kds?.active_now?.ready || 0} ready`}
           icon="🍳"
           color="#f97316"
-          onClick={() => window.open('/bites-kiosk/?kds=1', '_blank')} />
+          onClick={() => window.open('/?kds=1', '_blank')} />
         <MiniPanel
           title="Avg Prep Time"
           value={data.kds?.completed_today?.avg_prep ? `${Math.round(data.kds.completed_today.avg_prep)}d` : '-'}

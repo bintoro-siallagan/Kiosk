@@ -43,7 +43,7 @@ export default function AdminFeedbackSegment({ apiBase = "" }) {
               <div style={{ flex: 1, height: 13, background: "#0a0e16", borderRadius: 7, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: Math.round(f.distribution[r] / maxDist * 100) + "%", background: r >= 4 ? "#10b981" : r === 3 ? "#f59e0b" : "#ef4444" }} />
               </div>
-              <span style={{ width: 32, textAlign: "right", fontFamily: "'Space Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{f.distribution[r]}</span>
+              <span style={{ width: 32, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{f.distribution[r]}</span>
             </div>
           ))}
         </div>
@@ -53,7 +53,7 @@ export default function AdminFeedbackSegment({ apiBase = "" }) {
           <div style={{ display: "flex", alignItems: "flex-end", gap: 8, height: 120, marginTop: 12 }}>
             {f.trend.map((t, i) => (
               <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-                <span style={{ fontSize: 10, color: ratingColor(t.avg), fontWeight: 700, fontFamily: "'Space Mono',monospace" }}>{t.avg}</span>
+                <span style={{ fontSize: 10, color: ratingColor(t.avg), fontWeight: 700, fontFamily: "'Geist Mono',monospace" }}>{t.avg}</span>
                 <div style={{ width: "100%", height: Math.round(t.avg / 5 * 80) + 4, background: ratingColor(t.avg), borderRadius: 3 }} title={`${t.count} feedback`} />
                 <span style={{ fontSize: 9, color: "#5b6470" }}>{t.date}</span>
               </div>
@@ -97,7 +97,7 @@ export default function AdminFeedbackSegment({ apiBase = "" }) {
             <div key={g.name} style={{ background: "#0a0e16", border: "1px solid #161b22", borderRadius: 9, padding: "11px 13px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: "#e6edf3" }}>{g.icon} {g.name}</span>
-                <span style={{ fontSize: 18, fontWeight: 800, color: AC, fontFamily: "'Space Mono',monospace" }}>{g.count}</span>
+                <span style={{ fontSize: 18, fontWeight: 800, color: AC, fontFamily: "'Geist Mono',monospace" }}>{g.count}</span>
               </div>
               <div style={{ fontSize: 11, color: "#9da7b3", marginTop: 4, lineHeight: 1.5 }}>{g.desc}</div>
             </div>
@@ -115,15 +115,15 @@ function Bar({ label, avg, count }) {
       <div style={{ flex: 1, height: 12, background: "#0a0e16", borderRadius: 6, overflow: "hidden" }}>
         <div style={{ height: "100%", width: Math.round(avg / 5 * 100) + "%", background: avg >= 4.3 ? "#10b981" : avg >= 3.5 ? "#f59e0b" : "#ef4444" }} />
       </div>
-      <span style={{ width: 70, textAlign: "right", fontFamily: "'Space Mono',monospace", fontSize: 12, color: "#cdd5df" }}>★{avg} · {count}</span>
+      <span style={{ width: 70, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 12, color: "#cdd5df" }}>★{avg} · {count}</span>
     </div>
   );
 }
 function Kpi({ label, v, c, sub }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
       <div style={{ fontSize: 10, color: "#5b6470" }}>{sub || " "}</div>
     </div>
   );
@@ -132,6 +132,6 @@ function Kpi({ label, v, c, sub }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
 };

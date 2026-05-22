@@ -97,10 +97,10 @@ export default function AdminFinancialStatements({ apiBase = "" }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   row: { display: "flex", justifyContent: "space-between", padding: "6px 2px", fontSize: 13 },
-  mono: { fontFamily: "'Space Mono',monospace", color: "#cdd5df" },
-  grpLbl: { fontSize: 10, color: "#5b6470", fontFamily: "'Space Mono',monospace", letterSpacing: 1, marginBottom: 3 },
+  mono: { fontFamily: "'Geist Mono',monospace", color: "#cdd5df" },
+  grpLbl: { fontSize: 10, color: "#5b6470", fontFamily: "'Geist Mono',monospace", letterSpacing: 1, marginBottom: 3 },
   pill: { background: "#0d1117", border: "1px solid #21262d", color: "#9da7b3", fontSize: 12, padding: "7px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit" },
   pillOn: { background: "#10b981", border: "1px solid #10b981", color: "#04130d", fontSize: 12, fontWeight: 700, padding: "7px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit" },
 };

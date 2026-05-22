@@ -51,18 +51,18 @@ export default function AdminAssetMaintenance({ apiBase = "" }) {
           <tbody>
             {d.assets.map(a => (
               <tr key={a.id} style={{ borderTop: "1px solid #161b22", fontSize: 12 }}>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#5b6470" }}>{a.asset_code}</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#5b6470" }}>{a.asset_code}</td>
                 <td style={{ ...S.td, color: "#e6edf3", fontWeight: 600 }}>{CAT_ICON[a.category] || "📦"} {a.name}</td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>{a.outlet}</td>
                 <td style={{ ...S.td, color: "#5b6470" }}>{fmtDate(a.last_service)}</td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>
                   {fmtDate(a.next_service)}
-                  <span style={{ color: a.days_to_service < 0 ? "#f87171" : "#5b6470", fontSize: 10, fontFamily: "'Space Mono',monospace" }}>
+                  <span style={{ color: a.days_to_service < 0 ? "#f87171" : "#5b6470", fontSize: 10, fontFamily: "'Geist Mono',monospace" }}>
                     {" "}({a.days_to_service < 0 ? `${-a.days_to_service}hr telat` : `${a.days_to_service}hr`})
                   </span>
                 </td>
                 <td style={S.td}>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: a.color, background: a.color + "1f", border: `1px solid ${a.color}55`, borderRadius: 5, padding: "2px 7px", fontFamily: "'Space Mono',monospace" }}>{a.label}</span>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: a.color, background: a.color + "1f", border: `1px solid ${a.color}55`, borderRadius: 5, padding: "2px 7px", fontFamily: "'Geist Mono',monospace" }}>{a.label}</span>
                 </td>
                 <td style={S.td}>
                   {a.m !== "ok" && <button onClick={() => service(a)} style={S.btn}>🔧 Service</button>}
@@ -79,8 +79,8 @@ export default function AdminAssetMaintenance({ apiBase = "" }) {
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{v}</div>
     </div>
   );
 }
@@ -88,8 +88,8 @@ function Kpi({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "8px 8px" },
-  btn: { background: "#78716c20", border: "1px solid #78716c66", color: "#d6d3d1", fontSize: 11, fontWeight: 700, padding: "4px 11px", borderRadius: 6, cursor: "pointer", fontFamily: "'Space Mono',monospace" },
+  btn: { background: "#78716c20", border: "1px solid #78716c66", color: "#d6d3d1", fontSize: 11, fontWeight: 700, padding: "4px 11px", borderRadius: 6, cursor: "pointer", fontFamily: "'Geist Mono',monospace" },
 };

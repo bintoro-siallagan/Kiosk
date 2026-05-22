@@ -59,7 +59,7 @@ export default function FlowQRGen() {
           {tables.map(table => (
             <div key={table || "general"} className="print-card" style={P.card}>
               <div style={P.cardHeader}>
-                <div style={P.cardLogo}>BINTORO</div>
+                <div style={P.cardLogo}>KaryaOS</div>
                 <div style={P.cardTagline}>Scan untuk order</div>
               </div>
 
@@ -112,7 +112,7 @@ export default function FlowQRGen() {
           value={host}
           onChange={e => setHost(e.target.value)}
           style={S.input}
-          placeholder="http://192.168.1.8:5184/bites-kiosk/"
+          placeholder="https://kiosk.karys.tech/"
         />
         <div style={S.hint}>
           💡 Pakai LAN IP atau domain production. Customer scan QR pakai HP — gak bisa pakai "localhost".
@@ -226,9 +226,9 @@ export default function FlowQRGen() {
 }
 
 const S = {
-  container: { width: "min(560px, 100%)", minHeight: "100vh", padding: "32px 20px", display: "flex", flexDirection: "column", gap: 18, color: "white", fontFamily: "'Plus Jakarta Sans', sans-serif", background: "#0a0a0a" },
+  container: { width: "min(560px, 100%)", minHeight: "100vh", padding: "32px 20px", display: "flex", flexDirection: "column", gap: 18, color: "white", fontFamily: "'Inter', sans-serif", background: "#0a0a0a" },
   header: { borderBottom: "1px solid #2a2a2a", paddingBottom: 14 },
-  title: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: "#FF6B35", letterSpacing: 2 },
+  title: { fontFamily: "'Inter', sans-serif", fontSize: 36, color: "#FF6B35", letterSpacing: 2 },
   subtitle: { fontSize: 12, color: "#9CA3AF", marginTop: 4 },
   section: { display: "flex", flexDirection: "column", gap: 8 },
   fieldLabel: { fontSize: 11, color: "#FF6B35", letterSpacing: 1.5, fontWeight: 700 },
@@ -251,19 +251,19 @@ const S = {
 };
 
 const P = {
-  printContainer: { background: "#f5f5f5", minHeight: "100vh", padding: 20, fontFamily: "'Plus Jakarta Sans', sans-serif" },
+  printContainer: { background: "#f5f5f5", minHeight: "100vh", padding: 20, fontFamily: "'Inter', sans-serif" },
   printControls: { display: "flex", gap: 10, marginBottom: 20, justifyContent: "center" },
   backBtn: { padding: "10px 18px", borderRadius: 8, background: "#fff", border: "1px solid #ccc", color: "#333", fontSize: 13, cursor: "pointer", fontFamily: "inherit" },
   printBtn: { padding: "10px 18px", borderRadius: 8, background: "#FF6B35", border: "none", color: "#111", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" },
   cardsGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16, maxWidth: 1200, margin: "0 auto" },
   card: { background: "white", borderRadius: 12, padding: 20, textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.1)", display: "flex", flexDirection: "column", gap: 10, color: "#111" },
   cardHeader: { borderBottom: "2px dashed #FF6B35", paddingBottom: 8 },
-  cardLogo: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "#FF6B35", letterSpacing: 2 },
+  cardLogo: { fontFamily: "'Inter', sans-serif", fontSize: 28, color: "#FF6B35", letterSpacing: 2 },
   cardTagline: { fontSize: 10, color: "#666", letterSpacing: 1, marginTop: 2 },
   cardQR: { width: "100%", maxWidth: 200, margin: "10px auto", display: "block" },
   cardTable: { padding: "8px 12px", background: "#FF6B35", color: "#111", borderRadius: 8 },
   cardTableLabel: { fontSize: 9, letterSpacing: 1.5, fontWeight: 700 },
-  cardTableId: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 1, lineHeight: 1.1 },
+  cardTableId: { fontFamily: "'Inter', sans-serif", fontSize: 28, letterSpacing: 1, lineHeight: 1.1 },
   cardFooter: { textAlign: "left", paddingTop: 6, borderTop: "1px solid #eee" },
   cardStep: { fontSize: 10, color: "#666", padding: "2px 0" },
   cardUrl: { fontSize: 7, color: "#999", fontFamily: "monospace", wordBreak: "break-all", marginTop: 4 },

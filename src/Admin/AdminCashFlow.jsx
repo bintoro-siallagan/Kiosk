@@ -44,18 +44,18 @@ export default function AdminCashFlow({ apiBase = "" }) {
         <div style={{ marginTop: 10 }}>
           {d.sections.map(sec => (
             <div key={sec.section} style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 12, fontWeight: 800, color: SEC_C[sec.section], fontFamily: "'Space Mono',monospace", letterSpacing: 0.5, marginBottom: 4 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: SEC_C[sec.section], fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5, marginBottom: 4 }}>
                 AKTIVITAS {sec.section.toUpperCase()}
               </div>
               {sec.lines.map((ln, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0 4px 14px", fontSize: 12 }}>
                   <span style={{ color: "#9da7b3" }}>{ln.label}</span>
-                  <span style={{ fontFamily: "'Space Mono',monospace", color: ln.amount >= 0 ? "#cdd5df" : "#f87171" }}>{fmtRp(ln.amount)}</span>
+                  <span style={{ fontFamily: "'Geist Mono',monospace", color: ln.amount >= 0 ? "#cdd5df" : "#f87171" }}>{fmtRp(ln.amount)}</span>
                 </div>
               ))}
               <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", borderTop: "1px solid #21262d", marginTop: 2 }}>
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#e6edf3" }}>Kas Bersih dari Aktivitas {sec.section}</span>
-                <span style={{ fontSize: 13, fontWeight: 800, fontFamily: "'Space Mono',monospace", color: sec.subtotal >= 0 ? "#10b981" : "#ef4444" }}>{fmtRp(sec.subtotal)}</span>
+                <span style={{ fontSize: 13, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: sec.subtotal >= 0 ? "#10b981" : "#ef4444" }}>{fmtRp(sec.subtotal)}</span>
               </div>
             </div>
           ))}
@@ -74,15 +74,15 @@ function Tot({ label, v, big, muted }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0" }}>
       <span style={{ fontSize: big ? 14 : 12, fontWeight: big ? 800 : muted ? 400 : 600, color: big ? "#e6edf3" : muted ? "#9da7b3" : "#cdd5df" }}>{label}</span>
-      <span style={{ fontSize: big ? 16 : 13, fontWeight: 800, fontFamily: "'Space Mono',monospace", color: big ? "#2dd4bf" : v >= 0 ? "#10b981" : "#ef4444" }}>{fmtRp(v)}</span>
+      <span style={{ fontSize: big ? 16 : 13, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: big ? "#2dd4bf" : v >= 0 ? "#10b981" : "#ef4444" }}>{fmtRp(v)}</span>
     </div>
   );
 }
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{v}</div>
     </div>
   );
 }
@@ -90,6 +90,6 @@ function Kpi({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
 };

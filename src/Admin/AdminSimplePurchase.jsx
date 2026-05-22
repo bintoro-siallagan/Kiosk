@@ -82,10 +82,10 @@ export default function AdminSimplePurchase({ apiBase = "" }) {
           <tbody>
             {d.purchases.map(p => (
               <tr key={p.id} style={{ borderTop: "1px solid #161b22", fontSize: 12 }}>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#5b6470", fontSize: 10 }}>{p.purchase_no}</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#5b6470", fontSize: 10 }}>{p.purchase_no}</td>
                 <td style={{ ...S.td, color: "#e6edf3", fontWeight: 600 }}>{p.item_name}</td>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#9da7b3" }}>{p.qty} {p.unit}</td>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", fontWeight: 700, color: "#a3e635" }}>{fmtRp(p.total)}</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#9da7b3" }}>{p.qty} {p.unit}</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "#a3e635" }}>{fmtRp(p.total)}</td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>{p.vendor}</td>
                 <td style={S.td}><span style={{ fontSize: 11, fontWeight: 700, color: PAY_C[p.payment_method] || "#9ca3af" }}>{p.payment_method}</span></td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>{p.outlet}</td>
@@ -102,8 +102,8 @@ export default function AdminSimplePurchase({ apiBase = "" }) {
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{v}</div>
     </div>
   );
 }
@@ -111,7 +111,7 @@ function Kpi({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "8px 8px" },
   input: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 9px", color: "#e6edf3", fontSize: 12, fontFamily: "inherit", outline: "none", width: "100%", boxSizing: "border-box" },

@@ -218,7 +218,7 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
       <div style={styles.logo}>
         <div style={styles.logoRow}>
           <span style={styles.logoIcon}>☕</span>
-          <span style={styles.logoText}>BINTORO POS</span>
+          <span style={styles.logoText}>KaryaOS POS</span>
         </div>
         <div style={styles.logoSub}>POINT OF SALE TERMINAL</div>
       </div>

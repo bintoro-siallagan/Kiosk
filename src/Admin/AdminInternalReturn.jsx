@@ -42,7 +42,7 @@ export default function AdminInternalReturn({ apiBase = "" }) {
         <Kpi label="Partial" v={String(s.partial)} c={s.partial > 0 ? "#3b82f6" : "#5b6470"} />
         <Kpi label="Selesai" v={String(s.completed)} c="#10b981" />
       </div>
-      <div style={{ fontSize: 11, color: "#5b6470", margin: "8px 2px", fontFamily: "'Space Mono',monospace" }}>
+      <div style={{ fontSize: 11, color: "#5b6470", margin: "8px 2px", fontFamily: "'Geist Mono',monospace" }}>
         {s.transfer} transfer return · {s.delivery} delivery return
       </div>
       {msg ? <div style={{ fontSize: 12, margin: "4px 2px 8px", color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
@@ -60,10 +60,10 @@ export default function AdminInternalReturn({ apiBase = "" }) {
                     <div style={{ fontSize: 13, fontWeight: 700, color: "#e6edf3" }}>
                       {r.return_no} <span style={{ color: "#60a5fa" }}>· {r.from_loc} → {r.to_loc}</span>
                     </div>
-                    <div style={{ fontSize: 10, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>ref {r.ref_no} · {r.processed_count}/{r.total_items} item diproses</div>
+                    <div style={{ fontSize: 10, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>ref {r.ref_no} · {r.processed_count}/{r.total_items} item diproses</div>
                   </div>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: ty.c, fontFamily: "'Space Mono',monospace" }}>{ty.l}</span>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}55`, borderRadius: 5, padding: "2px 8px", fontFamily: "'Space Mono',monospace" }}>{st.l}</span>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: ty.c, fontFamily: "'Geist Mono',monospace" }}>{ty.l}</span>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}55`, borderRadius: 5, padding: "2px 8px", fontFamily: "'Geist Mono',monospace" }}>{st.l}</span>
                   {pending.length > 0 && (
                     <button onClick={() => process(r, pending.map(i => i.sku))} style={S.act}>Proses Semua</button>
                   )}
@@ -73,9 +73,9 @@ export default function AdminInternalReturn({ apiBase = "" }) {
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11 }}>
                       <span style={{ color: it.processed ? "#10b981" : "#5b6470" }}>{it.processed ? "☑" : "☐"}</span>
                       <span style={{ flex: 1, color: it.processed ? "#5b6470" : "#cdd5df", textDecoration: it.processed ? "line-through" : "none" }}>
-                        {it.name} <b style={{ fontFamily: "'Space Mono',monospace" }}>{it.qty} {it.unit}</b>
+                        {it.name} <b style={{ fontFamily: "'Geist Mono',monospace" }}>{it.qty} {it.unit}</b>
                       </span>
-                      <span style={{ fontSize: 9, fontWeight: 700, color: REASON_C[it.reason] || "#9ca3af", fontFamily: "'Space Mono',monospace" }}>{it.reason}</span>
+                      <span style={{ fontSize: 9, fontWeight: 700, color: REASON_C[it.reason] || "#9ca3af", fontFamily: "'Geist Mono',monospace" }}>{it.reason}</span>
                       {!it.processed && <button onClick={() => process(r, [it.sku])} style={S.itemBtn}>proses</button>}
                     </div>
                   ))}
@@ -92,8 +92,8 @@ export default function AdminInternalReturn({ apiBase = "" }) {
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{v}</div>
     </div>
   );
 }
@@ -101,8 +101,8 @@ function Kpi({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   act: { background: "#9f1239", color: "#fff", border: "none", borderRadius: 6, padding: "5px 11px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
-  itemBtn: { background: "transparent", border: "1px solid #21262d", color: "#9da7b3", borderRadius: 5, padding: "2px 8px", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "'Space Mono',monospace" },
+  itemBtn: { background: "transparent", border: "1px solid #21262d", color: "#9da7b3", borderRadius: 5, padding: "2px 8px", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "'Geist Mono',monospace" },
 };

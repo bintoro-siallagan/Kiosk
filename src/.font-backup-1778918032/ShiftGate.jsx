@@ -43,18 +43,18 @@ const S = {
   loading: {
     position: "fixed", inset: 0, background: "#111", color: "#666",
     display: "flex", alignItems: "center", justifyContent: "center",
-    fontFamily: "'DM Sans',sans-serif", fontSize: 14
+    fontFamily: "'Inter',sans-serif", fontSize: 14
   },
   overlay: {
     position: "fixed", inset: 0, background: "#111", color: "#fff",
     display: "flex", flexDirection: "column",
     alignItems: "center", justifyContent: "center",
-    fontFamily: "'DM Sans',sans-serif",
+    fontFamily: "'Inter',sans-serif",
     padding: "40px", textAlign: "center", zIndex: 9999
   },
   icon: { fontSize: 100, marginBottom: 16, opacity: 0.85 },
   title: {
-    fontFamily: "'Bebas Neue',cursive",
+    fontFamily: "'Inter',cursive",
     fontSize: 56, letterSpacing: 3, margin: "0 0 8px", color: "#F59E0B"
   },
   subtitle: {
@@ -64,7 +64,7 @@ const S = {
   btn: {
     marginTop: 32, background: "#F59E0B", color: "#111",
     border: "none", borderRadius: 14, padding: "16px 32px",
-    fontFamily: "'DM Sans',sans-serif",
+    fontFamily: "'Inter',sans-serif",
     fontSize: 16, fontWeight: 700, cursor: "pointer",
     boxShadow: "0 4px 16px rgba(245,158,11,0.3)"
   },

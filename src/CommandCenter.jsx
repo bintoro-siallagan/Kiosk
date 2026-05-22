@@ -192,7 +192,7 @@ export default function CommandCenter(){
 
   if(loading)return(
     <div style={{minHeight:"100vh",background:"#080a0f",display:"flex",alignItems:"center",justifyContent:"center"}}>
-      <div style={{color:"#636e7b",fontSize:16,fontFamily:"monospace"}}>Connecting to Bites-Kiosk...</div>
+      <div style={{color:"#636e7b",fontSize:16,fontFamily:"monospace"}}>Connecting to KaryaOS...</div>
       <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );

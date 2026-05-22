@@ -61,10 +61,10 @@ export default function AdminProductVersioning({ apiBase = "" }) {
               <div style={{ flex: 1 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 13, fontWeight: 700, color: "#e6edf3" }}>{v.item_name}</span>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: TYPE_C[v.change_type], background: TYPE_C[v.change_type] + "1f", border: `1px solid ${TYPE_C[v.change_type]}55`, borderRadius: 4, padding: "2px 7px", fontFamily: "'Space Mono',monospace" }}>{(v.label || v.change_type).toUpperCase()}</span>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: TYPE_C[v.change_type], background: TYPE_C[v.change_type] + "1f", border: `1px solid ${TYPE_C[v.change_type]}55`, borderRadius: 4, padding: "2px 7px", fontFamily: "'Geist Mono',monospace" }}>{(v.label || v.change_type).toUpperCase()}</span>
                 </div>
                 <div style={{ fontSize: 12, color: "#9da7b3", margin: "3px 0" }}>{v.summary}</div>
-                <div style={{ fontSize: 11, fontFamily: "'Space Mono',monospace" }}>
+                <div style={{ fontSize: 11, fontFamily: "'Geist Mono',monospace" }}>
                   <span style={{ color: "#f87171" }}>{v.old_value}</span>
                   <span style={{ color: "#5b6470" }}> → </span>
                   <span style={{ color: "#34d399" }}>{v.new_value}</span>
@@ -90,8 +90,8 @@ function FilterChip({ label, on, c, onClick }) {
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{v}</div>
     </div>
   );
 }
@@ -99,6 +99,6 @@ function Kpi({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
 };

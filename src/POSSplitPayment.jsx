@@ -289,7 +289,7 @@ export default function POSSplitPayment({ order, kasir, onClose, onSuccess }) {
                 }}>
                   <img src={qrData.qrCode} alt="QR Code" style={{width: 260, height: 260, display: "block"}} />
                 </div>
-                <div style={{fontSize: 18, fontWeight: 700, color: "#F59E0B", fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 2}}>
+                <div style={{fontSize: 18, fontWeight: 700, color: "#F59E0B", fontFamily: "'Inter', sans-serif", letterSpacing: 2}}>
                   {fIDR(qrData.amount)}
                 </div>
                 <div style={{fontSize: 12, color: "#9CA3AF", marginTop: 8, maxWidth: 320}}>
@@ -455,7 +455,7 @@ const S = {
     position: "fixed", inset: 0,
     background: "rgba(0,0,0,0.85)", backdropFilter: "blur(10px)",
     display: "flex", alignItems: "center", justifyContent: "center",
-    zIndex: 1500, fontFamily: "'Plus Jakarta Sans', sans-serif",
+    zIndex: 1500, fontFamily: "'Inter', sans-serif",
     padding: 20,
   },
   modal: {
@@ -468,7 +468,7 @@ const S = {
     padding: "20px 24px", borderBottom: "1px solid #2a2a2a",
     display: "flex", alignItems: "center", justifyContent: "space-between",
   },
-  title: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "#F59E0B", letterSpacing: 1.5 },
+  title: { fontFamily: "'Inter', sans-serif", fontSize: 28, color: "#F59E0B", letterSpacing: 1.5 },
   subtitle: { fontSize: 12, color: "#9CA3AF", marginTop: 4 },
   closeBtn: {
     width: 36, height: 36, borderRadius: 10,
@@ -481,7 +481,7 @@ const S = {
   },
   summaryRow: { display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13, color: "#D1D5DB" },
   summaryRemaining: { borderTop: "1px solid #2a2a2a", marginTop: 8, paddingTop: 10, fontSize: 14, fontWeight: 600 },
-  totalVal: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: "white", letterSpacing: 0.5 },
+  totalVal: { fontFamily: "'Inter', sans-serif", fontSize: 18, color: "white", letterSpacing: 0.5 },
   paymentsList: { padding: "0 20px 16px", flex: 1, overflowY: "auto" },
   paymentRow: {
     padding: "14px 16px", marginBottom: 12, borderRadius: 12,

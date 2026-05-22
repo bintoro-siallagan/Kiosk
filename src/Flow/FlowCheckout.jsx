@@ -459,7 +459,7 @@ export default function FlowCheckout({
           <div style={S.pointsCard}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
               <span style={{ fontSize: 12, color: "#9CA3AF" }}>Saldo poin</span>
-              <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, color: "#FF6B35" }}>
+              <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 20, color: "#FF6B35" }}>
                 {customerPoints.toLocaleString("id-ID")}
               </span>
             </div>
@@ -550,7 +550,7 @@ const S = {
   container: { width: "min(440px, 100%)", minHeight: "100vh", padding: "16px 16px 100px", display: "flex", flexDirection: "column", gap: 14 },
   header: { display: "flex", justifyContent: "space-between", alignItems: "center" },
   backBtn: { padding: "8px 14px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid #2a2a2a", color: "white", fontSize: 13, cursor: "pointer", fontFamily: "inherit" },
-  headTitle: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: "#FF6B35", letterSpacing: 1 },
+  headTitle: { fontFamily: "'Inter', sans-serif", fontSize: 24, color: "#FF6B35", letterSpacing: 1 },
   customerCard: { padding: "14px 16px", borderRadius: 12, background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)" },
   fieldLabel: { fontSize: 10, color: "#9CA3AF", letterSpacing: 1, fontWeight: 600, marginBottom: 4 },
   customerName: { fontSize: 16, fontWeight: 800 },
@@ -570,12 +570,12 @@ const S = {
   itemBody: { flex: 1, minWidth: 0 },
   itemName: { fontSize: 13, fontWeight: 700, lineHeight: 1.3 },
   itemMeta: { fontSize: 11, color: "#9CA3AF", marginTop: 2 },
-  itemLineTotal: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 16, color: "#FF6B35", letterSpacing: 0.5, whiteSpace: "nowrap" },
+  itemLineTotal: { fontFamily: "'Inter', sans-serif", fontSize: 16, color: "#FF6B35", letterSpacing: 0.5, whiteSpace: "nowrap" },
   notesInput: { width: "100%", padding: "12px 14px", borderRadius: 12, background: "#0d0d0d", border: "1px solid #2a2a2a", color: "white", fontSize: 13, fontFamily: "inherit", resize: "none", outline: "none", boxSizing: "border-box" },
 
   // Promo
   appliedPromoCard: { display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderRadius: 12, background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.4)" },
-  appliedPromoCode: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, color: "#10B981", letterSpacing: 0.5 },
+  appliedPromoCode: { fontFamily: "'Inter', sans-serif", fontSize: 18, color: "#10B981", letterSpacing: 0.5 },
   appliedPromoDesc: { fontSize: 11, color: "#D1D5DB", marginTop: 2, lineHeight: 1.4 },
   appliedPromoSaving: { fontSize: 11, color: "#10B981", marginTop: 4, fontWeight: 700 },
   removeBtn: { width: 28, height: 28, borderRadius: 14, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", color: "#F87171", fontSize: 12, cursor: "pointer", padding: 0 },
@@ -602,9 +602,9 @@ const S = {
   totalRow: { display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13, color: "#D1D5DB" },
   totalRowBig: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, paddingTop: 10, borderTop: "1px solid rgba(245,158,11,0.2)" },
   totalLabel: { fontSize: 13 },
-  totalValue: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 16, color: "white", letterSpacing: 0.5 },
+  totalValue: { fontFamily: "'Inter', sans-serif", fontSize: 16, color: "white", letterSpacing: 0.5 },
   totalBigLabel: { fontSize: 14, fontWeight: 800, letterSpacing: 1 },
-  totalBigValue: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, color: "#FF6B35", letterSpacing: 1 },
+  totalBigValue: { fontFamily: "'Inter', sans-serif", fontSize: 32, color: "#FF6B35", letterSpacing: 1 },
   errorBox: { padding: "10px 12px", borderRadius: 8, background: "rgba(248,113,113,0.10)", color: "#F87171", fontSize: 12 },
   payBtn: { width: "100%", padding: "16px", borderRadius: 14, background: "linear-gradient(135deg, #10B981, #059669)", border: "none", color: "white", fontSize: 15, fontWeight: 800, fontFamily: "inherit", cursor: "pointer", boxShadow: "0 8px 24px rgba(16,185,129,0.3)" },
   disclaimer: { textAlign: "center", fontSize: 10, color: "#6B7280", padding: "10px 0", lineHeight: 1.5 },
@@ -612,14 +612,14 @@ const S = {
   // QR
   qrContainer: { width: "min(440px, 100%)", minHeight: "100vh", padding: "12px", display: "flex", flexDirection: "column", margin: "0 auto" },
   qrHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 },
-  qrTitle: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: "#FF6B35", letterSpacing: 1 },
+  qrTitle: { fontFamily: "'Inter', sans-serif", fontSize: 24, color: "#FF6B35", letterSpacing: 1 },
   qrBody: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "12px", gap: 10 },
   qrLoadingIcon: { fontSize: 64, animation: "pulse 2s infinite" },
   qrLoadingTitle: { fontSize: 20, fontWeight: 800 },
   qrLoadingSub: { fontSize: 13, color: "#9CA3AF" },
   qrCard: { padding: 16, background: "white", borderRadius: 20, marginBottom: 14, boxShadow: "0 20px 50px rgba(245,158,11,0.25)" },
   qrImage: { width: 340, height: 340, display: "block", maxWidth: "92vw", maxHeight: "92vw" },
-  qrAmount: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 44, color: "#FF6B35", letterSpacing: 1, marginTop: 8 },
+  qrAmount: { fontFamily: "'Inter', sans-serif", fontSize: 44, color: "#FF6B35", letterSpacing: 1, marginTop: 8 },
   qrHint: { fontSize: 14, color: "#FAFAFA", maxWidth: 320, lineHeight: 1.5, fontWeight: 600 },
   qrPayBadge: { fontSize: 10, color: "#10B981", padding: "3px 10px", borderRadius: 6, background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)", marginTop: 4 },
   qrDeeplink: { fontSize: 13, color: "#3B82F6", textDecoration: "none", marginTop: 12, padding: "10px 16px", background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 10, fontWeight: 600 },

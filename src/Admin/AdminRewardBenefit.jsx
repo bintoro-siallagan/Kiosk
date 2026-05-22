@@ -60,7 +60,7 @@ export default function AdminRewardBenefit({ apiBase = "" }) {
             <option value="">— pilih crew —</option>
             {d.crew.map(c => <option key={c.id} value={c.id}>{c.staff_name} · {c.points} poin ({c.outlet})</option>)}
           </select>
-          {sel ? <span style={{ fontSize: 12, color: "#fbbf24", fontFamily: "'Space Mono',monospace" }}>⭐ {sel.points} poin tersedia</span> : null}
+          {sel ? <span style={{ fontSize: 12, color: "#fbbf24", fontFamily: "'Geist Mono',monospace" }}>⭐ {sel.points} poin tersedia</span> : null}
           {msg ? <span style={{ fontSize: 12, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</span> : null}
         </div>
 
@@ -71,9 +71,9 @@ export default function AdminRewardBenefit({ apiBase = "" }) {
               <div key={r.id} style={{ background: "#0a0e16", border: "1px solid #161b22", borderRadius: 10, padding: "12px 13px" }}>
                 <div style={{ fontSize: 26 }}>{r.icon}</div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: "#e6edf3", margin: "4px 0 2px" }}>{r.name}</div>
-                <div style={{ fontSize: 10, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{r.category.toUpperCase()}</div>
+                <div style={{ fontSize: 10, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>{r.category.toUpperCase()}</div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 9 }}>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24", fontFamily: "'Space Mono',monospace" }}>⭐ {r.cost}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: "#fbbf24", fontFamily: "'Geist Mono',monospace" }}>⭐ {r.cost}</span>
                   <button onClick={() => redeem(r.id)} disabled={!afford}
                     style={{ ...S.btn, opacity: afford ? 1 : 0.4, cursor: afford ? "pointer" : "not-allowed" }}>Tukar</button>
                 </div>
@@ -98,7 +98,7 @@ export default function AdminRewardBenefit({ apiBase = "" }) {
                 <tr key={r.id} style={{ borderTop: "1px solid #161b22", fontSize: 13 }}>
                   <td style={{ ...S.td, color: "#e6edf3", fontWeight: 600 }}>{r.staff_name}</td>
                   <td style={S.td}>{r.reward_icon} {r.reward_name}</td>
-                  <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#fbbf24" }}>⭐ {r.point_cost}</td>
+                  <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#fbbf24" }}>⭐ {r.point_cost}</td>
                   <td style={{ ...S.td, color: "#9da7b3" }}>{fmtDate(r.redeemed_at)}</td>
                   <td style={S.td}><span style={{ fontSize: 11, fontWeight: 700, color: st.c }}>{st.t}</span></td>
                   <td style={S.td}>
@@ -119,8 +119,8 @@ export default function AdminRewardBenefit({ apiBase = "" }) {
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{v}</div>
     </div>
   );
 }
@@ -128,10 +128,10 @@ function Kpi({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "9px 8px" },
   select: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "7px 10px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none" },
   btn: { background: "#ec4899", color: "#fff", border: "none", borderRadius: 6, padding: "5px 12px", fontSize: 12, fontWeight: 700, fontFamily: "inherit" },
-  btnSm: { background: "#3b82f61f", border: "1px solid #3b82f655", color: "#7cc4ff", fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 6, cursor: "pointer", fontFamily: "'Space Mono',monospace" },
+  btnSm: { background: "#3b82f61f", border: "1px solid #3b82f655", color: "#7cc4ff", fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 6, cursor: "pointer", fontFamily: "'Geist Mono',monospace" },
 };

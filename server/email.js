@@ -13,7 +13,7 @@ const DEFAULTS = {
   smtpUser:    "",
   smtpPass:    "",
   fromEmail:   "",
-  fromName:    "BINTORO Kiosk",
+  fromName:    "KaryaOS Kiosk",
   recipients:  [],           // default recipient list (admin can override per-send)
   updatedAt:   null,
 };
@@ -73,7 +73,7 @@ async function sendEmail({ to, subject, html, text, attachments }) {
   const info = await t.sendMail({
     from: `"${cfg.fromName}" <${cfg.fromEmail || cfg.smtpUser}>`,
     to: recipients.join(", "),
-    subject: subject || "BINTORO Report",
+    subject: subject || "KaryaOS Report",
     html, text,
     attachments,
   });

@@ -49,7 +49,7 @@ export default function AdminRoleDashboard({ apiBase = "" }) {
             <div style={{ fontSize: 18, fontWeight: 800, color: "#e6edf3" }}>{dash.title}</div>
             <div style={{ fontSize: 12, color: "#9da7b3" }}>{dash.focus}</div>
           </div>
-          <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, color: dash.accent, background: dash.accent + "1f", border: `1px solid ${dash.accent}55`, borderRadius: 6, padding: "4px 10px", fontFamily: "'Space Mono',monospace" }}>
+          <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, color: dash.accent, background: dash.accent + "1f", border: `1px solid ${dash.accent}55`, borderRadius: 6, padding: "4px 10px", fontFamily: "'Geist Mono',monospace" }}>
             {dash.id.toUpperCase()}
           </span>
         </div>
@@ -64,8 +64,8 @@ export default function AdminRoleDashboard({ apiBase = "" }) {
             {dash.widgets.map((w, i) => (
               <div key={i} style={{ background: "#0a0e16", border: "1px solid #161b22", borderRadius: 10, padding: "13px 15px" }}>
                 <div style={{ fontSize: 22 }}>{w.icon}</div>
-                <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace", margin: "6px 0 3px" }}>{w.label.toUpperCase()}</div>
-                <div style={{ fontSize: 19, fontWeight: 800, color: dash.accent, fontFamily: "'Space Mono',monospace" }}>{fmtVal(w.value, w.fmt)}</div>
+                <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace", margin: "6px 0 3px" }}>{w.label.toUpperCase()}</div>
+                <div style={{ fontSize: 19, fontWeight: 800, color: dash.accent, fontFamily: "'Geist Mono',monospace" }}>{fmtVal(w.value, w.fmt)}</div>
               </div>
             ))}
           </div>

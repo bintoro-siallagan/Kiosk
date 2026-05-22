@@ -108,7 +108,7 @@ export default function ESBNotif({ onBack }) {
   return (
     <div style={N.root}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0}
         ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-thumb{background:#FF6B35;border-radius:2px}
         @keyframes spin{to{transform:rotate(360deg)}}
@@ -296,7 +296,7 @@ export default function ESBNotif({ onBack }) {
                           {l.status==="pushing" && <span style={N.spin}/>}
                           {l.status==="ok"      && <span style={{ color:"#00C896", fontSize:16 }}>✅</span>}
                           {l.status==="error"   && <span style={{ color:"#FF3B30", fontSize:16 }}>❌</span>}
-                          <span style={{ fontFamily:"'Montserrat',sans-serif", fontSize:18, letterSpacing:1, color:"#fff" }}>
+                          <span style={{ fontFamily:"'Inter',sans-serif", fontSize:18, letterSpacing:1, color:"#fff" }}>
                             #{l.orderId}
                           </span>
                         </div>
@@ -326,7 +326,7 @@ export default function ESBNotif({ onBack }) {
                   <div key={o.id} style={N.orderRow}>
                     <div style={{ flex:1 }}>
                       <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:2 }}>
-                        <span style={{ fontFamily:"'Montserrat',sans-serif", fontSize:16, color:"#FF6B35" }}>#{o.id}</span>
+                        <span style={{ fontFamily:"'Inter',sans-serif", fontSize:16, color:"#FF6B35" }}>#{o.id}</span>
                         <span style={{ fontSize:11, color:"#555" }}>{fmtTime(o.time)}</span>
                         <span style={{ fontSize:11, color:"#666" }}>{o.type==="dine"?`🪑 ${o.table}`:"🛍️ Bawa"}</span>
                       </div>
@@ -353,10 +353,10 @@ export default function ESBNotif({ onBack }) {
 }
 
 const N = {
-  root:    { fontFamily:"'Plus Jakarta Sans',sans-serif", background:"#080c10", color:"#fff", minHeight:"100%", display:"flex", flexDirection:"column", position:"fixed", top:0, left:0, right:0, bottom:0, overflowY:"auto", zIndex:9999 },
+  root:    { fontFamily:"'Inter',sans-serif", background:"#080c10", color:"#fff", minHeight:"100%", display:"flex", flexDirection:"column", position:"fixed", top:0, left:0, right:0, bottom:0, overflowY:"auto", zIndex:9999 },
   header:  { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"16px 24px", background:"#0d1117", borderBottom:"1px solid #161b22", flexWrap:"wrap", gap:12 },
   hLeft:   { display:"flex", alignItems:"center", gap:16 },
-  title:   { fontFamily:"'Montserrat',sans-serif", fontSize:22, letterSpacing:3, color:"#FF6B35" },
+  title:   { fontFamily:"'Inter',sans-serif", fontSize:22, letterSpacing:3, color:"#FF6B35" },
   sub:     { fontSize:11, color:"#555" },
   backBtn: { background:"transparent", border:"1px solid #333", borderRadius:10, padding:"8px 14px", color:"#888", cursor:"pointer", fontSize:12 },
   headerRight: { display:"flex", alignItems:"center", gap:10 },
@@ -372,8 +372,8 @@ const N = {
   statusItem:{ display:"flex", alignItems:"center", gap:12 },
   statusDot: (c) => ({ width:10, height:10, borderRadius:"50%", background:c, flexShrink:0 }),
   label:   { fontSize:12, fontWeight:600, color:"#aaa" },
-  input:   { background:"#080c10", border:"1px solid #21262d", borderRadius:10, padding:"9px 12px", color:"#fff", fontSize:13, fontFamily:"'Plus Jakarta Sans',sans-serif" },
-  saveBtn: { background:"linear-gradient(90deg,#FF6B35,#FF3B30)", border:"none", borderRadius:10, padding:"10px 20px", color:"#fff", cursor:"pointer", fontSize:13, fontWeight:700, letterSpacing:1, fontFamily:"'Montserrat',sans-serif", flex:1 },
+  input:   { background:"#080c10", border:"1px solid #21262d", borderRadius:10, padding:"9px 12px", color:"#fff", fontSize:13, fontFamily:"'Inter',sans-serif" },
+  saveBtn: { background:"linear-gradient(90deg,#FF6B35,#FF3B30)", border:"none", borderRadius:10, padding:"10px 20px", color:"#fff", cursor:"pointer", fontSize:13, fontWeight:700, letterSpacing:1, fontFamily:"'Inter',sans-serif", flex:1 },
   testBtn: { background:"#0d1117", border:"1px solid #21262d", borderRadius:10, padding:"10px 16px", color:"#aaa", cursor:"pointer", fontSize:12, fontWeight:600, display:"flex", alignItems:"center", gap:6 },
   clearBtn:{ background:"transparent", border:"1px solid #21262d", borderRadius:8, padding:"5px 10px", color:"#555", cursor:"pointer", fontSize:11 },
   spin:    { display:"inline-block", width:13, height:13, border:"2px solid #333", borderTop:"2px solid #FF6B35", borderRadius:"50%", animation:"spin 0.8s linear infinite", flexShrink:0 },

@@ -69,15 +69,15 @@ export default function AdminSettlement({ apiBase = "" }) {
               <tr key={i} style={{ borderTop: "1px solid #161b22", fontSize: 13 }}>
                 <td style={{ ...S.td, color: "#e6edf3", fontWeight: 600 }}>{c.channel}</td>
                 <td style={S.td}>
-                  <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, fontFamily: "'Space Mono',monospace",
+                  <span style={{ fontSize: 10, padding: "2px 7px", borderRadius: 5, fontFamily: "'Geist Mono',monospace",
                     background: c.group === "POS" ? "#1e3a5f" : "#3a2a1e", color: c.group === "POS" ? "#7cc4ff" : "#f0b86e" }}>{c.group}</span>
                 </td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>{c.count}</td>
-                <td style={{ ...S.td, color: "#9da7b3", fontFamily: "'Space Mono',monospace" }}>{fmtRp(c.gross)}</td>
-                <td style={{ ...S.td, color: c.fee > 0 ? "#f87171" : "#5b6470", fontFamily: "'Space Mono',monospace" }}>
+                <td style={{ ...S.td, color: "#9da7b3", fontFamily: "'Geist Mono',monospace" }}>{fmtRp(c.gross)}</td>
+                <td style={{ ...S.td, color: c.fee > 0 ? "#f87171" : "#5b6470", fontFamily: "'Geist Mono',monospace" }}>
                   {c.fee > 0 ? "− " + fmtRp(c.fee) : "—"} {c.fee > 0 ? <span style={{ color: "#5b6470", fontSize: 10 }}>({c.fee_pct}%)</span> : null}
                 </td>
-                <td style={{ ...S.td, color: "#10b981", fontWeight: 700, fontFamily: "'Space Mono',monospace" }}>{fmtRp(c.net)}</td>
+                <td style={{ ...S.td, color: "#10b981", fontWeight: 700, fontFamily: "'Geist Mono',monospace" }}>{fmtRp(c.net)}</td>
                 <td style={{ ...S.td, fontSize: 11, color: c.settled ? "#10b981" : "#f59e0b" }}>
                   {c.settled ? "✓ " : "⏳ "}{c.settle}
                 </td>
@@ -93,8 +93,8 @@ export default function AdminSettlement({ apiBase = "" }) {
 function Kpi({ label, v, c, sub }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
       <div style={{ fontSize: 10, color: "#5b6470" }}>{sub}</div>
     </div>
   );
@@ -103,7 +103,7 @@ function Kpi({ label, v, c, sub }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(5,minmax(0,1fr))", gap: 10 },
   td: { padding: "9px 8px" },
   pill: { background: "#0d1117", border: "1px solid #21262d", color: "#9da7b3", fontSize: 12, padding: "7px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit" },

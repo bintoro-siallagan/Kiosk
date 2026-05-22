@@ -33,7 +33,7 @@ export default function AdminAntiFraud({ apiBase = "" }) {
 
       <div style={{ ...S.card, display: "flex", alignItems: "center", gap: 26 }}>
         <div>
-          <span style={{ fontSize: 34, fontWeight: 900, color: s.total ? "#ef4444" : "#10b981", fontFamily: "'Space Mono',monospace" }}>{s.total}</span>
+          <span style={{ fontSize: 34, fontWeight: 900, color: s.total ? "#ef4444" : "#10b981", fontFamily: "'Geist Mono',monospace" }}>{s.total}</span>
           <span style={{ fontSize: 13, color: "#9da7b3", marginLeft: 8 }}>indikasi terdeteksi</span>
         </div>
         {s.critical > 0 && <span style={{ color: "#ef4444", fontSize: 13, fontWeight: 700 }}>● {s.critical} critical</span>}
@@ -58,8 +58,8 @@ export default function AdminAntiFraud({ apiBase = "" }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <span style={{ fontSize: 20 }}>{a.icon}</span>
                   <span style={{ fontSize: 14, fontWeight: 700, color: "#e6edf3" }}>{a.title}</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: sv.c, background: sv.c + "1f", border: `1px solid ${sv.c}55`, borderRadius: 5, padding: "2px 8px", fontFamily: "'Space Mono',monospace" }}>{a.category}</span>
-                  <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, color: sv.c, fontFamily: "'Space Mono',monospace" }}>{sv.t}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: sv.c, background: sv.c + "1f", border: `1px solid ${sv.c}55`, borderRadius: 5, padding: "2px 8px", fontFamily: "'Geist Mono',monospace" }}>{a.category}</span>
+                  <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, color: sv.c, fontFamily: "'Geist Mono',monospace" }}>{sv.t}</span>
                 </div>
                 <div style={{ fontSize: 12, color: "#9da7b3", marginTop: 6, lineHeight: 1.55, paddingLeft: 30 }}>{a.detail}</div>
               </div>

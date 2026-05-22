@@ -59,16 +59,16 @@ export default function AdminBatchTracking({ apiBase = "" }) {
           <tbody>
             {d.batches.map(b => (
               <tr key={b.id} style={{ borderTop: "1px solid #161b22", fontSize: 12 }}>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#5b6470" }}>{b.batch_no}</td>
-                <td style={{ ...S.td, color: "#e6edf3", fontWeight: 600 }}>{b.item_name} <span style={{ color: "#5b6470", fontFamily: "'Space Mono',monospace", fontSize: 10 }}>{b.sku}</span></td>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#9da7b3" }}>{b.qty} {b.unit}</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#5b6470" }}>{b.batch_no}</td>
+                <td style={{ ...S.td, color: "#e6edf3", fontWeight: 600 }}>{b.item_name} <span style={{ color: "#5b6470", fontFamily: "'Geist Mono',monospace", fontSize: 10 }}>{b.sku}</span></td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#9da7b3" }}>{b.qty} {b.unit}</td>
                 <td style={{ ...S.td, color: "#5b6470" }}>{fmtDate(b.received_at)}</td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>{fmtDate(b.expiry_at)}</td>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", fontWeight: 700, color: b.color }}>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: b.color }}>
                   {b.days < 0 ? `${-b.days} hr lewat` : `${b.days} hari`}
                 </td>
                 <td style={S.td}>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: b.color, background: b.color + "1f", border: `1px solid ${b.color}55`, borderRadius: 5, padding: "2px 7px", fontFamily: "'Space Mono',monospace" }}>{ST[b.status]}</span>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: b.color, background: b.color + "1f", border: `1px solid ${b.color}55`, borderRadius: 5, padding: "2px 7px", fontFamily: "'Geist Mono',monospace" }}>{ST[b.status]}</span>
                 </td>
                 <td style={S.td}>
                   {b.status === "expired" && <button onClick={() => discard(b)} style={S.btn}>🗑 Buang</button>}
@@ -85,8 +85,8 @@ export default function AdminBatchTracking({ apiBase = "" }) {
 function Kpi({ label, v, c, sub }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
       <div style={{ fontSize: 10, color: "#5b6470" }}>{sub || " "}</div>
     </div>
   );
@@ -95,8 +95,8 @@ function Kpi({ label, v, c, sub }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "7px 8px" },
-  btn: { background: "#ef444420", border: "1px solid #ef444455", color: "#f87171", fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 6, cursor: "pointer", fontFamily: "'Space Mono',monospace" },
+  btn: { background: "#ef444420", border: "1px solid #ef444455", color: "#f87171", fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 6, cursor: "pointer", fontFamily: "'Geist Mono',monospace" },
 };

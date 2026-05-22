@@ -57,7 +57,7 @@ async function openCDSOnSecondScreen() {
   cdsWindowRef = window.open(finalUrl, 'BintoroCDS', features);
 
   if (!cdsWindowRef) {
-    alert("Popup diblok! Allow popup untuk bites-kiosk di browser settings, lalu coba lagi.");
+    alert("Popup diblok! Allow popup untuk KaryaOS di browser settings, lalu coba lagi.");
     return null;
   }
 
@@ -170,7 +170,7 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
         <span style={{fontSize:18}}>🖥️</span> Buka Layar Pelanggan
       </button>
       <header style={S.header}>
-        <div style={S.brand}>☕ BINTORO POS</div>
+        <div style={S.brand}>☕ KaryaOS POS</div>
         <div style={S.user}>
           <span style={S.userIcon}>👤</span>
           <span style={S.userName}>{cashier.name}</span>

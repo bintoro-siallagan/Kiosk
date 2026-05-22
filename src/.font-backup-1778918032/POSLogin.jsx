@@ -21,7 +21,7 @@ export default function POSLogin({ onLogin }) {
   return (
     <div style={S.root}>
       <header style={S.header}>
-        <h1 style={S.title}>☕ BINTORO POS</h1>
+        <h1 style={S.title}>☕ KaryaOS POS</h1>
         <p style={S.subtitle}>POINT OF SALE TERMINAL</p>
       </header>
 
@@ -84,13 +84,13 @@ const roleColors = {
 const S = {
   root: {
     minHeight: "100vh", background: "#111", color: "#fff",
-    fontFamily: "'DM Sans',sans-serif",
+    fontFamily: "'Inter',sans-serif",
     padding: "48px 24px",
     display: "flex", flexDirection: "column"
   },
   header: { textAlign: "center", marginBottom: 48 },
   title: {
-    fontFamily: "'Bebas Neue',cursive",
+    fontFamily: "'Inter',cursive",
     fontSize: 72, letterSpacing: 5,
     margin: "0 0 4px", color: "#F59E0B"
   },

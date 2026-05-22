@@ -96,13 +96,13 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
   return (
     <div style={C.root}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=DM+Sans:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&family=DM+Sans:wght@400;600;700&display=swap');
         *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
         @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
         @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
         @keyframes pop{0%{transform:scale(0.85);opacity:0}60%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
         @keyframes spin{to{transform:rotate(360deg)}}
-        button{cursor:pointer;user-select:none;-webkit-user-select:none;font-family:'Plus Jakarta Sans',sans-serif;}
+        button{cursor:pointer;user-select:none;-webkit-user-select:none;font-family:'Inter',sans-serif;}
         input:focus{outline:none}
       `}</style>
 
@@ -152,7 +152,7 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
           <div style={C.stepEmoji}>👋</div>
           <div style={C.stepTitle}>Hai, siapa nama Anda?</div>
           <div style={C.stepSub}>
-            <span style={{color:"#38BDF8",fontFamily:"'Montserrat',sans-serif",letterSpacing:1}}>{phone}</span>
+            <span style={{color:"#38BDF8",fontFamily:"'Inter',sans-serif",letterSpacing:1}}>{phone}</span>
             {" "}belum terdaftar
           </div>
 
@@ -258,34 +258,34 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
 // Numpad styles — big touch targets
 const N = {
   pad:      {display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,width:"100%",maxWidth:340,margin:"20px 0 0"},
-  key:      {height:72,fontSize:26,fontWeight:700,background:"#1a1a2e",border:"1px solid #252540",borderRadius:16,color:"#fff",fontFamily:"'Montserrat',sans-serif",letterSpacing:1,transition:"background 0.1s",WebkitTapHighlightColor:"transparent",active:{background:"#252540"}},
+  key:      {height:72,fontSize:26,fontWeight:700,background:"#1a1a2e",border:"1px solid #252540",borderRadius:16,color:"#fff",fontFamily:"'Inter',sans-serif",letterSpacing:1,transition:"background 0.1s",WebkitTapHighlightColor:"transparent",active:{background:"#252540"}},
   keyDel:   {height:72,fontSize:22,background:"#1a1a2e",border:"1px solid #252540",borderRadius:16,color:"#F87171",fontWeight:700,transition:"background 0.1s"},
-  keyEnter: {height:72,fontSize:20,background:"linear-gradient(135deg,#F59E0B,#F97316)",border:"none",borderRadius:16,color:"#050810",fontWeight:700,letterSpacing:1,fontFamily:"'Montserrat',sans-serif"},
+  keyEnter: {height:72,fontSize:20,background:"linear-gradient(135deg,#F59E0B,#F97316)",border:"none",borderRadius:16,color:"#050810",fontWeight:700,letterSpacing:1,fontFamily:"'Inter',sans-serif"},
 };
 
 const C = {
-  root:       {fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#050810",color:"#fff",minHeight:"100vh",display:"flex",flexDirection:"column"},
+  root:       {fontFamily:"'Inter',sans-serif",background:"#050810",color:"#fff",minHeight:"100vh",display:"flex",flexDirection:"column"},
   strip:      {display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 20px",background:"#0d1117",borderBottom:"1px solid #1a1a2e",gap:12},
   stripLabel: {fontSize:13,fontWeight:600,marginBottom:2},
   stripItems: {fontSize:11,color:"#555",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:240},
-  stripTotal: {fontFamily:"'Montserrat',sans-serif",fontSize:22,color:"#F59E0B",letterSpacing:1,flexShrink:0},
+  stripTotal: {fontFamily:"'Inter',sans-serif",fontSize:22,color:"#F59E0B",letterSpacing:1,flexShrink:0},
   stepEmoji:  {fontSize:80,marginBottom:8,display:"block",textAlign:"center"},
-  stepTitle:  {fontFamily:"'Montserrat',sans-serif",fontSize:36,letterSpacing:2,color:"#fff",marginBottom:8,textAlign:"center",fontWeight:900},
+  stepTitle:  {fontFamily:"'Inter',sans-serif",fontSize:36,letterSpacing:2,color:"#fff",marginBottom:8,textAlign:"center",fontWeight:900},
   stepSub:    {fontSize:15,color:"#888",marginBottom:20,textAlign:"center",lineHeight:1.6},
   phoneDisplay:{display:"flex",alignItems:"center",justifyContent:"center",gap:12,background:"#0d1117",border:"1px solid #21262d",borderRadius:16,padding:"18px 24px",width:"100%",maxWidth:340,marginBottom:8},
-  phonePrefix:{fontSize:16,color:"#555",fontFamily:"'Plus Jakarta Sans',sans-serif"},
-  phoneNum:   {fontFamily:"'Montserrat',sans-serif",fontSize:28,letterSpacing:4,flex:1,textAlign:"center"},
+  phonePrefix:{fontSize:16,color:"#555",fontFamily:"'Inter',sans-serif"},
+  phoneNum:   {fontFamily:"'Inter',sans-serif",fontSize:28,letterSpacing:4,flex:1,textAlign:"center"},
   spinner:    {width:18,height:18,border:"2px solid #333",borderTop:"2px solid #F59E0B",borderRadius:"50%",animation:"spin 0.8s linear infinite",display:"inline-block",flexShrink:0},
-  nameInput:  {width:"100%",background:"#0d1117",border:"1px solid #21262d",borderRadius:14,padding:"18px 20px",color:"#fff",fontSize:20,marginBottom:16,fontFamily:"'Plus Jakarta Sans',sans-serif",textAlign:"center"},
+  nameInput:  {width:"100%",background:"#0d1117",border:"1px solid #21262d",borderRadius:14,padding:"18px 20px",color:"#fff",fontSize:20,marginBottom:16,fontFamily:"'Inter',sans-serif",textAlign:"center"},
   benefits:   {display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"},
   benefitChip:{background:"rgba(52,211,153,0.08)",border:"1px solid rgba(52,211,153,0.2)",borderRadius:20,padding:"5px 12px",fontSize:12,color:"#34D399"},
   memberCard: {display:"flex",alignItems:"center",gap:14,background:"#0d1117",border:"1px solid #38BDF822",borderRadius:18,padding:"18px 20px",width:"100%"},
   memberAva:  {width:54,height:54,borderRadius:"50%",background:"linear-gradient(135deg,#38BDF8,#6366F1)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,fontWeight:700,flexShrink:0,color:"#fff"},
   memberName: {fontSize:18,fontWeight:700,marginBottom:3},
-  memberPhone:{fontSize:12,color:"#666",fontFamily:"'Montserrat',sans-serif",letterSpacing:1},
-  visits:     {fontFamily:"'Montserrat',sans-serif",fontSize:28,color:"#F59E0B",lineHeight:1},
+  memberPhone:{fontSize:12,color:"#666",fontFamily:"'Inter',sans-serif",letterSpacing:1},
+  visits:     {fontFamily:"'Inter',sans-serif",fontSize:28,color:"#F59E0B",lineHeight:1},
   tag:        {fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20,letterSpacing:0.5},
-  bigBtn:     {background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:14,padding:"18px",color:"#050810",fontSize:16,fontWeight:700,letterSpacing:1,fontFamily:"'Montserrat',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"opacity 0.15s"},
+  bigBtn:     {background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:14,padding:"18px",color:"#050810",fontSize:16,fontWeight:700,letterSpacing:1,fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"opacity 0.15s"},
   redeemBox: {width:"100%",marginTop:16,padding:"16px",background:"linear-gradient(180deg,rgba(251,146,60,0.12),rgba(13,17,23,0.55))",border:"1.5px solid rgba(251,146,60,0.55)",borderRadius:14,boxShadow:"0 0 24px rgba(251,146,60,0.16)"},
   slider:    {width:"100%",accentColor:"#FB923C",height:6,cursor:"pointer"},
   ghostBtn:   {background:"#0d1117",border:"1px solid #21262d",borderRadius:14,padding:"16px 20px",color:"#666",fontSize:13,fontWeight:600},

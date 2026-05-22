@@ -61,7 +61,7 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
     const phone = (session.phone || "").replace(/[^0-9]/g, "");
     const intl = phone.startsWith("0") ? "62" + phone.substring(1) : phone;
     const msg = encodeURIComponent(
-      `Halo, saya baru aja order di BINTORO!\n\n` +
+      `Halo, saya baru aja order di KaryaOS!\n\n` +
       `Order #${order.id}\nTotal: ${fIDR(orderData.total || order.total)}\n\nTracking: ${trackingUrl}`
     );
     window.open(`https://wa.me/${intl}?text=${msg}`, "_blank");
@@ -80,7 +80,7 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
           {currentStep === 0 && "Pesanan Diterima!"}
         </div>
         <div style={S.subtitle}>
-          {currentStep >= 3 && "Terima kasih sudah order di BINTORO ☕"}
+          {currentStep >= 3 && "Terima kasih sudah order di KaryaOS ☕"}
           {currentStep === 2 && "Silakan diambil di counter / meja kamu"}
           {currentStep === 1 && "Barista lagi nyiapin pesanan kamu"}
           {currentStep === 0 && "Akan segera dipersiapkan"}
@@ -125,7 +125,7 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
       <button onClick={onOrderMore} style={S.btnPrimary}>🛒 Pesan Lagi</button>
       <button onClick={onHome} style={S.btnGhost}>← Kembali ke Home</button>
 
-      <div style={S.footer}>BINTORO Flow · Mobile Order Portal</div>
+      <div style={S.footer}>KaryaOS Flow · Mobile Order Portal</div>
     </div>
   );
 }
@@ -160,7 +160,7 @@ const S = {
   title: { fontSize: 24, fontWeight: 800, marginTop: 8 },
   subtitle: { fontSize: 13, color: "#9CA3AF", marginTop: 4, padding: "0 20px" },
   orderCard: { padding: "20px", borderRadius: 16, background: "linear-gradient(135deg, rgba(245,158,11,0.10), rgba(245,158,11,0.02))", border: "1px solid rgba(245,158,11,0.3)", textAlign: "center" },
-  orderId: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 36, color: "#FF6B35", letterSpacing: 2 },
+  orderId: { fontFamily: "'Inter', sans-serif", fontSize: 36, color: "#FF6B35", letterSpacing: 2 },
   orderTotal: { fontSize: 20, fontWeight: 800, marginTop: 4 },
   orderMeta: { fontSize: 12, color: "#9CA3AF", marginTop: 8 },
   steps: { display: "flex", alignItems: "center", gap: 2, padding: "12px 0" },

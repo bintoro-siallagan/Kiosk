@@ -6,7 +6,7 @@
  */
 import { useState, useEffect, useCallback } from "react";
 
-const MONO = "'Space Mono',monospace";
+const MONO = "'Geist Mono',monospace";
 const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const fmtH = (m) => m >= 60 ? (m / 60).toFixed(1) + " jam" : (m || 0) + " mnt";
 const prodCol = (n) => n >= 85 ? "#34D399" : n >= 70 ? "#F59E0B" : "#F87171";

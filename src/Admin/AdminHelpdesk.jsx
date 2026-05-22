@@ -82,12 +82,12 @@ export default function AdminHelpdesk({ apiBase = "" }) {
               <tr key={t.id} style={{ borderTop: "1px solid #161b22", fontSize: 12, opacity: ["resolved", "closed"].includes(t.status) ? 0.55 : 1 }}>
                 <td style={{ ...S.td }}>
                   <div style={{ color: "#e6edf3", fontWeight: 600 }}>{t.subject}</div>
-                  <div style={{ fontSize: 10, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{t.ticket_no}{t.sla_breach ? <span style={{ color: "#ef4444" }}> · ⚠ SLA</span> : ""}</div>
+                  <div style={{ fontSize: 10, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>{t.ticket_no}{t.sla_breach ? <span style={{ color: "#ef4444" }}> · ⚠ SLA</span> : ""}</div>
                 </td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>{t.category}</td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>{t.customer}</td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>{t.outlet}</td>
-                <td style={S.td}><span style={{ fontSize: 10, fontWeight: 700, color: PRI[t.priority], fontFamily: "'Space Mono',monospace" }}>{t.priority.toUpperCase()}</span></td>
+                <td style={S.td}><span style={{ fontSize: 10, fontWeight: 700, color: PRI[t.priority], fontFamily: "'Geist Mono',monospace" }}>{t.priority.toUpperCase()}</span></td>
                 <td style={{ ...S.td, ...S.mono, color: t.sla_breach ? "#ef4444" : "#5b6470" }}>{t.resolution_hours != null ? `${t.resolution_hours}j (selesai)` : `${t.age_hours}j`}</td>
                 <td style={S.td}>
                   <select value={t.status} onChange={e => setStatus(t, e.target.value)}
@@ -107,8 +107,8 @@ export default function AdminHelpdesk({ apiBase = "" }) {
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{v}</div>
     </div>
   );
 }
@@ -116,10 +116,10 @@ function Kpi({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "7px 8px" },
-  mono: { fontFamily: "'Space Mono',monospace" },
+  mono: { fontFamily: "'Geist Mono',monospace" },
   input: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 9px", color: "#e6edf3", fontSize: 12, fontFamily: "inherit", outline: "none", boxSizing: "border-box" },
   btn: { background: "#f97316", color: "#fff", border: "none", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
 };

@@ -12,12 +12,12 @@ const fR = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 
 const S = {
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 14, padding: 20, marginBottom: 16 },
-  label: { fontSize: 11, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8, fontFamily: "'Space Mono',monospace" },
+  label: { fontSize: 11, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8, fontFamily: "'Geist Mono',monospace" },
   input: { width: "100%", background: "#0a0e16", border: "1px solid #21262d", borderRadius: 8, padding: "10px 12px", color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" },
   fieldLabel: { fontSize: 11, color: "#666", marginBottom: 4 },
   btn: (color = "#22D3EE") => ({ background: color + "18", border: `1px solid ${color}44`, borderRadius: 8, padding: "10px 18px", color, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }),
   badge: (color) => ({ background: color + "22", color, padding: "3px 9px", borderRadius: 6, fontSize: 11, fontWeight: 600 }),
-  chip: { background: "#161b22", color: "#8b949e", padding: "3px 8px", borderRadius: 6, fontSize: 11, fontFamily: "'Space Mono',monospace" },
+  chip: { background: "#161b22", color: "#8b949e", padding: "3px 8px", borderRadius: 6, fontSize: 11, fontFamily: "'Geist Mono',monospace" },
   grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 },
 };
 
@@ -189,7 +189,7 @@ export default function AdminPaymentGateway({ apiBase = "" }) {
           <div key={w.url} style={{ marginBottom: 10 }}>
             <div style={{ fontSize: 11, color: "#666", marginBottom: 4 }}>{w.label}</div>
             <div style={{ display: "flex", gap: 8 }}>
-              <input style={{ ...S.input, fontFamily: "'Space Mono',monospace", fontSize: 12 }} readOnly value={w.url} />
+              <input style={{ ...S.input, fontFamily: "'Geist Mono',monospace", fontSize: 12 }} readOnly value={w.url} />
               <button onClick={() => copy(w.url)} style={S.btn("#22D3EE")}>Copy</button>
             </div>
           </div>
@@ -213,7 +213,7 @@ export default function AdminPaymentGateway({ apiBase = "" }) {
             ].map((x) => (
               <div key={x.k}>
                 <div style={{ fontSize: 11, color: "#555" }}>{x.k}</div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: x.c, fontFamily: "'Space Mono',monospace" }}>{x.v}</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color: x.c, fontFamily: "'Geist Mono',monospace" }}>{x.v}</div>
               </div>
             ))}
           </div>
@@ -235,7 +235,7 @@ export default function AdminPaymentGateway({ apiBase = "" }) {
             <div key={it.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #0f1629", gap: 8 }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 600 }}>
-                  <span style={{ fontFamily: "'Space Mono',monospace", color: "#8b949e" }}>{it.doc_no}</span>
+                  <span style={{ fontFamily: "'Geist Mono',monospace", color: "#8b949e" }}>{it.doc_no}</span>
                   {" · "}{it.provider_code} / {it.payment_method}
                 </div>
                 <div style={{ fontSize: 11, color: "#555" }}>
@@ -243,7 +243,7 @@ export default function AdminPaymentGateway({ apiBase = "" }) {
                 </div>
               </div>
               <div style={{ textAlign: "right" }}>
-                <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono',monospace" }}>{fR(it.amount)}</div>
+                <div style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Geist Mono',monospace" }}>{fR(it.amount)}</div>
                 <span style={S.badge(STATUS_COLOR[it.status] || "#6b7280")}>{it.status}</span>
               </div>
             </div>

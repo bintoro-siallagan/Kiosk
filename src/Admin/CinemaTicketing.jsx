@@ -45,10 +45,10 @@ export default function CinemaTicketing({ apiBase }) {
   const stLabel = (s) => `${s.film_title || "—"} · ${s.studio_name || "—"} · ${s.show_date} ${s.start_time}`;
 
   return (
-    <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#e6edf3" }}>
+    <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       {/* Header */}
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🎟️ Cinema Ticketing</div>
+        <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🎟️ Cinema Ticketing</div>
         <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>karyaOS — vertikal cinema · pilih jadwal &amp; jual kursi</div>
       </div>
 
@@ -72,21 +72,21 @@ export default function CinemaTicketing({ apiBase }) {
             <div style={{ flex: 1, minWidth: 120, height: 8, background: "#161b22", borderRadius: 4, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${occupancy}%`, background: occupancy >= 80 ? "#ef4444" : occupancy >= 50 ? "#eab308" : "#10b981", borderRadius: 4 }} />
             </div>
-            <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 12.5, fontWeight: 700 }}>{data.sold_count}/{data.capacity} · {occupancy}%</span>
+            <span style={{ fontFamily: "'Geist Mono',monospace", fontSize: 12.5, fontWeight: 700 }}>{data.sold_count}/{data.capacity} · {occupancy}%</span>
           </div>
 
           {/* Seat map */}
           <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "16px 14px", overflowX: "auto" }}>
             <div style={{ textAlign: "center", marginBottom: 14 }}>
               <div style={{ height: 4, background: "linear-gradient(90deg,transparent,#a855f7,transparent)", borderRadius: 4, marginBottom: 4 }} />
-              <span style={{ fontSize: 10, color: C.dim, letterSpacing: 3, fontFamily: "'Space Mono',monospace" }}>L A Y A R</span>
+              <span style={{ fontSize: 10, color: C.dim, letterSpacing: 3, fontFamily: "'Geist Mono',monospace" }}>L A Y A R</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "center" }}>
               {Array.from({ length: data.rows }).map((_, ri) => {
                 const letter = String.fromCharCode(65 + ri);
                 return (
                   <div key={ri} style={{ display: "flex", gap: 5, alignItems: "center" }}>
-                    <span style={{ width: 16, fontSize: 11, color: C.dim, fontFamily: "'Space Mono',monospace" }}>{letter}</span>
+                    <span style={{ width: 16, fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{letter}</span>
                     {Array.from({ length: data.cols }).map((_, ci) => {
                       const seat = `${letter}${ci + 1}`;
                       const sold = data.sold.includes(seat);
@@ -97,7 +97,7 @@ export default function CinemaTicketing({ apiBase }) {
                         <button key={ci} onClick={() => toggle(seat)} disabled={sold} title={seat}
                           style={{ width: 26, height: 26, borderRadius: 5, background: bg, border: `1px solid ${bd}`,
                             color: sold ? "#ef4444" : sel ? "#062a1a" : C.sub, fontSize: 9.5, fontWeight: 700,
-                            cursor: sold ? "not-allowed" : "pointer", fontFamily: "'Space Mono',monospace" }}>
+                            cursor: sold ? "not-allowed" : "pointer", fontFamily: "'Geist Mono',monospace" }}>
                           {ci + 1}
                         </button>
                       );
@@ -116,11 +116,11 @@ export default function CinemaTicketing({ apiBase }) {
           {/* Sell footer */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap", marginTop: 14, background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "12px 16px" }}>
             <div style={{ fontSize: 12.5, color: C.sub }}>
-              <b style={{ color: "#fff", fontSize: 15, fontFamily: "'Space Mono',monospace" }}>{selected.size}</b> kursi dipilih
+              <b style={{ color: "#fff", fontSize: 15, fontFamily: "'Geist Mono',monospace" }}>{selected.size}</b> kursi dipilih
               {selected.size > 0 && <span> · {[...selected].sort().join(", ")}</span>}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 16, fontWeight: 700, color: "#10b981" }}>{rp(selected.size * price)}</div>
+              <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 16, fontWeight: 700, color: "#10b981" }}>{rp(selected.size * price)}</div>
               <button onClick={sell} disabled={!selected.size}
                 style={{ background: selected.size ? "#10b981" : "#1b212c", border: "none", borderRadius: 8, padding: "9px 20px",
                   color: selected.size ? "#04130c" : C.dim, fontSize: 13, fontWeight: 700, cursor: selected.size ? "pointer" : "not-allowed", fontFamily: "inherit" }}>

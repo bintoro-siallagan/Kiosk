@@ -76,7 +76,7 @@ export default function AdminAutoReorder({ apiBase = "" }) {
                   <td style={{ ...S.td, color: "#9da7b3" }}>{it.supplier}</td>
                   <td style={{ ...S.td, ...S.mono, color: "#9da7b3" }}>{it.status === "reorder" ? fmtRp(it.est_total) : "—"}</td>
                   <td style={S.td}>
-                    <span style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}55`, borderRadius: 5, padding: "2px 7px", fontFamily: "'Space Mono',monospace" }}>{st.l}</span>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}55`, borderRadius: 5, padding: "2px 7px", fontFamily: "'Geist Mono',monospace" }}>{st.l}</span>
                   </td>
                 </tr>
               );
@@ -91,10 +91,10 @@ export default function AdminAutoReorder({ apiBase = "" }) {
           <div style={{ fontSize: 12, color: "#5b6470", padding: "10px 0" }}>Belum ada PR auto-generated. Klik "Generate" di atas.</div>
         ) : d.generated_prs.map(pr => (
           <div key={pr.pr_number} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 0", borderTop: "1px solid #161b22", fontSize: 12 }}>
-            <span style={{ fontFamily: "'Space Mono',monospace", fontWeight: 700, color: "#a5b4fc" }}>{pr.pr_number}</span>
+            <span style={{ fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "#a5b4fc" }}>{pr.pr_number}</span>
             <span style={{ flex: 1, color: "#9da7b3" }}>{pr.items} item · {fmtDate(pr.created_at)}</span>
-            <span style={{ fontFamily: "'Space Mono',monospace", color: "#cdd5df" }}>{fmtRp(pr.total_estimated)}</span>
-            <span style={{ fontSize: 10, fontWeight: 700, color: "#10b981", fontFamily: "'Space Mono',monospace" }}>→ {pr.status.toUpperCase()}</span>
+            <span style={{ fontFamily: "'Geist Mono',monospace", color: "#cdd5df" }}>{fmtRp(pr.total_estimated)}</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>→ {pr.status.toUpperCase()}</span>
           </div>
         ))}
       </div>
@@ -105,8 +105,8 @@ export default function AdminAutoReorder({ apiBase = "" }) {
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 16, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 16, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{v}</div>
     </div>
   );
 }
@@ -114,9 +114,9 @@ function Kpi({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "8px 8px" },
-  mono: { fontFamily: "'Space Mono',monospace" },
+  mono: { fontFamily: "'Geist Mono',monospace" },
   btn: { background: "#3730a3", color: "#fff", border: "none", borderRadius: 7, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
 };

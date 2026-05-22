@@ -68,11 +68,11 @@ export default function EscalationMatrix({ apiBase }) {
   const compliance = resolved.length ? Math.round((onTimeResolved / resolved.length) * 100) : null;
 
   return (
-    <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#e6edf3" }}>
+    <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14, marginBottom: 18 }}>
         <div>
-          <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🚨 Escalation Matrix</div>
+          <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🚨 Escalation Matrix</div>
           <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>FlowOS Tahap 4 — Escalation · SLA, rantai eskalasi &amp; routing channel</div>
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -85,7 +85,7 @@ export default function EscalationMatrix({ apiBase }) {
       </div>
 
       {/* SLA tier matrix */}
-      <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Space Mono',monospace", marginBottom: 8 }}>MATRIKS SLA &amp; RANTAI ESKALASI</div>
+      <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>MATRIKS SLA &amp; RANTAI ESKALASI</div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12, marginBottom: 22 }}>
         {TIERS.map(t => {
           const count = active.filter(a => a.tier.id === t.id).length;
@@ -95,7 +95,7 @@ export default function EscalationMatrix({ apiBase }) {
                 <span style={{ fontSize: 13, fontWeight: 700, color: t.color }}>{t.label}</span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: count ? "#fff" : C.dim, background: count ? t.color + "33" : "transparent", borderRadius: 6, padding: "2px 8px" }}>{count} aktif</span>
               </div>
-              <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 20, fontWeight: 700, margin: "8px 0 2px" }}>≤ {fmtDur(t.target)}</div>
+              <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 20, fontWeight: 700, margin: "8px 0 2px" }}>≤ {fmtDur(t.target)}</div>
               <div style={{ fontSize: 11.5, color: C.sub }}>{t.note}</div>
               <div style={{ fontSize: 11, color: C.dim, marginTop: 8, borderTop: `1px solid ${C.border}`, paddingTop: 7 }}>📨 {t.channel}</div>
               <div style={{ fontSize: 10.5, color: C.dim, marginTop: 5, lineHeight: 1.5 }}>
@@ -107,7 +107,7 @@ export default function EscalationMatrix({ apiBase }) {
       </div>
 
       {/* Active escalations */}
-      <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Space Mono',monospace", marginBottom: 8 }}>ESKALASI AKTIF ({active.length})</div>
+      <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>ESKALASI AKTIF ({active.length})</div>
       {loading ? (
         <div style={{ color: C.dim, fontSize: 13, padding: "24px 0" }}>Memuat…</div>
       ) : active.length === 0 ? (
@@ -124,11 +124,11 @@ export default function EscalationMatrix({ apiBase }) {
                 <div style={{ flex: 1, minWidth: 170 }}>
                   <div style={{ fontSize: 13, fontWeight: 700 }}>{a.title}</div>
                   <div style={{ fontSize: 11.5, color: C.sub, marginTop: 2 }}>
-                    <span style={{ fontFamily: "'Space Mono',monospace" }}>{a.incident_no}</span> · 🏪 {a.outlet || "—"} · 👤 {a.reported_by || "—"}
+                    <span style={{ fontFamily: "'Geist Mono',monospace" }}>{a.incident_no}</span> · 🏪 {a.outlet || "—"} · 👤 {a.reported_by || "—"}
                   </div>
                 </div>
                 <div style={{ textAlign: "right", minWidth: 124 }}>
-                  <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 13, fontWeight: 700 }}>{fmtDur(a.elapsed)}</div>
+                  <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 13, fontWeight: 700 }}>{fmtDur(a.elapsed)}</div>
                   <div style={{ fontSize: 11, fontWeight: 700, color: a.breached ? "#ef4444" : "#10b981", marginTop: 2 }}>
                     {a.breached ? `⚠ LEWAT SLA (≤ ${fmtDur(a.tier.target)})` : `✓ Dalam SLA (≤ ${fmtDur(a.tier.target)})`}
                   </div>
@@ -136,7 +136,7 @@ export default function EscalationMatrix({ apiBase }) {
               </div>
               {/* line 2 — escalation chain + channel routing */}
               <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginTop: 9, paddingTop: 9, borderTop: `1px solid ${C.border}` }}>
-                <span style={{ fontSize: 10.5, color: C.dim, fontFamily: "'Space Mono',monospace" }}>RANTAI</span>
+                <span style={{ fontSize: 10.5, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>RANTAI</span>
                 <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap", flex: 1 }}>
                   {a.tier.chain.map((s, i) => (
                     <span key={i} style={{ display: "flex", alignItems: "center", gap: 5 }}>
@@ -166,7 +166,7 @@ export default function EscalationMatrix({ apiBase }) {
 function Stat({ label, value, color }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #1b212c", borderRadius: 10, padding: "8px 14px", textAlign: "center", minWidth: 88 }}>
-      <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 19, fontWeight: 700, color }}>{value}</div>
+      <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, color }}>{value}</div>
       <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 0.5, marginTop: 1 }}>{label}</div>
     </div>
   );

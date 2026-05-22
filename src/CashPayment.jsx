@@ -129,7 +129,7 @@ export default function CashPayment({ items = [], amount = 0, subtotal = 0, prom
 
   return (
     <div style={S.page}>
-      <h1 style={S.title}>BINTORO</h1>
+      <h1 style={S.title}>KaryaOS</h1>
       <p style={S.subtitle}>Pembayaran Tunai</p>
 
       <div style={S.grid}>
@@ -263,7 +263,7 @@ export default function CashPayment({ items = [], amount = 0, subtotal = 0, prom
         </div>
       </div>
 
-      <div style={S.footer}>BINTORO Kiosk · {new Date().toLocaleString('id-ID')}</div>
+      <div style={S.footer}>KaryaOS Kiosk · {new Date().toLocaleString('id-ID')}</div>
     </div>
   );
 }

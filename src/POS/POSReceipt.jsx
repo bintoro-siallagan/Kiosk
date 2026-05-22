@@ -20,7 +20,7 @@ const API_HOST = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export default function POSReceipt({ order, onClose, onPrintDone }) {
   const [taxConfig, setTaxConfig] = useState([]);
-  const [kioskName, setKioskName] = useState('Bites Kiosk');
+  const [kioskName, setKioskName] = useState('KaryaOS');
   const printRef = useRef(null);
 
   useEffect(() => {

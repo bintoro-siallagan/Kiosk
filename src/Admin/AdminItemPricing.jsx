@@ -68,7 +68,7 @@ export default function AdminItemPricing({ apiBase = "" }) {
                     <div style={{ fontSize: 12, fontWeight: 600, color: "#e6edf3" }}>{it.name}</div>
                     <div style={{ fontSize: 10, color: "#5b6470" }}>{it.category} · {it.channels.length} channel</div>
                   </div>
-                  <span style={{ fontSize: 12, fontFamily: "'Space Mono',monospace", color: "#9da7b3" }}>{fmtRp(it.prices.dinein)}</span>
+                  <span style={{ fontSize: 12, fontFamily: "'Geist Mono',monospace", color: "#9da7b3" }}>{fmtRp(it.prices.dinein)}</span>
                 </div>
               );
             })}
@@ -80,7 +80,7 @@ export default function AdminItemPricing({ apiBase = "" }) {
           {!item || !edit ? <div style={{ color: "#5b6470" }}>Pilih item.</div> : (
             <>
               <div style={{ fontSize: 15, fontWeight: 800, color: "#e6edf3" }}>{item.name}</div>
-              <div style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Space Mono',monospace", marginBottom: 12 }}>{item.item_code} · {item.category}</div>
+              <div style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace", marginBottom: 12 }}>{item.item_code} · {item.category}</div>
 
               <div style={S.kicker}>💲 MULTI-PRICE</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, margin: "8px 0 14px" }}>
@@ -88,7 +88,7 @@ export default function AdminItemPricing({ apiBase = "" }) {
                   <label key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "6px 10px" }}>
                     <span style={{ fontSize: 12, color: "#9da7b3" }}>{lbl}</span>
                     <input type="number" value={edit.prices[k]} onChange={e => setEdit({ ...edit, prices: { ...edit.prices, [k]: e.target.value } })}
-                      style={{ width: 90, background: "transparent", border: "none", color: "#e6edf3", fontSize: 13, fontFamily: "'Space Mono',monospace", textAlign: "right", outline: "none" }} />
+                      style={{ width: 90, background: "transparent", border: "none", color: "#e6edf3", fontSize: 13, fontFamily: "'Geist Mono',monospace", textAlign: "right", outline: "none" }} />
                   </label>
                 ))}
               </div>
@@ -130,8 +130,8 @@ export default function AdminItemPricing({ apiBase = "" }) {
 function Kpi({ label, v, c, sub }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
       <div style={{ fontSize: 10, color: "#5b6470" }}>{sub || " "}</div>
     </div>
   );
@@ -140,7 +140,7 @@ function Kpi({ label, v, c, sub }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   input: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 10px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none" },
   btn: { background: "#22c55e", color: "#04140c", border: "none", borderRadius: 7, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },

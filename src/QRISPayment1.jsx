@@ -163,7 +163,7 @@ export default function QRISPayment(props) {
   // ============================================================
   return (
     <div style={S.page}>
-      <h1 style={S.title}>BINTORO</h1>
+      <h1 style={S.title}>KaryaOS</h1>
       <p style={S.subtitle}>Pembayaran QRIS</p>
 
       <div style={S.grid}>
@@ -243,7 +243,7 @@ export default function QRISPayment(props) {
       </div>
 
       <div style={{ textAlign: 'center', marginTop: 24, fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
-        <span>BINTORO Kiosk · {new Date().toLocaleString('id-ID')}</span>
+        <span>KaryaOS Kiosk · {new Date().toLocaleString('id-ID')}</span>
       </div>
     </div>
   );

@@ -47,7 +47,7 @@ export default function AdminLoyaltyPromo({ apiBase = "" }) {
             <tbody>
               {p.usage.map((x, i) => (
                 <tr key={i} style={{ borderTop: "1px solid #161b22", fontSize: 12 }}>
-                  <td style={{ ...S.td, fontWeight: 700, color: "#e6edf3", fontFamily: "'Space Mono',monospace" }}>{x.code}</td>
+                  <td style={{ ...S.td, fontWeight: 700, color: "#e6edf3", fontFamily: "'Geist Mono',monospace" }}>{x.code}</td>
                   <td style={S.td}>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                       <span style={{ width: 44, height: 6, background: "#0a0e16", borderRadius: 3, overflow: "hidden", display: "inline-block" }}>
@@ -56,9 +56,9 @@ export default function AdminLoyaltyPromo({ apiBase = "" }) {
                       <b style={{ color: "#cdd5df" }}>{x.orders}</b>
                     </span>
                   </td>
-                  <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#f59e0b" }}>{fmtRp(x.discount)}</td>
-                  <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#9da7b3" }}>{fmtRp(x.revenue)}</td>
-                  <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", fontWeight: 700, color: x.roi >= 5 ? "#10b981" : x.roi ? "#f59e0b" : "#5b6470" }}>{x.roi ? x.roi + "×" : "—"}</td>
+                  <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#f59e0b" }}>{fmtRp(x.discount)}</td>
+                  <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#9da7b3" }}>{fmtRp(x.revenue)}</td>
+                  <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: x.roi >= 5 ? "#10b981" : x.roi ? "#f59e0b" : "#5b6470" }}>{x.roi ? x.roi + "×" : "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -87,11 +87,11 @@ export default function AdminLoyaltyPromo({ apiBase = "" }) {
           <div style={S.kicker}>📋 PROMO CATALOG — REDEMPTION RATE</div>
           {p.catalog.slice(0, 8).map((c, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>
-              <span style={{ width: 110, fontSize: 11, color: "#e6edf3", fontFamily: "'Space Mono',monospace", flexShrink: 0 }}>{c.code}</span>
+              <span style={{ width: 110, fontSize: 11, color: "#e6edf3", fontFamily: "'Geist Mono',monospace", flexShrink: 0 }}>{c.code}</span>
               <div style={{ flex: 1, height: 11, background: "#0a0e16", borderRadius: 6, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: c.redemption_rate + "%", background: rrColor(c.redemption_rate) }} />
               </div>
-              <span style={{ width: 110, textAlign: "right", fontSize: 11, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{c.used_count}/{c.usage_limit} · {c.redemption_rate}%</span>
+              <span style={{ width: 110, textAlign: "right", fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>{c.used_count}/{c.usage_limit} · {c.redemption_rate}%</span>
             </div>
           ))}
         </div>
@@ -104,7 +104,7 @@ export default function AdminLoyaltyPromo({ apiBase = "" }) {
               <div style={{ flex: 1, height: 13, background: "#0a0e16", borderRadius: 7, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: Math.round(v / chTotal * 100) + "%", background: c }} />
               </div>
-              <span style={{ width: 64, textAlign: "right", fontFamily: "'Space Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{v} · {Math.round(v / chTotal * 100)}%</span>
+              <span style={{ width: 64, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{v} · {Math.round(v / chTotal * 100)}%</span>
             </div>
           ))}
         </div>
@@ -117,15 +117,15 @@ function Stat({ label, v, c }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#0a0e16", border: "1px solid #161b22", borderRadius: 8, padding: "9px 12px" }}>
       <span style={{ fontSize: 12, color: "#9da7b3" }}>{label}</span>
-      <span style={{ fontSize: 14, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace" }}>{v}</span>
+      <span style={{ fontSize: 14, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace" }}>{v}</span>
     </div>
   );
 }
 function Kpi({ label, v, c, sub }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
       <div style={{ fontSize: 10, color: "#5b6470" }}>{sub}</div>
     </div>
   );
@@ -134,7 +134,7 @@ function Kpi({ label, v, c, sub }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "8px 8px" },
 };

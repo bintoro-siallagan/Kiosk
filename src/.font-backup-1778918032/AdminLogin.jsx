@@ -49,7 +49,7 @@ export default function AdminLogin({ onLogin }) {
       <div style={L.wrap}>
         {/* Logo */}
         <div style={L.logo}>🍽️</div>
-        <div style={L.brand}>BINTORO</div>
+        <div style={L.brand}>KaryaOS</div>
         <div style={L.title}>ADMIN ACCESS</div>
         <div style={L.sub}>Masukkan PIN 6 digit Anda</div>
 
@@ -91,11 +91,11 @@ export default function AdminLogin({ onLogin }) {
 }
 
 const L = {
-  root:    {fontFamily:"'DM Sans',sans-serif",background:"#050810",color:"#fff",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"},
+  root:    {fontFamily:"'Inter',sans-serif",background:"#050810",color:"#fff",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"},
   wrap:    {textAlign:"center",padding:"40px 24px",maxWidth:360,width:"100%",animation:"fadeUp 0.3s ease"},
   logo:    {fontSize:56,marginBottom:8},
-  brand:   {fontFamily:"'Space Mono',monospace",fontSize:28,fontWeight:700,color:"#F59E0B",letterSpacing:4,marginBottom:4},
-  title:   {fontFamily:"'Space Mono',monospace",fontSize:14,letterSpacing:4,color:"#555",marginBottom:6},
+  brand:   {fontFamily:"'Geist Mono',monospace",fontSize:28,fontWeight:700,color:"#F59E0B",letterSpacing:4,marginBottom:4},
+  title:   {fontFamily:"'Geist Mono',monospace",fontSize:14,letterSpacing:4,color:"#555",marginBottom:6},
   sub:     {fontSize:13,color:"#444",marginBottom:32},
   dots:    {display:"flex",gap:14,justifyContent:"center",marginBottom:24},
   dot:     {width:18,height:18,borderRadius:"50%",border:"2px solid",transition:"all 0.2s"},
@@ -103,8 +103,8 @@ const L = {
   checking:{display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:12,color:"#F59E0B",marginBottom:12},
   spinner: {width:14,height:14,border:"2px solid #333",borderTop:"2px solid #F59E0B",borderRadius:"50%",animation:"spin 0.8s linear infinite",display:"inline-block"},
   pad:     {display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:28},
-  key:     {height:64,fontSize:22,fontFamily:"'Space Mono',monospace",fontWeight:700,background:"#0d1117",border:"1px solid #1a1a2e",borderRadius:14,color:"#fff",transition:"background 0.1s"},
+  key:     {height:64,fontSize:22,fontFamily:"'Geist Mono',monospace",fontWeight:700,background:"#0d1117",border:"1px solid #1a1a2e",borderRadius:14,color:"#fff",transition:"background 0.1s"},
   delKey:  {height:64,fontSize:20,background:"#0d1117",border:"1px solid #1a1a2e",borderRadius:14,color:"#F87171",fontWeight:700},
   hints:   {display:"flex",gap:16,justifyContent:"center",flexWrap:"wrap"},
-  hint:    {fontSize:11,color:"#333",fontFamily:"'Space Mono',monospace"},
+  hint:    {fontSize:11,color:"#333",fontFamily:"'Geist Mono',monospace"},
 };

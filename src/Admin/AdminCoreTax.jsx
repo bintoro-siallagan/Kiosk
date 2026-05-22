@@ -59,9 +59,9 @@ export default function AdminCoreTax({ apiBase = "" }) {
           {d.pph.map(p => (
             <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderTop: "1px solid #161b22", fontSize: 12 }}>
               <span style={{ flex: 1, color: "#e6edf3" }}>{p.label}</span>
-              <span style={{ fontFamily: "'Space Mono',monospace", fontWeight: 700, color: "#60a5fa" }}>{fmtRp(p.amount)}</span>
+              <span style={{ fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "#60a5fa" }}>{fmtRp(p.amount)}</span>
               <button onClick={() => setStatus(p, p.status === "paid" ? "draft" : "paid")}
-                style={{ width: 76, fontSize: 9, fontWeight: 700, color: ST[p.status], background: ST[p.status] + "1f", border: `1px solid ${ST[p.status]}55`, borderRadius: 5, padding: "3px 6px", fontFamily: "'Space Mono',monospace", cursor: "pointer" }}>
+                style={{ width: 76, fontSize: 9, fontWeight: 700, color: ST[p.status], background: ST[p.status] + "1f", border: `1px solid ${ST[p.status]}55`, borderRadius: 5, padding: "3px 6px", fontFamily: "'Geist Mono',monospace", cursor: "pointer" }}>
                 {p.status.toUpperCase()}
               </button>
             </div>
@@ -77,7 +77,7 @@ export default function AdminCoreTax({ apiBase = "" }) {
             <div key={i} style={{ background: "#0a0e16", border: "1px solid #161b22", borderTop: `2px solid ${ST[x.status]}`, borderRadius: 9, padding: "10px 12px" }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: "#e6edf3" }}>{x.name}</div>
               <div style={{ fontSize: 10, color: "#5b6470" }}>{x.period} · jatuh tempo {fmtDate(x.due_date)}</div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: ST[x.status], fontFamily: "'Space Mono',monospace", marginTop: 5 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: ST[x.status], fontFamily: "'Geist Mono',monospace", marginTop: 5 }}>
                 {x.status === "siap" ? "● SIAP LAPOR" : "○ PERLU DILENGKAPI"}
               </div>
             </div>
@@ -102,7 +102,7 @@ export default function AdminCoreTax({ apiBase = "" }) {
                 <td style={{ ...S.td, ...S.mono, color: "#9da7b3" }}>{r.dpp > 0 ? fmtRp(r.dpp) : "—"}</td>
                 <td style={{ ...S.td, ...S.mono, color: "#5b6470" }}>{r.rate > 0 ? r.rate + "%" : "—"}</td>
                 <td style={{ ...S.td, ...S.mono, fontWeight: 700, color: "#cdd5df" }}>{fmtRp(r.amount)}</td>
-                <td style={S.td}><span style={{ fontSize: 9, fontWeight: 700, color: ST[r.status], fontFamily: "'Space Mono',monospace" }}>{r.status.toUpperCase()}</span></td>
+                <td style={S.td}><span style={{ fontSize: 9, fontWeight: 700, color: ST[r.status], fontFamily: "'Geist Mono',monospace" }}>{r.status.toUpperCase()}</span></td>
               </tr>
             ))}
           </tbody>
@@ -117,15 +117,15 @@ function Row({ label, v, c, bold }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderTop: bold ? "1px solid #21262d" : "none" }}>
       <span style={{ fontSize: bold ? 13 : 12, fontWeight: bold ? 700 : 400, color: bold ? "#e6edf3" : "#9da7b3" }}>{label}</span>
-      <span style={{ fontSize: bold ? 13 : 12, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace" }}>{fmtRp(v)}</span>
+      <span style={{ fontSize: bold ? 13 : 12, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace" }}>{fmtRp(v)}</span>
     </div>
   );
 }
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 16, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 16, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{v}</div>
     </div>
   );
 }
@@ -133,8 +133,8 @@ function Kpi({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "7px 8px" },
-  mono: { fontFamily: "'Space Mono',monospace" },
+  mono: { fontFamily: "'Geist Mono',monospace" },
 };

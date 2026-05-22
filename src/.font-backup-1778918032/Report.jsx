@@ -71,7 +71,7 @@ function buildReceipt(orders, reportType, dateRange, printerWidth=32) {
   const now       = new Date();
 
   const p = escpos().init()
-    .align("C").bold(true).size(2,2).text("BINTORO").newline()
+    .align("C").bold(true).size(2,2).text("KaryaOS").newline()
     .size(1,1).text("Self Order Kiosk").newline()
     .bold(false).text("Jl. Contoh No.1, Jakarta").newline()
     .text("Telp: 021-12345678").newline()
@@ -301,7 +301,7 @@ export default function Report({ onBack }) {
     }
 
     w.document.write(`
-      <html><head><title>BINTORO - Laporan</title>
+      <html><head><title>KaryaOS - Laporan</title>
       <style>
         @page { size: 58mm auto; margin: 2mm; }
         body { font-family: monospace; font-size: 11px; width: 54mm; margin:0; padding:4px; }
@@ -313,7 +313,7 @@ export default function Report({ onBack }) {
         .foot { text-align:center; margin-top:8px; font-size:10px; }
       </style></head>
       <body>
-        <h2>BINTORO</h2>
+        <h2>KaryaOS</h2>
         <p class="center">Self Order Kiosk<br/>Jl. Contoh No.1, Jakarta</p>
         <hr/>
         <p class="center"><b>LAPORAN ${activeTab.toUpperCase()}</b><br/>
@@ -338,9 +338,9 @@ export default function Report({ onBack }) {
   ];
 
   if (loading) return (
-    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh", background:"#080c10", fontFamily:"'DM Sans',sans-serif", flexDirection:"column", gap:12 }}>
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"center", height:"100vh", background:"#080c10", fontFamily:"'Inter',sans-serif", flexDirection:"column", gap:12 }}>
       <div style={{ fontSize:40 }}>📊</div>
-      <div style={{ color:"#FF6B35", fontFamily:"'Bebas Neue',cursive", fontSize:24, letterSpacing:3 }}>MEMUAT LAPORAN...</div>
+      <div style={{ color:"#FF6B35", fontFamily:"'Inter',cursive", fontSize:24, letterSpacing:3 }}>MEMUAT LAPORAN...</div>
     </div>
   );
 
@@ -368,7 +368,7 @@ export default function Report({ onBack }) {
           <button style={R.backBtn} onClick={onBack}>← Kembali</button>
           <div>
             <div style={R.headerTitle}>📊 LAPORAN</div>
-            <div style={R.headerSub}>BINTORO Self Order Kiosk</div>
+            <div style={R.headerSub}>KaryaOS Self Order Kiosk</div>
           </div>
         </div>
         <div style={R.headerRight}>
@@ -588,7 +588,7 @@ export default function Report({ onBack }) {
                   <div style={R.statLabel}>👥 Total Kunjungan</div>
                   <div style={{...R.statVal,color:"#00C896"}}>{totalVisit}</div>
                 </div>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:64,color:"#1e1e1e",letterSpacing:4}}>{totalVisit}</div>
+                <div style={{fontFamily:"'Inter',cursive",fontSize:64,color:"#1e1e1e",letterSpacing:4}}>{totalVisit}</div>
               </div>
             </div>
 
@@ -636,34 +636,34 @@ export default function Report({ onBack }) {
 }
 
 const R = {
-  root:   { fontFamily:"'DM Sans',sans-serif", background:"#080c10", color:"#fff", minHeight:"100vh", display:"flex", flexDirection:"column" },
+  root:   { fontFamily:"'Inter',sans-serif", background:"#080c10", color:"#fff", minHeight:"100vh", display:"flex", flexDirection:"column" },
   toast:  { position:"fixed", bottom:24, left:"50%", transform:"translateX(-50%)", border:"1px solid", borderRadius:12, padding:"12px 20px", fontSize:13, fontWeight:600, zIndex:999, animation:"notif 0.3s ease", whiteSpace:"nowrap" },
   header: { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"16px 24px", background:"#0d1117", borderBottom:"1px solid #161b22", flexWrap:"wrap", gap:12 },
   headerLeft:  { display:"flex", alignItems:"center", gap:16 },
   headerRight: { display:"flex", alignItems:"center", gap:10, flexWrap:"wrap" },
-  headerTitle: { fontFamily:"'Bebas Neue',cursive", fontSize:24, letterSpacing:3, color:"#FF6B35" },
+  headerTitle: { fontFamily:"'Inter',cursive", fontSize:24, letterSpacing:3, color:"#FF6B35" },
   headerSub:   { fontSize:11, color:"#555" },
   backBtn:     { background:"transparent", border:"1px solid #333", borderRadius:10, padding:"8px 14px", color:"#888", cursor:"pointer", fontSize:12, letterSpacing:1 },
   dateFilter:  { display:"flex", background:"#0d1117", border:"1px solid #21262d", borderRadius:10, overflow:"hidden" },
-  dateBtn:     { background:"transparent", border:"none", padding:"7px 14px", color:"#666", cursor:"pointer", fontSize:12, fontFamily:"'DM Sans',sans-serif" },
+  dateBtn:     { background:"transparent", border:"none", padding:"7px 14px", color:"#666", cursor:"pointer", fontSize:12, fontFamily:"'Inter',sans-serif" },
   dateBtnActive: { background:"#FF6B35", color:"#fff" },
   printerBtn:  { background:"#0d1117", border:"1px solid #21262d", borderRadius:10, padding:"7px 14px", color:"#888", cursor:"pointer", fontSize:12, display:"flex", alignItems:"center", gap:6 },
-  printBtn:    { background:"linear-gradient(90deg,#FF6B35,#FF3B30)", border:"none", borderRadius:10, padding:"8px 20px", color:"#fff", cursor:"pointer", fontSize:13, fontWeight:700, letterSpacing:1, fontFamily:"'Bebas Neue',cursive" },
+  printBtn:    { background:"linear-gradient(90deg,#FF6B35,#FF3B30)", border:"none", borderRadius:10, padding:"8px 20px", color:"#fff", cursor:"pointer", fontSize:13, fontWeight:700, letterSpacing:1, fontFamily:"'Inter',cursive" },
   printerPanel: { background:"#0d1117", border:"1px solid #21262d", borderBottom:"1px solid #21262d", padding:"16px 24px" },
   printerPanelTitle: { fontSize:13, fontWeight:700, color:"#888", letterSpacing:2, textTransform:"uppercase", marginBottom:12 },
   printerRow:   { display:"flex", alignItems:"flex-end", gap:12, flexWrap:"wrap" },
   printerField: { display:"flex", flexDirection:"column", gap:4 },
   printerLabel: { fontSize:11, color:"#555", letterSpacing:1 },
-  printerInput: { background:"#080c10", border:"1px solid #21262d", borderRadius:8, padding:"8px 12px", color:"#fff", fontSize:13, width:180, fontFamily:"'DM Sans',sans-serif" },
+  printerInput: { background:"#080c10", border:"1px solid #21262d", borderRadius:8, padding:"8px 12px", color:"#fff", fontSize:13, width:180, fontFamily:"'Inter',sans-serif" },
   printerTestBtn: { background:"#1e1e1e", border:"1px solid #333", borderRadius:8, padding:"8px 16px", color:"#aaa", cursor:"pointer", fontSize:12, fontWeight:600 },
   tabBar: { display:"flex", gap:4, padding:"12px 24px", background:"#0d1117", borderBottom:"1px solid #161b22" },
-  tab:    { background:"transparent", border:"1px solid #21262d", borderRadius:10, padding:"8px 20px", color:"#666", cursor:"pointer", fontSize:13, fontWeight:600, fontFamily:"'DM Sans',sans-serif", transition:"all 0.15s" },
+  tab:    { background:"transparent", border:"1px solid #21262d", borderRadius:10, padding:"8px 20px", color:"#666", cursor:"pointer", fontSize:13, fontWeight:600, fontFamily:"'Inter',sans-serif", transition:"all 0.15s" },
   tabActive: { background:"#FF6B35", border:"1px solid #FF6B35", color:"#fff" },
   content:   { flex:1, padding:"20px 24px", overflowY:"auto" },
   grid2:     { display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:20 },
   statCard:  { background:"#0d1117", border:"1px solid #161b22", borderRadius:14, padding:"18px 20px" },
   statLabel: { fontSize:11, color:"#666", letterSpacing:1, textTransform:"uppercase", marginBottom:8 },
-  statVal:   { fontFamily:"'Bebas Neue',cursive", fontSize:28, letterSpacing:1 },
+  statVal:   { fontFamily:"'Inter',cursive", fontSize:28, letterSpacing:1 },
   tableCard: { background:"#0d1117", border:"1px solid #161b22", borderRadius:14, overflow:"hidden", marginBottom:16 },
   tableTitle: { padding:"14px 20px", fontSize:13, fontWeight:700, letterSpacing:2, color:"#888", textTransform:"uppercase", borderBottom:"1px solid #161b22" },
   tableHead:  { display:"flex", padding:"10px 20px", background:"#080c10", fontSize:11, color:"#555", letterSpacing:1, textTransform:"uppercase", gap:8 },

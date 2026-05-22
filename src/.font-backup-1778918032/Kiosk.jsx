@@ -233,7 +233,7 @@ const AM = {
   sheet:{background:"#141414",borderRadius:"24px 24px 0 0",width:"100%",maxWidth:640,maxHeight:"90vh",display:"flex",flexDirection:"column",animation:"slideUp 0.3s ease",border:"1px solid #2a2a2a",borderBottom:"none"},
   header:{display:"flex",gap:16,padding:"20px 20px 16px",borderBottom:"1px solid #1e1e1e",alignItems:"flex-start"},
   name:{fontSize:20,fontWeight:700,lineHeight:1.2,marginBottom:4},
-  price:{fontSize:18,fontWeight:700,color:"#FF6B35",fontFamily:"'Bebas Neue',cursive",letterSpacing:1},
+  price:{fontSize:18,fontWeight:700,color:"#FF6B35",fontFamily:"'Inter',cursive",letterSpacing:1},
   desc:{fontSize:12,color:"#666",marginTop:4,lineHeight:1.4},
   close:{background:"#2a2a2a",border:"none",borderRadius:"50%",width:36,height:36,color:"#aaa",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"},
   body:{overflowY:"auto",padding:"0 20px",flex:1},
@@ -244,10 +244,10 @@ const AM = {
   opt:{display:"flex",alignItems:"center",gap:12,background:"#1a1a1a",border:"1px solid #222",borderRadius:14,padding:"14px 16px",cursor:"pointer",color:"#ccc",textAlign:"left",transition:"all 0.15s"},
   optOn:{background:"rgba(255,107,53,0.08)",border:"1px solid #FF6B35",color:"#fff"},
   radio:{width:20,height:20,borderRadius:"50%",border:"2px solid",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"},
-  note:{width:"100%",background:"#1a1a1a",border:"1px solid #222",borderRadius:12,padding:"12px 14px",color:"#ccc",fontSize:14,fontFamily:"'DM Sans',sans-serif",boxSizing:"border-box"},
+  note:{width:"100%",background:"#1a1a1a",border:"1px solid #222",borderRadius:12,padding:"12px 14px",color:"#ccc",fontSize:14,fontFamily:"'Inter',sans-serif",boxSizing:"border-box"},
   footer:{padding:"14px 20px 28px",borderTop:"1px solid #1e1e1e",background:"#0d0d0d"},
   addonSum:{fontSize:12,color:"#888",textAlign:"center",marginBottom:8},
-  confirm:{width:"100%",background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",borderRadius:16,padding:"18px",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",letterSpacing:1,fontFamily:"'Bebas Neue',cursive"},
+  confirm:{width:"100%",background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",borderRadius:16,padding:"18px",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",letterSpacing:1,fontFamily:"'Inter',cursive"},
 };
 
 const TAG_CLR = {
@@ -482,7 +482,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
       <div style={K.welcomeInner}>
         <div style={K.logoWrap}>
           <div style={K.logoIcon} onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}}>🍽️</div>
-          <h1 style={K.brand}>BINTORO</h1>
+          <h1 style={K.brand}>KaryaOS</h1>
           <p style={K.tagline}>Crafted with love. Ordered with ease.</p>
         </div>
         <div style={K.clockDisp}>{time.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</div>
@@ -569,7 +569,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           </div>
           {promo ? (
             <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <span style={{fontFamily:"'Bebas Neue',cursive",fontSize:18,color:"#34D399",letterSpacing:1}}>-{fIDR(discount)}</span>
+              <span style={{fontFamily:"'Inter',cursive",fontSize:18,color:"#34D399",letterSpacing:1}}>-{fIDR(discount)}</span>
               <button style={{background:"transparent",border:"none",color:"#F87171",fontSize:14,padding:"4px 8px",borderRadius:8}}
                 onClick={e=>{e.stopPropagation();setPromo(null);}}>✕</button>
             </div>
@@ -617,14 +617,14 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           <div onClick={e=>e.stopPropagation()}
             style={{background:"linear-gradient(135deg,#1a1a2e 0%, #050810 100%)",border:"2px solid #F59E0B44",borderRadius:24,padding:"40px 36px",maxWidth:480,width:"90%",textAlign:"center",boxShadow:"0 20px 60px rgba(245,158,11,0.2), 0 0 80px rgba(0,0,0,0.5)",animation:"slideUp 0.3s ease"}}>
             <div style={{fontSize:80,marginBottom:20,animation:"giftBounce 1.2s ease infinite"}}>🎁</div>
-            <h2 style={{fontFamily:"'Bebas Neue',cursive",fontSize:42,letterSpacing:3,margin:"0 0 12px",color:"#F59E0B"}}>CEK PROMO DULU?</h2>
+            <h2 style={{fontFamily:"'Inter',cursive",fontSize:42,letterSpacing:3,margin:"0 0 12px",color:"#F59E0B"}}>CEK PROMO DULU?</h2>
             <p style={{fontSize:15,color:"#aaa",lineHeight:1.6,margin:"0 0 28px"}}>
               Punya kode promo atau voucher diskon?<br/>
               Pakai sekarang sebelum bayar, siapa tau dapat hemat!
             </p>
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
               <button onClick={()=>{audio.playConfirm();setShowPromoTeaser(false);setScreen("cart");setShowPromo(true);}}
-                style={{background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:14,padding:"18px 24px",color:"#050810",fontSize:16,fontWeight:800,fontFamily:"'Bebas Neue',cursive",letterSpacing:3,cursor:"pointer",boxShadow:"0 4px 20px rgba(245,158,11,0.4)"}}>
+                style={{background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:14,padding:"18px 24px",color:"#050810",fontSize:16,fontWeight:800,fontFamily:"'Inter',cursive",letterSpacing:3,cursor:"pointer",boxShadow:"0 4px 20px rgba(245,158,11,0.4)"}}>
                 🎟 YA, MASUKKAN KODE PROMO
               </button>
               <button onClick={()=>{audio.playClick();setShowPromoTeaser(false);setScreen("cart");}}
@@ -697,7 +697,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
         <div style={K.cartFooter}>
           <div style={K.summaryRow}><span style={{color:"#888"}}>Subtotal</span><span>{fIDR(subtotal)}</span></div>
           <div style={K.summaryRow}><span style={{color:"#888"}}>PPN 11%</span><span>{fIDR(tax)}</span></div>
-          <div style={{...K.summaryRow,fontSize:22,fontWeight:700,color:"#fff",fontFamily:"'Bebas Neue',cursive",letterSpacing:2,borderTop:"1px solid #333",paddingTop:12,marginTop:4}}>
+          <div style={{...K.summaryRow,fontSize:22,fontWeight:700,color:"#fff",fontFamily:"'Inter',cursive",letterSpacing:2,borderTop:"1px solid #333",paddingTop:12,marginTop:4}}>
             <span>TOTAL</span><span style={{color:"#FF6B35"}}>{fIDR(total)}</span>
           </div>
           <button style={K.proceedBtn} onClick={()=>setScreen("confirm")}>
@@ -718,7 +718,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
         <div style={{display:"flex",alignItems:"center",gap:10}}>
           <span style={{fontSize:26}}>🍽️</span>
           <div>
-            <div style={K.headerBrand}>BINTORO</div>
+            <div style={K.headerBrand}>KaryaOS</div>
             <div style={K.headerSub}>{orderType==="dine"?"🪑 Makan di Sini":"🛍️ Bawa Pulang"}</div>
           </div>
         </div>
@@ -828,14 +828,14 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
             {callSent ? (
               <>
                 <div style={{fontSize:56,marginBottom:12}}>✅</div>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,letterSpacing:3,color:"#34D399",marginBottom:8}}>STAFF DIPANGGIL!</div>
+                <div style={{fontFamily:"'Inter',cursive",fontSize:24,letterSpacing:3,color:"#34D399",marginBottom:8}}>STAFF DIPANGGIL!</div>
                 <div style={{fontSize:13,color:"#888",marginBottom:20}}>Mohon tunggu sebentar, staff akan segera datang ke meja Anda.</div>
                 <button style={{...K.proceedBtn,background:"#1a1a2e",color:"#888"}} onClick={()=>setStaffCall(false)}>Tutup</button>
               </>
             ) : (
               <>
                 <div style={{fontSize:48,marginBottom:12}}>🔔</div>
-                <div style={{fontFamily:"'Bebas Neue',cursive",fontSize:24,letterSpacing:3,marginBottom:8}}>PANGGIL STAFF</div>
+                <div style={{fontFamily:"'Inter',cursive",fontSize:24,letterSpacing:3,marginBottom:8}}>PANGGIL STAFF</div>
                 <div style={{fontSize:13,color:"#666",marginBottom:20}}>Meja: {tableInfo?.name || "-"}</div>
                 <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
                   {["Butuh bantuan","Meja kotor","Peralatan makan","Keluhan pesanan","Lainnya"].map(r=>(
@@ -849,7 +849,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
                 </div>
                 <div style={{display:"flex",gap:10}}>
                   <button style={{flex:1,background:"#1a1a2e",border:"1px solid #21262d",borderRadius:12,padding:"14px",color:"#666",fontSize:13}} onClick={()=>setStaffCall(false)}>Batal</button>
-                  <button style={{flex:2,background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:12,padding:"14px",color:"#050810",fontWeight:700,fontSize:14,fontFamily:"'Bebas Neue',cursive",letterSpacing:1,opacity:!callReason?0.4:1}}
+                  <button style={{flex:2,background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:12,padding:"14px",color:"#050810",fontWeight:700,fontSize:14,fontFamily:"'Inter',cursive",letterSpacing:1,opacity:!callReason?0.4:1}}
                     disabled={!callReason}
                     onClick={async()=>{
                       await api.staffCall({tableId:tableInfo?.id,reason:callReason}).catch(()=>{});
@@ -880,30 +880,30 @@ const KIOSK_CSS = `
   .add-btn:active{animation:pop 0.3s ease}
   .add-btn:active,.numpad-btn:active{transform:scale(0.93)!important}
   @keyframes ripple{0%{transform:scale(0);opacity:0.4}100%{transform:scale(2.5);opacity:0}}
-  button{cursor:pointer;font-family:'DM Sans',sans-serif}
-  input,textarea{font-family:'DM Sans',sans-serif}
+  button{cursor:pointer;font-family:'Inter',sans-serif}
+  input,textarea{font-family:'Inter',sans-serif}
 `;
 
 const K = {
-  root:       {fontFamily:"'DM Sans',sans-serif",background:"#111",color:"#fff",minHeight:"100vh",display:"flex",flexDirection:"column",overflowX:"hidden"},
+  root:       {fontFamily:"'Inter',sans-serif",background:"#111",color:"#fff",minHeight:"100vh",display:"flex",flexDirection:"column",overflowX:"hidden"},
 
   // Idle
-  idleOverlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans',sans-serif"},
+  idleOverlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',sans-serif"},
   idleBox:    {textAlign:"center",padding:"40px 32px",background:"#1a1a1a",borderRadius:28,border:"1px solid #333",maxWidth:380},
-  idleTitle:  {fontFamily:"'Bebas Neue',cursive",fontSize:36,letterSpacing:4,color:"#FF6B35",marginBottom:8},
+  idleTitle:  {fontFamily:"'Inter',cursive",fontSize:36,letterSpacing:4,color:"#FF6B35",marginBottom:8},
   idleSub:    {fontSize:14,color:"#888",marginBottom:12},
-  idleCount:  {fontFamily:"'Bebas Neue',cursive",fontSize:72,color:"#fff",lineHeight:1,marginBottom:12},
+  idleCount:  {fontFamily:"'Inter',cursive",fontSize:72,color:"#fff",lineHeight:1,marginBottom:12},
   idleBar:    {height:6,background:"#333",borderRadius:3,marginBottom:24,overflow:"hidden"},
   idleFill:   {height:"100%",background:"linear-gradient(90deg,#FF6B35,#FF3B30)",borderRadius:3,transition:"width 1s linear"},
-  idleBtn:    {width:"100%",background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",borderRadius:14,padding:"16px",color:"#fff",fontSize:14,fontWeight:700,letterSpacing:2,fontFamily:"'Bebas Neue',cursive",marginBottom:10},
+  idleBtn:    {width:"100%",background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",borderRadius:14,padding:"16px",color:"#fff",fontSize:14,fontWeight:700,letterSpacing:2,fontFamily:"'Inter',cursive",marginBottom:10},
   idleCancel: {background:"transparent",border:"1px solid #333",borderRadius:10,padding:"10px 20px",color:"#555",fontSize:13},
 
   // Welcome
-  welcome:    {fontFamily:"'DM Sans',sans-serif",background:"linear-gradient(160deg,#0a0a0a 0%,#1a0800 50%,#0a0a0a 100%)",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"},
+  welcome:    {fontFamily:"'Inter',sans-serif",background:"linear-gradient(160deg,#0a0a0a 0%,#1a0800 50%,#0a0a0a 100%)",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"},
   welcomeInner:{textAlign:"center",padding:"40px 24px",maxWidth:620,width:"100%"},
   logoWrap:   {marginBottom:28},
   logoIcon:   {fontSize:72,lineHeight:1,marginBottom:10,display:"block"},
-  brand:      {fontFamily:"'Bebas Neue',cursive",fontSize:72,letterSpacing:10,color:"#FF6B35",lineHeight:1},
+  brand:      {fontFamily:"'Inter',cursive",fontSize:72,letterSpacing:10,color:"#FF6B35",lineHeight:1},
   tagline:    {fontSize:15,color:"#666",marginTop:8,letterSpacing:2},
   clockDisp:  {fontSize:16,color:"#444",marginBottom:36,letterSpacing:4},
   welcomeQ:   {fontSize:12,letterSpacing:5,color:"#555",marginBottom:24},
@@ -911,13 +911,13 @@ const K = {
   orderBtn:   {background:"linear-gradient(145deg,#1a1a1a,#252525)",border:"1px solid #333",borderRadius:24,padding:"32px 40px",display:"flex",flexDirection:"column",alignItems:"center",gap:8,flex:1,maxWidth:220,color:"#fff",transition:"transform 0.15s"},
   orderBtnAlt:{background:"linear-gradient(135deg,#FF6B35,#FF3B30)",border:"none"},
   orderBtnIcon:{fontSize:44},
-  orderBtnLabel:{fontFamily:"'Bebas Neue',cursive",fontSize:24,letterSpacing:2},
+  orderBtnLabel:{fontFamily:"'Inter',cursive",fontSize:24,letterSpacing:2},
   orderBtnSub:{fontSize:12,color:"rgba(255,255,255,0.6)"},
   tapHint:    {fontSize:11,letterSpacing:5,color:"#2a2a2a"},
 
   // Header
   header:     {display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 20px",background:"#0d0d0d",borderBottom:"1px solid #1e1e1e",position:"sticky",top:0,zIndex:100},
-  headerBrand:{fontFamily:"'Bebas Neue',cursive",fontSize:22,letterSpacing:3,color:"#FF6B35"},
+  headerBrand:{fontFamily:"'Inter',cursive",fontSize:22,letterSpacing:3,color:"#FF6B35"},
   headerSub:  {fontSize:11,color:"#666"},
   headerTime: {fontSize:13,color:"#444",fontVariantNumeric:"tabular-nums"},
   cartChip:   {display:"flex",alignItems:"center",gap:8,background:"#FF6B35",border:"none",borderRadius:30,padding:"10px 18px",color:"#fff",fontSize:13,fontWeight:700},
@@ -941,7 +941,7 @@ const K = {
   calBadge:   {fontSize:10,color:"#555",background:"#222",padding:"2px 7px",borderRadius:20},
   addonHint:  {fontSize:10,color:"#FF6B35",background:"rgba(255,107,53,0.1)",padding:"2px 7px",borderRadius:20,border:"1px solid rgba(255,107,53,0.2)"},
   cardBottom: {display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:"auto"},
-  cardPrice:  {fontFamily:"'Bebas Neue',cursive",fontSize:20,color:"#FF6B35",letterSpacing:1},
+  cardPrice:  {fontFamily:"'Inter',cursive",fontSize:20,color:"#FF6B35",letterSpacing:1},
   addBtn:     {background:"#FF6B35",border:"none",borderRadius:20,padding:"12px 18px",color:"#fff",fontSize:13,fontWeight:700,letterSpacing:1,transition:"all 0.15s",minHeight:44},
 
   // Sticky bar
@@ -954,7 +954,7 @@ const K = {
   // Cart
   cartHeader: {display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",background:"#0d0d0d",borderBottom:"1px solid #1e1e1e",position:"sticky",top:0},
   backBtn:    {background:"transparent",border:"1px solid #2a2a2a",borderRadius:10,padding:"8px 14px",color:"#888",fontSize:12,letterSpacing:1},
-  cartTitle:  {fontFamily:"'Bebas Neue',cursive",fontSize:24,letterSpacing:3,color:"#FF6B35"},
+  cartTitle:  {fontFamily:"'Inter',cursive",fontSize:24,letterSpacing:3,color:"#FF6B35"},
   clearAllBtn:{background:"rgba(255,59,48,0.1)",border:"1px solid rgba(255,59,48,0.3)",borderRadius:10,padding:"8px 14px",color:"#FF3B30",fontSize:12,fontWeight:600},
   cartBody:   {flex:1,overflowY:"auto",padding:"12px 16px"},
   emptyCart:  {textAlign:"center",padding:"60px 20px",color:"#666"},
@@ -970,11 +970,11 @@ const K = {
   qtyVal:     {fontSize:16,fontWeight:700,minWidth:20,textAlign:"center"},
   cartFooter: {padding:"16px 20px",background:"#0d0d0d",borderTop:"1px solid #1e1e1e"},
   summaryRow: {display:"flex",justifyContent:"space-between",padding:"6px 0",fontSize:14,borderBottom:"1px solid #1a1a1a"},
-  proceedBtn: {width:"100%",marginTop:14,background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",borderRadius:16,padding:"18px",color:"#fff",fontSize:15,fontWeight:700,letterSpacing:2,fontFamily:"'Bebas Neue',cursive"},
+  proceedBtn: {width:"100%",marginTop:14,background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",borderRadius:16,padding:"18px",color:"#fff",fontSize:15,fontWeight:700,letterSpacing:2,fontFamily:"'Inter',cursive"},
 
   // Confirm screen
   confirmHeader:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",background:"#0d0d0d",borderBottom:"1px solid #1e1e1e",position:"sticky",top:0},
-  confirmTitle: {fontFamily:"'Bebas Neue',cursive",fontSize:22,letterSpacing:3,color:"#FF6B35"},
+  confirmTitle: {fontFamily:"'Inter',cursive",fontSize:22,letterSpacing:3,color:"#FF6B35"},
   typePill:   {background:"#1e1e1e",border:"1px solid #333",borderRadius:20,padding:"4px 12px",fontSize:11,color:"#aaa"},
   confirmBody:{flex:1,overflowY:"auto",padding:"16px 20px"},
   confirmItems:{display:"flex",flexDirection:"column",gap:12,marginBottom:20},
@@ -983,13 +983,13 @@ const K = {
   confirmItemName:{fontSize:16,fontWeight:700,marginBottom:4},
   confirmItemAddon:{fontSize:12,color:"#FF6B35",marginBottom:3},
   confirmItemNote:{fontSize:11,color:"#666",marginBottom:6,fontStyle:"italic"},
-  confirmItemPrice:{fontSize:16,fontWeight:700,color:"#FF6B35",fontFamily:"'Bebas Neue',cursive",letterSpacing:1,whiteSpace:"nowrap"},
+  confirmItemPrice:{fontSize:16,fontWeight:700,color:"#FF6B35",fontFamily:"'Inter',cursive",letterSpacing:1,whiteSpace:"nowrap"},
   billBox:    {background:"#1a1a1a",borderRadius:16,padding:"16px 20px",marginBottom:16},
   billRow:    {display:"flex",justifyContent:"space-between",padding:"7px 0",fontSize:14,borderBottom:"1px solid #222"},
   billLabel:  {color:"#888"},
   billDivider:{height:1,background:"#333",margin:"10px 0"},
-  billTotal:  {display:"flex",justifyContent:"space-between",fontSize:22,fontWeight:700,fontFamily:"'Bebas Neue',cursive",letterSpacing:2,paddingTop:4},
+  billTotal:  {display:"flex",justifyContent:"space-between",fontSize:22,fontWeight:700,fontFamily:"'Inter',cursive",letterSpacing:2,paddingTop:4},
   confirmFooter:{padding:"16px 20px",background:"#0d0d0d",borderTop:"1px solid #1e1e1e",display:"flex",gap:12},
   editOrderBtn:{background:"#1a1a1a",border:"1px solid #333",borderRadius:14,padding:"16px 20px",color:"#888",fontSize:13,fontWeight:600,flex:1},
-  payBtn:     {flex:2,background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",borderRadius:14,padding:"16px",color:"#fff",fontSize:14,fontWeight:700,letterSpacing:1,fontFamily:"'Bebas Neue',cursive"},
+  payBtn:     {flex:2,background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",borderRadius:14,padding:"16px",color:"#fff",fontSize:14,fontWeight:700,letterSpacing:1,fontFamily:"'Inter',cursive"},
 };

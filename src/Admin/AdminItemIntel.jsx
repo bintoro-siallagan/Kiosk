@@ -41,7 +41,7 @@ export default function AdminItemIntel({ apiBase = "" }) {
           {d.health_dist.map(h => (
             <div key={h.status} style={{ background: "#0a0e16", border: "1px solid #161b22", borderTop: `2px solid ${HEALTH_C[h.status]}`, borderRadius: 9, padding: "10px 12px" }}>
               <div style={{ fontSize: 12, fontWeight: 700, color: HEALTH_C[h.status] }}>{h.status}</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#e6edf3", fontFamily: "'Space Mono',monospace", margin: "3px 0" }}>{h.count}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#e6edf3", fontFamily: "'Geist Mono',monospace", margin: "3px 0" }}>{h.count}</div>
               <div style={{ height: 5, background: "#161b22", borderRadius: 3, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: Math.round(h.count / maxH * 100) + "%", background: HEALTH_C[h.status] }} />
               </div>
@@ -63,15 +63,15 @@ export default function AdminItemIntel({ apiBase = "" }) {
             {d.items.map(it => (
               <tr key={it.item_code} style={{ borderTop: "1px solid #161b22", fontSize: 12 }}>
                 <td style={{ ...S.td, color: "#e6edf3", fontWeight: 600 }}>{it.name}</td>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: it.margin_pct >= 60 ? "#10b981" : "#f59e0b" }}>{it.margin_pct}%</td>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: it.waste_pct > 8 ? "#ef4444" : "#9da7b3" }}>{it.waste_pct}%</td>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#9da7b3" }}>{it.monthly_sold}</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: it.margin_pct >= 60 ? "#10b981" : "#f59e0b" }}>{it.margin_pct}%</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: it.waste_pct > 8 ? "#ef4444" : "#9da7b3" }}>{it.waste_pct}%</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#9da7b3" }}>{it.monthly_sold}</td>
                 <td style={S.td}>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: it.health_color, background: it.health_color + "1f", border: `1px solid ${it.health_color}55`, borderRadius: 5, padding: "2px 8px", fontFamily: "'Space Mono',monospace" }}>{it.health}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: it.health_color, background: it.health_color + "1f", border: `1px solid ${it.health_color}55`, borderRadius: 5, padding: "2px 8px", fontFamily: "'Geist Mono',monospace" }}>{it.health}</span>
                 </td>
                 <td style={S.td}>
                   {it.tags.map((t, i) => (
-                    <span key={i} style={{ fontSize: 9, fontWeight: 700, color: TAG_C[t] || "#9ca3af", background: (TAG_C[t] || "#9ca3af") + "1f", borderRadius: 4, padding: "2px 6px", marginRight: 3, fontFamily: "'Space Mono',monospace" }}>{t}</span>
+                    <span key={i} style={{ fontSize: 9, fontWeight: 700, color: TAG_C[t] || "#9ca3af", background: (TAG_C[t] || "#9ca3af") + "1f", borderRadius: 4, padding: "2px 6px", marginRight: 3, fontFamily: "'Geist Mono',monospace" }}>{t}</span>
                   ))}
                 </td>
               </tr>
@@ -118,8 +118,8 @@ export default function AdminItemIntel({ apiBase = "" }) {
 function Kpi({ label, v, c, sub }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
       <div style={{ fontSize: 10, color: "#5b6470" }}>{sub || " "}</div>
     </div>
   );
@@ -128,7 +128,7 @@ function Kpi({ label, v, c, sub }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "7px 8px" },
 };

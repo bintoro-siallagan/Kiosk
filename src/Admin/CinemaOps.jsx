@@ -48,11 +48,11 @@ export default function CinemaOps({ apiBase }) {
   );
 
   return (
-    <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#e6edf3" }}>
+    <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14, marginBottom: 16 }}>
         <div>
-          <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🎬 Cinema Operations</div>
+          <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🎬 Cinema Operations</div>
           <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>karyaOS — vertikal cinema · film, studio &amp; jadwal tayang</div>
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -118,7 +118,7 @@ export default function CinemaOps({ apiBase }) {
                   <div style={{ fontSize: 11, color: C.sub }}>🏪 {x.outlet || "—"} · {x.rows}×{x.cols}</div>
                 </div>
                 <Badge color="#a855f7">{x.studio_type}</Badge>
-                <div style={{ fontSize: 12, fontFamily: "'Space Mono',monospace", color: "#22d3ee", width: 86, textAlign: "right" }}>{x.capacity} kursi</div>
+                <div style={{ fontSize: 12, fontFamily: "'Geist Mono',monospace", color: "#22d3ee", width: 86, textAlign: "right" }}>{x.capacity} kursi</div>
                 {delBtn(`studios/${x.id}`)}
               </Row>
             ))}
@@ -151,8 +151,8 @@ export default function CinemaOps({ apiBase }) {
                   <div style={{ fontSize: 11, color: C.sub }}>{x.studio_name || "—"} · {x.studio_type || ""}{x.capacity ? ` · ${x.capacity} kursi` : ""}</div>
                 </div>
                 <Badge color="#22d3ee">{x.show_date}</Badge>
-                <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 13, fontWeight: 700, width: 56 }}>{x.start_time}</div>
-                <div style={{ fontSize: 12, fontFamily: "'Space Mono',monospace", color: "#10b981", width: 96, textAlign: "right" }}>{rp(x.price)}</div>
+                <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 13, fontWeight: 700, width: 56 }}>{x.start_time}</div>
+                <div style={{ fontSize: 12, fontFamily: "'Geist Mono',monospace", color: "#10b981", width: 96, textAlign: "right" }}>{rp(x.price)}</div>
                 {delBtn(`showtimes/${x.id}`)}
               </Row>
             ))}
@@ -166,7 +166,7 @@ export default function CinemaOps({ apiBase }) {
 function Stat({ label, value, color }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #1b212c", borderRadius: 10, padding: "8px 14px", textAlign: "center", minWidth: 92 }}>
-      <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 19, fontWeight: 700, color }}>{value}</div>
+      <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, color }}>{value}</div>
       <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 0.5, marginTop: 1 }}>{label}</div>
     </div>
   );

@@ -179,7 +179,7 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
       <div style={{ background: BG, borderBottom: `1px solid ${BORDER}`, padding: "14px 20px", flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
           <button onClick={() => setScreen("home")} style={{ background: "transparent", border: "none", color: TEXT, fontSize: 24, cursor: "pointer", padding: 0, width: 32 }}>←</button>
-          <h1 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: BRAND, letterSpacing: 1 }}>MENU</h1>
+          <h1 style={{ margin: 0, fontFamily: "'Inter', sans-serif", fontSize: 26, color: BRAND, letterSpacing: 1 }}>MENU</h1>
         </div>
         <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari menu..."
           style={{ width: "100%", padding: "10px 14px", background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, color: TEXT, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
@@ -237,7 +237,7 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
               <span style={{ background: "#000", color: BRAND, borderRadius: 999, padding: "2px 9px", fontSize: 12 }}>{cartCount}</span>
               Lihat Pesanan
             </span>
-            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: 0.5 }}>{rupiah(cartTotal)} →</span>
+            <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 22, letterSpacing: 0.5 }}>{rupiah(cartTotal)} →</span>
           </button>
         ) : (
           <div style={{ textAlign: "center", color: SUB, fontSize: 13, padding: "9px 0" }}>🛒 Keranjang kosong — ketuk menu untuk memesan</div>
@@ -257,7 +257,7 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
           }}>
             <div style={{ width: 40, height: 4, background: BORDER, borderRadius: 2, margin: "12px auto 4px" }} />
             <div style={{ padding: "8px 20px 12px", borderBottom: `1px solid ${BORDER}`, flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: BRAND }}>
+              <h2 style={{ margin: 0, fontFamily: "'Inter', sans-serif", fontSize: 26, color: BRAND }}>
                 PESANAN{cartCount > 0 ? ` (${cartCount})` : ""}
               </h2>
               {cart.length > 0 && (
@@ -308,10 +308,10 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
               {cart.length > 0 ? (
                 <>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                    <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: 1 }}>TOTAL</span>
-                    <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: BRAND }}>{rupiah(cartTotal)}</span>
+                    <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 18, letterSpacing: 1 }}>TOTAL</span>
+                    <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 28, color: BRAND }}>{rupiah(cartTotal)}</span>
                   </div>
-                  <button onClick={() => setScreen("checkout")} style={{ width: "100%", padding: "14px", borderRadius: 12, background: BRAND, border: "none", color: "#000", fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: 2, cursor: "pointer" }}>CHECKOUT →</button>
+                  <button onClick={() => setScreen("checkout")} style={{ width: "100%", padding: "14px", borderRadius: 12, background: BRAND, border: "none", color: "#000", fontFamily: "'Inter', sans-serif", fontSize: 20, letterSpacing: 2, cursor: "pointer" }}>CHECKOUT →</button>
                   <button onClick={() => setShowCart(false)} style={{ width: "100%", padding: "10px", marginTop: 8, borderRadius: 10, background: "transparent", border: "none", color: SUB, fontSize: 13, cursor: "pointer" }}>← Lanjut pilih menu</button>
                 </>
               ) : (

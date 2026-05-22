@@ -50,7 +50,7 @@ export default function AdminApAging({ apiBase = "" }) {
               <div style={{ flex: 1, height: 16, background: "#0a0e16", borderRadius: 5, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: Math.max(b.total / maxB * 100, b.total > 0 ? 3 : 0) + "%", background: BUCKET_C[b.bucket] }} />
               </div>
-              <span style={{ width: 110, textAlign: "right", fontSize: 12, fontFamily: "'Space Mono',monospace", color: "#cdd5df" }}>{fmtJt(b.total)}</span>
+              <span style={{ width: 110, textAlign: "right", fontSize: 12, fontFamily: "'Geist Mono',monospace", color: "#cdd5df" }}>{fmtJt(b.total)}</span>
               <span style={{ width: 30, textAlign: "right", fontSize: 10, color: "#5b6470" }}>{b.count}×</span>
             </div>
           ))}
@@ -73,7 +73,7 @@ export default function AdminApAging({ apiBase = "" }) {
                 <td style={{ ...S.td, ...S.mono, color: "#5b6470" }}>{p.invoice_no}</td>
                 <td style={{ ...S.td, ...S.mono, fontWeight: 700, color: "#cdd5df" }}>{fmtRp(p.outstanding)}</td>
                 <td style={{ ...S.td, ...S.mono, color: p.overdue ? "#ef4444" : "#9da7b3" }}>{p.overdue ? `telat ${-p.days_to_due} hr` : `${p.days_to_due} hr lagi`}</td>
-                <td style={S.td}><span style={{ fontSize: 9, fontWeight: 700, color: BUCKET_C[p.bucket], fontFamily: "'Space Mono',monospace" }}>{p.bucket}</span></td>
+                <td style={S.td}><span style={{ fontSize: 9, fontWeight: 700, color: BUCKET_C[p.bucket], fontFamily: "'Geist Mono',monospace" }}>{p.bucket}</span></td>
                 <td style={S.td}><button onClick={() => pay(p)} style={S.btn}>Bayar</button></td>
               </tr>
             ))}
@@ -87,8 +87,8 @@ export default function AdminApAging({ apiBase = "" }) {
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 16, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 16, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{v}</div>
     </div>
   );
 }
@@ -96,9 +96,9 @@ function Kpi({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "7px 8px" },
-  mono: { fontFamily: "'Space Mono',monospace" },
+  mono: { fontFamily: "'Geist Mono',monospace" },
   btn: { background: "#dc2626", color: "#fff", border: "none", borderRadius: 6, padding: "5px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
 };

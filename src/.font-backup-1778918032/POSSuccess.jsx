@@ -58,11 +58,11 @@ export default function POSSuccess({ created, order, cashier, onDone, onAnother 
 }
 
 const S = {
-  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'DM Sans',sans-serif",
+  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Inter',sans-serif",
     display:"flex", alignItems:"center", justifyContent:"center", padding:24 },
   card: { maxWidth:560, width:"100%", textAlign:"center" },
   icon: { fontSize:96, marginBottom:8 },
-  title: { fontFamily:"'Bebas Neue',cursive", fontSize:48, letterSpacing:3,
+  title: { fontFamily:"'Inter',cursive", fontSize:48, letterSpacing:3,
     color:"#F59E0B", margin:"0 0 8px" },
   orderId: { fontSize:14, color:"#888", letterSpacing:3, marginBottom:32, fontWeight:600 },
   details: { background:"#1a1a1a", border:"1px solid #2a2a2a", borderRadius:14,
@@ -72,7 +72,7 @@ const S = {
   detailLabel: { color:"#888" },
   statusPaid: { color:"#10B981", fontWeight:700 },
   statusTab: { color:"#F59E0B", fontWeight:700 },
-  detailTotal: { fontFamily:"'Bebas Neue',cursive", fontSize:24, color:"#F59E0B", letterSpacing:1 },
+  detailTotal: { fontFamily:"'Inter',cursive", fontSize:24, color:"#F59E0B", letterSpacing:1 },
   actions: { display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 },
   anotherBtn: { background:"#F59E0B", color:"#111", border:"none", borderRadius:12,
     padding:"14px", fontFamily:"inherit", fontSize:14, fontWeight:700, cursor:"pointer" },

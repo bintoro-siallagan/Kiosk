@@ -8,7 +8,7 @@ const todayStr = () => {
 };
 
 const S = {
-  overlay: { position:"fixed", inset:0, background:"rgba(5,8,16,0.97)", zIndex:1000, display:"flex", flexDirection:"column", fontFamily:"'DM Sans',sans-serif", color:"#fff", overflow:"auto" },
+  overlay: { position:"fixed", inset:0, background:"rgba(5,8,16,0.97)", zIndex:1000, display:"flex", flexDirection:"column", fontFamily:"'Inter',sans-serif", color:"#fff", overflow:"auto" },
   header:  { position:"sticky", top:0, background:"#080c10", borderBottom:"1px solid #161b22", padding:"20px 32px", display:"flex", alignItems:"center", justifyContent:"space-between", gap:16, zIndex:10, flexWrap:"wrap" },
   title:   { fontSize:24, fontWeight:700, letterSpacing:0.5 },
   body:    { padding:"24px 32px", maxWidth:1200, margin:"0 auto", width:"100%" },
@@ -18,13 +18,13 @@ const S = {
   grid2:   { display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))", gap:18 },
   tile:    { background:"#080c10", borderRadius:10, padding:"14px 16px", border:"1px solid #161b22" },
   tileLabel: { fontSize:10, color:"#666", marginBottom:6, letterSpacing:1.2 },
-  tileValue: { fontSize:18, fontWeight:700, fontFamily:"'Space Mono',monospace" },
+  tileValue: { fontSize:18, fontWeight:700, fontFamily:"'Geist Mono',monospace" },
   table:   { width:"100%", borderCollapse:"collapse" },
   th:      { textAlign:"left", padding:"8px 12px", fontSize:10, color:"#666", borderBottom:"1px solid #161b22", letterSpacing:1.2, textTransform:"uppercase", fontWeight:700 },
   td:      { padding:"10px 12px", fontSize:13, borderBottom:"1px solid #0d1117" },
-  btn:     { background:"linear-gradient(90deg,#F59E0B,#F97316)", border:"none", borderRadius:8, padding:"8px 14px", color:"#050810", cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:"'DM Sans',sans-serif" },
+  btn:     { background:"linear-gradient(90deg,#F59E0B,#F97316)", border:"none", borderRadius:8, padding:"8px 14px", color:"#050810", cursor:"pointer", fontSize:12, fontWeight:700, fontFamily:"'Inter',sans-serif" },
   closeBtn:{ background:"transparent", border:"1px solid #888", borderRadius:8, padding:"8px 14px", color:"#fff", cursor:"pointer", fontSize:12, fontWeight:600 },
-  dateInput: { background:"#080c10", border:"1px solid #161b22", borderRadius:8, padding:"8px 12px", color:"#fff", fontFamily:"'DM Sans',sans-serif", fontSize:13, colorScheme:"dark" },
+  dateInput: { background:"#080c10", border:"1px solid #161b22", borderRadius:8, padding:"8px 12px", color:"#fff", fontFamily:"'Inter',sans-serif", fontSize:13, colorScheme:"dark" },
   rowBetween: { display:"flex", justifyContent:"space-between", padding:"8px 0", borderBottom:"1px solid #0d1117", fontSize:13 },
 };
 
@@ -181,7 +181,7 @@ export default function ZReport({ onClose }) {
 
   // Sheet 1: Ringkasan
   const ringkasan = [
-    ["BINTORO Z-REPORT", ""],
+    ["KaryaOS Z-REPORT", ""],
     ["Periode", periodLabel],
     ["Dicetak", new Date().toLocaleString("id-ID")],
     ["Oleh", adminName],
@@ -323,7 +323,7 @@ export default function ZReport({ onClose }) {
     <div class="content">
     <div class="brand-row">
       <div>
-        <div class="brand">🍦 BINTORO</div>
+        <div class="brand">🍦 KaryaOS</div>
         <div class="brand-sub">SELF-ORDER KIOSK · POS</div>
       </div>
       <div class="meta">
@@ -390,7 +390,7 @@ export default function ZReport({ onClose }) {
       <div class="sig"><div class="sig-line">Supervisor / Manager</div></div>
     </div>
 
-    <div class="footer">BINTORO Kiosk · Z-Report dicetak otomatis dari sistem POS · ${printedAt}</div>
+    <div class="footer">KaryaOS Kiosk · Z-Report dicetak otomatis dari sistem POS · ${printedAt}</div>
     </div>
 
     <script>window.onload = () => setTimeout(() => { window.print(); window.onafterprint = () => window.close(); }, 200);</script>
@@ -409,7 +409,7 @@ export default function ZReport({ onClose }) {
             <div style={{borderBottom:"2px solid #000",paddingBottom:14,marginBottom:20}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
                 <div>
-                  <div style={{fontSize:32,fontWeight:900,fontFamily:"'Bebas Neue',sans-serif",letterSpacing:4,color:"#000"}}>🍦 BINTORO</div>
+                  <div style={{fontSize:32,fontWeight:900,fontFamily:"'Inter',sans-serif",letterSpacing:4,color:"#000"}}>🍦 KaryaOS</div>
                   <div style={{fontSize:11,color:"#000",letterSpacing:2,marginTop:2}}>SELF-ORDER KIOSK · POS</div>
                 </div>
                 <div style={{textAlign:"right",fontSize:10,color:"#444"}}>
@@ -419,7 +419,7 @@ export default function ZReport({ onClose }) {
               </div>
             </div>
             <div style={{textAlign:"center",marginBottom:24}}>
-              <div style={{fontSize:22,fontWeight:800,color:"#000",fontFamily:"'Bebas Neue',sans-serif",letterSpacing:3}}>📊 Z-REPORT</div>
+              <div style={{fontSize:22,fontWeight:800,color:"#000",fontFamily:"'Inter',sans-serif",letterSpacing:3}}>📊 Z-REPORT</div>
               <div style={{fontSize:13,color:"#222",marginTop:4,fontWeight:600}}>LAPORAN PENJUALAN</div>
               <div style={{fontSize:12,color:"#444",marginTop:6,fontStyle:"italic"}}>Periode: {report?.period?.label || "—"}</div>
             </div>
@@ -454,7 +454,7 @@ export default function ZReport({ onClose }) {
                         <tr key={m}>
                           <td style={S.td}>{m === "CASH" ? "💵 Tunai" : m === "QRIS" ? "📱 QRIS / GoPay" : m}</td>
                           <td style={{...S.td, textAlign:"right"}}>{info.count}</td>
-                          <td style={{...S.td, textAlign:"right", fontFamily:"'Space Mono',monospace"}}>{fmt(info.total)}</td>
+                          <td style={{...S.td, textAlign:"right", fontFamily:"'Geist Mono',monospace"}}>{fmt(info.total)}</td>
                         </tr>
                       ))
                   }
@@ -470,7 +470,7 @@ export default function ZReport({ onClose }) {
                   : Object.entries(report.orderTypes).map(([t, info]) => (
                       <div key={t} style={S.rowBetween}>
                         <span>{t === "dine" ? "🍽 Dine-in" : t === "takeaway" ? "🛍 Takeaway" : t}</span>
-                        <span style={{fontFamily:"'Space Mono',monospace"}}>{info.count}× · {fmt(info.total)}</span>
+                        <span style={{fontFamily:"'Geist Mono',monospace"}}>{info.count}× · {fmt(info.total)}</span>
                       </div>
                     ))
                 }
@@ -479,9 +479,9 @@ export default function ZReport({ onClose }) {
               <section style={S.card}>
                 <div style={S.cardTitle}>💵 Rekonsiliasi Kas</div>
                 <div style={S.rowBetween}><span style={{color:"#888"}}>Transaksi Cash</span><span>{report.cashReconciliation.transactionCount}</span></div>
-                <div style={S.rowBetween}><span style={{color:"#888"}}>Penjualan Cash</span><span style={{fontFamily:"'Space Mono',monospace"}}>{fmt(report.cashReconciliation.cashSales)}</span></div>
-                <div style={S.rowBetween}><span style={{color:"#888"}}>Kas Diterima</span><span style={{fontFamily:"'Space Mono',monospace"}}>{fmt(report.cashReconciliation.cashReceived)}</span></div>
-                <div style={{...S.rowBetween, borderBottom:"none", paddingTop:10}}><span style={{color:"#888"}}>Kembalian</span><span style={{color:"#FB923C", fontFamily:"'Space Mono',monospace"}}>{fmt(report.cashReconciliation.cashChange)}</span></div>
+                <div style={S.rowBetween}><span style={{color:"#888"}}>Penjualan Cash</span><span style={{fontFamily:"'Geist Mono',monospace"}}>{fmt(report.cashReconciliation.cashSales)}</span></div>
+                <div style={S.rowBetween}><span style={{color:"#888"}}>Kas Diterima</span><span style={{fontFamily:"'Geist Mono',monospace"}}>{fmt(report.cashReconciliation.cashReceived)}</span></div>
+                <div style={{...S.rowBetween, borderBottom:"none", paddingTop:10}}><span style={{color:"#888"}}>Kembalian</span><span style={{color:"#FB923C", fontFamily:"'Geist Mono',monospace"}}>{fmt(report.cashReconciliation.cashChange)}</span></div>
               </section>
             </div>
 
@@ -496,8 +496,8 @@ export default function ZReport({ onClose }) {
                         <tr key={i}>
                           <td style={{...S.td, color:"#888"}}>{i + 1}</td>
                           <td style={S.td}>{it.name}</td>
-                          <td style={{...S.td, textAlign:"right", fontFamily:"'Space Mono',monospace"}}>{it.qty}</td>
-                          <td style={{...S.td, textAlign:"right", fontFamily:"'Space Mono',monospace"}}>{fmt(it.revenue)}</td>
+                          <td style={{...S.td, textAlign:"right", fontFamily:"'Geist Mono',monospace"}}>{it.qty}</td>
+                          <td style={{...S.td, textAlign:"right", fontFamily:"'Geist Mono',monospace"}}>{fmt(it.revenue)}</td>
                         </tr>
                       ))
                   }
@@ -513,9 +513,9 @@ export default function ZReport({ onClose }) {
                   <tbody>
                     {Object.entries(report.promoUsage).map(([code, info]) => (
                       <tr key={code}>
-                        <td style={{...S.td, fontFamily:"'Space Mono',monospace"}}>{code}</td>
+                        <td style={{...S.td, fontFamily:"'Geist Mono',monospace"}}>{code}</td>
                         <td style={{...S.td, textAlign:"right"}}>{info.count}×</td>
-                        <td style={{...S.td, textAlign:"right", color:"#FB923C", fontFamily:"'Space Mono',monospace"}}>−{fmt(info.totalDiscount)}</td>
+                        <td style={{...S.td, textAlign:"right", color:"#FB923C", fontFamily:"'Geist Mono',monospace"}}>−{fmt(info.totalDiscount)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -534,7 +534,7 @@ export default function ZReport({ onClose }) {
             )}
 
             <div style={{textAlign:"center", fontSize:11, color:"#444", padding:"20px 0"}}>
-              Generated {new Date(report.generatedAt).toLocaleString("id-ID")} · BINTORO Kiosk
+              Generated {new Date(report.generatedAt).toLocaleString("id-ID")} · KaryaOS Kiosk
             </div>
           </>
         )}
@@ -554,7 +554,7 @@ export default function ZReport({ onClose }) {
               <textarea value={emailTo} onChange={e=>setEmailTo(e.target.value)}
                 placeholder="owner@bintoro.id, manager@bintoro.id"
                 rows={2}
-                style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'DM Sans',sans-serif",resize:"vertical"}}/>
+                style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Inter',sans-serif",resize:"vertical"}}/>
               <div style={{fontSize:10,color:"#666",marginTop:6}}>📎 Attachment: Z-Report Excel file ({report?.period?.from || "—"}{report?.period?.to && report.period.to !== report.period.from ? "_to_" + report.period.to : ""}.xlsx)</div>
             </div>
             {emailResult && (
@@ -583,7 +583,7 @@ export default function ZReport({ onClose }) {
                   const wb = XLSX.utils.book_new();
                   const fI2 = (a) => Math.round(a||0);
                   const s2 = report.summary || {};
-                  const ringkasan = [["BINTORO Z-REPORT"],["Periode", report?.period?.label||""],["Dicetak", new Date().toLocaleString("id-ID")],[],["Metrik","Nilai"],["Transaksi", s2.transactionCount||0],["Gross Revenue", fI2(s2.grossRevenue)],["Net Revenue", fI2(s2.netRevenue)],["PPN 11% extracted", fI2(s2.taxExtracted)],["Rata-rata Tiket", fI2(s2.avgTicket)],["Diskon Promo", fI2(s2.promoDiscount)]];
+                  const ringkasan = [["KaryaOS Z-REPORT"],["Periode", report?.period?.label||""],["Dicetak", new Date().toLocaleString("id-ID")],[],["Metrik","Nilai"],["Transaksi", s2.transactionCount||0],["Gross Revenue", fI2(s2.grossRevenue)],["Net Revenue", fI2(s2.netRevenue)],["PPN 11% extracted", fI2(s2.taxExtracted)],["Rata-rata Tiket", fI2(s2.avgTicket)],["Diskon Promo", fI2(s2.promoDiscount)]];
                   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ringkasan), "Ringkasan");
                   const payRows = [["Metode","Trx","Total"]];
                   Object.entries(report.payments||{}).forEach(([k,v])=>payRows.push([k,v.count||0,fI2(v.total)]));
@@ -602,7 +602,7 @@ export default function ZReport({ onClose }) {
                   const filename = `Z-Report_${from}${to!==from?"_to_"+to:""}.xlsx`;
                   const result = await api.emailZReport({
                     recipients: emailTo.split(",").map(x=>x.trim()).filter(Boolean),
-                    subject: `Z-Report BINTORO — ${report?.period?.label||"Hari Ini"}`,
+                    subject: `Z-Report KaryaOS — ${report?.period?.label||"Hari Ini"}`,
                     attachmentBase64: b64,
                     attachmentFilename: filename,
                     periodLabel: report?.period?.label||"",
