@@ -33,12 +33,12 @@ const homeFab = {
 export default function AdminShell({ initialView = "home", adminSession, onLogout, onExitKiosk }) {
   const [view, setView] = useState(initialView);
   const [toolsTab, setToolsTab] = useState("dashboard");
-  const [adminTab, setAdminTab] = useState("overview");
+  const [adminTab, setAdminTab] = useState("orders");
 
   // single navigation entry point — replaces App-level setScene for admin
   const nav = (v, arg) => {
     if (v === "tools") setToolsTab(arg || "dashboard");
-    if (v === "admin") setAdminTab(arg || "overview");
+    if (v === "admin") setAdminTab(arg || "orders");
     setView(v || "home");
   };
 
