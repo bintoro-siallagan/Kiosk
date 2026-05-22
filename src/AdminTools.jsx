@@ -100,6 +100,7 @@ import AdminCoa from "./Admin/AdminCoa.jsx";
 import AdminReconciliation from "./Admin/AdminReconciliation.jsx";
 import AdminReleasePayment from "./Admin/AdminReleasePayment.jsx";
 import AdminPeriodClosing from "./Admin/AdminPeriodClosing.jsx";
+import OwnerDashboard from "./Admin/OwnerDashboard.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -169,12 +170,13 @@ const S = {
 };
 
 export default function AdminTools({ onBack, initialTab }) {
-  const [tab, setTab] = useState(initialTab || "staff");
+  const [tab, setTab] = useState(initialTab || "dashboard");
   const [toast, setToast] = useState(null);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
 
   const TABS = [
+    { id: "dashboard", label: "📊 Owner Dashboard", color: "#F59E0B" },
     { id: "staff", label: "👤 Staff & PIN", color: "#F59E0B" },
     { id: "gudang", label: "📦 Gudang & Stok", color: "#3B82F6" },
     { id: "waste", label: "🗑️ Log Waste", color: "#F97316" },
@@ -284,6 +286,7 @@ export default function AdminTools({ onBack, initialTab }) {
   // Urutan value-chain enterprise: Operasi → Product → Inventory → Commerce
   // → Finance → HRIS → Customer → Security. Tiap grup urut alur kerja.
   const GROUPS = [
+    { name: "Dashboard", icon: "📊", module: "pos", ids: ["dashboard"] },
     { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["outlet_master", "staff", "checklist", "cashier_kpi", "gudang", "waste", "asset_maintenance", "quality", "incidents", "compliance", "document_hub", "notif_center", "config", "audit"] },
     { name: "Product", icon: "📦", module: "config", ids: ["master_category", "master_unit", "item_master", "item_pricing", "item_config", "item_rules", "food_cost", "food_cost_calc", "item_intel", "product_hub", "product_ver"] },
     { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["stock_list", "batch_tracking", "stock_opname", "stock_transfer", "production", "sales_stock_sync", "demand_forecast", "auto_reorder", "supplier_master", "rfq", "price_list", "procurement_plus", "simple_purchase", "petty_cash", "goods_delivery", "goods_received", "purchase_invoice", "purchase_return", "internal_return"] },
@@ -296,7 +299,7 @@ export default function AdminTools({ onBack, initialTab }) {
   const groupOf = (id) => { const g = GROUPS.find(x => x.ids.includes(id)); return g ? g.name : GROUPS[0].name; };
   const moduleOf = (id) => { const g = GROUPS.find(x => x.ids.includes(id)); return g ? g.module : "pos"; };
   const [search, setSearch] = useState("");
-  const [openGroup, setOpenGroup] = useState(() => groupOf(initialTab || "staff"));
+  const [openGroup, setOpenGroup] = useState(() => groupOf(initialTab || "dashboard"));
 
   // ── Dynamic role-based menu — sidebar nyesuain RBAC role ──
   const ALL_ROLES = [
@@ -331,7 +334,7 @@ export default function AdminTools({ onBack, initialTab }) {
 
   return (
     <div style={S.root}>
-      <div style={S.header}>
+      <div style={S.header} className="no-print">
         <div>
           <div style={S.title}>🛠️ ADMIN TOOLS</div>
           <div style={S.sub}>Staff · Gudang · Waste · Config · Audit</div>
@@ -340,7 +343,7 @@ export default function AdminTools({ onBack, initialTab }) {
       </div>
 
       <div style={S.main}>
-        <div style={S.sidebar}>
+        <div style={S.sidebar} className="no-print">
           <select value={viewRole} onChange={e => setViewRole(e.target.value)} style={S.roleSelect} title="Lihat menu sebagai role">
             {ALL_ROLES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
           </select>
@@ -362,6 +365,12 @@ export default function AdminTools({ onBack, initialTab }) {
         </div>
 
         <div style={S.body}>
+        {tab === "dashboard" && <OwnerDashboard apiBase={API} onNavigate={(key) => {
+          const navMap = { finance: "finance", gl: "general_ledger", aggregator: "aggregator", payment_gateway: "payment", refund_cancel: "anti_fraud", hr: "hris", loyalty: "loyalty" };
+          const target = navMap[key] || key;
+          setTab(target);
+          setOpenGroup(groupOf(target));
+        }} />}
         {tab === "staff" && <StaffTab showToast={showToast} />}
         {tab === "gudang" && <GudangTab showToast={showToast} />}
         {tab === "waste" && <WasteTab showToast={showToast} />}

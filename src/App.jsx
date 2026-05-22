@@ -57,7 +57,7 @@ function getScene() {
 
 export default function App() {
   const [scene,        setScene]    = useState(getScene);
-  const [toolsTab, setToolsTab] = useState("staff");
+  const [toolsTab, setToolsTab] = useState("dashboard");
   const [adminTab, setAdminTab] = useState("overview");
   const [trackOrderId, setTrackOrderId] = useState(() => new URLSearchParams(window.location.search).get("trackorder"));
   const [adminSession, setAdmin]    = useState(() => {
@@ -122,7 +122,7 @@ export default function App() {
   if (adminRoutes.includes(scene) && !adminSession) return <AdminLogin onLogin={handleAdminLogin}/>;
 
   if (scene === "admin-login") return <AdminLogin onLogin={handleAdminLogin}/>;
-  if (scene === "home") return <AdminHome adminSession={adminSession} onLogout={handleAdminLogout} onExit={go("kiosk")} onNav={(s, arg) => { if (s === "tools") { setToolsTab(arg || "staff"); setScene("tools"); } else if (s === "admin") { setAdminTab(arg || "overview"); setScene("admin"); } else setScene(s); }} />;
+  if (scene === "home") return <AdminHome adminSession={adminSession} onLogout={handleAdminLogout} onExit={go("kiosk")} onNav={(s, arg) => { if (s === "tools") { setToolsTab(arg || "dashboard"); setScene("tools"); } else if (s === "admin") { setAdminTab(arg || "overview"); setScene("admin"); } else setScene(s); }} />;
   if (scene === "tools") return <AdminTools onBack={() => { setScene("home"); }} initialTab={toolsTab} />;
   if (scene === "command") return <CommandCenter />;
   if (scene === "flow") return <FlowApp />;
