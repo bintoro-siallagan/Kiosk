@@ -62,7 +62,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
   const [lastRefresh, setLastRefresh] = useState(Date.now());
   const [data, setData] = useState({
     finance: null, refundCancel: null, kds: null, aggregator: null,
-    loyalty: null, employees: null, financeTender: null, financeTopItems: null
+    loyalty: null, employees: null, financeTender: null, financeTopItems: null, cashFlow: null
   });
   const [loading, setLoading] = useState(true);
   const fetchControllerRef = useRef(null);
@@ -86,7 +86,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
       const [
         financeDash, financeTrend, financeChannels,
         rc, kdsStats, aggregatorRecon,
-        loyalty, hrEmployees, financeTender, financeTopItems
+        loyalty, staff, financeTender, financeTopItems, cashFlow
       ] = await Promise.all([
         safeJson(`/api/finance/dashboard?from=${range.from}&to=${range.to}`),
         safeJson(`/api/finance/revenue-trend?days=30`),
@@ -96,9 +96,10 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
         safeJson(`/api/aggregator/reconcile?from=${range.from}&to=${range.to}`),
         // Try /stats first (existing backend), fallback to /summary
         safeJson(`/api/loyalty/stats`).then(r => r || safeJson(`/api/loyalty/summary`)),
-        safeJson(`/api/hr/employees`),
+        safeJson(`/api/staff`),
         safeJson(`/api/finance/by-tender?from=${range.from}&to=${range.to}`),
-        safeJson(`/api/finance/top-items?from=${range.from}&to=${range.to}&limit=8`)
+        safeJson(`/api/finance/top-items?from=${range.from}&to=${range.to}&limit=8`),
+        safeJson(`/api/cash-flow`)
       ]);
 
       // /api/loyalty/stats uses {tier_distribution:[{tier,count}], outstanding_points};
@@ -109,7 +110,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
         current_outstanding: loyalty.current_outstanding ?? loyalty.outstanding_points ?? 0,
       } : loyalty;
 
-      setData({ finance: financeDash, financeTrend, financeChannels, refundCancel: rc, kds: kdsStats, aggregator: aggregatorRecon, loyalty: loyaltyNorm, employees: hrEmployees, financeTender, financeTopItems });
+      setData({ finance: financeDash, financeTrend, financeChannels, refundCancel: rc, kds: kdsStats, aggregator: aggregatorRecon, loyalty: loyaltyNorm, employees: staff, financeTender, financeTopItems, cashFlow });
       setLastRefresh(Date.now());
     } catch (e) { console.warn('[dashboard] fetch error:', e.message); }
     setLoading(false);
@@ -145,7 +146,10 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
     const avgTicket = num(bucket.revenue?.avg_order_value) || (orders > 0 ? rev / orders : 0);
     const cogs = num(bucket.cogs?.total ?? f.cogs);
     const grossMargin = num(bucket.margins?.gross_margin_pct) || (rev > 0 ? ((rev - cogs) / rev) * 100 : 0);
-    const cashPosition = num(f.cash_position?.total) || num(f.cash_drawer) + num(f.bank_balance);
+    // Cash Position = closing cash from the cash-flow statement (/api/cash-flow);
+    // it's a point-in-time balance so it stays period-independent by design.
+    const cashPosition = num(data.cashFlow?.closing_cash) || num(f.cash_position?.total) || num(f.cash_drawer) + num(f.bank_balance);
+    const cashFlowNet = num(data.cashFlow?.net_change);
     const apOutstanding = num(f.ap_outstanding);
     const anomalyCount = data.refundCancel?.anomaly_count || 0;
 
@@ -153,7 +157,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
       rev: { value: rev, delta: f.revenue?.delta_pct || 0, label: 'Net Revenue', subtext: `${orders} order` },
       avgTicket: { value: avgTicket, delta: f.avg_ticket_delta || 0, label: 'Avg Ticket', subtext: `dari ${orders} order` },
       grossMargin: { value: grossMargin, delta: f.gross_margin_delta || 0, label: 'Gross Margin', subtext: `COGS ${fmtIDRcompact(cogs)}`, isPercent: true },
-      cash: { value: cashPosition, label: 'Cash Position', subtext: `AP outstanding ${fmtIDRcompact(apOutstanding)}` },
+      cash: { value: cashPosition, label: 'Cash Position', subtext: data.cashFlow ? `arus kas ${cashFlowNet >= 0 ? '+' : ''}${fmtIDRcompact(cashFlowNet)} · ${data.cashFlow.period || 'bln ini'}` : `AP outstanding ${fmtIDRcompact(apOutstanding)}` },
       anomaly: { value: anomalyCount, label: 'Anomali', subtext: anomalyCount > 0 ? 'butuh review' : 'all clear', isCount: true, isAlert: anomalyCount > 0 }
     };
   }, [data, financeBucket]);
@@ -302,8 +306,8 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
           color="#3b82f6" />
         <MiniPanel
           title="Karyawan Aktif"
-          value={data.employees?.length || 0}
-          sub="full-time + part-time"
+          value={(data.employees || []).filter(e => e.is_active !== 0 && e.active !== 0).length}
+          sub={`${(data.employees || []).length} staff terdaftar`}
           icon="👥"
           color="#a78bfa"
           onClick={() => onNavigate?.('hr')} />
