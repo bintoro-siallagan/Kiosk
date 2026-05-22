@@ -613,7 +613,6 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
             </div>
           )}
           <div style={{display:"flex",gap:6}}>
-            <button style={{...D.exitBtn,flex:1}} onClick={onExit}>← Home</button>
             {onLogout && <button style={{...D.exitBtn,flex:1,color:"#F87171",borderColor:"#F8717133"}} onClick={onLogout}>Logout</button>}
           </div>
         </div>

@@ -155,7 +155,6 @@ export default function ShiftManager({ onBack }) {
 
       <div style={S.header}>
         <div style={{display:"flex",alignItems:"center",gap:16}}>
-          <button style={S.backBtn} onClick={onBack}>← Kembali</button>
           <div>
             <div style={S.title}>⚙️ OPERASIONAL</div>
             <div style={S.sub}>Shift · Meja · User Admin</div>

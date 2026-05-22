@@ -114,7 +114,6 @@ export default function MemberList({ onBack }) {
       {/* HEADER */}
       <div style={M.header}>
         <div style={M.hLeft}>
-          <button style={M.backBtn} onClick={onBack}>← Kembali</button>
           <div>
             <div style={M.title}>👥 MEMBER & CUSTOMER</div>
             <div style={M.sub}>Database pelanggan kiosk BINTORO</div>

@@ -121,7 +121,6 @@ export default function ESBNotif({ onBack }) {
       {/* HEADER */}
       <div style={N.header}>
         <div style={N.hLeft}>
-          <button style={N.backBtn} onClick={onBack}>← Kembali</button>
           <div>
             <div style={N.title}>🔔 ESB POS — PUSH NOTIFIKASI</div>
             <div style={N.sub}>Setiap transaksi kiosk otomatis dikirim ke ESB POS</div>

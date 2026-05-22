@@ -367,7 +367,6 @@ export default function AdminTools({ onBack, initialTab }) {
             <div style={S.sub}>Staff · Gudang · Waste · Config · Audit</div>
           </div>
         </div>
-        <button onClick={onBack} style={S.btn()}>← Kembali</button>
       </div>
 
       <div style={S.main}>
