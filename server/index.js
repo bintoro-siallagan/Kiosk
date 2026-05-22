@@ -1970,9 +1970,11 @@ app.post("/api/payment/qris", async (req, res) => {
     if (itemsTotal !== grossAmount && mappedItems.length > 0) {
       const diff = grossAmount - itemsTotal;
       if (diff !== 0) {
+        // Keep diff's sign — Midtrans needs sum(item_details) === gross_amount,
+        // so a discount must be a negative-price line (not Math.abs).
         validItems.push({
-          id: "tax-fee",
-          price: Math.abs(diff),
+          id: diff > 0 ? "tax-fee" : "discount",
+          price: diff,
           quantity: 1,
           name: diff > 0 ? "Pajak & Biaya" : "Diskon",
         });
