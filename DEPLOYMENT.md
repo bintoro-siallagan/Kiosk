@@ -39,7 +39,7 @@ Internet
 | CPU | 2 vCPU | 2–4 vCPU |
 | RAM | 2 GB | 4 GB |
 | Disk | 30 GB SSD | 80 GB SSD |
-| OS | Ubuntu 22.04 LTS | Ubuntu 22.04 LTS |
+| OS | Ubuntu 22.04 LTS | Ubuntu 24.04 LTS |
 
 Provider: DigitalOcean / Vultr / Hostinger / IDCloudHost (~Rp 80–200rb/bln).
 
