@@ -215,8 +215,8 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
             return maxRedeem > 0 ? (
               <div style={C.redeemBox}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                  <span style={{fontSize:12,color:"#FB923C",letterSpacing:1}}>🎁 TUKAR POIN (opsional)</span>
-                  <span style={{fontSize:11,color:"#666"}}>{loyalty.points} pt tersedia</span>
+                  <span style={{fontSize:14,fontWeight:800,color:"#FB923C",letterSpacing:0.5}}>🎁 Tukar Poin jadi Diskon</span>
+                  <span style={{fontSize:12,fontWeight:700,color:"#FB923C",background:"rgba(251,146,60,0.15)",borderRadius:8,padding:"3px 9px"}}>{loyalty.points} poin</span>
                 </div>
                 <input type="range" min={0} max={maxRedeem} step={loyalty.redeemRate}
                   value={redeemPoints} onChange={e => setRedeemPoints(+e.target.value)}
@@ -286,7 +286,7 @@ const C = {
   visits:     {fontFamily:"'Montserrat',sans-serif",fontSize:28,color:"#F59E0B",lineHeight:1},
   tag:        {fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20,letterSpacing:0.5},
   bigBtn:     {background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:14,padding:"18px",color:"#050810",fontSize:16,fontWeight:700,letterSpacing:1,fontFamily:"'Montserrat',sans-serif",display:"flex",alignItems:"center",justifyContent:"center",gap:8,transition:"opacity 0.15s"},
-  redeemBox: {width:"100%",marginTop:16,padding:"14px 16px",background:"#0d1117",border:"1px solid rgba(251,146,60,0.2)",borderRadius:14},
+  redeemBox: {width:"100%",marginTop:16,padding:"16px",background:"linear-gradient(180deg,rgba(251,146,60,0.12),rgba(13,17,23,0.55))",border:"1.5px solid rgba(251,146,60,0.55)",borderRadius:14,boxShadow:"0 0 24px rgba(251,146,60,0.16)"},
   slider:    {width:"100%",accentColor:"#FB923C",height:6,cursor:"pointer"},
   ghostBtn:   {background:"#0d1117",border:"1px solid #21262d",borderRadius:14,padding:"16px 20px",color:"#666",fontSize:13,fontWeight:600},
   backLink:   {background:"transparent",border:"none",color:"#444",fontSize:12,marginTop:12,letterSpacing:1,textDecoration:"underline"},
