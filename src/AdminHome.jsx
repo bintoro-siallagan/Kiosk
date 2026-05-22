@@ -80,7 +80,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
   const [railOpen, setRailOpen] = useState(false);
   const [viewRole, setViewRole] = useState("super-admin");
   const [rbacMap, setRbacMap] = useState(null);
-  const openRight = (kind, arg) => { setRightView(kind); setRightArg(arg || null); setRailOpen(false); };
+  const openRight = (kind, arg) => { setRightView(kind); setRightArg(arg || null); setRailOpen(false); window.scrollTo(0, 0); };
   const closeRight = () => { setRightView("home"); setRightArg(null); };
 
   useEffect(() => {
