@@ -23,6 +23,15 @@ export default function OrderTracking({ onHome }) {
   const [lastPoll, setPoll]   = useState(Date.now());
   const pollerRef = useRef();
 
+  // Full-screen page — escape the 1126px #root width cap (index.css).
+  useEffect(() => {
+    const root = document.getElementById("root");
+    if (!root) return;
+    const pw = root.style.width, pm = root.style.maxWidth;
+    root.style.width = "100%"; root.style.maxWidth = "none";
+    return () => { root.style.width = pw; root.style.maxWidth = pm; };
+  }, []);
+
   useEffect(() => {
     if (urlOrderId) fetchOrder(urlOrderId);
     return () => clearInterval(pollerRef.current);

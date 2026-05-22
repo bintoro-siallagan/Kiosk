@@ -242,6 +242,15 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
   const [promoTeaserShown, setPromoTeaserShown] = useState(false);
   const [tableInfo,  setTableInfo]  = useState(tableInfoProp || null);
   useEffect(() => { if (tableInfoProp) setTableInfo(tableInfoProp); }, [tableInfoProp]);
+
+  // Full-screen kiosk — escape the 1126px #root width cap (index.css).
+  useEffect(() => {
+    const root = document.getElementById("root");
+    if (!root) return;
+    const pw = root.style.width, pm = root.style.maxWidth;
+    root.style.width = "100%"; root.style.maxWidth = "none";
+    return () => { root.style.width = pw; root.style.maxWidth = pm; };
+  }, []);
   const [showStaffCall, setStaffCall] = useState(false);
   const [callReason, setCallReason] = useState("");
   const [callSent,   setCallSent]   = useState(false);

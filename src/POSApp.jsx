@@ -89,6 +89,15 @@ export default function POSApp() {
   const [checklist, setChecklist] = useState(null);          // null = belum ke-load
   const [closingChecklist, setClosingChecklist] = useState(false);
 
+  // Full-screen POS terminal — escape the 1126px #root width cap (index.css).
+  useEffect(() => {
+    const root = document.getElementById("root");
+    if (!root) return;
+    const pw = root.style.width, pm = root.style.maxWidth;
+    root.style.width = "100%"; root.style.maxWidth = "none";
+    return () => { root.style.width = pw; root.style.maxWidth = pm; };
+  }, []);
+
   // Status checklist opening/closing hari ini
   const reloadChecklist = useCallback(() => {
     fetch(`${API_HOST}/api/checklist/status`)

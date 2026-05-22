@@ -88,6 +88,20 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     return () => clearInterval(t);
   }, []);
 
+  // Render the admin dashboard at natural scale, full width — opt out of the
+  // global auto-zoom (auto-zoom.css) and the 1126px #root cap so it auto-sizes.
+  useEffect(() => {
+    const html = document.documentElement;
+    const root = document.getElementById("root");
+    const pz = html.style.zoom, pw = root && root.style.width, pm = root && root.style.maxWidth;
+    html.style.zoom = "1";
+    if (root) { root.style.width = "100%"; root.style.maxWidth = "none"; }
+    return () => {
+      html.style.zoom = pz;
+      if (root) { root.style.width = pw || ""; root.style.maxWidth = pm || ""; }
+    };
+  }, []);
+
   useEffect(() => {
     const loadOrders = () => fetch(`${API}/api/orders`).then(r => r.json()).then(o => {
       const arr = Array.isArray(o) ? o : [];
