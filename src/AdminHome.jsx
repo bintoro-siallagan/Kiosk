@@ -127,6 +127,9 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
       { label: "POS Kasir", icon: "🧾", c: "#10b981", on: () => openTab("?pos=1") },
       { label: "KDS Dapur", icon: "👨‍🍳", c: "#f97316", on: () => openTab("?kds=1") },
       { label: "CDS Display", icon: "📺", c: "#a855f7", on: () => openTab("?cds=1") },
+      { label: "Kiosk", icon: "🖥️", c: "#06b6d4", on: () => openTab("?kiosk=1") },
+      { label: "Tracking", icon: "📍", c: "#f59e0b", on: () => openTab("?track=1") },
+      { label: "QR Barcode", icon: "🔳", c: "#8b5cf6", on: () => openRight("admin", "qrgen") },
     ] },
     { title: "Manajemen & Data", accent: "#3b82f6", items: [
       { label: "Member & Customer", icon: "👥", c: "#3b82f6", on: () => openRight("members") },
