@@ -46,6 +46,16 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
   const wsRef = useRef(null);
   const audioCtx = useRef(null);
 
+  // KDS is a full-screen kitchen display — escape the 1126px #root width cap
+  // (index.css) so it uses the whole monitor.
+  useEffect(() => {
+    const root = document.getElementById("root");
+    if (!root) return;
+    const pw = root.style.width, pm = root.style.maxWidth;
+    root.style.width = "100%"; root.style.maxWidth = "none";
+    return () => { root.style.width = pw; root.style.maxWidth = pm; };
+  }, []);
+
   // Clock tick — refresh display every second for live elapsed time
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);
