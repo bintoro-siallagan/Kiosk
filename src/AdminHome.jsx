@@ -12,6 +12,7 @@ import ESBNotif from "./ESBNotif.jsx";
 import MemberList from "./MemberList.jsx";
 import PromoManager from "./PromoManager.jsx";
 import ShiftManager from "./ShiftManager.jsx";
+import { TABS, GROUPS } from "./adminModules.js";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
@@ -26,6 +27,30 @@ const QUEUE = [
 ];
 const PERIODS = [{ k: "today", l: "Hari Ini", d: 1 }, { k: "7d", l: "7 Hari", d: 7 }, { k: "30d", l: "30 Hari", d: 30 }];
 
+// Recursive rail menu node — supports nested groups (Tools → category → module).
+function RailNode({ node, depth, open, onToggle }) {
+  const k = node._k || node.label;
+  const hasSub = !!(node.sub && node.sub.length);
+  const isOpen = open.has(k);
+  return (
+    <div>
+      <button className="tile" style={{ ...S.rowTile, paddingLeft: 12 + depth * 14 }}
+        onClick={() => hasSub ? onToggle(k) : (node.on && node.on())}>
+        {depth === 0 && node.icon ? (
+          <div style={{ ...S.chip, width: 30, height: 30, fontSize: 14, background: `${node.c}1a`, color: node.c, border: `1px solid ${node.c}33` }}>{node.icon}</div>
+        ) : null}
+        <span style={{ fontSize: depth === 0 ? 12.5 : 11.5, fontWeight: depth === 0 ? 700 : 600, color: depth === 0 ? "#e6edf3" : "#c3c4c9", flex: 1, textAlign: "left" }}>{node.label}</span>
+        <span style={{ color: "#5b6470", fontSize: 12 }}>{hasSub ? (isOpen ? "▾" : "▸") : "→"}</span>
+      </button>
+      {hasSub && isOpen ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
+          {node.sub.map(c => <RailNode key={c._k || c.label} node={c} depth={depth + 1} open={open} onToggle={onToggle} />)}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   const [now, setNow] = useState(new Date());
   const [orders, setOrders] = useState([]);
@@ -34,7 +59,8 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   const [outlets, setOutlets] = useState([]);
   const [period, setPeriod] = useState("today");
   const [health, setHealth] = useState(null);
-  const [openSub, setOpenSub] = useState(null);
+  const [openNodes, setOpenNodes] = useState(() => new Set());
+  const toggleNode = (k) => setOpenNodes(p => { const n = new Set(p); n.has(k) ? n.delete(k) : n.add(k); return n; });
   const [rightView, setRightView] = useState("home");
   const [rightArg, setRightArg] = useState(null);
   const openRight = (kind, arg) => { setRightView(kind); setRightArg(arg || null); };
@@ -115,6 +141,13 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
     { label: "Alert Aktif", val: String(notifs.length), c: crit > 0 ? "#ef4444" : "#f59e0b", icon: "🔔", sub: crit ? `${crit} perlu tindakan` : "semua aman" },
     { label: "System Health", val: health == null ? "…" : health + " / 100", c: health >= 75 ? "#10b981" : health >= 50 ? "#f59e0b" : "#ef4444", icon: "🔎", sub: "self-audit score" },
   ];
+  const toolsSub = GROUPS.map(g => ({
+    _k: "g:" + g.name, label: `${g.icon} ${g.name}`,
+    sub: g.ids.map(id => {
+      const t = TABS.find(x => x.id === id);
+      return { _k: "m:" + id, label: t ? t.label : id, on: () => openRight("tools", id) };
+    }),
+  }));
   const columns = [
     { title: "Outlet", accent: "#22d3ee", items: [
       { label: "Pesanan / Transaksi", icon: "🧾", c: "#10b981", on: () => openRight("admin", "orders") },
@@ -137,17 +170,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
       { label: "Laporan", icon: "📊", c: "#10b981", on: () => openRight("report") },
       { label: "ESB Sync", icon: "🔗", c: "#22d3ee", on: () => openRight("esb-sync") },
       { label: "Push Notif", icon: "🔔", c: "#a855f7", on: () => openRight("esb-notif") },
-      { label: "Tools", icon: "🛠️", c: "#f59e0b", sub: [
-        { label: "📊 Dashboard", on: () => openRight("tools", "dashboard") },
-        { label: "🛰️ Operasi & Outlet", on: () => openRight("tools", "outlet_master") },
-        { label: "📦 Product", on: () => openRight("tools", "master_category") },
-        { label: "🚚 Inventory & Procurement", on: () => openRight("tools", "stock_list") },
-        { label: "🛒 Commerce", on: () => openRight("tools", "master") },
-        { label: "💰 Finance", on: () => openRight("tools", "coa") },
-        { label: "👥 HRIS & Reward", on: () => openRight("tools", "hris") },
-        { label: "🎯 Customer & Marketing", on: () => openRight("tools", "customer_intel") },
-        { label: "🔐 Security & Admin", on: () => openRight("tools", "rbac") },
-      ] },
+      { label: "Tools", icon: "🛠️", c: "#f59e0b", sub: toolsSub },
       { label: "Management", icon: "📊", c: "#3b82f6", on: () => openRight("command") },
     ] },
   ];
@@ -211,30 +234,8 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
             <div key={col.title}>
               <Section label={col.title.toUpperCase()} accent={col.accent} mt={ci === 0 ? 0 : 14} />
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {col.items.map(t => t.sub ? (
-                  <div key={t.label}>
-                    <button className="tile" style={S.rowTile} onClick={() => setOpenSub(openSub === t.label ? null : t.label)}>
-                      <div style={{ ...S.chip, width: 30, height: 30, fontSize: 14, background: `${t.c}1a`, color: t.c, border: `1px solid ${t.c}33` }}>{t.icon}</div>
-                      <span style={{ fontSize: 12.5, fontWeight: 700, color: "#e6edf3", flex: 1, textAlign: "left" }}>{t.label}</span>
-                      <span style={{ color: "#5b6470", fontSize: 11 }}>{openSub === t.label ? "▾" : "▸"}</span>
-                    </button>
-                    {openSub === t.label && (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 4, margin: "4px 0 2px 14px", borderLeft: `1px solid ${t.c}33`, paddingLeft: 8 }}>
-                        {t.sub.map(s => (
-                          <button key={s.label} className="tile" style={{ ...S.rowTile, padding: "6px 10px" }} onClick={s.on}>
-                            <span style={{ fontSize: 11.5, fontWeight: 600, color: "#cdd5df", flex: 1, textAlign: "left" }}>{s.label}</span>
-                            <span style={{ color: "#5b6470", fontSize: 12 }}>→</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <button key={t.label} className="tile" style={S.rowTile} onClick={t.on}>
-                    <div style={{ ...S.chip, width: 30, height: 30, fontSize: 14, background: `${t.c}1a`, color: t.c, border: `1px solid ${t.c}33` }}>{t.icon}</div>
-                    <span style={{ fontSize: 12.5, fontWeight: 700, color: "#e6edf3", flex: 1, textAlign: "left" }}>{t.label}</span>
-                    <span style={{ color: "#5b6470", fontSize: 13 }}>→</span>
-                  </button>
+                {col.items.map(t => (
+                  <RailNode key={t._k || t.label} node={t} depth={0} open={openNodes} onToggle={toggleNode} />
                 ))}
               </div>
             </div>
