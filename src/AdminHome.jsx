@@ -28,6 +28,14 @@ const QUEUE = [
 const PERIODS = [{ k: "today", l: "Hari Ini", d: 1 }, { k: "7d", l: "7 Hari", d: 7 }, { k: "30d", l: "30 Hari", d: 30 }];
 
 // Recursive rail menu node — supports nested groups (Tools → category → module).
+const ADMIN_ROLES = [
+  { id: "super-admin", label: "👑 Super Admin" }, { id: "owner", label: "💼 Owner / Director" },
+  { id: "area-manager", label: "🗺️ Area Manager" }, { id: "outlet-manager", label: "🏪 Outlet Manager" },
+  { id: "finance", label: "💰 Finance Staff" }, { id: "warehouse", label: "📦 Warehouse Staff" },
+  { id: "marketing", label: "🎯 Marketing Team" }, { id: "hr", label: "👥 HR Staff" },
+  { id: "cashier", label: "🧑‍💼 Cashier / Crew" }, { id: "auditor", label: "🔍 Auditor" },
+];
+
 function RailNode({ node, depth, open, onToggle }) {
   const [q, setQ] = useState("");
   const k = node._k || node.label;
@@ -69,7 +77,10 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
   const toggleNode = (k) => setOpenNodes(p => { const n = new Set(p); n.has(k) ? n.delete(k) : n.add(k); return n; });
   const [rightView, setRightView] = useState(initialView || "home");
   const [rightArg, setRightArg] = useState(null);
-  const openRight = (kind, arg) => { setRightView(kind); setRightArg(arg || null); };
+  const [railOpen, setRailOpen] = useState(false);
+  const [viewRole, setViewRole] = useState("super-admin");
+  const [rbacMap, setRbacMap] = useState(null);
+  const openRight = (kind, arg) => { setRightView(kind); setRightArg(arg || null); setRailOpen(false); };
   const closeRight = () => { setRightView("home"); setRightArg(null); };
 
   useEffect(() => {
@@ -95,7 +106,18 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
 
   const hour = now.getHours();
   const greet = hour < 11 ? "Selamat pagi" : hour < 15 ? "Selamat siang" : hour < 19 ? "Selamat sore" : "Selamat malam";
-  const openTab = (q) => window.open(window.location.pathname + q, "_blank");
+  const openTab = (q) => { window.open(window.location.pathname + q, "_blank"); setRailOpen(false); };
+
+  // FlowOS Stage 1 — role-customizable view: rail Tools modules filter by RBAC role.
+  useEffect(() => {
+    fetch(`${API}/api/rbac`).then(r => r.json()).then(j => {
+      const m = {};
+      for (const p of (j.permissions || [])) { (m[p.role_id] = m[p.role_id] || {})[p.module_id] = p.level; }
+      setRbacMap(m);
+    }).catch(() => {});
+  }, []);
+  const moduleOf = (id) => { const g = GROUPS.find(x => x.ids.includes(id)); return g ? g.module : "pos"; };
+  const canSee = (mod) => !rbacMap || !rbacMap[viewRole] || (rbacMap[viewRole][mod] && rbacMap[viewRole][mod] !== "none");
 
   // ── period KPI + tren ──
   const winDays = PERIODS.find(p => p.k === period).d;
@@ -147,7 +169,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     { label: "Alert Aktif", val: String(notifs.length), c: crit > 0 ? "#ef4444" : "#f59e0b", icon: "🔔", sub: crit ? `${crit} perlu tindakan` : "semua aman" },
     { label: "System Health", val: health == null ? "…" : health + " / 100", c: health >= 75 ? "#10b981" : health >= 50 ? "#f59e0b" : "#ef4444", icon: "🔎", sub: "self-audit score" },
   ];
-  const toolsSub = GROUPS.map(g => ({
+  const toolsSub = GROUPS.filter(g => canSee(g.module)).map(g => ({
     _k: "g:" + g.name, label: `${g.icon} ${g.name}`,
     sub: g.ids.map(id => {
       const t = TABS.find(x => x.id === id);
@@ -180,7 +202,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "Push Notif", icon: "🔔", c: "#a855f7", on: () => openRight("esb-notif") },
       { label: "Tools", icon: "🛠️", c: "#f59e0b", searchable: true,
         getSub: (q) => q.trim()
-          ? TABS.filter(t => t.label.toLowerCase().includes(q.trim().toLowerCase()))
+          ? TABS.filter(t => t.label.toLowerCase().includes(q.trim().toLowerCase()) && canSee(moduleOf(t.id)))
               .map(t => ({ _k: "m:" + t.id, label: t.label, on: () => openRight("tools", t.id) }))
           : toolsSub },
       { label: "Management", icon: "📊", c: "#3b82f6", on: () => openRight("command") },
@@ -208,6 +230,8 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       {/* Topbar */}
       <div style={S.topbar} className="no-print">
         <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
+          <button className="ah-hamburger" onClick={() => setRailOpen(o => !o)} title="Menu" aria-label="Menu"
+            style={{ background: "#161619", border: "1px solid #2a2b30", borderRadius: 8, color: "#e6edf3", fontSize: 17, lineHeight: 1, padding: "6px 11px", cursor: "pointer", fontFamily: "inherit" }}>☰</button>
           <div style={S.logo}>k</div>
           <div>
             <div style={S.brand}>karya<span style={{ color: "#f59e0b" }}>OS</span></div>
@@ -238,10 +262,15 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       </div>
 
       {/* Body — 2 bagian */}
-      <div style={S.body}>
+      <div style={S.body} className="ah-body">
 
         {/* KIRI: panel modul */}
-        <aside style={S.left} className="no-print">
+        <div className="ah-backdrop no-print" data-open={railOpen} onClick={() => setRailOpen(false)} />
+        <aside style={S.left} className={`ah-rail no-print${railOpen ? " ah-rail-open" : ""}`}>
+          <select value={viewRole} onChange={e => setViewRole(e.target.value)} title="Tampilkan modul sesuai role"
+            style={{ width: "100%", background: "#0e0e11", border: "1px solid #2a2b30", borderRadius: 8, padding: "8px 10px", color: "#c9a8ff", fontSize: 12, fontWeight: 700, fontFamily: "inherit", boxSizing: "border-box", marginBottom: 10, outline: "none", cursor: "pointer" }}>
+            {ADMIN_ROLES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
+          </select>
           {columns.map((col, ci) => (
             <div key={col.title}>
               <Section label={col.title.toUpperCase()} accent={col.accent} mt={ci === 0 ? 0 : 14} />
@@ -465,6 +494,25 @@ const CSS = `
 ::-webkit-scrollbar-track { background:transparent }
 @keyframes lp { 0%,100%{opacity:1} 50%{opacity:.3} }
 .livedot { animation: lp 1.6s infinite; }
+.ah-hamburger { display: none; }
+.ah-backdrop { display: none; }
+@media (max-width: 768px) {
+  .ah-hamburger { display: inline-flex !important; align-items: center; }
+  .ah-body { grid-template-columns: 1fr !important; }
+  .ah-rail {
+    position: fixed !important; left: 0; top: 0; bottom: 0;
+    width: 264px; z-index: 10001; background: #08090a;
+    padding: 14px 14px 24px; overflow-y: auto;
+    transform: translateX(-100%); transition: transform .22s ease;
+    box-shadow: 2px 0 28px rgba(0,0,0,.7);
+  }
+  .ah-rail.ah-rail-open { transform: translateX(0); }
+  .ah-backdrop[data-open="true"] {
+    display: block !important; position: fixed; inset: 0;
+    background: rgba(0,0,0,.55); z-index: 10000;
+  }
+}
+@media print { .ah-hamburger, .ah-backdrop { display: none !important; } }
 `;
 
 // Premium dark — Linear/Vercel: flat near-black, hairline borders,
