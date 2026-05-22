@@ -25,11 +25,11 @@ import { MenuProvider } from "./MenuContext.jsx";
 const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 function getScene() {
   const q = window.location.search;
-  if (new URLSearchParams(q).get("command")) return "command";
+  if (new URLSearchParams(q).has("command")) return "command";
   if (q.includes("cinema")) return "cinema";
   if (q.includes("tools")) return "tools";
   if (q.includes("home")) return "home";
-  if (new URLSearchParams(q).get("flow")) return "flow";
+  if (new URLSearchParams(q).has("flow")) return "flow";
   if (new URLSearchParams(q).get("trackorder")) return "customer-track";
   if (q.includes("track"))     return "track";
   if (q.includes("admin"))     return "admin-login";
