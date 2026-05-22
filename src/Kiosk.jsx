@@ -513,6 +513,10 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           )}
         </button>
 
+        <div style={{fontSize:12,color:"#FB923C",margin:"-4px 0 14px",display:"flex",alignItems:"center",gap:7,background:"rgba(251,146,60,0.08)",border:"1px solid rgba(251,146,60,0.25)",borderRadius:10,padding:"9px 12px"}}>
+          🎁 <span><b>Punya poin?</b> Bisa ditukar jadi diskon di langkah berikutnya — masukkan nomor HP member-mu.</span>
+        </div>
+
         <div style={K.billBox}>
           <div style={K.billRow}><span style={K.billLabel}>Subtotal</span><span>{fIDR(subtotal)}</span></div>
           {promo && (
