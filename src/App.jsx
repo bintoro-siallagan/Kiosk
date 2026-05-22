@@ -11,21 +11,11 @@ import TableSelector from "./TableSelector.jsx";
 import CustomerInput from "./CustomerInput.jsx";
 import Payment       from "./Payment.jsx";
 import DigitalReceipt from "./DigitalReceipt.jsx";
-import CommandCenter from "./CommandCenter.jsx";
-import AdminTools from "./AdminTools.jsx";
-import AdminHome from "./AdminHome.jsx";
-
-import Admin         from "./Admin.jsx";
-import Report        from "./Report.jsx";
-import ESBSync       from "./ESBSync.jsx";
-import ESBNotif      from "./ESBNotif.jsx";
+import AdminShell    from "./AdminShell.jsx";
 import OrderTracking from "./OrderTracking.jsx";
-import MemberList    from "./MemberList.jsx";
-import PromoManager  from "./PromoManager.jsx";
 import ShiftGate     from "./ShiftGate.jsx";
 import POSApp        from "./POSApp.jsx";
 import KDS           from "./KDS/KDS.jsx";
-import ShiftManager  from "./ShiftManager.jsx";
 
 import FlowApp from "./Flow/FlowApp.jsx";
 import POSSatisfaction from "./POS/POSSatisfaction.jsx";
@@ -57,8 +47,6 @@ function getScene() {
 
 export default function App() {
   const [scene,        setScene]    = useState(getScene);
-  const [toolsTab, setToolsTab] = useState("dashboard");
-  const [adminTab, setAdminTab] = useState("overview");
   const [trackOrderId, setTrackOrderId] = useState(() => new URLSearchParams(window.location.search).get("trackorder"));
   const [adminSession, setAdmin]    = useState(() => {
     const token = localStorage.getItem("adminToken");
@@ -122,19 +110,10 @@ export default function App() {
   if (adminRoutes.includes(scene) && !adminSession) return <AdminLogin onLogin={handleAdminLogin}/>;
 
   if (scene === "admin-login") return <AdminLogin onLogin={handleAdminLogin}/>;
-  if (scene === "home") return <AdminHome adminSession={adminSession} onLogout={handleAdminLogout} onExit={go("kiosk")} onNav={(s, arg) => { if (s === "tools") { setToolsTab(arg || "dashboard"); setScene("tools"); } else if (s === "admin") { setAdminTab(arg || "overview"); setScene("admin"); } else setScene(s); }} />;
-  if (scene === "tools") return <AdminTools onBack={() => { setScene("home"); }} initialTab={toolsTab} />;
-  if (scene === "command") return <CommandCenter />;
+  if (adminRoutes.includes(scene)) return <AdminShell initialView={scene} adminSession={adminSession} onLogout={handleAdminLogout} onExitKiosk={() => setScene("kiosk")} />;
   if (scene === "flow") return <FlowApp />;
   if (scene === "customer-track") return <><PromoBroadcastBanner/><CustomerTrackingPage orderId={trackOrderId}/></>;
   if (scene === "track")       return <OrderTracking onHome={go("kiosk")}/>;
-  if (scene === "admin")       return <Admin initialTab={adminTab} onExit={go("home")} onReport={go("report")} onESBSync={go("esb-sync")} onESBNotif={go("esb-notif")} onMembers={go("members")} onPromo={go("promo")} onShift={go("shift")} onLogout={handleAdminLogout} adminSession={adminSession} onTools={(tab) => { if (tab === "command") { setScene("command"); } else { setToolsTab(tab); setScene("tools"); } }}/>;
-  if (scene === "report")      return <Report    onBack={go("home")}/>;
-  if (scene === "esb-sync")    return <ESBSync   onBack={go("home")}/>;
-  if (scene === "esb-notif")   return <ESBNotif  onBack={go("home")}/>;
-  if (scene === "members")     return <MemberList onBack={go("home")}/>;
-  if (scene === "promo")       return <PromoManager onBack={go("home")}/>;
-  if (scene === "shift")       return <ShiftManager onBack={go("home")}/>;
 
   if (scene === "table-select" && checkoutData) {
     return (
