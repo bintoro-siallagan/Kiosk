@@ -88,9 +88,11 @@ export default function FlowCheckout({
     ]).then(([promoList, cfg, custList]) => {
       if (Array.isArray(promoList)) setPromos(promoList);
       if (cfg) setLoyaltyCfg({ ...LOYALTY_DEFAULTS, ...cfg });
-      if (Array.isArray(custList) && session?.phone) {
+      // /api/customers returns { total, data: [...] } — not a bare array
+      const custArr = Array.isArray(custList) ? custList : (custList?.data || []);
+      if (session?.phone) {
         const clean = String(session.phone).replace(/\D/g, "");
-        const fresh = custList.find(c => {
+        const fresh = custArr.find(c => {
           const cp = String(c.phone || "").replace(/\D/g, "");
           return cp === clean;
         });

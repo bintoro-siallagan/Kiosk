@@ -44,6 +44,7 @@ export default function FlowRedeem({ session, setPointsToRedeem, setScreen }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [points, setPoints] = useState(session?.points || 0);
+  const [customer, setCustomer] = useState(null);
   const [amount, setAmount] = useState(0);
 
   useEffect(() => {
@@ -57,10 +58,13 @@ export default function FlowRedeem({ session, setPointsToRedeem, setScreen }) {
       }
       // Find latest customer record (might have updated points)
       const sessPhone = session?.phone || session?._phoneLocal;
-      const cust = Array.isArray(custList)
-        ? custList.find(c => matchPhone(c.phone, sessPhone))
-        : null;
-      if (cust && typeof cust.points === "number") setPoints(cust.points);
+      // /api/customers returns { total, data: [...] } — not a bare array
+      const custArr = Array.isArray(custList) ? custList : (custList?.data || []);
+      const cust = custArr.find(c => matchPhone(c.phone, sessPhone));
+      if (cust) {
+        setCustomer(cust);
+        if (typeof cust.points === "number") setPoints(cust.points);
+      }
 
       // Filter orders for this customer
       const mine = (Array.isArray(allOrders) ? allOrders : [])
@@ -90,7 +94,7 @@ export default function FlowRedeem({ session, setPointsToRedeem, setScreen }) {
   }, [points, config]);
 
   // Tier
-  const tags = Array.isArray(session?.tags) ? session.tags : [];
+  const tags = Array.isArray(customer?.tags) ? customer.tags : (Array.isArray(session?.tags) ? session.tags : []);
   const tier = tags.includes("vip") ? "vip" : tags.includes("member") ? "member" : "guest";
   const tierInfo = {
     vip: { label: "🌟 VIP", color: "#FF6B35" },
