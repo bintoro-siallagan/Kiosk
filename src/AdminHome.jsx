@@ -133,7 +133,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
         { label: "🎯 Customer & Marketing", on: () => onNav("tools", "customer_intel") },
         { label: "🔐 Security & Admin", on: () => onNav("tools", "rbac") },
       ] },
-      { label: "Management", icon: "📊", c: "#3b82f6", on: () => openTab("?command=1") },
+      { label: "Management", icon: "📊", c: "#3b82f6", on: () => onNav("command") },
     ] },
   ];
 
