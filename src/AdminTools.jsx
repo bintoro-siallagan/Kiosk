@@ -62,6 +62,7 @@ import EscalationMatrix from "./Admin/EscalationMatrix.jsx";
 import OptimizationCenter from "./Admin/OptimizationCenter.jsx";
 import CinemaOps from "./Admin/CinemaOps.jsx";
 import CinemaTicketing from "./Admin/CinemaTicketing.jsx";
+import CinemaBoxOffice from "./Admin/CinemaBoxOffice.jsx";
 import AdminSignage from "./Admin/AdminSignage.jsx";
 import AdminDemandForecast from "./Admin/AdminDemandForecast.jsx";
 import AdminAssetMaintenance from "./Admin/AdminAssetMaintenance.jsx";
@@ -189,6 +190,7 @@ export default function AdminTools({ initialTab }) {
         {tab === "optimization" && <OptimizationCenter apiBase={API} />}
         {tab === "cinema_ops" && <CinemaOps apiBase={API} />}
         {tab === "cinema_ticketing" && <CinemaTicketing apiBase={API} />}
+        {tab === "cinema_box_office" && <CinemaBoxOffice apiBase={API} />}
         {tab === "simple_purchase" && <AdminSimplePurchase apiBase={API} />}
         {tab === "petty_cash" && <AdminPettyCash apiBase={API} />}
         {tab === "purchase_invoice" && <AdminPurchaseInvoice apiBase={API} />}
