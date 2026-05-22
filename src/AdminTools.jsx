@@ -101,7 +101,6 @@ import AdminReconciliation from "./Admin/AdminReconciliation.jsx";
 import AdminReleasePayment from "./Admin/AdminReleasePayment.jsx";
 import AdminPeriodClosing from "./Admin/AdminPeriodClosing.jsx";
 import OwnerDashboard from "./Admin/OwnerDashboard.jsx";
-import { TABS, GROUPS } from "./adminModules.js";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -171,115 +170,18 @@ const S = {
   hamburger: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 8, color: "#e6edf3", fontSize: 17, lineHeight: 1, padding: "7px 11px", cursor: "pointer", fontFamily: "inherit" },
 };
 
-// Responsive shell — the 236px sidebar becomes an off-canvas drawer on phones.
-const adminToolsCss = `
-.at-hamburger { display: none; }
-.at-backdrop { display: none; }
-@media (max-width: 768px) {
-  .at-hamburger { display: inline-flex !important; align-items: center; }
-  .at-sidebar {
-    position: fixed !important; left: 0; top: 0; bottom: 0;
-    width: 264px !important; z-index: 10001;
-    transform: translateX(-100%); transition: transform .22s ease;
-    box-shadow: 2px 0 28px rgba(0,0,0,.65);
-  }
-  .at-sidebar.at-sidebar-open { transform: translateX(0); }
-  .at-backdrop[data-open="true"] {
-    display: block !important; position: fixed; inset: 0;
-    background: rgba(0,0,0,.55); z-index: 10000;
-  }
-}
-@media print { .at-hamburger, .at-backdrop { display: none !important; } }
-`;
-
-export default function AdminTools({ onBack, initialTab, embedded }) {
+export default function AdminTools({ initialTab }) {
   const [tab, setTab] = useState(initialTab || "dashboard");
   const [toast, setToast] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
-
-  const groupOf = (id) => { const g = GROUPS.find(x => x.ids.includes(id)); return g ? g.name : GROUPS[0].name; };
-  const moduleOf = (id) => { const g = GROUPS.find(x => x.ids.includes(id)); return g ? g.module : "pos"; };
-  const [search, setSearch] = useState("");
-  const [openGroup, setOpenGroup] = useState(() => groupOf(initialTab || "dashboard"));
-
-  // ── Dynamic role-based menu — sidebar nyesuain RBAC role ──
-  const ALL_ROLES = [
-    { id: "super-admin", label: "👑 Super Admin" }, { id: "owner", label: "💼 Owner / Director" },
-    { id: "area-manager", label: "🗺️ Area Manager" }, { id: "outlet-manager", label: "🏪 Outlet Manager" },
-    { id: "finance", label: "💰 Finance Staff" }, { id: "warehouse", label: "📦 Warehouse Staff" },
-    { id: "marketing", label: "🎯 Marketing Team" }, { id: "hr", label: "👥 HR Staff" },
-    { id: "cashier", label: "🧑‍💼 Cashier / Crew" }, { id: "auditor", label: "🔍 Auditor" },
-  ];
-  const [viewRole, setViewRole] = useState("super-admin");
-  const [rbacMap, setRbacMap] = useState(null);
-  useEffect(() => {
-    fetch(`${API}/api/rbac`).then(r => r.json()).then(j => {
-      const m = {};
-      for (const p of (j.permissions || [])) { (m[p.role_id] = m[p.role_id] || {})[p.module_id] = p.level; }
-      setRbacMap(m);
-    }).catch(() => {});
-  }, []);
-  const canSee = (mod) => !rbacMap || !rbacMap[viewRole] || (rbacMap[viewRole][mod] && rbacMap[viewRole][mod] !== "none");
-  const visibleGroups = GROUPS.filter(g => canSee(g.module));
-  // pas ganti role — kalau tab aktif gak boleh dilihat, pindah ke grup pertama yang visible
-  useEffect(() => {
-    if (rbacMap && !canSee(moduleOf(tab)) && visibleGroups[0]) {
-      setTab(visibleGroups[0].ids[0]);
-      setOpenGroup(visibleGroups[0].name);
-    }
-  }, [viewRole, rbacMap]); // eslint-disable-line
-  const navItem = (t) => t ? (
-    <div key={t.id} onClick={() => { setTab(t.id); setOpenGroup(groupOf(t.id)); setSearch(""); setSidebarOpen(false); }}
-      style={S.navItem(tab === t.id, t.color)}>{t.label}</div>
-  ) : null;
 
   return (
     <div style={S.root}>
-      <style>{adminToolsCss}</style>
-      {!embedded && (<div style={S.header} className="no-print">
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button className="at-hamburger" style={S.hamburger}
-            onClick={() => setSidebarOpen(o => !o)} aria-label="Menu" title="Buka menu">☰</button>
-          <div>
-            <div style={S.title}>🛠️ ADMIN TOOLS</div>
-            <div style={S.sub}>Staff · Gudang · Waste · Config · Audit</div>
-          </div>
-        </div>
-      </div>)}
-
       <div style={S.main}>
-        {!embedded && (<>
-        <div className="at-backdrop no-print" data-open={sidebarOpen} onClick={() => setSidebarOpen(false)} />
-        <div style={S.sidebar} className={`at-sidebar no-print${sidebarOpen ? " at-sidebar-open" : ""}`}>
-          <select value={viewRole} onChange={e => setViewRole(e.target.value)} style={S.roleSelect} title="Lihat menu sebagai role">
-            {ALL_ROLES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
-          </select>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Cari menu…" style={S.search} />
-          {search.trim()
-            ? TABS.filter(t => t.label.toLowerCase().includes(search.toLowerCase()) && canSee(moduleOf(t.id))).map(navItem)
-            : visibleGroups.map(g => (
-              <div key={g.name} style={{ marginBottom: 2 }}>
-                <div onClick={() => setOpenGroup(openGroup === g.name ? "" : g.name)} style={S.groupHead(openGroup === g.name)}>
-                  <span>{g.icon} {g.name}</span>
-                  <span style={{ fontSize: 9, color: "#5b6470" }}>{openGroup === g.name ? "▾" : "▸"}</span>
-                </div>
-                {openGroup === g.name && g.ids.map(id => navItem(TABS.find(t => t.id === id)))}
-              </div>
-            ))}
-          {!search.trim() && visibleGroups.length === 0 ? (
-            <div style={{ fontSize: 11, color: "#5b6470", padding: "12px 10px", lineHeight: 1.5 }}>Role ini belum punya akses modul admin.</div>
-          ) : null}
-        </div>
-        </>)}
-
         <div style={S.body}>
         {tab === "dashboard" && <OwnerDashboard apiBase={API} onNavigate={(key) => {
           const navMap = { finance: "finance", gl: "general_ledger", aggregator: "aggregator", payment_gateway: "payment", refund_cancel: "anti_fraud", hr: "hris", loyalty: "loyalty" };
-          const target = navMap[key] || key;
-          setTab(target);
-          setOpenGroup(groupOf(target));
+          setTab(navMap[key] || key);
         }} />}
         {tab === "staff" && <StaffTab showToast={showToast} />}
         {tab === "gudang" && <GudangTab showToast={showToast} />}
