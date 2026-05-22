@@ -25,6 +25,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   const [outlets, setOutlets] = useState([]);
   const [period, setPeriod] = useState("today");
   const [health, setHealth] = useState(null);
+  const [openSub, setOpenSub] = useState(null);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -121,7 +122,17 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
       { label: "Laporan", icon: "📊", c: "#10b981", on: () => onNav("report") },
       { label: "ESB Sync", icon: "🔗", c: "#22d3ee", on: () => onNav("esb-sync") },
       { label: "Push Notif", icon: "🔔", c: "#a855f7", on: () => onNav("esb-notif") },
-      { label: "Tools", icon: "🛠️", c: "#f59e0b", on: () => onNav("tools") },
+      { label: "Tools", icon: "🛠️", c: "#f59e0b", sub: [
+        { label: "📊 Dashboard", on: () => onNav("tools", "dashboard") },
+        { label: "🛰️ Operasi & Outlet", on: () => onNav("tools", "outlet_master") },
+        { label: "📦 Product", on: () => onNav("tools", "master_category") },
+        { label: "🚚 Inventory & Procurement", on: () => onNav("tools", "stock_list") },
+        { label: "🛒 Commerce", on: () => onNav("tools", "master") },
+        { label: "💰 Finance", on: () => onNav("tools", "coa") },
+        { label: "👥 HRIS & Reward", on: () => onNav("tools", "hris") },
+        { label: "🎯 Customer & Marketing", on: () => onNav("tools", "customer_intel") },
+        { label: "🔐 Security & Admin", on: () => onNav("tools", "rbac") },
+      ] },
       { label: "Management", icon: "📊", c: "#3b82f6", on: () => openTab("?command=1") },
     ] },
   ];
@@ -185,7 +196,25 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
             <div key={col.title}>
               <Section label={col.title.toUpperCase()} accent={col.accent} mt={ci === 0 ? 0 : 14} />
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {col.items.map(t => (
+                {col.items.map(t => t.sub ? (
+                  <div key={t.label}>
+                    <button className="tile" style={S.rowTile} onClick={() => setOpenSub(openSub === t.label ? null : t.label)}>
+                      <div style={{ ...S.chip, width: 30, height: 30, fontSize: 14, background: `${t.c}1a`, color: t.c, border: `1px solid ${t.c}33` }}>{t.icon}</div>
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: "#e6edf3", flex: 1, textAlign: "left" }}>{t.label}</span>
+                      <span style={{ color: "#5b6470", fontSize: 11 }}>{openSub === t.label ? "▾" : "▸"}</span>
+                    </button>
+                    {openSub === t.label && (
+                      <div style={{ display: "flex", flexDirection: "column", gap: 4, margin: "4px 0 2px 14px", borderLeft: `1px solid ${t.c}33`, paddingLeft: 8 }}>
+                        {t.sub.map(s => (
+                          <button key={s.label} className="tile" style={{ ...S.rowTile, padding: "6px 10px" }} onClick={s.on}>
+                            <span style={{ fontSize: 11.5, fontWeight: 600, color: "#cdd5df", flex: 1, textAlign: "left" }}>{s.label}</span>
+                            <span style={{ color: "#5b6470", fontSize: 12 }}>→</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
                   <button key={t.label} className="tile" style={S.rowTile} onClick={t.on}>
                     <div style={{ ...S.chip, width: 30, height: 30, fontSize: 14, background: `${t.c}1a`, color: t.c, border: `1px solid ${t.c}33` }}>{t.icon}</div>
                     <span style={{ fontSize: 12.5, fontWeight: 700, color: "#e6edf3", flex: 1, textAlign: "left" }}>{t.label}</span>
