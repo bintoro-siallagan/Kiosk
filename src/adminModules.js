@@ -32,6 +32,7 @@ export const TABS = [
   { id: "outlet_master", label: "🏪 Outlet Master", color: "#15803d" },
   { id: "incidents", label: "🚨 Incident", color: "#dc2626" },
   { id: "escalation", label: "🚨 Escalation Matrix", color: "#ef4444" },
+  { id: "cinema_ops", label: "🎬 Cinema Ops", color: "#a855f7" },
   { id: "signage", label: "📺 Digital Signage", color: "#9333ea" },
   { id: "demand_forecast", label: "📈 Demand Forecast", color: "#0284c7" },
   { id: "asset_maintenance", label: "🔧 Asset & Maintenance", color: "#78716c" },
@@ -117,7 +118,7 @@ export const TABS = [
 // → Finance → HRIS → Customer → Security. Tiap grup urut alur kerja.
 export const GROUPS = [
   { name: "Dashboard", icon: "📊", module: "pos", ids: ["dashboard", "optimization"] },
-  { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["outlet_master", "staff", "checklist", "cashier_kpi", "gudang", "waste", "asset_maintenance", "quality", "incidents", "escalation", "compliance", "document_hub", "notif_center", "config", "audit"] },
+  { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["outlet_master", "staff", "checklist", "cashier_kpi", "gudang", "waste", "asset_maintenance", "quality", "incidents", "escalation", "cinema_ops", "compliance", "document_hub", "notif_center", "config", "audit"] },
   { name: "Product", icon: "📦", module: "config", ids: ["master_category", "master_unit", "item_master", "item_pricing", "item_config", "item_rules", "food_cost", "food_cost_calc", "item_intel", "product_hub", "product_ver"] },
   { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["stock_list", "batch_tracking", "stock_opname", "stock_transfer", "production", "sales_stock_sync", "demand_forecast", "auto_reorder", "supplier_master", "rfq", "price_list", "procurement_plus", "simple_purchase", "petty_cash", "goods_delivery", "goods_received", "purchase_invoice", "purchase_return", "internal_return"] },
   { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "payment", "conv_fee", "aggregator", "loyalty", "broadcast", "sales_pipeline", "b2b_customer", "quotation", "sales_order", "delivery_order", "sales_invoice", "sales_return"] },

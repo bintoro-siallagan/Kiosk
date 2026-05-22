@@ -3695,6 +3695,8 @@ const menuBuilder     = setupMenuBuilder(app,     { dbPath: DB_PATH, mountPath: 
 const procurementGaps = setupProcurementGaps(app, { dbPath: DB_PATH, mountPath: '/api/procurement' });
 const finance         = setupFinance(app,         { dbPath: DB_PATH, mountPath: '/api/finance' });
 setupFinanceDashboard(app, { dbPath: DB_PATH });
+const { setupCinema } = require('./cinema-backend');
+setupCinema(app, { dbPath: DB_PATH });
 const bridge          = setupBridge(app,          { dbPath: DB_PATH, mountPath: '/api/bridge' });
 const notifications   = setupNotifications(app, {
   dbPath: DB_PATH,
