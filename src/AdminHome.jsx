@@ -3,6 +3,7 @@
 // target) · performa outlet · live sales · monitoring · penjualan.
 
 import { useState, useEffect, useCallback } from "react";
+import CommandCenter from "./CommandCenter.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
@@ -26,6 +27,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   const [period, setPeriod] = useState("today");
   const [health, setHealth] = useState(null);
   const [openSub, setOpenSub] = useState(null);
+  const [rightView, setRightView] = useState("home");
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -133,7 +135,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
         { label: "🎯 Customer & Marketing", on: () => onNav("tools", "customer_intel") },
         { label: "🔐 Security & Admin", on: () => onNav("tools", "rbac") },
       ] },
-      { label: "Management", icon: "📊", c: "#3b82f6", on: () => openTab("?command=1") },
+      { label: "Management", icon: "📊", c: "#3b82f6", on: () => setRightView("command") },
     ] },
   ];
 
@@ -228,6 +230,17 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
 
         {/* KANAN: konten */}
         <main style={S.right}>
+          {rightView === "command" ? (
+            <div style={{ marginTop: 4 }}>
+              <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
+                <button onClick={() => setRightView("home")} title="Tutup Command Center"
+                  style={{ background: "#161b22", border: "1px solid #30363d", borderRadius: 8, color: "#e6edf3", fontSize: 12, fontWeight: 700, padding: "7px 14px", cursor: "pointer", fontFamily: "inherit" }}>✕ Tutup</button>
+              </div>
+              <div style={{ position: "relative", transform: "translateZ(0)", height: "80vh", overflow: "hidden", borderRadius: 14, border: "1px solid #1e1f23" }}>
+                <CommandCenter />
+              </div>
+            </div>
+          ) : (<>
           {/* Period selector + KPI */}
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
             <div style={S.segWrap}>
@@ -394,6 +407,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
                   ))}
                 </div>}
           </div>
+          </>)}
         </main>
       </div>
 
