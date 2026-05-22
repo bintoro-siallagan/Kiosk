@@ -87,12 +87,6 @@ export default function AdminLogin({ onLogin }) {
           ))}
         </div>
 
-        {/* Role hints */}
-        <div style={L.hints}>
-          <div style={L.hint}>Manager: 123456</div>
-          <div style={L.hint}>Kasir 1: 111111</div>
-          <div style={L.hint}>Kasir 2: 222222</div>
-        </div>
       </div>
     </div>
   );
