@@ -552,7 +552,7 @@ export default function ZReport({ onClose }) {
             <div style={{marginBottom:14}}>
               <div style={{fontSize:11,color:"#888",marginBottom:6,fontWeight:600}}>PENERIMA (pisah koma untuk multi)</div>
               <textarea value={emailTo} onChange={e=>setEmailTo(e.target.value)}
-                placeholder="owner@bintoro.id, manager@bintoro.id"
+                placeholder="owner@karys.tech, manager@karys.tech"
                 rows={2}
                 style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Inter',sans-serif",resize:"vertical"}}/>
               <div style={{fontSize:10,color:"#666",marginTop:6}}>📎 Attachment: Z-Report Excel file ({report?.period?.from || "—"}{report?.period?.to && report.period.to !== report.period.from ? "_to_" + report.period.to : ""}.xlsx)</div>

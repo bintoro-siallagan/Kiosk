@@ -54,7 +54,7 @@ async function openCDSOnSecondScreen() {
   }
 
   const features = `${position},toolbar=no,menubar=no,location=no,status=no,scrollbars=yes`;
-  cdsWindowRef = window.open(finalUrl, 'BintoroCDS', features);
+  cdsWindowRef = window.open(finalUrl, 'KaryaOSCDS', features);
 
   if (!cdsWindowRef) {
     alert("Popup diblok! Allow popup untuk KaryaOS di browser settings, lalu coba lagi.");
