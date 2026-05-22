@@ -217,7 +217,7 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
       {/* LOGO */}
       <div style={styles.logo}>
         <div style={styles.logoRow}>
-          <span style={styles.logoIcon}>☕</span>
+          <img src="/logo.png" alt="KaryaOS" style={{ height: 54, objectFit: "contain" }} />
           <span style={styles.logoText}>KaryaOS POS</span>
         </div>
         <div style={styles.logoSub}>POINT OF SALE TERMINAL</div>

@@ -65,7 +65,7 @@ export default function DigitalReceipt({ orderId, onDone }) {
         <div style={R.paper} className="receipt-paper">
           {/* Header */}
           <div style={R.rHeader}>
-            <div style={R.rLogo}>🍽️</div>
+            <div style={R.rLogo}><img src="/logo.png" alt="KaryaOS" style={{ height: 56, objectFit: "contain" }} /></div>
             <div style={R.rBrand}>KaryaOS</div>
             <div style={R.rAddr}>Self Order Kiosk</div>
             <div style={R.rAddr}>Jakarta, Indonesia</div>

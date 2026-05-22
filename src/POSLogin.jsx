@@ -21,7 +21,8 @@ export default function POSLogin({ onLogin }) {
   return (
     <div style={S.root}>
       <header style={S.header}>
-        <h1 style={S.title}>☕ KaryaOS POS</h1>
+        <img src="/logo.png" alt="KaryaOS" style={{ width: 72, height: 72, objectFit: "contain", marginBottom: 8 }} />
+        <h1 style={S.title}>KaryaOS POS</h1>
         <p style={S.subtitle}>POINT OF SALE TERMINAL</p>
       </header>
 

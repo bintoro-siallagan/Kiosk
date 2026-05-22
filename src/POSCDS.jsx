@@ -285,7 +285,7 @@ function CDSIdle() {
 function SlideWelcome() {
   return (
     <div style={S.ssCenter}>
-      <div style={S.ssLogo}>☕</div>
+      <div style={S.ssLogo}><img src="/logo.png" alt="KaryaOS" style={{ height: 88, objectFit: "contain" }} /></div>
       <div style={S.ssBrand}>KaryaOS</div>
       <div style={S.ssTagline}>Selamat datang!</div>
       <div style={S.ssHint}>Tap kasir untuk mulai order</div>
@@ -557,7 +557,7 @@ function CDSCart({ state }) {
     <>
       <header style={S.header}>
         <div style={S.headerLeft}>
-          <span style={S.logoSmall}>☕</span>
+          <img src="/logo.png" alt="KaryaOS" style={{ height: 30, objectFit: "contain" }} />
           <span style={S.brandSmall}>KaryaOS</span>
         </div>
         <div>
@@ -734,7 +734,7 @@ function CDSQR({ state }) {
     <>
       <header style={S.header}>
         <div style={S.headerLeft}>
-          <span style={S.logoSmall}>☕</span>
+          <img src="/logo.png" alt="KaryaOS" style={{ height: 30, objectFit: "contain" }} />
           <span style={S.brandSmall}>KaryaOS</span>
         </div>
         <div style={S.tag}>💳 QRIS Payment</div>
@@ -798,7 +798,7 @@ function CDSTrackQR({ state, pubConfig }) {
     <>
       <header style={S.header}>
         <div style={S.headerLeft}>
-          <span style={S.logoSmall}>☕</span>
+          <img src="/logo.png" alt="KaryaOS" style={{ height: 30, objectFit: "contain" }} />
           <span style={S.brandSmall}>KaryaOS</span>
         </div>
         <div style={S.tag}>Order #{orderId}</div>

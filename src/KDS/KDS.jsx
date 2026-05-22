@@ -187,7 +187,7 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
       {/* TOP BAR */}
       <div style={styles.topBar}>
         <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
-          <span style={styles.brand}>🍳 KDS</span>
+          <span style={styles.brand}><img src="/logo.png" alt="" style={{ height: 24, verticalAlign: "middle", marginRight: 7 }} />KDS</span>
           <span style={styles.divider}>|</span>
           <div style={styles.stationTabs}>
             <button onClick={() => setActiveStation('all')} style={stationTabBtn(activeStation === 'all', '#6b7280')}>
