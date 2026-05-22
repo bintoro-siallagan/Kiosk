@@ -32,7 +32,7 @@ const S = {
   root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Plus Jakarta Sans',sans-serif",
     display:"flex", alignItems:"center", justifyContent:"center", padding:24 },
   card: { maxWidth:700, width:"100%", textAlign:"center" },
-  title: { fontFamily:"'Montserrat',sans-serif", fontSize:52, letterSpacing:4, margin:"0 0 8px", color:"#F59E0B" },
+  title: { fontFamily:"'Montserrat',sans-serif", fontSize:"min(52px,11vw)", letterSpacing:4, margin:"0 0 8px", color:"#F59E0B", whiteSpace:"nowrap" },
   subtitle: { color:"#888", fontSize:16, marginBottom:48 },
   grid: { display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:20, marginBottom:32 },
   option: { background:"#1a1a1a", border:"2px solid #2a2a2a", borderRadius:20, padding:"48px 24px",

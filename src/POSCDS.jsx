@@ -29,6 +29,15 @@ export default function POSCDS() {
       .catch(() => {});
   }, []);
 
+  // The CDS is a full-screen customer display already sized for a large
+  // monitor — opt it out of the global auto-zoom (auto-zoom.css zooms html
+  // up to 1.4x on wide screens, which would double-scale this screen).
+  useEffect(() => {
+    const prev = document.documentElement.style.zoom;
+    document.documentElement.style.zoom = "1";
+    return () => { document.documentElement.style.zoom = prev; };
+  }, []);
+
   useEffect(() => {
     let mounted = true;
 
@@ -386,7 +395,7 @@ function SlideThanks() {
   return (
     <div style={S.ssCenter}>
       <div style={S.ssThanksIcon}>☕</div>
-      <div style={{...S.ssItemName, fontSize:96, color:"#FF6B35", textShadow:"0 0 60px rgba(255,107,53,0.4)"}}>Terima Kasih</div>
+      <div style={{...S.ssItemName, fontSize:"min(96px,10vh,9vw)", color:"#FF6B35", textShadow:"0 0 60px rgba(255,107,53,0.4)"}}>Terima Kasih</div>
       <div style={S.ssItemDesc}>Sudah mampir ke Bintoro!</div>
       <div style={S.ssSocial}>📷 @bintorocafe</div>
     </div>
@@ -408,12 +417,12 @@ function CDSWelcoming({ state }) {
 
     return (
       <div style={{
-        flex: 1, display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
+        flex: 1, display: "flex", flexDirection: "column", boxSizing: "border-box",
+        alignItems: "center", justifyContent: "center", maxWidth: "100%",
         padding: "60px 40px", gap: 24,
         animation: "ssFadeIn 0.5s ease-out"
       }}>
-        <div style={{ fontSize: 120, lineHeight: 1 }}>
+        <div style={{ fontSize: "min(120px,13vh)", lineHeight: 1 }}>
           {isNew ? "✨" : "👋"}
         </div>
 
@@ -427,7 +436,7 @@ function CDSWelcoming({ state }) {
         </div>
 
         <div style={{
-          fontSize: 72, fontWeight: 800,
+          fontSize: "min(72px,8vh,7vw)", fontWeight: 800,
           fontFamily: "'Montserrat', sans-serif",
           color: "#fff", textAlign: "center",
           letterSpacing: 1, lineHeight: 1.1,
@@ -478,11 +487,11 @@ function CDSWelcoming({ state }) {
   if (phoneLookup) {
     return (
       <div style={{
-        flex: 1, display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
+        flex: 1, display: "flex", flexDirection: "column", boxSizing: "border-box",
+        alignItems: "center", justifyContent: "center", maxWidth: "100%",
         padding: "60px 40px", gap: 32
       }}>
-        <div style={{ fontSize: 100, lineHeight: 1 }}>📱</div>
+        <div style={{ fontSize: "min(100px,12vh)", lineHeight: 1 }}>📱</div>
 
         <div style={{
           fontSize: 18, color: "#FF6B35", letterSpacing: 4,
@@ -492,7 +501,7 @@ function CDSWelcoming({ state }) {
         </div>
 
         <div style={{
-          fontSize: 48, fontWeight: 700,
+          fontSize: "min(48px,5vh,6vw)", fontWeight: 700,
           fontFamily: "'JetBrains Mono', monospace",
           color: "#fff", letterSpacing: 4,
           padding: "16px 32px",
@@ -828,8 +837,8 @@ function CDSTrackQR({ state, pubConfig }) {
 }
 
 const S = {
-  root: { height:"100vh", width:"100vw", background:"#0a0a0a", color:"#fff", 
-    fontFamily:"'Plus Jakarta Sans','-apple-system',sans-serif",  position:"relative",
+  root: { height:"100vh", width:"100vw", background:"#0a0a0a", color:"#fff",
+    fontFamily:"'Plus Jakarta Sans','-apple-system',sans-serif", position:"fixed", top:0, left:0,
     display:"flex", flexDirection:"column" },
   conn: { position:"fixed", top:12, right:12, fontSize:10, padding:"3px 10px",
     border:"1px solid", borderRadius:100, background:"#0a0a0a",
@@ -854,27 +863,27 @@ const S = {
     alignItems:"center", justifyContent:"center", overflow:"hidden" },
   ssSlide: { width:"100%", minHeight:"100vh", display:"flex", alignItems:"center",
     justifyContent:"center", animation:"ssFadeIn 0.8s ease-out" },
-  ssCenter: { display:"flex", flexDirection:"column", alignItems:"center",
+  ssCenter: { display:"flex", flexDirection:"column", alignItems:"center", boxSizing:"border-box",
     textAlign:"center", padding:"60px 80px", maxWidth:"none", width:"100%", gap:20, justifyContent:"space-evenly", minHeight:"100vh" },
 
-  ssLogo: { fontSize:240, lineHeight:1, marginBottom:12 },
-  ssBrand: { fontSize:150, fontFamily:"'Montserrat',sans-serif", color:"#FF6B35", letterSpacing:4, marginBottom:8, fontWeight:900, lineHeight:1, textShadow:"0 0 80px rgba(255,107,53,0.5)" },
-  ssTagline: { fontSize:56, color:"#fff", marginBottom:12, fontWeight:700, letterSpacing:1 },
+  ssLogo: { fontSize:"min(240px,22vh)", lineHeight:1, marginBottom:12 },
+  ssBrand: { fontSize:"min(150px,13vh,11vw)", fontFamily:"'Montserrat',sans-serif", color:"#FF6B35", letterSpacing:4, marginBottom:8, fontWeight:900, lineHeight:1, textShadow:"0 0 80px rgba(255,107,53,0.5)" },
+  ssTagline: { fontSize:"min(56px,6vh)", color:"#fff", marginBottom:12, fontWeight:700, letterSpacing:1 },
   ssHint: { fontSize:24, color:"#666", marginTop:8, letterSpacing:4 },
 
   ssBadge: { padding:"8px 24px", background:"rgba(245,158,11,0.15)",
-    color:"#FF6B35", borderRadius:100, fontSize:48, fontWeight:800,
+    color:"#FF6B35", borderRadius:100, fontSize:"min(48px,5vh)", fontWeight:800,
     letterSpacing:2, marginBottom:0 },
 
-  ssItemEmoji: { fontSize:260, lineHeight:1, marginBottom:8, filter:"drop-shadow(0 16px 40px rgba(0,0,0,0.6))" },
-  ssItemName: { fontSize:80, fontWeight:800, marginBottom:8, lineHeight:1.1, color:"#fff" },
+  ssItemEmoji: { fontSize:"min(260px,26vh)", lineHeight:1, marginBottom:8, filter:"drop-shadow(0 16px 40px rgba(0,0,0,0.6))" },
+  ssItemName: { fontSize:"min(80px,9vh,8vw)", fontWeight:800, marginBottom:8, lineHeight:1.1, color:"#fff" },
   ssItemDesc: { fontSize:30, color:"#ccc", marginBottom:24, lineHeight:1.5, fontWeight:500,
     maxWidth:600 },
-  ssItemPrice: { fontSize:90, fontWeight:900, color:"#FF6B35", fontFamily:"'Montserrat',sans-serif", letterSpacing:1, marginBottom:4 },
+  ssItemPrice: { fontSize:"min(90px,9vh)", fontWeight:900, color:"#FF6B35", fontFamily:"'Montserrat',sans-serif", letterSpacing:1, marginBottom:4 },
   ssItemExtra: { fontSize:22, color:"#34D399", fontWeight:700, padding:"8px 20px", background:"rgba(52,211,153,0.1)", borderRadius:100, letterSpacing:1 },
 
-  ssPromoEmoji: { fontSize:100, lineHeight:1, marginBottom:4 },
-  ssPromoBigTitle: { fontSize:148, fontWeight:900, color:"#FF6B35",
+  ssPromoEmoji: { fontSize:"min(100px,12vh)", lineHeight:1, marginBottom:4 },
+  ssPromoBigTitle: { fontSize:"min(148px,13vh,11vw)", fontWeight:900, color:"#FF6B35",
     fontFamily:"'Montserrat',sans-serif", letterSpacing:2, marginBottom:8,
     lineHeight:1, textShadow:"0 0 60px rgba(255,107,53,0.5), 0 0 120px rgba(255,107,53,0.2)" },
   ssPromoTag: { padding:"10px 24px", background:"rgba(59,130,246,0.2)",

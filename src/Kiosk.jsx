@@ -838,7 +838,7 @@ const K = {
   welcomeInner:{textAlign:"center",padding:"40px 24px",maxWidth:620,width:"100%"},
   logoWrap:   {marginBottom:28},
   logoIcon:   {fontSize:72,lineHeight:1,marginBottom:10,display:"block"},
-  brand:      {fontFamily:"'Montserrat',sans-serif",fontSize:72,letterSpacing:10,color:"#FF6B35",lineHeight:1},
+  brand:      {fontFamily:"'Montserrat',sans-serif",fontSize:"min(72px,11vw)",letterSpacing:"min(10px,1.6vw)",color:"#FF6B35",lineHeight:1,whiteSpace:"nowrap"},
   tagline:    {fontSize:15,color:"#666",marginTop:8,letterSpacing:2},
   clockDisp:  {fontSize:16,color:"#444",marginBottom:36,letterSpacing:4},
   welcomeQ:   {fontSize:12,letterSpacing:5,color:"#555",marginBottom:24},
