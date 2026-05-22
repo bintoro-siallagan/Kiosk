@@ -56,7 +56,7 @@ export default function AdminConvenienceFee({ apiBase = "" }) {
 
         <div style={{ background: "#0a0e16", border: "1px solid #161b22", borderRadius: 8, padding: "10px 12px", fontSize: 12, color: "#9da7b3", margin: "6px 0 12px" }}>
           Preview di struk QRIS:<br />
-          <span style={{ color: "#fb923c", fontFamily: "'Space Mono',monospace" }}>
+          <span style={{ color: "#fb923c", fontFamily: "'Geist Mono',monospace" }}>
             🧾 {cfg.label || "Biaya Layanan"} &nbsp; +{fmtRp(cfg.amount)}
           </span>
           <div style={{ marginTop: 4, color: "#5b6470" }}>💵 Transaksi tunai → tanpa fee</div>
@@ -72,10 +72,10 @@ export default function AdminConvenienceFee({ apiBase = "" }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace", marginBottom: 12 },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace", marginBottom: 12 },
   row: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, gap: 12 },
   lbl: { fontSize: 13, color: "#cdd5df" },
   input: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 10px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", width: 200, textAlign: "right" },
-  toggle: { border: "none", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Space Mono',monospace" },
+  toggle: { border: "none", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "'Geist Mono',monospace" },
   btn: { background: "#fb923c", color: "#1a0f02", border: "none", borderRadius: 7, padding: "9px 20px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
 };

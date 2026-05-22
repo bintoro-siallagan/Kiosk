@@ -51,12 +51,12 @@ export default function AdminItemConfig({ apiBase = "" }) {
             <div key={g.id} style={{ background: "#0a0e16", border: "1px solid #161b22", borderRadius: 9, padding: "11px 13px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: "#e6edf3" }}>{g.name}</span>
-                <span style={{ fontSize: 9, fontWeight: 700, color: "#a855f7", fontFamily: "'Space Mono',monospace" }}>{g.mod_type.toUpperCase()}</span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: "#a855f7", fontFamily: "'Geist Mono',monospace" }}>{g.mod_type.toUpperCase()}</span>
               </div>
               {g.options.map((o, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 11, padding: "2px 0", color: "#9da7b3" }}>
                   <span>{o.name}</span>
-                  <span style={{ color: o.price > 0 ? "#10b981" : "#5b6470", fontFamily: "'Space Mono',monospace" }}>{o.price > 0 ? "+" + fmtRp(o.price) : "gratis"}</span>
+                  <span style={{ color: o.price > 0 ? "#10b981" : "#5b6470", fontFamily: "'Geist Mono',monospace" }}>{o.price > 0 ? "+" + fmtRp(o.price) : "gratis"}</span>
                 </div>
               ))}
             </div>
@@ -94,8 +94,8 @@ export default function AdminItemConfig({ apiBase = "" }) {
                     {it.inventory_type === "stock" ? "● STOCK" : "○ NON-STOCK"}
                   </button>
                 </td>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#9da7b3" }}>{it.inventory_type === "stock" ? it.min_stock : "—"}</td>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#9da7b3" }}>{it.inventory_type === "stock" ? it.reorder_point : "—"}</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#9da7b3" }}>{it.inventory_type === "stock" ? it.min_stock : "—"}</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#9da7b3" }}>{it.inventory_type === "stock" ? it.reorder_point : "—"}</td>
                 <td style={S.td}>
                   <button onClick={() => patch(it, { expiry_tracking: !it.expiry_tracking })} style={{ ...S.flag, color: it.expiry_tracking ? "#f59e0b" : "#5b6470" }}>{it.expiry_tracking ? "✓ ya" : "—"}</button>
                 </td>
@@ -116,8 +116,8 @@ export default function AdminItemConfig({ apiBase = "" }) {
 function Kpi({ label, v, c, sub }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
       <div style={{ fontSize: 10, color: "#5b6470" }}>{sub || " "}</div>
     </div>
   );
@@ -126,9 +126,9 @@ function Kpi({ label, v, c, sub }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "7px 8px" },
-  toggle: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 6, padding: "4px 9px", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "'Space Mono',monospace" },
+  toggle: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 6, padding: "4px 9px", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "'Geist Mono',monospace" },
   flag: { background: "transparent", border: "none", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
 };

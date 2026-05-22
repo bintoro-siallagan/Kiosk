@@ -141,7 +141,7 @@ export default function FlowHistory({ session, addToCart, setScreen }) {
             background: "transparent", border: "none", color: TEXT,
             fontSize: 24, cursor: "pointer", padding: 0, width: 32
           }}>←</button>
-          <h1 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: BRAND, letterSpacing: 1 }}>
+          <h1 style={{ margin: 0, fontFamily: "'Inter', sans-serif", fontSize: 28, color: BRAND, letterSpacing: 1 }}>
             RIWAYAT PESANAN
           </h1>
         </div>
@@ -151,12 +151,12 @@ export default function FlowHistory({ session, addToCart, setScreen }) {
       <div style={{ padding: "16px 20px" }}>
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: 16, display: "flex", justifyContent: "space-around" }}>
           <div style={{ textAlign: "center", flex: 1 }}>
-            <div style={{ fontSize: 26, fontWeight: 700, color: BRAND, fontFamily: "'Bebas Neue', sans-serif", lineHeight: 1 }}>{stats.total}</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: BRAND, fontFamily: "'Inter', sans-serif", lineHeight: 1 }}>{stats.total}</div>
             <div style={{ fontSize: 11, color: SUB, marginTop: 4 }}>Total Pesanan</div>
           </div>
           <div style={{ width: 1, background: BORDER }} />
           <div style={{ textAlign: "center", flex: 1 }}>
-            <div style={{ fontSize: 26, fontWeight: 700, color: stats.active > 0 ? "#3B82F6" : SUB, fontFamily: "'Bebas Neue', sans-serif", lineHeight: 1 }}>{stats.active}</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: stats.active > 0 ? "#3B82F6" : SUB, fontFamily: "'Inter', sans-serif", lineHeight: 1 }}>{stats.active}</div>
             <div style={{ fontSize: 11, color: SUB, marginTop: 4 }}>Aktif</div>
           </div>
           <div style={{ width: 1, background: BORDER }} />
@@ -233,7 +233,7 @@ export default function FlowHistory({ session, addToCart, setScreen }) {
             }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
                 <div>
-                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: BRAND, letterSpacing: 0.5, lineHeight: 1 }}>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 22, color: BRAND, letterSpacing: 0.5, lineHeight: 1 }}>
                     #{order.id}
                   </div>
                   <div style={{ fontSize: 11, color: SUB, marginTop: 4 }}>{relTime(order.time)}</div>
@@ -291,7 +291,7 @@ export default function FlowHistory({ session, addToCart, setScreen }) {
             <div style={{ marginBottom: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
-                  <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, color: BRAND, lineHeight: 1 }}>
+                  <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 32, color: BRAND, lineHeight: 1 }}>
                     #{detail.id}
                   </div>
                   <div style={{ fontSize: 12, color: SUB, marginTop: 4 }}>{fullDate(detail.time)}</div>

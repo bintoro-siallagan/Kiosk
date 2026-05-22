@@ -51,9 +51,9 @@ export default function AdminTalenta({ apiBase = "" }) {
         <div style={{ fontSize: 30 }}>🔗</div>
         <div style={{ flex: 1, minWidth: 200 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#e6edf3" }}>{c.provider}</div>
-          <div style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>workspace: {c.workspace} · {c.mode}</div>
+          <div style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>workspace: {c.workspace} · {c.mode}</div>
         </div>
-        <span style={{ fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 7, fontFamily: "'Space Mono',monospace",
+        <span style={{ fontSize: 11, fontWeight: 700, padding: "5px 12px", borderRadius: 7, fontFamily: "'Geist Mono',monospace",
           color: connected ? "#10b981" : "#f59e0b", background: (connected ? "#10b981" : "#f59e0b") + "1f",
           border: `1px solid ${(connected ? "#10b981" : "#f59e0b")}55` }}>
           {connected ? "● CONNECTED" : "● SANDBOX"}
@@ -84,7 +84,7 @@ export default function AdminTalenta({ apiBase = "" }) {
                   <div style={{ fontSize: 11, color: "#5b6470" }}>{e.desc} · sync {ago(e.last_sync)}</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: "#3b82f6", fontFamily: "'Space Mono',monospace" }}>{e.record_count}</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "#3b82f6", fontFamily: "'Geist Mono',monospace" }}>{e.record_count}</div>
                   <div style={{ fontSize: 9, color: "#5b6470" }}>record</div>
                 </div>
                 <button onClick={() => sync(e.key)} disabled={!!busy} style={S.btnSm}>
@@ -103,7 +103,7 @@ export default function AdminTalenta({ apiBase = "" }) {
           ) : d.log.map((l, i) => (
             <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "7px 0", borderTop: i ? "1px solid #161b22" : "none" }}>
               <span style={{ color: "#9da7b3" }}>🔄 {l.entity}</span>
-              <span style={{ color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{l.records} rec · {ago(l.at)}</span>
+              <span style={{ color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>{l.records} rec · {ago(l.at)}</span>
             </div>
           ))}
         </div>
@@ -115,8 +115,8 @@ export default function AdminTalenta({ apiBase = "" }) {
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 16, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 16, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{v}</div>
     </div>
   );
 }
@@ -124,8 +124,8 @@ function Kpi({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12, marginTop: 14 },
   btnPrimary: { background: "#0ea5e9", color: "#04141f", border: "none", borderRadius: 7, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
-  btnSm: { background: "#0ea5e91f", border: "1px solid #0ea5e955", color: "#38bdf8", fontSize: 11, fontWeight: 700, padding: "6px 11px", borderRadius: 6, cursor: "pointer", fontFamily: "'Space Mono',monospace", whiteSpace: "nowrap" },
+  btnSm: { background: "#0ea5e91f", border: "1px solid #0ea5e955", color: "#38bdf8", fontSize: 11, fontWeight: 700, padding: "6px 11px", borderRadius: 6, cursor: "pointer", fontFamily: "'Geist Mono',monospace", whiteSpace: "nowrap" },
 };

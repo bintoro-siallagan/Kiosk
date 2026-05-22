@@ -191,7 +191,7 @@ const AM = {
   sheet:{background:"#141414",borderRadius:"24px 24px 0 0",width:"100%",maxWidth:640,maxHeight:"90vh",display:"flex",flexDirection:"column",animation:"slideUp 0.3s ease",border:"1px solid #2a2a2a",borderBottom:"none"},
   header:{display:"flex",gap:16,padding:"20px 20px 16px",borderBottom:"1px solid #1e1e1e",alignItems:"flex-start"},
   name:{fontSize:20,fontWeight:700,lineHeight:1.2,marginBottom:4},
-  price:{fontSize:18,fontWeight:700,color:"#FF6B35",fontFamily:"'Montserrat',sans-serif",letterSpacing:1},
+  price:{fontSize:18,fontWeight:700,color:"#FF6B35",fontFamily:"'Inter',sans-serif",letterSpacing:1},
   desc:{fontSize:12,color:"#666",marginTop:4,lineHeight:1.4},
   close:{background:"#2a2a2a",border:"none",borderRadius:"50%",width:36,height:36,color:"#aaa",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"},
   body:{overflowY:"auto",padding:"0 20px",flex:1},
@@ -202,10 +202,10 @@ const AM = {
   opt:{display:"flex",alignItems:"center",gap:12,background:"#1a1a1a",border:"1px solid #222",borderRadius:14,padding:"14px 16px",cursor:"pointer",color:"#ccc",textAlign:"left",transition:"all 0.15s"},
   optOn:{background:"rgba(255,107,53,0.08)",border:"1px solid #FF6B35",color:"#fff"},
   radio:{width:20,height:20,borderRadius:"50%",border:"2px solid",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"},
-  note:{width:"100%",background:"#1a1a1a",border:"1px solid #222",borderRadius:12,padding:"12px 14px",color:"#ccc",fontSize:14,fontFamily:"'Plus Jakarta Sans',sans-serif",boxSizing:"border-box"},
+  note:{width:"100%",background:"#1a1a1a",border:"1px solid #222",borderRadius:12,padding:"12px 14px",color:"#ccc",fontSize:14,fontFamily:"'Inter',sans-serif",boxSizing:"border-box"},
   footer:{padding:"14px 20px 28px",borderTop:"1px solid #1e1e1e",background:"#0d0d0d"},
   addonSum:{fontSize:12,color:"#888",textAlign:"center",marginBottom:8},
-  confirm:{width:"100%",background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",borderRadius:16,padding:"18px",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",letterSpacing:1,fontFamily:"'Montserrat',sans-serif"},
+  confirm:{width:"100%",background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",borderRadius:16,padding:"18px",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",letterSpacing:1,fontFamily:"'Inter',sans-serif"},
 };
 
 const TAG_CLR = {
@@ -419,8 +419,8 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
       <style>{FONT_CSS+KIOSK_CSS}</style>
       <div style={K.welcomeInner}>
         <div style={K.logoWrap}>
-          <div style={K.logoIcon} onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}}>🍽️</div>
-          <h1 style={K.brand}>BINTORO</h1>
+          <img src="/logo.png" alt="KaryaOS" onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}} style={{width:150,height:150,objectFit:"contain",cursor:"pointer"}}/>
+          <h1 style={K.brand}>KaryaOS</h1>
           <p style={K.tagline}>Crafted with love. Ordered with ease.</p>
         </div>
         <div style={K.clockDisp}>{time.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</div>
@@ -504,7 +504,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           </div>
           {promo ? (
             <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <span style={{fontFamily:"'Montserrat',sans-serif",fontSize:18,color:"#34D399",letterSpacing:1}}>-{fIDR(discount)}</span>
+              <span style={{fontFamily:"'Inter',sans-serif",fontSize:18,color:"#34D399",letterSpacing:1}}>-{fIDR(discount)}</span>
               <button style={{background:"transparent",border:"none",color:"#F87171",fontSize:14,padding:"4px 8px",borderRadius:8}}
                 onClick={e=>{e.stopPropagation();setPromo(null);}}>✕</button>
             </div>
@@ -553,13 +553,13 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           <div onClick={e=>e.stopPropagation()}
             style={{background:"linear-gradient(135deg,#1a1a2e 0%,#050810 100%)",border:"2px solid #F59E0B44",borderRadius:24,padding:"40px 36px",maxWidth:480,width:"90%",textAlign:"center",boxShadow:"0 20px 60px rgba(245,158,11,0.2)",animation:"slideUp 0.3s ease"}}>
             <div style={{fontSize:80,marginBottom:20,animation:"giftBounce 1.2s ease infinite"}}>🎁</div>
-            <h2 style={{fontFamily:"'Montserrat',sans-serif",fontSize:42,letterSpacing:3,margin:"0 0 12px",color:"#F59E0B"}}>CEK PROMO DULU?</h2>
+            <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:42,letterSpacing:3,margin:"0 0 12px",color:"#F59E0B"}}>CEK PROMO DULU?</h2>
             <p style={{fontSize:15,color:"#aaa",lineHeight:1.6,margin:"0 0 28px"}}>
               Punya kode promo atau voucher diskon?<br/>Pakai sekarang sebelum bayar!
             </p>
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
               <button onClick={()=>{audio.playConfirm();setShowPromoTeaser(false);setScreen("confirm");setShowPromo(true);}}
-                style={{background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:14,padding:"18px 24px",color:"#050810",fontSize:16,fontWeight:800,fontFamily:"'Montserrat',sans-serif",letterSpacing:3,cursor:"pointer"}}>
+                style={{background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:14,padding:"18px 24px",color:"#050810",fontSize:16,fontWeight:800,fontFamily:"'Inter',sans-serif",letterSpacing:3,cursor:"pointer"}}>
                 🎟 YA, MASUKKAN KODE PROMO
               </button>
               <button onClick={()=>{audio.playClick();setShowPromoTeaser(false);setScreen("confirm");}}
@@ -595,7 +595,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           <div style={{display:"flex",alignItems:"center",gap:10}}>
             <span style={{fontSize:26}}>🍽️</span>
             <div>
-              <div style={K.headerBrand}>BINTORO</div>
+              <div style={K.headerBrand}>KaryaOS</div>
               <div style={K.headerSub}>{orderType==="dine"?"🪑 Makan di Sini":"🛍️ Bawa Pulang"}</div>
             </div>
           </div>
@@ -721,16 +721,16 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           {cart.length>0 ? (
             <>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                <span style={{fontFamily:"'Montserrat',sans-serif",fontSize:18,letterSpacing:1,color:"#aaa"}}>TOTAL</span>
-                <span style={{fontFamily:"'Montserrat',sans-serif",fontSize:30,color:"#FF6B35"}}>{fIDR(total)}</span>
+                <span style={{fontFamily:"'Inter',sans-serif",fontSize:18,letterSpacing:1,color:"#aaa"}}>TOTAL</span>
+                <span style={{fontFamily:"'Inter',sans-serif",fontSize:30,color:"#FF6B35"}}>{fIDR(total)}</span>
               </div>
               <button onClick={goToConfirm}
-                style={{width:"100%",padding:"16px",borderRadius:14,background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",color:"#fff",fontFamily:"'Montserrat',sans-serif",fontSize:20,letterSpacing:2,cursor:"pointer"}}>
+                style={{width:"100%",padding:"16px",borderRadius:14,background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",color:"#fff",fontFamily:"'Inter',sans-serif",fontSize:20,letterSpacing:2,cursor:"pointer"}}>
                 CHECKOUT →
               </button>
             </>
           ) : (
-            <button disabled style={{width:"100%",padding:"16px",borderRadius:14,background:"#1e1e1e",border:"none",color:"#333",fontFamily:"'Montserrat',sans-serif",fontSize:18,cursor:"not-allowed"}}>
+            <button disabled style={{width:"100%",padding:"16px",borderRadius:14,background:"#1e1e1e",border:"none",color:"#333",fontFamily:"'Inter',sans-serif",fontSize:18,cursor:"not-allowed"}}>
               PILIH MENU DULU
             </button>
           )}
@@ -763,14 +763,14 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
             {callSent ? (
               <>
                 <div style={{fontSize:56,marginBottom:12}}>✅</div>
-                <div style={{fontFamily:"'Montserrat',sans-serif",fontSize:24,letterSpacing:3,color:"#34D399",marginBottom:8}}>STAFF DIPANGGIL!</div>
+                <div style={{fontFamily:"'Inter',sans-serif",fontSize:24,letterSpacing:3,color:"#34D399",marginBottom:8}}>STAFF DIPANGGIL!</div>
                 <div style={{fontSize:13,color:"#888",marginBottom:20}}>Mohon tunggu sebentar.</div>
                 <button style={{...K.proceedBtn,background:"#1a1a2e",color:"#888"}} onClick={()=>setStaffCall(false)}>Tutup</button>
               </>
             ) : (
               <>
                 <div style={{fontSize:48,marginBottom:12}}>🔔</div>
-                <div style={{fontFamily:"'Montserrat',sans-serif",fontSize:24,letterSpacing:3,marginBottom:8}}>PANGGIL STAFF</div>
+                <div style={{fontFamily:"'Inter',sans-serif",fontSize:24,letterSpacing:3,marginBottom:8}}>PANGGIL STAFF</div>
                 <div style={{fontSize:13,color:"#666",marginBottom:20}}>Meja: {tableInfo?.name||"-"}</div>
                 <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
                   {["Butuh bantuan","Meja kotor","Peralatan makan","Keluhan pesanan","Lainnya"].map(r=>(
@@ -784,7 +784,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
                 </div>
                 <div style={{display:"flex",gap:10}}>
                   <button style={{flex:1,background:"#1a1a2e",border:"1px solid #21262d",borderRadius:12,padding:"14px",color:"#666",fontSize:13}} onClick={()=>setStaffCall(false)}>Batal</button>
-                  <button style={{flex:2,background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:12,padding:"14px",color:"#050810",fontWeight:700,fontSize:14,fontFamily:"'Montserrat',sans-serif",letterSpacing:1,opacity:!callReason?0.4:1}}
+                  <button style={{flex:2,background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:12,padding:"14px",color:"#050810",fontWeight:700,fontSize:14,fontFamily:"'Inter',sans-serif",letterSpacing:1,opacity:!callReason?0.4:1}}
                     disabled={!callReason}
                     onClick={async()=>{await api.staffCall({tableId:tableInfo?.id,reason:callReason}).catch(()=>{});setCallSent(true);}}>
                     PANGGIL STAFF 🔔
@@ -800,7 +800,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
 }
 
 // ─── STYLES ───────────────────────────────────────────────────────────────────
-const FONT_CSS = `@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap');`;
+const FONT_CSS = `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap');`;
 const KIOSK_CSS = `
   *{box-sizing:border-box;margin:0;padding:0}
   ::-webkit-scrollbar{width:3px;height:3px}
@@ -814,22 +814,22 @@ const KIOSK_CSS = `
   @keyframes arrowPulse{0%,100%{opacity:0.3;transform:translateX(0)}50%{opacity:0.8;transform:translateX(-4px)}}
   .menu-card{animation:fadeIn 0.25s ease forwards}
   .add-btn:active{animation:pop 0.3s ease;transform:scale(0.93)!important}
-  button{cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
-  input,textarea{font-family:'Plus Jakarta Sans',sans-serif}
+  button{cursor:pointer;font-family:'Inter',sans-serif}
+  input,textarea{font-family:'Inter',sans-serif}
 `;
 
 const K = {
-  root:     {fontFamily:"'Plus Jakarta Sans',sans-serif",background:"#111",color:"#fff",minHeight:"100vh",display:"flex",flexDirection:"column",overflowX:"hidden"},
+  root:     {fontFamily:"'Inter',sans-serif",background:"#111",color:"#fff",minHeight:"100vh",display:"flex",flexDirection:"column",overflowX:"hidden"},
 
   // ── SPLIT LAYOUT ──
-  splitRoot:{height:"100vh",background:"#111",color:"#fff",display:"flex",overflow:"hidden",fontFamily:"'Plus Jakarta Sans',sans-serif"},
+  splitRoot:{height:"100vh",background:"#111",color:"#fff",display:"flex",overflow:"hidden",fontFamily:"'Inter',sans-serif"},
   splitLeft:{flex:"0 0 60%",display:"flex",flexDirection:"column",borderRight:"1px solid #1e1e1e",overflow:"hidden"},
   splitRight:{flex:"0 0 40%",display:"flex",flexDirection:"column",background:"#0d0d0d"},
   splitMenuScroll:{flex:1,overflowY:"auto",padding:"12px 12px 16px"},
 
   // ── CART PANEL ──
   cartPanelHeader:{padding:"16px 20px",borderBottom:"1px solid #1e1e1e",flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"center"},
-  cartPanelTitle:{fontFamily:"'Montserrat',sans-serif",fontSize:26,color:"#FF6B35",letterSpacing:1},
+  cartPanelTitle:{fontFamily:"'Inter',sans-serif",fontSize:26,color:"#FF6B35",letterSpacing:1},
   cartPanelBody:{flex:1,overflowY:"auto",padding:"0 14px"},
   cartPanelRow:{background:"#1a1a1a",border:"1px solid #222",borderRadius:12,padding:"12px",marginTop:8},
   cartPanelFooter:{padding:"16px 20px",borderTop:"1px solid #1e1e1e",flexShrink:0},
@@ -837,22 +837,22 @@ const K = {
   removeBtn:{background:"transparent",border:"none",color:"#F87171",fontSize:16,cursor:"pointer",padding:"0 4px",flexShrink:0},
 
   // ── IDLE ──
-  idleOverlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Plus Jakarta Sans',sans-serif"},
+  idleOverlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.95)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',sans-serif"},
   idleBox:    {textAlign:"center",padding:"40px 32px",background:"#1a1a1a",borderRadius:28,border:"1px solid #333",maxWidth:380},
-  idleTitle:  {fontFamily:"'Montserrat',sans-serif",fontSize:36,letterSpacing:4,color:"#FF6B35",marginBottom:8},
+  idleTitle:  {fontFamily:"'Inter',sans-serif",fontSize:36,letterSpacing:4,color:"#FF6B35",marginBottom:8},
   idleSub:    {fontSize:14,color:"#888",marginBottom:12},
-  idleCount:  {fontFamily:"'Montserrat',sans-serif",fontSize:72,color:"#fff",lineHeight:1,marginBottom:12},
+  idleCount:  {fontFamily:"'Inter',sans-serif",fontSize:72,color:"#fff",lineHeight:1,marginBottom:12},
   idleBar:    {height:6,background:"#333",borderRadius:3,marginBottom:24,overflow:"hidden"},
   idleFill:   {height:"100%",background:"linear-gradient(90deg,#FF6B35,#FF3B30)",borderRadius:3,transition:"width 1s linear"},
-  idleBtn:    {width:"100%",background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",borderRadius:14,padding:"16px",color:"#fff",fontSize:14,fontWeight:700,letterSpacing:2,fontFamily:"'Montserrat',sans-serif",marginBottom:10},
+  idleBtn:    {width:"100%",background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",borderRadius:14,padding:"16px",color:"#fff",fontSize:14,fontWeight:700,letterSpacing:2,fontFamily:"'Inter',sans-serif",marginBottom:10},
   idleCancel: {background:"transparent",border:"1px solid #333",borderRadius:10,padding:"10px 20px",color:"#555",fontSize:13},
 
   // ── WELCOME ──
-  welcome:    {fontFamily:"'Plus Jakarta Sans',sans-serif",background:"linear-gradient(160deg,#0a0a0a 0%,#1a0800 50%,#0a0a0a 100%)",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"},
+  welcome:    {fontFamily:"'Inter',sans-serif",background:"linear-gradient(160deg,#0a0a0a 0%,#1a0800 50%,#0a0a0a 100%)",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"},
   welcomeInner:{textAlign:"center",padding:"40px 24px",maxWidth:620,width:"100%"},
   logoWrap:   {marginBottom:28},
   logoIcon:   {fontSize:72,lineHeight:1,marginBottom:10,display:"block"},
-  brand:      {fontFamily:"'Montserrat',sans-serif",fontSize:"min(72px,11vw)",letterSpacing:"min(10px,1.6vw)",color:"#FF6B35",lineHeight:1,whiteSpace:"nowrap"},
+  brand:      {fontFamily:"'Inter',sans-serif",fontSize:"min(72px,11vw)",letterSpacing:"min(10px,1.6vw)",color:"#FF6B35",lineHeight:1,whiteSpace:"nowrap"},
   tagline:    {fontSize:15,color:"#666",marginTop:8,letterSpacing:2},
   clockDisp:  {fontSize:16,color:"#444",marginBottom:36,letterSpacing:4},
   welcomeQ:   {fontSize:12,letterSpacing:5,color:"#555",marginBottom:24},
@@ -860,13 +860,13 @@ const K = {
   orderBtn:   {background:"linear-gradient(145deg,#1a1a1a,#252525)",border:"1px solid #333",borderRadius:24,padding:"32px 40px",display:"flex",flexDirection:"column",alignItems:"center",gap:8,flex:1,maxWidth:220,color:"#fff",transition:"transform 0.15s"},
   orderBtnAlt:{background:"linear-gradient(135deg,#FF6B35,#FF3B30)",border:"none"},
   orderBtnIcon:{fontSize:44},
-  orderBtnLabel:{fontFamily:"'Montserrat',sans-serif",fontSize:24,letterSpacing:2},
+  orderBtnLabel:{fontFamily:"'Inter',sans-serif",fontSize:24,letterSpacing:2},
   orderBtnSub:{fontSize:12,color:"rgba(255,255,255,0.6)"},
   tapHint:    {fontSize:11,letterSpacing:5,color:"#2a2a2a"},
 
   // ── HEADER ──
   header:     {display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",background:"#0d0d0d",borderBottom:"1px solid #1e1e1e",flexShrink:0},
-  headerBrand:{fontFamily:"'Montserrat',sans-serif",fontSize:20,letterSpacing:3,color:"#FF6B35"},
+  headerBrand:{fontFamily:"'Inter',sans-serif",fontSize:20,letterSpacing:3,color:"#FF6B35"},
   headerSub:  {fontSize:11,color:"#666"},
   headerTime: {fontSize:13,color:"#444",fontVariantNumeric:"tabular-nums"},
   resetBtn:   {background:"transparent",border:"1px solid #2a2a2a",borderRadius:8,padding:"6px 12px",color:"#666",fontSize:11,cursor:"pointer"},
@@ -888,7 +888,7 @@ const K = {
   calBadge:   {fontSize:9,color:"#555",background:"#222",padding:"2px 6px",borderRadius:20},
   addonHint:  {fontSize:9,color:"#FF6B35",background:"rgba(255,107,53,0.1)",padding:"2px 6px",borderRadius:20,border:"1px solid rgba(255,107,53,0.2)"},
   cardBottom: {display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:"auto",paddingTop:6},
-  cardPrice:  {fontFamily:"'Montserrat',sans-serif",fontSize:18,color:"#FF6B35",letterSpacing:1},
+  cardPrice:  {fontFamily:"'Inter',sans-serif",fontSize:18,color:"#FF6B35",letterSpacing:1},
   addBtn:     {background:"#FF6B35",border:"none",borderRadius:16,padding:"9px 14px",color:"#fff",fontSize:12,fontWeight:700,letterSpacing:0.5,transition:"all 0.15s"},
   soldOutBadge:{background:"#F87171",color:"#fff",borderRadius:20,padding:"6px 10px",fontSize:10,fontWeight:700,letterSpacing:1},
   clearAllBtn:{background:"transparent",border:"none",color:"#F87171",fontSize:12,cursor:"pointer"},
@@ -904,7 +904,7 @@ const K = {
   // ── CONFIRM SCREEN ──
   confirmHeader:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",background:"#0d0d0d",borderBottom:"1px solid #1e1e1e",position:"sticky",top:0},
   backBtn:    {background:"transparent",border:"1px solid #2a2a2a",borderRadius:10,padding:"8px 14px",color:"#888",fontSize:12,letterSpacing:1},
-  confirmTitle:{fontFamily:"'Montserrat',sans-serif",fontSize:22,letterSpacing:3,color:"#FF6B35"},
+  confirmTitle:{fontFamily:"'Inter',sans-serif",fontSize:22,letterSpacing:3,color:"#FF6B35"},
   typePill:   {background:"#1e1e1e",border:"1px solid #333",borderRadius:20,padding:"4px 12px",fontSize:11,color:"#aaa"},
   confirmBody:{flex:1,overflowY:"auto",padding:"20px 24px",display:"flex",flexDirection:"column",gap:0},
   confirmItems:{display:"flex",flexDirection:"column",gap:12,marginBottom:20},
@@ -913,14 +913,14 @@ const K = {
   confirmItemName:{fontSize:16,fontWeight:700,marginBottom:4},
   confirmItemAddon:{fontSize:12,color:"#FF6B35",marginBottom:3},
   confirmItemNote:{fontSize:11,color:"#666",marginBottom:6,fontStyle:"italic"},
-  confirmItemPrice:{fontSize:16,fontWeight:700,color:"#FF6B35",fontFamily:"'Montserrat',sans-serif",letterSpacing:1,whiteSpace:"nowrap"},
+  confirmItemPrice:{fontSize:16,fontWeight:700,color:"#FF6B35",fontFamily:"'Inter',sans-serif",letterSpacing:1,whiteSpace:"nowrap"},
   billBox:    {background:"linear-gradient(135deg,#1a1a1a,#111)",borderRadius:16,padding:"20px 24px",marginBottom:16,border:"1px solid #2a2a2a"},
   billRow:    {display:"flex",justifyContent:"space-between",padding:"7px 0",fontSize:14,borderBottom:"1px solid #222"},
   billLabel:  {color:"#888"},
   billDivider:{height:1,background:"#333",margin:"10px 0"},
-  billTotal:  {display:"flex",justifyContent:"space-between",fontSize:22,fontWeight:700,fontFamily:"'Montserrat',sans-serif",letterSpacing:2,paddingTop:4},
+  billTotal:  {display:"flex",justifyContent:"space-between",fontSize:22,fontWeight:700,fontFamily:"'Inter',sans-serif",letterSpacing:2,paddingTop:4},
   confirmFooter:{padding:"16px 20px",background:"#0d0d0d",borderTop:"1px solid #1e1e1e",display:"flex",gap:12},
   editOrderBtn:{background:"#1a1a1a",border:"1px solid #333",borderRadius:14,padding:"16px 20px",color:"#888",fontSize:13,fontWeight:600,flex:1},
-  payBtn:     {flex:2,background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",borderRadius:14,padding:"16px",color:"#fff",fontSize:14,fontWeight:700,letterSpacing:1,fontFamily:"'Montserrat',sans-serif"},
-  proceedBtn: {width:"100%",marginTop:14,background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",borderRadius:16,padding:"18px",color:"#fff",fontSize:15,fontWeight:700,letterSpacing:2,fontFamily:"'Montserrat',sans-serif"},
+  payBtn:     {flex:2,background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",borderRadius:14,padding:"16px",color:"#fff",fontSize:14,fontWeight:700,letterSpacing:1,fontFamily:"'Inter',sans-serif"},
+  proceedBtn: {width:"100%",marginTop:14,background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",borderRadius:16,padding:"18px",color:"#fff",fontSize:15,fontWeight:700,letterSpacing:2,fontFamily:"'Inter',sans-serif"},
 };

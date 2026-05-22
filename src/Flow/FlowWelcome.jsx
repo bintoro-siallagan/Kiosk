@@ -133,7 +133,7 @@ export default function FlowWelcome({ onAuth, tableContext }) {
   return (
     <div style={S.container}>
       <div style={S.hero}>
-        <div style={S.logo}>BINTORO</div>
+        <img src="/logo.png" alt="KaryaOS" style={{ width: 132, height: 132, objectFit: "contain", marginBottom: 6 }} />
         <div style={S.tagline}>Order Langsung dari HP-mu</div>
         {tableContext && (
           <div style={S.tableBadge}>📍 Meja {tableContext}</div>
@@ -242,7 +242,7 @@ export default function FlowWelcome({ onAuth, tableContext }) {
       </div>
 
       <div style={S.footer}>
-        Powered by BINTORO Flow
+        Powered by KaryaOS Flow
       </div>
     </div>
   );
@@ -251,7 +251,7 @@ export default function FlowWelcome({ onAuth, tableContext }) {
 const S = {
   container: { width: "min(440px, 100%)", minHeight: "100vh", padding: "32px 20px", display: "flex", flexDirection: "column", gap: 24 },
   hero: { textAlign: "center", padding: "20px 0", animation: "fadeUp 0.5s ease" },
-  logo: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 48, color: "#FF6B35", letterSpacing: 3 },
+  logo: { fontFamily: "'Inter', sans-serif", fontSize: 48, color: "#FF6B35", letterSpacing: 3 },
   tagline: { fontSize: 13, color: "#9CA3AF", marginTop: 4, letterSpacing: 0.5 },
   tableBadge: { display: "inline-block", marginTop: 12, padding: "6px 14px", borderRadius: 20, background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.3)", color: "#FF6B35", fontSize: 12, fontWeight: 600 },
   card: { background: "linear-gradient(180deg, #161616 0%, #0d0d0d 100%)", border: "1px solid #2a2a2a", borderRadius: 20, padding: "28px 24px", animation: "fadeUp 0.6s ease" },

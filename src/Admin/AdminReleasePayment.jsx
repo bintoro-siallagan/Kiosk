@@ -58,12 +58,12 @@ export default function AdminReleasePayment({ apiBase = "" }) {
               <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12, background: "#0a0e16", border: "1px solid #161b22", borderLeft: `3px solid ${p.overdue ? "#ef4444" : "#f59e0b"}`, borderRadius: 9, padding: "11px 14px" }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: "#e6edf3" }}>{p.payee}</div>
-                  <div style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{p.release_no} · {p.invoice_ref} · {p.payment_method}</div>
+                  <div style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>{p.release_no} · {p.invoice_ref} · {p.payment_method}</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 10, color: p.overdue ? "#ef4444" : "#5b6470" }}>{p.overdue ? "⚠ TELAT — " : "tempo "}{fmtDate(p.due_date)}</div>
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 800, color: "#fb923c", fontFamily: "'Space Mono',monospace", width: 140, textAlign: "right" }}>{fmtRp(p.amount)}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: "#fb923c", fontFamily: "'Geist Mono',monospace", width: 140, textAlign: "right" }}>{fmtRp(p.amount)}</div>
                 <button onClick={() => release(p)} disabled={busy === p.id} style={S.btn}>
                   {busy === p.id ? "Memproses…" : "💸 Release"}
                 </button>
@@ -85,10 +85,10 @@ export default function AdminReleasePayment({ apiBase = "" }) {
           <tbody>
             {d.released.map(p => (
               <tr key={p.id} style={{ borderTop: "1px solid #161b22", fontSize: 12 }}>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#5b6470", fontSize: 10 }}>{p.release_no}</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#5b6470", fontSize: 10 }}>{p.release_no}</td>
                 <td style={{ ...S.td, color: "#e6edf3", fontWeight: 600 }}>{p.payee}</td>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#9da7b3" }}>{p.invoice_ref}</td>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", fontWeight: 700, color: "#10b981" }}>{fmtRp(p.amount)}</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#9da7b3" }}>{p.invoice_ref}</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "#10b981" }}>{fmtRp(p.amount)}</td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>{p.payment_method}</td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>{p.released_by}</td>
                 <td style={{ ...S.td, color: "#5b6470" }}>{fmtDate(p.released_at)}</td>
@@ -104,8 +104,8 @@ export default function AdminReleasePayment({ apiBase = "" }) {
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{v}</div>
     </div>
   );
 }
@@ -113,7 +113,7 @@ function Kpi({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "8px 8px" },
   btn: { background: "#c2410c", color: "#fff", border: "none", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },

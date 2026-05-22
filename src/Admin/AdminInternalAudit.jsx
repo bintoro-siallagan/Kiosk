@@ -71,10 +71,10 @@ export default function AdminInternalAudit({ apiBase = "" }) {
                 <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: a.findings_count ? "pointer" : "default" }} onClick={() => a.findings_count && setExp(exp === a.id ? null : a.id)}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 700, color: "#e6edf3" }}>{a.title}</div>
-                    <div style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{a.code} · {a.area} · {a.auditor} · {a.period}</div>
+                    <div style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>{a.code} · {a.area} · {a.auditor} · {a.period}</div>
                   </div>
                   {a.findings_count > 0 && <span style={{ fontSize: 10, color: a.open_findings > 0 ? "#f87171" : "#10b981" }}>{a.open_findings}/{a.findings_count} temuan {exp === a.id ? "▲" : "▼"}</span>}
-                  {a.rating && <span style={{ fontSize: 9, color: "#a78bfa", fontFamily: "'Space Mono',monospace" }}>{a.rating}</span>}
+                  {a.rating && <span style={{ fontSize: 9, color: "#a78bfa", fontFamily: "'Geist Mono',monospace" }}>{a.rating}</span>}
                   <select value={a.status} onChange={e => setStatus(a, e.target.value)} onClick={e => e.stopPropagation()}
                     style={{ ...S.input, padding: "4px 6px", fontSize: 10, color: st.c, fontWeight: 700, width: 120 }}>
                     {["scheduled", "in_progress", "completed"].map(x => <option key={x} value={x}>{STT[x].l}</option>)}
@@ -98,8 +98,8 @@ export default function AdminInternalAudit({ apiBase = "" }) {
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{v}</div>
     </div>
   );
 }
@@ -107,7 +107,7 @@ function Kpi({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   input: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 9px", color: "#e6edf3", fontSize: 12, fontFamily: "inherit", outline: "none", boxSizing: "border-box" },
   btn: { background: "#7c3aed", color: "#fff", border: "none", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },

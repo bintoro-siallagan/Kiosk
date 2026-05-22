@@ -314,7 +314,7 @@ function POSQRISFlow({ cart, subtotal, order, onCancel, onPaid }) {
             <div style={{padding:"12px 24px", background:"#111", border:"1px solid #F59E0B",
               borderRadius:12, marginBottom:24, display:"inline-flex", flexDirection:"column", alignItems:"center"}}>
               <span style={{fontSize:11, color:"#888", letterSpacing:2}}>MENUNGGU PEMBAYARAN</span>
-              <span style={{fontSize:32, fontFamily:"'Bebas Neue',cursive", color:"#F59E0B", letterSpacing:2}}>
+              <span style={{fontSize:32, fontFamily:"'Inter',cursive", color:"#F59E0B", letterSpacing:2}}>
                 Rp {fmt(subtotal)}
               </span>
             </div>
@@ -359,7 +359,7 @@ function POSQRISFlow({ cart, subtotal, order, onCancel, onPaid }) {
 }
 
 const S = {
-  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'DM Sans',sans-serif",
+  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Inter',sans-serif",
     display:"flex", flexDirection:"column" },
   header: { display:"flex", alignItems:"center", justifyContent:"space-between",
     padding:"16px 24px", borderBottom:"1px solid #222" },

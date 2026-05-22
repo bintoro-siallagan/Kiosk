@@ -165,7 +165,7 @@ export default function FlowPromos({ customer, setActivePromo, setScreen }) {
             background: "transparent", border: "none", color: TEXT,
             fontSize: 24, cursor: "pointer", padding: 0, width: 32
           }}>←</button>
-          <h1 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: BRAND, letterSpacing: 1 }}>
+          <h1 style={{ margin: 0, fontFamily: "'Inter', sans-serif", fontSize: 28, color: BRAND, letterSpacing: 1 }}>
             PROMO
           </h1>
         </div>
@@ -246,7 +246,7 @@ export default function FlowPromos({ customer, setActivePromo, setScreen }) {
               {/* Code + value */}
               <div style={{ marginBottom: 10, paddingRight: 70 }}>
                 <div style={{
-                  fontFamily: "'Bebas Neue', sans-serif", fontSize: 24,
+                  fontFamily: "'Inter', sans-serif", fontSize: 24,
                   color: available && eligible ? BRAND : SUB, letterSpacing: 1, lineHeight: 1
                 }}>
                   {p.code}
@@ -317,7 +317,7 @@ export default function FlowPromos({ customer, setActivePromo, setScreen }) {
                 {(TYPE_META[detail.type] || TYPE_META.fixed).label}
               </div>
               <div style={{
-                fontFamily: "'Bebas Neue', sans-serif", fontSize: 56, color: BRAND, lineHeight: 1, marginBottom: 8
+                fontFamily: "'Inter', sans-serif", fontSize: 56, color: BRAND, lineHeight: 1, marginBottom: 8
               }}>
                 {valueLabel(detail)}
               </div>
@@ -333,7 +333,7 @@ export default function FlowPromos({ customer, setActivePromo, setScreen }) {
             }}>
               <div style={{ fontSize: 11, color: SUB, marginBottom: 6, letterSpacing: 1 }}>KODE PROMO</div>
               <div style={{
-                fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, color: BRAND, letterSpacing: 2, marginBottom: 8
+                fontFamily: "'Inter', sans-serif", fontSize: 32, color: BRAND, letterSpacing: 2, marginBottom: 8
               }}>
                 {detail.code}
               </div>

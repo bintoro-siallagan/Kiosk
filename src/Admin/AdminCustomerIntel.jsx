@@ -47,7 +47,7 @@ export default function AdminCustomerIntel({ apiBase = "" }) {
             <div key={g.name} style={{ background: "#0a0e16", border: "1px solid #161b22", borderTop: `2px solid ${g.color}`, borderRadius: 9, padding: "11px 13px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: g.color }}>{g.icon} {g.name}</span>
-                <span style={{ fontSize: 18, fontWeight: 800, color: "#e6edf3", fontFamily: "'Space Mono',monospace" }}>{g.count}</span>
+                <span style={{ fontSize: 18, fontWeight: 800, color: "#e6edf3", fontFamily: "'Geist Mono',monospace" }}>{g.count}</span>
               </div>
               <div style={{ fontSize: 11, color: "#9da7b3", marginTop: 4, lineHeight: 1.5 }}>{g.action}</div>
             </div>
@@ -64,7 +64,7 @@ export default function AdminCustomerIntel({ apiBase = "" }) {
             <div style={{ flex: 1, height: 12, background: "#0a0e16", borderRadius: 6, overflow: "hidden" }}>
               <div style={{ height: "100%", width: Math.round(v / maxVf * 100) + "%", background: (VISIT[k] || {}).c }} />
             </div>
-            <span style={{ width: 40, textAlign: "right", fontFamily: "'Space Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{v}</span>
+            <span style={{ width: 40, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{v}</span>
           </div>
         ))}
       </div>
@@ -85,17 +85,17 @@ export default function AdminCustomerIntel({ apiBase = "" }) {
               <tr key={i} style={{ borderTop: "1px solid #161b22", fontSize: 13 }}>
                 <td style={S.td}>
                   <div style={{ color: "#e6edf3", fontWeight: 600 }}>{c.name}</div>
-                  <div style={{ color: "#5b6470", fontSize: 11, fontFamily: "'Space Mono',monospace" }}>{c.phone}</div>
+                  <div style={{ color: "#5b6470", fontSize: 11, fontFamily: "'Geist Mono',monospace" }}>{c.phone}</div>
                 </td>
                 {[c.r, c.f, c.m].map((sc, j) => (
                   <td key={j} style={S.td}>
-                    <span style={{ display: "inline-block", width: 20, height: 20, lineHeight: "20px", textAlign: "center", borderRadius: 5, fontSize: 11, fontWeight: 700, color: "#0a0e16", background: scoreColor(sc), fontFamily: "'Space Mono',monospace" }}>{sc}</span>
+                    <span style={{ display: "inline-block", width: 20, height: 20, lineHeight: "20px", textAlign: "center", borderRadius: 5, fontSize: 11, fontWeight: 700, color: "#0a0e16", background: scoreColor(sc), fontFamily: "'Geist Mono',monospace" }}>{sc}</span>
                   </td>
                 ))}
                 <td style={S.td}><span style={{ fontSize: 11, fontWeight: 700, color: (d.segments.find(g => g.name === c.segment) || {}).color || "#9ca3af" }}>{c.segment}</span></td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>{c.recency_days} hari lalu</td>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#9da7b3" }}>{c.frequency}×</td>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", fontWeight: 700, color: "#d946ef" }}>{fmtRp(c.monetary)}</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#9da7b3" }}>{c.frequency}×</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "#d946ef" }}>{fmtRp(c.monetary)}</td>
               </tr>
             ))}
           </tbody>
@@ -108,8 +108,8 @@ export default function AdminCustomerIntel({ apiBase = "" }) {
 function Kpi({ label, v, c, sub }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
       <div style={{ fontSize: 10, color: "#5b6470" }}>{sub}</div>
     </div>
   );
@@ -118,7 +118,7 @@ function Kpi({ label, v, c, sub }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "9px 8px" },
 };

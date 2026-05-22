@@ -70,14 +70,14 @@ export default function AdminFoodCostCalc({ apiBase = "" }) {
             {rows.length === 0 ? <div style={{ fontSize: 12, color: "#5b6470" }}>Belum ada bahan.</div> : rows.map((r, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, padding: "4px 0", borderTop: "1px solid #161b22" }}>
                 <span style={{ flex: 1, color: "#e6edf3" }}>{r.name} <span style={{ color: "#5b6470" }}>· {r.qty} {r.unit}</span></span>
-                <span style={{ fontFamily: "'Space Mono',monospace", color: "#9da7b3" }}>{fmtRp(r.unit_cost * r.qty)}</span>
+                <span style={{ fontFamily: "'Geist Mono',monospace", color: "#9da7b3" }}>{fmtRp(r.unit_cost * r.qty)}</span>
                 <button onClick={() => setRows(rows.filter((_, j) => j !== i))} style={{ background: "transparent", border: "none", color: "#f87171", cursor: "pointer", fontSize: 13 }}>×</button>
               </div>
             ))}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", borderTop: "1px solid #21262d", marginTop: 8, paddingTop: 8 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: "#e6edf3" }}>TOTAL FOOD COST</span>
-            <span style={{ fontSize: 14, fontWeight: 800, color: "#fb923c", fontFamily: "'Space Mono',monospace" }}>{fmtRp(totalCost)}</span>
+            <span style={{ fontSize: 14, fontWeight: 800, color: "#fb923c", fontFamily: "'Geist Mono',monospace" }}>{fmtRp(totalCost)}</span>
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center" }}>
             <input value={price} onChange={e => setPrice(e.target.value)} placeholder="Harga jual (Rp)" type="number" style={{ ...S.input, flex: 1 }} />
@@ -94,11 +94,11 @@ export default function AdminFoodCostCalc({ apiBase = "" }) {
             <Stat label="Margin Kotor" v={sp > 0 ? margin + "%" : "—"} c={margin >= 60 ? "#10b981" : margin >= 40 ? "#f59e0b" : "#ef4444"} />
             <Stat label="Profit / unit" v={sp > 0 ? fmtRp(sp - totalCost) : "—"} c="#3b82f6" />
           </div>
-          <div style={{ fontSize: 10, color: "#5b6470", fontFamily: "'Space Mono',monospace", margin: "12px 0 6px" }}>💡 SARAN HARGA JUAL</div>
+          <div style={{ fontSize: 10, color: "#5b6470", fontFamily: "'Geist Mono',monospace", margin: "12px 0 6px" }}>💡 SARAN HARGA JUAL</div>
           {[60, 65, 70].map(t => (
             <div key={t} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "3px 0" }}>
               <span style={{ color: "#9da7b3" }}>Margin {t}%</span>
-              <span style={{ fontFamily: "'Space Mono',monospace", color: "#fb923c" }}>{fmtRp(suggest(t))}</span>
+              <span style={{ fontFamily: "'Geist Mono',monospace", color: "#fb923c" }}>{fmtRp(suggest(t))}</span>
             </div>
           ))}
         </div>
@@ -134,7 +134,7 @@ function Stat({ label, v, c }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", background: "#0a0e16", border: "1px solid #161b22", borderRadius: 8, padding: "9px 12px" }}>
       <span style={{ fontSize: 12, color: "#9da7b3" }}>{label}</span>
-      <span style={{ fontSize: 14, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace" }}>{v}</span>
+      <span style={{ fontSize: 14, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace" }}>{v}</span>
     </div>
   );
 }
@@ -142,9 +142,9 @@ function Stat({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   td: { padding: "7px 8px" },
-  mono: { fontFamily: "'Space Mono',monospace" },
+  mono: { fontFamily: "'Geist Mono',monospace" },
   input: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 9px", color: "#e6edf3", fontSize: 12, fontFamily: "inherit", outline: "none", boxSizing: "border-box" },
   btn: { background: "#ea580c", color: "#fff", border: "none", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
   btnGhost: { background: "#161b22", color: "#9da7b3", border: "1px solid #21262d", borderRadius: 7, padding: "8px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },

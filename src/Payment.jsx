@@ -176,7 +176,7 @@ export default function Payment({ cart, orderType, promo, tableData, customerDat
 
     return (
       <div style={S.page}>
-        <h1 style={S.title}>BINTORO</h1>
+        <h1 style={S.title}>KaryaOS</h1>
         <p style={S.subtitle}>Pilih Metode Pembayaran</p>
 
         <div style={S.totalLabel}>TOTAL</div>
@@ -230,7 +230,7 @@ export default function Payment({ cart, orderType, promo, tableData, customerDat
     return (
       <div style={{...S.page, justifyContent:'center', gap:20, padding:'40px 24px'}}>
         <div style={{fontSize:72, lineHeight:1}}>🧾</div>
-        <div style={{fontFamily:"'Montserrat',sans-serif", fontSize:24, fontWeight:900, letterSpacing:3, color:'#fff'}}>PESANAN #{orderNum}</div>
+        <div style={{fontFamily:"'Inter',sans-serif", fontSize:24, fontWeight:900, letterSpacing:3, color:'#fff'}}>PESANAN #{orderNum}</div>
         <div style={{fontSize:13, color:'rgba(255,255,255,0.4)', letterSpacing:2}}>TOTAL PEMBAYARAN</div>
         <div style={{fontSize:56, fontWeight:800, color:'#fb923c', fontVariantNumeric:'tabular-nums', lineHeight:1}}>
           Rp {amount.toLocaleString('id-ID')}

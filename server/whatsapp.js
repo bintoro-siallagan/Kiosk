@@ -7,8 +7,8 @@ const path = require('path');
 const WA_CONFIG_FILE = path.join(__dirname, "wa-config.json");
 
 const DEFAULT_TEMPLATES = {
-  ready: "🍦 Halo {customerName}!\n\nPesanan *#{orderId}* kamu sudah siap diambil di counter ya. Tunjukkan struk atau sebut nomor pesanan.\n\nTotal: Rp {totalIDR}\n\nTerima kasih,\n*BINTORO*",
-  completed: "✅ Terima kasih telah berbelanja di BINTORO!\n\nPesanan #{orderId} udah selesai diambil.\n\nRate pengalaman kamu: {trackingUrl}"
+  ready: "🍦 Halo {customerName}!\n\nPesanan *#{orderId}* kamu sudah siap diambil di counter ya. Tunjukkan struk atau sebut nomor pesanan.\n\nTotal: Rp {totalIDR}\n\nTerima kasih,\n*KaryaOS*",
+  completed: "✅ Terima kasih telah berbelanja di KaryaOS!\n\nPesanan #{orderId} udah selesai diambil.\n\nRate pengalaman kamu: {trackingUrl}"
 };
 
 function loadConfig() {

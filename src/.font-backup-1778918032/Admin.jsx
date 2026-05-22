@@ -79,7 +79,7 @@ function OrderCard({ order, onStatus, compact }) {
     }}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
-          <span style={{fontFamily:"'Space Mono',monospace",fontSize:13,fontWeight:700,color:"#fff"}}>#{order.id}</span>
+          <span style={{fontFamily:"'Geist Mono',monospace",fontSize:13,fontWeight:700,color:"#fff"}}>#{order.id}</span>
           {urgent && <span style={{fontSize:9,background:"#F87171",color:"#fff",borderRadius:4,padding:"1px 5px",fontWeight:700,letterSpacing:1}}>LATE</span>}
         </div>
         <span style={{fontSize:11,color:"#555"}}>{fAgo(order.time)}</span>
@@ -113,7 +113,7 @@ function OrderCard({ order, onStatus, compact }) {
 const btnStyle = (color, bg) => ({
   background: bg || `${color}18`, border:`1px solid ${color}44`,
   borderRadius:6, padding:"4px 10px", color, cursor:"pointer",
-  fontSize:11, fontWeight:700, fontFamily:"'DM Sans',sans-serif",
+  fontSize:11, fontWeight:700, fontFamily:"'Inter',sans-serif",
 });
 
 export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembers, onPromo, onShift, onLogout, adminSession }) {
@@ -561,10 +561,10 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
   const time = new Date(now);
 
   if (loading) return (
-    <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"#050810",fontFamily:"'DM Sans',sans-serif",flexDirection:"column",gap:16}}>
+    <div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100vh",background:"#050810",fontFamily:"'Inter',sans-serif",flexDirection:"column",gap:16}}>
       <style>{FONTS}</style>
       <div style={{width:40,height:40,border:"2px solid #1a1a2e",borderTop:"2px solid #F59E0B",borderRadius:"50%",animation:"spin 0.8s linear infinite"}}/>
-      <div style={{fontFamily:"'Space Mono',monospace",fontSize:13,color:"#555",letterSpacing:2}}>LOADING DASHBOARD</div>
+      <div style={{fontFamily:"'Geist Mono',monospace",fontSize:13,color:"#555",letterSpacing:2}}>LOADING DASHBOARD</div>
     </div>
   );
 
@@ -583,7 +583,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
       <aside style={D.sidebar}>
         <div style={D.sideTop}>
           <div style={D.logo}>🍽️</div>
-          <div style={D.brand}>BINTORO</div>
+          <div style={D.brand}>KaryaOS</div>
           <div style={D.brandSub}>COMMAND CENTER</div>
           <div style={{...D.livePill, borderColor: connected?"#34D39933":"#F8717133", color:connected?"#34D399":"#F87171"}}>
             <span style={{...D.liveDot,background:connected?"#34D399":"#F87171"}}/>
@@ -625,7 +625,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
           <div style={D.clock}>{time.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</div>
           <div style={D.clockSub}>{time.toLocaleDateString("id-ID",{weekday:"short",day:"numeric",month:"short"})}</div>
           {adminSession && (
-            <div style={{fontSize:11,color:"#555",marginBottom:6,fontFamily:"'Space Mono',monospace"}}>
+            <div style={{fontSize:11,color:"#555",marginBottom:6,fontFamily:"'Geist Mono',monospace"}}>
               {adminSession.name} · {adminSession.role}
             </div>
           )}
@@ -721,7 +721,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                       const hLabel = new Date(now-(7-i)*3600000).getHours();
                       return (
                         <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:4}}>
-                          <div style={{fontSize:9,color:v>0?"#F59E0B":"transparent",fontFamily:"'Space Mono',monospace"}}>{v>0?`${v.toFixed(0)}k`:""}</div>
+                          <div style={{fontSize:9,color:v>0?"#F59E0B":"transparent",fontFamily:"'Geist Mono',monospace"}}>{v>0?`${v.toFixed(0)}k`:""}</div>
                           <div title={`${hLabel}:00`} style={{width:"100%",height:h,borderRadius:"4px 4px 0 0",
                             background: i===hourData.length-1?"#F59E0B":`${v>0?"#F59E0B":"#1a1a2e"}${v>0?"66":""}`,
                             transition:"height 0.4s ease"}}/>
@@ -750,7 +750,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                         <div key={i} style={{marginBottom:10}}>
                           <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
                             <span style={{fontSize:12,color:"#aaa"}}>{t.label}</span>
-                            <span style={{fontSize:13,fontWeight:700,color:t.color,fontFamily:"'Space Mono',monospace"}}>{t.count}</span>
+                            <span style={{fontSize:13,fontWeight:700,color:t.color,fontFamily:"'Geist Mono',monospace"}}>{t.count}</span>
                           </div>
                           <div style={{height:4,background:"#1a1a2e",borderRadius:2,overflow:"hidden"}}>
                             <div style={{height:"100%",width:`${orders.length?(t.count/orders.length)*100:0}%`,background:t.color,borderRadius:2,transition:"width 0.5s"}}/>
@@ -768,10 +768,10 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                   </div>
                   {topItems.map(([name,d],i)=>(
                     <div key={name} style={{display:"flex",alignItems:"center",gap:10,marginBottom:8}}>
-                      <span style={{fontSize:10,color:"#555",fontFamily:"'Space Mono',monospace",width:16}}>#{i+1}</span>
+                      <span style={{fontSize:10,color:"#555",fontFamily:"'Geist Mono',monospace",width:16}}>#{i+1}</span>
                       <span style={{fontSize:18}}>{d.e}</span>
                       <span style={{flex:1,fontSize:12,color:"#ccc"}}>{name}</span>
-                      <span style={{fontSize:12,fontWeight:700,color:"#F59E0B",fontFamily:"'Space Mono',monospace"}}>{d.qty}x</span>
+                      <span style={{fontSize:12,fontWeight:700,color:"#F59E0B",fontFamily:"'Geist Mono',monospace"}}>{d.qty}x</span>
                     </div>
                   ))}
                 </div>
@@ -793,7 +793,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                   return (
                     <div key={o.id} style={{flexShrink:0,background:"#0d1117",border:`1px solid ${st.color}22`,borderRadius:10,padding:"10px 14px",minWidth:160}}>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                        <span style={{fontFamily:"'Space Mono',monospace",fontSize:12,fontWeight:700}}>#{o.id}</span>
+                        <span style={{fontFamily:"'Geist Mono',monospace",fontSize:12,fontWeight:700}}>#{o.id}</span>
                         <span style={{fontSize:10,color:st.color,fontWeight:700}}>{st.short}</span>
                       </div>
                       <div style={{fontSize:11,color:"#888",marginBottom:2}}>{o.type==="dine"?`🪑${o.table}`:"🛍️"}</div>
@@ -840,7 +840,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                   <div key={key} style={{background:"#080c10",border:`1px solid ${col.color}22`,borderRadius:14,overflow:"hidden"}}>
                     <div style={{padding:"12px 16px",borderBottom:`1px solid ${col.color}22`,display:"flex",alignItems:"center",gap:8}}>
                       <span style={{fontSize:16}}>{col.icon}</span>
-                      <span style={{fontFamily:"'Space Mono',monospace",fontSize:13,fontWeight:700,color:col.color}}>{col.label}</span>
+                      <span style={{fontFamily:"'Geist Mono',monospace",fontSize:13,fontWeight:700,color:col.color}}>{col.label}</span>
                       <span style={{marginLeft:"auto",background:`${col.color}22`,color:col.color,borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:700}}>{colOrders.length}</span>
                     </div>
                     <div style={{padding:"12px",maxHeight:520,overflowY:"auto"}}>
@@ -862,10 +862,10 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                   const st=STATUS[o.status];
                   return (
                     <div key={o.id} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 14px",background:"#0d1117",borderRadius:10,border:"1px solid #161b22"}}>
-                      <span style={{fontFamily:"'Space Mono',monospace",fontSize:13,fontWeight:700,color:"#aaa",minWidth:40}}>#{o.id}</span>
+                      <span style={{fontFamily:"'Geist Mono',monospace",fontSize:13,fontWeight:700,color:"#aaa",minWidth:40}}>#{o.id}</span>
                       <span style={{fontSize:12,color:"#666",flex:1}}>{o.type==="dine"?`🪑 ${o.table}`:"🛍️ Bawa"} · {fTime(o.time)}</span>
                       <span style={{fontSize:11,color:"#666",flex:2}}>{o.items.map(i=>i.n).join(", ").slice(0,40)}</span>
-                      <span style={{fontSize:13,fontWeight:700,color:"#F59E0B",fontFamily:"'Space Mono',monospace"}}>{fIDR(o.total)}</span>
+                      <span style={{fontSize:13,fontWeight:700,color:"#F59E0B",fontFamily:"'Geist Mono',monospace"}}>{fIDR(o.total)}</span>
                       <span style={{fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20,background:st.bg,color:st.color}}>{st.label}</span>
                     </div>
                   );
@@ -906,7 +906,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                         {editPrice===item.id ? (
                           <div style={{display:"flex",gap:4,alignItems:"center",flex:1}}>
                             <span style={{fontSize:11,color:"#555"}}>Rp</span>
-                            <input style={{flex:1,background:"#080c10",border:"1px solid #F59E0B",borderRadius:6,padding:"4px 8px",color:"#fff",fontSize:12,fontFamily:"'DM Sans',sans-serif"}}
+                            <input style={{flex:1,background:"#080c10",border:"1px solid #F59E0B",borderRadius:6,padding:"4px 8px",color:"#fff",fontSize:12,fontFamily:"'Inter',sans-serif"}}
                               type="number" value={priceVal} autoFocus
                               onChange={e=>setPriceVal(e.target.value)}
                               onKeyDown={e=>{if(e.key==="Enter")savePrice(item.id);if(e.key==="Escape"){setEditPrice(null);setPriceVal("");}}}/>
@@ -914,7 +914,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                             <button style={{background:"#1a1a2e",border:"none",borderRadius:6,padding:"4px 8px",color:"#888",cursor:"pointer",fontSize:12}} onClick={()=>{setEditPrice(null);setPriceVal("");}}>✕</button>
                           </div>
                         ) : (
-                          <button style={{background:"transparent",border:"none",color:"#F59E0B",cursor:"pointer",fontSize:14,fontWeight:700,fontFamily:"'Space Mono',monospace",padding:0}}
+                          <button style={{background:"transparent",border:"none",color:"#F59E0B",cursor:"pointer",fontSize:14,fontWeight:700,fontFamily:"'Geist Mono',monospace",padding:0}}
                             onClick={()=>{setEditPrice(item.id);setPriceVal(String(item.price));}} title="Edit harga">
                             {fIDR(item.price)} ✎
                           </button>
@@ -948,7 +948,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                   <div style={{fontSize:32,marginBottom:10}}>{s.icon}</div>
                   <div style={{fontSize:15,fontWeight:700,marginBottom:4}}>{s.title}</div>
                   <div style={{fontSize:12,color:"#666",marginBottom:16,lineHeight:1.5}}>{s.desc}</div>
-                  <button style={{background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:8,padding:"8px 16px",color:"#050810",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'DM Sans',sans-serif"}} onClick={s.fn}>{s.action} →</button>
+                  <button style={{background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:8,padding:"8px 16px",color:"#050810",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Inter',sans-serif"}} onClick={s.fn}>{s.action} →</button>
                 </div>
               ))}
 
@@ -972,7 +972,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                       value={printerConfig.kitchen?.ip||""}
                       onChange={e=>setPrinterConfig({...printerConfig, kitchen:{...printerConfig.kitchen, ip: e.target.value}})}
                       onBlur={e=>updatePrinter({kitchen:{...printerConfig.kitchen, ip: e.target.value}})}
-                      style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'DM Sans',sans-serif"}}/>
+                      style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Inter',sans-serif"}}/>
                   </div>
                   <div>
                     <div style={{fontSize:11,color:"#888",marginBottom:6,fontWeight:600}}>CUSTOMER PRINTER IP</div>
@@ -980,7 +980,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                       value={printerConfig.customer?.ip||""}
                       onChange={e=>setPrinterConfig({...printerConfig, customer:{...printerConfig.customer, ip: e.target.value}})}
                       onBlur={e=>updatePrinter({customer:{...printerConfig.customer, ip: e.target.value}})}
-                      style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'DM Sans',sans-serif"}}/>
+                      style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Inter',sans-serif"}}/>
                   </div>
                 </div>
                 <div style={{fontSize:10,color:"#666",marginTop:10,lineHeight:1.5}}>Port default 9100 (RAW). Kosongin IP buat skip print di printer itu. Debug mode = simpan .bin file daripada print real.</div>
@@ -1009,7 +1009,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                         }
                         togglePaymentMethod(m.key);
                       }}
-                        style={{flex:1, background: on?"rgba(52,211,153,0.10)":"#0a0e16", border:`1px solid ${on?"#34D39966":"#21262d"}`, borderRadius:12, padding:"16px 14px", color: on?"#34D399":"#666", cursor:"pointer", textAlign:"left", display:"flex", alignItems:"center", gap:14, fontFamily:"'DM Sans',sans-serif"}}>
+                        style={{flex:1, background: on?"rgba(52,211,153,0.10)":"#0a0e16", border:`1px solid ${on?"#34D39966":"#21262d"}`, borderRadius:12, padding:"16px 14px", color: on?"#34D399":"#666", cursor:"pointer", textAlign:"left", display:"flex", alignItems:"center", gap:14, fontFamily:"'Inter',sans-serif"}}>
                         <div style={{fontSize:28}}>{m.icon}</div>
                         <div style={{flex:1}}>
                           <div style={{fontSize:14,fontWeight:700,marginBottom:2}}>{on?"✓ ":""}{m.label}</div>
@@ -1045,7 +1045,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                         value={midtransConfig.serverKey||""}
                         onChange={e=>setMidtransConfig({...midtransConfig, serverKey: e.target.value})}
                         onBlur={e=>updateMidtrans({serverKey: e.target.value})}
-                        style={{flex:1,background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Space Mono',monospace"}}/>
+                        style={{flex:1,background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Geist Mono',monospace"}}/>
                       <button onClick={()=>setRevealServerKey(!revealServerKey)} style={{background:"#161b22",border:"1px solid #21262d",borderRadius:8,padding:"0 12px",color:"#888",cursor:"pointer"}}>👁</button>
                     </div>
                   </div>
@@ -1055,7 +1055,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                       value={midtransConfig.clientKey||""}
                       onChange={e=>setMidtransConfig({...midtransConfig, clientKey: e.target.value})}
                       onBlur={e=>updateMidtrans({clientKey: e.target.value})}
-                      style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Space Mono',monospace"}}/>
+                      style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Geist Mono',monospace"}}/>
                   </div>
                   <div>
                     <div style={{fontSize:11,color:"#888",marginBottom:6,fontWeight:600}}>MERCHANT ID</div>
@@ -1063,7 +1063,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                       value={midtransConfig.merchantId||""}
                       onChange={e=>setMidtransConfig({...midtransConfig, merchantId: e.target.value})}
                       onBlur={e=>updateMidtrans({merchantId: e.target.value})}
-                      style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Space Mono',monospace"}}/>
+                      style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Geist Mono',monospace"}}/>
                   </div>
                   <div>
                     <div style={{fontSize:11,color:"#888",marginBottom:6,fontWeight:600}}>NOTIFICATION URL</div>
@@ -1071,7 +1071,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                       value={midtransConfig.notificationUrl||""}
                       onChange={e=>setMidtransConfig({...midtransConfig, notificationUrl: e.target.value})}
                       onBlur={e=>updateMidtrans({notificationUrl: e.target.value})}
-                      style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'DM Sans',sans-serif"}}/>
+                      style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Inter',sans-serif"}}/>
                   </div>
                 </div>
                 <div style={{marginBottom:14}}>
@@ -1104,7 +1104,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                       enabledMethods: midtransConfig.enabledMethods,
                     });
                   }} disabled={midtransSaving}
-                    style={{background:midtransSaving?"#666":"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:8,padding:"10px 22px",color:"#050810",cursor:midtransSaving?"wait":"pointer",fontSize:13,fontWeight:700,fontFamily:"'DM Sans',sans-serif",boxShadow:midtransSaving?"none":"0 4px 12px rgba(245,158,11,0.3)"}}>
+                    style={{background:midtransSaving?"#666":"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:8,padding:"10px 22px",color:"#050810",cursor:midtransSaving?"wait":"pointer",fontSize:13,fontWeight:700,fontFamily:"'Inter',sans-serif",boxShadow:midtransSaving?"none":"0 4px 12px rgba(245,158,11,0.3)"}}>
                     {midtransSaving ? "⏳ Menyimpan…" : "💾 Simpan"}
                   </button>
                   {midtransTest && <span style={{fontSize:11,color: midtransTest.error?"#F87171":"#34D399",marginLeft:6}}>{midtransTest.error || midtransTest.message || "OK"}</span>}
@@ -1153,7 +1153,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                       onChange={e => setAudioConfigState({...audioConfig, ttsPhrase: e.target.value})}
                       onBlur={e => updateAudioConfig({ttsPhrase: e.target.value})}
                       placeholder="Frasa TTS, contoh: Terima kasih kakak"
-                      style={{width:"100%",background:"#161b22",border:"1px solid #21262d",borderRadius:6,padding:"8px 10px",color:"#fff",fontSize:12,fontFamily:"'DM Sans',sans-serif"}}/>
+                      style={{width:"100%",background:"#161b22",border:"1px solid #21262d",borderRadius:6,padding:"8px 10px",color:"#fff",fontSize:12,fontFamily:"'Inter',sans-serif"}}/>
                   </div>
                   <div>
                     <div style={{fontSize:11,color:"#888",fontWeight:600,marginBottom:8}}>SOUND PROFILES (klik label = preview, checkbox = toggle)</div>
@@ -1231,12 +1231,12 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                   </div>
                 )}
                 <div style={{display:"flex",gap:10,alignItems:"center"}}>
-                  <label style={{background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:8,padding:"10px 18px",color:"#050810",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'DM Sans',sans-serif",display:"inline-block"}}>
+                  <label style={{background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:8,padding:"10px 18px",color:"#050810",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Inter',sans-serif",display:"inline-block"}}>
                     📤 Upload Audio (mp3/wav/ogg)
                     <input type="file" accept="audio/*" style={{display:"none"}}
                       onChange={e => { handleAudioUpload(e.target.files?.[0]); e.target.value=""; }}/>
                   </label>
-                  <button onClick={handleAudioPreview} style={{background:"#161b22",border:"1px solid #21262d",borderRadius:8,padding:"10px 16px",color:"#A78BFA",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'DM Sans',sans-serif"}}>
+                  <button onClick={handleAudioPreview} style={{background:"#161b22",border:"1px solid #21262d",borderRadius:8,padding:"10px 16px",color:"#A78BFA",cursor:"pointer",fontSize:12,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>
                     ▶ Preview
                   </button>
                   <span style={{fontSize:10,color:"#666"}}>Max 5MB · mono 128kbps recommended</span>
@@ -1263,14 +1263,14 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                       <input type="text" placeholder="smtp.gmail.com" value={emailConfig.smtpHost||""}
                         onChange={e=>setEmailConfig({...emailConfig, smtpHost: e.target.value})}
                         onBlur={e=>updateEmailConfig({smtpHost: e.target.value})}
-                        style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Space Mono',monospace"}}/>
+                        style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Geist Mono',monospace"}}/>
                     </div>
                     <div>
                       <div style={{fontSize:11,color:"#888",marginBottom:6,fontWeight:600}}>PORT</div>
                       <input type="number" placeholder="587" value={emailConfig.smtpPort||""}
                         onChange={e=>setEmailConfig({...emailConfig, smtpPort: parseInt(e.target.value)||587})}
                         onBlur={e=>updateEmailConfig({smtpPort: parseInt(e.target.value)||587, smtpSecure: parseInt(e.target.value)===465})}
-                        style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Space Mono',monospace"}}/>
+                        style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Geist Mono',monospace"}}/>
                     </div>
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
@@ -1287,7 +1287,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                         <input type={revealSmtpPass?"text":"password"} placeholder="•••• •••• •••• ••••" value={emailConfig.smtpPass||""}
                           onChange={e=>setEmailConfig({...emailConfig, smtpPass: e.target.value})}
                           onBlur={e=>{ if(!e.target.value.includes("•")) updateEmailConfig({smtpPass: e.target.value}); }}
-                          style={{flex:1,background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Space Mono',monospace"}}/>
+                          style={{flex:1,background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Geist Mono',monospace"}}/>
                         <button onClick={()=>setRevealSmtpPass(!revealSmtpPass)} style={{background:"#161b22",border:"1px solid #21262d",borderRadius:8,padding:"0 12px",color:"#888",cursor:"pointer"}}>👁</button>
                       </div>
                     </div>
@@ -1295,7 +1295,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                   <div style={{display:"grid",gridTemplateColumns:"1fr 2fr",gap:12,marginBottom:12}}>
                     <div>
                       <div style={{fontSize:11,color:"#888",marginBottom:6,fontWeight:600}}>FROM NAME</div>
-                      <input type="text" placeholder="BINTORO Kiosk" value={emailConfig.fromName||""}
+                      <input type="text" placeholder="KaryaOS Kiosk" value={emailConfig.fromName||""}
                         onChange={e=>setEmailConfig({...emailConfig, fromName: e.target.value})}
                         onBlur={e=>updateEmailConfig({fromName: e.target.value})}
                         style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13}}/>
@@ -1377,7 +1377,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                       onChange={e => setScreensaverConfig({...screensaverConfig, tagline: e.target.value})}
                       onBlur={e => updateScreensaver({tagline: e.target.value})}
                       placeholder="SENTUH UNTUK MEMESAN"
-                      style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Bebas Neue',cursive",letterSpacing:2}}/>
+                      style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Inter',cursive",letterSpacing:2}}/>
                   </div>
 
                   {/* Image thumbnails */}
@@ -1396,7 +1396,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                       {screensaverImages.map((img, idx) => (
                         <div key={img.name} style={{display:"flex",gap:14,padding:"12px",background:"#0a0e16",border:"1px solid #21262d",borderRadius:10,alignItems:"center"}}>
                           {/* Slide number */}
-                          <div style={{minWidth:36,height:36,borderRadius:8,background:"#1a1a2e",display:"flex",alignItems:"center",justifyContent:"center",color:"#F59E0B",fontFamily:"'Bebas Neue',cursive",fontSize:20,fontWeight:700}}>
+                          <div style={{minWidth:36,height:36,borderRadius:8,background:"#1a1a2e",display:"flex",alignItems:"center",justifyContent:"center",color:"#F59E0B",fontFamily:"'Inter',cursive",fontSize:20,fontWeight:700}}>
                             {idx + 1}
                           </div>
                           {/* Thumbnail */}
@@ -1414,13 +1414,13 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                           </div>
                           {/* Actions */}
                           <div style={{display:"flex",gap:6}}>
-                            <label style={{background:"#161b22",border:"1px solid #A78BFA55",borderRadius:8,padding:"8px 14px",color:"#A78BFA",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"'DM Sans',sans-serif"}}>
+                            <label style={{background:"#161b22",border:"1px solid #A78BFA55",borderRadius:8,padding:"8px 14px",color:"#A78BFA",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>
                               🔄 Ganti
                               <input type="file" accept="image/*" style={{display:"none"}}
                                 onChange={e => { handleSsReplace(img.name, e.target.files?.[0]); e.target.value=""; }}/>
                             </label>
                             <button onClick={()=>handleSsDelete(img.name)}
-                              style={{background:"transparent",border:"1px solid #F87171",borderRadius:8,padding:"8px 14px",color:"#F87171",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"'DM Sans',sans-serif"}}>
+                              style={{background:"transparent",border:"1px solid #F87171",borderRadius:8,padding:"8px 14px",color:"#F87171",cursor:"pointer",fontSize:11,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>
                               🗑 Hapus
                             </button>
                           </div>
@@ -1428,7 +1428,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                       ))}
 
                       {/* Add new slide button */}
-                      <label style={{display:"flex",justifyContent:"center",alignItems:"center",gap:10,padding:"16px",background:"transparent",border:"2px dashed #F59E0B66",borderRadius:10,color:"#F59E0B",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"'DM Sans',sans-serif"}}>
+                      <label style={{display:"flex",justifyContent:"center",alignItems:"center",gap:10,padding:"16px",background:"transparent",border:"2px dashed #F59E0B66",borderRadius:10,color:"#F59E0B",cursor:"pointer",fontSize:13,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>
                         {ssUploading ? "⏳ Uploading…" : "+ Tambah Slide Baru"}
                         <input type="file" accept="image/*" multiple style={{display:"none"}}
                           onChange={e => { handleSsUpload(Array.from(e.target.files||[])); e.target.value=""; }}/>
@@ -1459,21 +1459,21 @@ const CSS = `
   ::-webkit-scrollbar{width:3px;height:3px}
   ::-webkit-scrollbar-track{background:transparent}
   ::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
-  .nav-item{background:transparent;border:none;cursor:pointer;width:100%;text-align:left;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;transition:all 0.15s;color:#555;font-family:'DM Sans',sans-serif;font-size:14px;}
+  .nav-item{background:transparent;border:none;cursor:pointer;width:100%;text-align:left;display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;transition:all 0.15s;color:#555;font-family:'Inter',sans-serif;font-size:14px;}
   .nav-item:hover{background:#0d1117;color:#aaa}
   .nav-item.active{background:linear-gradient(90deg,rgba(245,158,11,0.15),transparent);color:#F59E0B;border-right:2px solid #F59E0B;}
   .kpi-card:hover{transform:translateY(-1px);border-color:rgba(245,158,11,0.2)!important}
   input:focus{outline:none}
-  button{font-family:'DM Sans',sans-serif}
+  button{font-family:'Inter',sans-serif}
 `;
 
 const D = {
-  root:     {display:"flex",height:"100vh",background:"#050810",color:"#fff",fontFamily:"'DM Sans',sans-serif",overflow:"hidden"},
+  root:     {display:"flex",height:"100vh",background:"#050810",color:"#fff",fontFamily:"'Inter',sans-serif",overflow:"hidden"},
   toast:    {position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",border:"1px solid",borderRadius:10,padding:"10px 20px",fontSize:12,fontWeight:600,zIndex:999,animation:"slideIn 0.3s ease",whiteSpace:"nowrap",backdropFilter:"blur(10px)"},
   sidebar:  {width:220,background:"#080c10",borderRight:"1px solid #0f1629",display:"flex",flexDirection:"column",flexShrink:0},
   sideTop:  {padding:"24px 16px 20px",borderBottom:"1px solid #0f1629",textAlign:"center"},
   logo:     {fontSize:32,marginBottom:4},
-  brand:    {fontFamily:"'Space Mono',monospace",fontSize:18,fontWeight:700,letterSpacing:3,color:"#F59E0B"},
+  brand:    {fontFamily:"'Geist Mono',monospace",fontSize:18,fontWeight:700,letterSpacing:3,color:"#F59E0B"},
   brandSub: {fontSize:9,letterSpacing:4,color:"#333",marginTop:2,marginBottom:10},
   livePill: {display:"inline-flex",alignItems:"center",gap:5,border:"1px solid",borderRadius:20,padding:"3px 10px",fontSize:10,fontWeight:700,letterSpacing:2},
   liveDot:  {width:5,height:5,borderRadius:"50%",animation:"pulse 1.5s infinite",display:"inline-block"},
@@ -1486,25 +1486,25 @@ const D = {
   sideDivider:{fontSize:9,letterSpacing:3,color:"#333",padding:"8px 4px 6px",fontWeight:700},
   sideLink: {background:"transparent",border:"none",color:"#555",cursor:"pointer",fontSize:12,padding:"7px 8px",display:"block",width:"100%",textAlign:"left",borderRadius:6,transition:"color 0.15s"},
   sideBottom:{padding:"12px 12px 16px",borderTop:"1px solid #0f1629",textAlign:"center"},
-  clock:    {fontFamily:"'Space Mono',monospace",fontSize:22,color:"#F59E0B",letterSpacing:2,marginBottom:2},
+  clock:    {fontFamily:"'Geist Mono',monospace",fontSize:22,color:"#F59E0B",letterSpacing:2,marginBottom:2},
   clockSub: {fontSize:10,color:"#444",marginBottom:10},
   exitBtn:  {width:"100%",background:"transparent",border:"1px solid #1a1a2e",borderRadius:8,padding:"7px",color:"#555",cursor:"pointer",fontSize:11,transition:"all 0.15s"},
   main:     {flex:1,overflowY:"auto",padding:"24px 28px"},
   pageHeader:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:24},
-  pageTitle:{fontFamily:"'Space Mono',monospace",fontSize:20,fontWeight:700,color:"#fff",marginBottom:4},
+  pageTitle:{fontFamily:"'Geist Mono',monospace",fontSize:20,fontWeight:700,color:"#fff",marginBottom:4},
   pageSub:  {fontSize:12,color:"#555"},
   refreshBtn:{background:"#0d1117",border:"1px solid #1a1a2e",borderRadius:8,padding:"7px 14px",color:"#888",cursor:"pointer",fontSize:12},
   kpiRow:   {display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:14,marginBottom:20},
   kpiCard:  {background:"#0d1117",border:"1px solid",borderRadius:14,padding:"18px 20px",transition:"all 0.2s",cursor:"default"},
   kpiTop:   {display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12},
   kpiLabel: {fontSize:11,color:"#555",letterSpacing:1,textTransform:"uppercase",marginBottom:6},
-  kpiVal:   {fontFamily:"'Space Mono',monospace",fontSize:22,fontWeight:700,lineHeight:1,marginBottom:4},
+  kpiVal:   {fontFamily:"'Geist Mono',monospace",fontSize:22,fontWeight:700,lineHeight:1,marginBottom:4},
   kpiSub:   {fontSize:11,color:"#444",lineHeight:1.4},
   kpiIcon:  {width:40,height:40,borderRadius:10,display:"flex",alignItems:"center",justifyContent:"center",fontSize:18},
   mainGrid: {display:"grid",gridTemplateColumns:"1fr 320px",gap:16},
   gridCard: {background:"#080c10",border:"1px solid #0f1629",borderRadius:14,padding:"18px 20px"},
   cardHead: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14},
-  cardTitle:{fontFamily:"'Space Mono',monospace",fontSize:12,fontWeight:700,color:"#aaa",letterSpacing:1},
+  cardTitle:{fontFamily:"'Geist Mono',monospace",fontSize:12,fontWeight:700,color:"#aaa",letterSpacing:1},
   seeAllBtn:{background:"transparent",border:"none",color:"#F59E0B",cursor:"pointer",fontSize:11},
   kanban:   {display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12},
   kanbanCol:{},

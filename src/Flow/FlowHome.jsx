@@ -41,7 +41,7 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
   return (
     <div style={S.container}>
       <header style={S.header}>
-        <div style={S.logo}>BINTORO</div>
+        <div style={S.logo}>KaryaOS</div>
         <button onClick={onLogout} style={S.logoutBtn}>Logout</button>
       </header>
 
@@ -71,7 +71,7 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
       </div>
 
       <div style={S.actionsGrid}>
-        <ActionCard icon="🍽️" title="Pesan Sekarang" subtitle="Browse menu BINTORO" accent="#FF6B35" onClick={() => onNavigate("menu")} />
+        <ActionCard icon="🍽️" title="Pesan Sekarang" subtitle="Browse menu KaryaOS" accent="#FF6B35" onClick={() => onNavigate("menu")} />
         <ActionCard icon="🔁" title="Pesan Ulang" subtitle="Order favorit" accent="#10B981" comingSoon />
         <ActionCard icon="📦" title="Pesanan Aktif" subtitle="Track status pesanan" accent="#3B82F6" comingSoon />
         <ActionCard icon="🎁" title="Tukar Poin" subtitle={points >= 100 ? "Bisa redeem!" : "Min 100 poin"} accent="#8B5CF6" onClick={() => onNavigate("redeem")} />
@@ -89,7 +89,7 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
         </button>
       )}
 
-      <div style={S.footer}>BINTORO Flow · Mobile Order Portal</div>
+      <div style={S.footer}>KaryaOS Flow · Mobile Order Portal</div>
     </div>
   );
 }
@@ -108,7 +108,7 @@ function ActionCard({ icon, title, subtitle, accent, comingSoon, onClick }) {
 const S = {
   container: { width: "min(440px, 100%)", minHeight: "100vh", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 20, position: "relative" },
   header: { display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 8 },
-  logo: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "#FF6B35", letterSpacing: 2 },
+  logo: { fontFamily: "'Inter', sans-serif", fontSize: 28, color: "#FF6B35", letterSpacing: 2 },
   logoutBtn: { padding: "6px 12px", borderRadius: 8, background: "transparent", border: "1px solid #2a2a2a", color: "#9CA3AF", fontSize: 11, cursor: "pointer", fontFamily: "inherit" },
   profile: { background: "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.02) 100%)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 16, padding: "20px 18px", animation: "fadeUp 0.4s ease" },
   greeting: { fontSize: 18, fontWeight: 700, marginBottom: 10 },
@@ -117,7 +117,7 @@ const S = {
   statsRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 },
   statBox: { background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "12px 14px" },
   statLabel: { fontSize: 10, color: "#9CA3AF", letterSpacing: 1, fontWeight: 600, marginBottom: 4 },
-  statValue: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: "#FF6B35", lineHeight: 1, letterSpacing: 1 },
+  statValue: { fontFamily: "'Inter', sans-serif", fontSize: 28, color: "#FF6B35", lineHeight: 1, letterSpacing: 1 },
   statUnit: { fontSize: 14, color: "#9CA3AF", marginLeft: 2 },
   statBadge: { fontSize: 10, marginTop: 6, fontWeight: 600 },
   actionsGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
@@ -144,5 +144,5 @@ const S = {
     display: "inline-flex", alignItems: "center", justifyContent: "center",
     fontSize: 13, fontWeight: 800,
   },
-  cartFloaterTotal: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: 1 },
+  cartFloaterTotal: { fontFamily: "'Inter', sans-serif", fontSize: 18, letterSpacing: 1 },
 };

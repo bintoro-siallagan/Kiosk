@@ -30,8 +30,8 @@ export default function AdminHRCommand({ apiBase = "" }) {
       {/* Hero — workforce health */}
       <div style={{ ...S.card, display: "flex", alignItems: "center", gap: 24, marginBottom: 14 }}>
         <div style={{ textAlign: "center", minWidth: 150 }}>
-          <div style={{ fontSize: 10, color: "#5b6470", fontFamily: "'Space Mono',monospace", letterSpacing: 1 }}>WORKFORCE HEALTH</div>
-          <div style={{ fontSize: 52, fontWeight: 900, color: hc, fontFamily: "'Space Mono',monospace", lineHeight: 1.1 }}>{w.score}</div>
+          <div style={{ fontSize: 10, color: "#5b6470", fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>WORKFORCE HEALTH</div>
+          <div style={{ fontSize: 52, fontWeight: 900, color: hc, fontFamily: "'Geist Mono',monospace", lineHeight: 1.1 }}>{w.score}</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: hc }}>{w.label}</div>
         </div>
         <div style={{ flex: 1 }}>
@@ -78,7 +78,7 @@ export default function AdminHRCommand({ apiBase = "" }) {
             <div key={i} style={{ background: "#0a0e16", border: "1px solid #161b22", borderLeft: `3px solid ${TIER[p.tier]}`, borderRadius: 9, padding: "10px 12px" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#e6edf3" }}>{i === 0 ? "🥇 " : i === 1 ? "🥈 " : i === 2 ? "🥉 " : ""}{p.staff_name}</div>
               <div style={{ fontSize: 11, color: "#5b6470", margin: "2px 0 5px" }}>{p.outlet} · {p.role}</div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontFamily: "'Space Mono',monospace" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontFamily: "'Geist Mono',monospace" }}>
                 <span style={{ color: "#fbbf24" }}>{p.xp.toLocaleString("id-ID")} XP</span>
                 <span style={{ color: "#10b981" }}>🏆 {p.achievements}</span>
               </div>
@@ -118,7 +118,7 @@ export default function AdminHRCommand({ apiBase = "" }) {
             <div style={{ flex: 1, height: 11, background: "#0a0e16", borderRadius: 6, overflow: "hidden" }}>
               <div style={{ height: "100%", width: o.morale + "%", background: moraleColor(o.morale) }} />
             </div>
-            <span style={{ width: 60, textAlign: "right", fontFamily: "'Space Mono',monospace", fontSize: 12, color: moraleColor(o.morale), fontWeight: 700 }}>{o.morale}</span>
+            <span style={{ width: 60, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 12, color: moraleColor(o.morale), fontWeight: 700 }}>{o.morale}</span>
             <span style={{ width: 110, textAlign: "right", fontSize: 11, color: "#5b6470" }}>{o.label} · {o.crew} crew</span>
           </div>
         ))}
@@ -130,8 +130,8 @@ export default function AdminHRCommand({ apiBase = "" }) {
 function Kpi({ label, v, c, sub }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
       <div style={{ fontSize: 10, color: "#5b6470" }}>{sub}</div>
     </div>
   );
@@ -141,6 +141,6 @@ function Empty({ t }) { return <div style={{ fontSize: 12, color: "#10b981", pad
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
 };

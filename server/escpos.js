@@ -89,7 +89,7 @@ function buildKitchenTicket(order) {
 function buildCustomerReceipt(order) {
   const r = new Receipt();
 
-  r.align("center").bold(true).size("dbl").line("BINTORO")
+  r.align("center").bold(true).size("dbl").line("KaryaOS")
    .size("normal").line("Self Order Kiosk").bold(false)
    .line("Jakarta, Indonesia").feed();
   r.align("left").hr("=");

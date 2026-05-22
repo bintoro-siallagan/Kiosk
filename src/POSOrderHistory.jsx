@@ -388,7 +388,7 @@ const S = {
     position: "fixed", inset: 0,
     background: "rgba(0,0,0,0.85)", backdropFilter: "blur(10px)",
     display: "flex", alignItems: "center", justifyContent: "center",
-    zIndex: 1000, fontFamily: "'Plus Jakarta Sans', sans-serif",
+    zIndex: 1000, fontFamily: "'Inter', sans-serif",
   },
   modal: {
     width: "min(900px, 95vw)", maxHeight: "92vh",
@@ -401,7 +401,7 @@ const S = {
     padding: "20px 24px", borderBottom: "1px solid #2a2a2a",
     display: "flex", alignItems: "center", justifyContent: "space-between",
   },
-  title: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 32, color: "#F59E0B", letterSpacing: 1.5 },
+  title: { fontFamily: "'Inter', sans-serif", fontSize: 32, color: "#F59E0B", letterSpacing: 1.5 },
   subtitle: { fontSize: 13, color: "#9CA3AF", marginTop: 2 },
   closeBtn: {
     width: 40, height: 40, borderRadius: 12,
@@ -433,12 +433,12 @@ const S = {
   },
   rowMain: { flex: 1, minWidth: 280 },
   rowHeader: { display: "flex", gap: 12, alignItems: "baseline", marginBottom: 4, flexWrap: "wrap" },
-  orderId: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, color: "#F59E0B", letterSpacing: 1 },
+  orderId: { fontFamily: "'Inter', sans-serif", fontSize: 22, color: "#F59E0B", letterSpacing: 1 },
   orderMeta: { fontSize: 12, color: "#6B7280" },
   customer: { fontSize: 13, color: "#A78BFA", marginBottom: 4 },
   items: { fontSize: 13, color: "#D1D5DB", marginBottom: 8, lineHeight: 1.4 },
   totalRow: { display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" },
-  total: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: "#F59E0B" },
+  total: { fontFamily: "'Inter', sans-serif", fontSize: 26, color: "#F59E0B" },
   refundedTag: { fontSize: 11, color: "#A78BFA", padding: "2px 8px", background: "rgba(167,139,250,0.1)", borderRadius: 6 },
   statusBadge: { fontSize: 11, padding: "4px 10px", borderRadius: 6, fontWeight: 600 },
   reason: { fontSize: 12, color: "#9CA3AF", marginTop: 6, fontStyle: "italic" },
@@ -470,7 +470,7 @@ const S = {
     padding: "20px 24px", borderBottom: "1px solid #2a2a2a",
     display: "flex", gap: 16, alignItems: "center",
   },
-  actionTitle: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, color: "white", letterSpacing: 1 },
+  actionTitle: { fontFamily: "'Inter', sans-serif", fontSize: 24, color: "white", letterSpacing: 1 },
   actionSub: { fontSize: 13, color: "#9CA3AF" },
   actionBody: { padding: "20px 24px", maxHeight: "60vh", overflowY: "auto" },
   actionWarning: {
@@ -498,7 +498,7 @@ const S = {
   amountInput: {
     flex: 1, padding: "12px 14px", borderRadius: "0 10px 10px 0",
     background: "#0a0a0a", border: "1px solid #2a2a2a", color: "white",
-    fontSize: 18, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 1, outline: "none",
+    fontSize: 18, fontFamily: "'Inter', sans-serif", letterSpacing: 1, outline: "none",
   },
   quickButtons: { display: "flex", gap: 6, marginBottom: 10 },
   quickBtn: {

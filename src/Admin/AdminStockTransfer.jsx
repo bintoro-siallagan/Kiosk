@@ -51,18 +51,18 @@ export default function AdminStockTransfer({ apiBase = "" }) {
                     <div style={{ fontSize: 13, fontWeight: 700, color: "#e6edf3" }}>
                       {t.from_location} <span style={{ color: "#60a5fa" }}>→</span> {t.to_location}
                     </div>
-                    <div style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>
+                    <div style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>
                       {t.transfer_no}{t.sent_at ? ` · kirim ${fmtDate(t.sent_at)}` : ""}{t.received_at ? ` · terima ${fmtDate(t.received_at)}` : ""}
                     </div>
                   </div>
-                  <span style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}55`, borderRadius: 5, padding: "3px 9px", fontFamily: "'Space Mono',monospace" }}>{st.l}</span>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}55`, borderRadius: 5, padding: "3px 9px", fontFamily: "'Geist Mono',monospace" }}>{st.l}</span>
                   {t.status === "requested" && <button onClick={() => act(t, "send", `✓ ${t.transfer_no} dikirim`)} style={S.btn("#3b82f6")}>📤 Kirim</button>}
                   {t.status === "in_transit" && <button onClick={() => act(t, "receive", `✓ ${t.transfer_no} diterima`)} style={S.btn("#10b981")}>📥 Terima</button>}
                 </div>
                 <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {t.items.map((it, i) => (
                     <span key={i} style={{ fontSize: 11, color: "#9da7b3", background: "#0d1117", border: "1px solid #161b22", borderRadius: 5, padding: "2px 8px" }}>
-                      {it.name} <b style={{ color: "#cdd5df", fontFamily: "'Space Mono',monospace" }}>{it.qty} {it.unit}</b>
+                      {it.name} <b style={{ color: "#cdd5df", fontFamily: "'Geist Mono',monospace" }}>{it.qty} {it.unit}</b>
                     </span>
                   ))}
                 </div>
@@ -78,8 +78,8 @@ export default function AdminStockTransfer({ apiBase = "" }) {
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{v}</div>
     </div>
   );
 }
@@ -87,7 +87,7 @@ function Kpi({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   btn: (c) => ({ background: c, color: "#fff", border: "none", borderRadius: 6, padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }),
 };

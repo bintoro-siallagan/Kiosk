@@ -77,7 +77,7 @@ export default function AdminAR({ apiBase = "" }) {
             <div style={{ flex: 1, height: 12, background: "#0a0e16", borderRadius: 6, overflow: "hidden" }}>
               <div style={{ height: "100%", width: Math.round(s.aging[k] / maxAge * 100) + "%", background: AGING[k].c }} />
             </div>
-            <span style={{ width: 110, textAlign: "right", fontFamily: "'Space Mono',monospace", fontSize: 12, color: "#cdd5df", flexShrink: 0 }}>{fmtRp(s.aging[k])}</span>
+            <span style={{ width: 110, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 12, color: "#cdd5df", flexShrink: 0 }}>{fmtRp(s.aging[k])}</span>
           </div>
         ))}
       </div>
@@ -112,13 +112,13 @@ export default function AdminAR({ apiBase = "" }) {
               const ag = AGING[inv.aging] || AGING.lunas, st = ST[inv.status] || ST.unpaid;
               return (
                 <tr key={inv.id} style={{ borderTop: "1px solid #161b22", fontSize: 13 }}>
-                  <td style={{ ...S.td, color: "#5b6470", fontFamily: "'Space Mono',monospace", fontSize: 11 }}>{inv.invoice_number}</td>
+                  <td style={{ ...S.td, color: "#5b6470", fontFamily: "'Geist Mono',monospace", fontSize: 11 }}>{inv.invoice_number}</td>
                   <td style={S.td}>
                     <div style={{ color: "#e6edf3", fontWeight: 600 }}>{inv.customer}</div>
                     <div style={{ color: "#5b6470", fontSize: 11 }}>{TYPE[inv.customer_type] || inv.customer_type} · {inv.description || "—"}</div>
                   </td>
-                  <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#9da7b3" }}>{fmtRp(inv.amount)}</td>
-                  <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", fontWeight: 700, color: inv.outstanding > 0 ? "#f59e0b" : "#10b981" }}>{fmtRp(inv.outstanding)}</td>
+                  <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#9da7b3" }}>{fmtRp(inv.amount)}</td>
+                  <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: inv.outstanding > 0 ? "#f59e0b" : "#10b981" }}>{fmtRp(inv.outstanding)}</td>
                   <td style={{ ...S.td, color: "#9da7b3" }}>{fmtDate(inv.due_date)}</td>
                   <td style={S.td}><span style={{ color: ag.c, fontSize: 11, fontWeight: 600 }}>{ag.label}</span></td>
                   <td style={S.td}><span style={{ color: st.c, fontSize: 11, fontWeight: 700 }}>{st.t}</span></td>
@@ -140,8 +140,8 @@ export default function AdminAR({ apiBase = "" }) {
 function Kpi({ label, v, c, sub }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
       <div style={{ fontSize: 10, color: "#5b6470" }}>{sub}</div>
     </div>
   );
@@ -150,10 +150,10 @@ function Kpi({ label, v, c, sub }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "9px 8px" },
   input: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 10px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", width: "100%", boxSizing: "border-box" },
   btnPrimary: { background: "#3b82f6", color: "#fff", border: "none", borderRadius: 7, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
-  btnPay: { background: "#3b82f61f", border: "1px solid #3b82f655", color: "#7cc4ff", fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 6, cursor: "pointer", fontFamily: "'Space Mono',monospace", whiteSpace: "nowrap" },
+  btnPay: { background: "#3b82f61f", border: "1px solid #3b82f655", color: "#7cc4ff", fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 6, cursor: "pointer", fontFamily: "'Geist Mono',monospace", whiteSpace: "nowrap" },
 };

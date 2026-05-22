@@ -65,7 +65,7 @@ export default function CustomerTrackingPage({ orderId }) {
 
   return (
     <div style={S.root}>
-      <div style={S.brand}>BINTORO</div>
+      <div style={S.brand}>KaryaOS</div>
       <div style={S.muted}>SELF ORDER KIOSK</div>
 
       <div style={S.card}>
@@ -77,7 +77,7 @@ export default function CustomerTrackingPage({ orderId }) {
         {loyalty && (
           <div style={{margin:"16px auto",maxWidth:360,padding:"14px 18px",background:"linear-gradient(135deg,rgba(251,146,60,0.12),rgba(245,158,11,0.06))",border:"1px solid rgba(251,146,60,0.3)",borderRadius:12,textAlign:"center"}}>
             <div style={{fontSize:10,letterSpacing:1.5,color:"#FB923C",marginBottom:4}}>🎁 SALDO POIN KAMU</div>
-            <div style={{fontSize:28,fontWeight:800,color:"#FB923C",fontFamily:"'Space Mono',monospace"}}>{loyalty.points.toLocaleString("id-ID")} pt</div>
+            <div style={{fontSize:28,fontWeight:800,color:"#FB923C",fontFamily:"'Geist Mono',monospace"}}>{loyalty.points.toLocaleString("id-ID")} pt</div>
             {order.pointsEarned > 0 && (
               <div style={{fontSize:11,color:"#34D399",marginTop:6}}>+ {order.pointsEarned} dari pesanan ini</div>
             )}
@@ -196,7 +196,7 @@ const S = {
     margin: "0 auto",
     boxSizing: "border-box",
     color: "#F1F5F9",
-    fontFamily: "'DM Sans',-apple-system,sans-serif",
+    fontFamily: "'Inter',-apple-system,sans-serif",
     display: "flex",
     flexDirection: "column",
     gap: "clamp(8px, 2vw, 16px)",
@@ -228,7 +228,7 @@ const S = {
     fontWeight: 800,
     color: "#F59E0B",
     textAlign: "center",
-    fontFamily: "'Space Mono',monospace",
+    fontFamily: "'Geist Mono',monospace",
     lineHeight: 1,
   },
   orderType: {

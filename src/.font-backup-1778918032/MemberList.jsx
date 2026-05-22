@@ -101,7 +101,7 @@ export default function MemberList({ onBack }) {
         @keyframes notif{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
         input:focus,textarea:focus{outline:none}
         .row:hover{background:rgba(255,255,255,0.02)!important}
-        button{font-family:'DM Sans',sans-serif;cursor:pointer}
+        button{font-family:'Inter',sans-serif;cursor:pointer}
       `}</style>
 
       {/* TOAST */}
@@ -117,7 +117,7 @@ export default function MemberList({ onBack }) {
           <button style={M.backBtn} onClick={onBack}>← Kembali</button>
           <div>
             <div style={M.title}>👥 MEMBER & CUSTOMER</div>
-            <div style={M.sub}>Database pelanggan kiosk BINTORO</div>
+            <div style={M.sub}>Database pelanggan kiosk KaryaOS</div>
           </div>
         </div>
         <button style={M.reloadBtn} onClick={load}>↺ Refresh</button>
@@ -137,7 +137,7 @@ export default function MemberList({ onBack }) {
             <div key={i} style={M.statCard}>
               <span style={{fontSize:20}}>{s.icon}</span>
               <div>
-                <div style={{fontFamily:"'Space Mono',monospace",fontSize:18,fontWeight:700,color:s.color}}>{s.val}</div>
+                <div style={{fontFamily:"'Geist Mono',monospace",fontSize:18,fontWeight:700,color:s.color}}>{s.val}</div>
                 <div style={{fontSize:10,color:"#555",letterSpacing:1,marginTop:2}}>{s.label}</div>
               </div>
             </div>
@@ -192,7 +192,7 @@ export default function MemberList({ onBack }) {
                     </div>
                     <div>
                       <div style={{fontSize:13,fontWeight:600}}>{c.name}</div>
-                      <div style={{fontSize:11,color:"#666",fontFamily:"'Space Mono',monospace"}}>{c.phone}</div>
+                      <div style={{fontSize:11,color:"#666",fontFamily:"'Geist Mono',monospace"}}>{c.phone}</div>
                       <div style={{display:"flex",gap:4,marginTop:3,flexWrap:"wrap"}}>
                         {(c.tags||[]).map(t=>(
                           <span key={t} style={{fontSize:9,fontWeight:700,padding:"1px 6px",borderRadius:20,...(TAG_CFG[t]||{})}}>
@@ -202,7 +202,7 @@ export default function MemberList({ onBack }) {
                       </div>
                     </div>
                   </span>
-                  <span style={{width:70,textAlign:"center",fontFamily:"'Space Mono',monospace",fontSize:14,fontWeight:700,color:"#F59E0B"}}>{c.visits}</span>
+                  <span style={{width:70,textAlign:"center",fontFamily:"'Geist Mono',monospace",fontSize:14,fontWeight:700,color:"#F59E0B"}}>{c.visits}</span>
                   <span style={{width:110,textAlign:"right",fontSize:12,fontWeight:600}}>{fIDR(c.totalSpend)}</span>
                   <span style={{width:90,textAlign:"center",fontSize:11,color:"#555"}}>{fAgo(c.lastVisit)}</span>
                   <span style={{width:80,textAlign:"center",display:"flex",gap:4,justifyContent:"center"}}>
@@ -231,8 +231,8 @@ export default function MemberList({ onBack }) {
               <div style={{...M.avatarLg,background:`hsl(${selected.id.charCodeAt(1)*37%360},50%,35%)`,margin:"0 auto 12px"}}>
                 {selected.name[0].toUpperCase()}
               </div>
-              <div style={{fontFamily:"'Space Mono',monospace",fontSize:18,fontWeight:700}}>{selected.name}</div>
-              <div style={{fontSize:13,color:"#666",fontFamily:"'Space Mono',monospace",marginTop:4}}>{selected.phone}</div>
+              <div style={{fontFamily:"'Geist Mono',monospace",fontSize:18,fontWeight:700}}>{selected.name}</div>
+              <div style={{fontSize:13,color:"#666",fontFamily:"'Geist Mono',monospace",marginTop:4}}>{selected.phone}</div>
               <div style={{display:"flex",gap:6,justifyContent:"center",flexWrap:"wrap",marginTop:8}}>
                 {(selected.tags||[]).map(t=>(
                   <span key={t} style={{fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:20,...(TAG_CFG[t]||{bg:"#222",color:"#aaa"})}}>{TAG_CFG[t]?.label||t}</span>
@@ -248,7 +248,7 @@ export default function MemberList({ onBack }) {
                 {label:"Rata² per Visit", val:selected.visits?fIDR(selected.totalSpend/selected.visits):"–", color:"#38BDF8"},
               ].map((s,i)=>(
                 <div key={i} style={M.miniStat}>
-                  <div style={{fontFamily:"'Space Mono',monospace",fontSize:16,fontWeight:700,color:s.color}}>{s.val}</div>
+                  <div style={{fontFamily:"'Geist Mono',monospace",fontSize:16,fontWeight:700,color:s.color}}>{s.val}</div>
                   <div style={{fontSize:10,color:"#555",marginTop:2}}>{s.label}</div>
                 </div>
               ))}
@@ -300,7 +300,7 @@ export default function MemberList({ onBack }) {
                   {waSending===selected.id ? "⏳ Membuka WA..." : "💬 Kirim Link Tracking"}
                 </button>
                 <button style={M.waPromoBtn} onClick={()=>{
-                  const msg = encodeURIComponent(`Halo ${selected.name}! 🎉\n\nAda promo spesial dari BINTORO untuk member setia kami!\n\nKunjungi kami sekarang dan dapatkan penawaran eksklusif. 🍽️\n\nSampai jumpa!`);
+                  const msg = encodeURIComponent(`Halo ${selected.name}! 🎉\n\nAda promo spesial dari KaryaOS untuk member setia kami!\n\nKunjungi kami sekarang dan dapatkan penawaran eksklusif. 🍽️\n\nSampai jumpa!`);
                   const waPhone = selected.phone.startsWith("0")?"62"+selected.phone.slice(1):selected.phone;
                   window.open(`https://wa.me/${waPhone}?text=${msg}`,"_blank");
                 }}>
@@ -316,10 +316,10 @@ export default function MemberList({ onBack }) {
 }
 
 const M = {
-  root:   {fontFamily:"'DM Sans',sans-serif",background:"#050810",color:"#fff",minHeight:"100vh",display:"flex",flexDirection:"column"},
+  root:   {fontFamily:"'Inter',sans-serif",background:"#050810",color:"#fff",minHeight:"100vh",display:"flex",flexDirection:"column"},
   header: {display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 24px",background:"#080c10",borderBottom:"1px solid #0f1629",flexWrap:"wrap",gap:10},
   hLeft:  {display:"flex",alignItems:"center",gap:16},
-  title:  {fontFamily:"'Space Mono',monospace",fontSize:18,fontWeight:700,color:"#F59E0B",letterSpacing:1},
+  title:  {fontFamily:"'Geist Mono',monospace",fontSize:18,fontWeight:700,color:"#F59E0B",letterSpacing:1},
   sub:    {fontSize:11,color:"#555"},
   backBtn:{background:"transparent",border:"1px solid #1a1a2e",borderRadius:8,padding:"7px 12px",color:"#555",fontSize:12},
   reloadBtn:{background:"#0d1117",border:"1px solid #1a1a2e",borderRadius:8,padding:"7px 14px",color:"#888",fontSize:12},
@@ -341,7 +341,7 @@ const M = {
   waIconBtn:{background:"rgba(37,211,102,0.12)",border:"1px solid rgba(37,211,102,0.3)",borderRadius:8,padding:"5px 8px",fontSize:13},
   delIconBtn:{background:"rgba(248,113,113,0.08)",border:"1px solid rgba(248,113,113,0.2)",borderRadius:8,padding:"5px 8px",fontSize:13},
   detailCol:{width:300,background:"#080c10",borderLeft:"1px solid #0f1629",padding:"20px",overflowY:"auto",flexShrink:0},
-  detailTitle:{fontFamily:"'Space Mono',monospace",fontSize:13,fontWeight:700,color:"#aaa",letterSpacing:2},
+  detailTitle:{fontFamily:"'Geist Mono',monospace",fontSize:13,fontWeight:700,color:"#aaa",letterSpacing:2},
   avatarLg:{width:64,height:64,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,fontWeight:700},
   statsGrid:{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:14},
   miniStat:{background:"#0d1117",border:"1px solid #0f1629",borderRadius:10,padding:"10px 8px",textAlign:"center"},

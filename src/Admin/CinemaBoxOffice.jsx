@@ -24,11 +24,11 @@ export default function CinemaBoxOffice({ apiBase }) {
   const today = data ? data.today : { tickets: 0, revenue: 0 };
 
   return (
-    <div style={{ fontFamily: "'Plus Jakarta Sans',sans-serif", color: "#e6edf3" }}>
+    <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14, marginBottom: 16 }}>
         <div>
-          <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🎬 Cinema Box Office</div>
+          <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🎬 Cinema Box Office</div>
           <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>karyaOS — vertikal cinema · penjualan tiket &amp; okupansi</div>
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -44,7 +44,7 @@ export default function CinemaBoxOffice({ apiBase }) {
       ) : (
         <>
           {/* Per film */}
-          <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Space Mono',monospace", marginBottom: 8 }}>PENJUALAN PER FILM</div>
+          <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>PENJUALAN PER FILM</div>
           {films.length === 0 ? (
             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "22px 18px", textAlign: "center", color: C.sub, fontSize: 13, marginBottom: 22 }}>
               Belum ada tiket terjual.
@@ -53,20 +53,20 @@ export default function CinemaBoxOffice({ apiBase }) {
             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "6px 14px", marginBottom: 22 }}>
               {films.map((f, i) => (
                 <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < films.length - 1 ? `1px solid ${C.border}` : "none", flexWrap: "wrap" }}>
-                  <div style={{ width: 22, fontFamily: "'Space Mono',monospace", fontSize: 12, color: C.dim }}>#{i + 1}</div>
+                  <div style={{ width: 22, fontFamily: "'Geist Mono',monospace", fontSize: 12, color: C.dim }}>#{i + 1}</div>
                   <div style={{ width: 150, flexShrink: 0, fontSize: 12.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.title}</div>
                   <div style={{ flex: 1, minWidth: 80, height: 8, background: "#161b22", borderRadius: 4, overflow: "hidden" }}>
                     <div style={{ height: "100%", width: `${Math.max(2, (f.revenue || 0) / maxRev * 100)}%`, background: "#a855f7", borderRadius: 4 }} />
                   </div>
                   <div style={{ width: 70, textAlign: "right", fontSize: 12, color: C.sub }}>{f.tickets} tkt</div>
-                  <div style={{ width: 110, textAlign: "right", fontFamily: "'Space Mono',monospace", fontSize: 12.5, fontWeight: 700, color: "#10b981" }}>{rp(f.revenue)}</div>
+                  <div style={{ width: 110, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 12.5, fontWeight: 700, color: "#10b981" }}>{rp(f.revenue)}</div>
                 </div>
               ))}
             </div>
           )}
 
           {/* Occupancy per showtime */}
-          <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Space Mono',monospace", marginBottom: 8 }}>OKUPANSI PER JADWAL</div>
+          <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>OKUPANSI PER JADWAL</div>
           {shows.length === 0 ? (
             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "22px 18px", textAlign: "center", color: C.sub, fontSize: 13 }}>
               Belum ada jadwal tayang.
@@ -85,8 +85,8 @@ export default function CinemaBoxOffice({ apiBase }) {
                     <div style={{ flex: 1, minWidth: 80, height: 8, background: "#161b22", borderRadius: 4, overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${Math.max(2, occ)}%`, background: col, borderRadius: 4 }} />
                     </div>
-                    <div style={{ width: 96, textAlign: "right", fontFamily: "'Space Mono',monospace", fontSize: 12 }}>{s.sold}/{s.capacity} · {occ}%</div>
-                    <div style={{ width: 104, textAlign: "right", fontFamily: "'Space Mono',monospace", fontSize: 12.5, fontWeight: 700, color: "#10b981" }}>{rp(s.revenue)}</div>
+                    <div style={{ width: 96, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 12 }}>{s.sold}/{s.capacity} · {occ}%</div>
+                    <div style={{ width: 104, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 12.5, fontWeight: 700, color: "#10b981" }}>{rp(s.revenue)}</div>
                   </div>
                 );
               })}
@@ -101,7 +101,7 @@ export default function CinemaBoxOffice({ apiBase }) {
 function Stat({ label, value, color }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #1b212c", borderRadius: 10, padding: "8px 14px", textAlign: "center", minWidth: 96 }}>
-      <div style={{ fontFamily: "'Space Mono',monospace", fontSize: 16, fontWeight: 700, color }}>{value}</div>
+      <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 16, fontWeight: 700, color }}>{value}</div>
       <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 0.5, marginTop: 1 }}>{label}</div>
     </div>
   );

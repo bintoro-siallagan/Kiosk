@@ -106,12 +106,12 @@ export default function POSSettle({ tab, cashier, onBack, onSuccess }) {
 }
 
 const S = {
-  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'DM Sans',sans-serif" },
+  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Inter',sans-serif" },
   header: { display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 24px",
     borderBottom:"1px solid #222", background:"#0a0a0a", position:"sticky", top:0, zIndex:10 },
   backBtn: { background:"transparent", border:"1px solid #333", color:"#aaa",
     padding:"8px 14px", borderRadius:8, fontSize:13, cursor:"pointer", fontFamily:"inherit" },
-  title: { fontFamily:"'Bebas Neue',cursive", fontSize:24, letterSpacing:2, color:"#F59E0B", margin:0 },
+  title: { fontFamily:"'Inter',cursive", fontSize:24, letterSpacing:2, color:"#F59E0B", margin:0 },
   statusPill: { background:"rgba(245,158,11,0.15)", color:"#F59E0B", padding:"6px 12px",
     borderRadius:100, fontSize:11, fontWeight:700, letterSpacing:1 },
   main: { maxWidth:640, margin:"0 auto", padding:"24px 20px" },
@@ -131,7 +131,7 @@ const S = {
   cartLineTotal: { fontSize:14, fontWeight:700, color:"#F59E0B" },
   totalBox: { background:"#1a1a1a", border:"1px solid #F59E0B", borderRadius:12, padding:16, marginBottom:16 },
   totalRow: { display:"flex", justifyContent:"space-between", alignItems:"center" },
-  totalAmount: { fontFamily:"'Bebas Neue',cursive", fontSize:32, color:"#F59E0B", letterSpacing:2 },
+  totalAmount: { fontFamily:"'Inter',cursive", fontSize:32, color:"#F59E0B", letterSpacing:2 },
   taxNote: { fontSize:10, color:"#555", marginTop:2 },
   payInfo: { background:"#1a1a1a", border:"1px solid #2a2a2a", borderRadius:12, padding:14, marginBottom:16 },
   payLabel: { fontSize:11, color:"#888", letterSpacing:1, fontWeight:700 },

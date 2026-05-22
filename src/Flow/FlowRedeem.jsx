@@ -121,7 +121,7 @@ export default function FlowRedeem({ session, setPointsToRedeem, setScreen }) {
             background: "transparent", border: "none", color: TEXT,
             fontSize: 24, cursor: "pointer", padding: 0, width: 32
           }}>←</button>
-          <h1 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: BRAND, letterSpacing: 1 }}>
+          <h1 style={{ margin: 0, fontFamily: "'Inter', sans-serif", fontSize: 28, color: BRAND, letterSpacing: 1 }}>
             TUKAR POIN
           </h1>
         </div>
@@ -137,7 +137,7 @@ export default function FlowRedeem({ session, setPointsToRedeem, setScreen }) {
           <div style={{ fontSize: 11, color: BRAND, fontWeight: 700, letterSpacing: 2, marginBottom: 8 }}>
             POIN KAMU
           </div>
-          <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 72, color: BRAND, lineHeight: 1 }}>
+          <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 72, color: BRAND, lineHeight: 1 }}>
             {points.toLocaleString("id-ID")}
           </div>
           <div style={{ fontSize: 13, color: SUB, marginTop: 6 }}>
@@ -207,7 +207,7 @@ export default function FlowRedeem({ session, setPointsToRedeem, setScreen }) {
               padding: 12, textAlign: "center"
             }}>
               <div style={{ fontSize: 11, color: SUB }}>Setara potongan</div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: BRAND, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 1 }}>
+              <div style={{ fontSize: 26, fontWeight: 800, color: BRAND, fontFamily: "'Inter', sans-serif", letterSpacing: 1 }}>
                 {rupiah(rupiahValue)}
               </div>
               <div style={{ fontSize: 10, color: SUB, marginTop: 4 }}>

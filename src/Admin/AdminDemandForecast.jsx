@@ -74,7 +74,7 @@ export default function AdminDemandForecast({ apiBase = "" }) {
                     <div style={{ width: 70, height: 6, background: "#161b22", borderRadius: 3, overflow: "hidden" }}>
                       <div style={{ height: "100%", width: Math.round(f.forecast_7d / maxF * 100) + "%", background: AC }} />
                     </div>
-                    <span style={{ fontFamily: "'Space Mono',monospace", fontWeight: 700, color: "#38bdf8" }}>{f.forecast_7d}</span>
+                    <span style={{ fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "#38bdf8" }}>{f.forecast_7d}</span>
                   </div>
                 </td>
                 <td style={{ ...S.td, ...S.mono, color: f.confidence >= 85 ? "#34d399" : "#f59e0b" }}>{f.confidence}%</td>
@@ -91,8 +91,8 @@ export default function AdminDemandForecast({ apiBase = "" }) {
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 16, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 16, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{v}</div>
     </div>
   );
 }
@@ -100,9 +100,9 @@ function Kpi({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "8px 8px" },
-  mono: { fontFamily: "'Space Mono',monospace" },
+  mono: { fontFamily: "'Geist Mono',monospace" },
   btn: { background: "#0284c720", border: "1px solid #0284c755", color: "#38bdf8", borderRadius: 7, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
 };

@@ -7,7 +7,7 @@ import { exportCSV, printReport } from "../reportUtil.js";
 const btn = (c) => ({
   background: c + "1f", border: `1px solid ${c}55`, color: c,
   fontSize: 12, fontWeight: 700, padding: "7px 13px", borderRadius: 7,
-  cursor: "pointer", fontFamily: "'Space Mono',monospace",
+  cursor: "pointer", fontFamily: "'Geist Mono',monospace",
 });
 
 export default function ReportActions({ title, subtitle = "", columns = [], rows = [] }) {

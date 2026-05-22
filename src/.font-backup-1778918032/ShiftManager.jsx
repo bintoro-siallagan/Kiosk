@@ -144,7 +144,7 @@ export default function ShiftManager({ onBack }) {
         @keyframes notif{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
         @keyframes ring{0%,100%{transform:rotate(0)}20%{transform:rotate(-15deg)}40%{transform:rotate(15deg)}60%{transform:rotate(-10deg)}80%{transform:rotate(10deg)}}
         input:focus,select:focus,textarea:focus{outline:none}
-        button{cursor:pointer;font-family:'DM Sans',sans-serif;}
+        button{cursor:pointer;font-family:'Inter',sans-serif;}
       `}</style>
 
       {toast && (
@@ -191,7 +191,7 @@ export default function ShiftManager({ onBack }) {
                   <div>
                     <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:4}}>
                       <span style={{width:10,height:10,borderRadius:"50%",background:"#34D399",animation:"pulse 1.5s infinite",display:"inline-block"}}/>
-                      <span style={{fontFamily:"'Space Mono',monospace",fontSize:14,fontWeight:700,color:"#34D399"}}>SHIFT AKTIF</span>
+                      <span style={{fontFamily:"'Geist Mono',monospace",fontSize:14,fontWeight:700,color:"#34D399"}}>SHIFT AKTIF</span>
                     </div>
                     <div style={{fontSize:20,fontWeight:700}}>{shift.kasirName}</div>
                     <div style={{fontSize:12,color:"#888",marginTop:2}}>Dibuka {fTime(shift.openAt)} · {elapsed(shift.openAt)}</div>
@@ -205,7 +205,7 @@ export default function ShiftManager({ onBack }) {
                     {label:"Modal Awal",   val:fIDR(shift.openingCash),     color:"#38BDF8"},
                   ].map((s,i)=>(
                     <div key={i} style={{background:"#080c10",borderRadius:10,padding:"10px 12px",textAlign:"center"}}>
-                      <div style={{fontFamily:"'Space Mono',monospace",fontSize:16,fontWeight:700,color:s.color}}>{s.val}</div>
+                      <div style={{fontFamily:"'Geist Mono',monospace",fontSize:16,fontWeight:700,color:s.color}}>{s.val}</div>
                       <div style={{fontSize:10,color:"#555",marginTop:2}}>{s.label}</div>
                     </div>
                   ))}
@@ -214,7 +214,7 @@ export default function ShiftManager({ onBack }) {
             ) : (
               <div style={{...S.card,textAlign:"center",marginBottom:16,borderColor:"#F8717133"}}>
                 <div style={{fontSize:40,marginBottom:10}}>⏸️</div>
-                <div style={{fontFamily:"'Space Mono',monospace",fontSize:16,color:"#F87171",marginBottom:6}}>TIDAK ADA SHIFT AKTIF</div>
+                <div style={{fontFamily:"'Geist Mono',monospace",fontSize:16,color:"#F87171",marginBottom:6}}>TIDAK ADA SHIFT AKTIF</div>
                 <div style={{fontSize:13,color:"#666",marginBottom:20}}>Buka shift baru untuk mulai menerima pesanan</div>
                 <button style={S.openShiftBtn} onClick={()=>setOpenForm(true)}>🟢 BUKA SHIFT BARU</button>
               </div>
@@ -227,12 +227,12 @@ export default function ShiftManager({ onBack }) {
               {shifts.slice(0,10).map(sh=>(
                 <div key={sh.id} style={S.shiftRow}>
                   <div style={{flex:1}}>
-                    <div style={{fontFamily:"'Space Mono',monospace",fontSize:13,fontWeight:700}}>{sh.id}</div>
+                    <div style={{fontFamily:"'Geist Mono',monospace",fontSize:13,fontWeight:700}}>{sh.id}</div>
                     <div style={{fontSize:12,color:"#888"}}>{sh.kasirName} · {fDate(sh.openAt)}</div>
                     <div style={{fontSize:11,color:"#666"}}>{fTime(sh.openAt)} – {sh.closeAt?fTime(sh.closeAt):"—"}</div>
                   </div>
                   <div style={{textAlign:"right"}}>
-                    <div style={{fontFamily:"'Space Mono',monospace",fontSize:14,color:"#F59E0B"}}>{fIDR(sh.totalRevenue)}</div>
+                    <div style={{fontFamily:"'Geist Mono',monospace",fontSize:14,color:"#F59E0B"}}>{fIDR(sh.totalRevenue)}</div>
                     <div style={{fontSize:11,color:"#666"}}>{sh.totalOrders} order</div>
                   </div>
                 </div>
@@ -278,7 +278,7 @@ export default function ShiftManager({ onBack }) {
                       <button style={{background:"transparent",border:"none",color:"#555",fontSize:13,padding:"2px 4px"}}
                         onClick={()=>handleDeleteTable(t.id)}>✕</button>
                     </div>
-                    <div style={{fontFamily:"'Space Mono',monospace",fontSize:14,fontWeight:700,marginBottom:2}}>{t.name}</div>
+                    <div style={{fontFamily:"'Geist Mono',monospace",fontSize:14,fontWeight:700,marginBottom:2}}>{t.name}</div>
                     <div style={{fontSize:11,color:"#555",marginBottom:8}}>Zona {t.zone} · {t.capacity} kursi</div>
                     <button style={{
                       width:"100%",borderRadius:8,padding:"6px",fontSize:11,fontWeight:700,
@@ -481,9 +481,9 @@ export default function ShiftManager({ onBack }) {
 }
 
 const S = {
-  root:      {fontFamily:"'DM Sans',sans-serif",background:"#050810",color:"#fff",minHeight:"100vh",display:"flex",flexDirection:"column"},
+  root:      {fontFamily:"'Inter',sans-serif",background:"#050810",color:"#fff",minHeight:"100vh",display:"flex",flexDirection:"column"},
   header:    {display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 24px",background:"#080c10",borderBottom:"1px solid #0f1629",flexWrap:"wrap",gap:10},
-  title:     {fontFamily:"'Space Mono',monospace",fontSize:18,fontWeight:700,color:"#F59E0B",letterSpacing:1},
+  title:     {fontFamily:"'Geist Mono',monospace",fontSize:18,fontWeight:700,color:"#F59E0B",letterSpacing:1},
   sub:       {fontSize:11,color:"#555"},
   backBtn:   {background:"transparent",border:"1px solid #1a1a2e",borderRadius:8,padding:"7px 12px",color:"#555",fontSize:12},
   callAlert: {display:"flex",alignItems:"center",gap:8,background:"rgba(245,158,11,0.1)",border:"1px solid rgba(245,158,11,0.3)",borderRadius:20,padding:"8px 16px",fontSize:13,fontWeight:700,color:"#F59E0B"},
@@ -494,7 +494,7 @@ const S = {
   body:      {flex:1,padding:"16px 24px",overflowY:"auto"},
   card:      {background:"#0d1117",border:"1px solid #1a1a2e",borderRadius:14,padding:"18px 20px",marginBottom:16},
   cardLabel: {fontSize:11,fontWeight:700,letterSpacing:2,color:"#555",textTransform:"uppercase",marginBottom:14},
-  openShiftBtn:{background:"linear-gradient(90deg,#34D399,#059669)",border:"none",borderRadius:10,padding:"12px 24px",color:"#fff",fontWeight:700,fontSize:14,letterSpacing:1,fontFamily:"'Space Mono',monospace"},
+  openShiftBtn:{background:"linear-gradient(90deg,#34D399,#059669)",border:"none",borderRadius:10,padding:"12px 24px",color:"#fff",fontWeight:700,fontSize:14,letterSpacing:1,fontFamily:"'Geist Mono',monospace"},
   closeShiftBtn:{background:"rgba(248,113,113,0.12)",border:"1px solid #F8717144",borderRadius:10,padding:"10px 18px",color:"#F87171",fontWeight:700,fontSize:13},
   shiftRow:  {display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 0",borderBottom:"1px solid #0f1629"},
   callRow:   {display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:"1px solid #0f1629"},
@@ -505,9 +505,9 @@ const S = {
   roleBadge: {fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:20},
   overlay:   {position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"},
   modal:     {background:"#0d1117",border:"1px solid #1a1a2e",borderRadius:16,padding:"24px",width:"100%",maxWidth:380},
-  modalTitle:{fontFamily:"'Space Mono',monospace",fontSize:16,fontWeight:700,color:"#F59E0B",marginBottom:16},
+  modalTitle:{fontFamily:"'Geist Mono',monospace",fontSize:16,fontWeight:700,color:"#F59E0B",marginBottom:16},
   label:     {fontSize:11,fontWeight:700,color:"#888",letterSpacing:1,textTransform:"uppercase",marginBottom:6,display:"block"},
-  input:     {width:"100%",background:"#080c10",border:"1px solid #21262d",borderRadius:10,padding:"10px 14px",color:"#fff",fontSize:13,fontFamily:"'DM Sans',sans-serif"},
+  input:     {width:"100%",background:"#080c10",border:"1px solid #21262d",borderRadius:10,padding:"10px 14px",color:"#fff",fontSize:13,fontFamily:"'Inter',sans-serif"},
   cancelBtn: {background:"transparent",border:"1px solid #21262d",borderRadius:10,padding:"10px 20px",color:"#666",fontSize:13},
-  confirmBtn:{flex:1,background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:10,padding:"10px",color:"#050810",fontWeight:700,fontSize:14,fontFamily:"'Space Mono',monospace"},
+  confirmBtn:{flex:1,background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:10,padding:"10px",color:"#050810",fontWeight:700,fontSize:14,fontFamily:"'Geist Mono',monospace"},
 };

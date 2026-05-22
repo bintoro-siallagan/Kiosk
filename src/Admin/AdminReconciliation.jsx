@@ -56,16 +56,16 @@ export default function AdminReconciliation({ apiBase = "" }) {
         <div style={{ ...S.card, marginTop: 12 }}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span style={S.kicker}>🏦 BANK RECONCILIATION</span>
-            <span style={{ fontSize: 12, fontFamily: "'Space Mono',monospace" }}>
+            <span style={{ fontSize: 12, fontFamily: "'Geist Mono',monospace" }}>
               Buku <b style={{ color: "#cdd5df" }}>{fmtRp(d.bank.book_balance)}</b> · Bank <b style={{ color: "#cdd5df" }}>{fmtRp(d.bank.bank_balance)}</b> · Selisih <b style={{ color: d.bank.difference === 0 ? "#10b981" : "#f59e0b" }}>{fmtRp(d.bank.difference)}</b>
             </span>
           </div>
           {d.bank.items.map(it => (
             <div key={it.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderTop: "1px solid #161b22", fontSize: 12 }}>
-              <span style={{ fontSize: 9, width: 50, color: it.side === "book" ? "#3b82f6" : "#a855f7", fontWeight: 700, fontFamily: "'Space Mono',monospace" }}>{it.side.toUpperCase()}</span>
+              <span style={{ fontSize: 9, width: 50, color: it.side === "book" ? "#3b82f6" : "#a855f7", fontWeight: 700, fontFamily: "'Geist Mono',monospace" }}>{it.side.toUpperCase()}</span>
               <span style={{ width: 60, color: "#5b6470" }}>{it.txn_date}</span>
               <span style={{ flex: 1, color: "#9da7b3" }}>{it.description}</span>
-              <span style={{ width: 110, textAlign: "right", fontFamily: "'Space Mono',monospace", color: it.amount < 0 ? "#f87171" : "#34d399" }}>{fmtRp(it.amount)}</span>
+              <span style={{ width: 110, textAlign: "right", fontFamily: "'Geist Mono',monospace", color: it.amount < 0 ? "#f87171" : "#34d399" }}>{fmtRp(it.amount)}</span>
               <button onClick={() => post(`bank-match/${it.id}`, null, it.matched ? "✓ Unmatch" : "✓ Matched")} style={S.btn(it.matched ? "#10b981" : "#5b6470")}>
                 {it.matched ? "✓ matched" : "○ match"}
               </button>
@@ -105,9 +105,9 @@ export default function AdminReconciliation({ apiBase = "" }) {
           <div style={S.kicker}>📒 GL RECONCILIATION — {d.gl.reconciled}/{d.gl.total} ter-rekonsiliasi</div>
           {d.gl.accounts.map(a => (
             <div key={a.account_code} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderTop: "1px solid #161b22", fontSize: 12 }}>
-              <span style={{ width: 56, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{a.account_code}</span>
+              <span style={{ width: 56, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>{a.account_code}</span>
               <span style={{ flex: 1, color: "#e6edf3" }}>{a.account_name}</span>
-              <span style={{ width: 130, textAlign: "right", fontFamily: "'Space Mono',monospace", color: "#9da7b3" }}>{fmtRp(a.balance)}</span>
+              <span style={{ width: 130, textAlign: "right", fontFamily: "'Geist Mono',monospace", color: "#9da7b3" }}>{fmtRp(a.balance)}</span>
               <button onClick={() => post(`gl-reconcile/${a.account_code}`, null, a.reconciled ? "✓ Dibatalkan" : "✓ Ter-rekonsiliasi")} style={S.btn(a.reconciled ? "#10b981" : "#f59e0b")}>
                 {a.reconciled ? "✓ reconciled" : "○ pending"}
               </button>
@@ -122,8 +122,8 @@ export default function AdminReconciliation({ apiBase = "" }) {
 function Kpi({ label, v, c }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", marginTop: 4 }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{v}</div>
     </div>
   );
 }
@@ -131,12 +131,12 @@ function Kpi({ label, v, c }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "8px 8px" },
-  mono: { fontFamily: "'Space Mono',monospace" },
+  mono: { fontFamily: "'Geist Mono',monospace" },
   tab: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, color: "#9da7b3", cursor: "pointer", fontFamily: "inherit" },
   input: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 10px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", flex: 1 },
-  btn: (c) => ({ background: c + "1f", border: `1px solid ${c}55`, color: c, fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 6, cursor: "pointer", fontFamily: "'Space Mono',monospace", whiteSpace: "nowrap" }),
+  btn: (c) => ({ background: c + "1f", border: `1px solid ${c}55`, color: c, fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 6, cursor: "pointer", fontFamily: "'Geist Mono',monospace", whiteSpace: "nowrap" }),
   btnPrimary: { background: "#0d9488", color: "#fff", border: "none", borderRadius: 7, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
 };

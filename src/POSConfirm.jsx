@@ -837,7 +837,7 @@ function POSQRISFlow({ cart, subtotal, order, onCancel, onPaid }) {
             <div style={{padding:"12px 24px", background:"#111", border:"1px solid #F59E0B",
               borderRadius:12, marginBottom:24, display:"inline-flex", flexDirection:"column", alignItems:"center"}}>
               <span style={{fontSize:11, color:"#888", letterSpacing:2}}>MENUNGGU PEMBAYARAN</span>
-              <span style={{fontSize:32, fontFamily:"'Montserrat',sans-serif", color:"#F59E0B", letterSpacing:2}}>
+              <span style={{fontSize:32, fontFamily:"'Inter',sans-serif", color:"#F59E0B", letterSpacing:2}}>
                 Rp {fmt(subtotal)}
               </span>
             </div>
@@ -885,11 +885,11 @@ function POSQRISFlow({ cart, subtotal, order, onCancel, onPaid }) {
 // Styles
 // ═══════════════════════════════════════════════════════════
 const S = {
-  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Plus Jakarta Sans',sans-serif", 
+  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Inter',sans-serif", 
     display:"flex", flexDirection:"column" },
   header: { display:"flex", alignItems:"center", justifyContent:"space-between",
     padding:"16px 24px", borderBottom:"1px solid #222" },
-  headTitle: { fontFamily:"'Montserrat',sans-serif", fontSize:32, color:"#F59E0B", margin:0 },
+  headTitle: { fontFamily:"'Inter',sans-serif", fontSize:32, color:"#F59E0B", margin:0 },
   iconBtn: { background:"transparent", border:"1px solid #333", color:"#aaa",
     padding:"8px 14px", borderRadius:8, fontSize:13, cursor:"pointer", fontFamily:"inherit" },
   main: { flex:1, padding:"24px 20px", maxWidth:640, margin:"0 auto", width:"100%",
@@ -927,8 +927,8 @@ const S = {
     padding:"16px 20px", display:"flex", justifyContent:"space-between", alignItems:"center" },
   subLabel: { fontSize:13, fontWeight:600 },
   taxNote: { fontSize:10, color:"#666", marginTop:2 },
-  subAmount: { fontFamily:"'Montserrat',sans-serif", fontSize:36, color:"#F59E0B", letterSpacing:1 },
-  subAmountPlain: { fontFamily:"'Montserrat',sans-serif", fontSize:24, color:"#888", letterSpacing:1 },
+  subAmount: { fontFamily:"'Inter',sans-serif", fontSize:36, color:"#F59E0B", letterSpacing:1 },
+  subAmountPlain: { fontFamily:"'Inter',sans-serif", fontSize:24, color:"#888", letterSpacing:1 },
 
   // Promo
   promoInputRow: { display:"flex", gap:8 },
@@ -974,7 +974,7 @@ const S = {
   breakdownTotalRow: { display:"flex", justifyContent:"space-between", alignItems:"center",
     padding:"4px 0" },
   breakdownTotalLabel: { fontSize:14, fontWeight:700, color:"#fff" },
-  breakdownTotalAmount: { fontFamily:"'Montserrat',sans-serif", fontSize:32,
+  breakdownTotalAmount: { fontFamily:"'Inter',sans-serif", fontSize:32,
     color:"#F59E0B", letterSpacing:1, fontWeight:800 },
 
   // Payment
@@ -1003,7 +1003,7 @@ const S = {
   },
   cashReceivedAmount: {
     fontSize: 28, fontWeight: 800, color: "#fff",
-    fontFamily: "'Montserrat',sans-serif", letterSpacing: 1
+    fontFamily: "'Inter',sans-serif", letterSpacing: 1
   },
   cashChangeRow: {
     fontSize: 14, color: "#34D399", fontWeight: 600,

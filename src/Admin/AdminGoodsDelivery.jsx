@@ -158,7 +158,7 @@ export default function AdminGoodsDelivery({ apiBase = "" }) {
               <span>{gd.gd_number} → {gd.to_outlet} <span style={{ color: "#5b6470" }}>· {gd.items.length} item</span></span>
               <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 {gd.status === "closed"
-                  ? <span style={{ color: "#5b6470", fontWeight: 700, fontFamily: "'Space Mono',monospace", fontSize: 11 }}>🔒 DITUTUP</span>
+                  ? <span style={{ color: "#5b6470", fontWeight: 700, fontFamily: "'Geist Mono',monospace", fontSize: 11 }}>🔒 DITUTUP</span>
                   : <>
                       <span style={{ color: "#10b981" }}>✓ diterima {fmtDate(gd.received_at)}</span>
                       <button onClick={() => closeGd(gd)} style={S.btnClose}>🔒 Tutup GD</button>
@@ -175,7 +175,7 @@ export default function AdminGoodsDelivery({ apiBase = "" }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   input: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 10px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", width: "100%", boxSizing: "border-box" },
   inputSm: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 6, padding: "6px 8px", color: "#e6edf3", fontSize: 12, fontFamily: "inherit", outline: "none", width: "100%", boxSizing: "border-box" },
   btnPrimary: { background: "#06B6D4", color: "#04141a", border: "none", borderRadius: 7, padding: "9px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },

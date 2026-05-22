@@ -40,7 +40,7 @@ export default function AdminReward({ apiBase = "" }) {
           {tiers.map(t => (
             <div key={t.tier} style={{ background: "#0a0e16", border: "1px solid #161b22", borderTop: `2px solid ${t.color}`, borderRadius: 9, padding: "10px 12px" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: t.color }}>{t.icon} {t.name}</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#e6edf3", fontFamily: "'Space Mono',monospace", margin: "3px 0" }}>{s.tier[t.tier] || 0}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#e6edf3", fontFamily: "'Geist Mono',monospace", margin: "3px 0" }}>{s.tier[t.tier] || 0}</div>
               <div style={{ height: 6, background: "#161b22", borderRadius: 3, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: Math.round((s.tier[t.tier] || 0) / maxTier * 100) + "%", background: t.color }} />
               </div>
@@ -64,7 +64,7 @@ export default function AdminReward({ apiBase = "" }) {
                 <div style={{ fontSize: 11, color: "#5b6470" }}>{r.outlet} · {r.role}</div>
               </div>
               <span style={{ fontSize: 11, color: r.level.color, fontWeight: 700 }}>{r.level.icon}</span>
-              <span style={{ fontFamily: "'Space Mono',monospace", fontSize: 13, fontWeight: 700, color: "#fbbf24" }}>{r.xp.toLocaleString("id-ID")} XP</span>
+              <span style={{ fontFamily: "'Geist Mono',monospace", fontSize: 13, fontWeight: 700, color: "#fbbf24" }}>{r.xp.toLocaleString("id-ID")} XP</span>
             </div>
           ))}
         </div>
@@ -87,7 +87,7 @@ export default function AdminReward({ apiBase = "" }) {
                 <div style={{ height: 9, background: "#161b22", borderRadius: 5, overflow: "hidden" }}>
                   <div style={{ height: "100%", width: c.progress_pct + "%", background: c.level.color }} />
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginTop: 4, fontFamily: "'Space Mono',monospace" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, marginTop: 4, fontFamily: "'Geist Mono',monospace" }}>
                   <span style={{ color: "#fbbf24" }}>{c.xp.toLocaleString("id-ID")} XP</span>
                   <span style={{ color: "#5b6470" }}>{c.next ? `${c.xp_to_next.toLocaleString("id-ID")} XP lagi → ${c.next.name}` : "Level MAX 💎"}</span>
                 </div>
@@ -111,8 +111,8 @@ export default function AdminReward({ apiBase = "" }) {
 function Kpi({ label, v, c, sub }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
       <div style={{ fontSize: 10, color: "#5b6470" }}>{sub}</div>
     </div>
   );
@@ -121,6 +121,6 @@ function Kpi({ label, v, c, sub }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
 };

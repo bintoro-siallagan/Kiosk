@@ -16,7 +16,7 @@ export function MenuProvider({ children }) {
   }, []);
 
   if (error) return (
-    <div style={{minHeight:"100vh",background:"#050810",color:"#f87171",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Plus Jakarta Sans',sans-serif",gap:10}}>
+    <div style={{minHeight:"100vh",background:"#050810",color:"#f87171",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',sans-serif",gap:10}}>
       <div style={{fontSize:48}}>⚠️</div>
       <div style={{fontSize:16,fontWeight:600}}>Gagal memuat menu</div>
       <div style={{fontSize:12,color:"#888"}}>{error}</div>
@@ -24,7 +24,7 @@ export function MenuProvider({ children }) {
   );
 
   if (!config) return (
-    <div style={{minHeight:"100vh",background:"#050810",color:"#888",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Plus Jakarta Sans',sans-serif",fontSize:14,letterSpacing:2}}>
+    <div style={{minHeight:"100vh",background:"#050810",color:"#888",display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',sans-serif",fontSize:14,letterSpacing:2}}>
       Loading menu…
     </div>
   );

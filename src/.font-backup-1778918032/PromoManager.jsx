@@ -193,7 +193,7 @@ export default function PromoManager({ onBack }) {
         @keyframes notif{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
         input:focus,select:focus{outline:none}
-        button{font-family:'DM Sans',sans-serif;cursor:pointer}
+        button{font-family:'Inter',sans-serif;cursor:pointer}
       `}</style>
 
       {/* TOAST */}
@@ -227,7 +227,7 @@ export default function PromoManager({ onBack }) {
             <div key={i} style={M.statCard}>
               <span style={{fontSize:22}}>{s.icon}</span>
               <div>
-                <div style={{fontFamily:"'Space Mono',monospace",fontSize:18,fontWeight:700,color:s.color}}>{s.val}</div>
+                <div style={{fontFamily:"'Geist Mono',monospace",fontSize:18,fontWeight:700,color:s.color}}>{s.val}</div>
                 <div style={{fontSize:10,color:"#555",letterSpacing:1}}>{s.label}</div>
               </div>
             </div>
@@ -272,7 +272,7 @@ export default function PromoManager({ onBack }) {
                     </div>
                     <div style={M.discBadge}>
                       {p.type==="percent" ? `${p.value}%` : fIDR(p.value)}
-                      <div style={{fontSize:10,color:"#aaa",fontWeight:400,fontFamily:"'DM Sans',sans-serif"}}>{p.type==="percent"?"diskon":"potongan"}</div>
+                      <div style={{fontSize:10,color:"#aaa",fontWeight:400,fontFamily:"'Inter',sans-serif"}}>{p.type==="percent"?"diskon":"potongan"}</div>
                     </div>
                   </div>
 
@@ -291,7 +291,7 @@ export default function PromoManager({ onBack }) {
                   <div style={{marginBottom:12}}>
                     <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#555",marginBottom:4}}>
                       <span>Penggunaan</span>
-                      <span style={{color:"#F59E0B",fontFamily:"'Space Mono',monospace"}}>{p.usedCount}/{p.usageLimit}</span>
+                      <span style={{color:"#F59E0B",fontFamily:"'Geist Mono',monospace"}}>{p.usedCount}/{p.usageLimit}</span>
                     </div>
                     <div style={{height:4,background:"#1a1a2e",borderRadius:2,overflow:"hidden"}}>
                       <div style={{height:"100%",width:`${pct}%`,background:pct>=90?"#F87171":"#F59E0B",borderRadius:2,transition:"width 0.5s"}}/>
@@ -330,7 +330,7 @@ export default function PromoManager({ onBack }) {
               {/* Code */}
               <div style={M.fieldGroup}>
                 <label style={M.label}>Kode Promo <span style={{color:"#F87171"}}>*</span></label>
-                <input style={{...M.input,fontFamily:"'Space Mono',monospace",fontSize:18,letterSpacing:3,textTransform:"uppercase"}}
+                <input style={{...M.input,fontFamily:"'Geist Mono',monospace",fontSize:18,letterSpacing:3,textTransform:"uppercase"}}
                   value={form.code} onChange={e=>setFV(f=>({...f,code:e.target.value.toUpperCase()}))}
                   placeholder="CONTOH10" maxLength={20}
                   /* disabled={!!editing} removed — code editable. Note: old orders retain old code string */
@@ -498,9 +498,9 @@ export default function PromoManager({ onBack }) {
                 <div style={M.preview}>
                   <div style={{fontSize:11,color:"#555",letterSpacing:2,marginBottom:8}}>PREVIEW</div>
                   <div style={{display:"flex",alignItems:"center",gap:12}}>
-                    <div style={{fontFamily:"'Space Mono',monospace",fontSize:18,color:"#F59E0B",letterSpacing:2}}>{form.code}</div>
+                    <div style={{fontFamily:"'Geist Mono',monospace",fontSize:18,color:"#F59E0B",letterSpacing:2}}>{form.code}</div>
                     <div style={{fontSize:13,color:"#888",flex:1}}>{form.desc}</div>
-                    <div style={{fontFamily:"'Space Mono',monospace",fontSize:16,color:"#34D399"}}>
+                    <div style={{fontFamily:"'Geist Mono',monospace",fontSize:16,color:"#34D399"}}>
                       {form.type==="percent"?`${form.value}% OFF`:`-${fIDR(Number(form.value))}`}
                     </div>
                   </div>
@@ -522,12 +522,12 @@ export default function PromoManager({ onBack }) {
 }
 
 const M = {
-  root:      {fontFamily:"'DM Sans',sans-serif",background:"#050810",color:"#fff",minHeight:"100vh",display:"flex",flexDirection:"column"},
+  root:      {fontFamily:"'Inter',sans-serif",background:"#050810",color:"#fff",minHeight:"100vh",display:"flex",flexDirection:"column"},
   header:    {display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 24px",background:"#080c10",borderBottom:"1px solid #0f1629",flexWrap:"wrap",gap:10},
-  title:     {fontFamily:"'Space Mono',monospace",fontSize:18,fontWeight:700,color:"#F59E0B",letterSpacing:1},
+  title:     {fontFamily:"'Geist Mono',monospace",fontSize:18,fontWeight:700,color:"#F59E0B",letterSpacing:1},
   sub:       {fontSize:11,color:"#555"},
   backBtn:   {background:"transparent",border:"1px solid #1a1a2e",borderRadius:8,padding:"7px 12px",color:"#555",fontSize:12},
-  createBtn: {background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:10,padding:"10px 20px",color:"#050810",fontWeight:700,fontSize:13,letterSpacing:1,fontFamily:"'Space Mono',monospace"},
+  createBtn: {background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:10,padding:"10px 20px",color:"#050810",fontWeight:700,fontSize:13,letterSpacing:1,fontFamily:"'Geist Mono',monospace"},
   statsRow:  {display:"flex",gap:10,padding:"14px 24px",overflowX:"auto",background:"#080c10",borderBottom:"1px solid #0f1629"},
   statCard:  {display:"flex",alignItems:"center",gap:12,background:"#0d1117",border:"1px solid #1a1a2e",borderRadius:12,padding:"10px 16px",flexShrink:0},
   body:      {flex:1,padding:"16px 24px",overflowY:"auto"},
@@ -538,9 +538,9 @@ const M = {
   reloadBtn: {marginLeft:"auto",background:"transparent",border:"1px solid #1a1a2e",borderRadius:8,padding:"5px 10px",color:"#555",fontSize:13},
   grid:      {display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:14},
   card:      {background:"#0d1117",border:"1px solid #1a1a2e",borderRadius:14,padding:"18px 20px"},
-  code:      {fontFamily:"'Space Mono',monospace",fontSize:20,fontWeight:700,color:"#F59E0B",letterSpacing:2,marginBottom:6},
+  code:      {fontFamily:"'Geist Mono',monospace",fontSize:20,fontWeight:700,color:"#F59E0B",letterSpacing:2,marginBottom:6},
   statusTag: {fontSize:10,fontWeight:700,padding:"2px 8px",borderRadius:20,display:"inline-block",letterSpacing:0.5},
-  discBadge: {textAlign:"right",fontFamily:"'Space Mono',monospace",fontSize:24,fontWeight:700,color:"#fff"},
+  discBadge: {textAlign:"right",fontFamily:"'Geist Mono',monospace",fontSize:24,fontWeight:700,color:"#fff"},
   detailGrid:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:12},
   detail:    {display:"flex",flexDirection:"column",gap:2},
   dk:        {fontSize:10,color:"#555",letterSpacing:1},
@@ -552,15 +552,15 @@ const M = {
   overlay:   {position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"},
   formPanel: {background:"#0d1117",borderRadius:"24px 24px 0 0",width:"100%",maxWidth:560,maxHeight:"90vh",display:"flex",flexDirection:"column",border:"1px solid #1a1a2e",animation:"slideIn 0.25s ease"},
   formHeader:{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 22px 16px",borderBottom:"1px solid #1a1a2e"},
-  formTitle: {fontFamily:"'Space Mono',monospace",fontSize:16,fontWeight:700,color:"#F59E0B"},
+  formTitle: {fontFamily:"'Geist Mono',monospace",fontSize:16,fontWeight:700,color:"#F59E0B"},
   formClose: {background:"#1a1a2e",border:"none",borderRadius:"50%",width:32,height:32,color:"#888",fontSize:14},
   formBody:  {padding:"16px 22px",flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:14},
   formFooter:{padding:"14px 22px 24px",borderTop:"1px solid #1a1a2e",display:"flex",gap:10},
   fieldGroup:{display:"flex",flexDirection:"column",gap:6},
   label:     {fontSize:11,fontWeight:700,color:"#888",letterSpacing:1,textTransform:"uppercase"},
-  input:     {background:"#080c10",border:"1px solid #21262d",borderRadius:10,padding:"10px 14px",color:"#fff",fontSize:14,fontFamily:"'DM Sans',sans-serif"},
+  input:     {background:"#080c10",border:"1px solid #21262d",borderRadius:10,padding:"10px 14px",color:"#fff",fontSize:14,fontFamily:"'Inter',sans-serif"},
   toggleChip:{borderRadius:10,padding:"9px 16px",fontSize:13,fontWeight:600,transition:"all 0.15s"},
   preview:   {background:"#080c10",border:"1px solid #F59E0B22",borderRadius:12,padding:"14px 16px"},
   cancelBtn: {background:"transparent",border:"1px solid #21262d",borderRadius:10,padding:"12px 20px",color:"#666",fontSize:13,fontWeight:600},
-  saveBtn:   {flex:1,background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:10,padding:"12px",color:"#050810",fontWeight:700,fontSize:14,letterSpacing:1,fontFamily:"'Space Mono',monospace"},
+  saveBtn:   {flex:1,background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:10,padding:"12px",color:"#050810",fontWeight:700,fontSize:14,letterSpacing:1,fontFamily:"'Geist Mono',monospace"},
 };

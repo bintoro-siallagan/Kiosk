@@ -46,7 +46,7 @@ export default function AdminClvChurn({ apiBase = "" }) {
               <div style={{ flex: 1, height: 13, background: "#0a0e16", borderRadius: 7, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: Math.round(cl.tier_dist[t] / maxTier * 100) + "%", background: TIER_C[t] }} />
               </div>
-              <span style={{ width: 30, textAlign: "right", fontFamily: "'Space Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{cl.tier_dist[t]}</span>
+              <span style={{ width: 30, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{cl.tier_dist[t]}</span>
             </div>
           ))}
           <div style={{ fontSize: 11, color: "#5b6470", marginTop: 8 }}>Proyeksi 12 bulan: <b style={{ color: AC }}>{fmtRp(cl.summary.projected_total)}</b> kalau pace dipertahankan.</div>
@@ -60,7 +60,7 @@ export default function AdminClvChurn({ apiBase = "" }) {
               <div style={{ flex: 1, height: 13, background: "#0a0e16", borderRadius: 7, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: Math.round(ch.stage_dist[st] / maxStage * 100) + "%", background: STAGE_C[st] }} />
               </div>
-              <span style={{ width: 30, textAlign: "right", fontFamily: "'Space Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{ch.stage_dist[st]}</span>
+              <span style={{ width: 30, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{ch.stage_dist[st]}</span>
             </div>
           ))}
           <div style={{ fontSize: 11, color: "#5b6470", marginTop: 8 }}>Stage dihitung dari recency vs gap kunjungan normal tiap customer.</div>
@@ -76,7 +76,7 @@ export default function AdminClvChurn({ apiBase = "" }) {
               <span style={{ color: "#e6edf3", fontWeight: 600 }}>
                 {i + 1}. {c.name} <span style={{ color: TIER_C[c.tier], fontSize: 10, fontWeight: 700 }}>{c.tier}</span>
               </span>
-              <span style={{ color: "#9da7b3", fontFamily: "'Space Mono',monospace" }}>
+              <span style={{ color: "#9da7b3", fontFamily: "'Geist Mono',monospace" }}>
                 {fmtRp(c.clv)} · {c.visits}× · proyeksi {fmtRp(c.projected_12mo)}
               </span>
             </div>
@@ -119,8 +119,8 @@ export default function AdminClvChurn({ apiBase = "" }) {
 function Kpi({ label, v, c, sub }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 17, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
       <div style={{ fontSize: 10, color: "#5b6470" }}>{sub || " "}</div>
     </div>
   );
@@ -129,6 +129,6 @@ function Kpi({ label, v, c, sub }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
 };

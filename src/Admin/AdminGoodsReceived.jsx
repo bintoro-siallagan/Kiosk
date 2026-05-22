@@ -73,10 +73,10 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
                     <div style={{ fontSize: 13, fontWeight: 700, color: "#e6edf3" }}>
                       {gr.gr_number} <span style={{ color: "#5b6470", fontWeight: 400, fontSize: 11 }}>· {gr.outlet}</span>
                       {gr.overdue
-                        ? <span style={{ marginLeft: 8, fontSize: 9, fontWeight: 700, color: "#ef4444", background: "#ef444420", border: "1px solid #ef444455", borderRadius: 5, padding: "2px 7px", fontFamily: "'Space Mono',monospace" }}>⚠ LUPA {gr.days_pending} HARI</span>
-                        : gr.days_pending > 0 ? <span style={{ marginLeft: 8, fontSize: 9, color: "#f59e0b", fontFamily: "'Space Mono',monospace" }}>pending {gr.days_pending} hari</span> : null}
+                        ? <span style={{ marginLeft: 8, fontSize: 9, fontWeight: 700, color: "#ef4444", background: "#ef444420", border: "1px solid #ef444455", borderRadius: 5, padding: "2px 7px", fontFamily: "'Geist Mono',monospace" }}>⚠ LUPA {gr.days_pending} HARI</span>
+                        : gr.days_pending > 0 ? <span style={{ marginLeft: 8, fontSize: 9, color: "#f59e0b", fontFamily: "'Geist Mono',monospace" }}>pending {gr.days_pending} hari</span> : null}
                     </div>
-                    <div style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{gr.gd_ref} · {gr.po_ref}</div>
+                    <div style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>{gr.gd_ref} · {gr.po_ref}</div>
                   </div>
                   <button onClick={() => confirm(gr)} disabled={busy === gr.id} style={S.btn}>
                     {busy === gr.id ? "Memproses…" : "✓ Konfirmasi Terima"}
@@ -85,8 +85,8 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
                 <div style={{ display: "grid", gap: 3 }}>
                   {gr.items.map((it, i) => (
                     <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#9da7b3", padding: "2px 0" }}>
-                      <span>{it.name} <span style={{ color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>· {it.sku}</span></span>
-                      <span style={{ fontFamily: "'Space Mono',monospace" }}>{it.qty_ordered} {it.unit}</span>
+                      <span>{it.name} <span style={{ color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>· {it.sku}</span></span>
+                      <span style={{ fontFamily: "'Geist Mono',monospace" }}>{it.qty_ordered} {it.unit}</span>
                     </div>
                   ))}
                 </div>
@@ -108,7 +108,7 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
           <tbody>
             {d.received.map(gr => (
               <tr key={gr.id} style={{ borderTop: "1px solid #161b22", fontSize: 12 }}>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#e6edf3", fontWeight: 600 }}>{gr.gr_number}</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#e6edf3", fontWeight: 600 }}>{gr.gr_number}</td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>{gr.outlet}</td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>{gr.items.length} item</td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>{gr.received_by}</td>
@@ -130,8 +130,8 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
 function Kpi({ label, v, c, sub }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
       <div style={{ fontSize: 10, color: "#5b6470" }}>{sub || " "}</div>
     </div>
   );
@@ -140,7 +140,7 @@ function Kpi({ label, v, c, sub }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "8px 8px" },
   btn: { background: "#22d3ee", color: "#04141a", border: "none", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },

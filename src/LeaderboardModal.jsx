@@ -22,7 +22,7 @@ export default function LeaderboardModal({ onClose }) {
   return (
     <div style={S.root} onClick={onClose}>
       <div style={S.box} onClick={e => e.stopPropagation()}>
-        <div style={S.brand}>🍦 BINTORO</div>
+        <div style={S.brand}>🍦 KaryaOS</div>
         <div style={S.title}>🏆 LEADERBOARD SULTAN</div>
         <div style={S.sub}>Jam ini {d?.window || ""} · reset tiap jam</div>
 

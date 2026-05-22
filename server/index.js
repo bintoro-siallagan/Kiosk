@@ -74,8 +74,8 @@ app.post("/api/admin/email-test", async (req, res) => {
     if (req.body?.testTo) {
       await emailModule.sendEmail({
         to: req.body.testTo,
-        subject: "BINTORO — Test Email",
-        html: `<h2>📧 Test Email Berhasil</h2><p>Konfigurasi SMTP BINTORO Kiosk OK. Dikirim pada ${new Date().toLocaleString("id-ID")}.</p>`,
+        subject: "KaryaOS — Test Email",
+        html: `<h2>📧 Test Email Berhasil</h2><p>Konfigurasi SMTP KaryaOS Kiosk OK. Dikirim pada ${new Date().toLocaleString("id-ID")}.</p>`,
       });
     }
     res.json({ ok: true, message: "SMTP OK" + (req.body?.testTo ? " · test email terkirim" : "") });
@@ -95,12 +95,12 @@ app.post("/api/reports/z/email", async (req, res) => {
     }] : [];
     const result = await emailModule.sendEmail({
       to: recipients,
-      subject: subject || `Z-Report BINTORO — ${periodLabel || new Date().toLocaleDateString("id-ID")}`,
+      subject: subject || `Z-Report KaryaOS — ${periodLabel || new Date().toLocaleDateString("id-ID")}`,
       html: `<div style="font-family:Arial,sans-serif">
-        <h2 style="color:#F59E0B">📊 BINTORO Z-Report</h2>
-        <p>Halo,<br/>Terlampir laporan Z-Report dari kiosk BINTORO untuk periode <strong>${periodLabel || "—"}</strong>.</p>
+        <h2 style="color:#F59E0B">📊 KaryaOS Z-Report</h2>
+        <p>Halo,<br/>Terlampir laporan Z-Report dari kiosk KaryaOS untuk periode <strong>${periodLabel || "—"}</strong>.</p>
         <p>File Excel berisi: Ringkasan, Breakdown Pembayaran, Jenis Order, Top Items, Promo, dan Rekonsiliasi Kas.</p>
-        <hr/><p style="font-size:11px;color:#888">Email otomatis dari BINTORO Kiosk · ${new Date().toLocaleString("id-ID")}</p>
+        <hr/><p style="font-size:11px;color:#888">Email otomatis dari KaryaOS Kiosk · ${new Date().toLocaleString("id-ID")}</p>
       </div>`,
       attachments,
     });
@@ -941,7 +941,7 @@ app.patch("/api/wa/config", (req, res) => {
 app.post("/api/wa/test", async (req, res) => {
   const { phone, message } = req.body || {};
   if (!phone) return res.status(400).json({ error: "phone required" });
-  const result = await wa.sendMessage(phone, message || "Test message from BINTORO Kiosk 🍦");
+  const result = await wa.sendMessage(phone, message || "Test message from KaryaOS Kiosk 🍦");
   res.json(result);
 });
 
@@ -1140,7 +1140,7 @@ let promoCodes = db.loadAllPromos();
 if (promoCodes.length === 0) {
   const seed = [
   {
-    id: "P001", code: "BINTORO10", type: "percent", value: 10,
+    id: "P001", code: "KaryaOS10", type: "percent", value: 10,
     desc: "Diskon 10% untuk semua menu",
     minOrder: 50000, maxDiscount: 50000,
     usageLimit: 100, usedCount: 12,
@@ -1573,7 +1573,7 @@ app.post("/api/customers/send-wa", async (req, res) => {
 
   const trackUrl = `${WA_TRACKING_BASE}/track?order=${orderId}`;
   const message  = encodeURIComponent(
-    `Halo ${customerName||"Kak"}! 👋\n\nTerima kasih sudah memesan di *BINTORO* 🍽️\n\nPesanan *#${orderId}* Anda sedang kami proses.\n\nCek status pesanan real-time di sini:\n👉 ${trackUrl}\n\nEstimasi siap: *12–18 menit*\n\nTerima kasih! 🙏`
+    `Halo ${customerName||"Kak"}! 👋\n\nTerima kasih sudah memesan di *KaryaOS* 🍽️\n\nPesanan *#${orderId}* Anda sedang kami proses.\n\nCek status pesanan real-time di sini:\n👉 ${trackUrl}\n\nEstimasi siap: *12–18 menit*\n\nTerima kasih! 🙏`
   );
 
   // WhatsApp API (wa.me deep link — works without Business API)
@@ -1987,7 +1987,7 @@ app.post("/api/payment/qris", async (req, res) => {
     const payload = {
       payment_type: isProduction ? "qris" : "gopay",
       transaction_details: {
-        order_id:     `BINTORO-${orderId}-${Date.now()}`,
+        order_id:     `KaryaOS-${orderId}-${Date.now()}`,
         gross_amount: grossAmount,
       },
       ...(isProduction
@@ -2102,7 +2102,7 @@ app.post("/api/payment/gopay", async (req, res) => {
   if (!midtransConfig.serverKey) return res.status(503).json({ error: "Midtrans server key not configured" });
 
   try {
-    const midtransOrderId = `BINTORO-${orderId}-${Date.now()}`;
+    const midtransOrderId = `KaryaOS-${orderId}-${Date.now()}`;
     const payload = {
       payment_type: "gopay",
       transaction_details: {
@@ -2561,7 +2561,7 @@ app.post("/api/shifts/close", (req, res) => {
       const openTime = new Date(closed.openAt || closed.openedAt || 0).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
       const closeTime = new Date(closed.closeAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 
-      let msg = "📊 *SHIFT REPORT — BINTORO*\n";
+      let msg = "📊 *SHIFT REPORT — KaryaOS*\n";
       msg += "━━━━━━━━━━━━━━━━━━━━\n";
       msg += "👤 Kasir: " + (closed.kasirName || "?") + "\n";
       msg += "⏰ " + openTime + " — " + closeTime + "\n\n";
@@ -2663,7 +2663,7 @@ Pesanan *#${orderId}* Anda sudah *SIAP DIAMBIL!* ✅
 ` +
     `Cek detail pesanan: ${trackUrl}
 
-Terima kasih sudah memesan di *BINTORO* 🍽️`
+Terima kasih sudah memesan di *KaryaOS* 🍽️`
   );
   const cleanPhone = order.customerPhone.replace(/\D/g,"");
   const waPhone    = cleanPhone.startsWith("0") ? "62" + cleanPhone.slice(1) : cleanPhone;
@@ -3844,7 +3844,7 @@ console.log('━━━ Bites-Kiosk Wave 1+2+3 — semua module loaded ━━━'
 
 server.listen(PORT, () => {
   console.log("");
-  console.log("🍽️  BINTORO BACKEND");
+  console.log("🍽️  KaryaOS BACKEND");
   console.log("─────────────────────────────");
   console.log(`🚀 REST API  : http://localhost:${PORT}/api`);
   console.log(`🔌 WebSocket : ws://localhost:${PORT}`);

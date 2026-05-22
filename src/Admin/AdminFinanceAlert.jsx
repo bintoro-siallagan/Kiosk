@@ -34,7 +34,7 @@ export default function AdminFinanceAlert({ apiBase = "" }) {
 
       <div style={{ ...S.card, marginBottom: 14, display: "flex", gap: 28, alignItems: "center" }}>
         <div>
-          <span style={{ fontSize: 32, fontWeight: 800, color: s.total ? "#f59e0b" : "#10b981", fontFamily: "'Space Mono',monospace" }}>{s.total}</span>
+          <span style={{ fontSize: 32, fontWeight: 800, color: s.total ? "#f59e0b" : "#10b981", fontFamily: "'Geist Mono',monospace" }}>{s.total}</span>
           <span style={{ color: "#9da7b3", fontSize: 13, marginLeft: 8 }}>alert aktif</span>
         </div>
         <div style={{ color: "#ef4444", fontSize: 13, fontWeight: 600 }}>● {s.critical} critical</div>
@@ -54,11 +54,11 @@ export default function AdminFinanceAlert({ apiBase = "" }) {
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "#e6edf3" }}>{a.title}</span>
-                <span style={{ fontSize: 9, padding: "2px 7px", borderRadius: 5, background: sv.bg, color: sv.c, fontFamily: "'Space Mono',monospace" }}>{a.category}</span>
+                <span style={{ fontSize: 9, padding: "2px 7px", borderRadius: 5, background: sv.bg, color: sv.c, fontFamily: "'Geist Mono',monospace" }}>{a.category}</span>
               </div>
               <div style={{ fontSize: 13, color: "#9da7b3", marginTop: 4 }}>{a.detail}</div>
             </div>
-            <span style={{ fontSize: 10, color: sv.c, fontWeight: 700, fontFamily: "'Space Mono',monospace", flexShrink: 0 }}>{sv.label}</span>
+            <span style={{ fontSize: 10, color: sv.c, fontWeight: 700, fontFamily: "'Geist Mono',monospace", flexShrink: 0 }}>{sv.label}</span>
           </div>
         );
       })}

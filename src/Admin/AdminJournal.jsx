@@ -47,8 +47,8 @@ export default function AdminJournal({ apiBase = "" }) {
           {t.balanced ? "✓ JURNAL BALANCE" : "✗ TIDAK BALANCE"}
         </span>
         <span style={{ fontSize: 13, color: "#9da7b3" }}>
-          Total Debit <b style={{ color: "#e6edf3", fontFamily: "'Space Mono',monospace" }}>{fmtRp(t.debit)}</b>
-          {"  =  "}Total Kredit <b style={{ color: "#e6edf3", fontFamily: "'Space Mono',monospace" }}>{fmtRp(t.credit)}</b>
+          Total Debit <b style={{ color: "#e6edf3", fontFamily: "'Geist Mono',monospace" }}>{fmtRp(t.debit)}</b>
+          {"  =  "}Total Kredit <b style={{ color: "#e6edf3", fontFamily: "'Geist Mono',monospace" }}>{fmtRp(t.credit)}</b>
         </span>
       </div>
 
@@ -59,17 +59,17 @@ export default function AdminJournal({ apiBase = "" }) {
         ) : d.entries.map((e, i) => (
           <div key={i} style={{ borderTop: "1px solid #161b22", padding: "10px 0" }}>
             <div style={{ fontSize: 12, color: "#e6edf3", fontWeight: 600 }}>
-              <span style={{ color: "#a78bfa", fontFamily: "'Space Mono',monospace" }}>{e.ref}</span> · {e.description}
+              <span style={{ color: "#a78bfa", fontFamily: "'Geist Mono',monospace" }}>{e.ref}</span> · {e.description}
             </div>
             <table style={{ width: "100%", marginTop: 5, borderCollapse: "collapse" }}>
               <tbody>
                 {[...e.lines].sort((a, b) => (b.debit - a.debit)).map((l, j) => (
                   <tr key={j} style={{ fontSize: 13 }}>
                     <td style={{ padding: "3px 8px", color: "#cdd5df", paddingLeft: l.credit > 0 ? 34 : 14 }}>
-                      {l.coa_code ? <span style={{ color: "#5b6470", fontFamily: "'Space Mono',monospace", fontSize: 11 }}>{l.coa_code} </span> : null}{l.account}
+                      {l.coa_code ? <span style={{ color: "#5b6470", fontFamily: "'Geist Mono',monospace", fontSize: 11 }}>{l.coa_code} </span> : null}{l.account}
                     </td>
-                    <td style={{ padding: "3px 8px", textAlign: "right", fontFamily: "'Space Mono',monospace", color: "#10b981", width: 150 }}>{l.debit > 0 ? fmtRp(l.debit) : ""}</td>
-                    <td style={{ padding: "3px 8px", textAlign: "right", fontFamily: "'Space Mono',monospace", color: "#f59e0b", width: 150 }}>{l.credit > 0 ? fmtRp(l.credit) : ""}</td>
+                    <td style={{ padding: "3px 8px", textAlign: "right", fontFamily: "'Geist Mono',monospace", color: "#10b981", width: 150 }}>{l.debit > 0 ? fmtRp(l.debit) : ""}</td>
+                    <td style={{ padding: "3px 8px", textAlign: "right", fontFamily: "'Geist Mono',monospace", color: "#f59e0b", width: 150 }}>{l.credit > 0 ? fmtRp(l.credit) : ""}</td>
                   </tr>
                 ))}
               </tbody>
@@ -89,11 +89,11 @@ export default function AdminJournal({ apiBase = "" }) {
           <tbody>
             {d.ledger.map((l, i) => (
               <tr key={i} style={{ borderTop: "1px solid #161b22", fontSize: 13 }}>
-                <td style={{ padding: "8px", color: "#5b6470", fontFamily: "'Space Mono',monospace", fontSize: 11 }}>{l.coa_code || "—"}</td>
+                <td style={{ padding: "8px", color: "#5b6470", fontFamily: "'Geist Mono',monospace", fontSize: 11 }}>{l.coa_code || "—"}</td>
                 <td style={{ padding: "8px", color: "#e6edf3", fontWeight: 600 }}>{l.account}</td>
-                <td style={{ padding: "8px", textAlign: "right", fontFamily: "'Space Mono',monospace", color: "#9da7b3" }}>{l.debit > 0 ? fmtRp(l.debit) : "—"}</td>
-                <td style={{ padding: "8px", textAlign: "right", fontFamily: "'Space Mono',monospace", color: "#9da7b3" }}>{l.credit > 0 ? fmtRp(l.credit) : "—"}</td>
-                <td style={{ padding: "8px", textAlign: "right", fontFamily: "'Space Mono',monospace", fontWeight: 700, color: l.balance >= 0 ? "#10b981" : "#f59e0b" }}>
+                <td style={{ padding: "8px", textAlign: "right", fontFamily: "'Geist Mono',monospace", color: "#9da7b3" }}>{l.debit > 0 ? fmtRp(l.debit) : "—"}</td>
+                <td style={{ padding: "8px", textAlign: "right", fontFamily: "'Geist Mono',monospace", color: "#9da7b3" }}>{l.credit > 0 ? fmtRp(l.credit) : "—"}</td>
+                <td style={{ padding: "8px", textAlign: "right", fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: l.balance >= 0 ? "#10b981" : "#f59e0b" }}>
                   {fmtRp(Math.abs(l.balance))} {l.balance >= 0 ? "D" : "K"}
                 </td>
               </tr>
@@ -108,7 +108,7 @@ export default function AdminJournal({ apiBase = "" }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   pill: { background: "#0d1117", border: "1px solid #21262d", color: "#9da7b3", fontSize: 12, padding: "7px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit" },
   pillOn: { background: "#a78bfa", border: "1px solid #a78bfa", color: "#140a2e", fontSize: 12, fontWeight: 700, padding: "7px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit" },
 };

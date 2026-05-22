@@ -58,7 +58,7 @@ export default function AdminItemMaster({ apiBase = "" }) {
             <div style={{ flex: 1, height: 11, background: "#0a0e16", borderRadius: 6, overflow: "hidden" }}>
               <div style={{ height: "100%", width: Math.round(c.count / maxCat * 100) + "%", background: AC }} />
             </div>
-            <span style={{ width: 30, textAlign: "right", fontFamily: "'Space Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{c.count}</span>
+            <span style={{ width: 30, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{c.count}</span>
           </div>
         ))}
       </div>
@@ -77,18 +77,18 @@ export default function AdminItemMaster({ apiBase = "" }) {
           <tbody>
             {items.map((it, i) => (
               <tr key={i} style={{ borderTop: "1px solid #161b22", fontSize: 12 }}>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#5b6470" }}>{it.item_code}</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#5b6470" }}>{it.item_code}</td>
                 <td style={S.td}>
                   <div style={{ color: "#e6edf3", fontWeight: 600 }}>{it.name}</div>
-                  <div style={{ color: "#5b6470", fontSize: 10, fontFamily: "'Space Mono',monospace" }}>{it.barcode}</div>
+                  <div style={{ color: "#5b6470", fontSize: 10, fontFamily: "'Geist Mono',monospace" }}>{it.barcode}</div>
                 </td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>{it.category}{it.subcategory ? ` · ${it.subcategory}` : ""}</td>
                 <td style={S.td}>
                   <span style={{ fontSize: 10, fontWeight: 700, color: TYPE_C[it.item_type] || "#9ca3af",
                     background: (TYPE_C[it.item_type] || "#9ca3af") + "1f", border: `1px solid ${(TYPE_C[it.item_type] || "#9ca3af")}55`,
-                    borderRadius: 5, padding: "2px 8px", fontFamily: "'Space Mono',monospace" }}>{it.item_type}</span>
+                    borderRadius: 5, padding: "2px 8px", fontFamily: "'Geist Mono',monospace" }}>{it.item_type}</span>
                 </td>
-                <td style={{ ...S.td, fontFamily: "'Space Mono',monospace", color: "#cdd5df" }}>{fmtRp(it.base_price)}</td>
+                <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#cdd5df" }}>{fmtRp(it.base_price)}</td>
                 <td style={{ ...S.td, color: "#5b6470" }}>{it.uom}</td>
               </tr>
             ))}
@@ -105,15 +105,15 @@ function TypeCard({ t, count, c, on, onClick, label }) {
       borderRadius: 9, padding: "10px 12px", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}>
       <div style={{ fontSize: 18 }}>{t.icon}</div>
       <div style={{ fontSize: 11, fontWeight: 700, color: on ? c : "#e6edf3", marginTop: 3 }}>{label || t.type}</div>
-      <div style={{ fontSize: 16, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace" }}>{count}</div>
+      <div style={{ fontSize: 16, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace" }}>{count}</div>
     </button>
   );
 }
 function Kpi({ label, v, c, sub }) {
   return (
     <div style={{ background: "#0d1117", border: "1px solid #161b22", borderTop: `2px solid ${c}`, borderRadius: 10, padding: "11px 13px" }}>
-      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Space Mono',monospace" }}>{label.toUpperCase()}</div>
-      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Space Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      <div style={{ fontSize: 18, fontWeight: 800, color: c, fontFamily: "'Geist Mono',monospace", margin: "4px 0 2px" }}>{v}</div>
       <div style={{ fontSize: 10, color: "#5b6470" }}>{sub || " "}</div>
     </div>
   );
@@ -122,7 +122,7 @@ function Kpi({ label, v, c, sub }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "8px 8px" },
 };

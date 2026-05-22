@@ -249,7 +249,7 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
 }
 
 const S = {
-  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'DM Sans',sans-serif",
+  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Inter',sans-serif",
     display:"flex", flexDirection:"column" },
   header: { display:"flex", alignItems:"center", gap:12,
     padding:"12px 20px", borderBottom:"1px solid #222", background:"#0a0a0a",
@@ -311,7 +311,7 @@ const S = {
   cartTotal: { padding:"16px 20px", borderTop:"1px solid #222", background:"#111" },
   totalRow: { display:"flex", justifyContent:"space-between", alignItems:"center",
     fontSize:15, fontWeight:600 },
-  totalAmount: { fontSize:20, fontWeight:800, color:"#F59E0B", fontFamily:"'Bebas Neue',cursive", letterSpacing:1 },
+  totalAmount: { fontSize:20, fontWeight:800, color:"#F59E0B", fontFamily:"'Inter',cursive", letterSpacing:1 },
   taxNote: { fontSize:10, color:"#555", marginTop:2 },
   actions: { padding:"12px 16px 20px", display:"flex", flexDirection:"column", gap:8 },
   payBtn: { background:"#F59E0B", color:"#111", border:"none", borderRadius:12,

@@ -245,7 +245,7 @@ export default function POSCustomerPicker({ order, onContinue, onBack, onCancel 
 }
 
 const S = {
-  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Plus Jakarta Sans',sans-serif",
+  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Inter',sans-serif",
     display:"flex", flexDirection:"column" },
   header: { display:"flex", alignItems:"center", gap:12,
     padding:"12px 20px", borderBottom:"1px solid #222", background:"#0a0a0a" },
@@ -253,7 +253,7 @@ const S = {
     padding:"8px 14px", borderRadius:8, fontSize:13, cursor:"pointer", fontFamily:"inherit" },
   ctx: { flex:1, fontSize:14, color:"#F59E0B", fontWeight:600 },
   main: { flex:1, padding:"40px 24px", maxWidth:560, margin:"0 auto", width:"100%", boxSizing:"border-box" },
-  title: { fontFamily:"'Montserrat',sans-serif", fontSize:42, color:"#F59E0B", letterSpacing:2,
+  title: { fontFamily:"'Inter',sans-serif", fontSize:42, color:"#F59E0B", letterSpacing:2,
     margin:0, textAlign:"center" },
   subtitle: { textAlign:"center", color:"#888", fontSize:13, marginBottom:24 },
   tabs: { display:"flex", gap:6, padding:4, background:"#0a0a0a", border:"1px solid #222",
@@ -284,7 +284,7 @@ const S = {
   memberPhone: { fontSize:12, color:"#888", marginTop:2 },
   memberPoints: { textAlign:"right" },
   pointsLabel: { fontSize:10, color:"#666", letterSpacing:1, fontWeight:600 },
-  pointsValue: { fontSize:20, fontWeight:800, color:"#F59E0B", fontFamily:"'Montserrat',sans-serif" },
+  pointsValue: { fontSize:20, fontWeight:800, color:"#F59E0B", fontFamily:"'Inter',sans-serif" },
   tagsRow: { display:"flex", gap:6, marginBottom:12, flexWrap:"wrap" },
   tag: { fontSize:10, padding:"3px 8px", borderRadius:100,
     background:"rgba(245,158,11,0.15)", color:"#F59E0B", fontWeight:600 },

@@ -115,7 +115,7 @@ export default function AdminPurchaseInvoice({ apiBase = "" }) {
                   const isActive = activeStep === c.step;
                   return (
                     <div key={c.step} style={{ flex: "1 1 180px", background: "#0a0e16", border: `1px solid ${done ? "#10b98155" : isActive ? "#a78bfa55" : "#21262d"}`, borderRadius: 8, padding: "8px 10px" }}>
-                      <div style={{ fontSize: 10, color: "#5b6470", fontFamily: "'Space Mono',monospace" }}>{i + 1}. {c.role.toUpperCase()}</div>
+                      <div style={{ fontSize: 10, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>{i + 1}. {c.role.toUpperCase()}</div>
                       {done ? (
                         <div style={{ fontSize: 12, color: "#10b981", marginTop: 3 }}>✓ {inv[c.byField] || "OK"} · {fmtDate(inv[c.atField])}</div>
                       ) : isActive ? (
@@ -140,7 +140,7 @@ export default function AdminPurchaseInvoice({ apiBase = "" }) {
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
-  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Space Mono',monospace" },
+  kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   input: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 10px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", width: "100%", boxSizing: "border-box" },
   btnPrimary: { background: "#a78bfa", color: "#140a2e", border: "none", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
   btnStep: { background: "#a78bfa", color: "#140a2e", border: "none", borderRadius: 6, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", width: "100%" },
