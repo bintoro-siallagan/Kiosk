@@ -1,7 +1,0 @@
-/* Auto-zoom for widescreen monitors */
-@media (min-width: 1000px) {
-  html { zoom: 1.25; }
-}
-@media (min-width: 1400px) {
-  html { zoom: 1.4; }
-}

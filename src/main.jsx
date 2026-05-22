@@ -1,4 +1,3 @@
-import "./auto-zoom.css";
 import { installOffline } from './offline.js'
 installOffline();   // patch fetch buat mode offline — sebelum app render
 import { StrictMode } from 'react'
