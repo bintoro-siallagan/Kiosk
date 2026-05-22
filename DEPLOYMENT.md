@@ -38,10 +38,14 @@ Internet
 |---|---|---|
 | CPU | 2 vCPU | 2–4 vCPU |
 | RAM | 2 GB | 4 GB |
-| Disk | 40 GB SSD | 80 GB SSD |
+| Disk | 30 GB SSD | 80 GB SSD |
 | OS | Ubuntu 22.04 LTS | Ubuntu 22.04 LTS |
 
 Provider: DigitalOcean / Vultr / Hostinger / IDCloudHost (~Rp 80–200rb/bln).
+
+> VPS **2 GB RAM / 30 GB disk** cukup untuk 1 outlet / trafik modest.
+> Wajib pasang **swap** (langkah 1) dan rotasi backup/log agar disk lega.
+> Untuk banyak outlet & trafik tinggi, naikkan RAM ke 4 GB.
 
 ---
 
@@ -65,6 +69,16 @@ su - karyaos
 
 > `build-essential` wajib — `better-sqlite3` adalah native module yang
 > di-compile saat `npm install`.
+
+**Swap — wajib untuk VPS RAM 2 GB.** Tanpa swap, `npm install` +
+`npm run build` (compile native module + bundling Vite) bisa gagal OOM:
+
+```bash
+sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
+sudo mkswap /swapfile && sudo swapon /swapfile
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+free -h        # pastikan baris Swap terisi
+```
 
 ---
 
