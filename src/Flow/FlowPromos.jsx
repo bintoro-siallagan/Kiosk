@@ -7,9 +7,7 @@ const BORDER = "#2A2A2A";
 const TEXT = "#FAFAFA";
 const SUB = "#A1A1AA";
 
-const API = typeof window !== "undefined"
-  ? `${window.location.protocol}//${window.location.hostname}:3011`
-  : "";
+const API = import.meta.env.VITE_API_URL || "http://localhost:3011";
 
 const TYPE_META = {
   percent: { label: "% OFF", color: "#3B82F6", bg: "rgba(59,130,246,0.15)" },
