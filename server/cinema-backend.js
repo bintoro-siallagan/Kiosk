@@ -222,6 +222,27 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // ── BOX OFFICE / reporting ──
+  router.get('/box-office', (req, res) => {
+    const totals = db.prepare(`SELECT COUNT(*) tickets, COALESCE(SUM(price),0) revenue FROM cinema_tickets`).get();
+    const today = db.prepare(`SELECT COUNT(*) tickets, COALESCE(SUM(price),0) revenue FROM cinema_tickets
+                              WHERE date(sold_at,'unixepoch','localtime') = date('now','localtime')`).get();
+    const by_film = db.prepare(`SELECT f.id, f.title, COUNT(t.id) tickets, COALESCE(SUM(t.price),0) revenue
+                                FROM cinema_tickets t
+                                JOIN cinema_showtimes s ON s.id = t.showtime_id
+                                JOIN cinema_films f ON f.id = s.film_id
+                                GROUP BY f.id ORDER BY revenue DESC`).all();
+    const showtimes = db.prepare(`SELECT s.id, f.title AS film_title, st.name AS studio_name,
+                                         s.show_date, s.start_time, (st.rows * st.cols) AS capacity,
+                                         COUNT(t.id) AS sold, COALESCE(SUM(t.price),0) AS revenue
+                                  FROM cinema_showtimes s
+                                  LEFT JOIN cinema_films f ON f.id = s.film_id
+                                  LEFT JOIN cinema_studios st ON st.id = s.studio_id
+                                  LEFT JOIN cinema_tickets t ON t.showtime_id = s.id
+                                  GROUP BY s.id ORDER BY s.show_date, s.start_time`).all();
+    res.json({ totals, today, by_film, showtimes });
+  });
+
   const mountPath = opts.mountPath || '/api/cinema';
   app.use(mountPath, router);
   console.log(`[cinema] mounted at ${mountPath} — films, studios, showtimes`);
