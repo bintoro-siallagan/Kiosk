@@ -366,6 +366,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
       setShowPromoTeaser(true);
       audio.playSwoosh?.();
     } else {
+      setShowPromoTeaser(false);
       setScreen("confirm");
     }
   };

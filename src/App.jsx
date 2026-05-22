@@ -69,6 +69,21 @@ export default function App() {
     return () => ["click","touchstart","keydown"].forEach(e => document.removeEventListener(e, unlock));
   }, []);
 
+  // QR-meja scan (?table=<qrCode>) — auto-fill the table so the customer
+  // doesn't have to re-pick the table they literally scanned.
+  useEffect(() => {
+    const tbl = new URLSearchParams(window.location.search).get("table");
+    if (!tbl) return;
+    fetch(`${API_HOST}/api/tables`)
+      .then(r => r.json())
+      .then(list => {
+        const arr = Array.isArray(list) ? list : (list?.tables || []);
+        const found = arr.find(t => t.id === tbl || t.qrCode === tbl || String(t.name) === tbl);
+        setTable(found || { id: tbl, name: "Meja " + tbl });
+      })
+      .catch(() => setTable({ id: tbl, name: "Meja " + tbl }));
+  }, []);
+
   const go = (s) => () => setScene(s);
 
   function handleAdminLogin(session) {
