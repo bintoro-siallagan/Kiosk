@@ -167,151 +167,159 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
   }, [detail, detailAddonTotal, detailQty]);
 
   return (
-    <div style={{ height: "100vh", background: BG, color: TEXT, display: "flex", overflow: "hidden" }}>
+    <div style={{ height: "100vh", background: BG, color: TEXT, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
-      {/* ── Hide scrollbar for category tabs ── */}
       <style>{`
         .cat-scroll::-webkit-scrollbar { display: none }
         .cat-scroll { -ms-overflow-style: none; scrollbar-width: none; }
-        @keyframes fadeArrow { 0%,100% { opacity: 0.3; transform: translateX(0); } 50% { opacity: 0.8; transform: translateX(-4px); } }
+        @keyframes flowSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
       `}</style>
 
-      {/* ══ LEFT: Menu ══ */}
-      <div style={{ flex: "0 0 60%", display: "flex", flexDirection: "column", borderRight: `1px solid ${BORDER}`, overflow: "hidden" }}>
-        <div style={{ background: BG, borderBottom: `1px solid ${BORDER}`, padding: "14px 20px", flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-            <button onClick={() => setScreen("home")} style={{ background: "transparent", border: "none", color: TEXT, fontSize: 24, cursor: "pointer", padding: 0, width: 32 }}>←</button>
-            <h1 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: BRAND, letterSpacing: 1 }}>MENU</h1>
-          </div>
-          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari menu..."
-            style={{ width: "100%", padding: "10px 14px", background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, color: TEXT, fontSize: 14, outline: "none" }} />
-
-          {/* FIX 1: Category tabs — scrollbar hidden, fade hint at right edge */}
-          <div style={{ position: "relative", marginTop: 10 }}>
-            <div className="cat-scroll" style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
-              {categories.map(c => (
-                <button key={c} onClick={() => setActiveCat(c)} style={{
-                  padding: "7px 14px", borderRadius: 999, whiteSpace: "nowrap", flexShrink: 0,
-                  border: `1px solid ${activeCat === c ? BRAND : BORDER}`,
-                  background: activeCat === c ? BRAND : "transparent",
-                  color: activeCat === c ? "#000" : TEXT,
-                  fontSize: 12, fontWeight: 600, cursor: "pointer"
-                }}>{catLabels[c] || c}</button>
-              ))}
-            </div>
-            {/* Right fade — hints more tabs exist */}
-            <div style={{
-              position: "absolute", right: 0, top: 0, bottom: 4, width: 40, pointerEvents: "none",
-              background: `linear-gradient(to right, transparent, ${BG})`
-            }} />
-          </div>
+      {/* ── Header ── */}
+      <div style={{ background: BG, borderBottom: `1px solid ${BORDER}`, padding: "14px 20px", flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+          <button onClick={() => setScreen("home")} style={{ background: "transparent", border: "none", color: TEXT, fontSize: 24, cursor: "pointer", padding: 0, width: 32 }}>←</button>
+          <h1 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: BRAND, letterSpacing: 1 }}>MENU</h1>
         </div>
+        <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari menu..."
+          style={{ width: "100%", padding: "10px 14px", background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, color: TEXT, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
 
-        <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
-          {loading && <div style={{ textAlign: "center", padding: 40, color: SUB }}>⏳ Loading menu...</div>}
-          {!loading && filtered.length === 0 && <div style={{ textAlign: "center", padding: 40, color: SUB }}>Tidak ada menu yang cocok</div>}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            {filtered.map(item => (
-              <button key={item.id} onClick={() => openDetail(item)} style={{
-                background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14,
-                padding: 14, textAlign: "left", cursor: "pointer", position: "relative", overflow: "hidden", color: TEXT
-              }}>
-                {item.popular && <span style={{ position: "absolute", top: 8, right: 8, background: BRAND, color: "#000", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4 }}>POPULAR</span>}
-                <div style={{ fontSize: 40, marginBottom: 6 }}>{item.emoji}</div>
-                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, lineHeight: 1.3, color: TEXT }}>{item.name}</div>
-                <div style={{ fontSize: 11, color: SUB, marginBottom: 8, minHeight: 28, lineHeight: 1.3 }}>{item.desc}</div>
-                {item.freeToppings > 0 && <div style={{ fontSize: 10, color: BRAND, marginBottom: 6 }}>+ {item.freeToppings} topping gratis</div>}
-                <div style={{ fontSize: 14, fontWeight: 700, color: BRAND }}>{rupiah(item.price)}</div>
-              </button>
+        {/* Category tabs — scrollbar hidden, fade hint at right edge */}
+        <div style={{ position: "relative", marginTop: 10 }}>
+          <div className="cat-scroll" style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
+            {categories.map(c => (
+              <button key={c} onClick={() => setActiveCat(c)} style={{
+                padding: "7px 14px", borderRadius: 999, whiteSpace: "nowrap", flexShrink: 0,
+                border: `1px solid ${activeCat === c ? BRAND : BORDER}`,
+                background: activeCat === c ? BRAND : "transparent",
+                color: activeCat === c ? "#000" : TEXT,
+                fontSize: 12, fontWeight: 600, cursor: "pointer"
+              }}>{catLabels[c] || c}</button>
             ))}
           </div>
+          <div style={{
+            position: "absolute", right: 0, top: 0, bottom: 4, width: 40, pointerEvents: "none",
+            background: `linear-gradient(to right, transparent, ${BG})`
+          }} />
         </div>
       </div>
 
-      {/* ══ RIGHT: Cart Summary ══ */}
-      <div style={{ flex: "0 0 40%", display: "flex", flexDirection: "column", background: "#111" }}>
-        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${BORDER}`, flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: BRAND }}>
-            PESANAN{cartCount > 0 ? ` (${cartCount})` : ""}
-          </h2>
-          {cart.length > 0 && (
-            <button onClick={clearCart} style={{ background: "transparent", border: "none", color: "#EF4444", fontSize: 12, cursor: "pointer" }}>🗑 Kosongin</button>
-          )}
-        </div>
-
-        <div style={{ flex: 1, overflowY: "auto", padding: "0 16px" }}>
-          {cart.length === 0 ? (
-            /* FIX 2: Empty state — full-height centering, more inviting */
-            <div style={{
-              height: "100%", display: "flex", flexDirection: "column",
-              alignItems: "center", justifyContent: "center",
-              padding: "0 24px", gap: 10, userSelect: "none"
+      {/* ── Menu items (scrollable) ── */}
+      <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
+        {loading && <div style={{ textAlign: "center", padding: 40, color: SUB }}>⏳ Loading menu...</div>}
+        {!loading && filtered.length === 0 && <div style={{ textAlign: "center", padding: 40, color: SUB }}>Tidak ada menu yang cocok</div>}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          {filtered.map(item => (
+            <button key={item.id} onClick={() => openDetail(item)} style={{
+              background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14,
+              padding: 14, textAlign: "left", cursor: "pointer", position: "relative", overflow: "hidden", color: TEXT
             }}>
-              <div style={{ fontSize: 64, opacity: 0.25, lineHeight: 1 }}>🛒</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: TEXT, opacity: 0.4, marginTop: 4 }}>
-                Belum ada pesanan
-              </div>
-              <div style={{ fontSize: 12, color: SUB, textAlign: "center", lineHeight: 1.6, opacity: 0.8 }}>
-                Ketuk item di sebelah kiri<br />untuk mulai pesan
-              </div>
-              {/* animated arrow hinting left panel */}
-              <div style={{
-                marginTop: 12, display: "flex", alignItems: "center", gap: 6,
-                padding: "8px 16px", borderRadius: 999,
-                border: `1px dashed ${BORDER}`,
-                fontSize: 11, color: "#444"
-              }}>
-                <span style={{ animation: "fadeArrow 1.8s ease-in-out infinite" }}>←</span>
-                <span>pilih menu dulu</span>
-              </div>
-            </div>
-          ) : (
-            cart.map((it, i) => {
-              const q = it.q || 1;
-              const lineTotal = (it.p + (it.addonTotal || 0)) * q;
-              return (
-                <div key={it.id + "-" + i} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 12, marginTop: 8 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700 }}><span style={{ marginRight: 6 }}>{it.e}</span>{it.n}</div>
-                      <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{rupiah(it.p)}</div>
-                    </div>
-                    <button onClick={() => removeFromCart(it.id)} style={{ background: "transparent", border: "none", color: "#EF4444", fontSize: 18, cursor: "pointer", padding: "0 4px" }}>✕</button>
-                  </div>
-                  {it.addons?.toppings?.length > 0 && (
-                    <div style={{ fontSize: 11, color: SUB, marginBottom: 8, lineHeight: 1.4 }}>
-                      + {it.addons.toppings.map(t => t.name).join(", ")}
-                      {it.addonTotal > 0 && <span style={{ color: BRAND }}> ({rupiah(it.addonTotal)})</span>}
-                    </div>
-                  )}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-                    <div style={{ display: "flex", alignItems: "center" }}>
-                      <button onClick={() => updateCartQty(it.id, Math.max(1, q - 1))} style={{ width: 28, height: 28, borderRadius: "50%", border: `1px solid ${BORDER}`, background: BG, color: TEXT, fontSize: 14, cursor: "pointer" }}>−</button>
-                      <div style={{ width: 32, textAlign: "center", fontSize: 13, fontWeight: 700 }}>{q}</div>
-                      <button onClick={() => updateCartQty(it.id, q + 1)} style={{ width: 28, height: 28, borderRadius: "50%", border: `1px solid ${BORDER}`, background: BG, color: TEXT, fontSize: 14, cursor: "pointer" }}>+</button>
-                    </div>
-                    <span style={{ fontSize: 14, fontWeight: 700 }}>{rupiah(lineTotal)}</span>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        <div style={{ padding: "16px 20px", borderTop: `1px solid ${BORDER}`, flexShrink: 0 }}>
-          {cart.length > 0 ? (
-            <>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: 1 }}>TOTAL</span>
-                <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: BRAND }}>{rupiah(cartTotal)}</span>
-              </div>
-              <button onClick={() => setScreen("checkout")} style={{ width: "100%", padding: "14px", borderRadius: 12, background: BRAND, border: "none", color: "#000", fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: 2, cursor: "pointer" }}>CHECKOUT →</button>
-            </>
-          ) : (
-            <button disabled style={{ width: "100%", padding: "14px", borderRadius: 12, background: BORDER, border: "none", color: SUB, fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, cursor: "not-allowed" }}>PILIH MENU DULU</button>
-          )}
+              {item.popular && <span style={{ position: "absolute", top: 8, right: 8, background: BRAND, color: "#000", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4 }}>POPULAR</span>}
+              <div style={{ fontSize: 40, marginBottom: 6 }}>{item.emoji}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, lineHeight: 1.3, color: TEXT }}>{item.name}</div>
+              <div style={{ fontSize: 11, color: SUB, marginBottom: 8, minHeight: 28, lineHeight: 1.3 }}>{item.desc}</div>
+              {item.freeToppings > 0 && <div style={{ fontSize: 10, color: BRAND, marginBottom: 6 }}>+ {item.freeToppings} topping gratis</div>}
+              <div style={{ fontSize: 14, fontWeight: 700, color: BRAND }}>{rupiah(item.price)}</div>
+            </button>
+          ))}
         </div>
       </div>
+
+      {/* ── Bottom cart bar ── */}
+      <div style={{ flexShrink: 0, borderTop: `1px solid ${BORDER}`, background: "#111", padding: "12px 16px" }}>
+        {cart.length > 0 ? (
+          <button onClick={() => setShowCart(true)} style={{
+            width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+            gap: 10, padding: "13px 18px", borderRadius: 14, background: BRAND, border: "none",
+            color: "#000", cursor: "pointer", boxSizing: "border-box"
+          }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 13 }}>
+              <span style={{ background: "#000", color: BRAND, borderRadius: 999, padding: "2px 9px", fontSize: 12 }}>{cartCount}</span>
+              Lihat Pesanan
+            </span>
+            <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: 0.5 }}>{rupiah(cartTotal)} →</span>
+          </button>
+        ) : (
+          <div style={{ textAlign: "center", color: SUB, fontSize: 13, padding: "9px 0" }}>🛒 Keranjang kosong — ketuk menu untuk memesan</div>
+        )}
+      </div>
+
+      {/* ── Cart sheet (tap bottom bar) ── */}
+      {showCart && (
+        <div onClick={() => setShowCart(false)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 95,
+          display: "flex", flexDirection: "column", justifyContent: "flex-end"
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: BG, borderRadius: "20px 20px 0 0", maxHeight: "88vh",
+            display: "flex", flexDirection: "column", animation: "flowSheetUp 0.22s ease"
+          }}>
+            <div style={{ width: 40, height: 4, background: BORDER, borderRadius: 2, margin: "12px auto 4px" }} />
+            <div style={{ padding: "8px 20px 12px", borderBottom: `1px solid ${BORDER}`, flexShrink: 0, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 style={{ margin: 0, fontFamily: "'Bebas Neue', sans-serif", fontSize: 26, color: BRAND }}>
+                PESANAN{cartCount > 0 ? ` (${cartCount})` : ""}
+              </h2>
+              {cart.length > 0 && (
+                <button onClick={clearCart} style={{ background: "transparent", border: "none", color: "#EF4444", fontSize: 12, cursor: "pointer" }}>🗑 Kosongin</button>
+              )}
+            </div>
+
+            <div style={{ flex: 1, overflowY: "auto", padding: "0 16px 12px" }}>
+              {cart.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "48px 24px", color: SUB }}>
+                  <div style={{ fontSize: 52, opacity: 0.3, marginBottom: 8 }}>🛒</div>
+                  <div style={{ fontSize: 14 }}>Belum ada pesanan</div>
+                </div>
+              ) : (
+                cart.map((it, i) => {
+                  const q = it.q || 1;
+                  const lineTotal = (it.p + (it.addonTotal || 0)) * q;
+                  return (
+                    <div key={it.id + "-" + i} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 12, marginTop: 8 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 14, fontWeight: 700 }}><span style={{ marginRight: 6 }}>{it.e}</span>{it.n}</div>
+                          <div style={{ fontSize: 12, color: SUB, marginTop: 2 }}>{rupiah(it.p)}</div>
+                        </div>
+                        <button onClick={() => removeFromCart(it.id)} style={{ background: "transparent", border: "none", color: "#EF4444", fontSize: 18, cursor: "pointer", padding: "0 4px" }}>✕</button>
+                      </div>
+                      {it.addons?.toppings?.length > 0 && (
+                        <div style={{ fontSize: 11, color: SUB, marginBottom: 8, lineHeight: 1.4 }}>
+                          + {it.addons.toppings.map(t => t.name).join(", ")}
+                          {it.addonTotal > 0 && <span style={{ color: BRAND }}> ({rupiah(it.addonTotal)})</span>}
+                        </div>
+                      )}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center" }}>
+                          <button onClick={() => updateCartQty(it.id, Math.max(1, q - 1))} style={{ width: 28, height: 28, borderRadius: "50%", border: `1px solid ${BORDER}`, background: BG, color: TEXT, fontSize: 14, cursor: "pointer" }}>−</button>
+                          <div style={{ width: 32, textAlign: "center", fontSize: 13, fontWeight: 700 }}>{q}</div>
+                          <button onClick={() => updateCartQty(it.id, q + 1)} style={{ width: 28, height: 28, borderRadius: "50%", border: `1px solid ${BORDER}`, background: BG, color: TEXT, fontSize: 14, cursor: "pointer" }}>+</button>
+                        </div>
+                        <span style={{ fontSize: 14, fontWeight: 700 }}>{rupiah(lineTotal)}</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            <div style={{ padding: "14px 20px", borderTop: `1px solid ${BORDER}`, flexShrink: 0 }}>
+              {cart.length > 0 ? (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: 1 }}>TOTAL</span>
+                    <span style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, color: BRAND }}>{rupiah(cartTotal)}</span>
+                  </div>
+                  <button onClick={() => setScreen("checkout")} style={{ width: "100%", padding: "14px", borderRadius: 12, background: BRAND, border: "none", color: "#000", fontFamily: "'Bebas Neue', sans-serif", fontSize: 20, letterSpacing: 2, cursor: "pointer" }}>CHECKOUT →</button>
+                  <button onClick={() => setShowCart(false)} style={{ width: "100%", padding: "10px", marginTop: 8, borderRadius: 10, background: "transparent", border: "none", color: SUB, fontSize: 13, cursor: "pointer" }}>← Lanjut pilih menu</button>
+                </>
+              ) : (
+                <button onClick={() => setShowCart(false)} style={{ width: "100%", padding: "13px", borderRadius: 12, background: CARD, border: `1px solid ${BORDER}`, color: TEXT, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>← Pilih menu</button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TOPPING PICKER MODAL */}
       {detail && (
