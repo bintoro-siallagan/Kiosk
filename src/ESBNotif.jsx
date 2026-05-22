@@ -353,7 +353,7 @@ export default function ESBNotif({ onBack }) {
 }
 
 const N = {
-  root:    { fontFamily:"'Plus Jakarta Sans',sans-serif", background:"#080c10", color:"#fff", minHeight:"100vh", display:"flex", flexDirection:"column", position:"fixed", top:0, left:0, right:0, bottom:0, overflowY:"auto", zIndex:9999 },
+  root:    { fontFamily:"'Plus Jakarta Sans',sans-serif", background:"#080c10", color:"#fff", minHeight:"100%", display:"flex", flexDirection:"column", position:"fixed", top:0, left:0, right:0, bottom:0, overflowY:"auto", zIndex:9999 },
   header:  { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"16px 24px", background:"#0d1117", borderBottom:"1px solid #161b22", flexWrap:"wrap", gap:12 },
   hLeft:   { display:"flex", alignItems:"center", gap:16 },
   title:   { fontFamily:"'Montserrat',sans-serif", fontSize:22, letterSpacing:3, color:"#FF6B35" },
