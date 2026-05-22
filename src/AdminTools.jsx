@@ -59,6 +59,7 @@ import AdminBatchTracking from "./Admin/AdminBatchTracking.jsx";
 import AdminOutletMaster from "./Admin/AdminOutletMaster.jsx";
 import AdminIncidents from "./Admin/AdminIncidents.jsx";
 import EscalationMatrix from "./Admin/EscalationMatrix.jsx";
+import OptimizationCenter from "./Admin/OptimizationCenter.jsx";
 import AdminSignage from "./Admin/AdminSignage.jsx";
 import AdminDemandForecast from "./Admin/AdminDemandForecast.jsx";
 import AdminAssetMaintenance from "./Admin/AdminAssetMaintenance.jsx";
@@ -183,6 +184,7 @@ export default function AdminTools({ initialTab }) {
         {tab === "outlet_master" && <AdminOutletMaster apiBase={API} />}
         {tab === "incidents" && <AdminIncidents apiBase={API} />}
         {tab === "escalation" && <EscalationMatrix apiBase={API} />}
+        {tab === "optimization" && <OptimizationCenter apiBase={API} />}
         {tab === "simple_purchase" && <AdminSimplePurchase apiBase={API} />}
         {tab === "petty_cash" && <AdminPettyCash apiBase={API} />}
         {tab === "purchase_invoice" && <AdminPurchaseInvoice apiBase={API} />}

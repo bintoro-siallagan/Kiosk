@@ -5,6 +5,7 @@
 
 export const TABS = [
   { id: "dashboard", label: "📊 Owner Dashboard", color: "#F59E0B" },
+  { id: "optimization", label: "📈 Optimization Center", color: "#0ea5e9" },
   { id: "staff", label: "👤 Staff & PIN", color: "#F59E0B" },
   { id: "gudang", label: "📦 Gudang & Stok", color: "#3B82F6" },
   { id: "waste", label: "🗑️ Log Waste", color: "#F97316" },
@@ -115,7 +116,7 @@ export const TABS = [
 // Urutan value-chain enterprise: Operasi → Product → Inventory → Commerce
 // → Finance → HRIS → Customer → Security. Tiap grup urut alur kerja.
 export const GROUPS = [
-  { name: "Dashboard", icon: "📊", module: "pos", ids: ["dashboard"] },
+  { name: "Dashboard", icon: "📊", module: "pos", ids: ["dashboard", "optimization"] },
   { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["outlet_master", "staff", "checklist", "cashier_kpi", "gudang", "waste", "asset_maintenance", "quality", "incidents", "escalation", "compliance", "document_hub", "notif_center", "config", "audit"] },
   { name: "Product", icon: "📦", module: "config", ids: ["master_category", "master_unit", "item_master", "item_pricing", "item_config", "item_rules", "food_cost", "food_cost_calc", "item_intel", "product_hub", "product_ver"] },
   { name: "Inventory & Procurement", icon: "🚚", module: "stock", ids: ["stock_list", "batch_tracking", "stock_opname", "stock_transfer", "production", "sales_stock_sync", "demand_forecast", "auto_reorder", "supplier_master", "rfq", "price_list", "procurement_plus", "simple_purchase", "petty_cash", "goods_delivery", "goods_received", "purchase_invoice", "purchase_return", "internal_return"] },
