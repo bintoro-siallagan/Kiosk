@@ -51,7 +51,7 @@ function RailNode({ node, depth, open, onToggle }) {
   );
 }
 
-export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
+export default function AdminHome({ adminSession, onLogout, onExit, initialView }) {
   const [now, setNow] = useState(new Date());
   const [orders, setOrders] = useState([]);
   const [allOrders, setAllOrders] = useState([]);
@@ -61,7 +61,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
   const [health, setHealth] = useState(null);
   const [openNodes, setOpenNodes] = useState(() => new Set());
   const toggleNode = (k) => setOpenNodes(p => { const n = new Set(p); n.has(k) ? n.delete(k) : n.add(k); return n; });
-  const [rightView, setRightView] = useState("home");
+  const [rightView, setRightView] = useState(initialView || "home");
   const [rightArg, setRightArg] = useState(null);
   const openRight = (kind, arg) => { setRightView(kind); setRightArg(arg || null); };
   const closeRight = () => { setRightView("home"); setRightArg(null); };
@@ -194,7 +194,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
       <style>{CSS}</style>
 
       {/* Topbar */}
-      <div style={S.topbar}>
+      <div style={S.topbar} className="no-print">
         <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
           <div style={S.logo}>k</div>
           <div>
@@ -210,7 +210,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
       </div>
 
       {/* Status operasional strip */}
-      <div style={S.opStrip}>
+      <div style={S.opStrip} className="no-print">
         <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
           <span className="livedot" style={{ width: 8, height: 8, borderRadius: "50%", background: isOpen ? "#10b981" : "#ef4444", display: "inline-block", boxShadow: `0 0 7px ${isOpen ? "#10b981" : "#ef4444"}` }} />
           <b style={{ color: isOpen ? "#10b981" : "#ef4444" }}>{isOpen ? "OUTLET BEROPERASI" : "DI LUAR JAM OPERASIONAL"}</b>
@@ -229,7 +229,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
       <div style={S.body}>
 
         {/* KIRI: panel modul */}
-        <aside style={S.left}>
+        <aside style={S.left} className="no-print">
           {columns.map((col, ci) => (
             <div key={col.title}>
               <Section label={col.title.toUpperCase()} accent={col.accent} mt={ci === 0 ? 0 : 14} />
@@ -433,7 +433,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
         </main>
       </div>
 
-      <div style={S.footer}>
+      <div style={S.footer} className="no-print">
         <button className="tile" style={S.footBtn} onClick={onExit}>← Kiosk</button>
         {onLogout && <button className="tile" style={{ ...S.footBtn, color: "#f87171", borderColor: "#f8717133" }} onClick={onLogout}>Logout</button>}
         <span style={{ flex: 1 }} />

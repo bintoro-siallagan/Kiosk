@@ -11,7 +11,7 @@ import TableSelector from "./TableSelector.jsx";
 import CustomerInput from "./CustomerInput.jsx";
 import Payment       from "./Payment.jsx";
 import DigitalReceipt from "./DigitalReceipt.jsx";
-import AdminShell    from "./AdminShell.jsx";
+import AdminHome     from "./AdminHome.jsx";
 import OrderTracking from "./OrderTracking.jsx";
 import ShiftGate     from "./ShiftGate.jsx";
 import POSApp        from "./POSApp.jsx";
@@ -110,7 +110,7 @@ export default function App() {
   if (adminRoutes.includes(scene) && !adminSession) return <AdminLogin onLogin={handleAdminLogin}/>;
 
   if (scene === "admin-login") return <AdminLogin onLogin={handleAdminLogin}/>;
-  if (adminRoutes.includes(scene)) return <AdminShell initialView={scene} adminSession={adminSession} onLogout={handleAdminLogout} onExitKiosk={() => setScene("kiosk")} />;
+  if (adminRoutes.includes(scene)) return <AdminHome initialView={scene} adminSession={adminSession} onLogout={handleAdminLogout} onExit={() => setScene("kiosk")} />;
   if (scene === "flow") return <FlowApp />;
   if (scene === "customer-track") return <><PromoBroadcastBanner/><CustomerTrackingPage orderId={trackOrderId}/></>;
   if (scene === "track")       return <OrderTracking onHome={go("kiosk")}/>;
