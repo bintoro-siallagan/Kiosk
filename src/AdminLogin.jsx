@@ -12,6 +12,14 @@ export default function AdminLogin({ onLogin }) {
     if (pin.length === 6) handleLogin();
   }, [pin]);
 
+  // Opt out of the global auto-zoom — auto-zoom.css zooms html up to 1.4x on
+  // wide screens, which (× 100vh) makes this full-screen login overflow.
+  useEffect(() => {
+    const prev = document.documentElement.style.zoom;
+    document.documentElement.style.zoom = "1";
+    return () => { document.documentElement.style.zoom = prev; };
+  }, []);
+
   async function handleLogin() {
     setBusy(true); setError("");
     try {
