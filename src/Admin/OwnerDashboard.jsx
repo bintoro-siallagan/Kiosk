@@ -747,7 +747,7 @@ const periodBtn = (active) => ({
 const styles = {
   root: { background: '#0a0a0a', minHeight: '100vh', padding: 16, color: '#fff', fontFamily: 'system-ui,-apple-system,sans-serif' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 12 },
-  title: { fontSize: 22, fontWeight: 700, margin: 0 },
+  title: { fontSize: 22, fontWeight: 700, margin: 0, color: '#fff' },
   subtitle: { fontSize: 12, color: '#9ca3af', marginTop: 4 },
   periodSelector: { display: 'flex', gap: 4, flexWrap: 'wrap' },
   btn: { padding: '6px 10px', background: '#1f1f1f', color: '#9ca3af', border: 'none', borderRadius: 4, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
