@@ -1997,7 +1997,7 @@ app.post("/api/payment/qris", async (req, res) => {
       item_details: validItems,
       customer_details: {
         first_name: (customerName || "Customer").slice(0, 50),
-        email:      "customer@bintoro.id",
+        email:      "customer@karys.tech",
       },
     };
 
@@ -2114,7 +2114,7 @@ app.post("/api/payment/gopay", async (req, res) => {
       },
       customer_details: {
         first_name: customerName || "Customer",
-        email:      "customer@bintoro.id",
+        email:      "customer@karys.tech",
       },
     };
 

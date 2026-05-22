@@ -128,34 +128,34 @@ export default function App() {
 
   if (scene === "admin-login") return <AdminLogin onLogin={handleAdminLogin}/>;
   if (adminRoutes.includes(scene)) return <AdminHome initialView={scene} adminSession={adminSession} onLogout={handleAdminLogout} onExit={() => setScene("kiosk")} />;
-  if (scene === "flow") return <FlowApp />;
+  if (scene === "flow") return <ShiftGate><FlowApp /></ShiftGate>;
   if (scene === "cinema") return <CinemaKiosk apiBase={API_HOST} />;
   if (scene === "customer-track") return <><PromoBroadcastBanner/><CustomerTrackingPage orderId={trackOrderId}/></>;
   if (scene === "track")       return <OrderTracking onHome={go("kiosk")}/>;
 
   if (scene === "table-select" && checkoutData) {
     return (
-      <TableSelector
+      <ShiftGate><TableSelector
         onSelect={handleTableSelect}
         onBack={go("kiosk")}
-      />
+      /></ShiftGate>
     );
   }
 
   if (scene === "customer-input" && checkoutData) {
     return (
-      <CustomerInput
+      <ShiftGate><CustomerInput
         cart={checkoutData.cart}
         orderType={checkoutData.orderType}
         onConfirm={handleCustomerConfirm}
         onBack={() => setScene(checkoutData.orderType === "dine" ? "table-select" : "kiosk")}
-      />
+      /></ShiftGate>
     );
   }
 
   if (scene === "payment" && checkoutData && customerData) {
     return (
-      <Payment
+      <ShiftGate><Payment
         cart={checkoutData.cart}
         orderType={checkoutData.orderType}
         promo={checkoutData.promo}
@@ -163,7 +163,7 @@ export default function App() {
         customerData={customerData}
         onSuccess={handlePaymentSuccess}
         onBack={() => setScene("customer-input")}
-      />
+      /></ShiftGate>
     );
   }
 

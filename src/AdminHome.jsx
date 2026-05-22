@@ -246,7 +246,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
         <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
           <button className="ah-hamburger" onClick={() => setRailOpen(o => !o)} title="Menu" aria-label="Menu"
             style={{ background: "#161619", border: "1px solid #2a2b30", borderRadius: 8, color: "#e6edf3", fontSize: 17, lineHeight: 1, padding: "6px 11px", cursor: "pointer", fontFamily: "inherit" }}>☰</button>
-          <div style={S.logo}>k</div>
+          <img src="/logo.png" alt="KaryaOS" style={{ width: 38, height: 38, borderRadius: 9, objectFit: "contain", flexShrink: 0 }} />
           <div>
             <div style={S.brand}>karya<span style={{ color: "#f59e0b" }}>OS</span></div>
             <div style={S.brandSub}>ENTERPRISE F&B OPERATING SYSTEM</div>

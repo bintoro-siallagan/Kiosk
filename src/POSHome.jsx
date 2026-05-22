@@ -54,7 +54,7 @@ async function openCDSOnSecondScreen() {
   }
 
   const features = `${position},toolbar=no,menubar=no,location=no,status=no,scrollbars=yes`;
-  cdsWindowRef = window.open(finalUrl, 'BintoroCDS', features);
+  cdsWindowRef = window.open(finalUrl, 'KaryaOSCDS', features);
 
   if (!cdsWindowRef) {
     alert("Popup diblok! Allow popup untuk KaryaOS di browser settings, lalu coba lagi.");
@@ -170,7 +170,7 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
         <span style={{fontSize:18}}>🖥️</span> Buka Layar Pelanggan
       </button>
       <header style={S.header}>
-        <div style={S.brand}>☕ KaryaOS POS</div>
+        <div style={S.brand}><img src="/logo.png" alt="" style={{ height: 26, verticalAlign: "middle", marginRight: 7 }} />KaryaOS POS</div>
         <div style={S.user}>
           <span style={S.userIcon}>👤</span>
           <span style={S.userName}>{cashier.name}</span>

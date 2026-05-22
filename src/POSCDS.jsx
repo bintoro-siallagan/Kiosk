@@ -285,7 +285,7 @@ function CDSIdle() {
 function SlideWelcome() {
   return (
     <div style={S.ssCenter}>
-      <div style={S.ssLogo}>☕</div>
+      <div style={S.ssLogo}><img src="/logo.png" alt="KaryaOS" style={{ height: 88, objectFit: "contain" }} /></div>
       <div style={S.ssBrand}>KaryaOS</div>
       <div style={S.ssTagline}>Selamat datang!</div>
       <div style={S.ssHint}>Tap kasir untuk mulai order</div>
@@ -381,7 +381,7 @@ function SlideMember() {
     <div style={S.ssCenter}>
       <div style={{...S.ssBadge, background:"rgba(59,130,246,0.15)", color:"#3B82F6"}}>💎 MEMBER</div>
       <div style={S.ssMemberIcon}>🎁</div>
-      <div style={S.ssItemName}>Jadi Member Bintoro</div>
+      <div style={S.ssItemName}>Jadi Member KaryaOS</div>
       <div style={S.ssItemDesc}>
         Dapat <strong style={{color:"#FF6B35"}}>1 poin tiap Rp 1.000</strong> belanja<br/>
         Tukar <strong style={{color:"#FF6B35"}}>100 poin = Rp 1.000</strong> diskon
@@ -396,8 +396,8 @@ function SlideThanks() {
     <div style={S.ssCenter}>
       <div style={S.ssThanksIcon}>☕</div>
       <div style={{...S.ssItemName, fontSize:"min(96px,10vh,9vw)", color:"#FF6B35", textShadow:"0 0 60px rgba(255,107,53,0.4)"}}>Terima Kasih</div>
-      <div style={S.ssItemDesc}>Sudah mampir ke Bintoro!</div>
-      <div style={S.ssSocial}>📷 @bintorocafe</div>
+      <div style={S.ssItemDesc}>Sudah mampir ke KaryaOS!</div>
+      <div style={S.ssSocial}>📷 @karyaos</div>
     </div>
   );
 }
@@ -557,7 +557,7 @@ function CDSCart({ state }) {
     <>
       <header style={S.header}>
         <div style={S.headerLeft}>
-          <span style={S.logoSmall}>☕</span>
+          <img src="/logo.png" alt="KaryaOS" style={{ height: 30, objectFit: "contain" }} />
           <span style={S.brandSmall}>KaryaOS</span>
         </div>
         <div>
@@ -734,7 +734,7 @@ function CDSQR({ state }) {
     <>
       <header style={S.header}>
         <div style={S.headerLeft}>
-          <span style={S.logoSmall}>☕</span>
+          <img src="/logo.png" alt="KaryaOS" style={{ height: 30, objectFit: "contain" }} />
           <span style={S.brandSmall}>KaryaOS</span>
         </div>
         <div style={S.tag}>💳 QRIS Payment</div>
@@ -798,7 +798,7 @@ function CDSTrackQR({ state, pubConfig }) {
     <>
       <header style={S.header}>
         <div style={S.headerLeft}>
-          <span style={S.logoSmall}>☕</span>
+          <img src="/logo.png" alt="KaryaOS" style={{ height: 30, objectFit: "contain" }} />
           <span style={S.brandSmall}>KaryaOS</span>
         </div>
         <div style={S.tag}>Order #{orderId}</div>

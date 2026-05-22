@@ -32,7 +32,7 @@ async function esbRequest(method, path, body) {
   return data;
 }
 
-// ─── MAPPER: Bintoro Menu → ESB Format ───────────────────────────────────
+// ─── MAPPER: KaryaOS Menu → ESB Format ───────────────────────────────────
 function mapMenuToESB(item) {
   return {
     item_code:    String(item.id),
@@ -96,7 +96,7 @@ export async function esbGetMenuItem(itemCode) {
 }
 
 /**
- * Mapper: ESB menu response → format Bintoro Kiosk
+ * Mapper: ESB menu response → format KaryaOS Kiosk
  */
 export function mapESBToLocal(esbItem) {
   return {
@@ -114,7 +114,7 @@ export function mapESBToLocal(esbItem) {
 }
 
 /**
- * GET + parse semua menu dari ESB, return array format Bintoro
+ * GET + parse semua menu dari ESB, return array format KaryaOS
  */
 export async function esbFetchAndMapMenu() {
   const raw = await esbGetMenu();

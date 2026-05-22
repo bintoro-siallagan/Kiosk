@@ -593,7 +593,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
         {/* Header */}
         <div style={K.header}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontSize:26}}>🍽️</span>
+            <img src="/logo.png" alt="KaryaOS" style={{height:34,objectFit:"contain"}}/>
             <div>
               <div style={K.headerBrand}>KaryaOS</div>
               <div style={K.headerSub}>{orderType==="dine"?"🪑 Makan di Sini":"🛍️ Bawa Pulang"}</div>

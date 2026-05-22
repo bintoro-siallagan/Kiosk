@@ -87,7 +87,7 @@ export default function OrderTracking({ onHome }) {
       {/* Header */}
       <div style={T.header}>
         <div style={T.headerInner}>
-          <div style={T.logo}>🍽️</div>
+          <div style={T.logo}><img src="/logo.png" alt="KaryaOS" style={{ height: 40, objectFit: "contain" }} /></div>
           <div>
             <div style={T.brand}>KaryaOS</div>
             <div style={T.brandSub}>Order Tracking</div>
