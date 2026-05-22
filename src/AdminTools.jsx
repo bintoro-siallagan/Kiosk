@@ -101,7 +101,6 @@ import AdminReconciliation from "./Admin/AdminReconciliation.jsx";
 import AdminReleasePayment from "./Admin/AdminReleasePayment.jsx";
 import AdminPeriodClosing from "./Admin/AdminPeriodClosing.jsx";
 import OwnerDashboard from "./Admin/OwnerDashboard.jsx";
-import { TABS, GROUPS } from "./adminModules.js";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -123,33 +122,8 @@ async function apiPatch(path, body) {
 // ── Styles ──
 const S = {
   root: { fontFamily: "'Plus Jakarta Sans',sans-serif", background: "#050810", color: "#fff", minHeight: "100%", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, overflowY: "auto", zIndex: 9999 },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 28px 0" },
-  title: { fontFamily: "'Space Mono',monospace", fontSize: 20, fontWeight: 700, letterSpacing: 2 },
-  sub: { fontSize: 12, color: "#555", marginTop: 2 },
-  tabs: { display: "flex", gap: 4, padding: "16px 28px 0", borderBottom: "1px solid #0f1629", overflowX: "auto" },
-  tab: (active, color) => ({
-    padding: "10px 18px", fontSize: 13, fontWeight: active ? 700 : 400,
-    color: active ? color : "#555", background: "transparent", border: "none",
-    borderBottom: active ? `3px solid ${color}` : "3px solid transparent",
-    cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap",
-  }),
   body: { flex: 1, padding: "20px 28px", overflowY: "auto" },
   main: { display: "flex", flex: 1, overflow: "hidden", marginTop: 14, borderTop: "1px solid #0f1629" },
-  sidebar: { width: 236, flexShrink: 0, borderRight: "1px solid #0f1629", padding: "12px 10px", overflowY: "auto", background: "#050810" },
-  search: { width: "100%", background: "#0a0e16", border: "1px solid #21262d", borderRadius: 8, padding: "8px 10px", color: "#fff", fontSize: 12, fontFamily: "inherit", boxSizing: "border-box", marginBottom: 10, outline: "none" },
-  roleSelect: { width: "100%", background: "#0d1117", border: "1px solid #a855f755", borderRadius: 8, padding: "8px 10px", color: "#c9a8ff", fontSize: 12, fontWeight: 700, fontFamily: "inherit", boxSizing: "border-box", marginBottom: 8, outline: "none", cursor: "pointer" },
-  groupHead: (open) => ({
-    display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 10px",
-    fontSize: 11.5, fontWeight: 700, color: open ? "#e6edf3" : "#7d8590", cursor: "pointer",
-    borderRadius: 7, background: open ? "#0d1117" : "transparent", letterSpacing: 0.3,
-  }),
-  navItem: (active, color) => ({
-    padding: "7px 10px 7px 24px", fontSize: 12, fontWeight: active ? 700 : 400,
-    color: active ? "#fff" : "#9da7b3", background: active ? color + "22" : "transparent",
-    borderLeft: active ? `3px solid ${color}` : "3px solid transparent",
-    cursor: "pointer", borderRadius: "0 6px 6px 0", marginBottom: 1, whiteSpace: "nowrap",
-    overflow: "hidden", textOverflow: "ellipsis",
-  }),
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 14, padding: 20, marginBottom: 16 },
   label: { fontSize: 11, color: "#555", letterSpacing: 1, textTransform: "uppercase", marginBottom: 8, fontFamily: "'Space Mono',monospace" },
   input: { width: "100%", background: "#0a0e16", border: "1px solid #21262d", borderRadius: 8, padding: "10px 12px", color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box" },
@@ -167,119 +141,20 @@ const S = {
   grid3: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 },
   badge: (color) => ({ background: color + "22", color, padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 600 }),
   toast: { position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)", background: "#34D39915", border: "1px solid #34D39944", color: "#34D399", borderRadius: 10, padding: "10px 20px", fontSize: 13, fontWeight: 600, zIndex: 9999 },
-  bar: (pct, color) => ({ height: 6, background: "#161b22", borderRadius: 3, overflow: "hidden", flex: 1, children: null }),
-  hamburger: { background: "#0d1117", border: "1px solid #21262d", borderRadius: 8, color: "#e6edf3", fontSize: 17, lineHeight: 1, padding: "7px 11px", cursor: "pointer", fontFamily: "inherit" },
 };
 
-// Responsive shell — the 236px sidebar becomes an off-canvas drawer on phones.
-const adminToolsCss = `
-.at-hamburger { display: none; }
-.at-backdrop { display: none; }
-@media (max-width: 768px) {
-  .at-hamburger { display: inline-flex !important; align-items: center; }
-  .at-sidebar {
-    position: fixed !important; left: 0; top: 0; bottom: 0;
-    width: 264px !important; z-index: 10001;
-    transform: translateX(-100%); transition: transform .22s ease;
-    box-shadow: 2px 0 28px rgba(0,0,0,.65);
-  }
-  .at-sidebar.at-sidebar-open { transform: translateX(0); }
-  .at-backdrop[data-open="true"] {
-    display: block !important; position: fixed; inset: 0;
-    background: rgba(0,0,0,.55); z-index: 10000;
-  }
-}
-@media print { .at-hamburger, .at-backdrop { display: none !important; } }
-`;
-
-export default function AdminTools({ onBack, initialTab, embedded }) {
+export default function AdminTools({ initialTab }) {
   const [tab, setTab] = useState(initialTab || "dashboard");
   const [toast, setToast] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2500); };
-
-  const groupOf = (id) => { const g = GROUPS.find(x => x.ids.includes(id)); return g ? g.name : GROUPS[0].name; };
-  const moduleOf = (id) => { const g = GROUPS.find(x => x.ids.includes(id)); return g ? g.module : "pos"; };
-  const [search, setSearch] = useState("");
-  const [openGroup, setOpenGroup] = useState(() => groupOf(initialTab || "dashboard"));
-
-  // ── Dynamic role-based menu — sidebar nyesuain RBAC role ──
-  const ALL_ROLES = [
-    { id: "super-admin", label: "👑 Super Admin" }, { id: "owner", label: "💼 Owner / Director" },
-    { id: "area-manager", label: "🗺️ Area Manager" }, { id: "outlet-manager", label: "🏪 Outlet Manager" },
-    { id: "finance", label: "💰 Finance Staff" }, { id: "warehouse", label: "📦 Warehouse Staff" },
-    { id: "marketing", label: "🎯 Marketing Team" }, { id: "hr", label: "👥 HR Staff" },
-    { id: "cashier", label: "🧑‍💼 Cashier / Crew" }, { id: "auditor", label: "🔍 Auditor" },
-  ];
-  const [viewRole, setViewRole] = useState("super-admin");
-  const [rbacMap, setRbacMap] = useState(null);
-  useEffect(() => {
-    fetch(`${API}/api/rbac`).then(r => r.json()).then(j => {
-      const m = {};
-      for (const p of (j.permissions || [])) { (m[p.role_id] = m[p.role_id] || {})[p.module_id] = p.level; }
-      setRbacMap(m);
-    }).catch(() => {});
-  }, []);
-  const canSee = (mod) => !rbacMap || !rbacMap[viewRole] || (rbacMap[viewRole][mod] && rbacMap[viewRole][mod] !== "none");
-  const visibleGroups = GROUPS.filter(g => canSee(g.module));
-  // pas ganti role — kalau tab aktif gak boleh dilihat, pindah ke grup pertama yang visible
-  useEffect(() => {
-    if (rbacMap && !canSee(moduleOf(tab)) && visibleGroups[0]) {
-      setTab(visibleGroups[0].ids[0]);
-      setOpenGroup(visibleGroups[0].name);
-    }
-  }, [viewRole, rbacMap]); // eslint-disable-line
-  const navItem = (t) => t ? (
-    <div key={t.id} onClick={() => { setTab(t.id); setOpenGroup(groupOf(t.id)); setSearch(""); setSidebarOpen(false); }}
-      style={S.navItem(tab === t.id, t.color)}>{t.label}</div>
-  ) : null;
 
   return (
     <div style={S.root}>
-      <style>{adminToolsCss}</style>
-      {!embedded && (<div style={S.header} className="no-print">
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button className="at-hamburger" style={S.hamburger}
-            onClick={() => setSidebarOpen(o => !o)} aria-label="Menu" title="Buka menu">☰</button>
-          <div>
-            <div style={S.title}>🛠️ ADMIN TOOLS</div>
-            <div style={S.sub}>Staff · Gudang · Waste · Config · Audit</div>
-          </div>
-        </div>
-      </div>)}
-
       <div style={S.main}>
-        {!embedded && (<>
-        <div className="at-backdrop no-print" data-open={sidebarOpen} onClick={() => setSidebarOpen(false)} />
-        <div style={S.sidebar} className={`at-sidebar no-print${sidebarOpen ? " at-sidebar-open" : ""}`}>
-          <select value={viewRole} onChange={e => setViewRole(e.target.value)} style={S.roleSelect} title="Lihat menu sebagai role">
-            {ALL_ROLES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
-          </select>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Cari menu…" style={S.search} />
-          {search.trim()
-            ? TABS.filter(t => t.label.toLowerCase().includes(search.toLowerCase()) && canSee(moduleOf(t.id))).map(navItem)
-            : visibleGroups.map(g => (
-              <div key={g.name} style={{ marginBottom: 2 }}>
-                <div onClick={() => setOpenGroup(openGroup === g.name ? "" : g.name)} style={S.groupHead(openGroup === g.name)}>
-                  <span>{g.icon} {g.name}</span>
-                  <span style={{ fontSize: 9, color: "#5b6470" }}>{openGroup === g.name ? "▾" : "▸"}</span>
-                </div>
-                {openGroup === g.name && g.ids.map(id => navItem(TABS.find(t => t.id === id)))}
-              </div>
-            ))}
-          {!search.trim() && visibleGroups.length === 0 ? (
-            <div style={{ fontSize: 11, color: "#5b6470", padding: "12px 10px", lineHeight: 1.5 }}>Role ini belum punya akses modul admin.</div>
-          ) : null}
-        </div>
-        </>)}
-
         <div style={S.body}>
         {tab === "dashboard" && <OwnerDashboard apiBase={API} onNavigate={(key) => {
           const navMap = { finance: "finance", gl: "general_ledger", aggregator: "aggregator", payment_gateway: "payment", refund_cancel: "anti_fraud", hr: "hris", loyalty: "loyalty" };
-          const target = navMap[key] || key;
-          setTab(target);
-          setOpenGroup(groupOf(target));
+          setTab(navMap[key] || key);
         }} />}
         {tab === "staff" && <StaffTab showToast={showToast} />}
         {tab === "gudang" && <GudangTab showToast={showToast} />}
