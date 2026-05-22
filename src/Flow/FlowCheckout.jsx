@@ -187,7 +187,7 @@ export default function FlowCheckout({
             p: (c.price || 0) + (c.addonTotal || 0),
             q: c.qty,
           })),
-          customerName: session.name || "FlowOS Customer",
+          customerName: session.name || "KaryaOS Customer",
         }),
       });
 
@@ -266,7 +266,7 @@ export default function FlowCheckout({
           customerName: session.name,
           customerPhone: phoneLocal,
           customerId: session.customerId || session.id || null,
-          kasir: "FlowOS",
+          kasir: "KaryaOS",
           source: "customer_portal",
           notes: notes || null,
           pay: "QRIS",

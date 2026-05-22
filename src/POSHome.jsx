@@ -114,6 +114,29 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
     return `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
   };
 
+  async function handleCloseDay() {
+    if (!window.confirm("TUTUP HARI?\n\nShift aktif ikut ditutup, dan TIDAK ADA yang bisa order sampai Manager 'Buka Hari'. Ringkasan transaksi hari ini akan dicetak" + " (& dikirim email bila email aktif).")) return;
+    try {
+      const r = await fetch(`${API_BASE}/api/day/close`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ by: cashier.name || "Manager" }),
+      });
+      const data = await r.json();
+      if (data.reportHtml) {
+        const w = window.open("", "_blank", "width=640,height=820");
+        if (w) {
+          w.document.write(`<html><head><title>Tutup Hari — KaryaOS</title></head><body style="margin:24px" onload="setTimeout(function(){window.print()},300)">${data.reportHtml}</body></html>`);
+          w.document.close();
+        }
+      }
+    } catch (e) {
+      alert("Gagal tutup hari: " + e.message);
+      return;
+    }
+    onLogout();
+  }
+
   return (
     <div style={S.root}>
       {mergeTab && (
@@ -181,6 +204,12 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
             <button onClick={onCloseShift}
               style={{...S.logout, background: '#f9731622', border: '1px solid #f9731655', color: '#f97316'}}>
               🔒 Tutup Shift
+            </button>
+          )}
+          {role === "manager" && (
+            <button onClick={handleCloseDay}
+              style={{...S.logout, background: '#7c3aed22', border: '1px solid #7c3aed66', color: '#a78bfa'}}>
+              🌙 Tutup Hari
             </button>
           )}
           <button onClick={onLogout} style={S.logout}>Logout</button>

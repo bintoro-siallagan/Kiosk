@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-// FlowOS Stage 5 (Optimization) — pattern/anomaly detection + benchmark tracking.
+// KaryaOS Stage 5 (Optimization) — pattern/anomaly detection + benchmark tracking.
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const C = { card: "#0d1117", border: "#1b212c", sub: "#7d8590", dim: "#5b6470" };
 
@@ -43,7 +43,7 @@ export default function OptimizationCenter({ apiBase }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14, marginBottom: 18 }}>
         <div>
           <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>📈 Optimization Center</div>
-          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>FlowOS Tahap 5 — Optimization · deteksi pola &amp; benchmark</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>KaryaOS Tahap 5 — Optimization · deteksi pola &amp; benchmark</div>
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <Stat label="Anomali terdeteksi" value={anomalies.length} color={anomalies.length ? "#eab308" : "#10b981"} />

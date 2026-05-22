@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 
-// FlowOS Stage 4 (Escalation) — SLA-based escalation matrix with response chains.
+// KaryaOS Stage 4 (Escalation) — SLA-based escalation matrix with response chains.
 // Each tier: target response time, delivery channel, and an escalation chain
 // (responder advances as the incident ages past each step's threshold).
 const TIERS = [
@@ -73,7 +73,7 @@ export default function EscalationMatrix({ apiBase }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14, marginBottom: 18 }}>
         <div>
           <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🚨 Escalation Matrix</div>
-          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>FlowOS Tahap 4 — Escalation · SLA, rantai eskalasi &amp; routing channel</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>KaryaOS Tahap 4 — Escalation · SLA, rantai eskalasi &amp; routing channel</div>
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <Stat label="Eskalasi aktif" value={active.length} color="#22d3ee" />

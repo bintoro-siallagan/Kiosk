@@ -101,7 +101,7 @@ export default function FlowQRGen() {
       <header style={S.header}>
         <div>
           <div style={S.title}>QR Generator</div>
-          <div style={S.subtitle}>Generate table QR untuk FlowOS</div>
+          <div style={S.subtitle}>Generate table QR untuk KaryaOS</div>
         </div>
       </header>
 
