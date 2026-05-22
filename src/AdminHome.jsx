@@ -101,10 +101,6 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
     { label: "Alert Aktif", val: String(notifs.length), c: crit > 0 ? "#ef4444" : "#f59e0b", icon: "🔔", sub: crit ? `${crit} perlu tindakan` : "semua aman" },
     { label: "System Health", val: health == null ? "…" : health + " / 100", c: health >= 75 ? "#10b981" : health >= 50 ? "#f59e0b" : "#ef4444", icon: "🔎", sub: "self-audit score" },
   ];
-  const primary = [
-    { label: "Tools", desc: "Admin Tools — 115 modul operasi, produk, finance & HR", icon: "🛠️", c: "#f59e0b", on: () => onNav("tools") },
-    { label: "Management", desc: "Command Center — 13 dashboard realtime monitoring", icon: "📊", c: "#3b82f6", on: () => openTab("?command=1") },
-  ];
   const columns = [
     { title: "Outlet", accent: "#22d3ee", items: [
       { label: "Dashboard Outlet", icon: "🏪", c: "#22d3ee", on: () => onNav("tools", "dashboard") },
@@ -125,6 +121,8 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
       { label: "Laporan", icon: "📊", c: "#10b981", on: () => onNav("report") },
       { label: "ESB Sync", icon: "🔗", c: "#22d3ee", on: () => onNav("esb-sync") },
       { label: "Push Notif", icon: "🔔", c: "#a855f7", on: () => onNav("esb-notif") },
+      { label: "Tools", icon: "🛠️", c: "#f59e0b", on: () => onNav("tools") },
+      { label: "Management", icon: "📊", c: "#3b82f6", on: () => openTab("?command=1") },
     ] },
   ];
 
@@ -226,21 +224,6 @@ export default function AdminHome({ adminSession, onLogout, onExit, onNav }) {
                   </div>
                 )}
               </div>
-            ))}
-          </div>
-
-          {/* Akses utama */}
-          <Section label="AKSES UTAMA" mt={14} />
-          <div style={S.primaryRow}>
-            {primary.map(t => (
-              <button key={t.label} className="tile" style={{ ...S.primaryTile, borderColor: `${t.c}2e` }} onClick={t.on}>
-                <div style={{ ...S.chip, width: 44, height: 44, fontSize: 24, background: `${t.c}1f`, color: t.c, border: `1px solid ${t.c}44` }}>{t.icon}</div>
-                <div style={{ flex: 1, textAlign: "left" }}>
-                  <div style={{ fontSize: 17, fontWeight: 800, color: "#e6edf3" }}>{t.label}</div>
-                  <div style={{ fontSize: 11, color: "#7d8590", marginTop: 2 }}>{t.desc}</div>
-                </div>
-                <span style={{ ...S.arrow, background: `${t.c}1a`, color: t.c }}>→</span>
-              </button>
             ))}
           </div>
 
