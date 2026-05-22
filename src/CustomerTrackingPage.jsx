@@ -20,6 +20,15 @@ export default function CustomerTrackingPage({ orderId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError]   = useState(null);
   const [loyalty, setLoyalty] = useState(null);
+
+  // Full-screen page — escape the 1126px #root width cap (index.css).
+  useEffect(() => {
+    const root = document.getElementById("root");
+    if (!root) return;
+    const pw = root.style.width, pm = root.style.maxWidth;
+    root.style.width = "100%"; root.style.maxWidth = "none";
+    return () => { root.style.width = pw; root.style.maxWidth = pm; };
+  }, []);
   const [showFeedback, setShowFeedback] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
