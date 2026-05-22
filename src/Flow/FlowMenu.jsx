@@ -167,7 +167,7 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
   }, [detail, detailAddonTotal, detailQty]);
 
   return (
-    <div style={{ height: "100vh", background: BG, color: TEXT, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ height: "100vh", width: "100%", maxWidth: 480, margin: "0 auto", background: BG, color: TEXT, display: "flex", flexDirection: "column", overflow: "hidden" }}>
 
       <style>{`
         .cat-scroll::-webkit-scrollbar { display: none }
@@ -248,10 +248,11 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
       {showCart && (
         <div onClick={() => setShowCart(false)} style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 95,
-          display: "flex", flexDirection: "column", justifyContent: "flex-end"
+          display: "flex", flexDirection: "column", justifyContent: "flex-end", alignItems: "center"
         }}>
           <div onClick={e => e.stopPropagation()} style={{
             background: BG, borderRadius: "20px 20px 0 0", maxHeight: "88vh",
+            width: "100%", maxWidth: 480,
             display: "flex", flexDirection: "column", animation: "flowSheetUp 0.22s ease"
           }}>
             <div style={{ width: 40, height: 4, background: BORDER, borderRadius: 2, margin: "12px auto 4px" }} />
