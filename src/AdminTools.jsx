@@ -122,6 +122,17 @@ import AdminReconciliation from "./Admin/AdminReconciliation.jsx";
 import AdminReleasePayment from "./Admin/AdminReleasePayment.jsx";
 import AdminPeriodClosing from "./Admin/AdminPeriodClosing.jsx";
 import OwnerDashboard from "./Admin/OwnerDashboard.jsx";
+import FnbRecipe from "./Admin/FnbRecipe.jsx";
+import FnbCombo from "./Admin/FnbCombo.jsx";
+import FnbMenuPeriods from "./Admin/FnbMenuPeriods.jsx";
+import FnbDietaryTags from "./Admin/FnbDietaryTags.jsx";
+import FnbHappyHour from "./Admin/FnbHappyHour.jsx";
+import FnbReservation from "./Admin/FnbReservation.jsx";
+import FnbTipPool from "./Admin/FnbTipPool.jsx";
+import FnbMembershipTier from "./Admin/FnbMembershipTier.jsx";
+import FnbBirthdayPromo from "./Admin/FnbBirthdayPromo.jsx";
+import FnbReferral from "./Admin/FnbReferral.jsx";
+import FnbDelivery from "./Admin/FnbDelivery.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -213,6 +224,17 @@ export default function AdminTools({ initialTab }) {
         {tab === "cinema_bundle_redeem" && <CinemaBundleRedeem apiBase={API} />}
         {tab === "cinema_distribution" && <CinemaDistribution apiBase={API} />}
         {tab === "cinema_in_studio_queue" && <CinemaInStudioQueue apiBase={API} />}
+        {tab === "fnb_recipe" && <FnbRecipe apiBase={API} />}
+        {tab === "fnb_combo" && <FnbCombo apiBase={API} />}
+        {tab === "fnb_menu_periods" && <FnbMenuPeriods apiBase={API} />}
+        {tab === "fnb_dietary_tags" && <FnbDietaryTags apiBase={API} />}
+        {tab === "fnb_happy_hour" && <FnbHappyHour apiBase={API} />}
+        {tab === "fnb_reservation" && <FnbReservation apiBase={API} />}
+        {tab === "fnb_tip_pool" && <FnbTipPool apiBase={API} />}
+        {tab === "fnb_membership_tier" && <FnbMembershipTier apiBase={API} />}
+        {tab === "fnb_birthday_promo" && <FnbBirthdayPromo apiBase={API} />}
+        {tab === "fnb_referral" && <FnbReferral apiBase={API} />}
+        {tab === "fnb_delivery" && <FnbDelivery apiBase={API} />}
         {tab === "cinema_event_booking" && <CinemaEventBooking apiBase={API} />}
         {tab === "cinema_price_list" && <CinemaPriceList apiBase={API} />}
         {tab === "cinema_command_center" && <CinemaCommandCenter apiBase={API} />}
