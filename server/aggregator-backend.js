@@ -575,6 +575,12 @@ function setupAggregator(app, opts = {}) {
     res.send(toCsv(header, body));
   });
 
+  router.delete('/orders/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM aggregator_orders WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/aggregator';
   app.use(mountPath, router);
 

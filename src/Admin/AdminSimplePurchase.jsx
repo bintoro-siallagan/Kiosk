@@ -2,6 +2,7 @@
 // Simple Purchase — pembelian cepat / petty cash.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#65a30d";
@@ -10,14 +11,33 @@ const PAY_C = { Cash: "#10b981", "Petty Cash": "#f59e0b", Transfer: "#3b82f6" };
 const EMPTY = { item_name: "", qty: "", unit: "pcs", unit_price: "", vendor: "", payment_method: "Cash", outlet: "Paskal" };
 
 export default function AdminSimplePurchase({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [form, setForm] = useState(EMPTY);
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/simple-purchase`).then(r => r.json()).then(setD).catch(() => {});
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
+
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/simple-purchase/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const remove = async (item) => {
+    const ok = await confirm({ title: `Hapus "${item.purchase_no || item.item_name || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/simple-purchase/${item.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
+  };
 
   const save = () => {
     if (!form.item_name.trim() || !(Number(form.qty) > 0) || !(Number(form.unit_price) > 0)) {
@@ -76,7 +96,7 @@ export default function AdminSimplePurchase({ apiBase = "" }) {
         <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
           <thead>
             <tr style={{ color: "#5b6470", fontSize: 10, textAlign: "left" }}>
-              {["NO", "ITEM", "QTY", "TOTAL", "VENDOR", "BAYAR", "OUTLET", "TGL"].map(h => <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>)}
+              {["NO", "ITEM", "QTY", "TOTAL", "VENDOR", "BAYAR", "OUTLET", "TGL", ""].map(h => <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -90,14 +110,54 @@ export default function AdminSimplePurchase({ apiBase = "" }) {
                 <td style={S.td}><span style={{ fontSize: 11, fontWeight: 700, color: PAY_C[p.payment_method] || "#9ca3af" }}>{p.payment_method}</span></td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>{p.outlet}</td>
                 <td style={{ ...S.td, color: "#5b6470" }}>{fmtDate(p.created_at)}</td>
+                <td style={S.td}>
+                  <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+                    <button onClick={() => setEditing({ ...p })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                    <button onClick={() => remove(p)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.purchase_no || '#'+editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>ITEM</div><input value={editing.item_name || ""} onChange={e => setEditing({ ...editing, item_name: e.target.value })} style={modalInp} /></div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+                <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>QTY</div><input type="number" value={editing.qty || 0} onChange={e => setEditing({ ...editing, qty: Number(e.target.value) })} style={modalInp} /></div>
+                <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>UNIT</div><input value={editing.unit || ""} onChange={e => setEditing({ ...editing, unit: e.target.value })} style={modalInp} /></div>
+                <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>HARGA</div><input type="number" value={editing.unit_price || 0} onChange={e => setEditing({ ...editing, unit_price: Number(e.target.value) })} style={modalInp} /></div>
+              </div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>VENDOR</div><input value={editing.vendor || ""} onChange={e => setEditing({ ...editing, vendor: e.target.value })} style={modalInp} /></div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>BAYAR</div>
+                  <select value={editing.payment_method || "Cash"} onChange={e => setEditing({ ...editing, payment_method: e.target.value })} style={modalInp}>
+                    <option value="Cash">Cash</option>
+                    <option value="Petty Cash">Petty Cash</option>
+                    <option value="Transfer">Transfer</option>
+                  </select>
+                </div>
+                <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>OUTLET</div><input value={editing.outlet || ""} onChange={e => setEditing({ ...editing, outlet: e.target.value })} style={modalInp} /></div>
+              </div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>CATATAN</div><input value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} style={modalInp} /></div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 function Kpi({ label, v, c }) {
   return (

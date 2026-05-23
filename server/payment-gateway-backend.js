@@ -582,6 +582,28 @@ function setupPaymentGateway(app, opts = {}) {
     res.json(rows);
   });
 
+  router.post('/providers', (req, res) => {
+    const b = req.body || {};
+    const code = String(b.code || '').trim().toLowerCase();
+    const name = String(b.name || '').trim();
+    if (!code || !name) return res.status(400).json({ error: 'code + name wajib diisi' });
+    const exists = db.prepare(`SELECT code FROM payment_gateway_providers WHERE code = ?`).get(code);
+    if (exists) return res.status(409).json({ error: `provider '${code}' sudah ada` });
+    try {
+      db.prepare(`INSERT INTO payment_gateway_providers
+        (code, name, server_key, client_key, callback_token, merchant_id, environment, is_active, supported_methods, updated_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?)`).run(
+        code, name,
+        b.server_key || null, b.client_key || null, b.callback_token || null, b.merchant_id || null,
+        b.environment === 'production' ? 'production' : 'sandbox',
+        b.is_active ? 1 : 0,
+        b.supported_methods || '',
+        nowSec()
+      );
+      res.json({ ok: true, code });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
   router.put('/providers/:code', (req, res) => {
     const b = req.body || {};
     const allowed = ['server_key', 'client_key', 'callback_token', 'merchant_id', 'environment', 'is_active', 'supported_methods'];
@@ -594,6 +616,16 @@ function setupPaymentGateway(app, opts = {}) {
     sets.push('updated_at = ?'); params.push(nowSec());
     params.push(req.params.code);
     db.prepare(`UPDATE payment_gateway_providers SET ${sets.join(', ')} WHERE code = ?`).run(...params);
+    res.json({ ok: true });
+  });
+
+  router.delete('/providers/:code', (req, res) => {
+    const used = db.prepare(`SELECT COUNT(*) c FROM payment_intents WHERE provider_code = ?`).get(req.params.code);
+    if (used && used.c > 0) {
+      return res.status(409).json({ error: `Provider masih dipakai ${used.c} intent — nonaktifkan saja` });
+    }
+    const info = db.prepare(`DELETE FROM payment_gateway_providers WHERE code = ?`).run(req.params.code);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
     res.json({ ok: true });
   });
 

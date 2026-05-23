@@ -2,6 +2,7 @@
 // Procurement Wave 2 admin UI — Returns + Advances + Invoice Aging + PR Suggest.
 // Pasangkan ke AdminProcurement.jsx existing sebagai tab tambahan, atau standalone.
 import React, { useState, useEffect, useCallback } from 'react';
+import { useUiKit } from "../components/uiKit.jsx";
 
 const API_HOST = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const API = API_HOST + '/api/procurement';
@@ -131,15 +132,18 @@ function Dashboard() {
 // RETURNS
 // ============================================================
 function Returns() {
+  const { confirm } = useUiKit();
   const [list, setList] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [msg, setMsg] = useState("");
   const load = useCallback(()=>api('/returns').then(setList).catch(console.error), []);
   useEffect(()=>{ load(); }, [load]);
 
   const finalize = async (id) => {
     const credit = prompt('Credit Note ref (optional)?');
     const refund = prompt('Refund method (credit_note / cash / transfer)?', 'credit_note');
-    if (!confirm('Finalize akan reverse stock dari warehouse. Lanjut?')) return;
+    if (!window.confirm('Finalize akan reverse stock dari warehouse. Lanjut?')) return;
     try {
       const r = await api(`/returns/${id}/finalize`, {method:'POST', body:{
         finalized_by: 'admin', credit_note_ref: credit || null, refund_method: refund
@@ -149,12 +153,28 @@ function Returns() {
     } catch (e) { alert(e.message); }
   };
 
+  const saveEdit = async () => {
+    try {
+      await api(`/returns/${editing.id}`, { method: "PATCH", body: editing });
+      setMsg("✓ Disimpan"); setEditing(null); load();
+    } catch (e) { setMsg(e.message); }
+  };
+  const remove = async (item) => {
+    const ok = await confirm({ title: `Hapus "${item.doc_no || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    try {
+      await api(`/returns/${item.id}`, { method: "DELETE" });
+      setMsg("✓ Dihapus"); load();
+    } catch (e) { setMsg(e.message); }
+  };
+
   return (
     <div>
       <div style={{display:'flex', justifyContent:'space-between', marginBottom:12}}>
         <h3 style={{margin:0}}>Purchase Returns ({list.length})</h3>
         <button onClick={()=>setShowForm(true)} style={btnPrimary}>+ Return</button>
       </div>
+      {msg ? <div style={{ fontSize: 12, margin: "0 0 8px", color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
       {showForm && <ReturnForm onClose={()=>{setShowForm(false); load();}} />}
       <table style={tableStyle}>
         <thead><tr><th>Doc No</th><th>Tanggal</th><th>Supplier</th><th>Reason</th><th>Items</th><th>Value</th><th>Status</th><th></th></tr></thead>
@@ -169,12 +189,43 @@ function Returns() {
               <td>{fmtIDR(r.total_value)}</td>
               <td><StatusPill v={r.status} /></td>
               <td>
-                {r.status === 'draft' && <button onClick={()=>finalize(r.id)} style={btnPrimary}>Finalize</button>}
+                <div style={{ display:'flex', gap:4, justifyContent:'flex-end' }}>
+                  {r.status === 'draft' && <button onClick={()=>finalize(r.id)} style={btnPrimary}>Finalize</button>}
+                  {r.status === 'draft' && <button onClick={() => setEditing({ ...r })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>}
+                  {r.status !== 'finalized' && <button onClick={() => remove(r)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>}
+                </div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.doc_no || '#'+editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>REASON</div>
+                <select value={editing.reason || "damaged"} onChange={e => setEditing({ ...editing, reason: e.target.value })} style={modalInp}>
+                  <option value="damaged">damaged</option>
+                  <option value="wrong_item">wrong_item</option>
+                  <option value="expired">expired</option>
+                  <option value="quality_issue">quality_issue</option>
+                  <option value="overstock">overstock</option>
+                  <option value="other">other</option>
+                </select>
+              </div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>NOTES</div><input value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} style={modalInp} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>CREDIT NOTE REF</div><input value={editing.credit_note_ref || ""} onChange={e => setEditing({ ...editing, credit_note_ref: e.target.value })} style={modalInp} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>REFUND METHOD</div><input value={editing.refund_method || ""} onChange={e => setEditing({ ...editing, refund_method: e.target.value })} style={modalInp} /></div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -274,9 +325,12 @@ function ReturnForm({onClose}) {
 // ADVANCES (DP)
 // ============================================================
 function Advances() {
+  const { confirm } = useUiKit();
   const [list, setList] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [msg, setMsg] = useState("");
   const load = useCallback(()=>api('/advances').then(setList), []);
   useEffect(()=>{
     fetch(`${API}/suppliers`).then(r=>r.json()).then(setSuppliers).catch(()=>{});
@@ -297,9 +351,24 @@ function Advances() {
   };
 
   const refundAdv = async (id) => {
-    if (!confirm('Refund sisa DP? Status jadi refunded.')) return;
+    if (!window.confirm('Refund sisa DP? Status jadi refunded.')) return;
     await api(`/advances/${id}/refund`, {method:'POST', body:{refunded_by:'admin'}});
     load();
+  };
+
+  const saveEdit = async () => {
+    try {
+      await api(`/advances/${editing.id}`, { method: "PATCH", body: editing });
+      setMsg("✓ Disimpan"); setEditing(null); load();
+    } catch (e) { setMsg(e.message); }
+  };
+  const remove = async (item) => {
+    const ok = await confirm({ title: `Hapus "${item.doc_no || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    try {
+      await api(`/advances/${item.id}`, { method: "DELETE" });
+      setMsg("✓ Dihapus"); load();
+    } catch (e) { setMsg(e.message); }
   };
 
   return (
@@ -308,6 +377,7 @@ function Advances() {
         <h3 style={{margin:0}}>Advance Purchases / DP ({list.length})</h3>
         <button onClick={()=>setShowForm(true)} style={btnPrimary}>+ DP</button>
       </div>
+      {msg ? <div style={{ fontSize: 12, margin: "0 0 8px", color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
       {showForm && <AdvanceForm suppliers={suppliers} onClose={()=>{setShowForm(false); load();}} />}
       <table style={tableStyle}>
         <thead><tr><th>Doc</th><th>Tanggal</th><th>Supplier</th><th>PO Ref</th><th>Amount</th><th>Applied</th><th>Sisa</th><th>Status</th><th></th></tr></thead>
@@ -323,17 +393,46 @@ function Advances() {
               <td><b>{fmtIDR(a.remaining_amount)}</b></td>
               <td><StatusPill v={a.status} /></td>
               <td>
-                {(a.status === 'pending' || a.status === 'partial') && a.remaining_amount > 0 && (
-                  <>
-                    <button onClick={()=>applyAdv(a.id, a.remaining_amount)} style={btnSmall}>Apply</button>{' '}
-                    <button onClick={()=>refundAdv(a.id)} style={btnDanger}>Refund</button>
-                  </>
-                )}
+                <div style={{ display:'flex', gap:4, justifyContent:'flex-end', alignItems:'center' }}>
+                  {(a.status === 'pending' || a.status === 'partial') && a.remaining_amount > 0 && (
+                    <>
+                      <button onClick={()=>applyAdv(a.id, a.remaining_amount)} style={btnSmall}>Apply</button>
+                      <button onClick={()=>refundAdv(a.id)} style={btnDanger}>Refund</button>
+                    </>
+                  )}
+                  {a.status === 'pending' && <button onClick={() => setEditing({ ...a })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>}
+                  {a.status === 'pending' && (a.applied_amount || 0) === 0 && <button onClick={() => remove(a)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>}
+                </div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.doc_no || '#'+editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>AMOUNT</div><input type="number" value={editing.amount || 0} onChange={e => setEditing({ ...editing, amount: Number(e.target.value) })} style={modalInp} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>PAYMENT METHOD</div>
+                <select value={editing.payment_method || "transfer"} onChange={e => setEditing({ ...editing, payment_method: e.target.value })} style={modalInp}>
+                  <option value="transfer">transfer</option>
+                  <option value="cash">cash</option>
+                  <option value="check">check</option>
+                </select>
+              </div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>REFERENCE</div><input value={editing.reference || ""} onChange={e => setEditing({ ...editing, reference: e.target.value })} style={modalInp} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>NOTES</div><input value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} style={modalInp} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>PO ID</div><input type="number" value={editing.po_id || ""} onChange={e => setEditing({ ...editing, po_id: e.target.value ? Number(e.target.value) : null })} style={modalInp} /></div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -533,6 +632,7 @@ const btnSmall = {padding:'4px 10px', background:'#0a1422', color:'#93c5fd', bor
 const formGrid = {display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:12};
 const modalOverlay = {position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000};
 const modalBox = {background:'#0e0e13', borderRadius:8, padding:20, maxWidth:'95vw', maxHeight:'90vh', overflow:'auto', minWidth:700};
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 if (typeof document !== 'undefined' && !document.getElementById('proc-gaps-styles')) {
   const s = document.createElement('style');

@@ -65,6 +65,27 @@ function setupDemandForecast(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  router.patch('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM demand_forecast WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['product_name', 'category', 'avg_daily', 'trend_pct', 'forecast_7d', 'confidence']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    fields.push(`updated_at = ?`); args.push(nowSec());
+    args.push(req.params.id);
+    db.prepare(`UPDATE demand_forecast SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM demand_forecast WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/demand-forecast';
   app.use(mountPath, router);
   console.log(`[demand-forecast] mounted at ${mountPath} — sales demand forecasting`);

@@ -130,6 +130,24 @@ function setupNotificationCenter(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // PATCH = restore (un-dismiss) notification by key
+  router.patch('/:key', (req, res) => {
+    const b = req.body || {};
+    if (b.restore || b.undismiss) {
+      db.prepare(`DELETE FROM notif_dismissed WHERE notif_key = ?`).run(req.params.key);
+      return res.json({ ok: true, restored: true });
+    }
+    // default behavior: mark dismissed (idempotent)
+    db.prepare(`INSERT OR IGNORE INTO notif_dismissed (notif_key) VALUES (?)`).run(req.params.key);
+    res.json({ ok: true });
+  });
+
+  // DELETE = remove notification permanently (insert into dismissed)
+  router.delete('/:key', (req, res) => {
+    db.prepare(`INSERT OR IGNORE INTO notif_dismissed (notif_key) VALUES (?)`).run(req.params.key);
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/notification-center';
   app.use(mountPath, router);
   console.log(`[notification-center] mounted at ${mountPath} — unified alert hub`);

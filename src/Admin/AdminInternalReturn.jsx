@@ -2,6 +2,7 @@
 // Internal Return — Transfer Return & Delivery Return + partial complete.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const AC = "#9f1239";
 const TYPE = { transfer: { c: "#2563eb", l: "TRANSFER RETURN" }, delivery: { c: "#0e7490", l: "DELIVERY RETURN" } };
@@ -9,13 +10,32 @@ const STAT = { draft: { c: "#f59e0b", l: "DRAFT" }, partial: { c: "#3b82f6", l: 
 const REASON_C = { Rusak: "#ef4444", Kedaluwarsa: "#f59e0b", "Salah Kirim": "#3b82f6", "Kualitas Buruk": "#a855f7", "Kelebihan Kirim": "#0d9488" };
 
 export default function AdminInternalReturn({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/internal-return`).then(r => r.json()).then(setD).catch(() => {});
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
+
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/internal-return/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const remove = async (item) => {
+    const ok = await confirm({ title: `Hapus "${item.return_no || '#'+item.id}"?`, message: "Akan dihapus permanen. Hanya draft yang bisa dihapus.", danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/internal-return/${item.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
+  };
 
   const process = (r, skus) => {
     fetch(`${apiBase}/api/internal-return/${r.id}/process`, {
@@ -67,6 +87,12 @@ export default function AdminInternalReturn({ apiBase = "" }) {
                   {pending.length > 0 && (
                     <button onClick={() => process(r, pending.map(i => i.sku))} style={S.act}>Proses Semua</button>
                   )}
+                  {r.status === 'draft' && (
+                    <>
+                      <button onClick={() => setEditing({ ...r })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                      <button onClick={() => remove(r)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+                    </>
+                  )}
                 </div>
                 <div style={{ marginTop: 7, display: "grid", gap: 4 }}>
                   {r.items.map((it, i) => (
@@ -85,9 +111,55 @@ export default function AdminInternalReturn({ apiBase = "" }) {
           })}
         </div>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 620, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.return_no || '#'+editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>TIPE</div>
+                <select value={editing.return_type || "transfer"} onChange={e => setEditing({ ...editing, return_type: e.target.value })} style={modalInp}>
+                  <option value="transfer">transfer</option>
+                  <option value="delivery">delivery</option>
+                </select>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>DARI</div><input value={editing.from_loc || ""} onChange={e => setEditing({ ...editing, from_loc: e.target.value })} style={modalInp} /></div>
+                <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>KE</div><input value={editing.to_loc || ""} onChange={e => setEditing({ ...editing, to_loc: e.target.value })} style={modalInp} /></div>
+              </div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>REF NO</div><input value={editing.ref_no || ""} onChange={e => setEditing({ ...editing, ref_no: e.target.value })} style={modalInp} /></div>
+              <div>
+                <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>ITEMS</div>
+                <div style={{ display: "grid", gap: 6 }}>
+                  {(editing.items || []).map((it, i) => (
+                    <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 70px 80px 120px", gap: 6 }}>
+                      <input value={it.name || ""} onChange={e => { const items = [...editing.items]; items[i] = { ...it, name: e.target.value }; setEditing({ ...editing, items }); }} style={modalInp} placeholder="nama" />
+                      <input type="number" value={it.qty || 0} onChange={e => { const items = [...editing.items]; items[i] = { ...it, qty: Number(e.target.value) }; setEditing({ ...editing, items }); }} style={modalInp} placeholder="qty" />
+                      <input value={it.unit || ""} onChange={e => { const items = [...editing.items]; items[i] = { ...it, unit: e.target.value }; setEditing({ ...editing, items }); }} style={modalInp} placeholder="unit" />
+                      <select value={it.reason || "Rusak"} onChange={e => { const items = [...editing.items]; items[i] = { ...it, reason: e.target.value }; setEditing({ ...editing, items }); }} style={modalInp}>
+                        <option value="Rusak">Rusak</option>
+                        <option value="Kedaluwarsa">Kedaluwarsa</option>
+                        <option value="Salah Kirim">Salah Kirim</option>
+                        <option value="Kualitas Buruk">Kualitas Buruk</option>
+                        <option value="Kelebihan Kirim">Kelebihan Kirim</option>
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 function Kpi({ label, v, c }) {
   return (

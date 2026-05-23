@@ -1,6 +1,7 @@
 // client/src/Admin/AdminFinance.jsx
 // Finance tab: Dashboard (P&L), Expenses CRUD, Tax Config, COGS Detail, Reports
 import React, { useState, useEffect, useCallback } from 'react';
+import { useUiKit } from "../components/uiKit.jsx";
 
 const API = '/api/finance';
 
@@ -271,6 +272,7 @@ function RevenueSparkline({series}) {
 // EXPENSES
 // ============================================================
 function Expenses() {
+  const { confirm } = useUiKit();
   const [list, setList] = useState([]);
   const [categories, setCategories] = useState([]);
   const [filter, setFilter] = useState('');
@@ -278,6 +280,7 @@ function Expenses() {
   const [to, setTo] = useState(today());
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [msg, setMsg] = useState("");
 
   const load = useCallback(() => {
     const q = new URLSearchParams({ from, to });
@@ -294,6 +297,19 @@ function Expenses() {
     if (!reason) return;
     await api(`/expenses/${id}/void`, { method:'POST', body:{reason, voided_by:'admin'} });
     load();
+  };
+
+  const remove = async (item) => {
+    const ok = await confirm({
+      title: `Hapus "${item.doc_no || '#'+item.id}"?`,
+      message: "Expense yang sudah voided akan dihapus permanen. Tidak bisa dibatalkan.",
+      danger: true, okLabel: "Hapus"
+    });
+    if (!ok) return;
+    try {
+      await api(`/expenses/${item.id}`, { method: "DELETE" });
+      setMsg("✓ Dihapus"); load();
+    } catch (e) { setMsg(e.message); }
   };
 
   return (
@@ -321,6 +337,8 @@ function Expenses() {
       {showForm && <ExpenseForm initial={editing} categories={categories}
         onClose={() => { setShowForm(false); setEditing(null); load(); }} />}
 
+      {msg ? <div style={{ fontSize: 12, margin: "0 0 8px", color: msg.startsWith("✓") ? "#10b981" : "#dc2626" }}>{msg}</div> : null}
+
       <table style={tableStyle}>
         <thead><tr>
           <th>Doc No</th><th>Tanggal</th><th>Kategori</th><th>Vendor</th><th>Description</th><th>Amount</th><th>Tax</th><th>Status</th><th></th>
@@ -337,9 +355,14 @@ function Expenses() {
               <td>{e.tax_amount ? fmtIDR(e.tax_amount) : '-'}</td>
               <td>{e.status === 'voided' ? '✗ voided' : '✓'}</td>
               <td>
-                {e.status === 'recorded' && (
-                  <button onClick={() => voidExpense(e.id)} style={btnDanger}>Void</button>
-                )}
+                <div style={{ display:'flex', gap:4, justifyContent:'flex-end' }}>
+                  {e.status === 'recorded' && (
+                    <button onClick={() => voidExpense(e.id)} style={btnDanger}>Void</button>
+                  )}
+                  {e.status === 'voided' && (
+                    <button onClick={() => remove(e)} title="Hapus" style={{ background: "#fee2e2", border: "1px solid #fca5a5", color: "#dc2626", padding: "4px 10px", borderRadius: 4, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️ Hapus</button>
+                  )}
+                </div>
               </td>
             </tr>
           ))}

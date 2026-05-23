@@ -373,6 +373,18 @@ function setupFinance(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // conservative: only voided expenses can be deleted permanently. Recorded → must void first.
+  router.delete('/expenses/:id', (req, res) => {
+    const row = db.prepare(`SELECT status FROM finance_expenses WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    if (row.status === 'recorded') {
+      return res.status(403).json({ error: 'expense aktif tidak bisa dihapus — void dulu' });
+    }
+    const info = db.prepare(`DELETE FROM finance_expenses WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   router.post('/expenses/:id/void', (req, res) => {
     const { reason, voided_by } = req.body || {};
     if (!reason || !voided_by) return res.status(400).json({ error: 'reason, voided_by required' });

@@ -527,6 +527,75 @@ function setupProcurementGaps(app, opts = {}) {
     });
   });
 
+  // PATCH/DELETE for purchase_returns (only while draft) — items cascade via FK
+  router.patch('/returns/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM purchase_returns WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    if (row.status !== 'draft') {
+      return res.status(403).json({ error: `status ${row.status} — hanya draft yang bisa diubah` });
+    }
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['reason', 'notes', 'return_date', 'credit_note_ref', 'refund_method']) {
+      if (b[k] !== undefined) {
+        if (k === 'reason' && !['damaged', 'wrong_item', 'expired', 'quality_issue', 'overstock', 'other'].includes(b[k])) continue;
+        fields.push(`${k} = ?`);
+        args.push(b[k]);
+      }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE purchase_returns SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/returns/:id', (req, res) => {
+    const row = db.prepare(`SELECT status FROM purchase_returns WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    if (row.status === 'finalized') {
+      return res.status(403).json({ error: 'return sudah finalized — tidak bisa dihapus' });
+    }
+    db.transaction(() => {
+      db.prepare(`DELETE FROM pr_return_items WHERE return_id = ?`).run(req.params.id);
+      db.prepare(`DELETE FROM purchase_returns WHERE id = ?`).run(req.params.id);
+    })();
+    res.json({ ok: true });
+  });
+
+  // PATCH/DELETE for advance_purchases (only while pending — applied/refunded locked)
+  router.patch('/advances/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM advance_purchases WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    if (row.status !== 'pending') {
+      return res.status(403).json({ error: `status ${row.status} — hanya pending yang bisa diubah` });
+    }
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['amount', 'payment_method', 'reference', 'notes', 'advance_date', 'po_id']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    // if amount changed, remaining_amount must also update
+    if (b.amount !== undefined) {
+      fields.push(`remaining_amount = ?`);
+      args.push(Number(b.amount) - (row.applied_amount || 0));
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE advance_purchases SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/advances/:id', (req, res) => {
+    const row = db.prepare(`SELECT status, applied_amount FROM advance_purchases WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    if (row.status === 'applied' || row.status === 'partial' || (row.applied_amount || 0) > 0) {
+      return res.status(403).json({ error: 'advance sudah di-apply — tidak bisa dihapus' });
+    }
+    const info = db.prepare(`DELETE FROM advance_purchases WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/procurement';
   app.use(mountPath, router);
 

@@ -91,6 +91,29 @@ function setupDeviceSession(app, opts = {}) {
     res.json({ ok: true, authorized });
   });
 
+  router.patch('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM device_registry WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['name', 'type', 'outlet', 'authorized']) {
+      if (b[k] !== undefined) {
+        fields.push(`${k} = ?`);
+        args.push(k === 'authorized' ? (b[k] ? 1 : 0) : b[k]);
+      }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE device_registry SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM device_registry WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/device-session';
   app.use(mountPath, router);
   console.log(`[device-session] mounted at ${mountPath} — device & session control`);

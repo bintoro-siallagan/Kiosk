@@ -11,12 +11,17 @@ const STATUS = {
   delivered:  { label: "Diantar",    color: "#10b981" },
   cancelled:  { label: "Dibatal",    color: "#6b7280" },
 };
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 export default function CinemaInStudioQueue({ apiBase = "" }) {
   const base = (apiBase || "") + "/api/cinema";
   const [orders, setOrders] = useState([]);
   const [filter, setFilter] = useState("active");  // active | all | delivered
   const [staff, setStaff] = useState(localStorage.getItem("cinema_fnb_staff") || "");
+  const [menu, setMenu] = useState([]);
+  const [studios, setStudios] = useState([]);
+  const [creating, setCreating] = useState(null);
+  const [msg, setMsg] = useState("");
 
   const load = useCallback(async () => {
     const qs = filter === "active" ? "" : filter === "delivered" ? "?status=delivered" : "";
@@ -26,11 +31,61 @@ export default function CinemaInStudioQueue({ apiBase = "" }) {
     setOrders(list);
   }, [base, filter]);
 
+  const loadMenu = useCallback(async () => {
+    try {
+      const r = await fetch(`${base}/in-studio/menu`); const d = await r.json();
+      setMenu(d.items || []);
+    } catch {}
+    try {
+      const r = await fetch(`${base}/studios`); const d = await r.json();
+      setStudios(d.studios || []);
+    } catch {}
+  }, [base]);
+
   useEffect(() => {
     load();
+    loadMenu();
     const iv = setInterval(load, 10000); // poll 10s
     return () => clearInterval(iv);
-  }, [load]);
+  }, [load, loadMenu]);
+
+  const openCreate = () => {
+    setMsg("");
+    setCreating({
+      seat: "", studio_id: "", studio_name: "",
+      buyer_name: "", buyer_phone: "", notes: "",
+      status: "pending", items: [],
+    });
+  };
+  const addItem = () => {
+    if (!menu.length) return;
+    setCreating(c => ({ ...c, items: [...(c.items || []), { bundle_id: menu[0].id, qty: 1 }] }));
+  };
+  const updItem = (i, patch) => setCreating(c => ({ ...c, items: c.items.map((it, idx) => idx === i ? { ...it, ...patch } : it) }));
+  const rmItem = (i) => setCreating(c => ({ ...c, items: c.items.filter((_, idx) => idx !== i) }));
+  const submitCreate = async () => {
+    if (!creating) return;
+    if (!creating.seat || !creating.seat.trim()) { setMsg("⚠ Kursi wajib diisi"); return; }
+    if (!creating.items || !creating.items.length) { setMsg("⚠ Tambah minimal 1 item"); return; }
+    const sd = studios.find(s => String(s.id) === String(creating.studio_id));
+    const body = {
+      seat: creating.seat.trim(),
+      studio_id: creating.studio_id ? Number(creating.studio_id) : null,
+      studio_name: sd ? sd.name : (creating.studio_name || ""),
+      buyer_name: creating.buyer_name, buyer_phone: creating.buyer_phone,
+      notes: creating.notes, status: creating.status,
+      delivered_by: staff || "manual",
+      items: creating.items.map(it => ({ bundle_id: Number(it.bundle_id), qty: Number(it.qty) || 1 })),
+    };
+    try {
+      const r = await fetch(`${base}/in-studio/orders/manual`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      });
+      const j = await r.json();
+      if (j.ok) { setMsg(`✓ Order ${j.order_code} ditambah`); setCreating(null); load(); }
+      else setMsg(j.error || "gagal");
+    } catch (e) { setMsg(String(e.message || e)); }
+  };
 
   async function patch(o, body) {
     if (staff?.trim()) localStorage.setItem("cinema_fnb_staff", staff.trim());
@@ -51,10 +106,13 @@ export default function CinemaInStudioQueue({ apiBase = "" }) {
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <input value={staff} onChange={e => setStaff(e.target.value)} placeholder="Nama staff (audit)" style={{ background: "#0a0e16", border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: "#fff", fontSize: 12, fontFamily: "inherit" }} />
+          <button onClick={openCreate} style={{ background: "#a855f7", border: "none", color: "#fff", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ Tambah Order Manual</button>
           <Stat label="Baru" value={counts.pending || 0} color={STATUS.pending.color} />
           <Stat label="Disiapkan" value={counts.preparing || 0} color={STATUS.preparing.color} />
         </div>
       </div>
+
+      {msg && <div style={{ background: msg.startsWith("✓") ? "#10b98115" : "#ef444415", border: `1px solid ${msg.startsWith("✓") ? "#10b98133" : "#ef444433"}`, borderRadius: 8, padding: "8px 12px", color: msg.startsWith("✓") ? "#86efac" : "#fca5a5", fontSize: 12, marginBottom: 12 }}>{msg}</div>}
 
       <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
         {[["active", "Aktif"], ["all", "Semua"], ["delivered", "Diantar"]].map(([id, label]) => (
@@ -116,6 +174,73 @@ export default function CinemaInStudioQueue({ apiBase = "" }) {
           })}
         </div>
       )}
+
+      {creating && (
+        <div onClick={() => setCreating(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 20, width: 560, maxWidth: "94vw", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#a855f7", marginBottom: 14, fontFamily: "'Geist Mono',monospace" }}>+ ORDER MANUAL</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 10 }}>
+                <CSField label="Kursi *">
+                  <input style={modalInp} placeholder="A1, B5..." value={creating.seat} onChange={e => setCreating({ ...creating, seat: e.target.value })} />
+                </CSField>
+                <CSField label="Studio">
+                  <select style={modalInp} value={creating.studio_id || ""} onChange={e => setCreating({ ...creating, studio_id: e.target.value })}>
+                    <option value="">— pilih studio —</option>
+                    {studios.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </CSField>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <CSField label="Nama Customer"><input style={modalInp} value={creating.buyer_name || ""} onChange={e => setCreating({ ...creating, buyer_name: e.target.value })} /></CSField>
+                <CSField label="No. HP"><input style={modalInp} value={creating.buyer_phone || ""} onChange={e => setCreating({ ...creating, buyer_phone: e.target.value })} /></CSField>
+              </div>
+              <CSField label="Catatan"><input style={modalInp} value={creating.notes || ""} onChange={e => setCreating({ ...creating, notes: e.target.value })} /></CSField>
+              <CSField label="Status Awal">
+                <select style={modalInp} value={creating.status} onChange={e => setCreating({ ...creating, status: e.target.value })}>
+                  <option value="pending">pending (baru)</option>
+                  <option value="preparing">preparing (langsung disiapkan)</option>
+                  <option value="delivered">delivered (sudah diantar)</option>
+                </select>
+              </CSField>
+
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>ITEMS *</div>
+                  <button onClick={addItem} disabled={!menu.length} style={{ background: "#a855f71f", border: "1px solid #a855f755", color: "#a855f7", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: menu.length ? "pointer" : "not-allowed", opacity: menu.length ? 1 : 0.5, fontFamily: "inherit" }}>+ Item</button>
+                </div>
+                {(!creating.items || !creating.items.length) && <div style={{ fontSize: 11, color: C.dim, padding: "8px 0" }}>Belum ada item — klik "+ Item" untuk menambah.</div>}
+                {(creating.items || []).map((it, i) => {
+                  const m = menu.find(x => String(x.id) === String(it.bundle_id));
+                  return (
+                    <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 80px 90px 32px", gap: 8, alignItems: "center", marginBottom: 6 }}>
+                      <select style={modalInp} value={it.bundle_id} onChange={e => updItem(i, { bundle_id: e.target.value })}>
+                        {menu.map(b => <option key={b.id} value={b.id}>{b.name} — {rp(b.price)}</option>)}
+                      </select>
+                      <input type="number" min={1} style={modalInp} value={it.qty} onChange={e => updItem(i, { qty: e.target.value })} />
+                      <div style={{ fontSize: 12, color: "#10b981", fontFamily: "'Geist Mono',monospace", textAlign: "right" }}>{m ? rp((Number(it.qty) || 1) * m.price) : "—"}</div>
+                      <button onClick={() => rmItem(i)} style={{ background: "transparent", border: "1px solid #ef444444", color: "#ef4444", borderRadius: 6, padding: "4px 6px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
+              <button onClick={() => setCreating(null)} style={{ background: "transparent", border: "1px solid #30363d", color: "#9da7b3", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={submitCreate} style={{ background: "#a855f7", border: "none", color: "#fff", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Tambah Order</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CSField({ label, children }) {
+  return (
+    <div>
+      <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace", marginBottom: 4 }}>{label.toUpperCase()}</div>
+      {children}
     </div>
   );
 }

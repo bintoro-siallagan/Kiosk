@@ -8,6 +8,7 @@
 //   4. Providers      — config commission rate, webhook secret, API key per provider
 //   5. Sync Log       — audit trail menu sync ke aggregator
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useUiKit } from '../components/uiKit.jsx';
 
 const fmtIDR = (n) => new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', maximumFractionDigits:0}).format(Math.round(n||0));
 const fmtDateTime = (sec) => sec ? new Date(sec*1000).toLocaleString('id-ID', {dateStyle:'short', timeStyle:'short'}) : '-';
@@ -25,6 +26,7 @@ const PROVIDER_COLORS = {
 const PROVIDER_ICONS = { gofood: '🛵', grabfood: '🛵', shopeefood: '🛒', traveloka: '✈️' };
 
 export default function AdminAggregator({ apiBase = '' }) {
+  const { confirm } = useUiKit();
   const [tab, setTab] = useState('live');
   const [providers, setProviders] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -32,6 +34,7 @@ export default function AdminAggregator({ apiBase = '' }) {
   const [syncLog, setSyncLog] = useState([]);
   const [loading, setLoading] = useState(false);
   const [now, setNow] = useState(Date.now());
+  const [msg, setMsg] = useState('');
 
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 30 * 1000);
@@ -121,6 +124,19 @@ export default function AdminAggregator({ apiBase = '' }) {
     loadOrders();
   };
 
+  const remove = async (o) => {
+    const ok = await confirm({
+      title: `Hapus "${o.doc_no || '#' + o.id}"?`,
+      message: 'Akan dihapus permanen. Tidak bisa dibatalkan.',
+      danger: true, okLabel: 'Hapus',
+    });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/aggregator/orders/${o.id}`, { method: 'DELETE' });
+    const j = await r.json();
+    if (j.ok) { setMsg('✓ Dihapus'); loadOrders(); }
+    else setMsg(j.error || 'gagal');
+  };
+
   return (
     <div style={styles.root}>
       <div style={styles.header}>
@@ -176,6 +192,7 @@ export default function AdminAggregator({ apiBase = '' }) {
 
           {/* Recent completed */}
           <h3 style={{...styles.sectionTitle, marginTop: 24}}>Recent Completed</h3>
+          {msg ? <div style={{ fontSize: 12, margin: '6px 2px 8px', color: msg.startsWith('✓') ? '#10b981' : '#f87171' }}>{msg}</div> : null}
           <div style={styles.completedList}>
             {orders.filter(o => ['completed','rejected'].includes(o.status)).slice(0, 10).map(o => (
               <div key={o.id} style={styles.completedRow}>
@@ -192,6 +209,7 @@ export default function AdminAggregator({ apiBase = '' }) {
                 }}>
                   {o.status}
                 </span>
+                <button onClick={() => remove(o)} title="Hapus" style={{ background: '#ef444418', border: '1px solid #ef444444', color: '#ef4444', padding: '3px 7px', borderRadius: 5, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}>🗑️</button>
               </div>
             ))}
           </div>

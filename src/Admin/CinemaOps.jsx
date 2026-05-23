@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 // Cinema Operations — manage films, studios/screens and showtimes.
 // karyaOS cinema vertical (admin side). Talks to /api/cinema/*.
 const C = { card: "#0d1117", border: "#1b212c", sub: "#7d8590", dim: "#5b6470" };
 const inp = { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "7px 9px", color: "#fff", fontSize: 12, fontFamily: "inherit", boxSizing: "border-box", outline: "none" };
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 // LSF Indonesia age classification — SU=Semua Umur, 13+, 17+, D21=Dewasa 21+
 const RATINGS = ["SU", "13+", "17+", "D21"];
 const RATING_COLOR = { "SU": "#10b981", "13+": "#22d3ee", "17+": "#f59e0b", "D21": "#ef4444" };
@@ -20,6 +22,7 @@ const DS_LABEL = { scheduled: "Terjadwal", running: "Berlangsung", closed: "Tutu
 const DS_COLOR = { scheduled: "#10b981", running: "#f59e0b", closed: "#6b7280", sold_out: "#ef4444", cancelled: "#dc2626" };
 
 export default function CinemaOps({ apiBase }) {
+  const { confirm } = useUiKit();
   const [tab, setTab] = useState("film");
   const [films, setFilms] = useState([]);
   const [studios, setStudios] = useState([]);
@@ -27,6 +30,7 @@ export default function CinemaOps({ apiBase }) {
   const [summary, setSummary] = useState(null);
   const [form, setForm] = useState({});
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(null); // { type:'film'|'studio'|'showtime', data:{} }
 
   const base = `${apiBase}/api/cinema`;
   const reload = () => {
@@ -46,6 +50,40 @@ export default function CinemaOps({ apiBase }) {
       .catch(() => setMsg("Gagal menyimpan"));
   };
   const del = (path) => { fetch(`${base}/${path}`, { method: "DELETE" }).then(() => reload()).catch(() => {}); };
+  const askDelete = async (item, path, label) => {
+    const ok = await confirm({
+      title: `Hapus "${label || item.title || item.name || ('#' + item.id)}"?`,
+      message: "Akan dihapus permanen — termasuk data terkait (jadwal/tiket).",
+      danger: true, okLabel: "Hapus",
+    });
+    if (!ok) return;
+    del(path);
+  };
+  const saveEdit = async () => {
+    if (!editing) return;
+    const { type, data } = editing;
+    const path = type === "film" ? `films/${data.id}` : type === "studio" ? `studios/${data.id}` : `showtimes/${data.id}`;
+    let body = {};
+    if (type === "film") {
+      body = {
+        title: data.title, genre: data.genre, duration_min: data.duration_min,
+        rating: data.rating, status: data.status, synopsis: data.synopsis,
+      };
+    } else if (type === "studio") {
+      body = { name: data.name, studio_type: data.studio_type, rows: data.rows, cols: data.cols, outlet: data.outlet };
+    } else {
+      body = {
+        film_id: data.film_id, studio_id: data.studio_id, show_date: data.show_date,
+        start_time: data.start_time, price: data.price, format: data.format,
+      };
+    }
+    try {
+      const r = await fetch(`${base}/${path}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      const j = await r.json();
+      if (j.ok) { setMsg("✓ Tersimpan"); setEditing(null); reload(); }
+      else setMsg(j.error || "gagal");
+    } catch { setMsg("Gagal menyimpan"); }
+  };
   const closeShow = (id) => {
     const reason = window.prompt("Alasan tutup showtime (opsional):", "") ?? "";
     fetch(`${base}/showtimes/${id}/close`, {
@@ -61,8 +99,11 @@ export default function CinemaOps({ apiBase }) {
   const btn = (label, onClick, color = "#a855f7") => (
     <button onClick={onClick} style={{ background: color + "1f", border: `1px solid ${color}55`, borderRadius: 7, padding: "7px 14px", color, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>{label}</button>
   );
-  const delBtn = (path) => (
-    <button onClick={() => del(path)} title="Hapus" style={{ background: "transparent", border: "1px solid #ef444444", borderRadius: 6, padding: "4px 9px", color: "#ef4444", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+  const editBtn = (type, item) => (
+    <button onClick={() => setEditing({ type, data: { ...item } })} title="Edit" style={{ background: "transparent", border: "1px solid #30363d", borderRadius: 6, padding: "4px 9px", color: "#9da7b3", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>✎</button>
+  );
+  const delBtnAsk = (item, path, label) => (
+    <button onClick={() => askDelete(item, path, label)} title="Hapus" style={{ background: "transparent", border: "1px solid #ef444444", borderRadius: 6, padding: "4px 9px", color: "#ef4444", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
   );
 
   return (
@@ -114,7 +155,8 @@ export default function CinemaOps({ apiBase }) {
                 </div>
                 <Badge color={RATING_COLOR[x.rating] || "#6366f1"}>{x.rating}</Badge>
                 <Badge color={statusColor(x.status)}>{statusLabel(x.status)}</Badge>
-                {delBtn(`films/${x.id}`)}
+                {editBtn("film", x)}
+                {delBtnAsk(x, `films/${x.id}`, x.title)}
               </Row>
             ))}
           </List>
@@ -141,7 +183,8 @@ export default function CinemaOps({ apiBase }) {
                 </div>
                 <Badge color="#a855f7">{x.studio_type}</Badge>
                 <div style={{ fontSize: 12, fontFamily: "'Geist Mono',monospace", color: "#22d3ee", width: 86, textAlign: "right" }}>{x.capacity} kursi</div>
-                {delBtn(`studios/${x.id}`)}
+                {editBtn("studio", x)}
+                {delBtnAsk(x, `studios/${x.id}`, x.name)}
               </Row>
             ))}
           </List>
@@ -187,13 +230,106 @@ export default function CinemaOps({ apiBase }) {
                   {isClosedManual
                     ? btn("🔓 Buka lagi", () => reopenShow(x.id), "#10b981")
                     : btn("🔒 Tutup", () => closeShow(x.id), "#f59e0b")}
-                  {delBtn(`showtimes/${x.id}`)}
+                  {editBtn("showtime", x)}
+                  {delBtnAsk(x, `showtimes/${x.id}`, `${x.film_title || ""} ${x.show_date} ${x.start_time}`)}
                 </Row>
               );
             })}
           </List>
         </>
       )}
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 20, width: 520, maxWidth: "92vw", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#a855f7", marginBottom: 14, fontFamily: "'Geist Mono',monospace" }}>
+              EDIT {editing.type.toUpperCase()} #{editing.data.id}
+            </div>
+
+            {editing.type === "film" && (
+              <div style={{ display: "grid", gap: 10 }}>
+                <Field label="Judul"><input style={modalInp} value={editing.data.title || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, title: e.target.value } })} /></Field>
+                <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
+                  <Field label="Genre"><input style={modalInp} value={editing.data.genre || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, genre: e.target.value } })} /></Field>
+                  <Field label="Durasi (mnt)"><input type="number" style={modalInp} value={editing.data.duration_min || 0} onChange={e => setEditing({ ...editing, data: { ...editing.data, duration_min: e.target.value } })} /></Field>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <Field label="Rating">
+                    <select style={modalInp} value={editing.data.rating || "SU"} onChange={e => setEditing({ ...editing, data: { ...editing.data, rating: e.target.value } })}>
+                      {RATINGS.map(r => <option key={r} value={r}>{r} — {RATING_NAME[r] || r}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Status">
+                    <select style={modalInp} value={editing.data.status || "now_showing"} onChange={e => setEditing({ ...editing, data: { ...editing.data, status: e.target.value } })}>
+                      {STATUSES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                    </select>
+                  </Field>
+                </div>
+                <Field label="Sinopsis"><textarea rows={3} style={{ ...modalInp, resize: "vertical" }} value={editing.data.synopsis || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, synopsis: e.target.value } })} /></Field>
+              </div>
+            )}
+
+            {editing.type === "studio" && (
+              <div style={{ display: "grid", gap: 10 }}>
+                <Field label="Nama"><input style={modalInp} value={editing.data.name || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, name: e.target.value } })} /></Field>
+                <Field label="Tipe">
+                  <select style={modalInp} value={editing.data.studio_type || "Regular"} onChange={e => setEditing({ ...editing, data: { ...editing.data, studio_type: e.target.value } })}>
+                    {STUDIO_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </Field>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <Field label="Baris"><input type="number" style={modalInp} value={editing.data.rows || 0} onChange={e => setEditing({ ...editing, data: { ...editing.data, rows: e.target.value } })} /></Field>
+                  <Field label="Kolom"><input type="number" style={modalInp} value={editing.data.cols || 0} onChange={e => setEditing({ ...editing, data: { ...editing.data, cols: e.target.value } })} /></Field>
+                </div>
+                <Field label="Outlet"><input style={modalInp} value={editing.data.outlet || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, outlet: e.target.value } })} /></Field>
+              </div>
+            )}
+
+            {editing.type === "showtime" && (
+              <div style={{ display: "grid", gap: 10 }}>
+                <Field label="Film">
+                  <select style={modalInp} value={editing.data.film_id || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, film_id: e.target.value } })}>
+                    <option value="">— pilih film —</option>
+                    {films.map(x => <option key={x.id} value={x.id}>{x.title}</option>)}
+                  </select>
+                </Field>
+                <Field label="Studio">
+                  <select style={modalInp} value={editing.data.studio_id || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, studio_id: e.target.value } })}>
+                    <option value="">— pilih studio —</option>
+                    {studios.map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
+                  </select>
+                </Field>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <Field label="Tanggal"><input type="date" style={modalInp} value={editing.data.show_date || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, show_date: e.target.value } })} /></Field>
+                  <Field label="Jam"><input type="time" style={modalInp} value={editing.data.start_time || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, start_time: e.target.value } })} /></Field>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <Field label="Format">
+                    <select style={modalInp} value={editing.data.format || "2D"} onChange={e => setEditing({ ...editing, data: { ...editing.data, format: e.target.value } })}>
+                      {FORMATS.map(fm => <option key={fm} value={fm}>{fm}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Harga"><input type="number" style={modalInp} value={editing.data.price || 0} onChange={e => setEditing({ ...editing, data: { ...editing.data, price: e.target.value } })} /></Field>
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #30363d", color: "#9da7b3", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#a855f7", border: "none", color: "#fff", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <div>
+      <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace", marginBottom: 4 }}>{label.toUpperCase()}</div>
+      {children}
     </div>
   );
 }

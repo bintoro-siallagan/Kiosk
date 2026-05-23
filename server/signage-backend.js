@@ -87,6 +87,48 @@ function setupSignage(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // PATCH/DELETE for media
+  router.patch('/media/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM signage_media WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['title', 'media_type', 'duration_sec', 'channel', 'status']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE signage_media SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/media/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM signage_media WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
+  // PATCH/DELETE for screens
+  router.patch('/screen/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM signage_screens WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['name', 'screen_type', 'outlet', 'status']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE signage_screens SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/screen/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM signage_screens WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/signage';
   app.use(mountPath, router);
   console.log(`[signage] mounted at ${mountPath} — digital signage CMS`);

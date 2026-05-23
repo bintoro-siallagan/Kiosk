@@ -2,6 +2,7 @@
 // Reward Benefit — crew tukar point jadi benefit nyata.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "—";
 const ST = {
@@ -10,15 +11,48 @@ const ST = {
   delivered: { c: "#10b981", t: "DELIVERED", next: null, action: null },
 };
 
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
+
 export default function AdminRewardBenefit({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [crewId, setCrewId] = useState("");
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/reward-benefits`).then(r => r.json()).then(setD).catch(() => {});
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
+
+  const saveEdit = async () => {
+    if (!editing) return;
+    const body = {
+      staff_name: editing.staff_name,
+      reward_name: editing.reward_name,
+      reward_icon: editing.reward_icon,
+      point_cost: Number(editing.point_cost) || 0,
+      status: editing.status,
+    };
+    const r = await fetch(`${apiBase}/api/reward-benefits/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const remove = async (item) => {
+    const ok = await confirm({
+      title: `Hapus redemption "${item.reward_name}"?`,
+      message: `Crew: ${item.staff_name} · ${item.point_cost} poin. Akan dihapus permanen.`,
+      danger: true, okLabel: "Hapus",
+    });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/reward-benefits/${item.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
+  };
 
   const redeem = (rewardId) => {
     if (!crewId) { setMsg("⚠ Pilih crew dulu"); return; }
@@ -102,9 +136,13 @@ export default function AdminRewardBenefit({ apiBase = "" }) {
                   <td style={{ ...S.td, color: "#9da7b3" }}>{fmtDate(r.redeemed_at)}</td>
                   <td style={S.td}><span style={{ fontSize: 11, fontWeight: 700, color: st.c }}>{st.t}</span></td>
                   <td style={S.td}>
-                    {st.next
-                      ? <button onClick={() => setStatus(r.id, st.next)} style={S.btnSm}>{st.action}</button>
-                      : <span style={{ color: "#10b981" }}>✓ selesai</span>}
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                      {st.next
+                        ? <button onClick={() => setStatus(r.id, st.next)} style={S.btnSm}>{st.action}</button>
+                        : <span style={{ color: "#10b981", fontSize: 11 }}>✓ selesai</span>}
+                      <button onClick={() => setEditing({ ...r })} style={S.btnEdit} title="Edit">✎</button>
+                      <button onClick={() => remove(r)} style={S.btnDel} title="Hapus">🗑</button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -112,6 +150,50 @@ export default function AdminRewardBenefit({ apiBase = "" }) {
           </tbody>
         </table>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 20, width: 440, maxWidth: "92vw" }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#ec4899", marginBottom: 14, fontFamily: "'Geist Mono',monospace" }}>EDIT REDEMPTION #{editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <Field label="Nama Crew">
+                <input style={modalInp} value={editing.staff_name || ""} onChange={e => setEditing({ ...editing, staff_name: e.target.value })} />
+              </Field>
+              <Field label="Nama Benefit">
+                <input style={modalInp} value={editing.reward_name || ""} onChange={e => setEditing({ ...editing, reward_name: e.target.value })} />
+              </Field>
+              <div style={{ display: "grid", gridTemplateColumns: "80px 1fr", gap: 10 }}>
+                <Field label="Icon">
+                  <input style={modalInp} value={editing.reward_icon || ""} onChange={e => setEditing({ ...editing, reward_icon: e.target.value })} />
+                </Field>
+                <Field label="Poin">
+                  <input type="number" style={modalInp} value={editing.point_cost || 0} onChange={e => setEditing({ ...editing, point_cost: e.target.value })} />
+                </Field>
+              </div>
+              <Field label="Status">
+                <select style={modalInp} value={editing.status || "pending"} onChange={e => setEditing({ ...editing, status: e.target.value })}>
+                  <option value="pending">pending</option>
+                  <option value="approved">approved</option>
+                  <option value="delivered">delivered</option>
+                </select>
+              </Field>
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #30363d", color: "#9da7b3", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#ec4899", border: "none", color: "#fff", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <div>
+      <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace", marginBottom: 4 }}>{label.toUpperCase()}</div>
+      {children}
     </div>
   );
 }
@@ -134,4 +216,6 @@ const S = {
   select: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "7px 10px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none" },
   btn: { background: "#ec4899", color: "#fff", border: "none", borderRadius: 6, padding: "5px 12px", fontSize: 12, fontWeight: 700, fontFamily: "inherit" },
   btnSm: { background: "#3b82f61f", border: "1px solid #3b82f655", color: "#7cc4ff", fontSize: 11, fontWeight: 700, padding: "5px 10px", borderRadius: 6, cursor: "pointer", fontFamily: "'Geist Mono',monospace" },
+  btnEdit: { background: "transparent", border: "1px solid #30363d", color: "#9da7b3", fontSize: 11, padding: "4px 9px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit" },
+  btnDel: { background: "transparent", border: "1px solid #ef444444", color: "#ef4444", fontSize: 11, padding: "4px 9px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit" },
 };

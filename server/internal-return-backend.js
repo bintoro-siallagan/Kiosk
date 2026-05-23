@@ -112,6 +112,55 @@ function setupInternalReturn(app, opts = {}) {
     res.json({ ok: true, status: statusOf(after), stock_posted: posted });
   });
 
+  router.patch('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM internal_returns WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const items = J(row.items);
+    if (statusOf(items) !== 'draft') {
+      return res.status(403).json({ error: 'retur sudah diproses — tidak bisa diubah' });
+    }
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['return_type', 'from_loc', 'to_loc', 'ref_no']) {
+      if (b[k] !== undefined) {
+        if (k === 'return_type' && !['transfer', 'delivery'].includes(b[k])) continue;
+        fields.push(`${k} = ?`);
+        args.push(b[k]);
+      }
+    }
+    // allow item edits (qty/reason) while still draft
+    if (Array.isArray(b.items)) {
+      const norm = b.items.map(i => ({
+        sku: i.sku,
+        name: i.name || i.sku,
+        qty: Number(i.qty) || 0,
+        unit: i.unit || 'pcs',
+        reason: i.reason || 'Rusak',
+        processed: 0,
+      })).filter(i => i.sku && i.qty > 0);
+      if (norm.length) {
+        fields.push(`items = ?`);
+        args.push(JSON.stringify(norm));
+      }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE internal_returns SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM internal_returns WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const items = J(row.items);
+    if (statusOf(items) !== 'draft') {
+      return res.status(403).json({ error: 'retur sudah diproses — tidak bisa dihapus' });
+    }
+    const info = db.prepare(`DELETE FROM internal_returns WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/internal-return';
   app.use(mountPath, router);
   console.log(`[internal-return] mounted at ${mountPath} — transfer & delivery return (partial)`);

@@ -7,8 +7,11 @@
  *             Komponen nempel "/api/payment-gateway/..." sendiri.
  */
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fR = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 const S = {
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 14, padding: 20, marginBottom: 16 },
@@ -24,7 +27,7 @@ const S = {
 const STATUS_COLOR = { paid: "#34D399", pending: "#F59E0B", expired: "#6b7280", cancelled: "#6b7280", failed: "#F87171" };
 
 // ── Card config per provider ────────────────────────────────────────
-function ProviderCard({ apiBase, provider, onSaved, showToast }) {
+function ProviderCard({ apiBase, provider, onSaved, onDelete, showToast }) {
   const [form, setForm] = useState({
     server_key: "", client_key: "", callback_token: "",
     merchant_id: provider.merchant_id || "",
@@ -65,8 +68,12 @@ function ProviderCard({ apiBase, provider, onSaved, showToast }) {
           <span style={S.badge(provider.is_active ? "#34D399" : "#6b7280")}>{provider.is_active ? "AKTIF" : "OFF"}</span>
           <span style={S.badge(provider.environment === "production" ? "#F87171" : "#F59E0B")}>{provider.environment}</span>
         </div>
-        <div style={{ fontSize: 11, color: "#555" }}>
-          server_key {provider.has_server_key ? "✓" : "—"} · callback {provider.has_callback_token ? "✓" : "—"}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ fontSize: 11, color: "#555" }}>
+            server_key {provider.has_server_key ? "✓" : "—"} · callback {provider.has_callback_token ? "✓" : "—"}
+          </div>
+          <button onClick={() => onDelete(provider)} title="Hapus provider"
+            style={{ background: "transparent", border: "1px solid #ef444444", color: "#ef4444", borderRadius: 6, padding: "4px 9px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>🗑 Hapus</button>
         </div>
       </div>
 
@@ -131,12 +138,52 @@ function ProviderCard({ apiBase, provider, onSaved, showToast }) {
 
 // ── Tab utama ───────────────────────────────────────────────────────
 export default function AdminPaymentGateway({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [providers, setProviders] = useState([]);
   const [recon, setRecon] = useState(null);
   const [intents, setIntents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState(null);
+  const [creating, setCreating] = useState(null); // {code,name,supported_methods,environment}
   const showToast = (m) => { setToast(m); setTimeout(() => setToast(null), 2800); };
+
+  const deleteProvider = async (p) => {
+    const ok = await confirm({
+      title: `Hapus provider "${p.name}"?`,
+      message: "Akan dihapus permanen. Tidak bisa kalau masih dipakai intent.",
+      danger: true, okLabel: "Hapus",
+    });
+    if (!ok) return;
+    try {
+      const r = await fetch(`${apiBase}/api/payment-gateway/providers/${p.code}`, { method: "DELETE" });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      showToast(`✓ ${p.name} dihapus`);
+      load();
+    } catch (e) { showToast(`✗ ${e.message}`); }
+  };
+
+  const submitCreate = async () => {
+    if (!creating) return;
+    const code = String(creating.code || "").trim().toLowerCase();
+    const name = String(creating.name || "").trim();
+    if (!code || !name) { showToast("⚠ Code + Name wajib diisi"); return; }
+    try {
+      const r = await fetch(`${apiBase}/api/payment-gateway/providers`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code, name,
+          supported_methods: creating.supported_methods || "",
+          environment: creating.environment || "sandbox",
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      showToast(`✓ Provider '${code}' ditambah`);
+      setCreating(null);
+      load();
+    } catch (e) { showToast(`✗ ${e.message}`); }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -162,10 +209,16 @@ export default function AdminPaymentGateway({ apiBase = "" }) {
   return (
     <div>
       <div style={{ ...S.card, background: "#0a1422", border: "1px solid #15324d" }}>
-        <div style={{ ...S.label, color: "#5fa8d3" }}>💳 Payment Gateway — Midtrans + Xendit</div>
-        <div style={{ fontSize: 13, color: "#8b949e", lineHeight: 1.5 }}>
-          Isi API key dari dashboard provider, pilih <b>environment</b>, lalu aktifkan. Provider yang
-          aktif otomatis muncul di POS waktu kasir pilih QRIS / e-wallet.
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <div style={{ ...S.label, color: "#5fa8d3" }}>💳 Payment Gateway — Midtrans + Xendit</div>
+            <div style={{ fontSize: 13, color: "#8b949e", lineHeight: 1.5 }}>
+              Isi API key dari dashboard provider, pilih <b>environment</b>, lalu aktifkan. Provider yang
+              aktif otomatis muncul di POS waktu kasir pilih QRIS / e-wallet.
+            </div>
+          </div>
+          <button onClick={() => setCreating({ code: "", name: "", supported_methods: "", environment: "sandbox" })}
+            style={S.btn("#34D399")}>+ Provider Baru</button>
         </div>
       </div>
 
@@ -176,8 +229,45 @@ export default function AdminPaymentGateway({ apiBase = "" }) {
       )}
 
       {providers.map((p) => (
-        <ProviderCard key={p.code} apiBase={apiBase} provider={p} onSaved={load} showToast={showToast} />
+        <ProviderCard key={p.code} apiBase={apiBase} provider={p} onSaved={load} onDelete={deleteProvider} showToast={showToast} />
       ))}
+
+      {creating && (
+        <div onClick={() => setCreating(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 20, width: 460, maxWidth: "92vw" }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: "#34D399", marginBottom: 14, fontFamily: "'Geist Mono',monospace" }}>+ PROVIDER BARU</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <PGField label="Code (unique, lowercase)">
+                <input style={modalInp} placeholder="contoh: doku, faspay" value={creating.code || ""}
+                  onChange={e => setCreating({ ...creating, code: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, "") })} />
+              </PGField>
+              <PGField label="Nama Display">
+                <input style={modalInp} placeholder="DOKU, Faspay, etc" value={creating.name || ""}
+                  onChange={e => setCreating({ ...creating, name: e.target.value })} />
+              </PGField>
+              <PGField label="Supported Methods (csv, optional)">
+                <input style={modalInp} placeholder="qris,gopay,ovo,credit_card" value={creating.supported_methods || ""}
+                  onChange={e => setCreating({ ...creating, supported_methods: e.target.value })} />
+              </PGField>
+              <PGField label="Environment">
+                <select style={modalInp} value={creating.environment || "sandbox"}
+                  onChange={e => setCreating({ ...creating, environment: e.target.value })}>
+                  <option value="sandbox">sandbox</option>
+                  <option value="production">production</option>
+                </select>
+              </PGField>
+              <div style={{ fontSize: 11, color: "#666", lineHeight: 1.5 }}>
+                ⚠ Provider baru perlu adapter di backend (server/payment-gateway-backend.js) supaya bisa create charge.
+                Yang built-in: <b>midtrans</b>, <b>xendit</b>.
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
+              <button onClick={() => setCreating(null)} style={{ background: "transparent", border: "1px solid #30363d", color: "#9da7b3", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={submitCreate} style={{ background: "#34D399", border: "none", color: "#04130c", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Tambah Provider</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Webhook URL */}
       <div style={S.card}>
@@ -256,6 +346,15 @@ export default function AdminPaymentGateway({ apiBase = "" }) {
           {toast}
         </div>
       )}
+    </div>
+  );
+}
+
+function PGField({ label, children }) {
+  return (
+    <div>
+      <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace", marginBottom: 4 }}>{label.toUpperCase()}</div>
+      {children}
     </div>
   );
 }

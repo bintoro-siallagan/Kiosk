@@ -666,6 +666,24 @@ function setupCinema(app, opts = {}) {
     db.prepare(`DELETE FROM cinema_studios WHERE id = ?`).run(req.params.id);
     res.json({ ok: true });
   });
+  router.patch('/studios/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM cinema_studios WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'studio tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['name', 'studio_type', 'rows', 'cols', 'outlet', 'is_active']) {
+      if (b[k] !== undefined) {
+        fields.push(`${k} = ?`);
+        args.push(k === 'rows' || k === 'cols' ? (Number(b[k]) || 0)
+                : k === 'is_active' ? (b[k] ? 1 : 0)
+                : b[k]);
+      }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE cinema_studios SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
 
   // ── SHOWTIMES ──
   router.get('/showtimes', (req, res) => {
@@ -711,6 +729,22 @@ function setupCinema(app, opts = {}) {
   router.delete('/showtimes/:id', (req, res) => {
     db.prepare(`DELETE FROM cinema_tickets WHERE showtime_id = ?`).run(req.params.id);
     db.prepare(`DELETE FROM cinema_showtimes WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+  router.patch('/showtimes/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM cinema_showtimes WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'showtime tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['film_id', 'studio_id', 'show_date', 'start_time', 'price', 'format', 'status']) {
+      if (b[k] !== undefined) {
+        fields.push(`${k} = ?`);
+        args.push(k === 'film_id' || k === 'studio_id' || k === 'price' ? (Number(b[k]) || 0) : b[k]);
+      }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE cinema_showtimes SET ${fields.join(', ')} WHERE id = ?`).run(...args);
     res.json({ ok: true });
   });
 
@@ -2475,6 +2509,48 @@ function setupCinema(app, opts = {}) {
     }
     res.json({ orders });
   });
+  // Manual add (admin/staff): mirrors customer POST but allows setting status + buyer details freely.
+  router.post('/in-studio/orders/manual', (req, res) => {
+    const b = req.body || {};
+    const seat = String(b.seat || '').trim();
+    if (!seat) return res.status(400).json({ ok: false, error: 'Kursi wajib diisi' });
+    const items = Array.isArray(b.items) ? b.items : [];
+    const valid = [];
+    for (const it of items) {
+      const bid = parseInt(it.bundle_id, 10);
+      const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+      if (!bid) continue;
+      const bn = db.prepare(`SELECT * FROM cinema_bundles WHERE id = ?`).get(bid);
+      if (!bn) return res.status(400).json({ ok: false, error: `Menu id ${bid} tidak ditemukan` });
+      valid.push({ bundle_id: bn.id, bundle_name: bn.name, qty, price: bn.price });
+    }
+    if (!valid.length) return res.status(400).json({ ok: false, error: 'Pesanan kosong (minimal 1 item)' });
+    const total = valid.reduce((a, r) => a + r.qty * r.price, 0);
+    const status = ['pending', 'preparing', 'delivered', 'cancelled'].includes(b.status) ? b.status : 'pending';
+    const code = 'CM-' + require('crypto').randomBytes(3).toString('hex').toUpperCase();
+    let orderId;
+    db.transaction(() => {
+      const info = db.prepare(`INSERT INTO cinema_in_studio_orders
+        (order_code, showtime_id, studio_id, studio_name, seat, buyer_name, buyer_phone, notes, total, status, delivered_at, delivered_by)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
+        .run(code,
+             b.showtime_id ? parseInt(b.showtime_id, 10) : null,
+             b.studio_id   ? parseInt(b.studio_id, 10)   : null,
+             b.studio_name || '', seat,
+             b.buyer_name || '', b.buyer_phone || '',
+             b.notes || '', total, status,
+             status === 'delivered' ? Math.floor(Date.now()/1000) : null,
+             status === 'delivered' ? (b.delivered_by || 'manual') : null);
+      orderId = info.lastInsertRowid;
+      const insIt = db.prepare(`INSERT INTO cinema_in_studio_order_items (order_id, bundle_id, bundle_name, qty, price) VALUES (?,?,?,?,?)`);
+      for (const r of valid) {
+        const ii = insIt.run(orderId, r.bundle_id, r.bundle_name, r.qty, r.price);
+        try { deductInventoryForBundle(r.bundle_id, r.qty, 'in_studio_manual', ii.lastInsertRowid); } catch {}
+      }
+    })();
+    res.json({ ok: true, id: orderId, order_code: code, total, items: valid, status });
+  });
+
   router.patch('/in-studio/orders/:id', (req, res) => {
     const b = req.body || {};
     const o = db.prepare(`SELECT * FROM cinema_in_studio_orders WHERE id = ?`).get(req.params.id);
