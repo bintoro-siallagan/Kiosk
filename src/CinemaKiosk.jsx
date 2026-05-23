@@ -570,33 +570,20 @@ export default function CinemaKiosk({ apiBase }) {
                 <div style={{ height: 5, background: "linear-gradient(90deg,transparent,#a855f7,transparent)", borderRadius: 4, marginBottom: 6, boxShadow: "0 0 24px rgba(168,85,247,0.5)" }} />
                 <span style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: 6, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase", fontWeight: 700 }}>L A Y A R</span>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 7, alignItems: "center" }}>
-                {Array.from({ length: seatData.rows }).map((_, ri) => {
-                  const letter = String.fromCharCode(65 + ri);
-                  return (
-                    <div key={ri} style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                      <span style={{ width: 18, fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>{letter}</span>
-                      {Array.from({ length: seatData.cols }).map((_, ci) => {
-                        const seat = `${letter}${ci + 1}`;
-                        const sold = seatData.sold.includes(seat);
-                        const heldOther = (seatData.held_by_others || []).includes(seat);
-                        const sel = seats.has(seat);
-                        const unavail = sold || heldOther;
-                        return (
-                          <button key={ci} onClick={() => toggleSeat(seat)} disabled={unavail} title={heldOther ? `${seat} · sedang disimpan customer lain` : seat}
-                            className="karya-seat-btn"
-                            style={{ width: 30, height: 30, borderRadius: 8, fontSize: 10, fontWeight: 800, fontFamily: "'Geist Mono',monospace",
-                              background: sold ? "rgba(239,68,68,0.18)" : heldOther ? "rgba(234,179,8,0.18)" : sel ? "linear-gradient(135deg,#f59e0b,#fbbf24)" : "rgba(255,255,255,0.04)",
-                              border: `1px solid ${sold ? "rgba(239,68,68,0.3)" : heldOther ? "rgba(234,179,8,0.35)" : sel ? "rgba(245,158,11,0.5)" : "rgba(255,255,255,0.08)"}`,
-                              color: sold ? "#ef4444" : heldOther ? "#eab308" : sel ? "#111" : "rgba(255,255,255,0.55)",
-                              boxShadow: sel ? "0 0 0 1px rgba(245,158,11,0.4), 0 6px 18px rgba(245,158,11,0.25)" : "none",
-                              cursor: unavail ? "not-allowed" : "pointer" }}>{ci + 1}</button>
-                        );
-                      })}
-                    </div>
-                  );
-                })}
-              </div>
+              <SeatGrid
+                seatData={seatData}
+                seats={seats}
+                onToggle={toggleSeat}
+              />
+              {seatData.seat_type_prices && (
+                <div style={{ marginTop: 14, padding: "10px 12px", background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.15)", borderRadius: 10, display: "flex", flexWrap: "wrap", gap: 12, justifyContent: "center", fontSize: 11, fontFamily: "'Geist Mono',monospace" }}>
+                  {Object.entries(seatData.seat_type_prices).map(([type, price]) => (
+                    <span key={type} style={{ color: SEAT_COLOR[type] || "#10b981" }}>
+                      {SEAT_EMOJI[type] || "💺"} {type.toUpperCase()} <b>Rp {Math.round(price/1000)}rb</b>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </>
         )}
@@ -925,4 +912,78 @@ const contactInp = {
 };
 const btnGold  = { background: "linear-gradient(135deg,#f59e0b,#fbbf24)", border: "none", borderRadius: 12, padding: "14px 22px", color: "#111", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(245,158,11,0.3), inset 0 1px 0 rgba(255,255,255,0.2)", letterSpacing: 0.3, transition: "transform 0.15s ease, filter 0.15s ease" };
 const btnWA    = { background: "linear-gradient(135deg,#25D366,#34de7a)", border: "none", borderRadius: 12, padding: "14px 22px", color: "#04130c", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(37,211,102,0.3), inset 0 1px 0 rgba(255,255,255,0.2)", letterSpacing: 0.3, transition: "transform 0.15s ease, filter 0.15s ease" };
+
+// Seat type styling — sinkron dengan CinemaStudioLayoutEditor
+const SEAT_COLOR = { regular: "#10b981", premium: "#fbbf24", couple: "#ec4899", disabled: "#22d3ee", vip: "#a855f7" };
+const SEAT_EMOJI = { regular: "💺", premium: "👑", couple: "💑", disabled: "♿", vip: "⭐" };
+
+// SeatGrid — render dari seat_map (kalau ada) atau fallback ke rows×cols grid.
+// Flex column-reverse: Row data[0] di BAWAH (cinema standard: A = back row).
+// Auto-size: cells scale via container max-width, horizontal scroll kalau perlu.
+function SeatGrid({ seatData, seats, onToggle }) {
+  const useMap = Array.isArray(seatData?.seat_map) && seatData.seat_map.length > 0;
+  // Build row-based layout
+  const rowsData = useMap
+    ? seatData.seat_map
+    : Array.from({ length: seatData.rows }, (_, r) =>
+        Array.from({ length: seatData.cols }, (_, c) => ({
+          type: "regular",
+          label: `${String.fromCharCode(65 + r)}${c + 1}`,
+        }))
+      );
+  // Row labels — derived dari first non-void cell label OR fallback A-Z
+  const rowLabels = rowsData.map((row, r) => {
+    const first = row?.find(c => c && c.type !== "void" && c.label);
+    const match = first?.label?.match(/^([A-Za-z]+)/);
+    return match ? match[1] : String.fromCharCode(65 + r);
+  });
+  const soldSet = new Set(seatData.sold || []);
+  const heldOtherSet = new Set(seatData.held_by_others || []);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column-reverse", gap: 7, alignItems: "center" }}>
+      {rowsData.map((row, ri) => (
+        <div key={ri} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <span style={{ width: 28, fontSize: 11, color: "rgba(255,255,255,0.55)", fontFamily: "'Geist Mono',monospace", fontWeight: 800, textAlign: "center" }}>{rowLabels[ri]}</span>
+          {row.map((cell, ci) => {
+            const isVoid = !cell || cell.type === "void";
+            if (isVoid) return <div key={ci} style={{ width: 30, height: 30 }} aria-hidden />;
+            const seat = cell.label || `${rowLabels[ri]}${ci + 1}`;
+            const type = cell.type || "regular";
+            const sold = soldSet.has(seat);
+            const heldOther = heldOtherSet.has(seat);
+            const sel = seats.has(seat);
+            const unavail = sold || heldOther;
+            const baseColor = SEAT_COLOR[type] || "#10b981";
+            return (
+              <button
+                key={ci}
+                onClick={() => onToggle(seat)}
+                disabled={unavail}
+                title={heldOther ? `${seat} · sedang dipilih customer lain` : `${seat} · ${type}`}
+                className="karya-seat-btn"
+                style={{
+                  width: 30, height: 30, borderRadius: 8, fontSize: 10, fontWeight: 800,
+                  fontFamily: "'Geist Mono',monospace",
+                  background: sold ? "rgba(239,68,68,0.18)"
+                            : heldOther ? "rgba(234,179,8,0.18)"
+                            : sel ? "linear-gradient(135deg,#f59e0b,#fbbf24)"
+                            : `${baseColor}22`,
+                  border: `1px solid ${sold ? "rgba(239,68,68,0.3)"
+                                     : heldOther ? "rgba(234,179,8,0.35)"
+                                     : sel ? "rgba(245,158,11,0.5)"
+                                     : `${baseColor}55`}`,
+                  color: sold ? "#ef4444" : heldOther ? "#eab308" : sel ? "#111" : baseColor,
+                  boxShadow: sel ? "0 0 0 1px rgba(245,158,11,0.4), 0 6px 18px rgba(245,158,11,0.25)" : "none",
+                  cursor: unavail ? "not-allowed" : "pointer",
+                }}>
+                {ci + 1}
+              </button>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
 const btnEmail = (busy) => ({ background: busy ? "rgba(255,255,255,0.04)" : "linear-gradient(135deg,#22d3ee,#67e8f9)", border: "none", borderRadius: 12, padding: "14px 22px", color: busy ? "rgba(255,255,255,0.35)" : "#04130c", fontSize: 13, fontWeight: 800, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit", boxShadow: busy ? "none" : "0 4px 12px rgba(34,211,238,0.3), inset 0 1px 0 rgba(255,255,255,0.2)", letterSpacing: 0.3, transition: "transform 0.15s ease, filter 0.15s ease" });

@@ -297,14 +297,14 @@ export default function CinemaStudioLayoutEditor({ studio, onClose, onSaved }) {
           </div>
         </div>
 
-        {/* Grid */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 5, alignItems: "center", padding: 16, background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 12, overflowX: "auto" }}
+        {/* Grid container — header tetap di atas, rows reversed (A di bawah / back row) */}
+        <div style={{ padding: 16, background: "rgba(255,255,255,0.015)", border: "1px solid rgba(255,255,255,0.04)", borderRadius: 12, overflowX: "auto" }}
           onMouseDown={() => setPaintMode(true)}
           onMouseUp={() => setPaintMode(false)}
           onMouseLeave={() => setPaintMode(false)}
         >
           {/* Column header: numbers 1..cols + delete-col buttons */}
-          <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+          <div style={{ display: "flex", gap: 4, alignItems: "center", justifyContent: "center", marginBottom: 5 }}>
             <div style={{ width: 56 }} />
             {seatMap[0]?.map((_, c) => (
               <div key={c} style={{ width: 32, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
@@ -313,6 +313,8 @@ export default function CinemaStudioLayoutEditor({ studio, onClose, onSaved }) {
               </div>
             ))}
           </div>
+          {/* Rows — column-reverse: data[0] (Row A) di BAWAH = back row, cinema standard */}
+          <div style={{ display: "flex", flexDirection: "column-reverse", gap: 5, alignItems: "center" }}>
           {seatMap.map((row, r) => (
             <div key={r} style={{ display: "flex", gap: 4, alignItems: "center" }}>
               {/* Row label input + delete-row */}
@@ -354,6 +356,7 @@ export default function CinemaStudioLayoutEditor({ studio, onClose, onSaved }) {
               })}
             </div>
           ))}
+          </div>
         </div>
 
         {/* Tip */}
