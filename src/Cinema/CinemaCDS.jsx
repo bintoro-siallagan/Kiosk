@@ -17,6 +17,8 @@ const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtTime = (t) => t ? new Date(t).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "";
 const SEAT_COLOR = { regular: "#10b981", premium: "#fbbf24", couple: "#ec4899", disabled: "#22d3ee", vip: "#a855f7" };
 const SEAT_EMOJI = { regular: "💺", premium: "👑", couple: "💑", disabled: "♿", vip: "⭐" };
+const PAYMENT_LABEL = { cash: "💵 TUNAI", qris: "📲 QRIS", debit: "💳 KARTU DEBIT/KREDIT", voucher: "🎟️ VOUCHER" };
+const PAYMENT_COLOR = { cash: "#10b981", qris: "#22d3ee", debit: "#a855f7", voucher: "#ec4899" };
 
 export default function CinemaCDS() {
   const [state, setState] = useState({ stage: "idle" });
@@ -117,21 +119,54 @@ export default function CinemaCDS() {
   const stage = state.stage || "idle";
 
   // ═══════════════════════════════════════════════
-  // STAGE: PAY (QRIS QR display gede)
+  // STAGE: PAY (QRIS QR display gede OR payment method confirm screen)
   // ═══════════════════════════════════════════════
-  if (stage === "pay" && state.qrUrl) {
+  if (stage === "pay") {
+    const method = state.paymentMethod || "qris";
+    // QRIS dengan QR ready → tampil QR gede
+    if (state.qrUrl) {
+      return (
+        <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: 40, textAlign: "center" }}>
+            <div style={{ fontSize: 14, color: "#fbbf24", letterSpacing: 3, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 18 }}>📱 SCAN QRIS UNTUK BAYAR</div>
+            <div style={{ background: "#fff", padding: 24, borderRadius: 24, boxShadow: "0 24px 80px rgba(245,158,11,0.3), 0 0 0 4px rgba(245,158,11,0.2)" }}>
+              <img src={state.qrUrl} alt="QRIS" style={{ width: 360, height: 360, display: "block" }} />
+            </div>
+            <div style={{ marginTop: 26, fontSize: 64, fontWeight: 900, color: "#fbbf24", fontFamily: "'Geist Mono',monospace", letterSpacing: -2 }}>{rp(state.total)}</div>
+            <div style={{ fontSize: 14, color: "#9ca3af", marginTop: 6 }}>{state.film_title} · {state.seats?.join(", ")}</div>
+            <div style={{ marginTop: 18, padding: "10px 22px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 12, fontSize: 13, color: "#fbbf24" }}>
+              Buka e-wallet (GoPay/OVO/DANA/ShopeePay) → scan kode QR
+            </div>
+          </div>
+        </Shell>
+      );
+    }
+    // Belum QRIS / belum generate / method lain → tampil card sesuai method
     return (
       <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: 40, textAlign: "center" }}>
-          <div style={{ fontSize: 14, color: "#fbbf24", letterSpacing: 3, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 18 }}>📱 SCAN QRIS UNTUK BAYAR</div>
-          <div style={{ background: "#fff", padding: 24, borderRadius: 24, boxShadow: "0 24px 80px rgba(245,158,11,0.3), 0 0 0 4px rgba(245,158,11,0.2)" }}>
-            <img src={state.qrUrl} alt="QRIS" style={{ width: 360, height: 360, display: "block" }} />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: 40, textAlign: "center", gap: 14 }}>
+          <div style={{ fontSize: 14, color: PAYMENT_COLOR[method] || "#fbbf24", letterSpacing: 3, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>{(PAYMENT_LABEL[method] || method).toUpperCase()}</div>
+          <div style={{ fontSize: 56, fontWeight: 900, color: "#fff", letterSpacing: -1.2, lineHeight: 1.1 }}>
+            {method === "cash" ? "💵 Bayar Tunai"
+              : method === "qris" ? "📲 Menyiapkan QRIS..."
+              : method === "debit" ? "💳 Tap / Swipe Kartu"
+              : method === "voucher" ? "🎟️ Voucher" : "Pembayaran"}
           </div>
-          <div style={{ marginTop: 26, fontSize: 64, fontWeight: 900, color: "#fbbf24", fontFamily: "'Geist Mono',monospace", letterSpacing: -2 }}>{rp(state.total)}</div>
-          <div style={{ fontSize: 14, color: "#9ca3af", marginTop: 6 }}>{state.film_title} · {state.seats?.join(", ")}</div>
-          <div style={{ marginTop: 18, padding: "10px 22px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 12, fontSize: 13, color: "#fbbf24" }}>
-            Buka e-wallet (GoPay/OVO/DANA/ShopeePay) → scan kode QR
-          </div>
+          <div style={{ fontSize: 64, fontWeight: 900, color: "#fbbf24", fontFamily: "'Geist Mono',monospace", letterSpacing: -2, lineHeight: 1 }}>{rp(state.total)}</div>
+          <div style={{ fontSize: 16, color: "#cbd5e1" }}>{state.film_title} · {state.seats?.join(", ")}</div>
+          {method === "qris" && (
+            <div style={{ marginTop: 14, fontSize: 13, color: "#22d3ee" }}>● Tunggu kasir generate QR code...</div>
+          )}
+          {method === "cash" && (
+            <div style={{ marginTop: 14, padding: "10px 22px", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 12, fontSize: 14, color: "#10b981" }}>
+              Bayar tunai di kasir. Kembalian akan diberikan kasir.
+            </div>
+          )}
+          {method === "debit" && (
+            <div style={{ marginTop: 14, padding: "10px 22px", background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 12, fontSize: 14, color: "#c084fc" }}>
+              Tap / swipe kartu di mesin EDC. Tunggu konfirmasi kasir.
+            </div>
+          )}
         </div>
       </Shell>
     );
@@ -143,20 +178,23 @@ export default function CinemaCDS() {
   if (stage === "done") {
     return (
       <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: 40, textAlign: "center", gap: 10 }}>
-          <div style={{ fontSize: 80, lineHeight: 1, filter: "drop-shadow(0 0 32px rgba(16,185,129,0.5))" }}>🎬</div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: 30, textAlign: "center", gap: 10, overflowY: "auto" }}>
+          <div style={{ fontSize: 64, lineHeight: 1, filter: "drop-shadow(0 0 32px rgba(16,185,129,0.5))" }}>🎬</div>
           <div style={{ fontSize: 14, color: "#10b981", letterSpacing: 3, fontFamily: "'Geist Mono',monospace", fontWeight: 800, lineHeight: 1 }}>TIKET BERHASIL DIBELI</div>
-          <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: -1, lineHeight: 1.15, margin: 0 }}>{state.film_title || "Selamat menonton!"}</div>
-          <div style={{ fontSize: 18, color: "#9ca3af", lineHeight: 1.4, margin: 0 }}>
+          <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: -1, lineHeight: 1.15, margin: 0 }}>{state.film_title || "Selamat menonton!"}</div>
+          <div style={{ fontSize: 16, color: "#9ca3af", lineHeight: 1.4, margin: 0 }}>
             {state.studio_name} · {state.show_date} · {state.start_time}
+            {state.paymentMethod && <span> · {PAYMENT_LABEL[state.paymentMethod] || state.paymentMethod}</span>}
           </div>
-          <div style={{ display: "flex", gap: 12, marginTop: 8, flexWrap: "wrap", justifyContent: "center" }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
             {(state.seats || []).map(s => (
-              <span key={s} style={{ fontSize: 24, fontWeight: 900, padding: "10px 22px", borderRadius: 14, background: "linear-gradient(135deg,#f59e0b,#fbbf24)", color: "#1a1205", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5, lineHeight: 1 }}>{s}</span>
+              <span key={s} style={{ fontSize: 22, fontWeight: 900, padding: "8px 18px", borderRadius: 12, background: "linear-gradient(135deg,#f59e0b,#fbbf24)", color: "#1a1205", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5, lineHeight: 1 }}>{s}</span>
             ))}
           </div>
-          <div style={{ marginTop: 12, fontSize: 16, color: "#7d8590", lineHeight: 1 }}>Total dibayar</div>
-          <div style={{ fontSize: 38, fontWeight: 900, color: "#10b981", fontFamily: "'Geist Mono',monospace", letterSpacing: -1, lineHeight: 1 }}>{rp(state.total)}</div>
+          <div style={{ fontSize: 32, fontWeight: 900, color: "#10b981", fontFamily: "'Geist Mono',monospace", letterSpacing: -1, lineHeight: 1, marginTop: 4 }}>{rp(state.total)} <span style={{ fontSize: 12, color: "#7d8590" }}>dibayar</span></div>
+
+          {/* CUSTOMER FEEDBACK widget */}
+          <CdsFeedback filmId={state.film_id} purchaseId={state.purchase_id} apiBase={API_HOST} />
         </div>
       </Shell>
     );
@@ -213,20 +251,34 @@ export default function CinemaCDS() {
               </div>
             )}
 
-            {/* Price breakdown */}
+            {/* Price breakdown — full detail */}
             <div style={{ marginTop: 24, padding: 18, background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#9ca3af" }}>
-                <span>Subtotal Tiket ({state.seats?.length || 0} kursi)</span>
+              {/* Tiket line per-seat (kalau ada per-type pricing dari seat_data) */}
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#9ca3af", fontWeight: 600 }}>
+                <span>🎟️ Tiket × {state.seats?.length || 0} kursi</span>
                 <span style={{ fontFamily: "'Geist Mono',monospace" }}>{rp(state.seats_total || 0)}</span>
               </div>
+              {/* F&B bundles detail — per item */}
               {state.bundles && state.bundles.length > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 14, color: "#9ca3af", marginTop: 6 }}>
-                  <span>F&B Bundle ({state.bundles.length} item)</span>
-                  <span style={{ fontFamily: "'Geist Mono',monospace" }}>{rp(state.bundles_total || 0)}</span>
+                <>
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px dashed rgba(255,255,255,0.08)", fontSize: 11, color: "#fbbf24", fontFamily: "'Geist Mono',monospace", letterSpacing: 1.5, fontWeight: 800 }}>🍿 F&B BUNDLE</div>
+                  {state.bundles.map((b, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#cbd5e1", marginTop: 5, gap: 12 }}>
+                      <span><b style={{ color: "#fbbf24", marginRight: 6 }}>{b.qty}×</b>{b.name}</span>
+                      <span style={{ fontFamily: "'Geist Mono',monospace" }}>{rp((b.qty || 1) * (b.price || 0))}</span>
+                    </div>
+                  ))}
+                </>
+              )}
+              {/* Payment method indicator */}
+              {state.paymentMethod && (
+                <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px dashed rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between", fontSize: 13, color: "#9ca3af" }}>
+                  <span>Metode Pembayaran</span>
+                  <span style={{ fontWeight: 800, color: PAYMENT_COLOR[state.paymentMethod] || "#fbbf24" }}>{PAYMENT_LABEL[state.paymentMethod] || state.paymentMethod.toUpperCase()}</span>
                 </div>
               )}
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 26, fontWeight: 900, color: "#10b981", marginTop: 12, borderTop: "1px solid rgba(16,185,129,0.2)", paddingTop: 12 }}>
-                <span>Total</span>
+                <span>TOTAL</span>
                 <span style={{ fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5 }}>{rp(state.total || 0)}</span>
               </div>
             </div>
@@ -307,6 +359,62 @@ function Shell({ children, now, outlet, bgUrl }) {
         </div>
       </div>
       <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>{children}</div>
+    </div>
+  );
+}
+
+// CdsFeedback — customer feedback widget di done stage (1-5 star + optional comment)
+function CdsFeedback({ filmId, purchaseId, apiBase }) {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Reset state when new transaction completes (purchaseId change)
+  useEffect(() => { setRating(0); setComment(""); setSent(false); }, [purchaseId]);
+
+  const submit = async () => {
+    if (!rating || sent) return;
+    setSubmitting(true);
+    try {
+      if (filmId) {
+        await fetch(`${apiBase}/api/cinema/films/${filmId}/rate`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rating, comment, source: "cds" }),
+        });
+      }
+      setSent(true);
+    } catch {}
+    setSubmitting(false);
+  };
+
+  if (sent) {
+    return (
+      <div style={{ marginTop: 16, padding: "16px 20px", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 14, maxWidth: 480, width: "100%" }}>
+        <div style={{ fontSize: 32, marginBottom: 6 }}>✨</div>
+        <div style={{ fontSize: 14, color: "#fbbf24", fontWeight: 800, letterSpacing: 0.3 }}>Terima kasih atas rating Anda!</div>
+        <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 4 }}>Selamat menikmati filmnya 🍿</div>
+      </div>
+    );
+  }
+  return (
+    <div style={{ marginTop: 16, padding: "16px 20px", background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, maxWidth: 480, width: "100%" }}>
+      <div style={{ fontSize: 12, color: "#9ca3af", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700, marginBottom: 10 }}>RATE FILM INI · OPSIONAL</div>
+      <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 10 }}>
+        {[1, 2, 3, 4, 5].map(n => (
+          <button key={n} onClick={() => setRating(n)}
+            style={{ background: "transparent", border: "none", fontSize: 36, cursor: "pointer", padding: 0, lineHeight: 1, color: n <= rating ? "#fbbf24" : "rgba(255,255,255,0.2)", transition: "transform 0.15s ease, color 0.15s ease", transform: n <= rating ? "scale(1.05)" : "scale(1)" }}>
+            ★
+          </button>
+        ))}
+      </div>
+      <input type="text" value={comment} onChange={e => setComment(e.target.value)}
+        placeholder="Komentar singkat (opsional)..."
+        style={{ width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "8px 12px", color: "#fff", fontSize: 12, fontFamily: "inherit", outline: "none", marginBottom: 10, boxSizing: "border-box" }} />
+      <button onClick={submit} disabled={!rating || submitting}
+        style={{ width: "100%", padding: "9px 18px", background: rating ? "linear-gradient(135deg,#fbbf24,#f59e0b)" : "rgba(255,255,255,0.05)", border: "none", borderRadius: 8, color: rating ? "#1a1205" : "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 800, cursor: rating && !submitting ? "pointer" : "not-allowed", fontFamily: "inherit", letterSpacing: 0.5 }}>
+        {submitting ? "Kirim..." : rating ? `Kirim Rating ${rating}★` : "Pilih bintang dulu"}
+      </button>
     </div>
   );
 }

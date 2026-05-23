@@ -177,8 +177,10 @@ export default function POSCinemaApp() {
     if (picked && (stage === "sell" || stage === "pay" || stage === "success")) {
       payload = {
         ...payload,
-        stage: stage === "pay" ? (extra.qrUrl ? "pay" : "selling") : stage === "success" ? "done" : "selling",
+        // pay stage HARUS broadcast 'pay' even kalau qrUrl belum siap — CDS show waiting card
+        stage: stage === "pay" ? "pay" : stage === "success" ? "done" : "selling",
         film_title: picked.film_title,
+        film_id: picked.film_id,
         poster_url: picked.poster_url,
         genre: picked.genre,
         duration_min: picked.duration_min,
@@ -187,8 +189,10 @@ export default function POSCinemaApp() {
         show_date: picked.show_date,
         start_time: picked.start_time,
         format: picked.format,
+        paymentMethod: paymentMethod, // user-selected method (broadcast langsung)
         seats: [...(seats || [])],
         bundles: (bundles || []).map(b => ({ name: b.name, qty: b.qty, price: b.price })),
+        purchase_id: lastSale?.purchase_id,
         // Saat sell stage pakai liveTotals (running total), saat pay+success pakai saleData
         seats_total: saleData?.ticketSubtotal ?? liveTotals?.ticketSubtotal ?? 0,
         bundles_total: saleData?.bundleSubtotal ?? liveTotals?.bundleSubtotal ?? 0,
@@ -208,7 +212,7 @@ export default function POSCinemaApp() {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     }).catch(() => {});
-  }, [picked, stage, seats, bundles, saleData, seatData, liveTotals]);
+  }, [picked, stage, seats, bundles, saleData, seatData, liveTotals, paymentMethod, lastSale]);
 
   // Broadcast saat stage / picked / seats / bundles berubah
   useEffect(() => { broadcastCds(); }, [broadcastCds]);
