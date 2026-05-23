@@ -244,24 +244,24 @@ function PackageCard({ pkg, onClick }) {
 }
 
 // ============================================================
-// MENU PICKER MODAL (size + extras)
+// MENU PICKER MODAL — ToppingPicker template (panel + tabs + grid +
+// chips + 3-part footer). Match POSMenu Order Baru visually.
 // ============================================================
 function MenuPickerModal({ menu, extras, onAdd, onClose }) {
   const hasSizes = menu.size_variants?.length > 0;
   const defaultSizeId = (menu.size_variants?.find(v => v.is_default) || menu.size_variants?.[0])?.size_id || null;
   const [sizeId, setSizeId] = useState(defaultSizeId);
+  const [activeGroup, setActiveGroup] = useState('all');
 
-  // Filter extras by allowed_extras (if defined) — fetch menu detail
   const [allowedExtras, setAllowedExtras] = useState(null);
   useEffect(() => {
     fetch(`${API_HOST}/api/master/menus/${menu.id}`).then(r => r.json()).then(d => {
       if (d.allowed_extras?.length > 0) setAllowedExtras(new Set(d.allowed_extras));
-      else setAllowedExtras(null); // null = all allowed
+      else setAllowedExtras(null);
     }).catch(() => setAllowedExtras(null));
   }, [menu.id]);
 
   const [extraQtys, setExtraQtys] = useState({});
-
   const availableExtras = useMemo(() => {
     if (allowedExtras === null) return extras;
     return extras.filter(e => allowedExtras.has(e.id));
@@ -276,9 +276,6 @@ function MenuPickerModal({ menu, extras, onAdd, onClose }) {
   }, 0);
   const freeExtras = menu.free_extras || 0;
   const totalExtraQty = Object.values(extraQtys).reduce((s, q) => s + q, 0);
-  const chargedExtras = Math.max(0, extrasTotal - (freeExtras * (extras[0]?.extra_price || 0)));
-  // Note: simplified free calc — assumes all extras same price. For real discount calc, more nuanced.
-
   const lineTotal = displayPrice + extrasTotal;
 
   const updateExtra = (id, delta) => {
@@ -293,87 +290,182 @@ function MenuPickerModal({ menu, extras, onAdd, onClose }) {
   const submit = () => {
     onAdd({
       menu_id: menu.id, qty: 1,
-      size_id: sizeId,
-      size_name: sizeName,
+      size_id: sizeId, size_name: sizeName,
       extras: Object.entries(extraQtys).map(([eid, qty]) => {
         const e = extras.find(x => x.id === eid);
         return { extra_id: eid, name: e?.name, qty, extra_price: e?.extra_price || 0 };
       }),
-      display_name: menu.name,
-      display_price: displayPrice,
-      line_total: lineTotal,
-      is_package: false
+      display_name: menu.name, display_price: displayPrice,
+      line_total: lineTotal, is_package: false,
     });
   };
 
+  const tabs = [{ key: 'all', label: 'Semua' }];
+  if (hasSizes) tabs.push({ key: 'size', label: 'Ukuran' });
+  if (availableExtras.length > 0) tabs.push({ key: 'extras', label: 'Extras' });
+  const showSize = (activeGroup === 'all' || activeGroup === 'size') && hasSizes;
+  const showExtras = (activeGroup === 'all' || activeGroup === 'extras') && availableExtras.length > 0;
+
   return (
-    <div style={styles.modalOverlay} onClick={onClose}>
-      <div style={styles.modalBox} onClick={e=>e.stopPropagation()}>
-        <div style={{display:'flex', justifyContent:'space-between'}}>
-          <h2 style={{margin:0}}>{menu.emoji} {menu.name}</h2>
-          <button onClick={onClose} style={styles.closeBtn}>×</button>
+    <div style={MP.overlay} onClick={onClose}>
+      <div style={MP.panel} onClick={e=>e.stopPropagation()}>
+        {/* HEADER */}
+        <div style={MP.header}>
+          <div style={MP.headerLeft}>
+            <span style={MP.itemEmoji}>{menu.emoji || '🍴'}</span>
+            <div>
+              <div style={MP.itemName}>{menu.name}</div>
+              {menu.description && <div style={MP.itemDesc}>{menu.description}</div>}
+            </div>
+          </div>
+          <div style={MP.basePrice}>{fmtIDR(menu.price)}</div>
         </div>
-        {menu.description && <p style={{color:'rgba(255,255,255,0.55)', marginTop:8, fontSize:13}}>{menu.description}</p>}
 
-        {hasSizes && (
-          <div style={{marginTop:16}}>
-            <h4 style={{marginBottom:8, color:'#fff', fontWeight:700, fontSize:14}}>Pilih Ukuran</h4>
-            <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
-              {menu.size_variants.map(v => {
-                const p = menu.price + (v.price_adjustment || 0);
-                const active = sizeId === v.size_id;
-                return (
-                  <button key={v.size_id} onClick={()=>setSizeId(v.size_id)} style={{
-                    ...styles.sizeBtn,
-                    background: active ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.03)',
-                    color: active ? '#fbbf24' : '#fff',
-                    borderColor: active ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.08)',
-                    boxShadow: active ? '0 0 16px rgba(245,158,11,0.2)' : 'none',
-                  }}>
-                    <div style={{fontWeight:700}}>{v.size_name}</div>
-                    <div style={{fontSize:12, marginTop:4, fontFamily:"'Geist Mono',monospace", color: active ? '#fbbf24' : 'rgba(255,255,255,0.7)'}}>{fmtIDR(p)}</div>
-                  </button>
-                );
-              })}
+        {/* PROGRESS — show kalau ada free_extras */}
+        {freeExtras > 0 && (
+          <div style={MP.progressSection}>
+            <div style={MP.progressLabel}>
+              <span>{Math.min(totalExtraQty, freeExtras)}/{freeExtras} extras gratis dipilih</span>
+              {totalExtraQty > freeExtras && (
+                <span style={MP.extraBadge}>+{totalExtraQty - freeExtras} berbayar</span>
+              )}
+            </div>
+            <div style={MP.progressTrack}>
+              <div style={{ ...MP.progressFill,
+                width: `${Math.min(100, (totalExtraQty / Math.max(freeExtras,1)) * 100)}%`,
+                background: totalExtraQty > freeExtras ? '#F59E0B' : '#FF6B35' }} />
             </div>
           </div>
         )}
 
-        {availableExtras.length > 0 && (
-          <div style={{marginTop:16}}>
-            <h4 style={{marginBottom:8, color:'#fff', fontWeight:700, fontSize:14}}>
-              Extras {freeExtras > 0 && <span style={{fontSize:12, color:'#10b981', fontWeight:600}}>({freeExtras} gratis)</span>}
-            </h4>
-            <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(170px, 1fr))', gap:6, maxHeight:220, overflow:'auto'}}>
-              {availableExtras.map(e => {
-                const qty = extraQtys[e.id] || 0;
-                return (
-                  <div key={e.id} style={styles.extraRow}>
-                    <div style={{flex:1, fontSize:13, color:'#fff'}}>
-                      {e.emoji} {e.name}<br/>
-                      <span style={{fontSize:11, color:'rgba(255,255,255,0.45)', fontFamily:"'Geist Mono',monospace"}}>{fmtIDR(e.extra_price)}</span>
+        {/* TABS */}
+        {tabs.length > 1 && (
+          <div style={MP.tabs}>
+            {tabs.map(t => (
+              <button key={t.key} onClick={() => setActiveGroup(t.key)}
+                style={{ ...MP.tab, ...(activeGroup === t.key ? MP.tabActive : {}) }}>{t.label}</button>
+            ))}
+          </div>
+        )}
+
+        {/* GRID — sizes + extras as unified cards */}
+        <div style={MP.grid}>
+          {showSize && menu.size_variants.map(v => {
+            const p = menu.price + (v.price_adjustment || 0);
+            const sel = sizeId === v.size_id;
+            return (
+              <button key={'sz-' + v.size_id} onClick={() => setSizeId(v.size_id)}
+                style={{ ...MP.optBtn, ...(sel ? MP.optSelected : {}), borderColor: sel ? '#FF6B35' : 'rgba(255,255,255,0.08)' }}>
+                <div style={MP.optName}>📏 {v.size_name}</div>
+                <div style={MP.optMeta}>
+                  <span style={p !== menu.price ? MP.premiumTag : MP.freeTag}>
+                    {p !== menu.price ? (p > menu.price ? '+' : '') + fmtIDR(p - menu.price) : fmtIDR(p)}
+                  </span>
+                  {v.is_default && <span style={MP.defaultTag}>DEFAULT</span>}
+                </div>
+                {sel && <div style={MP.checkCircle}>✓</div>}
+              </button>
+            );
+          })}
+          {showExtras && availableExtras.map(e => {
+            const qty = extraQtys[e.id] || 0;
+            const sel = qty > 0;
+            return (
+              <button key={'ex-' + e.id} onClick={() => updateExtra(e.id, sel ? -qty : 1)}
+                style={{ ...MP.optBtn, ...(sel ? MP.optSelected : {}), borderColor: sel ? '#FF6B35' : 'rgba(255,255,255,0.08)' }}>
+                <div style={MP.optName}>{e.emoji || ''} {e.name}</div>
+                <div style={MP.optMeta}>
+                  {e.extra_price > 0
+                    ? <span style={MP.premiumTag}>+{fmtIDR(e.extra_price)}</span>
+                    : <span style={MP.freeTag}>GRATIS</span>}
+                </div>
+                {sel && (
+                  <>
+                    <div style={MP.checkCircle}>{qty > 1 ? qty : '✓'}</div>
+                    <div style={MP.qtyBlock}>
+                      <span onClick={(ev) => { ev.stopPropagation(); updateExtra(e.id, -1); }} style={MP.qtyMini}>−</span>
+                      <span onClick={(ev) => { ev.stopPropagation(); updateExtra(e.id, 1); }} style={MP.qtyMini}>+</span>
                     </div>
-                    <button onClick={()=>updateExtra(e.id, -1)} disabled={qty===0} style={{...styles.qtyBtn, opacity: qty===0 ? 0.4 : 1}}>−</button>
-                    <div style={{minWidth:20, textAlign:'center', fontWeight:700, color:'#fff', fontFamily:"'Geist Mono',monospace"}}>{qty}</div>
-                    <button onClick={()=>updateExtra(e.id, 1)} style={styles.qtyBtn}>+</button>
-                  </div>
-                );
-              })}
-            </div>
+                  </>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* SELECTED CHIPS */}
+        {(sizeName || Object.keys(extraQtys).length > 0) && (
+          <div style={MP.selectedBar}>
+            {sizeName && (
+              <span style={{ ...MP.selectedChip, background: 'rgba(255,107,53,0.15)', borderColor: '#FF6B35' }}>
+                📏 {sizeName}
+              </span>
+            )}
+            {Object.entries(extraQtys).map(([eid, qty]) => {
+              const e = extras.find(x => x.id === eid);
+              if (!e) return null;
+              return (
+                <span key={eid} onClick={() => updateExtra(eid, -qty)}
+                  style={{ ...MP.selectedChip, background: 'rgba(245,158,11,0.15)', borderColor: '#F59E0B' }}>
+                  {e.name}{qty > 1 ? ` ×${qty}` : ''} ✕
+                </span>
+              );
+            })}
           </div>
         )}
 
-        <div style={styles.modalFooter}>
-          <div style={{flex:1}}>
-            <div style={{fontSize:11, color:'rgba(255,255,255,0.45)', letterSpacing:1.2, fontFamily:"'Geist Mono',monospace", fontWeight:700, textTransform:'uppercase'}}>TOTAL</div>
-            <div style={{fontSize:24, fontWeight:800, color:'#fff', fontFamily:"'Geist Mono',monospace", letterSpacing:'-0.5px'}}>{fmtIDR(lineTotal)}</div>
+        {/* FOOTER — Cancel | Breakdown | Confirm (match ToppingPicker) */}
+        <div style={MP.footer}>
+          <button style={MP.cancelBtn} onClick={onClose}>← Batal</button>
+          <div style={MP.priceBreakdown}>
+            {extrasTotal > 0 && <div style={MP.addonLine}>Extras +{fmtIDR(extrasTotal)}</div>}
+            <div style={MP.totalLine}>{fmtIDR(lineTotal)}</div>
           </div>
-          <button onClick={submit} style={styles.addBtn}>+ Tambah ke Pesanan</button>
+          <button style={MP.confirmBtn} onClick={submit}>Tambah ke Pesanan</button>
         </div>
       </div>
     </div>
   );
 }
+
+// Inline styles untuk MenuPickerModal — mirror ToppingPicker.S
+const MP = {
+  overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.96)', backdropFilter: 'blur(2px)', WebkitBackdropFilter: 'blur(2px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 },
+  panel: { width: '100%', maxWidth: 720, maxHeight: '95vh', background: '#111', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', overflow: 'hidden', color: '#fff', fontFamily: "'Inter',sans-serif", boxShadow: '0 24px 64px rgba(0,0,0,0.7)' },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '20px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)' },
+  headerLeft: { display: 'flex', alignItems: 'center', gap: 14 },
+  itemEmoji: { fontSize: 40 },
+  itemName: { fontSize: 18, fontWeight: 700, color: '#fff' },
+  itemDesc: { fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 },
+  basePrice: { fontSize: 18, fontWeight: 700, color: 'rgba(255,255,255,0.6)', fontFamily: "'Geist Mono',monospace" },
+  progressSection: { padding: '12px 24px 8px' },
+  progressLabel: { display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 6 },
+  extraBadge: { color: '#F59E0B', fontWeight: 600 },
+  progressTrack: { height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' },
+  progressFill: { height: '100%', borderRadius: 2, transition: 'width 0.2s, background 0.2s' },
+  tabs: { display: 'flex', gap: 6, padding: '8px 24px 4px', overflowX: 'auto' },
+  tab: { padding: '6px 14px', borderRadius: 999, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.6)', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'inherit' },
+  tabActive: { background: '#FF6B35', color: '#fff', borderColor: '#FF6B35', fontWeight: 600 },
+  grid: { flex: 1, overflowY: 'auto', padding: '12px 24px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 10, alignContent: 'start' },
+  optBtn: { position: 'relative', padding: '14px 12px', borderRadius: 12, border: '2px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)', color: '#fff', cursor: 'pointer', textAlign: 'left', minHeight: 70, fontFamily: 'inherit' },
+  optSelected: { background: 'rgba(255,107,53,0.08)' },
+  optName: { fontSize: 13, fontWeight: 600, marginBottom: 4 },
+  optMeta: { display: 'flex', gap: 6, flexWrap: 'wrap' },
+  premiumTag: { fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'rgba(245,158,11,0.15)', color: '#F59E0B', fontWeight: 600, fontFamily: "'Geist Mono',monospace" },
+  freeTag: { fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'rgba(34,197,94,0.15)', color: '#22C55E', fontWeight: 700, fontFamily: "'Geist Mono',monospace" },
+  defaultTag: { fontSize: 9, padding: '2px 6px', borderRadius: 4, background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', fontWeight: 700, letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" },
+  checkCircle: { position: 'absolute', top: 8, right: 8, width: 22, height: 22, borderRadius: 11, background: '#FF6B35', color: '#fff', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  qtyBlock: { position: 'absolute', bottom: 6, right: 6, display: 'flex', gap: 4 },
+  qtyMini: { width: 22, height: 22, borderRadius: 6, background: 'rgba(255,107,53,0.2)', color: '#FF6B35', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', userSelect: 'none' },
+  selectedBar: { display: 'flex', flexWrap: 'wrap', gap: 6, padding: '8px 24px', borderTop: '1px solid rgba(255,255,255,0.06)' },
+  selectedChip: { padding: '4px 10px', borderRadius: 999, border: '1px solid', fontSize: 11, color: '#fff', cursor: 'pointer', fontFamily: 'inherit' },
+  footer: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 24px', borderTop: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.3)', gap: 12 },
+  cancelBtn: { padding: '12px 18px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', fontSize: 14, whiteSpace: 'nowrap', fontFamily: 'inherit' },
+  priceBreakdown: { textAlign: 'center', flex: 1 },
+  addonLine: { fontSize: 11, color: '#F59E0B', fontFamily: "'Geist Mono',monospace" },
+  totalLine: { fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Geist Mono',monospace", letterSpacing: '-0.5px' },
+  confirmBtn: { padding: '14px 28px', borderRadius: 12, border: 'none', background: '#FF6B35', color: '#fff', fontSize: 15, fontWeight: 800, cursor: 'pointer', whiteSpace: 'nowrap', letterSpacing: 0.5, fontFamily: 'inherit' },
+};
 
 // ============================================================
 // PACKAGE PICKER MODAL
