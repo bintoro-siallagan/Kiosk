@@ -54,7 +54,6 @@ app.use("/audio", express.static(require("path").join(__dirname, "audio")));
 app.use("/screensaver", express.static(require("path").join(__dirname, "screensaver")));
 
 // ─── UPLOADS — poster film, trailer file, dll ────────────────────────
-const fs = require("fs");
 const uploadDir = require("path").join(__dirname, "uploads");
 try { fs.mkdirSync(uploadDir, { recursive: true }); } catch {}
 app.use("/uploads", express.static(uploadDir, { maxAge: "7d" }));
