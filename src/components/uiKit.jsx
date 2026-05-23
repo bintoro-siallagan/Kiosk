@@ -308,9 +308,10 @@ export function TooltipButton({ tip, children, ...props }) {
         onMouseLeave={() => setShow(false)}
         onFocus={() => setShow(true)}
         onBlur={() => setShow(false)}
+        aria-label={typeof tip === "string" ? tip : (props["aria-label"] || "")}
         title={tip}>{children}</button>
       {show && tip && (
-        <span style={{
+        <span role="tooltip" style={{
           position: "absolute", bottom: "calc(100% + 6px)", left: "50%", transform: "translateX(-50%)",
           background: "#000", color: "#fff", fontSize: 11, padding: "5px 9px", borderRadius: 5,
           whiteSpace: "nowrap", zIndex: 1000, pointerEvents: "none",
@@ -320,6 +321,42 @@ export function TooltipButton({ tip, children, ...props }) {
     </span>
   );
 }
+
+// ════════════════════════════════════════════════════════════════════
+// COMPONENT: ValidatedInput — input dengan validation + visual error
+// ════════════════════════════════════════════════════════════════════
+export function ValidatedInput({ value, onChange, validate, error: extError, ...rest }) {
+  const [touched, setTouched] = useState(false);
+  const localError = touched && validate ? validate(value) : null;
+  const error = extError || localError;
+  return (
+    <>
+      <input value={value} onChange={onChange} onBlur={() => setTouched(true)}
+        className={error ? "uikit-input-error" : ""}
+        aria-invalid={!!error} aria-describedby={error ? `err-${rest.name || rest.id}` : undefined}
+        style={{ width: "100%", padding: "8px 11px", background: "#0a0e16", border: `1px solid ${error ? "#ef4444" : "#1b212c"}`, borderRadius: 8, color: "#fff", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box", outline: "none" }}
+        {...rest} />
+      {error && <div id={`err-${rest.name || rest.id}`} role="alert" style={{ fontSize: 11, color: "#ef4444", marginTop: 4 }}>⚠ {error}</div>}
+    </>
+  );
+}
+
+// Helper validators
+export const validators = {
+  required: (v) => !v || (typeof v === "string" && !v.trim()) ? "Field ini wajib diisi" : null,
+  email:    (v) => v && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v) ? "Format email tidak valid" : null,
+  phone:    (v) => v && !/^[0-9+\-\s]{8,}$/.test(v) ? "Format nomor telepon tidak valid" : null,
+  min:      (n) => (v) => v != null && Number(v) < n ? `Minimum ${n}` : null,
+  max:      (n) => (v) => v != null && Number(v) > n ? `Maximum ${n}` : null,
+  minLen:   (n) => (v) => v && v.length < n ? `Minimum ${n} karakter` : null,
+  pwd:      (v) => {
+    if (!v || v.length < 8) return "Min 8 karakter";
+    if (!/[A-Z]/.test(v)) return "Butuh huruf besar (A-Z)";
+    if (!/[a-z]/.test(v)) return "Butuh huruf kecil (a-z)";
+    if (!/[0-9]/.test(v)) return "Butuh angka (0-9)";
+    return null;
+  },
+};
 
 // ════════════════════════════════════════════════════════════════════
 // COMPONENT: LoadingSkeleton
