@@ -63,6 +63,22 @@ import OptimizationCenter from "./Admin/OptimizationCenter.jsx";
 import CinemaOps from "./Admin/CinemaOps.jsx";
 import CinemaTicketing from "./Admin/CinemaTicketing.jsx";
 import CinemaBoxOffice from "./Admin/CinemaBoxOffice.jsx";
+import CinemaValidate from "./Admin/CinemaValidate.jsx";
+import CinemaRefund from "./Admin/CinemaRefund.jsx";
+import CinemaBundles from "./Admin/CinemaBundles.jsx";
+import CinemaBundleRedeem from "./Admin/CinemaBundleRedeem.jsx";
+import CinemaDistribution from "./Admin/CinemaDistribution.jsx";
+import CinemaInStudioQueue from "./Admin/CinemaInStudioQueue.jsx";
+import CinemaEventBooking from "./Admin/CinemaEventBooking.jsx";
+import CinemaPriceList from "./Admin/CinemaPriceList.jsx";
+import CinemaCommandCenter from "./Admin/CinemaCommandCenter.jsx";
+import CinemaPromotion from "./Admin/CinemaPromotion.jsx";
+import CinemaHolidays from "./Admin/CinemaHolidays.jsx";
+import CinemaSeatTypes from "./Admin/CinemaSeatTypes.jsx";
+import CinemaCRM from "./Admin/CinemaCRM.jsx";
+import CinemaAnalytics from "./Admin/CinemaAnalytics.jsx";
+import CinemaCampaign from "./Admin/CinemaCampaign.jsx";
+import CinemaInventory from "./Admin/CinemaInventory.jsx";
 import AdminSignage from "./Admin/AdminSignage.jsx";
 import AdminDemandForecast from "./Admin/AdminDemandForecast.jsx";
 import AdminAssetMaintenance from "./Admin/AdminAssetMaintenance.jsx";
@@ -191,6 +207,22 @@ export default function AdminTools({ initialTab }) {
         {tab === "cinema_ops" && <CinemaOps apiBase={API} />}
         {tab === "cinema_ticketing" && <CinemaTicketing apiBase={API} />}
         {tab === "cinema_box_office" && <CinemaBoxOffice apiBase={API} />}
+        {tab === "cinema_validate" && <CinemaValidate apiBase={API} />}
+        {tab === "cinema_refund" && <CinemaRefund apiBase={API} />}
+        {tab === "cinema_bundles" && <CinemaBundles apiBase={API} />}
+        {tab === "cinema_bundle_redeem" && <CinemaBundleRedeem apiBase={API} />}
+        {tab === "cinema_distribution" && <CinemaDistribution apiBase={API} />}
+        {tab === "cinema_in_studio_queue" && <CinemaInStudioQueue apiBase={API} />}
+        {tab === "cinema_event_booking" && <CinemaEventBooking apiBase={API} />}
+        {tab === "cinema_price_list" && <CinemaPriceList apiBase={API} />}
+        {tab === "cinema_command_center" && <CinemaCommandCenter apiBase={API} />}
+        {tab === "cinema_promotion" && <CinemaPromotion apiBase={API} />}
+        {tab === "cinema_holidays" && <CinemaHolidays apiBase={API} />}
+        {tab === "cinema_seat_types" && <CinemaSeatTypes apiBase={API} />}
+        {tab === "cinema_crm" && <CinemaCRM apiBase={API} />}
+        {tab === "cinema_analytics" && <CinemaAnalytics apiBase={API} />}
+        {tab === "cinema_campaign" && <CinemaCampaign apiBase={API} />}
+        {tab === "cinema_inventory" && <CinemaInventory apiBase={API} />}
         {tab === "simple_purchase" && <AdminSimplePurchase apiBase={API} />}
         {tab === "petty_cash" && <AdminPettyCash apiBase={API} />}
         {tab === "purchase_invoice" && <AdminPurchaseInvoice apiBase={API} />}

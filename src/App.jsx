@@ -8,6 +8,8 @@ import POSCDS from "./POSCDS.jsx";
 import AdminLogin    from "./AdminLogin.jsx";
 import Kiosk         from "./Kiosk.jsx";
 import CinemaKiosk   from "./CinemaKiosk.jsx";
+import CinemaInStudioOrder from "./CinemaInStudioOrder.jsx";
+import CinemaBoard from "./CinemaBoard.jsx";
 import TableSelector from "./TableSelector.jsx";
 import CustomerInput from "./CustomerInput.jsx";
 import Payment       from "./Payment.jsx";
@@ -26,6 +28,8 @@ const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 function getScene() {
   const q = window.location.search;
   if (new URLSearchParams(q).has("command")) return "command";
+  if (q.includes("cinema-snack")) return "cinema-snack";
+  if (q.includes("cinema-board")) return "cinema-board";
   if (q.includes("cinema")) return "cinema";
   if (q.includes("tools")) return "tools";
   if (q.includes("home")) return "home";
@@ -130,6 +134,8 @@ export default function App() {
   if (adminRoutes.includes(scene)) return <AdminHome initialView={scene} adminSession={adminSession} onLogout={handleAdminLogout} onExit={() => setScene("kiosk")} />;
   if (scene === "flow") return <ShiftGate><FlowApp /></ShiftGate>;
   if (scene === "cinema") return <CinemaKiosk apiBase={API_HOST} />;
+  if (scene === "cinema-snack") return <CinemaInStudioOrder apiBase={API_HOST} />;
+  if (scene === "cinema-board") return <CinemaBoard apiBase={API_HOST} />;
   if (scene === "customer-track") return <><PromoBroadcastBanner/><CustomerTrackingPage orderId={trackOrderId}/></>;
   if (scene === "track")       return <OrderTracking onHome={go("kiosk")}/>;
 

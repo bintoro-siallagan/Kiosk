@@ -183,13 +183,33 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     { label: "Alert Aktif", val: String(notifs.length), c: crit > 0 ? "#ef4444" : "#f59e0b", icon: "🔔", sub: crit ? `${crit} perlu tindakan` : "semua aman" },
     { label: "System Health", val: health == null ? "…" : health + " / 100", c: health >= 75 ? "#10b981" : health >= 50 ? "#f59e0b" : "#ef4444", icon: "🔎", sub: "self-audit score" },
   ];
-  const toolsSub = GROUPS.filter(g => canSee(g.module)).map(g => ({
-    _k: "g:" + g.name, label: `${g.icon} ${g.name}`,
-    sub: g.ids.map(id => {
-      const t = TABS.find(x => x.id === id);
-      return { _k: "m:" + id, label: t ? t.label : id, on: () => openRight("tools", id) };
-    }),
-  }));
+  const moduleNode = (id) => {
+    const t = TABS.find(x => x.id === id);
+    return { _k: "m:" + id, label: t ? t.label : id, on: () => openRight("tools", id) };
+  };
+  const toolsSub = GROUPS.filter(g => canSee(g.module)).map(g => {
+    // 3-level nesting: kalau group punya `categories`, render category sub-bucket
+    if (g.categories?.length) {
+      return {
+        _k: "g:" + g.name, label: `${g.icon} ${g.name}`,
+        sub: g.categories.map(cat => ({
+          _k: `g:${g.name}:${cat.name}`, label: cat.name,
+          sub: cat.ids.map(moduleNode),
+        })),
+      };
+    }
+    return {
+      _k: "g:" + g.name, label: `${g.icon} ${g.name}`,
+      sub: g.ids.map(moduleNode),
+    };
+  });
+  // Cinema sub-menu (nested) — mirror dari group.categories di adminModules
+  const cinemaGroup = GROUPS.find(g => g.name === "Cinema");
+  const cinemaToolsSub = cinemaGroup?.categories?.map(cat => ({
+    _k: `cinema-cat:${cat.name}`, label: cat.name,
+    sub: cat.ids.map(moduleNode),
+  })) || [];
+
   const columns = [
     { title: "Dashboard", accent: "#f59e0b", items: [
       { label: "Owner Dashboard", icon: "📊", c: "#f59e0b", on: () => openRight("tools", "dashboard") },
@@ -200,12 +220,31 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "QR Meja", icon: "🪑", c: "#a855f7", on: () => openRight("admin", "qrgen") },
       { label: "Pengaturan", icon: "⚙️", c: "#7d8590", on: () => openRight("admin", "settings") },
     ] },
-    { title: "Surface Operasional", accent: "#10b981", items: [
+    { title: "Surface Operasional F&B", accent: "#10b981", items: [
       { label: "POS Kasir", icon: "🧾", c: "#10b981", on: () => openTab("?pos=1") },
       { label: "KDS Dapur", icon: "👨‍🍳", c: "#f97316", on: () => openTab("?kds=1") },
       { label: "CDS Display", icon: "📺", c: "#a855f7", on: () => openTab("?cds=1") },
       { label: "Kiosk", icon: "🖥️", c: "#06b6d4", on: () => openTab("?kiosk=1") },
       { label: "Tracking", icon: "📍", c: "#f59e0b", on: () => openTab("?track=1") },
+    ] },
+    // 🎬 Cinema — dedicated column terpisah dari F&B
+    { title: "🎬 Cinema Vertical", accent: "#a855f7", items: [
+      { label: "Cinema Kiosk (Customer)", icon: "🎬", c: "#a855f7", on: () => openTab("?cinema") },
+      { label: "In-Studio QR Order",      icon: "🍿", c: "#f59e0b", on: () => openTab("?cinema-snack") },
+      { label: "Lobby Board (TV)",        icon: "📺", c: "#22d3ee", on: () => openTab("?cinema-board") },
+      { label: "Command Center",          icon: "🎬", c: "#a855f7", on: () => openRight("tools", "cinema_command_center") },
+      { label: "Box Office",              icon: "🎬", c: "#10b981", on: () => openRight("tools", "cinema_box_office") },
+      { label: "Ticketing",               icon: "🎟️", c: "#10b981", on: () => openRight("tools", "cinema_ticketing") },
+      { label: "Validasi Tiket",          icon: "🎟️", c: "#a855f7", on: () => openRight("tools", "cinema_validate") },
+      { label: "Cinema Modules",          icon: "🛠️", c: "#ec4899", searchable: true,
+        getSub: (q) => {
+          if (!q.trim()) return cinemaToolsSub;
+          const filter = q.trim().toLowerCase();
+          const allCinema = cinemaGroup?.ids || [];
+          return allCinema.map(id => TABS.find(x => x.id === id)).filter(Boolean)
+            .filter(t => t.label.toLowerCase().includes(filter))
+            .map(t => ({ _k: "m:" + t.id, label: t.label, on: () => openRight("tools", t.id) }));
+        } },
     ] },
     { title: "Manajemen & Data", accent: "#3b82f6", items: [
       { label: "Member & Customer", icon: "👥", c: "#3b82f6", on: () => openRight("members") },
