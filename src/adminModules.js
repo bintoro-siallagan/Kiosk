@@ -130,6 +130,27 @@ export const TABS = [
   { id: "item_intel", label: "🩺 Item Health", color: "#16a34a" },
   { id: "product_hub", label: "🛍️ Product Hub", color: "#8b5cf6" },
   { id: "product_ver", label: "📜 Versioning", color: "#7c3aed" },
+  // ── F&B Enhanced pack (closes audit gap: recipe BOM, combo, periods,
+  // dietary tags, happy hour, reservation, tip pool, membership tier,
+  // birthday promo, referral, delivery)
+  { id: "fnb_recipe",           label: "🍱 F&B Recipe BOM",        color: "#10b981" },
+  { id: "fnb_combo",            label: "🍔 F&B Combo / Set Meal",  color: "#f59e0b" },
+  { id: "fnb_menu_periods",     label: "⏰ Menu Periods",          color: "#22d3ee" },
+  { id: "fnb_dietary_tags",     label: "🌱 Dietary / Allergen",    color: "#16a34a" },
+  { id: "fnb_happy_hour",       label: "🕐 Happy Hour Pricing",    color: "#fbbf24" },
+  { id: "fnb_reservation",      label: "📅 Reservation",           color: "#a855f7" },
+  { id: "fnb_tip_pool",         label: "💵 Tip Pool",              color: "#f59e0b" },
+  { id: "fnb_membership_tier",  label: "🏅 Membership Tier",       color: "#fbbf24" },
+  { id: "fnb_birthday_promo",   label: "🎂 Birthday Promo",        color: "#ec4899" },
+  { id: "fnb_referral",         label: "🤝 Referral Program",      color: "#22d3ee" },
+  { id: "fnb_delivery",         label: "🚴 Delivery & Drivers",    color: "#3b82f6" },
+  { id: "fnb_menu_engineering", label: "📊 Menu Engineering",      color: "#a855f7" },
+  { id: "fnb_bill_split",       label: "🧾 Bill Split & Merge",    color: "#22d3ee" },
+  { id: "fnb_order_transfer",   label: "🔄 Order Transfer Meja",   color: "#a78bfa" },
+  { id: "fnb_kds_routing",      label: "🍳 KDS Multi-Station",     color: "#fb923c" },
+  { id: "fnb_whatsapp",         label: "💬 WhatsApp Business",     color: "#25d366" },
+  { id: "fnb_bank_recon",       label: "🏦 Banking Auto-Recon",    color: "#10b981" },
+  { id: "fnb_driver_tracking",  label: "📍 Driver Realtime",       color: "#3b82f6" },
 ];
 
 // Urutan value-chain enterprise: Operasi → Product → Inventory → Commerce
@@ -139,6 +160,31 @@ export const GROUPS = [
   { name: "Operasi & Outlet", icon: "🛰️", module: "pos", ids: ["outlet_master", "staff", "checklist", "cashier_kpi", "gudang", "waste", "asset_maintenance", "quality", "incidents", "escalation", "compliance", "document_hub", "notif_center", "config", "audit"] },
   // 🎬 Cinema vertical — dedicated top-level group dengan 4 sub-kategori.
   // Sub-grouping via `categories` field; AdminHome rail renderer support nested.
+  // 🍽️ F&B Enhanced — dedicated top-level group untuk feature-pack baru
+  // (recipe BOM, combo, periods, dietary, happy hour, reservation, tips,
+  // membership tier, birthday, referral, delivery)
+  { name: "F&B Enhanced", icon: "🍽️", module: "pos",
+    ids: [
+      "fnb_recipe", "fnb_combo", "fnb_menu_periods", "fnb_dietary_tags",
+      "fnb_happy_hour", "fnb_reservation", "fnb_tip_pool",
+      "fnb_membership_tier", "fnb_birthday_promo", "fnb_referral",
+      "fnb_delivery", "fnb_driver_tracking",
+      "fnb_menu_engineering",
+      "fnb_bill_split", "fnb_order_transfer",
+      "fnb_kds_routing",
+      "fnb_whatsapp", "fnb_bank_recon",
+    ],
+    categories: [
+      { name: "🍱 Menu & Product",  ids: ["fnb_recipe", "fnb_combo", "fnb_menu_periods", "fnb_dietary_tags", "fnb_menu_engineering"] },
+      { name: "🕐 Pricing",         ids: ["fnb_happy_hour"] },
+      { name: "📅 Customer Ops",    ids: ["fnb_reservation", "fnb_order_transfer", "fnb_bill_split"] },
+      { name: "👥 Loyalty",         ids: ["fnb_membership_tier", "fnb_birthday_promo", "fnb_referral"] },
+      { name: "💵 Staff",           ids: ["fnb_tip_pool"] },
+      { name: "🚴 Delivery",        ids: ["fnb_delivery", "fnb_driver_tracking"] },
+      { name: "🍳 Kitchen",         ids: ["fnb_kds_routing"] },
+      { name: "🔗 Integration",     ids: ["fnb_whatsapp", "fnb_bank_recon"] },
+    ],
+  },
   { name: "Cinema", icon: "🎬", module: "pos",
     ids: [
       "cinema_command_center", "cinema_ops", "cinema_ticketing", "cinema_box_office", "cinema_validate", "cinema_refund", "cinema_in_studio_queue", "cinema_event_booking",

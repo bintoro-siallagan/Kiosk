@@ -3781,6 +3781,8 @@ const finance         = setupFinance(app,         { dbPath: DB_PATH, mountPath: 
 setupFinanceDashboard(app, { dbPath: DB_PATH });
 const { setupCinema } = require('./cinema-backend');
 setupCinema(app, { dbPath: DB_PATH });
+const { setupFnbFeatures } = require('./fnb-features-backend');
+setupFnbFeatures(app, { dbPath: DB_PATH });
 const bridge          = setupBridge(app,          { dbPath: DB_PATH, mountPath: '/api/bridge' });
 const notifications   = setupNotifications(app, {
   dbPath: DB_PATH,
