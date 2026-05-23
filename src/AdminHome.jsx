@@ -805,7 +805,6 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       </div>
 
       <div style={S.footer} className="no-print">
-        <button className="tile" style={S.footBtn} onClick={onExit}>← Kiosk</button>
         {onLogout && <button className="tile" style={{ ...S.footBtn, color: "#f87171", borderColor: "#f8717133" }} onClick={onLogout}>Logout</button>}
         <span style={{ flex: 1 }} />
         <span style={S.footNote}>karyaOS · 145+ modul · 🎬 Cinema · 🍽️ F&B · 🛡️ Enterprise · v5</span>
