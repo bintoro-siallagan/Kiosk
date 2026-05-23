@@ -105,6 +105,38 @@ function setupItemRules(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // ── Combo CRUD ──────────────────────────────────────────────────────
+  router.post('/combos', (req, res) => {
+    const b = req.body || {};
+    if (!b.name || !String(b.name).trim()) return res.status(400).json({ error: 'nama wajib' });
+    const items = Array.isArray(b.items) ? b.items : (typeof b.items === 'string' ? b.items.split(',').map(s => s.trim()).filter(Boolean) : []);
+    db.prepare(`INSERT INTO item_combos (name, combo_type, items, price) VALUES (?,?,?,?)`)
+      .run(String(b.name).trim(), b.combo_type || 'meal', JSON.stringify(items), Number(b.price) || 0);
+    res.json({ ok: true });
+  });
+  router.patch('/combos/:id', (req, res) => {
+    const c = db.prepare(`SELECT * FROM item_combos WHERE id = ?`).get(req.params.id);
+    if (!c) return res.status(404).json({ error: 'combo tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    if (b.name !== undefined)       { fields.push('name = ?');       args.push(String(b.name).trim()); }
+    if (b.combo_type !== undefined) { fields.push('combo_type = ?'); args.push(String(b.combo_type)); }
+    if (b.items !== undefined) {
+      const items = Array.isArray(b.items) ? b.items : (typeof b.items === 'string' ? b.items.split(',').map(s => s.trim()).filter(Boolean) : []);
+      fields.push('items = ?'); args.push(JSON.stringify(items));
+    }
+    if (b.price !== undefined)      { fields.push('price = ?');      args.push(Number(b.price) || 0); }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE item_combos SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/combos/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM item_combos WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'combo tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/item-rules';
   app.use(mountPath, router);
   console.log(`[item-rules] mounted at ${mountPath} — kitchen routing, promo & combo`);

@@ -1,15 +1,20 @@
 // src/Admin/AdminItemRules.jsx
-// Item Rules — kitchen routing, promo link, availability + combo.
+// Item Rules — kitchen routing, promo link, availability + combo CRUD.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#ea580c";
 const STATION_C = { Bar: "#3b82f6", Kitchen: "#f59e0b", Dessert: "#ec4899", "Cinema Snack": "#a855f7" };
 const COMBO_ICON = { cinema: "🎬", meal: "🍱", family: "👨‍👩‍👧" };
+const emptyCombo = { name: "", combo_type: "meal", items: "", price: 0 };
 
 export default function AdminItemRules({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
+  const [editing, setEditing] = useState(null); // combo editing
+  const [msg, setMsg] = useState("");
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/item-rules`).then(r => r.json()).then(setD).catch(() => {});
@@ -25,6 +30,23 @@ export default function AdminItemRules({ apiBase = "" }) {
     fetch(`${apiBase}/api/item-rules/${it.item_code}`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     }).then(r => r.json()).then(j => { if (j.ok) load(); }).catch(() => {});
+  };
+  const saveCombo = async () => {
+    if (!editing.name?.trim()) { setMsg("⚠ Nama wajib"); return; }
+    const isNew = !editing.id;
+    const url = isNew ? `${apiBase}/api/item-rules/combos` : `${apiBase}/api/item-rules/combos/${editing.id}`;
+    const r = await fetch(url, { method: isNew ? "POST" : "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing) });
+    const j = await r.json();
+    if (j.ok) { setMsg(isNew ? "✓ Combo ditambah" : "✓ Combo disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const removeCombo = async (c) => {
+    const ok = await confirm({ title: `Hapus combo "${c.name}"?`, message: "Combo akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/item-rules/combos/${c.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Combo dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Item Rules…</div>;
@@ -62,7 +84,11 @@ export default function AdminItemRules({ apiBase = "" }) {
         </div>
         {/* Combos */}
         <div style={S.card}>
-          <div style={S.kicker}>🍱 COMBO & BUNDLE — {d.combos.length}</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={S.kicker}>🍱 COMBO & BUNDLE — {d.combos.length}</span>
+            <button onClick={() => setEditing({ ...emptyCombo })} style={{ background: AC, color: "#fff", border: "none", padding: "5px 11px", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ Combo</button>
+          </div>
+          {msg ? <div style={{ fontSize: 11, marginTop: 6, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
           <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
             {d.combos.map(c => (
               <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 11, background: "#0a0e16", border: "1px solid #161b22", borderRadius: 9, padding: "10px 12px" }}>
@@ -72,11 +98,38 @@ export default function AdminItemRules({ apiBase = "" }) {
                   <div style={{ fontSize: 11, color: "#5b6470" }}>{c.items.join(" + ")}</div>
                 </div>
                 <span style={{ fontFamily: "'Geist Mono',monospace", fontSize: 13, fontWeight: 700, color: "#10b981" }}>{fmtRp(c.price)}</span>
+                <span style={{ display: "flex", gap: 4 }}>
+                  <button onClick={() => setEditing({ ...c, items: Array.isArray(c.items) ? c.items.join(", ") : (c.items || "") })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                  <button onClick={() => removeCombo(c)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+                </span>
               </div>
             ))}
           </div>
         </div>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 500, width: "100%" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>{editing.id ? `✏️ Edit Combo` : "+ Combo Baru"}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div style={{ gridColumn: "1/-1" }}><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>NAMA COMBO</div><input value={editing.name || ""} onChange={e => setEditing({ ...editing, name: e.target.value })} placeholder="Cinema Combo XL / Family Meal" style={inpR} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>TIPE</div>
+                <select value={editing.combo_type || "meal"} onChange={e => setEditing({ ...editing, combo_type: e.target.value })} style={inpR}>
+                  <option value="meal">🍱 Meal</option><option value="cinema">🎬 Cinema</option><option value="family">👨‍👩‍👧 Family</option>
+                </select>
+              </div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>HARGA</div><input type="number" value={editing.price || 0} onChange={e => setEditing({ ...editing, price: Number(e.target.value) })} style={inpR} /></div>
+              <div style={{ gridColumn: "1/-1" }}><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>ITEMS (pisah dengan koma)</div>
+                <input value={editing.items || ""} onChange={e => setEditing({ ...editing, items: e.target.value })} placeholder="Popcorn Large, Cola Reguler, Tiket Reguler" style={inpR} /></div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveCombo} style={{ background: AC, color: "#fff", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>{editing.id ? "💾 Simpan" : "+ Tambah"}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Per-item rules */}
       <div style={{ ...S.card, marginTop: 14 }}>
@@ -140,3 +193,4 @@ const S = {
   badge: { background: "#0a0e16", border: "1px solid", borderRadius: 6, padding: "4px 9px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'Geist Mono',monospace" },
   flag: { background: "transparent", border: "none", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "'Geist Mono',monospace" },
 };
+const inpR = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "7px 10px", color: "#e6edf3", fontSize: 12.5, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
