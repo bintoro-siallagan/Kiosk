@@ -139,6 +139,8 @@ export default function POSCinemaApp() {
   const [picked, setPicked] = useState(null); // showtime obj
   const [seats, setSeats] = useState([]);     // selected seats
   const [bundles, setBundles] = useState([]); // selected bundles [{id, qty, ...}]
+  const [seatData, setSeatData] = useState(null); // {rows, cols, seat_map, sold, held_by_others}
+  const [liveTotals, setLiveTotals] = useState(null); // {ticketSubtotal, bundleSubtotal, total} dari Sell stage
   const [buyer, setBuyer] = useState({ name: "", phone: "", email: "" });
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [saleData, setSaleData] = useState(null); // intermediate buat payment stage
@@ -187,9 +189,18 @@ export default function POSCinemaApp() {
         format: picked.format,
         seats: [...(seats || [])],
         bundles: (bundles || []).map(b => ({ name: b.name, qty: b.qty, price: b.price })),
-        seats_total: saleData?.ticketSubtotal || 0,
-        bundles_total: saleData?.bundleSubtotal || 0,
-        total: saleData?.total || 0,
+        // Saat sell stage pakai liveTotals (running total), saat pay+success pakai saleData
+        seats_total: saleData?.ticketSubtotal ?? liveTotals?.ticketSubtotal ?? 0,
+        bundles_total: saleData?.bundleSubtotal ?? liveTotals?.bundleSubtotal ?? 0,
+        total: saleData?.total ?? liveTotals?.total ?? 0,
+        // Seat map info — biar CDS bisa render seat grid yang sama
+        seat_data: seatData ? {
+          rows: seatData.rows,
+          cols: seatData.cols,
+          seat_map: seatData.seat_map,
+          sold: seatData.sold || [],
+          held_by_others: seatData.held_by_others || [],
+        } : null,
         ...extra,
       };
     }
@@ -197,7 +208,7 @@ export default function POSCinemaApp() {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     }).catch(() => {});
-  }, [picked, stage, seats, bundles, saleData]);
+  }, [picked, stage, seats, bundles, saleData, seatData, liveTotals]);
 
   // Broadcast saat stage / picked / seats / bundles berubah
   useEffect(() => { broadcastCds(); }, [broadcastCds]);
@@ -255,6 +266,8 @@ export default function POSCinemaApp() {
             cashier={cashier}
             onCancel={resetSale}
             onProceed={proceedToPay}
+            onSeatData={setSeatData}
+            onLiveTotals={setLiveTotals}
           />
         )}
         {stage === "pay" && picked && saleData && (
@@ -471,14 +484,14 @@ const ratingColor = (r) => ({ SU: TH.green, "13+": TH.cyan, "17+": TH.amber, D21
 // ═══════════════════════════════════════════════════════════════════
 // SELL — seat map + bundles + checkout
 // ═══════════════════════════════════════════════════════════════════
-function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, paymentMethod, setPaymentMethod, cashier, onCancel, onProceed }) {
+function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, paymentMethod, setPaymentMethod, cashier, onCancel, onProceed, onSeatData, onLiveTotals }) {
   const [seatData, setSeatData] = useState(null);
   const [bundleList, setBundleList] = useState([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
 
   const loadSeats = useCallback(() => {
-    fetch(`${API_HOST}/api/cinema/showtimes/${picked.id}/seats`).then(r => r.json()).then(setSeatData).catch(() => {});
+    fetch(`${API_HOST}/api/cinema/showtimes/${picked.id}/seats`).then(r => r.json()).then(d => { setSeatData(d); onSeatData && onSeatData(d); }).catch(() => {});
   }, [picked.id]);
   useEffect(() => { loadSeats(); const iv = setInterval(loadSeats, 10000); return () => clearInterval(iv); }, [loadSeats]);
 
@@ -501,9 +514,30 @@ function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, p
     });
   };
 
-  const ticketSubtotal = seats.length * (picked.price || 0);
+  // Per-seat-type pricing kalau seatData.seat_type_prices ada, else fallback flat showtime price
+  const ticketSubtotal = useMemo(() => {
+    if (!seatData) return seats.length * (picked.price || 0);
+    const prices = seatData.seat_type_prices;
+    if (!prices) return seats.length * (picked.price || 0);
+    // Build seat→type map dari seat_map
+    const typeMap = {};
+    if (Array.isArray(seatData.seat_map)) {
+      for (const row of seatData.seat_map) for (const cell of (row || [])) {
+        if (cell && cell.label && cell.type && cell.type !== "void") typeMap[cell.label] = cell.type;
+      }
+    }
+    return seats.reduce((sum, s) => {
+      const t = typeMap[s] || "regular";
+      return sum + (prices[t] != null ? prices[t] : (picked.price || 0));
+    }, 0);
+  }, [seats, seatData, picked.price]);
   const bundleSubtotal = bundles.reduce((s, b) => s + (b.price || 0) * (b.qty || 0), 0);
   const total = ticketSubtotal + bundleSubtotal;
+
+  // Live broadcast totals ke parent → CDS receives running bill summary
+  useEffect(() => {
+    if (onLiveTotals) onLiveTotals({ ticketSubtotal, bundleSubtotal, total });
+  }, [ticketSubtotal, bundleSubtotal, total, onLiveTotals]);
 
   const submit = () => {
     if (!seats.length) { setMsg("⚠ Pilih minimal 1 kursi"); return; }

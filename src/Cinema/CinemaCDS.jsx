@@ -154,13 +154,21 @@ export default function CinemaCDS() {
               <Info label="FORMAT" value={state.format || "2D"} color="#c084fc" />
             </div>
 
-            {/* Seats */}
-            {state.seats && state.seats.length > 0 && (
+            {/* Seat map preview — biar customer lihat posisi kursi di studio */}
+            {state.seat_data && (
               <div style={{ marginTop: 22 }}>
-                <div style={{ fontSize: 12, color: "#7d8590", letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 10 }}>KURSI DIPILIH</div>
+                <div style={{ fontSize: 12, color: "#7d8590", letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 10 }}>POSISI KURSI DI STUDIO</div>
+                <CdsSeatMap seatData={state.seat_data} selectedSeats={state.seats || []} />
+              </div>
+            )}
+
+            {/* Seats list pills */}
+            {state.seats && state.seats.length > 0 && (
+              <div style={{ marginTop: 14 }}>
+                <div style={{ fontSize: 12, color: "#7d8590", letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 8 }}>KURSI DIPILIH</div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                   {state.seats.map(s => (
-                    <span key={s} style={{ fontSize: 22, fontWeight: 900, padding: "8px 18px", borderRadius: 10, background: "linear-gradient(135deg,#f59e0b,#fbbf24)", color: "#1a1205", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5 }}>{s}</span>
+                    <span key={s} style={{ fontSize: 18, fontWeight: 900, padding: "6px 14px", borderRadius: 10, background: "linear-gradient(135deg,#f59e0b,#fbbf24)", color: "#1a1205", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5 }}>{s}</span>
                   ))}
                 </div>
               </div>
@@ -253,6 +261,79 @@ function Shell({ children, now, outlet }) {
         </div>
       </div>
       <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>{children}</div>
+    </div>
+  );
+}
+
+// CdsSeatMap — read-only seat layout untuk display di CDS. Row A di bawah (cinema standard).
+function CdsSeatMap({ seatData, selectedSeats }) {
+  const sel = new Set(selectedSeats || []);
+  const sold = new Set(seatData.sold || []);
+  const held = new Set(seatData.held_by_others || []);
+
+  // Use seat_map kalau ada, else fallback grid
+  const rows = Array.isArray(seatData.seat_map) && seatData.seat_map.length > 0
+    ? seatData.seat_map
+    : Array.from({ length: seatData.rows || 0 }, (_, r) =>
+        Array.from({ length: seatData.cols || 0 }, (_, c) => ({
+          type: "regular",
+          label: `${String.fromCharCode(65 + r)}${c + 1}`,
+        }))
+      );
+  const rowLabels = rows.map((row, r) => {
+    const first = row?.find(c => c && c.type !== "void" && c.label);
+    const m = first?.label?.match(/^([A-Za-z]+)/);
+    return m ? m[1] : String.fromCharCode(65 + r);
+  });
+
+  return (
+    <div style={{ padding: 12, background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 12, overflowX: "auto" }}>
+      {/* SCREEN */}
+      <div style={{ textAlign: "center", marginBottom: 10 }}>
+        <div style={{ height: 4, background: "linear-gradient(90deg,transparent,#a855f7,transparent)", borderRadius: 3, marginBottom: 4, boxShadow: "0 0 20px rgba(168,85,247,0.5)" }} />
+        <span style={{ fontSize: 9, color: "rgba(255,255,255,0.5)", letterSpacing: 5, fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>L A Y A R</span>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column-reverse", gap: 4, alignItems: "center" }}>
+        {rows.map((row, ri) => (
+          <div key={ri} style={{ display: "flex", gap: 4, alignItems: "center" }}>
+            <span style={{ width: 22, fontSize: 10, color: "#7d8590", fontFamily: "'Geist Mono',monospace", fontWeight: 800, textAlign: "center" }}>{rowLabels[ri]}</span>
+            {row.map((cell, ci) => {
+              const isVoid = !cell || cell.type === "void";
+              if (isVoid) return <div key={ci} style={{ width: 22, height: 22 }} />;
+              const seat = cell.label || `${rowLabels[ri]}${ci + 1}`;
+              const type = cell.type || "regular";
+              const isSel = sel.has(seat);
+              const isSold = sold.has(seat);
+              const isHeld = held.has(seat);
+              const baseColor = SEAT_COLOR[type] || "#10b981";
+              return (
+                <div key={ci} title={`${seat} · ${type}`} style={{
+                  width: 22, height: 22, borderRadius: 5,
+                  background: isSold ? "rgba(239,68,68,0.25)"
+                            : isHeld ? "rgba(234,179,8,0.2)"
+                            : isSel ? "linear-gradient(135deg,#f59e0b,#fbbf24)"
+                            : `${baseColor}22`,
+                  border: `1px solid ${isSold ? "rgba(239,68,68,0.4)" : isHeld ? "rgba(234,179,8,0.4)" : isSel ? "rgba(245,158,11,0.7)" : `${baseColor}66`}`,
+                  fontSize: 8, color: isSel ? "#111" : isSold ? "#ef4444" : isHeld ? "#eab308" : baseColor,
+                  fontFamily: "'Geist Mono',monospace", fontWeight: 800,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  boxShadow: isSel ? "0 0 0 1px rgba(245,158,11,0.5), 0 2px 8px rgba(245,158,11,0.3)" : "none",
+                  animation: isSel ? "kdsCellPulse 1s ease-in-out infinite" : "none",
+                }}>
+                  {ci + 1}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+      <style>{`@keyframes kdsCellPulse { 0%,100% { transform: scale(1) } 50% { transform: scale(1.1) } }`}</style>
+      {/* Legend */}
+      <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap", marginTop: 10, fontSize: 10, color: "#9ca3af", fontFamily: "'Geist Mono',monospace" }}>
+        <span>🟨 PILIHAN KAMU</span>
+        <span style={{ color: "#10b981" }}>● TERSEDIA</span>
+        <span style={{ color: "#ef4444" }}>● TERJUAL</span>
+      </div>
     </div>
   );
 }
