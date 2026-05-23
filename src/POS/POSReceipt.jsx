@@ -186,17 +186,63 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
   };
 
   return (
-    <div style={overlay} onClick={onClose}>
-      <div style={modalBox} onClick={e=>e.stopPropagation()}>
-        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16}}>
-          <div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', letterSpacing: 1.4, fontFamily: "'Geist Mono',monospace", fontWeight: 700, textTransform: 'uppercase' }}>STRUK</div>
-            <h2 style={{margin:'2px 0 0', color:'#fff', fontSize:22, fontWeight:800, letterSpacing:'-0.4px'}}>Pesanan</h2>
+    <div style={fullScreenRoot}>
+      <div style={successCard}>
+        {/* Big success icon — match POSSuccess */}
+        <div style={successIcon}>✅</div>
+
+        {/* Title amber gradient + Order ID kicker */}
+        <h1 style={successTitle}>PEMBAYARAN BERHASIL</h1>
+        <div style={successOrderId}>Order #{order.ref}</div>
+
+        {/* Compact details card — match POSSuccess details */}
+        <div style={detailsCard}>
+          <div style={detailRow}>
+            <span style={detailLabel}>Tanggal</span>
+            <span style={detailValue}>{fmtDateTime(order.paid_at || Math.floor(Date.now()/1000))}</span>
           </div>
-          <button onClick={onClose} style={closeBtn}>×</button>
+          {order.cashier && (
+            <div style={detailRow}>
+              <span style={detailLabel}>Kasir</span>
+              <span style={detailValue}>{order.cashier}</span>
+            </div>
+          )}
+          {order.customer?.name && (
+            <div style={detailRow}>
+              <span style={detailLabel}>Customer</span>
+              <span style={detailValue}>{order.customer.name}</span>
+            </div>
+          )}
+          <div style={detailRow}>
+            <span style={detailLabel}>Items</span>
+            <span style={detailValue}>{(order.items || []).length} item</span>
+          </div>
+          {(order.payments || []).map((p, i) => (
+            <div key={i} style={detailRow}>
+              <span style={detailLabel}>{(p.tender_type || '').toUpperCase()}</span>
+              <span style={detailValue}>{fmtIDR(p.amount)}</span>
+            </div>
+          ))}
+          {calc.loyaltyDiscount > 0 && (
+            <div style={detailRow}>
+              <span style={detailLabel}>🏅 Diskon Loyalty</span>
+              <span style={{...detailValue, color: '#34d399'}}>−{fmtIDR(calc.loyaltyDiscount)}</span>
+            </div>
+          )}
+          {calc.change > 0 && (
+            <div style={detailRow}>
+              <span style={detailLabel}>💰 Kembalian</span>
+              <span style={{...detailValue, color: '#34d399', fontWeight: 800}}>{fmtIDR(calc.change)}</span>
+            </div>
+          )}
+          <div style={{...detailRow, borderBottom: 'none', paddingTop: 14, marginTop: 4, borderTop: '1px solid rgba(255,255,255,0.08)'}}>
+            <span style={detailLabel}>Total</span>
+            <span style={detailTotal}>{fmtIDR(calc.grandTotal)}</span>
+          </div>
         </div>
 
-        <div ref={printRef} style={receipt}>
+        {/* Hidden printable receipt — for actual print/PDF (not shown) */}
+        <div ref={printRef} style={{...receipt, position: 'absolute', left: '-9999px', top: 0}}>
           <h1 className="center" style={{textAlign:'center', fontSize:18, margin:'8px 0'}}>{kioskName}</h1>
           <div className="center" style={{textAlign:'center', fontSize:11, color:'#666'}}>Struk Pesanan</div>
           <hr style={dashLine}/>
@@ -205,7 +251,6 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
           {order.cashier && <div className="row" style={row}><span>Kasir:</span><span>{order.cashier}</span></div>}
           {order.customer?.name && <div className="row" style={row}><span>Customer:</span><span>{order.customer.name}</span></div>}
           <hr style={dashLine}/>
-
           {(order.items || []).map((it, i) => (
             <div key={i} style={{marginBottom:6}}>
               <div style={{fontWeight:600}}>{it.display_name}</div>
@@ -219,19 +264,10 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
               </div>
             </div>
           ))}
-
           <hr style={dashLine}/>
           <div className="row" style={row}><span>Subtotal</span><b>{fmtIDR(calc.subtotal)}</b></div>
-          {calc.loyaltyDiscount > 0 && (
-            <div className="row" style={{...row, color:'#b45309'}}>
-              <span>🏅 Diskon Loyalty</span>
-              <span>−{fmtIDR(calc.loyaltyDiscount)}</span>
-            </div>
-          )}
-          <div className="row total" style={{...row, ...total}}>
-            <b>TOTAL</b>
-            <b>{fmtIDR(calc.grandTotal)}</b>
-          </div>
+          {calc.loyaltyDiscount > 0 && <div className="row" style={row}><span>🏅 Diskon Loyalty</span><span>−{fmtIDR(calc.loyaltyDiscount)}</span></div>}
+          <div className="row total" style={{...row, ...total}}><b>TOTAL</b><b>{fmtIDR(calc.grandTotal)}</b></div>
           {calc.taxes.length > 0 && (
             <div style={{fontSize:10, color:'#666', marginTop:4}}>
               <div>Harga sudah termasuk pajak:</div>
@@ -243,44 +279,27 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
               ))}
             </div>
           )}
-
           <hr style={dashLine}/>
           {(order.payments || []).map((p, i) => (
             <div key={i}>
-              <div className="row" style={row}>
-                <span>{(p.tender_type || '').toUpperCase()}</span>
-                <span>{fmtIDR(p.amount)}</span>
-              </div>
+              <div className="row" style={row}><span>{(p.tender_type || '').toUpperCase()}</span><span>{fmtIDR(p.amount)}</span></div>
               {p.ref_no && <div className="indent" style={indent}>Ref: {p.ref_no}</div>}
             </div>
           ))}
-          {calc.change > 0 && (
-            <div className="row" style={{...row, fontWeight:700, color:'#10b981'}}>
-              <b>KEMBALIAN</b>
-              <b>{fmtIDR(calc.change)}</b>
-            </div>
-          )}
-
-          <div className="footer" style={footer}>
-            ✨ Terima Kasih ✨<br/>
-            Sampai jumpa kembali
-          </div>
+          {calc.change > 0 && <div className="row" style={{...row, fontWeight:700, color:'#10b981'}}><b>KEMBALIAN</b><b>{fmtIDR(calc.change)}</b></div>}
+          <div className="footer" style={footer}>✨ Terima Kasih ✨<br/>Sampai jumpa kembali</div>
         </div>
 
-        <div style={{marginTop:16, display:'flex', gap:8, flexWrap:'wrap'}}>
-          <button onClick={browserPrint} style={btnPrimary}>🖨️ Print Browser</button>
-          <button onClick={downloadPDF} style={btn}>📄 Save PDF</button>
-          <button onClick={sendToThermalPrinter} style={btn}>🧾 Thermal Printer</button>
-          <button onClick={onClose} style={{...btn, marginLeft:'auto'}}>Selesai</button>
+        {/* Action buttons row — Print/PDF/Thermal (secondary) + Selesai (primary) */}
+        <div style={successActions}>
+          <button onClick={browserPrint} style={ghostBtn}>🖨️ Print</button>
+          <button onClick={downloadPDF} style={ghostBtn}>📄 PDF</button>
+          <button onClick={sendToThermalPrinter} style={ghostBtn}>🧾 Thermal</button>
         </div>
+        <button onClick={onClose} style={doneBtn}>✓ Selesai · Transaksi Baru</button>
 
-        <div style={{
-          marginTop:12, padding:'10px 14px',
-          background:'rgba(255,255,255,0.025)',
-          border:'1px solid rgba(255,255,255,0.06)',
-          borderRadius:8, fontSize:11.5, color:'rgba(255,255,255,0.55)', lineHeight:1.5,
-        }}>
-          <b style={{ color:'#fff' }}>Tips:</b> Browser Print buka dialog cetak biasa (bisa save as PDF). Thermal Printer coba Bluetooth → backend → clipboard fallback. Pastikan kasir punya thermal printer ESC/POS compatible.
+        <div style={successHint}>
+          ✨ Terima Kasih · Sampai jumpa kembali ✨
         </div>
       </div>
     </div>
@@ -288,29 +307,89 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
 }
 
 // ============================================================
-// STYLES — chrome dark MacBook-premium, receipt body tetap putih
-// (receipt body putih = mimic kertas kasir; preview cetak).
+// STYLES — Full-screen success page (match POSSuccess Order Baru)
+// Receipt body kept untuk print/PDF dialog (hidden offscreen).
 // ============================================================
-const overlay = {
-  position:'fixed', inset:0,
-  background:'rgba(0,0,0,0.75)',
-  backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)',
-  display:'flex', alignItems:'center', justifyContent:'center', zIndex:1100,
+const fullScreenRoot = {
+  minHeight: '100vh',
+  background: 'linear-gradient(160deg,#08090a 0%,#14151c 50%,#0a0b0e 100%)',
+  color: '#fff',
+  fontFamily: "'Inter','SF Pro Display',system-ui,-apple-system,sans-serif",
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  padding: 24, position: 'relative',
 };
-const modalBox = {
-  background:'linear-gradient(180deg,#15171c 0%,#0d0f14 100%)',
-  border:'1px solid rgba(255,255,255,0.08)',
-  color:'#fff',
-  borderRadius:14, padding:24, maxWidth:520, width:'95vw', maxHeight:'90vh', overflow:'auto',
-  boxShadow:'0 24px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)',
-  fontFamily:"'Inter','SF Pro Display',system-ui,-apple-system,sans-serif",
+const successCard = {
+  maxWidth: 560, width: '100%', textAlign: 'center',
+  position: 'relative',
 };
-const closeBtn = {
-  width:36, height:36, borderRadius:8,
-  background:'rgba(255,255,255,0.06)',
-  border:'1px solid rgba(255,255,255,0.08)',
-  color:'#fff', fontSize:22, cursor:'pointer', fontFamily:'inherit',
-  display:'inline-flex', alignItems:'center', justifyContent:'center',
+const successIcon = {
+  fontSize: 96, marginBottom: 18,
+  filter: 'drop-shadow(0 0 40px rgba(16,185,129,0.5))',
+  animation: 'pos-receipt-pop 0.7s cubic-bezier(0.18,1.05,0.4,1) both',
+};
+const successTitle = {
+  fontSize: 36, fontWeight: 800, letterSpacing: -0.6,
+  background: 'linear-gradient(135deg,#F59E0B 0%,#fbbf24 50%,#F59E0B 100%)',
+  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+  margin: '0 0 8px', lineHeight: 1.2,
+  filter: 'drop-shadow(0 0 24px rgba(251,191,36,0.25))',
+};
+const successOrderId = {
+  fontSize: 12, color: 'rgba(255,255,255,0.55)',
+  letterSpacing: 2, marginBottom: 32, fontWeight: 700,
+  fontFamily: "'Geist Mono',monospace", textTransform: 'uppercase',
+};
+const detailsCard = {
+  background: 'linear-gradient(180deg,#15171c 0%,#0d0f14 100%)',
+  border: '1px solid rgba(255,255,255,0.08)',
+  borderRadius: 16, padding: '20px 24px', marginBottom: 20,
+  textAlign: 'left',
+  boxShadow: '0 1px 2px rgba(0,0,0,0.3),0 12px 32px rgba(0,0,0,0.25),inset 0 1px 0 rgba(255,255,255,0.04)',
+};
+const detailRow = {
+  display: 'flex', justifyContent: 'space-between',
+  padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.05)',
+  fontSize: 13.5,
+};
+const detailLabel = {
+  color: 'rgba(255,255,255,0.55)',
+  fontFamily: "'Geist Mono',monospace", fontSize: 11.5, letterSpacing: 0.5,
+  fontWeight: 600,
+};
+const detailValue = {
+  color: '#fff', fontWeight: 600,
+  fontFamily: "'Geist Mono',monospace",
+};
+const detailTotal = {
+  fontSize: 26, fontWeight: 800, color: '#F59E0B',
+  letterSpacing: -0.4, fontFamily: "'Geist Mono',monospace",
+};
+const successActions = {
+  display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8,
+  marginBottom: 12,
+};
+const ghostBtn = {
+  background: 'rgba(255,255,255,0.04)',
+  border: '1px solid rgba(255,255,255,0.08)',
+  color: '#fff',
+  borderRadius: 10, padding: '12px',
+  fontFamily: 'inherit', fontSize: 13, fontWeight: 600,
+  cursor: 'pointer', transition: 'all 0.15s',
+};
+const doneBtn = {
+  width: '100%',
+  background: 'linear-gradient(135deg, #F59E0B, #fbbf24)',
+  color: '#1a1205', border: 'none',
+  borderRadius: 12, padding: '15px',
+  fontFamily: 'inherit', fontSize: 15, fontWeight: 800,
+  cursor: 'pointer', letterSpacing: 0.3,
+  boxShadow: '0 8px 24px rgba(245,158,11,0.4), inset 0 1px 0 rgba(255,255,255,0.25)',
+  transition: 'all 0.2s',
+};
+const successHint = {
+  fontSize: 12, color: 'rgba(255,255,255,0.4)',
+  marginTop: 14, letterSpacing: 0.5,
+  fontFamily: "'Geist Mono',monospace",
 };
 // Receipt body — keep light/paper style (kasir expect ini seperti kertas struk)
 const receipt = { background:'#fff', border:'1px dashed #d1d5db', borderRadius:6, padding:'14px 18px', fontFamily:'Courier New, monospace', fontSize:12, color:'#000' };
@@ -319,17 +398,10 @@ const total = { fontSize:14, fontWeight:700, borderTop:'2px solid #000', padding
 const indent = { paddingLeft:12, color:'#555', fontSize:11 };
 const dashLine = { border:'none', borderTop:'1px dashed #000', margin:'6px 0' };
 const footer = { fontSize:10, textAlign:'center', marginTop:10, color:'#555' };
-const btnPrimary = {
-  padding:'10px 18px',
-  background:'linear-gradient(135deg,#F59E0B,#fbbf24)',
-  color:'#1a1205', border:'none', borderRadius:9,
-  cursor:'pointer', fontWeight:800, fontSize:13, fontFamily:'inherit', letterSpacing:0.3,
-  boxShadow:'0 4px 14px rgba(245,158,11,0.35), inset 0 1px 0 rgba(255,255,255,0.2)',
-};
-const btn = {
-  padding:'10px 16px',
-  background:'rgba(255,255,255,0.04)',
-  border:'1px solid rgba(255,255,255,0.08)',
-  color:'#fff',
-  borderRadius:9, cursor:'pointer', fontSize:13, fontWeight:600, fontFamily:'inherit',
-};
+// Inject pop animation keyframe globally (idempotent)
+if (typeof document !== 'undefined' && !document.getElementById('pos-receipt-pop-css')) {
+  const s = document.createElement('style');
+  s.id = 'pos-receipt-pop-css';
+  s.textContent = `@keyframes pos-receipt-pop{0%{opacity:0;transform:scale(0.5) rotate(-12deg)}60%{transform:scale(1.15) rotate(8deg)}100%{opacity:1;transform:scale(1) rotate(0)}}`;
+  document.head.appendChild(s);
+}
