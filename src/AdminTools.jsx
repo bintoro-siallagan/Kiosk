@@ -67,6 +67,9 @@ import CinemaValidate from "./Admin/CinemaValidate.jsx";
 import CinemaRefund from "./Admin/CinemaRefund.jsx";
 import CinemaBundles from "./Admin/CinemaBundles.jsx";
 import CinemaBundleRedeem from "./Admin/CinemaBundleRedeem.jsx";
+import CinemaDistribution from "./Admin/CinemaDistribution.jsx";
+import CinemaInStudioQueue from "./Admin/CinemaInStudioQueue.jsx";
+import CinemaEventBooking from "./Admin/CinemaEventBooking.jsx";
 import AdminSignage from "./Admin/AdminSignage.jsx";
 import AdminDemandForecast from "./Admin/AdminDemandForecast.jsx";
 import AdminAssetMaintenance from "./Admin/AdminAssetMaintenance.jsx";
@@ -199,6 +202,9 @@ export default function AdminTools({ initialTab }) {
         {tab === "cinema_refund" && <CinemaRefund apiBase={API} />}
         {tab === "cinema_bundles" && <CinemaBundles apiBase={API} />}
         {tab === "cinema_bundle_redeem" && <CinemaBundleRedeem apiBase={API} />}
+        {tab === "cinema_distribution" && <CinemaDistribution apiBase={API} />}
+        {tab === "cinema_in_studio_queue" && <CinemaInStudioQueue apiBase={API} />}
+        {tab === "cinema_event_booking" && <CinemaEventBooking apiBase={API} />}
         {tab === "simple_purchase" && <AdminSimplePurchase apiBase={API} />}
         {tab === "petty_cash" && <AdminPettyCash apiBase={API} />}
         {tab === "purchase_invoice" && <AdminPurchaseInvoice apiBase={API} />}

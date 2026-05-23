@@ -109,6 +109,105 @@ CREATE TABLE IF NOT EXISTS cinema_purchase_bundles (
   created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
 CREATE INDEX IF NOT EXISTS idx_cpb_purchase ON cinema_purchase_bundles(purchase_id);
+CREATE TABLE IF NOT EXISTS cinema_seat_holds (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  showtime_id INTEGER NOT NULL,
+  seat TEXT NOT NULL,
+  hold_token TEXT NOT NULL,
+  held_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  expires_at INTEGER NOT NULL,
+  UNIQUE(showtime_id, seat)
+);
+CREATE INDEX IF NOT EXISTS idx_csh_expire ON cinema_seat_holds(expires_at);
+CREATE INDEX IF NOT EXISTS idx_csh_token ON cinema_seat_holds(hold_token);
+CREATE INDEX IF NOT EXISTS idx_csh_showtime ON cinema_seat_holds(showtime_id);
+CREATE TABLE IF NOT EXISTS cinema_distributors (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  code TEXT,
+  contact_person TEXT,
+  contact_email TEXT,
+  contact_phone TEXT,
+  address TEXT,
+  vat_pct REAL DEFAULT 11,            -- VAT deducted before net revenue split (default 11%)
+  notes TEXT,
+  is_active INTEGER DEFAULT 1,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+-- Tiered revenue share per film (standar Indo: W1 50/50, W2 60/40, W3+ 70/30)
+CREATE TABLE IF NOT EXISTS cinema_share_tiers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  film_id INTEGER NOT NULL,
+  week_from INTEGER NOT NULL DEFAULT 1,
+  week_to   INTEGER,                  -- inclusive; NULL = open-ended (≥ week_from)
+  cinema_pct REAL DEFAULT 50,
+  distributor_pct REAL DEFAULT 50,
+  notes TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_cst_film ON cinema_share_tiers(film_id);
+-- In-studio QR order (customer scans seat-side QR mid-movie to order F&B)
+CREATE TABLE IF NOT EXISTS cinema_in_studio_orders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_code TEXT NOT NULL UNIQUE,
+  showtime_id INTEGER,
+  studio_id INTEGER,
+  studio_name TEXT,
+  seat TEXT,
+  buyer_name TEXT,
+  buyer_phone TEXT,
+  notes TEXT,
+  total INTEGER DEFAULT 0,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending','preparing','delivered','cancelled')),
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  delivered_at INTEGER,
+  delivered_by TEXT
+);
+CREATE TABLE IF NOT EXISTS cinema_in_studio_order_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL,
+  bundle_id INTEGER,
+  bundle_name TEXT,
+  qty INTEGER DEFAULT 1,
+  price INTEGER DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_ciso_status ON cinema_in_studio_orders(status);
+CREATE INDEX IF NOT EXISTS idx_ciso_studio ON cinema_in_studio_orders(studio_id);
+CREATE INDEX IF NOT EXISTS idx_ciso_created ON cinema_in_studio_orders(created_at);
+-- Film rating (customer 1-5 stars + optional comment)
+CREATE TABLE IF NOT EXISTS cinema_film_ratings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  film_id INTEGER NOT NULL,
+  rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment TEXT,
+  customer_name TEXT,
+  customer_phone TEXT,
+  ticket_code TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_cfr_film ON cinema_film_ratings(film_id);
+-- Studio booking untuk event privat / corporate / birthday / wedding
+CREATE TABLE IF NOT EXISTS cinema_studio_bookings (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  booking_code TEXT NOT NULL UNIQUE,
+  studio_id INTEGER NOT NULL,
+  event_type TEXT,
+  event_name TEXT,
+  event_date TEXT NOT NULL,
+  start_time TEXT NOT NULL,
+  end_time TEXT NOT NULL,
+  contact_name TEXT,
+  contact_phone TEXT,
+  contact_email TEXT,
+  attendees INTEGER DEFAULT 0,
+  total_price INTEGER DEFAULT 0,
+  deposit_paid INTEGER DEFAULT 0,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending','confirmed','cancelled','completed')),
+  notes TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_csb_studio ON cinema_studio_bookings(studio_id);
+CREATE INDEX IF NOT EXISTS idx_csb_date ON cinema_studio_bookings(event_date);
 `;
 
 const SEED_FILMS = [
@@ -145,6 +244,30 @@ function setupCinema(app, opts = {}) {
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN buyer_email TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN buyer_phone TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN email_sent_at INTEGER"); } catch {}
+  // Distributor / license fields on films (links film → distributor + license terms)
+  try { db.exec("ALTER TABLE cinema_films ADD COLUMN distributor_id INTEGER"); } catch {}
+  try { db.exec("ALTER TABLE cinema_films ADD COLUMN license_start TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_films ADD COLUMN license_end TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_films ADD COLUMN revenue_share_pct REAL DEFAULT 0"); } catch {}
+  try { db.exec("ALTER TABLE cinema_films ADD COLUMN min_run_days INTEGER DEFAULT 0"); } catch {}
+  try { db.exec("ALTER TABLE cinema_films ADD COLUMN distributor_notes TEXT"); } catch {}
+  try { db.exec("CREATE INDEX IF NOT EXISTS idx_cinema_films_distributor ON cinema_films(distributor_id)"); } catch {}
+  // VAT pct on distributors (idempotent for existing DBs)
+  try { db.exec("ALTER TABLE cinema_distributors ADD COLUMN vat_pct REAL DEFAULT 11"); } catch {}
+
+  // Seed default distributors + standard tiered share template on first run.
+  // Tiered share scheme = standar industri bioskop Indonesia (cinema share):
+  //   Week 1: 50% (distributor 50%)
+  //   Week 2: 60% (distributor 40%)
+  //   Week 3+: 70% (distributor 30%)
+  if (db.prepare(`SELECT COUNT(*) c FROM cinema_distributors`).get().c === 0) {
+    const sd = db.prepare(`INSERT INTO cinema_distributors (name, code, contact_person, contact_email, contact_phone, vat_pct) VALUES (?,?,?,?,?,?)`);
+    sd.run('PT. Multivision Plus Picture', 'MVP', 'Bookings', 'booking@multivision.co.id',     '021-7980333', 11);
+    sd.run('PT. Falcon Pictures',           'FAL', 'Bookings', 'booking@falconpictures.id',     '021-7982300', 11);
+    sd.run('Walt Disney Studios Indonesia', 'DSN', 'Distribution', 'distrib@disney.co.id',      '021-29350888', 11);
+    sd.run('Warner Bros Indonesia',         'WB',  'Distribution', 'distrib@warnerbros.co.id',  '021-29927000', 11);
+    sd.run('Cinema 21 Distribution',        'C21', 'Bookings', 'distribusi@21cineplex.com',     '021-3505555', 11);
+  }
 
   // Seed default bundles on first run (customisable in Admin → Cinema Bundles)
   if (db.prepare(`SELECT COUNT(*) c FROM cinema_bundles`).get().c === 0) {
@@ -200,6 +323,16 @@ function setupCinema(app, opts = {}) {
   function soldCountFor(showtimeId) {
     return db.prepare(`SELECT COUNT(*) c FROM cinema_tickets WHERE showtime_id = ?`).get(showtimeId).c;
   }
+  // ── SEAT-HOLD anti double-sell ──
+  // Customer selects seats → POST /seats/hold to reserve them while going
+  // through F&B + payment (5 min default TTL). Other customers see the
+  // seats as "held" (yellow) and can't pick them. Hold consumed by
+  // POST /tickets atomically.
+  const HOLD_TTL_DEFAULT = 300;        // 5 min
+  const HOLD_TTL_MAX     = 900;        // 15 min ceiling
+  function pruneExpiredHolds() {
+    db.prepare(`DELETE FROM cinema_seat_holds WHERE expires_at < ?`).run(Math.floor(Date.now()/1000));
+  }
   function decorateShowtime(s) {
     if (!s) return s;
     const capacity = s.capacity || (s.rows && s.cols ? s.rows * s.cols : 0);
@@ -220,14 +353,28 @@ function setupCinema(app, opts = {}) {
 
   // ── FILMS ──
   router.get('/films', (req, res) => {
-    res.json({ films: db.prepare(`SELECT * FROM cinema_films ORDER BY status, title`).all() });
+    res.json({ films: db.prepare(`
+      SELECT f.*, d.name AS distributor_name, d.code AS distributor_code,
+             ROUND((SELECT AVG(rating) FROM cinema_film_ratings WHERE film_id = f.id), 2) AS avg_rating,
+             (SELECT COUNT(*) FROM cinema_film_ratings WHERE film_id = f.id) AS ratings_count
+      FROM cinema_films f
+      LEFT JOIN cinema_distributors d ON d.id = f.distributor_id
+      ORDER BY f.status, f.title`).all() });
   });
   router.post('/films', (req, res) => {
     const b = req.body || {};
     if (!b.title || !String(b.title).trim()) return res.status(400).json({ error: 'title wajib diisi' });
     const status = ['now_showing', 'coming_soon', 'archived'].includes(b.status) ? b.status : 'now_showing';
-    const info = db.prepare(`INSERT INTO cinema_films (title, genre, duration_min, rating, status, synopsis) VALUES (?,?,?,?,?,?)`)
-      .run(String(b.title).trim(), b.genre || '', Number(b.duration_min) || 0, b.rating || 'SU', status, b.synopsis || '');
+    const info = db.prepare(`INSERT INTO cinema_films
+      (title, genre, duration_min, rating, status, synopsis,
+       distributor_id, license_start, license_end, revenue_share_pct, min_run_days, distributor_notes)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
+      .run(String(b.title).trim(), b.genre || '', Number(b.duration_min) || 0, b.rating || 'SU', status, b.synopsis || '',
+           b.distributor_id ? parseInt(b.distributor_id, 10) : null,
+           b.license_start || null, b.license_end || null,
+           b.revenue_share_pct == null || b.revenue_share_pct === '' ? 0 : parseFloat(b.revenue_share_pct),
+           b.min_run_days ? parseInt(b.min_run_days, 10) : 0,
+           b.distributor_notes || '');
     res.json({ ok: true, id: info.lastInsertRowid });
   });
   router.delete('/films/:id', (req, res) => {
@@ -303,6 +450,7 @@ function setupCinema(app, opts = {}) {
 
   // ── TICKETS / seat map ──
   router.get('/showtimes/:id/seats', (req, res) => {
+    pruneExpiredHolds();
     const st = db.prepare(`SELECT s.*, f.title AS film_title, st.name AS studio_name,
                                   st.rows AS rows, st.cols AS cols, st.studio_type
                            FROM cinema_showtimes s
@@ -312,10 +460,95 @@ function setupCinema(app, opts = {}) {
     if (!st) return res.status(404).json({ error: 'showtime tidak ditemukan' });
     const sold = db.prepare(`SELECT seat FROM cinema_tickets WHERE showtime_id = ?`).all(req.params.id).map(r => r.seat);
     const capacity = (st.rows || 0) * (st.cols || 0);
+    // Holds — split into "by others" (locked to this customer) and "mine" (still editable)
+    const ownToken = String(req.query.hold_token || '');
+    const holdRows = db.prepare(`SELECT seat, hold_token, expires_at FROM cinema_seat_holds WHERE showtime_id = ?`).all(req.params.id);
+    const held_by_others = holdRows.filter(r => r.hold_token !== ownToken).map(r => r.seat);
+    const my_holds       = holdRows.filter(r => r.hold_token === ownToken).map(r => r.seat);
     // Pull duration via film for derived status
     const film = db.prepare(`SELECT duration_min FROM cinema_films WHERE id = ?`).get(st.film_id);
     const derived_status = computeStatus({ ...st, duration_min: film?.duration_min }, capacity, sold.length, Math.floor(Date.now()/1000));
-    res.json({ showtime: { ...st, derived_status }, rows: st.rows || 0, cols: st.cols || 0, capacity, sold, sold_count: sold.length, derived_status });
+    res.json({
+      showtime: { ...st, derived_status },
+      rows: st.rows || 0, cols: st.cols || 0, capacity,
+      sold, sold_count: sold.length,
+      held_by_others, my_holds,
+      derived_status,
+    });
+  });
+
+  // ── SEAT HOLDS ───────────────────────────────────────────────────────
+  router.post('/seats/hold', (req, res) => {
+    const b = req.body || {};
+    const showtimeId = parseInt(b.showtime_id, 10);
+    const seats = Array.isArray(b.seats) ? b.seats.map(String).filter(Boolean) : [];
+    const token = String(b.hold_token || '').trim();
+    const ttl   = Math.max(60, Math.min(HOLD_TTL_MAX, parseInt(b.ttl_seconds, 10) || HOLD_TTL_DEFAULT));
+    if (!showtimeId || !seats.length || !token) {
+      return res.status(400).json({ ok: false, error: 'showtime_id, seats, hold_token wajib' });
+    }
+    pruneExpiredHolds();
+    const placeholders = seats.map(() => '?').join(',');
+    // Check sold seats (race-safe: tickets table has UNIQUE)
+    const sold = db.prepare(`SELECT seat FROM cinema_tickets WHERE showtime_id = ? AND seat IN (${placeholders})`)
+      .all(showtimeId, ...seats).map(r => r.seat);
+    if (sold.length) {
+      return res.status(409).json({ ok: false, status: 'sold', conflict_seats: sold,
+        error: `Kursi ${sold.join(', ')} sudah terjual` });
+    }
+    // Check holds owned by another token
+    const held = db.prepare(`SELECT seat FROM cinema_seat_holds WHERE showtime_id = ? AND seat IN (${placeholders}) AND hold_token != ?`)
+      .all(showtimeId, ...seats, token).map(r => r.seat);
+    if (held.length) {
+      return res.status(409).json({ ok: false, status: 'held', conflict_seats: held,
+        error: `Kursi ${held.join(', ')} sedang disimpan customer lain` });
+    }
+    // Atomic upsert — if seat exists with same token, refresh expiry; else insert.
+    const expiresAt = Math.floor(Date.now()/1000) + ttl;
+    try {
+      db.transaction(() => {
+        const upsert = db.prepare(`INSERT INTO cinema_seat_holds (showtime_id, seat, hold_token, expires_at)
+                                   VALUES (?, ?, ?, ?)
+                                   ON CONFLICT(showtime_id, seat)
+                                     DO UPDATE SET expires_at = excluded.expires_at
+                                     WHERE cinema_seat_holds.hold_token = excluded.hold_token`);
+        for (const s of seats) {
+          const info = upsert.run(showtimeId, s, token, expiresAt);
+          if (info.changes === 0) throw new Error(`Kursi ${s} barusan diambil customer lain`);
+        }
+      })();
+    } catch (e) {
+      return res.status(409).json({ ok: false, status: 'held', error: e.message });
+    }
+    res.json({ ok: true, hold_token: token, expires_at: expiresAt, seats, ttl_seconds: ttl });
+  });
+
+  router.post('/seats/release', (req, res) => {
+    const b = req.body || {};
+    const token = String(b.hold_token || '').trim();
+    if (!token) return res.status(400).json({ ok: false, error: 'hold_token wajib' });
+    let info;
+    if (Array.isArray(b.seats) && b.seats.length) {
+      const placeholders = b.seats.map(() => '?').join(',');
+      const args = [token, ...b.seats];
+      let sql = `DELETE FROM cinema_seat_holds WHERE hold_token = ? AND seat IN (${placeholders})`;
+      if (b.showtime_id) { sql += ` AND showtime_id = ?`; args.push(b.showtime_id); }
+      info = db.prepare(sql).run(...args);
+    } else {
+      info = db.prepare(`DELETE FROM cinema_seat_holds WHERE hold_token = ?`).run(token);
+    }
+    res.json({ ok: true, released: info.changes });
+  });
+
+  router.post('/seats/refresh', (req, res) => {
+    const b = req.body || {};
+    const token = String(b.hold_token || '').trim();
+    if (!token) return res.status(400).json({ ok: false, error: 'hold_token wajib' });
+    const ttl = Math.max(60, Math.min(HOLD_TTL_MAX, parseInt(b.ttl_seconds, 10) || HOLD_TTL_DEFAULT));
+    pruneExpiredHolds();
+    const expiresAt = Math.floor(Date.now()/1000) + ttl;
+    const info = db.prepare(`UPDATE cinema_seat_holds SET expires_at = ? WHERE hold_token = ?`).run(expiresAt, token);
+    res.json({ ok: info.changes > 0, expires_at: expiresAt, refreshed: info.changes });
   });
   router.get('/tickets', (req, res) => {
     let sql = `SELECT t.*, f.title AS film_title, st.name AS studio_name,
@@ -364,6 +597,20 @@ function setupCinema(app, opts = {}) {
     }
     const bundlesTotal = bundleRows.reduce((a, r) => a + r.qty * r.price, 0);
 
+    // If hold_token provided: verify all requested seats are held by this token
+    // (refuse mismatched holds — the customer can't claim seats they don't own)
+    const holdToken = String(b.hold_token || '').trim();
+    if (holdToken) {
+      pruneExpiredHolds();
+      const placeholders = seats.map(() => '?').join(',');
+      const ownedHolds = db.prepare(`SELECT seat FROM cinema_seat_holds WHERE showtime_id = ? AND seat IN (${placeholders}) AND hold_token = ?`)
+        .all(st.id, ...seats, holdToken).map(r => r.seat);
+      const missing = seats.filter(s => !ownedHolds.includes(s));
+      if (missing.length) {
+        return res.status(409).json({ ok: false, error: `Hold expired untuk kursi ${missing.join(', ')} — coba pilih ulang.` });
+      }
+    }
+
     const crypto = require('crypto');
     const purchaseId = 'CP-' + crypto.randomBytes(4).toString('hex').toUpperCase();
     const ins   = db.prepare(`INSERT INTO cinema_tickets (showtime_id, seat, price, buyer, buyer_email, buyer_phone, code, purchase_id) VALUES (?,?,?,?,?,?,?,?)`);
@@ -384,6 +631,12 @@ function setupCinema(app, opts = {}) {
       })();
     } catch (e) {
       return res.status(409).json({ error: 'sebagian kursi sudah terjual — muat ulang peta kursi' });
+    }
+    // Holds consumed — delete the customer's holds for this showtime atomically
+    if (holdToken) {
+      const placeholders = seats.map(() => '?').join(',');
+      db.prepare(`DELETE FROM cinema_seat_holds WHERE showtime_id = ? AND seat IN (${placeholders}) AND hold_token = ?`)
+        .run(st.id, ...seats, holdToken);
     }
     const seatsTotal = seats.length * (st.price || 0);
     res.json({
@@ -681,6 +934,422 @@ function setupCinema(app, opts = {}) {
     } catch (e) {
       res.status(500).json({ ok: false, error: e.message || 'Gagal kirim email' });
     }
+  });
+
+  // ── DISTRIBUTORS / FILM LICENSING ────────────────────────────────────
+  router.get('/distributors', (req, res) => {
+    const all = String(req.query.all || '') === '1';
+    const sql = all
+      ? `SELECT * FROM cinema_distributors ORDER BY name`
+      : `SELECT * FROM cinema_distributors WHERE is_active = 1 ORDER BY name`;
+    res.json({ distributors: db.prepare(sql).all() });
+  });
+  router.post('/distributors', (req, res) => {
+    const b = req.body || {};
+    if (!b.name || !String(b.name).trim()) return res.status(400).json({ ok: false, error: 'name wajib' });
+    const info = db.prepare(`INSERT INTO cinema_distributors
+      (name, code, contact_person, contact_email, contact_phone, address, notes, is_active)
+      VALUES (?,?,?,?,?,?,?,?)`)
+      .run(String(b.name).trim(), b.code || '', b.contact_person || '', b.contact_email || '',
+           b.contact_phone || '', b.address || '', b.notes || '', b.is_active === false ? 0 : 1);
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+  router.patch('/distributors/:id', (req, res) => {
+    const b = req.body || {};
+    const fields = []; const args = [];
+    for (const k of ['name', 'code', 'contact_person', 'contact_email', 'contact_phone', 'address', 'notes', 'is_active']) {
+      if (k in b) { fields.push(`${k} = ?`); args.push(k === 'is_active' ? (b[k] ? 1 : 0) : b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE cinema_distributors SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/distributors/:id', (req, res) => {
+    // Don't orphan films — unlink instead
+    db.prepare(`UPDATE cinema_films SET distributor_id = NULL WHERE distributor_id = ?`).run(req.params.id);
+    db.prepare(`DELETE FROM cinema_distributors WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+  router.get('/distributors/:id/films', (req, res) => {
+    const films = db.prepare(`SELECT * FROM cinema_films WHERE distributor_id = ? ORDER BY title`).all(req.params.id);
+    res.json({ films });
+  });
+
+  // Patch film license details (used by Film Distribution admin page)
+  router.patch('/films/:id', (req, res) => {
+    const b = req.body || {};
+    const fields = []; const args = [];
+    for (const k of ['title', 'genre', 'duration_min', 'rating', 'status', 'synopsis',
+                     'distributor_id', 'license_start', 'license_end', 'revenue_share_pct',
+                     'min_run_days', 'distributor_notes']) {
+      if (k in b) {
+        fields.push(`${k} = ?`);
+        args.push(k === 'duration_min' || k === 'min_run_days' || k === 'distributor_id' ? (b[k] == null || b[k] === '' ? null : parseInt(b[k], 10))
+                : k === 'revenue_share_pct' ? (b[k] == null || b[k] === '' ? 0 : parseFloat(b[k]))
+                : b[k]);
+      }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE cinema_films SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  // ── SHARE TIERS (per-film tiered revenue share) ──────────────────────
+  router.get('/films/:id/share-tiers', (req, res) => {
+    const rows = db.prepare(`SELECT * FROM cinema_share_tiers WHERE film_id = ? ORDER BY week_from`).all(req.params.id);
+    res.json({ tiers: rows });
+  });
+  router.post('/films/:id/share-tiers', (req, res) => {
+    const b = req.body || {};
+    const wf = Math.max(1, parseInt(b.week_from, 10) || 1);
+    const wt = b.week_to == null || b.week_to === '' ? null : Math.max(wf, parseInt(b.week_to, 10));
+    const cp = Math.max(0, Math.min(100, parseFloat(b.cinema_pct ?? 50)));
+    const dp = b.distributor_pct == null ? +(100 - cp).toFixed(2) : Math.max(0, Math.min(100, parseFloat(b.distributor_pct)));
+    const info = db.prepare(`INSERT INTO cinema_share_tiers (film_id, week_from, week_to, cinema_pct, distributor_pct, notes) VALUES (?,?,?,?,?,?)`)
+      .run(req.params.id, wf, wt, cp, dp, b.notes || '');
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+  router.patch('/share-tiers/:id', (req, res) => {
+    const b = req.body || {};
+    const fields = []; const args = [];
+    for (const k of ['week_from', 'week_to', 'cinema_pct', 'distributor_pct', 'notes']) {
+      if (k in b) {
+        fields.push(`${k} = ?`);
+        if (k === 'week_from' || k === 'week_to') args.push(b[k] == null || b[k] === '' ? null : parseInt(b[k], 10));
+        else if (k === 'cinema_pct' || k === 'distributor_pct') args.push(parseFloat(b[k]) || 0);
+        else args.push(b[k]);
+      }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE cinema_share_tiers SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/share-tiers/:id', (req, res) => {
+    db.prepare(`DELETE FROM cinema_share_tiers WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+  // Convenience: seed a film with the standard Indo template W1 50/50, W2 60/40, W3+ 70/30
+  router.post('/films/:id/share-tiers/seed-standard', (req, res) => {
+    db.prepare(`DELETE FROM cinema_share_tiers WHERE film_id = ?`).run(req.params.id);
+    const ins = db.prepare(`INSERT INTO cinema_share_tiers (film_id, week_from, week_to, cinema_pct, distributor_pct, notes) VALUES (?,?,?,?,?,?)`);
+    ins.run(req.params.id, 1, 1,    50, 50, 'Week 1');
+    ins.run(req.params.id, 2, 2,    60, 40, 'Week 2');
+    ins.run(req.params.id, 3, null, 70, 30, 'Week 3+');
+    res.json({ ok: true });
+  });
+
+  // ── SETTLEMENT (auto-recon, tiered share aware) ──────────────────────
+  // Untuk setiap tiket:
+  //   net_per_tkt = price × (1 − vat_pct/100)
+  //   week        = floor((sold_date − license_start) / 7) + 1
+  //   tier        = tier dengan week_from ≤ week ≤ (week_to ?? ∞)
+  //   distributor_royalty = net_per_tkt × tier.distributor_pct / 100
+  //   cinema_share        = net_per_tkt × tier.cinema_pct / 100
+  // Kalau film belum punya tiers → fallback ke film.revenue_share_pct flat.
+  function getWeekIndex(soldAt, licenseStart) {
+    if (!licenseStart) return 1;
+    const [Y, M, D] = String(licenseStart).split('-').map(Number);
+    if (!Y || !M || !D) return 1;
+    const startMs = new Date(Y, M - 1, D, 0, 0, 0).getTime();
+    const days = Math.floor((soldAt * 1000 - startMs) / 86400000);
+    return Math.max(1, Math.floor(days / 7) + 1);
+  }
+  function pickTier(tiers, week) {
+    for (const t of tiers) {
+      if (week >= (t.week_from || 1) && (t.week_to == null || week <= t.week_to)) return t;
+    }
+    return null;
+  }
+
+  // Settlement: revenue per distributor × revenue share = royalty owed.
+  // Filters: ?from=YYYY-MM-DD&to=YYYY-MM-DD&distributor_id=N
+  router.get('/distribution/settlement', (req, res) => {
+    const where = []; const params = {};
+    if (req.query.from) { where.push(`date(t.sold_at,'unixepoch','localtime') >= @from`); params.from = req.query.from; }
+    if (req.query.to)   { where.push(`date(t.sold_at,'unixepoch','localtime') <= @to`);   params.to = req.query.to; }
+    if (req.query.distributor_id) { where.push(`f.distributor_id = @did`); params.did = parseInt(req.query.distributor_id, 10); }
+    const W = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+    // Pull each ticket with its film + distributor; compute tiered royalty in JS
+    const rows = db.prepare(`
+      SELECT t.id AS ticket_id, t.price, t.sold_at,
+             f.id AS film_id, f.title AS film_title, f.license_start, f.license_end,
+             f.revenue_share_pct AS legacy_share_pct,
+             d.id AS distributor_id, d.name AS distributor_name, d.code AS distributor_code,
+             COALESCE(d.vat_pct, 11) AS vat_pct
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_films    f ON f.id = s.film_id
+      LEFT JOIN cinema_distributors d ON d.id = f.distributor_id
+      ${W}
+    `).all(params);
+
+    // Cache tiers per film
+    const tiersByFilm = {};
+    function getTiers(filmId) {
+      if (filmId == null) return [];
+      if (tiersByFilm[filmId]) return tiersByFilm[filmId];
+      tiersByFilm[filmId] = db.prepare(`SELECT * FROM cinema_share_tiers WHERE film_id = ? ORDER BY week_from`).all(filmId);
+      return tiersByFilm[filmId];
+    }
+
+    const byDistMap = {};   // distributor_id → aggregate
+    const byFilmMap = {};   // film_id → aggregate
+    const byTierMap = {};   // `${distributor_id}|${film_id}|week_from-week_to` → aggregate
+    for (const r of rows) {
+      const vat = r.vat_pct || 0;
+      const gross = r.price || 0;
+      const net = gross * (1 - vat / 100);
+      const week = getWeekIndex(r.sold_at, r.license_start);
+      const tiers = getTiers(r.film_id);
+      const tier  = pickTier(tiers, week);
+      let cinemaPct, distributorPct, tierKey, tierLabel;
+      if (tier) {
+        cinemaPct = tier.cinema_pct;
+        distributorPct = tier.distributor_pct;
+        tierKey = `tier:${tier.id}`;
+        tierLabel = `W${tier.week_from}${tier.week_to ? '-W' + tier.week_to : '+'} · ${cinemaPct}/${distributorPct}`;
+      } else {
+        // Legacy fallback — flat revenue_share_pct as distributor cut
+        distributorPct = r.legacy_share_pct || 0;
+        cinemaPct = 100 - distributorPct;
+        tierKey = `legacy:${r.film_id}`;
+        tierLabel = `flat ${cinemaPct}/${distributorPct}`;
+      }
+      const royalty = net * distributorPct / 100;
+      const cinemaShare = net * cinemaPct / 100;
+
+      // Aggregate per distributor
+      const dKey = r.distributor_id || 'none';
+      const D = byDistMap[dKey] || (byDistMap[dKey] = {
+        distributor_id: r.distributor_id, distributor_name: r.distributor_name || '— Tanpa distributor —',
+        distributor_code: r.distributor_code || '',
+        tickets: 0, gross: 0, vat: 0, net: 0, royalty: 0, cinema_share: 0,
+      });
+      D.tickets++; D.gross += gross; D.vat += gross - net; D.net += net;
+      D.royalty += royalty; D.cinema_share += cinemaShare;
+
+      // Aggregate per film
+      const fKey = r.film_id || 'none';
+      const F = byFilmMap[fKey] || (byFilmMap[fKey] = {
+        film_id: r.film_id, film_title: r.film_title || '—',
+        distributor_id: r.distributor_id, distributor_name: r.distributor_name || '— Tanpa distributor —',
+        license_start: r.license_start, license_end: r.license_end,
+        tickets: 0, gross: 0, net: 0, royalty: 0, cinema_share: 0,
+      });
+      F.tickets++; F.gross += gross; F.net += net;
+      F.royalty += royalty; F.cinema_share += cinemaShare;
+
+      // Aggregate per tier (untuk audit recon)
+      const tKey = `${dKey}|${fKey}|${tierKey}`;
+      const T = byTierMap[tKey] || (byTierMap[tKey] = {
+        distributor_id: r.distributor_id, distributor_name: r.distributor_name || '— Tanpa distributor —',
+        film_id: r.film_id, film_title: r.film_title || '—',
+        tier_label: tierLabel, cinema_pct: cinemaPct, distributor_pct: distributorPct,
+        tickets: 0, gross: 0, net: 0, royalty: 0, cinema_share: 0,
+      });
+      T.tickets++; T.gross += gross; T.net += net;
+      T.royalty += royalty; T.cinema_share += cinemaShare;
+    }
+
+    const byDistributor = Object.values(byDistMap).sort((a, b) => b.net - a.net);
+    const byFilm        = Object.values(byFilmMap).sort((a, b) => b.net - a.net);
+    const byTier        = Object.values(byTierMap).sort((a, b) => b.net - a.net);
+    const totals = {
+      tickets:      rows.length,
+      gross:        byDistributor.reduce((a, r) => a + r.gross, 0),
+      vat:          byDistributor.reduce((a, r) => a + r.vat, 0),
+      net:          byDistributor.reduce((a, r) => a + r.net, 0),
+      royalty:      byDistributor.reduce((a, r) => a + r.royalty, 0),
+      cinema_share: byDistributor.reduce((a, r) => a + r.cinema_share, 0),
+    };
+    res.json({ totals, by_distributor: byDistributor, by_film: byFilm, by_tier: byTier });
+  });
+
+  // ── FILM RATINGS ──────────────────────────────────────────────────────
+  router.post('/films/:id/rate', (req, res) => {
+    const b = req.body || {};
+    const r = parseInt(b.rating, 10);
+    if (!r || r < 1 || r > 5) return res.status(400).json({ ok: false, error: 'Rating 1-5 wajib' });
+    const film = db.prepare(`SELECT id FROM cinema_films WHERE id = ?`).get(req.params.id);
+    if (!film) return res.status(404).json({ ok: false, error: 'Film tidak ditemukan' });
+    const info = db.prepare(`INSERT INTO cinema_film_ratings (film_id, rating, comment, customer_name, customer_phone, ticket_code) VALUES (?,?,?,?,?,?)`)
+      .run(req.params.id, r, b.comment || '', b.customer_name || '', b.customer_phone || '', b.ticket_code || '');
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+  router.get('/films/:id/ratings', (req, res) => {
+    const rows = db.prepare(`SELECT * FROM cinema_film_ratings WHERE film_id = ? ORDER BY created_at DESC LIMIT 100`).all(req.params.id);
+    const agg  = db.prepare(`SELECT ROUND(AVG(rating),2) avg, COUNT(*) total FROM cinema_film_ratings WHERE film_id = ?`).get(req.params.id);
+    res.json({ ratings: rows, avg: agg.avg, total: agg.total });
+  });
+
+  // ── STUDIO EVENT BOOKING ──────────────────────────────────────────────
+  // Booking studio penuh untuk event privat / corporate / wedding / birthday.
+  // Conflict check: tidak boleh overlap dengan booking lain di studio/tanggal yang sama.
+  function bookingOverlaps(studio_id, event_date, start_time, end_time, excludeId) {
+    let sql = `SELECT id FROM cinema_studio_bookings
+               WHERE studio_id = ? AND event_date = ? AND status != 'cancelled'
+                 AND NOT (end_time <= ? OR start_time >= ?)`;
+    const args = [studio_id, event_date, start_time, end_time];
+    if (excludeId) { sql += ' AND id != ?'; args.push(excludeId); }
+    return db.prepare(sql).all(...args);
+  }
+  router.get('/event-bookings', (req, res) => {
+    const where = []; const params = {};
+    if (req.query.from)         { where.push('b.event_date >= @from');           params.from = req.query.from; }
+    if (req.query.to)           { where.push('b.event_date <= @to');             params.to = req.query.to; }
+    if (req.query.studio_id)    { where.push('b.studio_id = @sid');              params.sid = parseInt(req.query.studio_id, 10); }
+    if (req.query.status)       { where.push('b.status = @status');              params.status = req.query.status; }
+    const W = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const rows = db.prepare(`
+      SELECT b.*, s.name AS studio_name, s.studio_type, (s.rows * s.cols) AS capacity
+      FROM cinema_studio_bookings b
+      LEFT JOIN cinema_studios s ON s.id = b.studio_id
+      ${W} ORDER BY b.event_date DESC, b.start_time DESC LIMIT 200
+    `).all(params);
+    res.json({ bookings: rows });
+  });
+  router.post('/event-bookings', (req, res) => {
+    const b = req.body || {};
+    const sid = parseInt(b.studio_id, 10);
+    if (!sid || !b.event_date || !b.start_time || !b.end_time) {
+      return res.status(400).json({ ok: false, error: 'studio_id, event_date, start_time, end_time wajib' });
+    }
+    if (b.start_time >= b.end_time) {
+      return res.status(400).json({ ok: false, error: 'end_time harus lebih besar dari start_time' });
+    }
+    const overlaps = bookingOverlaps(sid, b.event_date, b.start_time, b.end_time);
+    if (overlaps.length) {
+      return res.status(409).json({ ok: false, error: 'Studio sudah di-booking di slot ini (bentrok dengan booking lain)', conflict_ids: overlaps.map(o => o.id) });
+    }
+    const code = 'CE-' + require('crypto').randomBytes(3).toString('hex').toUpperCase();
+    const info = db.prepare(`INSERT INTO cinema_studio_bookings
+      (booking_code, studio_id, event_type, event_name, event_date, start_time, end_time,
+       contact_name, contact_phone, contact_email, attendees, total_price, deposit_paid, status, notes)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+      .run(code, sid, b.event_type || 'private',  b.event_name || '',
+           b.event_date, b.start_time, b.end_time,
+           b.contact_name || '', b.contact_phone || '', b.contact_email || '',
+           parseInt(b.attendees, 10) || 0, parseInt(b.total_price, 10) || 0,
+           parseInt(b.deposit_paid, 10) || 0, b.status || 'pending', b.notes || '');
+    res.json({ ok: true, id: info.lastInsertRowid, booking_code: code });
+  });
+  router.patch('/event-bookings/:id', (req, res) => {
+    const b = req.body || {};
+    const existing = db.prepare(`SELECT * FROM cinema_studio_bookings WHERE id = ?`).get(req.params.id);
+    if (!existing) return res.status(404).json({ ok: false, error: 'Booking tidak ditemukan' });
+    // Conflict check if any time field changed
+    if (b.event_date || b.start_time || b.end_time || b.studio_id) {
+      const sid = b.studio_id ? parseInt(b.studio_id, 10) : existing.studio_id;
+      const ed  = b.event_date || existing.event_date;
+      const st  = b.start_time || existing.start_time;
+      const et  = b.end_time   || existing.end_time;
+      if (st >= et) return res.status(400).json({ ok: false, error: 'end_time harus lebih besar dari start_time' });
+      const overlaps = bookingOverlaps(sid, ed, st, et, parseInt(req.params.id, 10));
+      if (overlaps.length) return res.status(409).json({ ok: false, error: 'Bentrok dengan booking lain' });
+    }
+    const fields = []; const args = [];
+    for (const k of ['studio_id', 'event_type', 'event_name', 'event_date', 'start_time', 'end_time',
+                     'contact_name', 'contact_phone', 'contact_email', 'attendees', 'total_price', 'deposit_paid', 'status', 'notes']) {
+      if (k in b) {
+        fields.push(`${k} = ?`);
+        if (['studio_id', 'attendees', 'total_price', 'deposit_paid'].includes(k)) args.push(parseInt(b[k], 10) || 0);
+        else args.push(b[k]);
+      }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE cinema_studio_bookings SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/event-bookings/:id', (req, res) => {
+    db.prepare(`DELETE FROM cinema_studio_bookings WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
+  // ── IN-STUDIO QR ORDER ────────────────────────────────────────────────
+  // Customer scans seat-side QR mid-movie → orders F&B for delivery.
+  // Menu = cinema_bundles catalog (re-used; staff sees orders in admin queue).
+  router.get('/in-studio/menu', (req, res) => {
+    const rows = db.prepare(`SELECT * FROM cinema_bundles WHERE is_active = 1 ORDER BY sort_order, name`).all();
+    res.json({ items: rows });
+  });
+  router.post('/in-studio/orders', (req, res) => {
+    const b = req.body || {};
+    const seat = String(b.seat || '').trim();
+    if (!seat) return res.status(400).json({ ok: false, error: 'Kursi wajib diisi' });
+    const items = Array.isArray(b.items) ? b.items : [];
+    const valid = [];
+    for (const it of items) {
+      const bid = parseInt(it.bundle_id, 10);
+      const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+      if (!bid) continue;
+      const bn = db.prepare(`SELECT * FROM cinema_bundles WHERE id = ? AND is_active = 1`).get(bid);
+      if (!bn) return res.status(400).json({ ok: false, error: `Menu id ${bid} tidak ditemukan` });
+      valid.push({ bundle_id: bn.id, bundle_name: bn.name, qty, price: bn.price });
+    }
+    if (!valid.length) return res.status(400).json({ ok: false, error: 'Pesanan kosong' });
+    const total = valid.reduce((a, r) => a + r.qty * r.price, 0);
+    const code = 'CO-' + require('crypto').randomBytes(3).toString('hex').toUpperCase();
+    let orderId;
+    db.transaction(() => {
+      const info = db.prepare(`INSERT INTO cinema_in_studio_orders
+        (order_code, showtime_id, studio_id, studio_name, seat, buyer_name, buyer_phone, notes, total)
+        VALUES (?,?,?,?,?,?,?,?,?)`)
+        .run(code,
+             b.showtime_id ? parseInt(b.showtime_id, 10) : null,
+             b.studio_id   ? parseInt(b.studio_id, 10)   : null,
+             b.studio_name || '', seat,
+             b.buyer_name || '', b.buyer_phone || '',
+             b.notes || '', total);
+      orderId = info.lastInsertRowid;
+      const insIt = db.prepare(`INSERT INTO cinema_in_studio_order_items (order_id, bundle_id, bundle_name, qty, price) VALUES (?,?,?,?,?)`);
+      for (const r of valid) insIt.run(orderId, r.bundle_id, r.bundle_name, r.qty, r.price);
+    })();
+    res.json({ ok: true, id: orderId, order_code: code, total, items: valid });
+  });
+  router.get('/in-studio/orders', (req, res) => {
+    const where = []; const params = {};
+    if (req.query.status)      { where.push('o.status = @status');           params.status = req.query.status; }
+    if (req.query.studio_id)   { where.push('o.studio_id = @studio_id');     params.studio_id = parseInt(req.query.studio_id, 10); }
+    if (req.query.from)        { where.push("date(o.created_at,'unixepoch','localtime') >= @from"); params.from = req.query.from; }
+    if (req.query.to)          { where.push("date(o.created_at,'unixepoch','localtime') <= @to");   params.to = req.query.to; }
+    const W = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const orders = db.prepare(`
+      SELECT o.*, COUNT(i.id) AS items_count
+      FROM cinema_in_studio_orders o
+      LEFT JOIN cinema_in_studio_order_items i ON i.order_id = o.id
+      ${W} GROUP BY o.id ORDER BY o.created_at DESC LIMIT 200
+    `).all(params);
+    // Hydrate items
+    const ids = orders.map(o => o.id);
+    if (ids.length) {
+      const phs = ids.map(() => '?').join(',');
+      const itemRows = db.prepare(`SELECT * FROM cinema_in_studio_order_items WHERE order_id IN (${phs})`).all(...ids);
+      const byOrder = {};
+      for (const it of itemRows) (byOrder[it.order_id] = byOrder[it.order_id] || []).push(it);
+      for (const o of orders) o.items = byOrder[o.id] || [];
+    }
+    res.json({ orders });
+  });
+  router.patch('/in-studio/orders/:id', (req, res) => {
+    const b = req.body || {};
+    const o = db.prepare(`SELECT * FROM cinema_in_studio_orders WHERE id = ?`).get(req.params.id);
+    if (!o) return res.status(404).json({ ok: false, error: 'Order tidak ditemukan' });
+    const fields = []; const args = [];
+    if (b.status && ['pending', 'preparing', 'delivered', 'cancelled'].includes(b.status)) {
+      fields.push('status = ?'); args.push(b.status);
+      if (b.status === 'delivered') { fields.push('delivered_at = ?'); args.push(Math.floor(Date.now()/1000)); }
+    }
+    if (b.delivered_by) { fields.push('delivered_by = ?'); args.push(String(b.delivered_by)); }
+    if (b.notes != null) { fields.push('notes = ?'); args.push(b.notes); }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE cinema_in_studio_orders SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
   });
 
   router.get('/tickets/wa-text', (req, res) => {

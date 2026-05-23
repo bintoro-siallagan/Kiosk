@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import DelightPopup from "./components/DelightPopup.jsx";
 
 // CinemaKiosk — customer-facing cinema ticket flow.
 // films → showtimes → seats → F&B bundles → confirmation. Uses /api/cinema/*.
@@ -22,25 +23,103 @@ export default function CinemaKiosk({ apiBase }) {
   const [done, setDone] = useState(null);
   const [msg, setMsg] = useState("");
   const [sending, setSending] = useState(false);
+  // ── Anti double-sell: each browser gets a stable hold_token (persisted in
+  // localStorage so refresh doesn't drop reservations). Backend locks the
+  // seats while customer is in F&B + payment so nobody else can grab them.
+  const [holdToken] = useState(() => {
+    try {
+      let t = localStorage.getItem("cinema_hold_token");
+      if (!t) {
+        const rnd = (window.crypto?.randomUUID?.() || Math.random().toString(36).slice(2) + Date.now().toString(36));
+        t = "CH-" + String(rnd).replace(/-/g, "").slice(0, 16).toUpperCase();
+        localStorage.setItem("cinema_hold_token", t);
+      }
+      return t;
+    } catch { return "CH-" + Math.random().toString(36).slice(2, 18).toUpperCase(); }
+  });
+  const [holdExpiresAt, setHoldExpiresAt] = useState(null); // unix sec
+  const [holdRemaining, setHoldRemaining] = useState(0);    // sec
   const base = `${apiBase || ""}/api/cinema`;
 
   useEffect(() => {
-    fetch(`${base}/films`).then(r => r.json()).then(d => setFilms((d.films || []).filter(f => f.status === "now_showing"))).catch(() => {});
+    fetch(`${base}/films`).then(r => r.json()).then(d => setFilms(d.films || [])).catch(() => {});
     fetch(`${base}/showtimes`).then(r => r.json()).then(d => setShowtimes(d.showtimes || [])).catch(() => {});
     fetch(`${base}/bundles`).then(r => r.json()).then(d => setBundleCatalog(d.bundles || [])).catch(() => {});
     // eslint-disable-next-line
   }, []);
+  // ── Customer rating (1-5 stars) on done step ──
+  const [showDelight, setShowDelight] = useState(false);
+  const [rateValue, setRateValue] = useState(0);
+  const [rateComment, setRateComment] = useState("");
+  const [rateSent, setRateSent] = useState(false);
+  async function submitRating() {
+    if (!rateValue || !done?.film?.id || rateSent) return;
+    try {
+      const r = await fetch(`${base}/films/${done.film.id}/rate`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rating: rateValue, comment: rateComment,
+          customer_name: done.email || "", customer_phone: done.phone || "",
+          ticket_code: done.tickets?.[0]?.code || "",
+        }),
+      });
+      const d = await r.json();
+      if (d.ok) setRateSent(true);
+    } catch {}
+  }
 
+  const reloadSeats = (showtimeId) => {
+    return fetch(`${base}/showtimes/${showtimeId}/seats?hold_token=${encodeURIComponent(holdToken)}`)
+      .then(r => r.json()).then(d => { if (d && !d.error) setSeatData(d); return d; });
+  };
   const pickFilm = (f) => { setFilm(f); setMsg(""); setStep("showtimes"); };
   const pickShow = (s) => {
     setMsg("");
-    fetch(`${base}/showtimes/${s.id}/seats`).then(r => r.json())
+    fetch(`${base}/showtimes/${s.id}/seats?hold_token=${encodeURIComponent(holdToken)}`).then(r => r.json())
       .then(d => { setShow(s); setSeatData(d && !d.error ? d : null); setSeats(new Set()); setStep("seats"); }).catch(() => {});
   };
   const toggleSeat = (seat) => {
-    if (!seatData || seatData.sold.includes(seat)) return;
+    if (!seatData) return;
+    if (seatData.sold.includes(seat)) return;
+    if ((seatData.held_by_others || []).includes(seat)) return;
     setSeats(p => { const n = new Set(p); n.has(seat) ? n.delete(seat) : n.add(seat); return n; });
   };
+
+  // Reserve seats on backend (atomic) before advancing to F&B / payment.
+  async function holdSeats() {
+    if (!seats.size || !show) return { ok: false };
+    setMsg("");
+    try {
+      const r = await fetch(`${base}/seats/hold`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ showtime_id: show.id, seats: [...seats], hold_token: holdToken, ttl_seconds: 300 }),
+      });
+      const d = await r.json();
+      if (!d.ok) {
+        setMsg("⚠ " + (d.error || "Gagal menyimpan kursi"));
+        if (d.conflict_seats) {
+          setSeats(p => { const n = new Set(p); d.conflict_seats.forEach(s => n.delete(s)); return n; });
+        }
+        if (show) await reloadSeats(show.id);
+        return { ok: false };
+      }
+      setHoldExpiresAt(d.expires_at);
+      return { ok: true };
+    } catch (e) {
+      setMsg("⚠ Koneksi gagal");
+      return { ok: false };
+    }
+  }
+
+  async function releaseHolds() {
+    try {
+      await fetch(`${base}/seats/release`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hold_token: holdToken }),
+      });
+    } catch {}
+    setHoldExpiresAt(null);
+  }
 
   // Cart helpers for bundles
   const incBundle = (id) => setCart(c => ({ ...c, [id]: (c[id] || 0) + 1 }));
@@ -59,8 +138,10 @@ export default function CinemaKiosk({ apiBase }) {
   const bundlesTotal = cartItems.reduce((a, it) => a + it.qty * it.price, 0);
   const grandTotal = seatsTotal + bundlesTotal;
 
-  const goBundles = () => {
+  const goBundles = async () => {
     if (!seats.size || !show) return;
+    const h = await holdSeats();
+    if (!h.ok) return;
     if (bundleCatalog.length === 0) { buy([]); return; }
     setStep("bundles");
   };
@@ -71,6 +152,7 @@ export default function CinemaKiosk({ apiBase }) {
     const body = {
       showtime_id: show.id,
       seats: [...seats],
+      hold_token: holdToken,
       bundles: (bundleItems || cartItems).map(it => ({ bundle_id: it.bundle_id, qty: it.qty })),
       buyer_email: email.trim() || undefined,
       buyer_phone: phone.trim() || undefined,
@@ -90,15 +172,60 @@ export default function CinemaKiosk({ apiBase }) {
             email: email.trim(),
             phone: phone.trim(),
           });
+          setHoldExpiresAt(null); // holds auto-consumed by backend
+          setRateValue(0); setRateComment(""); setRateSent(false);
           setStep("done");
+          setShowDelight(true);
         }
       }).catch(() => setMsg("⚠ Gagal memproses tiket"));
   };
 
   const reset = () => {
+    releaseHolds();
     setStep("films"); setFilm(null); setShow(null); setSeatData(null);
     setSeats(new Set()); setCart({}); setEmail(""); setPhone(""); setDone(null); setMsg("");
   };
+
+  // ── Countdown timer for the active hold ──
+  useEffect(() => {
+    if (!holdExpiresAt) { setHoldRemaining(0); return; }
+    const tick = () => {
+      const r = holdExpiresAt - Math.floor(Date.now() / 1000);
+      setHoldRemaining(Math.max(0, r));
+      if (r <= 0) {
+        setMsg("⚠ Waktu menyimpan kursi habis (5 menit). Pilih ulang.");
+        releaseHolds();
+        setSeats(new Set());
+        setStep("seats");
+        if (show) reloadSeats(show.id);
+      }
+    };
+    tick();
+    const iv = setInterval(tick, 1000);
+    return () => clearInterval(iv);
+    // eslint-disable-next-line
+  }, [holdExpiresAt]);
+
+  // ── Heartbeat: refresh hold every 60s while in bundles/payment step ──
+  useEffect(() => {
+    if (step !== "bundles" || !holdExpiresAt) return;
+    const iv = setInterval(() => {
+      fetch(`${base}/seats/refresh`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ hold_token: holdToken, ttl_seconds: 300 }),
+      }).then(r => r.json()).then(d => { if (d.ok) setHoldExpiresAt(d.expires_at); }).catch(() => {});
+    }, 60000);
+    return () => clearInterval(iv);
+    // eslint-disable-next-line
+  }, [step]);
+
+  // Auto-poll seat map (other customers' buys) while customer is selecting
+  useEffect(() => {
+    if (step !== "seats" || !show) return;
+    const iv = setInterval(() => reloadSeats(show.id), 8000);
+    return () => clearInterval(iv);
+    // eslint-disable-next-line
+  }, [step, show?.id]);
 
   // Email — POST to backend (uses configured SMTP)
   async function emailTickets() {
@@ -199,7 +326,11 @@ export default function CinemaKiosk({ apiBase }) {
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "18px 24px", borderBottom: "1px solid #161b22", flexShrink: 0 }}>
         {step !== "films" && step !== "done" && (
-          <button onClick={() => setStep(step === "bundles" ? "seats" : step === "seats" ? "showtimes" : "films")}
+          <button onClick={async () => {
+            if (step === "bundles") setStep("seats");
+            else if (step === "seats") { await releaseHolds(); setStep("showtimes"); }
+            else setStep("films");
+          }}
             style={{ background: "#161b22", border: "1px solid #2a2b30", borderRadius: 10, color: "#e6edf3", fontSize: 16, padding: "8px 14px", cursor: "pointer", fontFamily: "inherit" }}>←</button>
         )}
         <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 20, fontWeight: 700, letterSpacing: 1 }}>🎬 karya<span style={{ color: "#a855f7" }}>OS</span> Cinema</div>
@@ -219,16 +350,42 @@ export default function CinemaKiosk({ apiBase }) {
           <>
             <H>Pilih Film</H>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 14 }}>
-              {films.map(f => (
+              {films.filter(f => f.status === "now_showing").map(f => (
                 <button key={f.id} onClick={() => pickFilm(f)} style={card()}>
                   <div style={{ fontSize: 38, marginBottom: 8 }}>🎞️</div>
                   <div style={{ fontSize: 16, fontWeight: 700 }}>{f.title}</div>
                   <div style={{ fontSize: 12.5, color: "#7d8590", marginTop: 4 }}>{f.genre || "—"} · {f.duration_min || 0} mnt</div>
-                  <div style={{ marginTop: 8, display: "inline-block", fontSize: 11, fontWeight: 700, color: "#a78bfa", background: "#a855f722", borderRadius: 6, padding: "3px 10px" }}>{f.rating}</div>
+                  <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", background: "#a855f722", borderRadius: 6, padding: "3px 10px" }}>{f.rating}</span>
+                    {f.avg_rating ? (
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "#fbbf24" }}>★ {f.avg_rating} <span style={{ color: "#5b6470", fontWeight: 400 }}>({f.ratings_count})</span></span>
+                    ) : null}
+                  </div>
                 </button>
               ))}
-              {films.length === 0 && <div style={{ color: "#5b6470", fontSize: 14 }}>Belum ada film tayang.</div>}
+              {films.filter(f => f.status === "now_showing").length === 0 && <div style={{ color: "#5b6470", fontSize: 14 }}>Belum ada film tayang.</div>}
             </div>
+
+            {films.filter(f => f.status === "coming_soon").length > 0 && (
+              <>
+                <div style={{ marginTop: 30, marginBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 17, fontWeight: 700, letterSpacing: 1 }}>📅 Tayang Segera</div>
+                  <span style={{ fontSize: 11, color: "#fbbf24", background: "#f59e0b22", padding: "3px 10px", borderRadius: 6, fontWeight: 700, letterSpacing: 1 }}>COMING SOON</span>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 14 }}>
+                  {films.filter(f => f.status === "coming_soon").map(f => (
+                    <div key={f.id} style={{ ...card(), cursor: "default", opacity: 0.75, position: "relative", overflow: "hidden" }}>
+                      <div style={{ position: "absolute", top: 8, right: 8, fontSize: 9, color: "#fbbf24", background: "#f59e0b22", border: "1px solid #f59e0b55", borderRadius: 5, padding: "2px 7px", fontWeight: 700, letterSpacing: 1 }}>SEGERA</div>
+                      <div style={{ fontSize: 38, marginBottom: 8, filter: "grayscale(0.3)" }}>🎞️</div>
+                      <div style={{ fontSize: 16, fontWeight: 700 }}>{f.title}</div>
+                      <div style={{ fontSize: 12.5, color: "#7d8590", marginTop: 4 }}>{f.genre || "—"} · {f.duration_min || 0} mnt · {f.rating}</div>
+                      {f.synopsis && <div style={{ fontSize: 11.5, color: "#9ca3af", marginTop: 8, lineHeight: 1.45, maxHeight: 56, overflow: "hidden" }}>{f.synopsis}</div>}
+                      {f.license_start && <div style={{ fontSize: 11, color: "#fbbf24", marginTop: 8 }}>📅 Mulai {f.license_start}</div>}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </>
         )}
 
@@ -284,14 +441,16 @@ export default function CinemaKiosk({ apiBase }) {
                       {Array.from({ length: seatData.cols }).map((_, ci) => {
                         const seat = `${letter}${ci + 1}`;
                         const sold = seatData.sold.includes(seat);
+                        const heldOther = (seatData.held_by_others || []).includes(seat);
                         const sel = seats.has(seat);
+                        const unavail = sold || heldOther;
                         return (
-                          <button key={ci} onClick={() => toggleSeat(seat)} disabled={sold} title={seat}
+                          <button key={ci} onClick={() => toggleSeat(seat)} disabled={unavail} title={heldOther ? `${seat} · sedang disimpan customer lain` : seat}
                             style={{ width: 30, height: 30, borderRadius: 6, fontSize: 10, fontWeight: 700, fontFamily: "'Geist Mono',monospace",
-                              background: sold ? "#ef444433" : sel ? "#10b981" : "#1b212c",
-                              border: `1px solid ${sold ? "#ef444455" : sel ? "#10b981" : "#2a2b30"}`,
-                              color: sold ? "#ef4444" : sel ? "#04130c" : "#7d8590",
-                              cursor: sold ? "not-allowed" : "pointer" }}>{ci + 1}</button>
+                              background: sold ? "#ef444433" : heldOther ? "#eab30833" : sel ? "#10b981" : "#1b212c",
+                              border: `1px solid ${sold ? "#ef444455" : heldOther ? "#eab30855" : sel ? "#10b981" : "#2a2b30"}`,
+                              color: sold ? "#ef4444" : heldOther ? "#eab308" : sel ? "#04130c" : "#7d8590",
+                              cursor: unavail ? "not-allowed" : "pointer" }}>{ci + 1}</button>
                         );
                       })}
                     </div>
@@ -388,7 +547,33 @@ export default function CinemaKiosk({ apiBase }) {
                 🍿 Tunjukkan QR tiket di F&B counter untuk menukar combo.
               </div>
             )}
-            <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 22, flexWrap: "wrap" }}>
+            {/* Rating block (post-purchase: ask customer to rate the film) */}
+            <div style={{ marginTop: 22, background: "#0d1117", border: "1px solid #1b212c", borderRadius: 14, padding: 16, maxWidth: 440, margin: "22px auto 0" }}>
+              {rateSent ? (
+                <div style={{ textAlign: "center", padding: "10px 0" }}>
+                  <div style={{ fontSize: 28, marginBottom: 4 }}>🙏</div>
+                  <div style={{ fontSize: 13, color: "#10b981", fontWeight: 700 }}>Terima kasih atas rating-nya!</div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 11, color: "#fbbf24", letterSpacing: 1.5, fontWeight: 700, marginBottom: 8, textAlign: "center" }}>★ BERI RATING FILM</div>
+                  <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 10 }}>
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <button key={n} onClick={() => setRateValue(n)}
+                        style={{ background: "transparent", border: "none", fontSize: 30, cursor: "pointer", color: n <= rateValue ? "#fbbf24" : "#3a3a3a", padding: 4, fontFamily: "inherit" }}>★</button>
+                    ))}
+                  </div>
+                  <textarea value={rateComment} onChange={e => setRateComment(e.target.value)}
+                    placeholder="Komentar (opsional)…"
+                    style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px", background: "#0a0e16", border: "1px solid #2a2b30", borderRadius: 8, color: "#fff", fontSize: 12.5, fontFamily: "inherit", resize: "vertical", minHeight: 50, outline: "none" }} />
+                  <button onClick={submitRating} disabled={!rateValue}
+                    style={{ marginTop: 8, width: "100%", background: rateValue ? "#fbbf24" : "#1b212c", border: "none", borderRadius: 9, padding: "9px 18px", color: rateValue ? "#111" : "#5b6470", fontSize: 12.5, fontWeight: 700, cursor: rateValue ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
+                    Kirim Rating
+                  </button>
+                </>
+              )}
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 18, flexWrap: "wrap" }}>
               <button onClick={printTickets} style={btnGold}>
                 🖨️ Cetak {done.bundles?.length > 0 ? "+ Voucher F&B" : "Tiket"}
               </button>
@@ -424,12 +609,26 @@ export default function CinemaKiosk({ apiBase }) {
         </div>
       )}
 
+      <DelightPopup
+        show={showDelight && step === "done"}
+        emoji="🎉"
+        title="Tiket Siap!"
+        sub={`Selamat menonton ${done?.film?.title || ""}! Tunjukkan QR di pintu studio.`}
+        accent="#10b981"
+        onClose={() => setShowDelight(false)}
+      />
+
       {/* Footer — bundles step */}
       {step === "bundles" && (
         <div style={{ flexShrink: 0, borderTop: "1px solid #161b22", background: "#0a0e16", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div style={{ fontSize: 12, color: "#7d8590" }}>
             <div>Tiket <b style={{ color: "#fff" }}>{rp(seatsTotal)}</b> · F&amp;B <b style={{ color: "#fff" }}>{rp(bundlesTotal)}</b></div>
             <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 17, fontWeight: 700, color: "#10b981", marginTop: 2 }}>Total {rp(grandTotal)}</div>
+            {holdRemaining > 0 && (
+              <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 11, color: holdRemaining < 60 ? "#ef4444" : "#fbbf24", marginTop: 4, letterSpacing: 1 }}>
+                ⏱ Kursi disimpan {String(Math.floor(holdRemaining / 60)).padStart(2, "0")}:{String(holdRemaining % 60).padStart(2, "0")}
+              </div>
+            )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <button onClick={() => buy([])} style={{ background: "#1b212c", border: "1px solid #2a2b30", borderRadius: 12, padding: "12px 22px", color: "#9ca3af", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
