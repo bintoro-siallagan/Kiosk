@@ -348,8 +348,8 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       };
     });
     const surfaceItems = [
-      { id: "surf:pos",         title: "POS Kasir",            subtitle: "Buka POS terminal di tab baru",        icon: "🧾", kbd: "Open", onSelect: () => openTab("?pos=1") },
-      { id: "surf:pos-cinema",  title: "POS Cinema (Kasir)",   subtitle: "Jual tiket cinema di counter",         icon: "🎟️", kbd: "Open", onSelect: () => openTab("?pos-cinema") },
+      { id: "surf:pos",         title: "POS Kasir",            subtitle: "Buka POS terminal di tab baru",        icon: "🧾", kbd: "Open", onSelect: () => openTab("?pos=1&fresh=1") },
+      { id: "surf:pos-cinema",  title: "POS Cinema (Kasir)",   subtitle: "Jual tiket cinema di counter",         icon: "🎟️", kbd: "Open", onSelect: () => openTab("?pos-cinema&fresh=1") },
       { id: "surf:kds",         title: "KDS Dapur",            subtitle: "Kitchen display untuk staff dapur",    icon: "👨‍🍳", kbd: "Open", onSelect: () => openTab("?kds=1") },
       { id: "surf:cds",         title: "CDS Customer Display", subtitle: "Layar besar untuk customer",           icon: "📺", kbd: "Open", onSelect: () => openTab("?cds=1") },
       { id: "surf:kiosk",       title: "Kiosk F&B (Customer)", subtitle: "Customer self-order",                  icon: "🖥️", kbd: "Open", onSelect: () => openTab("?kiosk=1") },
@@ -415,7 +415,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "Pengaturan", icon: "⚙️", c: "#7d8590", on: () => openRight("admin", "settings") },
     ] },
     { title: "🛰️ Surface Operasional F&B", accent: "#10b981", items: [
-      { label: "POS Kasir", icon: "🧾", c: "#10b981", on: () => openTab("?pos=1") },
+      { label: "POS Kasir", icon: "🧾", c: "#10b981", on: () => openTab("?pos=1&fresh=1") },
       { label: "KDS Dapur", icon: "👨‍🍳", c: "#f97316", on: () => openTab("?kds=1") },
       { label: "CDS Display", icon: "📺", c: "#a855f7", on: () => openTab("?cds=1") },
       { label: "Kiosk", icon: "🖥️", c: "#06b6d4", on: () => openTab("?kiosk=1") },
@@ -445,7 +445,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     ] },
     // 🎬 Cinema — dedicated column terpisah dari F&B
     { title: "🎬 Cinema Vertical", accent: "#a855f7", items: [
-      { label: "POS Cinema (Kasir)",      icon: "🎟️", c: "#fbbf24", on: () => openTab("?pos-cinema") },
+      { label: "POS Cinema (Kasir)",      icon: "🎟️", c: "#fbbf24", on: () => openTab("?pos-cinema&fresh=1") },
       { label: "Cinema Kiosk (Customer)", icon: "🎬", c: "#a855f7", on: () => openTab("?cinema") },
       { label: "In-Studio QR Order",      icon: "🍿", c: "#f59e0b", on: () => openTab("?cinema-snack") },
       { label: "Lobby Board (TV)",        icon: "📺", c: "#22d3ee", on: () => openTab("?cinema-board") },

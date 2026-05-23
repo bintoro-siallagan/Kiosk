@@ -70,6 +70,14 @@ function QuickOrderFlow({ cashier, onExit }) {
 export default function POSApp() {
   const [cashier, setCashier] = useState(() => {
     try {
+      // Force-login support — buka dari AdminHome dengan ?fresh=1 → wajib login ulang
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("fresh") === "1") {
+        sessionStorage.removeItem("posCashier");
+        url.searchParams.delete("fresh");
+        window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + url.hash);
+        return null;
+      }
       const raw = sessionStorage.getItem("posCashier");
       return raw ? JSON.parse(raw) : null;
     } catch { return null; }

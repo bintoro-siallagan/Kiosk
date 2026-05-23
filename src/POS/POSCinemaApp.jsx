@@ -49,8 +49,19 @@ const fmtK = (n) => n >= 1e6 ? (n / 1e6).toFixed(1) + "jt" : n >= 1e3 ? Math.rou
 // MAIN APP
 // ═══════════════════════════════════════════════════════════════════
 export default function POSCinemaApp() {
+  // Force-login support — kalau buka dari AdminHome dengan ?fresh=1, clear session dulu
   const [cashier, setCashier] = useState(() => {
-    try { const raw = sessionStorage.getItem("posCashier"); return raw ? JSON.parse(raw) : null; } catch { return null; }
+    try {
+      const url = new URL(window.location.href);
+      if (url.searchParams.get("fresh") === "1") {
+        sessionStorage.removeItem("posCashier");
+        url.searchParams.delete("fresh");
+        window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + url.hash);
+        return null;
+      }
+      const raw = sessionStorage.getItem("posCashier");
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
   });
   const [stage, setStage] = useState("home"); // home | sell | pay | success
   const [picked, setPicked] = useState(null); // showtime obj
@@ -161,7 +172,14 @@ function TopBar({ cashier, stage, onLogout, onHome }) {
           <div style={{ fontSize: 11.5, color: TH.sub }}>Kasir</div>
           <div style={{ fontSize: 13.5, fontWeight: 700, color: "#fff" }}>{cashier?.name || "—"}</div>
         </div>
-        <button onClick={onLogout} className="ghost-btn" style={S.ghostBtn}>Logout</button>
+        <button onClick={onLogout} className="ghost-btn" style={{
+          ...S.ghostBtn,
+          background: "rgba(239,68,68,0.08)",
+          border: "1px solid rgba(239,68,68,0.35)",
+          color: "#fca5a5",
+          fontWeight: 700,
+          padding: "9px 16px",
+        }}>↻ Logout</button>
       </div>
     </div>
   );
@@ -825,7 +843,9 @@ const S = {
   topbar: {
     position: "sticky", top: 0, zIndex: 100,
     display: "flex", justifyContent: "space-between", alignItems: "center",
+    flexWrap: "wrap", gap: 12,
     padding: "14px 30px", borderBottom: TH.border,
+    background: "rgba(8,9,15,0.85)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
   },
   ghostBtn: {
     background: "rgba(255,255,255,0.02)", border: TH.border, color: TH.sub,
