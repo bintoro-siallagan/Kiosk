@@ -1087,26 +1087,26 @@ function Success({ sale, onAnother }) {
         }
       `}</style>
       <div className="success-card" style={{ ...S.cardLarge, padding: 28, maxWidth: 880, margin: "30px auto" }}>
-        {/* Header */}
-        <div style={{ textAlign: "center", paddingBottom: 22, borderBottom: TH.border }}>
-          <div style={{ fontSize: 56, marginBottom: 6, filter: "drop-shadow(0 0 24px rgba(16,185,129,0.4))" }}>🎬</div>
-          <div style={{ fontSize: 12, color: TH.green, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 700, textTransform: "uppercase" }}>TIKET BERHASIL TERJUAL</div>
-          <div style={{ fontSize: 26, fontWeight: 800, color: "#fff", marginTop: 8, letterSpacing: -0.5 }}>{sale.picked?.film_title}</div>
-          <div style={{ fontSize: 13, color: TH.sub, marginTop: 6 }}>
+        {/* Header — flex vertical with gap, no marginTop stacking */}
+        <div style={{ paddingBottom: 22, borderBottom: TH.border, display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+          <div style={{ fontSize: 48, lineHeight: 1, filter: "drop-shadow(0 0 24px rgba(16,185,129,0.4))" }}>🎬</div>
+          <div style={{ fontSize: 12, color: TH.green, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 700, textTransform: "uppercase", lineHeight: 1 }}>TIKET BERHASIL TERJUAL</div>
+          <div style={{ fontSize: 26, fontWeight: 800, color: "#fff", letterSpacing: -0.5, lineHeight: 1.2, textAlign: "center", margin: 0 }}>{sale.picked?.film_title}</div>
+          <div style={{ fontSize: 13, color: TH.sub, textAlign: "center", margin: 0 }}>
             {sale.picked?.studio_name} · {sale.picked?.show_date} · {sale.picked?.start_time}
           </div>
-          <div style={{ marginTop: 14, display: "flex", gap: 18, justifyContent: "center", flexWrap: "wrap" }}>
-            <div>
-              <div style={{ fontSize: 10, color: TH.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.2 }}>TOTAL DIBAYAR</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5 }}>{rp(sale.total)}</div>
+          <div style={{ marginTop: 6, display: "flex", gap: 24, justifyContent: "center", flexWrap: "wrap", width: "100%" }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 10, color: TH.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.2, lineHeight: 1 }}>TOTAL DIBAYAR</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#10b981", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5, marginTop: 4, lineHeight: 1 }}>{rp(sale.total)}</div>
             </div>
-            <div>
-              <div style={{ fontSize: 10, color: TH.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.2 }}>METODE</div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginTop: 4 }}>{sale.paymentMethod}</div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 10, color: TH.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.2, lineHeight: 1 }}>METODE</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginTop: 4, lineHeight: 1 }}>{(sale.paymentMethod || "").toUpperCase()}</div>
             </div>
-            <div>
-              <div style={{ fontSize: 10, color: TH.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.2 }}>JUMLAH TIKET</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5 }}>{tickets.length || sale.seats?.length || 0}</div>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 10, color: TH.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.2, lineHeight: 1 }}>JUMLAH TIKET</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5, marginTop: 4, lineHeight: 1 }}>{tickets.length || sale.seats?.length || 0}</div>
             </div>
           </div>
         </div>

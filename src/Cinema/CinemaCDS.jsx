@@ -193,8 +193,8 @@ export default function CinemaCDS() {
           </div>
           <div style={{ fontSize: 32, fontWeight: 900, color: "#10b981", fontFamily: "'Geist Mono',monospace", letterSpacing: -1, lineHeight: 1, marginTop: 4 }}>{rp(state.total)} <span style={{ fontSize: 12, color: "#7d8590" }}>dibayar</span></div>
 
-          {/* CUSTOMER FEEDBACK widget */}
-          <CdsFeedback filmId={state.film_id} purchaseId={state.purchase_id} apiBase={API_HOST} />
+          {/* CUSTOMER FEEDBACK QR — scan pakai HP → mobile feedback page */}
+          <CdsFeedbackQR filmId={state.film_id} filmTitle={state.film_title} purchaseId={state.purchase_id} />
         </div>
       </Shell>
     );
@@ -363,58 +363,30 @@ function Shell({ children, now, outlet, bgUrl }) {
   );
 }
 
-// CdsFeedback — customer feedback widget di done stage (1-5 star + optional comment)
-function CdsFeedback({ filmId, purchaseId, apiBase }) {
-  const [rating, setRating] = useState(0);
-  const [comment, setComment] = useState("");
-  const [sent, setSent] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
+// CdsFeedbackQR — display QR code di CDS, customer scan pakai HP → rate di /?cinema-feedback
+// CDS = TV display non-touch, customer gak bisa interact langsung
+function CdsFeedbackQR({ filmId, filmTitle, purchaseId }) {
+  const [qrSrc, setQrSrc] = useState(null);
+  useEffect(() => {
+    if (!filmId) { setQrSrc(null); return; }
+    const params = new URLSearchParams({ film: String(filmId), title: filmTitle || "" });
+    if (purchaseId) params.set("p", purchaseId);
+    const url = `${window.location.origin}/?cinema-feedback&${params.toString()}`;
+    // Use external QR API biar gak butuh deps tambahan di CDS bundle
+    setQrSrc(`https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=8&data=${encodeURIComponent(url)}`);
+  }, [filmId, filmTitle, purchaseId]);
 
-  // Reset state when new transaction completes (purchaseId change)
-  useEffect(() => { setRating(0); setComment(""); setSent(false); }, [purchaseId]);
-
-  const submit = async () => {
-    if (!rating || sent) return;
-    setSubmitting(true);
-    try {
-      if (filmId) {
-        await fetch(`${apiBase}/api/cinema/films/${filmId}/rate`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ rating, comment, source: "cds" }),
-        });
-      }
-      setSent(true);
-    } catch {}
-    setSubmitting(false);
-  };
-
-  if (sent) {
-    return (
-      <div style={{ marginTop: 16, padding: "16px 20px", background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 14, maxWidth: 480, width: "100%" }}>
-        <div style={{ fontSize: 32, marginBottom: 6 }}>✨</div>
-        <div style={{ fontSize: 14, color: "#fbbf24", fontWeight: 800, letterSpacing: 0.3 }}>Terima kasih atas rating Anda!</div>
-        <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 4 }}>Selamat menikmati filmnya 🍿</div>
-      </div>
-    );
-  }
+  if (!qrSrc) return null;
   return (
-    <div style={{ marginTop: 16, padding: "16px 20px", background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, maxWidth: 480, width: "100%" }}>
-      <div style={{ fontSize: 12, color: "#9ca3af", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700, marginBottom: 10 }}>RATE FILM INI · OPSIONAL</div>
-      <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 10 }}>
-        {[1, 2, 3, 4, 5].map(n => (
-          <button key={n} onClick={() => setRating(n)}
-            style={{ background: "transparent", border: "none", fontSize: 36, cursor: "pointer", padding: 0, lineHeight: 1, color: n <= rating ? "#fbbf24" : "rgba(255,255,255,0.2)", transition: "transform 0.15s ease, color 0.15s ease", transform: n <= rating ? "scale(1.05)" : "scale(1)" }}>
-            ★
-          </button>
-        ))}
+    <div style={{ marginTop: 14, padding: "16px 22px", background: "linear-gradient(180deg, rgba(251,191,36,0.06), rgba(251,191,36,0.02))", border: "1px solid rgba(251,191,36,0.25)", borderRadius: 14, display: "flex", gap: 18, alignItems: "center", maxWidth: 520 }}>
+      <img src={qrSrc} alt="QR rating" style={{ width: 120, height: 120, background: "#fff", borderRadius: 10, padding: 4, boxSizing: "content-box" }} />
+      <div style={{ textAlign: "left", flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 11, color: "#fbbf24", letterSpacing: 1.8, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>📱 RATE FILM INI</div>
+        <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginTop: 4, letterSpacing: -0.3, lineHeight: 1.2 }}>Scan QR dengan HP</div>
+        <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 4, lineHeight: 1.45 }}>
+          Beri rating + komentar setelah nonton. Insight Anda bantu kami pilih film terbaik 🎬
+        </div>
       </div>
-      <input type="text" value={comment} onChange={e => setComment(e.target.value)}
-        placeholder="Komentar singkat (opsional)..."
-        style={{ width: "100%", background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "8px 12px", color: "#fff", fontSize: 12, fontFamily: "inherit", outline: "none", marginBottom: 10, boxSizing: "border-box" }} />
-      <button onClick={submit} disabled={!rating || submitting}
-        style={{ width: "100%", padding: "9px 18px", background: rating ? "linear-gradient(135deg,#fbbf24,#f59e0b)" : "rgba(255,255,255,0.05)", border: "none", borderRadius: 8, color: rating ? "#1a1205" : "rgba(255,255,255,0.4)", fontSize: 12, fontWeight: 800, cursor: rating && !submitting ? "pointer" : "not-allowed", fontFamily: "inherit", letterSpacing: 0.5 }}>
-        {submitting ? "Kirim..." : rating ? `Kirim Rating ${rating}★` : "Pilih bintang dulu"}
-      </button>
     </div>
   );
 }

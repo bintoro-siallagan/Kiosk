@@ -35,6 +35,7 @@ const CinemaInStudioOrder    = lazy(() => import("./CinemaInStudioOrder.jsx"));
 const CinemaBoard            = lazy(() => import("./CinemaBoard.jsx"));
 const CinemaKDS              = lazy(() => import("./Cinema/CinemaKDS.jsx"));
 const CinemaCDS              = lazy(() => import("./Cinema/CinemaCDS.jsx"));
+const CinemaFeedback         = lazy(() => import("./Cinema/CinemaFeedback.jsx"));
 const TableSelector          = lazy(() => import("./TableSelector.jsx"));
 const CustomerInput          = lazy(() => import("./CustomerInput.jsx"));
 const Payment                = lazy(() => import("./Payment.jsx"));
@@ -72,6 +73,7 @@ function getScene() {
   if (q.includes("pos-cinema") || q.includes("poscinema")) return "pos-cinema";
   if (q.includes("cinema-kds") || q.includes("cinemakds")) return "cinema-kds";
   if (q.includes("cinema-cds") || q.includes("cinemacds")) return "cinema-cds";
+  if (q.includes("cinema-feedback")) return "cinema-feedback";
   if (q.includes("cinema-snack")) return "cinema-snack";
   if (q.includes("cinema-board")) return "cinema-board";
   if (q.includes("cinema")) return "cinema";
@@ -195,6 +197,8 @@ export default function App() {
     node = <CinemaKDS />;
   } else if (scene === "cinema-cds") {
     node = <CinemaCDS />;
+  } else if (scene === "cinema-feedback") {
+    node = <CinemaFeedback />;
   } else if (scene === "customer-track") {
     node = <><PromoBroadcastBanner/><CustomerTrackingPage orderId={trackOrderId}/></>;
   } else if (scene === "track") {
