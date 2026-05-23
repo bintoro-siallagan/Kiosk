@@ -76,17 +76,9 @@ const upload = multer({
   },
 });
 
-// ─── CDS Cinema — second display state (broadcast to /?cinema-cds clients) ───
-// POS Cinema POST current sale state → backend broadcast via WS ke semua CDS terminal.
-// Latest state cached supaya CDS yg baru connect langsung dapet snapshot.
+// CDS Cinema state — moved BELOW body parser (line ~162) supaya req.body parsed.
+// Lihat block setelah `app.use(express.json(...))` untuk endpoint actual.
 let cinemaCdsState = { stage: "idle", outlet: null, ts: Date.now() };
-app.post("/api/cinema/cds/state", (req, res) => {
-  const state = req.body || {};
-  cinemaCdsState = { ...state, ts: Date.now() };
-  broadcast("cinema_cds:state", cinemaCdsState);
-  res.json({ ok: true });
-});
-app.get("/api/cinema/cds/state", (_req, res) => res.json(cinemaCdsState));
 
 // POST /api/upload — multipart form-data, field name "file"
 // Response: { ok:true, url:"/uploads/filename.ext", filename, size, mimetype }
@@ -160,6 +152,16 @@ app.post("/api/reports/z/email", async (req, res) => {
 });
 
 app.use(express.json({ limit: "5mb", verify: (req, _res, buf) => { req.rawBody = buf; } }));
+
+// ─── CDS Cinema — second display state (NOW receives parsed body) ───
+// POS Cinema POST current sale state → backend broadcast via WS ke semua CDS terminal.
+app.post("/api/cinema/cds/state", (req, res) => {
+  const state = req.body || {};
+  cinemaCdsState = { ...state, ts: Date.now() };
+  broadcast("cinema_cds:state", cinemaCdsState);
+  res.json({ ok: true });
+});
+app.get("/api/cinema/cds/state", (_req, res) => res.json(cinemaCdsState));
 
 const db = require('./db');
 const wa = require('./whatsapp');
