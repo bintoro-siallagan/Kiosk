@@ -1,5 +1,6 @@
 // karyaOS — KDS Multi-Station Routing (kategori menu → station)
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit, TooltipButton } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 const empty = { name: "", icon: "🍳", category_keywords: "", printer_name: "", sort_order: 0, is_active: 1 };
 export default function FnbKdsRouting({ apiBase = "" }) {
@@ -20,7 +21,8 @@ export default function FnbKdsRouting({ apiBase = "" }) {
     const d = await r.json(); if (!d.ok) { showToast(d.error, "err"); return; }
     showToast("Station disimpan"); setEditing(null); setForm(empty); load();
   };
-  const remove = async (r) => { if (!confirm(`Hapus ${r.name}?`)) return; await fetch(`${base}/kds-stations/${r.id}`, { method: "DELETE" }); load(); };
+  const { confirm } = useUiKit();
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus station "${r.name}"?`, message: "Order yang ke station ini akan kembali ke routing default.", danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/kds-stations/${r.id}`, { method: "DELETE" }); load(); };
   const testRoute = async () => {
     const r = await fetch(`${base}/kds-route?category=${encodeURIComponent(testCat)}`).then(r => r.json());
     setTestResult(r);

@@ -22,6 +22,15 @@ const COA_MAP = {
   'Kas': '1-1100', 'Bank': '1-1200',
   'Piutang Payment Gateway': '1-1300', 'Piutang Aggregator': '1-1300',
   'Pendapatan Penjualan': '4-1100', 'Beban MDR': '6-1700', 'Beban Komisi Platform': '6-1700',
+  // Cinema vertical
+  'Penjualan Tiket Cinema':           '4-1500',
+  'Penjualan F&B Cinema — Bundle':    '4-1510',
+  'Penjualan F&B Cinema — In-Studio': '4-1520',
+  'Penjualan Event Booking Cinema':   '4-1530',
+  'HPP — Royalti Distributor Film':   '5-2100',
+  'HPP — Bahan F&B Cinema':           '5-2200',
+  'Hutang Royalti Distributor Film':  '2-1500',
+  'Beban Operasional Cinema':         '6-2100',
 };
 const coaCodeOf = (name) => {
   if (COA_MAP[name]) return COA_MAP[name];
@@ -81,6 +90,116 @@ function setupJournal(app, opts = {}) {
         { account: 'Piutang Aggregator', debit: net, credit: 0 },
         { account: 'Beban Komisi Platform', debit: fee, credit: 0 },
         { account: 'Pendapatan Penjualan', debit: 0, credit: gross },
+      ]);
+    }
+
+    // ── PENJUALAN — CINEMA (tickets) ──
+    // Cinema POST /tickets gak track payment method per ticket, treat = Kas.
+    // Refund (cinema_ticket_voids) di-reverse dari pendapatan tiket.
+    for (const r of many(`SELECT
+      COUNT(*) c, COALESCE(SUM(price),0) g
+      FROM cinema_tickets WHERE sold_at BETWEEN ? AND ?`, from, to)) {
+      if (!r.c) continue;
+      const gross = Math.round(r.g);
+      addEntry('JV-CINEMA-TKT', `Penjualan Tiket Cinema — ${r.c} tiket`, [
+        { account: 'Kas',                      debit: gross, credit: 0 },
+        { account: 'Penjualan Tiket Cinema',   debit: 0,     credit: gross },
+      ]);
+    }
+    // Refund tiket cinema — reverse entry
+    for (const r of many(`SELECT
+      COUNT(*) c, COALESCE(SUM(price),0) g
+      FROM cinema_ticket_voids WHERE voided_at BETWEEN ? AND ?`, from, to)) {
+      if (!r.c) continue;
+      const gross = Math.round(r.g);
+      addEntry('JV-CINEMA-VOID', `Refund / Void Tiket Cinema — ${r.c} tiket`, [
+        { account: 'Penjualan Tiket Cinema',   debit: gross, credit: 0 },
+        { account: 'Kas',                      debit: 0,     credit: gross },
+      ]);
+    }
+    // Royalti distributor (tier-aware, persis logic /distribution/settlement)
+    const royaltyRows = many(`
+      SELECT t.price, t.sold_at, f.id AS film_id, f.license_start, f.revenue_share_pct legacy_pct,
+             COALESCE(d.vat_pct, 11) AS vat_pct
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_films    f ON f.id = s.film_id
+      LEFT JOIN cinema_distributors d ON d.id = f.distributor_id
+      WHERE t.sold_at BETWEEN ? AND ?`, from, to);
+    if (royaltyRows.length) {
+      const tiersByFilm = {};
+      const getTiers = (fid) => {
+        if (fid == null) return [];
+        if (tiersByFilm[fid] !== undefined) return tiersByFilm[fid];
+        tiersByFilm[fid] = many(`SELECT * FROM cinema_share_tiers WHERE film_id = ? ORDER BY week_from`, fid);
+        return tiersByFilm[fid];
+      };
+      const weekIndex = (soldAt, licenseStart) => {
+        if (!licenseStart) return 1;
+        const [Y, M, D] = String(licenseStart).split('-').map(Number);
+        if (!Y || !M || !D) return 1;
+        const startMs = new Date(Y, M - 1, D, 0, 0, 0).getTime();
+        return Math.max(1, Math.floor((soldAt * 1000 - startMs) / 86400000 / 7) + 1);
+      };
+      let totalRoyalty = 0, totalCinemaShare = 0;
+      for (const r of royaltyRows) {
+        const net = (r.price || 0) * (1 - (r.vat_pct || 0) / 100);
+        const week = weekIndex(r.sold_at, r.license_start);
+        const tiers = getTiers(r.film_id);
+        const tier = tiers.find(t => week >= (t.week_from || 1) && (t.week_to == null || week <= t.week_to));
+        const distPct = tier ? tier.distributor_pct : (r.legacy_pct || 0);
+        totalRoyalty     += Math.round(net * distPct / 100);
+        totalCinemaShare += Math.round(net * (100 - distPct) / 100);
+      }
+      if (totalRoyalty > 0) {
+        addEntry('JV-CINEMA-ROYALTY', `Royalti distributor cinema (tier-aware, ${royaltyRows.length} tiket)`, [
+          { account: 'HPP — Royalti Distributor Film',    debit: totalRoyalty, credit: 0 },
+          { account: 'Hutang Royalti Distributor Film',   debit: 0,            credit: totalRoyalty },
+        ]);
+      }
+    }
+
+    // ── PENJUALAN — CINEMA F&B (bundle saat beli tiket) ──
+    for (const r of many(`SELECT
+      COUNT(*) c, COALESCE(SUM(qty * price),0) g
+      FROM cinema_purchase_bundles WHERE created_at BETWEEN ? AND ?`, from, to)) {
+      if (!r.c) continue;
+      const gross = Math.round(r.g);
+      addEntry('JV-CINEMA-FNB', `Penjualan F&B Cinema (bundle) — ${r.c} item`, [
+        { account: 'Kas',                                 debit: gross, credit: 0 },
+        { account: 'Penjualan F&B Cinema — Bundle',       debit: 0,     credit: gross },
+      ]);
+    }
+
+    // ── PENJUALAN — CINEMA In-Studio Order ──
+    for (const r of many(`SELECT
+      COUNT(*) c, COALESCE(SUM(total),0) g
+      FROM cinema_in_studio_orders
+      WHERE status = 'delivered' AND created_at BETWEEN ? AND ?`, from, to)) {
+      if (!r.c) continue;
+      const gross = Math.round(r.g);
+      addEntry('JV-CINEMA-INSTUDIO', `Penjualan F&B Cinema (in-studio) — ${r.c} order`, [
+        { account: 'Kas',                                 debit: gross, credit: 0 },
+        { account: 'Penjualan F&B Cinema — In-Studio',    debit: 0,     credit: gross },
+      ]);
+    }
+
+    // ── PENJUALAN — CINEMA Event Booking ──
+    // Hanya yang sudah completed/confirmed yang di-recognize sebagai revenue.
+    // Deposit dianggap pendapatan diterima dimuka (sudah handle terpisah).
+    for (const r of many(`SELECT
+      COUNT(*) c, COALESCE(SUM(total_price),0) g, COALESCE(SUM(deposit_paid),0) dp
+      FROM cinema_studio_bookings
+      WHERE status IN ('confirmed','completed')
+        AND (
+          (status = 'confirmed' AND date(created_at,'unixepoch','localtime') BETWEEN date(?, 'unixepoch','localtime') AND date(?, 'unixepoch','localtime'))
+          OR (status = 'completed' AND completed_at BETWEEN ? AND ?)
+        )`, from, to, from, to)) {
+      if (!r.c) continue;
+      const gross = Math.round(r.g);
+      addEntry('JV-CINEMA-EVENT', `Event Booking Studio — ${r.c} event`, [
+        { account: 'Kas',                                 debit: gross, credit: 0 },
+        { account: 'Penjualan Event Booking Cinema',      debit: 0,     credit: gross },
       ]);
     }
 

@@ -1,5 +1,6 @@
 // karyaOS — F&B Recipe BOM (ingredient + qty per menu item, auto-deduct on sale)
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit, EmptyState, TooltipButton, LoadingSkeleton, Help } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 const fmtNum = (n) => (Math.round((n || 0) * 100) / 100).toLocaleString("id-ID");
 const fmtTs = (s) => s ? new Date(s * 1000).toLocaleString("id-ID", { hour12: false }) : "—";
@@ -23,7 +24,15 @@ export default function FnbRecipe({ apiBase = "" }) {
     const d = await r.json(); if (!d.ok) { showToast(d.error, "err"); return; }
     showToast("Recipe ditambahkan"); setForm({ menu_item_id: form.menu_item_id, menu_item_name: form.menu_item_name, ingredient_name: "", qty: "", unit: "", notes: "" }); load();
   };
-  const remove = async (r) => { await fetch(`${base}/recipes/${r.id}`, { method: "DELETE" }); load(); };
+  const { confirm, undoToast } = useUiKit();
+  const remove = async (r) => {
+    if (!(await confirm({ title: `Hapus ingredient "${r.ingredient_name}"?`, message: `dari recipe "${r.menu_item_name}"`, danger: true, okLabel: "Hapus" }))) return;
+    await fetch(`${base}/recipes/${r.id}`, { method: "DELETE" }); load();
+    undoToast(`Ingredient "${r.ingredient_name}" dihapus`, async () => {
+      await fetch(`${base}/recipes`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(r) });
+      load();
+    });
+  };
   // Group by menu item
   const grouped = {};
   for (const r of rows) {

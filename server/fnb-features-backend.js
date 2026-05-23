@@ -374,6 +374,39 @@ CREATE TABLE IF NOT EXISTS fnb_bill_splits (
   created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
 CREATE INDEX IF NOT EXISTS idx_fbs_order ON fnb_bill_splits(parent_order_id);
+-- 19. Payment methods master + categories
+CREATE TABLE IF NOT EXISTS fnb_payment_categories (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  icon TEXT,
+  color TEXT,
+  sort_order INTEGER DEFAULT 0,
+  description TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE TABLE IF NOT EXISTS fnb_payment_methods (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  category TEXT NOT NULL,
+  icon TEXT,
+  color TEXT,
+  requires_approval INTEGER DEFAULT 0,
+  requires_reason INTEGER DEFAULT 0,
+  reduces_revenue INTEGER DEFAULT 0,
+  default_discount_pct REAL DEFAULT 0,
+  mdr_pct REAL DEFAULT 0,
+  max_amount INTEGER,
+  outlet_scope TEXT DEFAULT 'all',
+  sort_order INTEGER DEFAULT 0,
+  is_active INTEGER DEFAULT 1,
+  notes TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  updated_at INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_fpm_category ON fnb_payment_methods(category);
+CREATE INDEX IF NOT EXISTS idx_fpm_active ON fnb_payment_methods(is_active);
 `;
 
 function setupFnbFeatures(app, opts = {}) {
@@ -392,6 +425,47 @@ function setupFnbFeatures(app, opts = {}) {
     ss.run('Beverage',     '🥤', 'minuman,drink,juice,coffee,tea', 'printer-bar-1',     3);
     ss.run('Dessert',      '🍰', 'dessert,cake,ice cream,sweets',  'printer-pastry',    4);
   }
+  // Seed payment categories + methods on first run
+  if (db.prepare(`SELECT COUNT(*) c FROM fnb_payment_categories`).get().c === 0) {
+    const sc = db.prepare(`INSERT INTO fnb_payment_categories (code, name, icon, color, sort_order, description) VALUES (?,?,?,?,?,?)`);
+    sc.run('cash',     'Tunai',           '💵', '#10b981', 1,  'Pembayaran tunai langsung');
+    sc.run('card',     'Kartu Debit/Kredit', '💳', '#3b82f6', 2,  'EDC kartu (Visa/Master/JCB)');
+    sc.run('ewallet',  'E-Wallet',        '📱', '#a855f7', 3,  'GoPay, OVO, Dana, ShopeePay, dll');
+    sc.run('qris',     'QRIS',            '🔳', '#22d3ee', 4,  'QRIS Indonesia (cross-issuer)');
+    sc.run('transfer', 'Transfer Bank',   '🏦', '#0ea5e9', 5,  'Transfer manual via bank');
+    sc.run('voucher',  'Voucher',         '🎟️', '#fbbf24', 6,  'Voucher diskon / e-voucher');
+    sc.run('loyalty',  'Loyalty Points',  '⭐', '#f59e0b', 7,  'Tukar point member jadi pembayaran');
+    sc.run('comp',     'Complimentary',   '🎁', '#ec4899', 8,  'Free of charge — comp / FOC management');
+    sc.run('discount', 'Diskon Khusus',   '🏷️', '#f97316', 9,  'Diskon karyawan / VIP / partnership');
+    sc.run('house',    'House Account',   '🏢', '#6b7280', 10, 'Bill ke perusahaan (post-paid)');
+  }
+  if (db.prepare(`SELECT COUNT(*) c FROM fnb_payment_methods`).get().c === 0) {
+    const sm = db.prepare(`INSERT INTO fnb_payment_methods
+      (code, name, category, icon, color, requires_approval, requires_reason, reduces_revenue, default_discount_pct, mdr_pct, max_amount, outlet_scope, sort_order)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`);
+    // Cash + standard tenders
+    sm.run('cash',          'Tunai',                'cash',     '💵', '#10b981', 0, 0, 0, 0, 0,    null, 'all', 1);
+    sm.run('qris',          'QRIS',                 'qris',     '🔳', '#22d3ee', 0, 0, 0, 0, 0.7,  null, 'all', 2);
+    sm.run('debit_bca',     'Debit BCA',            'card',     '💳', '#3b82f6', 0, 0, 0, 0, 0.15, null, 'all', 3);
+    sm.run('credit_card',   'Kartu Kredit',         'card',     '💳', '#1d4ed8', 0, 0, 0, 0, 1.5,  null, 'all', 4);
+    sm.run('gopay',         'GoPay',                'ewallet',  '🟢', '#10b981', 0, 0, 0, 0, 1.8,  null, 'all', 5);
+    sm.run('ovo',           'OVO',                  'ewallet',  '🟣', '#7c3aed', 0, 0, 0, 0, 1.8,  null, 'all', 6);
+    sm.run('dana',          'DANA',                 'ewallet',  '🔵', '#0ea5e9', 0, 0, 0, 0, 1.8,  null, 'all', 7);
+    sm.run('shopeepay',     'ShopeePay',            'ewallet',  '🟠', '#f97316', 0, 0, 0, 0, 1.8,  null, 'all', 8);
+    sm.run('transfer_bca',  'Transfer BCA',         'transfer', '🏦', '#0ea5e9', 0, 0, 0, 0, 0,    null, 'all', 9);
+    sm.run('voucher',       'Voucher',              'voucher',  '🎟️', '#fbbf24', 0, 1, 0, 0, 0,    null, 'all', 10);
+    sm.run('loyalty_point', 'Tukar Loyalty Points', 'loyalty',  '⭐', '#f59e0b', 0, 0, 0, 0, 0,    null, 'all', 11);
+    // ── Comp / Discount methods (require manager approval) ──
+    sm.run('complimentary', 'Complimentary',        'comp',     '🎁', '#ec4899', 1, 1, 1, 100, 0,  500000, 'all', 20);
+    sm.run('foc_owner',     'FOC — Owner',          'comp',     '👑', '#a855f7', 1, 1, 1, 100, 0,  null, 'all', 21);
+    sm.run('foc_management', 'FOC — Management',    'comp',     '🎖️', '#7c3aed', 1, 1, 1, 100, 0, 1000000, 'all', 22);
+    sm.run('foc_marketing',  'FOC — Marketing',     'comp',     '📣', '#ec4899', 1, 1, 1, 100, 0, 500000, 'all', 23);
+    sm.run('staff_discount', 'Diskon Karyawan',     'discount', '👤', '#f97316', 1, 0, 1, 25,  0,  null, 'all', 30);
+    sm.run('vip_discount',   'Diskon VIP',          'discount', '⭐', '#fbbf24', 0, 0, 1, 15,  0,  null, 'all', 31);
+    sm.run('partner_discount', 'Diskon Partner',    'discount', '🤝', '#0ea5e9', 1, 1, 1, 20,  0,  null, 'all', 32);
+    sm.run('house_account',  'House Account',       'house',    '🏢', '#6b7280', 1, 0, 0, 0,   0,  null, 'all', 40);
+  }
+
   // Seed WA config row if absent
   if (db.prepare(`SELECT COUNT(*) c FROM fnb_wa_config`).get().c === 0) {
     db.prepare(`INSERT INTO fnb_wa_config (provider, is_enabled) VALUES ('fonnte', 0)`).run();
@@ -1297,6 +1371,119 @@ function setupFnbFeatures(app, opts = {}) {
       d.is_online    = d.ping_age_sec != null && d.ping_age_sec < 120;
     }
     res.json({ drivers, now });
+  });
+
+  // ── 19. PAYMENT METHODS MASTER ──────────────────────────────────────
+  router.get('/payment-methods', (req, res) => {
+    const sql = req.query.all === '1'
+      ? `SELECT * FROM fnb_payment_methods ORDER BY sort_order, name`
+      : `SELECT * FROM fnb_payment_methods WHERE is_active = 1 ORDER BY sort_order, name`;
+    const methods = db.prepare(sql).all();
+    if (req.query.outlet) {
+      const o = String(req.query.outlet);
+      for (let i = methods.length - 1; i >= 0; i--) {
+        const scope = methods[i].outlet_scope || 'all';
+        if (scope !== 'all' && !scope.split(',').map(s => s.trim()).includes(o)) methods.splice(i, 1);
+      }
+    }
+    res.json({ methods });
+  });
+  router.get('/payment-methods/by-category', (req, res) => {
+    const cats = db.prepare(`SELECT * FROM fnb_payment_categories ORDER BY sort_order`).all();
+    const methods = db.prepare(`SELECT * FROM fnb_payment_methods WHERE is_active = 1 ORDER BY sort_order, name`).all();
+    const grouped = cats.map(c => ({ ...c, methods: methods.filter(m => m.category === c.code) }));
+    // Append uncategorized
+    const known = new Set(cats.map(c => c.code));
+    const uncategorized = methods.filter(m => !known.has(m.category));
+    if (uncategorized.length) grouped.push({ code: 'other', name: 'Lainnya', icon: '❓', color: '#6b7280', methods: uncategorized });
+    res.json({ groups: grouped });
+  });
+  router.post('/payment-methods', (req, res) => {
+    const b = req.body || {};
+    if (!b.code || !b.name || !b.category) return res.status(400).json({ ok: false, error: 'code + name + category wajib' });
+    try {
+      const info = db.prepare(`INSERT INTO fnb_payment_methods
+        (code, name, category, icon, color, requires_approval, requires_reason, reduces_revenue, default_discount_pct, mdr_pct, max_amount, outlet_scope, sort_order, is_active, notes, updated_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+        .run(String(b.code).trim().toLowerCase(), String(b.name).trim(), b.category,
+             b.icon || '💳', b.color || '#6b7280',
+             b.requires_approval ? 1 : 0, b.requires_reason ? 1 : 0, b.reduces_revenue ? 1 : 0,
+             parseFloat(b.default_discount_pct) || 0, parseFloat(b.mdr_pct) || 0,
+             b.max_amount ? parseInt(b.max_amount, 10) : null,
+             b.outlet_scope || 'all', parseInt(b.sort_order, 10) || 0,
+             b.is_active === false ? 0 : 1, b.notes || '',
+             Math.floor(Date.now()/1000));
+      res.json({ ok: true, id: info.lastInsertRowid });
+    } catch (e) { res.status(409).json({ ok: false, error: 'Code sudah dipakai' }); }
+  });
+  router.patch('/payment-methods/:id', (req, res) => {
+    const b = req.body || {};
+    const fields = []; const args = [];
+    for (const k of ['name', 'category', 'icon', 'color', 'requires_approval', 'requires_reason', 'reduces_revenue',
+                     'default_discount_pct', 'mdr_pct', 'max_amount', 'outlet_scope', 'sort_order', 'is_active', 'notes']) {
+      if (k in b) {
+        fields.push(`${k} = ?`);
+        if (['requires_approval', 'requires_reason', 'reduces_revenue', 'is_active'].includes(k)) args.push(b[k] ? 1 : 0);
+        else if (['default_discount_pct', 'mdr_pct'].includes(k)) args.push(parseFloat(b[k]) || 0);
+        else if (['sort_order', 'max_amount'].includes(k)) args.push(b[k] == null || b[k] === '' ? null : parseInt(b[k], 10));
+        else args.push(b[k]);
+      }
+    }
+    fields.push('updated_at = ?'); args.push(Math.floor(Date.now()/1000));
+    args.push(req.params.id);
+    db.prepare(`UPDATE fnb_payment_methods SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/payment-methods/:id', (req, res) => {
+    db.prepare(`DELETE FROM fnb_payment_methods WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+  // Push to all outlets — set outlet_scope='all'
+  router.post('/payment-methods/:id/push-to-outlets', (req, res) => {
+    const b = req.body || {};
+    const scope = b.outlets && b.outlets.length ? (Array.isArray(b.outlets) ? b.outlets.join(',') : String(b.outlets)) : 'all';
+    db.prepare(`UPDATE fnb_payment_methods SET outlet_scope = ?, updated_at = ? WHERE id = ?`)
+      .run(scope, Math.floor(Date.now()/1000), req.params.id);
+    res.json({ ok: true, outlet_scope: scope });
+  });
+  // Bulk push: set scope for many methods at once
+  router.post('/payment-methods/bulk-push', (req, res) => {
+    const b = req.body || {};
+    const ids = Array.isArray(b.ids) ? b.ids : [];
+    const scope = b.outlets && b.outlets.length ? (Array.isArray(b.outlets) ? b.outlets.join(',') : String(b.outlets)) : 'all';
+    if (!ids.length) return res.status(400).json({ ok: false, error: 'ids wajib' });
+    const upd = db.prepare(`UPDATE fnb_payment_methods SET outlet_scope = ?, updated_at = ? WHERE id = ?`);
+    const now = Math.floor(Date.now()/1000);
+    db.transaction(() => { for (const id of ids) upd.run(scope, now, id); })();
+    res.json({ ok: true, count: ids.length, outlet_scope: scope });
+  });
+
+  router.get('/payment-categories', (req, res) => {
+    res.json({ categories: db.prepare(`SELECT * FROM fnb_payment_categories ORDER BY sort_order`).all() });
+  });
+  router.post('/payment-categories', (req, res) => {
+    const b = req.body || {};
+    if (!b.code || !b.name) return res.status(400).json({ ok: false, error: 'code + name wajib' });
+    try {
+      const info = db.prepare(`INSERT INTO fnb_payment_categories (code, name, icon, color, sort_order, description) VALUES (?,?,?,?,?,?)`)
+        .run(String(b.code).trim().toLowerCase(), String(b.name).trim(), b.icon || '💳', b.color || '#6b7280', parseInt(b.sort_order, 10) || 0, b.description || '');
+      res.json({ ok: true, id: info.lastInsertRowid });
+    } catch (e) { res.status(409).json({ ok: false, error: 'Code sudah dipakai' }); }
+  });
+  router.patch('/payment-categories/:id', (req, res) => {
+    const b = req.body || {};
+    const fields = []; const args = [];
+    for (const k of ['name', 'icon', 'color', 'sort_order', 'description']) {
+      if (k in b) { fields.push(`${k} = ?`); args.push(k === 'sort_order' ? parseInt(b[k], 10) || 0 : b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE fnb_payment_categories SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/payment-categories/:id', (req, res) => {
+    db.prepare(`DELETE FROM fnb_payment_categories WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
   });
 
   // ── 18. MENU ENGINEERING MATRIX ─────────────────────────────────────

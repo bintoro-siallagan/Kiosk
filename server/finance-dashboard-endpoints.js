@@ -94,6 +94,18 @@ function setupFinanceDashboard(app, opts = {}) {
       directCount = allRev.orders || 0;
     } catch {}
 
+    // Cinema channels — tickets / F&B bundle / in-studio / event booking
+    try {
+      const cinemaTkt = db.prepare(`SELECT COALESCE(SUM(price),0) g, COUNT(*) c FROM cinema_tickets WHERE sold_at BETWEEN ? AND ?`).get(from, to);
+      if (cinemaTkt?.c > 0) channels.push({ channel: 'cinema-ticket', label: '🎬 Tiket Cinema', amount: cinemaTkt.g, count: cinemaTkt.c });
+      const cinemaBundle = db.prepare(`SELECT COALESCE(SUM(qty*price),0) g, COUNT(*) c FROM cinema_purchase_bundles WHERE created_at BETWEEN ? AND ?`).get(from, to);
+      if (cinemaBundle?.c > 0) channels.push({ channel: 'cinema-fnb', label: '🍿 F&B Cinema', amount: cinemaBundle.g, count: cinemaBundle.c });
+      const cinemaIs = db.prepare(`SELECT COALESCE(SUM(total),0) g, COUNT(*) c FROM cinema_in_studio_orders WHERE status='delivered' AND created_at BETWEEN ? AND ?`).get(from, to);
+      if (cinemaIs?.c > 0) channels.push({ channel: 'cinema-instudio', label: '🍿 In-Studio Order', amount: cinemaIs.g, count: cinemaIs.c });
+      const cinemaEv = db.prepare(`SELECT COALESCE(SUM(total_price),0) g, COUNT(*) c FROM cinema_studio_bookings WHERE status IN ('confirmed','completed') AND (completed_at BETWEEN ? AND ? OR (status='confirmed' AND created_at BETWEEN ? AND ?))`).get(from, to, from, to);
+      if (cinemaEv?.c > 0) channels.push({ channel: 'cinema-event', label: '🎉 Event Studio', amount: cinemaEv.g, count: cinemaEv.c });
+    } catch {}
+
     // Aggregator orders (kurangi dari direct kalau aggregator pakai pos_payments juga)
     let aggregatorTotal = { gross: 0, count: 0 };
     try {
@@ -211,6 +223,15 @@ function setupFinanceDashboard(app, opts = {}) {
       revenue.gross = rev.gross || 0;
       revenue.net = rev.gross || 0;
       orderCount = rev.orders || 0;
+    } catch {}
+    // Add cinema revenue
+    try {
+      const tk = db.prepare(`SELECT COALESCE(SUM(price),0) g, COUNT(*) c FROM cinema_tickets WHERE sold_at BETWEEN ? AND ?`).get(from, to);
+      const bd = db.prepare(`SELECT COALESCE(SUM(qty*price),0) g FROM cinema_purchase_bundles WHERE created_at BETWEEN ? AND ?`).get(from, to);
+      const isq = db.prepare(`SELECT COALESCE(SUM(total),0) g, COUNT(*) c FROM cinema_in_studio_orders WHERE status='delivered' AND created_at BETWEEN ? AND ?`).get(from, to);
+      const cinemaTotal = (tk.g || 0) + (bd.g || 0) + (isq.g || 0);
+      revenue.gross += cinemaTotal; revenue.net += cinemaTotal;
+      orderCount += (tk.c || 0) + (isq.c || 0);
     } catch {}
 
     try {

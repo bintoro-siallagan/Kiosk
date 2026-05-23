@@ -1,5 +1,6 @@
 // karyaOS — Banking Auto-Recon (CSV import + auto-match settlement)
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit, TooltipButton } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtTs = (s) => s ? new Date(s * 1000).toLocaleDateString("id-ID") : "—";
@@ -41,8 +42,9 @@ export default function FnbBankRecon({ apiBase = "" }) {
     const d = await r.json(); if (!d.ok) { showToast(d.error, "err"); return; }
     showToast(`${d.imported} transaksi di-import`); setCsvText(""); load();
   };
+  const { prompt } = useUiKit();
   const match = async (t) => {
-    const sid = prompt(`Match transaksi ${rp(t.amount)} (${t.txn_date}) ke settlement ID?`, "");
+    const sid = await prompt({ title: "Match ke Settlement", label: `Transaksi ${rp(t.amount)} · ${t.txn_date}`, placeholder: "Settlement ID (numeric)", type: "number" });
     if (!sid) return;
     await fetch(`${base}/bank-transactions/${t.id}/match`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ settlement_id: parseInt(sid, 10), confidence: 1.0 }) });
     showToast("Matched"); load();

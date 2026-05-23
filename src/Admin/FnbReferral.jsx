@@ -1,5 +1,6 @@
 // karyaOS — F&B Referral Program (referrer + referee reward)
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit, EmptyState, TooltipButton } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtTs = (s) => s ? new Date(s * 1000).toLocaleString("id-ID", { hour12: false }) : "—";
@@ -26,7 +27,8 @@ export default function FnbReferral({ apiBase = "" }) {
     showToast(`Code dibuat: ${d.referral_code}`); setForm({ referrer_phone: "", referrer_name: "", reward_referrer_amount: 25000, reward_referee_amount: 25000 }); load();
   };
   const setStatus = async (r, status) => { await fetch(`${base}/referrals/${r.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) }); load(); };
-  const remove = async (r) => { if (!confirm(`Hapus ${r.referral_code}?`)) return; await fetch(`${base}/referrals/${r.id}`, { method: "DELETE" }); load(); };
+  const { confirm } = useUiKit();
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus referral ${r.referral_code}?`, danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/referrals/${r.id}`, { method: "DELETE" }); load(); };
   return (
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>

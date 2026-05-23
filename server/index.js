@@ -2302,31 +2302,177 @@ function requireAdmin(req, res, next) {
 // app.use("/api/customers", requireAdmin);
 // (Uncomment above when ready for production auth enforcement)
 
-// ─── ADMIN AUTH (PIN-based) ───────────────────────────────────────────────────
-let adminUsers = db.loadAllAdminUsers();
-if (adminUsers.length === 0) {
-  const seed = [
-  { id:"U001", name:"Manager",   pin:"123456", role:"manager", active:true },
-  { id:"U002", name:"Kasir 1",   pin:"111111", role:"kasir",   active:true },
-  { id:"U003", name:"Kasir 2",   pin:"222222", role:"kasir",   active:true },
-];
-  seed.forEach(u => db.insertAdminUser(u));
-  adminUsers = seed;
-  console.log(`🔐 Seeded ${seed.length} default admin users (PINs: 123456/111111/222222)`);
+// ─── ADMIN AUTH (Enterprise: username+password + legacy PIN fallback) ───
+// Password: scrypt(password, salt, 64). Lockout 15 min after 5 fails.
+// Session token: 32-byte random hex, valid 12 jam.
+const crypto = require("crypto");
+const SCRYPT_KEYLEN = 64, SCRYPT_PARAMS = { N: 16384, r: 8, p: 1 };
+const LOCKOUT_THRESHOLD = 5, LOCKOUT_DURATION_MS = 15 * 60 * 1000;
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 jam
+
+function hashPassword(password, salt) {
+  const s = salt || crypto.randomBytes(16).toString("hex");
+  const h = crypto.scryptSync(password, s, SCRYPT_KEYLEN, SCRYPT_PARAMS).toString("hex");
+  return { hash: h, salt: s };
 }
-const adminSessions = new Map(); // token → { userId, role, loginAt }
+function verifyPassword(password, hash, salt) {
+  if (!hash || !salt) return false;
+  try {
+    const test = crypto.scryptSync(password, salt, SCRYPT_KEYLEN, SCRYPT_PARAMS).toString("hex");
+    return crypto.timingSafeEqual(Buffer.from(test, "hex"), Buffer.from(hash, "hex"));
+  } catch { return false; }
+}
 
-function genToken() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+let adminUsers = db.loadAllAdminUsers();
+// Seed default super-admin with username/password kalau belum ada
+if (!adminUsers.find(u => u.username === "admin")) {
+  const pwd = hashPassword("admin123");
+  const seedAdmin = {
+    id: adminUsers.length ? `U${String(adminUsers.length + 1).padStart(3, "0")}` : "U001",
+    name: "Super Admin", username: "admin", email: "admin@karys.tech",
+    pin: "999999", role: "super-admin", active: true,
+    password_hash: pwd.hash, password_salt: pwd.salt,
+    password_changed_at: Math.floor(Date.now() / 1000),
+    must_change_password: 1,   // ⚠️ force change on first login
+    createdAt: Date.now(),
+  };
+  db.insertAdminUser(seedAdmin);
+  adminUsers = db.loadAllAdminUsers();
+  console.log(`🔐 Seeded enterprise admin → username='admin' password='admin123' (MUST CHANGE on first login)`);
+}
+// Legacy PIN seeds for backward compatibility (POS kasir quick-login)
+if (adminUsers.filter(u => u.pin && !u.username).length === 0 && adminUsers.length <= 1) {
+  const legacy = [
+    { id: "U002", name: "Kasir 1", pin: "111111", role: "kasir", active: true, createdAt: Date.now() },
+    { id: "U003", name: "Kasir 2", pin: "222222", role: "kasir", active: true, createdAt: Date.now() },
+  ];
+  legacy.forEach(u => db.insertAdminUser(u));
+  adminUsers = db.loadAllAdminUsers();
+  console.log(`🔐 Seeded legacy PIN users (kasir quick-login: 111111 / 222222)`);
+}
 
-app.post("/api/auth/login", (req, res) => {
-  const { pin } = req.body;
-  if (!pin) return res.status(400).json({ error: "PIN required" });
-  const user = adminUsers.find(u => u.pin === pin && u.active);
-  if (!user) return res.status(401).json({ error: "PIN salah" });
+const adminSessions = new Map(); // token → { userId, role, loginAt, expiresAt }
+function genToken() { return crypto.randomBytes(32).toString("hex"); }
+function purgeExpired() {
+  const now = Date.now();
+  for (const [t, s] of adminSessions) if (s.expiresAt < now) adminSessions.delete(t);
+}
+function clientIp(req) { return (req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "").toString().split(",")[0].trim(); }
+
+// ── Enterprise login: username + password ─────────────────────────────
+app.post("/api/auth/login-password", (req, res) => {
+  const { username, password } = req.body || {};
+  const ip = clientIp(req); const ua = req.headers["user-agent"] || "";
+  if (!username || !password) {
+    db.logLoginAttempt({ username, ip, user_agent: ua, method: "password", success: 0, error: "missing fields" });
+    return res.status(400).json({ error: "Username dan password wajib diisi" });
+  }
+  adminUsers = db.loadAllAdminUsers();
+  const user = adminUsers.find(u => u.username && u.username.toLowerCase() === String(username).toLowerCase() && u.active);
+  if (!user) {
+    db.logLoginAttempt({ username, ip, user_agent: ua, method: "password", success: 0, error: "user not found" });
+    return res.status(401).json({ error: "Username atau password salah" });
+  }
+  // Lockout check
+  if (user.locked_until && user.locked_until > Date.now()) {
+    const mins = Math.ceil((user.locked_until - Date.now()) / 60000);
+    db.logLoginAttempt({ user_id: user.id, username, ip, user_agent: ua, method: "password", success: 0, error: `locked: ${mins}m` });
+    return res.status(423).json({ error: `Akun terkunci. Coba lagi dalam ${mins} menit.` });
+  }
+  if (!verifyPassword(password, user.password_hash, user.password_salt)) {
+    const failed = (user.failed_login_count || 0) + 1;
+    const locked = failed >= LOCKOUT_THRESHOLD ? Date.now() + LOCKOUT_DURATION_MS : null;
+    db.insertAdminUser({ ...user, failed_login_count: failed, locked_until: locked });
+    db.logLoginAttempt({ user_id: user.id, username, ip, user_agent: ua, method: "password", success: 0, error: "wrong password" });
+    if (locked) return res.status(423).json({ error: `Akun dikunci 15 menit setelah ${LOCKOUT_THRESHOLD} gagal login.` });
+    return res.status(401).json({ error: `Username atau password salah (sisa ${LOCKOUT_THRESHOLD - failed}× sebelum dikunci)` });
+  }
+  // Success
   const token = genToken();
-  adminSessions.set(token, { userId: user.id, name: user.name, role: user.role, loginAt: Date.now() });
-  console.log(`🔐 Login: ${user.name} (${user.role})`);
-  res.json({ ok: true, token, name: user.name, role: user.role });
+  const expiresAt = Date.now() + SESSION_TTL_MS;
+  adminSessions.set(token, { userId: user.id, name: user.name, role: user.role, loginAt: Date.now(), expiresAt, ip });
+  db.insertAdminUser({ ...user, failed_login_count: 0, locked_until: null, last_login_at: Math.floor(Date.now() / 1000), last_login_ip: ip });
+  db.logLoginAttempt({ user_id: user.id, username, ip, user_agent: ua, method: "password", success: 1 });
+  console.log(`🔐 Enterprise login: ${user.name} (@${user.username}, ${user.role}) from ${ip}`);
+  res.json({
+    ok: true, token,
+    user: { id: user.id, name: user.name, username: user.username, email: user.email, role: user.role,
+            must_change_password: !!user.must_change_password, last_login_at: user.last_login_at },
+    expiresAt,
+  });
+});
+
+// ── Change password (require existing session + current password) ─────
+app.post("/api/auth/change-password", (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+  const session = token && adminSessions.get(token);
+  if (!session) return res.status(401).json({ error: "Not authenticated" });
+  const { current_password, new_password } = req.body || {};
+  if (!new_password || new_password.length < 8) return res.status(400).json({ error: "Password baru minimum 8 karakter" });
+  if (!/[A-Z]/.test(new_password) || !/[a-z]/.test(new_password) || !/[0-9]/.test(new_password)) {
+    return res.status(400).json({ error: "Password harus mengandung huruf besar, huruf kecil, dan angka" });
+  }
+  adminUsers = db.loadAllAdminUsers();
+  const user = adminUsers.find(u => u.id === session.userId);
+  if (!user) return res.status(404).json({ error: "User tidak ditemukan" });
+  // If user has existing password, verify current; if first-time set (must_change), allow without
+  if (user.password_hash && !user.must_change_password) {
+    if (!verifyPassword(current_password || "", user.password_hash, user.password_salt)) {
+      return res.status(401).json({ error: "Password lama salah" });
+    }
+  }
+  const { hash, salt } = hashPassword(new_password);
+  db.insertAdminUser({ ...user, password_hash: hash, password_salt: salt,
+    password_changed_at: Math.floor(Date.now() / 1000), must_change_password: 0 });
+  console.log(`🔐 Password changed: ${user.name} (@${user.username || user.id})`);
+  res.json({ ok: true });
+});
+
+// ── Set password (admin sets for another user) ────────────────────────
+app.post("/api/auth/users/:id/set-password", (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+  const session = token && adminSessions.get(token);
+  if (!session || !["super-admin", "owner"].includes(session.role)) return res.status(403).json({ error: "Hanya super-admin/owner yang boleh reset password" });
+  const { password, force_change = true } = req.body || {};
+  if (!password || password.length < 8) return res.status(400).json({ error: "Password minimum 8 karakter" });
+  adminUsers = db.loadAllAdminUsers();
+  const user = adminUsers.find(u => u.id === req.params.id);
+  if (!user) return res.status(404).json({ error: "User tidak ditemukan" });
+  const { hash, salt } = hashPassword(password);
+  db.insertAdminUser({ ...user, password_hash: hash, password_salt: salt,
+    password_changed_at: Math.floor(Date.now() / 1000),
+    must_change_password: force_change ? 1 : 0,
+    failed_login_count: 0, locked_until: null });
+  console.log(`🔐 Password reset by ${session.name} for ${user.name}`);
+  res.json({ ok: true });
+});
+
+// ── Login audit (for super-admin) ─────────────────────────────────────
+app.get("/api/auth/audit", (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+  const session = token && adminSessions.get(token);
+  if (!session || !["super-admin", "owner"].includes(session.role)) return res.status(403).json({ error: "Forbidden" });
+  res.json({ audit: db.recentLoginAudit(parseInt(req.query.limit, 10) || 100) });
+});
+
+// ── Legacy PIN login (POS kasir quick-access) — kept for backward compat
+app.post("/api/auth/login", (req, res) => {
+  purgeExpired();
+  const { pin } = req.body;
+  const ip = clientIp(req); const ua = req.headers["user-agent"] || "";
+  if (!pin) return res.status(400).json({ error: "PIN required" });
+  adminUsers = db.loadAllAdminUsers();
+  const user = adminUsers.find(u => u.pin === pin && u.active);
+  if (!user) {
+    db.logLoginAttempt({ ip, user_agent: ua, method: "pin", success: 0, error: "pin not found" });
+    return res.status(401).json({ error: "PIN salah" });
+  }
+  const token = genToken();
+  const expiresAt = Date.now() + SESSION_TTL_MS;
+  adminSessions.set(token, { userId: user.id, name: user.name, role: user.role, loginAt: Date.now(), expiresAt, ip });
+  db.logLoginAttempt({ user_id: user.id, username: user.username, ip, user_agent: ua, method: "pin", success: 1 });
+  console.log(`🔐 PIN Login: ${user.name} (${user.role})`);
+  res.json({ ok: true, token, name: user.name, role: user.role, must_change_password: !!user.must_change_password });
 });
 
 app.post("/api/auth/logout", (req, res) => {
@@ -3783,6 +3929,8 @@ const { setupCinema } = require('./cinema-backend');
 setupCinema(app, { dbPath: DB_PATH });
 const { setupFnbFeatures } = require('./fnb-features-backend');
 setupFnbFeatures(app, { dbPath: DB_PATH });
+const { setupOwnerDashboardExtras } = require('./owner-dashboard-extras');
+setupOwnerDashboardExtras(app, { dbPath: DB_PATH });
 const bridge          = setupBridge(app,          { dbPath: DB_PATH, mountPath: '/api/bridge' });
 const notifications   = setupNotifications(app, {
   dbPath: DB_PATH,

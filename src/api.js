@@ -86,8 +86,12 @@ export const api = {
   // Health
   health:         ()           => req("GET",    "/api/health"),
 
-  // Auth
+  // Auth — enterprise (username/password) + legacy PIN
   login:            (pin)        => req("POST",  "/api/auth/login", { pin }),
+  loginPassword:    (username, password) => req("POST", "/api/auth/login-password", { username, password }),
+  changePassword:   (current_password, new_password) => req("POST", "/api/auth/change-password", { current_password, new_password }),
+  setUserPassword:  (id, password, force_change=true) => req("POST", `/api/auth/users/${id}/set-password`, { password, force_change }),
+  loginAudit:       (limit=100)   => req("GET",   `/api/auth/audit?limit=${limit}`),
   logout:           ()           => req("POST",  "/api/auth/logout"),
   getMe:            ()           => req("GET",   "/api/auth/me"),
   getUsers:         ()           => req("GET",   "/api/auth/users"),

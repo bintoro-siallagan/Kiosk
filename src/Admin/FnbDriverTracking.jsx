@@ -1,5 +1,6 @@
 // karyaOS — Driver Realtime Location Tracking (live ping)
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit, EmptyState, LoadingSkeleton } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 const fmtAge = (s) => { if (s == null) return "never"; if (s < 60) return `${s}s ago`; if (s < 3600) return `${Math.floor(s/60)}m ago`; return `${Math.floor(s/3600)}h ago`; };
 
@@ -67,7 +68,7 @@ export default function FnbDriverTracking({ apiBase = "" }) {
           </div>
         ))}
       </div>
-      {drivers.length === 0 && <div style={{ padding: "40px", textAlign: "center", color: C.sub, fontSize: 13 }}>Belum ada driver aktif. Tambah dulu di 🚴 Delivery → Drivers tab.</div>}
+      {drivers.length === 0 && <EmptyState icon="🚴" title="Belum ada driver aktif" desc="Tambah driver dulu di modul 🚴 Delivery → tab Drivers." />}
     </div>
   );
 }

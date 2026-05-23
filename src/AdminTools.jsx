@@ -140,6 +140,7 @@ import FnbKdsRouting from "./Admin/FnbKdsRouting.jsx";
 import FnbWhatsApp from "./Admin/FnbWhatsApp.jsx";
 import FnbBankRecon from "./Admin/FnbBankRecon.jsx";
 import FnbDriverTracking from "./Admin/FnbDriverTracking.jsx";
+import FnbPaymentMethods from "./Admin/FnbPaymentMethods.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -249,6 +250,7 @@ export default function AdminTools({ initialTab }) {
         {tab === "fnb_whatsapp" && <FnbWhatsApp apiBase={API} />}
         {tab === "fnb_bank_recon" && <FnbBankRecon apiBase={API} />}
         {tab === "fnb_driver_tracking" && <FnbDriverTracking apiBase={API} />}
+        {tab === "fnb_payment_methods" && <FnbPaymentMethods apiBase={API} />}
         {tab === "cinema_event_booking" && <CinemaEventBooking apiBase={API} />}
         {tab === "cinema_price_list" && <CinemaPriceList apiBase={API} />}
         {tab === "cinema_command_center" && <CinemaCommandCenter apiBase={API} />}

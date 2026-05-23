@@ -1,5 +1,6 @@
 // karyaOS — F&B Reservation (booking table di muka)
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit, TooltipButton } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const STATUS = { pending: { label: "Pending", color: "#f59e0b" }, confirmed: { label: "Confirmed", color: "#10b981" }, seated: { label: "Seated", color: "#22d3ee" }, completed: { label: "Done", color: "#6b7280" }, cancelled: { label: "Cancelled", color: "#ef4444" }, no_show: { label: "No-show", color: "#7f1d1d" } };
@@ -27,7 +28,8 @@ export default function FnbReservation({ apiBase = "" }) {
     showToast(editing === "new" ? `Booking dibuat (${d.reservation_code})` : "Diperbarui"); setEditing(null); setForm(empty); load();
   };
   const setStatus = async (r, status) => { await fetch(`${base}/reservations/${r.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) }); showToast(`Status: ${STATUS[status]?.label}`); load(); };
-  const remove = async (r) => { if (!confirm(`Hapus booking ${r.reservation_code}?`)) return; await fetch(`${base}/reservations/${r.id}`, { method: "DELETE" }); load(); };
+  const { confirm } = useUiKit();
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus booking ${r.reservation_code}?`, message: `${r.customer_name} · ${r.reservation_date} ${r.reservation_time}`, danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/reservations/${r.id}`, { method: "DELETE" }); load(); };
   return (
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>

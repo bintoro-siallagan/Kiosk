@@ -1,5 +1,6 @@
 // karyaOS — Menu Engineering Matrix (Star / Plowhorse / Puzzle / Dog)
 import { useState, useEffect, useCallback } from "react";
+import { EmptyState, LoadingSkeleton } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const Q = {
@@ -22,7 +23,7 @@ export default function FnbMenuEngineering({ apiBase = "" }) {
     setData(d);
   }, [base, period]);
   useEffect(() => { load(); }, [load]);
-  if (!data) return <div style={{ color: C.sub, padding: 30 }}>Memuat…</div>;
+  if (!data) return <div style={{ padding: 16 }}><LoadingSkeleton rows={5} height={48} /></div>;
   const t = data.summary || {};
   return (
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
@@ -47,9 +48,8 @@ export default function FnbMenuEngineering({ apiBase = "" }) {
         ))}
       </div>
       {(!data.rows || data.rows.length === 0) ? (
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "40px 18px", textAlign: "center", color: C.sub, fontSize: 13 }}>
-          ⚠️ Data analisa belum tersedia. Pastikan menu_items + order_items table sudah ada dengan field <code>food_cost</code>, <code>price</code>, dan ada penjualan di periode pilihan.
-        </div>
+        <EmptyState icon="📊" title="Data analisa belum tersedia"
+          desc="Pastikan menu_items + order_items table sudah ada dengan field food_cost & price, dan ada penjualan di periode pilihan." />
       ) : (
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
           <div style={{ display: "flex", color: C.dim, fontSize: 11, letterSpacing: 1, padding: "8px 14px", borderBottom: `1px solid ${C.border}`, gap: 10 }}>

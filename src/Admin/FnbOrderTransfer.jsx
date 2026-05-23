@@ -1,5 +1,6 @@
 // karyaOS — Order Transfer Between Tables
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit, EmptyState } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 const fmtTs = (s) => s ? new Date(s * 1000).toLocaleString("id-ID", { hour12: false }) : "—";
 export default function FnbOrderTransfer({ apiBase = "" }) {

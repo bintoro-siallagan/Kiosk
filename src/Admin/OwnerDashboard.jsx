@@ -62,8 +62,10 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
   const [lastRefresh, setLastRefresh] = useState(Date.now());
   const [data, setData] = useState({
     finance: null, refundCancel: null, kds: null, aggregator: null,
-    loyalty: null, employees: null, financeTender: null, financeTopItems: null, cashFlow: null
+    loyalty: null, employees: null, financeTender: null, financeTopItems: null, cashFlow: null,
+    extras: null
   });
+  const [alertsOpen, setAlertsOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const fetchControllerRef = useRef(null);
 
@@ -86,7 +88,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
       const [
         financeDash, financeTrend, financeChannels,
         rc, kdsStats, aggregatorRecon,
-        loyalty, staff, financeTender, financeTopItems, cashFlow
+        loyalty, staff, financeTender, financeTopItems, cashFlow, extras
       ] = await Promise.all([
         safeJson(`/api/finance/dashboard?from=${range.from}&to=${range.to}`),
         safeJson(`/api/finance/revenue-trend?days=30`),
@@ -99,7 +101,8 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
         safeJson(`/api/staff`),
         safeJson(`/api/finance/by-tender?from=${range.from}&to=${range.to}`),
         safeJson(`/api/finance/top-items?from=${range.from}&to=${range.to}&limit=8`),
-        safeJson(`/api/cash-flow`)
+        safeJson(`/api/cash-flow`),
+        safeJson(`/api/owner-dashboard/extras`),   // 🆕 panels aggregator
       ]);
 
       // /api/loyalty/stats uses {tier_distribution:[{tier,count}], outstanding_points};
@@ -110,7 +113,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
         current_outstanding: loyalty.current_outstanding ?? loyalty.outstanding_points ?? 0,
       } : loyalty;
 
-      setData({ finance: financeDash, financeTrend, financeChannels, refundCancel: rc, kds: kdsStats, aggregator: aggregatorRecon, loyalty: loyaltyNorm, employees: staff, financeTender, financeTopItems, cashFlow });
+      setData({ finance: financeDash, financeTrend, financeChannels, refundCancel: rc, kds: kdsStats, aggregator: aggregatorRecon, loyalty: loyaltyNorm, employees: staff, financeTender, financeTopItems, cashFlow, extras });
       setLastRefresh(Date.now());
     } catch (e) { console.warn('[dashboard] fetch error:', e.message); }
     setLoading(false);
@@ -223,6 +226,71 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
         </div>
       </div>
 
+      {/* 🆕 QUICK-ACTION BUTTONS ROW */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 14 }}>
+        <button onClick={() => window.open('/?pos=1', '_blank')} style={qaBtn("#10b981", "🧾", "Buka POS Kasir")}>🧾<div><div style={{ fontWeight: 800 }}>POS Kasir</div><div style={{ fontSize: 10, opacity: 0.8 }}>Buka di tab baru</div></div></button>
+        <button onClick={() => window.open('/?kds=1', '_blank')} style={qaBtn("#f97316", "👨‍🍳", "Buka KDS")}>👨‍🍳<div><div style={{ fontWeight: 800 }}>KDS Dapur</div><div style={{ fontSize: 10, opacity: 0.8 }}>{data.kds?.active_now?.queued || 0} antrian</div></div></button>
+        <button onClick={() => onNavigate?.('cinema_validate')} style={qaBtn("#a855f7", "🎟️", "Cinema Validator")}>🎟️<div><div style={{ fontWeight: 800 }}>Cinema Validator</div><div style={{ fontSize: 10, opacity: 0.8 }}>Scan tiket QR</div></div></button>
+        <button onClick={() => onNavigate?.('shift_roster')} style={qaBtn("#22d3ee", "📊", "Z-Report End Day")}>📊<div><div style={{ fontWeight: 800 }}>End Day / Z-Report</div><div style={{ fontSize: 10, opacity: 0.8 }}>Tutup hari operasional</div></div></button>
+        <button onClick={() => setAlertsOpen(o => !o)} style={qaBtn(data.extras?.alerts?.length > 0 ? "#ef4444" : "#6b7280", "🔔", "Realtime Alerts")}>🔔<div><div style={{ fontWeight: 800 }}>Alerts ({data.extras?.alerts?.length || 0})</div><div style={{ fontSize: 10, opacity: 0.8 }}>Klik untuk live feed</div></div></button>
+      </div>
+
+      {/* 🆕 TODAY'S COMPARISON */}
+      {data.extras?.comparison && (
+        <div style={{ background: "#0d1117", border: "1px solid #2a2b30", borderRadius: 12, padding: 14, marginBottom: 14, display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 14 }}>
+          <div>
+            <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, fontFamily: "'Geist Mono',monospace" }}>HARI INI</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#10b981", fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{fmtIDRcompact(data.extras.comparison.today)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, fontFamily: "'Geist Mono',monospace" }}>VS KEMARIN (JAM YG SAMA)</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: data.extras.comparison.vs_yesterday_pct >= 0 ? "#10b981" : "#ef4444", fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>
+              {data.extras.comparison.vs_yesterday_pct >= 0 ? "↑" : "↓"} {Math.abs(data.extras.comparison.vs_yesterday_pct)}%
+            </div>
+            <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>kemarin: {fmtIDRcompact(data.extras.comparison.yesterday_same_time)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, fontFamily: "'Geist Mono',monospace" }}>VS MINGGU LALU</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: data.extras.comparison.vs_last_week_pct >= 0 ? "#10b981" : "#ef4444", fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>
+              {data.extras.comparison.vs_last_week_pct >= 0 ? "↑" : "↓"} {Math.abs(data.extras.comparison.vs_last_week_pct)}%
+            </div>
+            <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>7 hari lalu: {fmtIDRcompact(data.extras.comparison.last_week_same_time)}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, fontFamily: "'Geist Mono',monospace" }}>TARGET HARI INI</div>
+            <div style={{ fontSize: 18, fontWeight: 700, color: data.extras.comparison.target_pct >= 100 ? "#10b981" : data.extras.comparison.target_pct >= 60 ? "#fbbf24" : "#ef4444", fontFamily: "'Geist Mono',monospace", marginTop: 4 }}>{data.extras.comparison.target_pct}%</div>
+            <div style={{ marginTop: 4, height: 8, background: "#161b22", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${Math.min(100, data.extras.comparison.target_pct)}%`, background: data.extras.comparison.target_pct >= 100 ? "#10b981" : data.extras.comparison.target_pct >= 60 ? "#fbbf24" : "#ef4444", borderRadius: 4 }} />
+            </div>
+            <div style={{ fontSize: 10, color: "#6b7280", marginTop: 2 }}>target {fmtIDRcompact(data.extras.comparison.target_today)}</div>
+          </div>
+        </div>
+      )}
+
+      {/* 🆕 REAL-TIME ALERTS FEED (collapsible) */}
+      {alertsOpen && data.extras?.alerts && (
+        <div style={{ background: "#0d1117", border: "1px solid #ef444466", borderRadius: 12, padding: 14, marginBottom: 14 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: "#ef4444", letterSpacing: 1 }}>🔔 REAL-TIME ALERTS FEED ({data.extras.alerts.length})</div>
+            <button onClick={() => setAlertsOpen(false)} style={{ background: "transparent", border: "1px solid #2a2b30", color: "#9ca3af", padding: "3px 9px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit", fontSize: 11 }}>× tutup</button>
+          </div>
+          {data.extras.alerts.length === 0 ? <div style={{ color: "#10b981", fontSize: 13, textAlign: "center", padding: 14 }}>✓ Semua aman, tidak ada alert.</div> :
+            <div style={{ maxHeight: 320, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+              {data.extras.alerts.map((a, i) => (
+                <div key={i} style={{ display: "flex", gap: 10, padding: "8px 12px", background: a.severity === 'critical' ? "#7f1d1d22" : "#f59e0b15", border: `1px solid ${a.severity === 'critical' ? "#ef444466" : "#f59e0b66"}`, borderRadius: 8, alignItems: "center" }}>
+                  <span style={{ fontSize: 18 }}>{a.icon}</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, color: "#fff" }}>{a.title}</div>
+                    <div style={{ fontSize: 11, color: "#9ca3af" }}>{a.detail}</div>
+                  </div>
+                  <span style={{ fontSize: 10, color: a.severity === 'critical' ? "#ef4444" : "#f59e0b", fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>{a.severity.toUpperCase()}</span>
+                </div>
+              ))}
+            </div>
+          }
+        </div>
+      )}
+
       {/* ANOMALY BANNER */}
       {heroKpis?.anomaly?.value > 0 && (
         <div style={styles.anomalyBanner} onClick={() => onNavigate?.('refund_cancel')}>
@@ -319,6 +387,89 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
           color="#fbbf24"
           onClick={() => onNavigate?.('loyalty')} />
       </div>
+
+      {/* ═══ CINEMA PERFORMANCE ═══ */}
+      {data.extras?.cinema && (data.extras.cinema.total_revenue_today > 0 || data.extras.cinema.tickets_today.c > 0) && (
+        <>
+          <div style={styles.sectionLabel}>🎬 CINEMA PERFORMANCE (HARI INI)</div>
+          <div className="grid-4" style={styles.gridFourCol}>
+            <MiniPanel title="Tiket Cinema" value={data.extras.cinema.tickets_today.c} sub={fmtIDRcompact(data.extras.cinema.tickets_today.g)} icon="🎟️" color="#a855f7" onClick={() => onNavigate?.('cinema_box_office')} />
+            <MiniPanel title="F&B Bundle" value={data.extras.cinema.bundles_today.c} sub={fmtIDRcompact(data.extras.cinema.bundles_today.g)} icon="🍿" color="#f59e0b" />
+            <MiniPanel title="Occupancy" value={`${data.extras.cinema.occupancy_pct || 0}%`} sub={`${data.extras.cinema.occupancy?.sold || 0}/${data.extras.cinema.occupancy?.capacity || 0} kursi`} icon="🪑" color={data.extras.cinema.occupancy_pct >= 70 ? "#10b981" : data.extras.cinema.occupancy_pct >= 40 ? "#fbbf24" : "#ef4444"} onClick={() => onNavigate?.('cinema_command_center')} />
+            <MiniPanel title="Attach Rate F&B" value={`${data.extras.cinema.attach_rate_today || 0}%`} sub={data.extras.cinema.top_film ? `Top: ${data.extras.cinema.top_film.title}` : "—"} icon="🍿" color="#ec4899" />
+          </div>
+        </>
+      )}
+
+      {/* ═══ RESERVATION + DELIVERY + PROMOTIONS ═══ */}
+      {data.extras && (
+        <>
+          <div style={styles.sectionLabel}>📅 RESERVATION · 🚴 DELIVERY · 🎁 ACTIVE PROMOTIONS</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 16 }} className="grid-2">
+            {/* Reservation today */}
+            <Panel title="Reservation Today" onClick={() => onNavigate?.('fnb_reservation')}>
+              <div style={{ padding: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+                  <span style={{ color: "#9ca3af", fontSize: 12 }}>Total</span>
+                  <b style={{ color: "#a855f7", fontSize: 20 }}>{data.extras.reservation?.summary?.total || 0}</b>
+                </div>
+                <div style={{ fontSize: 11.5, color: "#9ca3af", lineHeight: 1.7 }}>
+                  ⏳ Pending: <b style={{ color: "#f59e0b" }}>{data.extras.reservation?.summary?.pending || 0}</b><br />
+                  ✓ Confirmed: <b style={{ color: "#10b981" }}>{data.extras.reservation?.summary?.confirmed || 0}</b><br />
+                  👥 Seated: <b style={{ color: "#22d3ee" }}>{data.extras.reservation?.summary?.seated || 0}</b><br />
+                  ✓ Completed: <b style={{ color: "#6b7280" }}>{data.extras.reservation?.summary?.completed || 0}</b><br />
+                  Total guests: <b style={{ color: "#fff" }}>{data.extras.reservation?.summary?.party_size || 0}</b>
+                </div>
+              </div>
+            </Panel>
+            {/* Delivery status */}
+            <Panel title="Delivery Status" onClick={() => onNavigate?.('fnb_delivery')}>
+              <div style={{ padding: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+                  <span style={{ color: "#9ca3af", fontSize: 12 }}>Drivers Online</span>
+                  <b style={{ color: "#10b981", fontSize: 20 }}>{data.extras.delivery?.online || 0}<span style={{ color: "#6b7280", fontSize: 13, marginLeft: 4 }}>/ {data.extras.delivery?.drivers?.length || 0}</span></b>
+                </div>
+                <div style={{ fontSize: 11.5, color: "#9ca3af", lineHeight: 1.7 }}>
+                  📦 Pending: <b style={{ color: "#f59e0b" }}>{data.extras.delivery?.by_status?.pending || 0}</b><br />
+                  🛵 On the way: <b style={{ color: "#3b82f6" }}>{data.extras.delivery?.by_status?.on_the_way || 0}</b><br />
+                  ✓ Delivered: <b style={{ color: "#10b981" }}>{data.extras.delivery?.by_status?.delivered || 0}</b><br />
+                  ⏱️ Avg time: <b style={{ color: "#fff" }}>{data.extras.delivery?.avg_time_minutes || 0} min</b>
+                </div>
+              </div>
+            </Panel>
+            {/* Active promotions */}
+            <Panel title="Active Promotions" onClick={() => onNavigate?.('fnb_happy_hour')}>
+              <div style={{ padding: 12, fontSize: 11.5, lineHeight: 1.7, color: "#9ca3af" }}>
+                🕐 Happy Hour aktif: <b style={{ color: "#fbbf24" }}>{data.extras.promotions?.happy_hours?.length || 0}</b><br />
+                {(data.extras.promotions?.happy_hours || []).slice(0, 2).map(h => <div key={h.id} style={{ fontSize: 11, color: "#fff", paddingLeft: 14 }}>• {h.name} · {h.discount_pct}%</div>)}
+                🎂 Birthday campaign: <b style={{ color: "#ec4899" }}>{data.extras.promotions?.birthday_campaigns?.length || 0}</b> ({data.extras.promotions?.birthday_redemptions_today || 0} redeem hari ini)<br />
+                🎬 Cinema campaign: <b style={{ color: "#a855f7" }}>{data.extras.promotions?.cinema_campaigns?.length || 0}</b><br />
+                🤝 Referral pending: <b style={{ color: "#22d3ee" }}>{data.extras.promotions?.referrals_pending || 0}</b>
+              </div>
+            </Panel>
+          </div>
+        </>
+      )}
+
+      {/* ═══ OUTLET HEALTH MAP ═══ */}
+      {data.extras?.outlet_health?.length > 0 && (
+        <>
+          <div style={styles.sectionLabel}>🌡️ OUTLET HEALTH MAP</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12, marginBottom: 16 }}>
+            {data.extras.outlet_health.map(o => (
+              <div key={o.outlet} style={{ background: "#0d1117", border: `2px solid ${o.studio_issues > 0 ? "#ef444455" : "#10b98166"}`, borderRadius: 12, padding: 14 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700 }}>🏪 {o.outlet}</div>
+                  {o.studio_issues > 0 ? <span style={{ background: "#ef444422", color: "#ef4444", padding: "2px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700 }}>⚠ {o.studio_issues}</span> : <span style={{ background: "#10b98122", color: "#10b981", padding: "2px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700 }}>✓ OK</span>}
+                </div>
+                <div style={{ fontSize: 12, color: "#9ca3af" }}>Revenue cinema hari ini</div>
+                <div style={{ fontSize: 17, color: "#10b981", fontWeight: 800, fontFamily: "'Geist Mono',monospace", marginTop: 3 }}>{fmtIDRcompact(o.cinema_rev)}</div>
+                <div style={{ fontSize: 11, color: "#6b7280", marginTop: 3 }}>🎟️ {o.cinema_tickets} tiket terjual</div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* FINANCIAL DEEP */}
       <div style={styles.sectionLabel}>FINANCIAL — INCOME STATEMENT ({range.label})</div>
@@ -744,6 +895,11 @@ const periodBtn = (active) => ({
   fontSize: 11, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit'
 });
 
+const qaBtn = (color, icon, title) => ({
+  background: color + "1f", border: `1px solid ${color}55`, color,
+  padding: "10px 14px", borderRadius: 10, cursor: "pointer", fontFamily: "inherit",
+  fontSize: 12, display: "flex", gap: 10, alignItems: "center", textAlign: "left",
+});
 const styles = {
   root: { background: '#0a0a0a', minHeight: '100vh', padding: 16, color: '#fff', fontFamily: 'system-ui,-apple-system,sans-serif' },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap', gap: 12 },

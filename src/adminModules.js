@@ -151,6 +151,7 @@ export const TABS = [
   { id: "fnb_whatsapp",         label: "💬 WhatsApp Business",     color: "#25d366" },
   { id: "fnb_bank_recon",       label: "🏦 Banking Auto-Recon",    color: "#10b981" },
   { id: "fnb_driver_tracking",  label: "📍 Driver Realtime",       color: "#3b82f6" },
+  { id: "fnb_payment_methods",  label: "💳 Payment Methods Master", color: "#10b981" },
 ];
 
 // Urutan value-chain enterprise: Operasi → Product → Inventory → Commerce
@@ -173,6 +174,7 @@ export const GROUPS = [
       "fnb_bill_split", "fnb_order_transfer",
       "fnb_kds_routing",
       "fnb_whatsapp", "fnb_bank_recon",
+      "fnb_payment_methods",
     ],
     categories: [
       { name: "🍱 Menu & Product",  ids: ["fnb_recipe", "fnb_combo", "fnb_menu_periods", "fnb_dietary_tags", "fnb_menu_engineering"] },
@@ -183,6 +185,7 @@ export const GROUPS = [
       { name: "🚴 Delivery",        ids: ["fnb_delivery", "fnb_driver_tracking"] },
       { name: "🍳 Kitchen",         ids: ["fnb_kds_routing"] },
       { name: "🔗 Integration",     ids: ["fnb_whatsapp", "fnb_bank_recon"] },
+      { name: "💳 Payments",        ids: ["fnb_payment_methods"] },
     ],
   },
   { name: "Cinema", icon: "🎬", module: "pos",

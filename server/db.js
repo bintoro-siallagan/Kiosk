@@ -105,6 +105,8 @@ db.exec(`
     active  INTEGER DEFAULT 1,
     created_at INTEGER
   );
+  -- enterprise auth fields (idempotent ALTER below)
+
 
   CREATE TABLE IF NOT EXISTS point_transactions (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -121,6 +123,31 @@ db.exec(`
 // Add points column to customers (idempotent)
 try { db.exec("ALTER TABLE customers ADD COLUMN points INTEGER DEFAULT 0"); console.log("🎁 customers.points column added"); }
 catch (e) { /* column already exists */ }
+
+// ─── ENTERPRISE AUTH MIGRATIONS (idempotent) ─────────────────────────
+try { db.exec("ALTER TABLE admin_users ADD COLUMN username TEXT"); } catch {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN email TEXT"); } catch {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN password_hash TEXT"); } catch {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN password_salt TEXT"); } catch {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN password_changed_at INTEGER"); } catch {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN must_change_password INTEGER DEFAULT 0"); } catch {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN last_login_at INTEGER"); } catch {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN last_login_ip TEXT"); } catch {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN failed_login_count INTEGER DEFAULT 0"); } catch {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN locked_until INTEGER"); } catch {}
+try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users(username) WHERE username IS NOT NULL"); } catch {}
+
+// Login audit log
+try {
+  db.exec(`CREATE TABLE IF NOT EXISTS admin_login_audit (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT, username TEXT, ip TEXT, user_agent TEXT,
+    method TEXT, success INTEGER DEFAULT 0,
+    error TEXT, created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+  )`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_admin_login_audit_user ON admin_login_audit(user_id)`);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_admin_login_audit_created ON admin_login_audit(created_at)`);
+} catch {}
 
 try { db.exec("ALTER TABLE orders ADD COLUMN convenience_fee INTEGER DEFAULT 0"); console.log("🧾 orders.convenience_fee added"); }
 catch (e) { /* column already exists */ }
@@ -434,23 +461,57 @@ console.log(`🪑 Tables persisted: ${loadAllTables().length}`);
 console.log(`🕐 Shifts persisted: ${loadAllShifts().length} (active: ${loadActiveShift() ? "yes" : "no"})`);
 console.log(`📋 Menu overrides: ${getMenuOverrides().size}`);
 
-// ─── ADMIN USERS ────────────────────────────────────
+// ─── ADMIN USERS (enterprise auth: username + password_hash) ─────────
 const adminUserStmts = {
-  insert: db.prepare(`INSERT OR REPLACE INTO admin_users (id,name,pin,role,active,created_at) VALUES (@id,@name,@pin,@role,@active,@created_at)`),
+  insert: db.prepare(`INSERT OR REPLACE INTO admin_users
+    (id, name, pin, role, active, created_at,
+     username, email, password_hash, password_salt, password_changed_at,
+     must_change_password, last_login_at, last_login_ip,
+     failed_login_count, locked_until)
+    VALUES (@id, @name, @pin, @role, @active, @created_at,
+     @username, @email, @password_hash, @password_salt, @password_changed_at,
+     @must_change_password, @last_login_at, @last_login_ip,
+     @failed_login_count, @locked_until)`),
   selectAll: db.prepare(`SELECT * FROM admin_users ORDER BY id`),
   delete:    db.prepare(`DELETE FROM admin_users WHERE id = ?`),
 };
 const adminUserToRow = u => ({
-  id:u.id, name:u.name, pin:u.pin, role:u.role||'kasir',
-  active:u.active===false?0:1, created_at:u.createdAt??Date.now(),
+  id: u.id, name: u.name, pin: u.pin, role: u.role || 'kasir',
+  active: u.active === false ? 0 : 1, created_at: u.createdAt ?? Date.now(),
+  username: u.username || null, email: u.email || null,
+  password_hash: u.password_hash || null, password_salt: u.password_salt || null,
+  password_changed_at: u.password_changed_at || null,
+  must_change_password: u.must_change_password ? 1 : 0,
+  last_login_at: u.last_login_at || null, last_login_ip: u.last_login_ip || null,
+  failed_login_count: u.failed_login_count || 0,
+  locked_until: u.locked_until || null,
 });
 const rowToAdminUser = r => ({
-  id:r.id, name:r.name, pin:r.pin, role:r.role,
-  active:!!r.active, createdAt:r.created_at,
+  id: r.id, name: r.name, pin: r.pin, role: r.role,
+  active: !!r.active, createdAt: r.created_at,
+  username: r.username, email: r.email,
+  password_hash: r.password_hash, password_salt: r.password_salt,
+  password_changed_at: r.password_changed_at,
+  must_change_password: !!r.must_change_password,
+  last_login_at: r.last_login_at, last_login_ip: r.last_login_ip,
+  failed_login_count: r.failed_login_count || 0,
+  locked_until: r.locked_until,
 });
 function loadAllAdminUsers() { return adminUserStmts.selectAll.all().map(rowToAdminUser); }
 function insertAdminUser(u)  { adminUserStmts.insert.run(adminUserToRow(u)); }
 function deleteAdminUser(id) { adminUserStmts.delete.run(id); }
+// Login audit log helper
+function logLoginAttempt(entry) {
+  try {
+    db.prepare(`INSERT INTO admin_login_audit (user_id, username, ip, user_agent, method, success, error) VALUES (?,?,?,?,?,?,?)`)
+      .run(entry.user_id || null, entry.username || null, entry.ip || null, entry.user_agent || null,
+           entry.method || 'password', entry.success ? 1 : 0, entry.error || null);
+  } catch {}
+}
+function recentLoginAudit(limit = 100) {
+  try { return db.prepare(`SELECT * FROM admin_login_audit ORDER BY created_at DESC LIMIT ?`).all(limit); }
+  catch { return []; }
+}
 console.log(`🔐 Admin users persisted: ${loadAllAdminUsers().length}`);
 
 // ─── POINT TRANSACTIONS ─────────────────────────────
@@ -489,6 +550,8 @@ module.exports = {
   getMenuOverrides, setMenuOverride,
 
   loadAllAdminUsers, insertAdminUser, deleteAdminUser,
+  logLoginAttempt, recentLoginAudit,
+  rawDb: db,
 
   insertPointTx, getPointHistory,
   runInTransaction,
