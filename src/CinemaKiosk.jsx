@@ -405,7 +405,7 @@ export default function CinemaKiosk({ apiBase }) {
         </div>
       </div>
 
-      <div style={{ position: "relative", zIndex: 1, flex: 1, padding: "24px", maxWidth: 980, width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
+      <div style={{ position: "relative", zIndex: 1, flex: 1, padding: "24px", maxWidth: 1400, width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
         {msg && <div style={{ background: "#ef444415", border: "1px solid #ef444444", borderRadius: 10, padding: "10px 14px", color: "#fca5a5", fontSize: 13, marginBottom: 16 }}>{msg}</div>}
 
         {/* STEP: films */}
