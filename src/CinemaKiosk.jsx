@@ -39,10 +39,35 @@ export default function CinemaKiosk({ apiBase }) {
     fetch(`${base}/tickets`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ showtime_id: show.id, seats: [...seats] }) })
       .then(r => r.json()).then(d => {
         if (d && d.error) setMsg("⚠ " + d.error);
-        else { setDone({ film, show, seats: [...seats].sort(), total: d.total }); setStep("done"); }
+        else { setDone({ film, show, seats: [...seats].sort(), total: d.total, tickets: d.tickets || [] }); setStep("done"); }
       }).catch(() => setMsg("⚠ Gagal memproses tiket"));
   };
   const reset = () => { setStep("films"); setFilm(null); setShow(null); setSeatData(null); setSeats(new Set()); setDone(null); setMsg(""); };
+
+  function printTickets() {
+    if (!done || !done.tickets || !done.tickets.length) return;
+    const html = done.tickets.map(t => `
+      <div style="border:2px dashed #999;border-radius:14px;padding:16px;margin:0 0 12px;display:flex;gap:18px;align-items:center;background:#fff;color:#111;font-family:'Inter',Arial,sans-serif;max-width:520px;page-break-inside:avoid">
+        <div style="text-align:center">
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=170x170&margin=6&data=${encodeURIComponent(t.code)}" style="width:170px;height:170px;display:block"/>
+          <div style="font-family:'Geist Mono',monospace;font-size:12px;margin-top:6px;letter-spacing:2px"><b>${t.code}</b></div>
+        </div>
+        <div style="flex:1;font-size:13px;line-height:1.55">
+          <div style="font-size:10px;color:#888;letter-spacing:3px;font-weight:800;margin-bottom:4px">🎬 KARYAOS CINEMA</div>
+          <div style="font-size:17px;font-weight:800;margin:0 0 6px">${done.film.title}</div>
+          <div><span style="color:#666">Jadwal</span> &nbsp;${done.show.show_date} &middot; ${done.show.start_time}</div>
+          <div><span style="color:#666">Studio</span> &nbsp;${done.show.studio_name || ''}</div>
+          <div><span style="color:#666">Kursi</span> &nbsp;<b style="font-size:16px">${t.seat}</b></div>
+          <div><span style="color:#666">Harga</span> &nbsp;Rp ${(t.price || 0).toLocaleString('id-ID')}</div>
+          <div style="margin-top:8px;font-size:10px;color:#888">Tunjukkan QR ini saat masuk studio</div>
+        </div>
+      </div>`).join('');
+    const w = window.open('', '_blank', 'width=640,height=820');
+    if (w) {
+      w.document.write(`<html><head><title>Tiket — KaryaOS Cinema</title></head><body style="margin:24px;background:#f5f5f5" onload="setTimeout(function(){window.print()},300)">${html}</body></html>`);
+      w.document.close();
+    }
+  }
 
   const filmShows = showtimes.filter(s => film && s.film_id === film.id);
   const price = show ? (show.price || 0) : 0;
@@ -157,9 +182,25 @@ export default function CinemaKiosk({ apiBase }) {
                 <b>Total</b><b style={{ color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>{rp(done.total)}</b>
               </div>
             </div>
-            <button onClick={reset} style={{ marginTop: 22, background: "#a855f7", border: "none", borderRadius: 12, padding: "14px 30px", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-              Pesan Tiket Lagi
-            </button>
+            {done.tickets && done.tickets.length > 0 && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 10, maxWidth: 480, margin: "18px auto 0" }}>
+                {done.tickets.map(t => (
+                  <div key={t.id} style={{ background: "#0d1117", border: "1px solid #1b212c", borderRadius: 12, padding: 12, textAlign: "center" }}>
+                    <img src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&margin=6&data=${encodeURIComponent(t.code)}`} alt={t.code} style={{ width: 120, height: 120, background: "#fff", borderRadius: 8 }} />
+                    <div style={{ fontSize: 11, color: "#9ca3af", letterSpacing: 2, marginTop: 6, fontFamily: "'Geist Mono',monospace" }}>{t.code}</div>
+                    <div style={{ fontSize: 13, marginTop: 4 }}>Kursi <b>{t.seat}</b></div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 22, flexWrap: "wrap" }}>
+              <button onClick={printTickets} style={{ background: "#f59e0b", border: "none", borderRadius: 12, padding: "14px 26px", color: "#111", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                🖨️ Cetak Tiket
+              </button>
+              <button onClick={reset} style={{ background: "#a855f7", border: "none", borderRadius: 12, padding: "14px 30px", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                Pesan Tiket Lagi
+              </button>
+            </div>
           </div>
         )}
       </div>

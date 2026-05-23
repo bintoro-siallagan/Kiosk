@@ -61,6 +61,8 @@ CREATE TABLE IF NOT EXISTS cinema_tickets (
   price INTEGER DEFAULT 0,
   buyer TEXT,
   sold_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  code TEXT,
+  checked_in_at INTEGER,
   UNIQUE(showtime_id, seat)
 );
 CREATE INDEX IF NOT EXISTS idx_cinema_ticket_showtime ON cinema_tickets(showtime_id);
@@ -85,6 +87,10 @@ function setupCinema(app, opts = {}) {
   const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
+  // Add QR-validation columns to existing cinema_tickets (no-op if already present)
+  try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN code TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN checked_in_at INTEGER"); } catch {}
+  try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_cinema_ticket_code ON cinema_tickets(code) WHERE code IS NOT NULL"); } catch {}
 
   // ── seed demo data on first run ──
   if (db.prepare(`SELECT COUNT(*) c FROM cinema_films`).get().c === 0) {
@@ -209,17 +215,49 @@ function setupCinema(app, opts = {}) {
     if (!b.showtime_id || !seats.length) return res.status(400).json({ error: 'showtime_id + seats wajib diisi' });
     const st = db.prepare(`SELECT * FROM cinema_showtimes WHERE id = ?`).get(b.showtime_id);
     if (!st) return res.status(404).json({ error: 'showtime tidak ditemukan' });
-    const ins = db.prepare(`INSERT INTO cinema_tickets (showtime_id, seat, price, buyer) VALUES (?,?,?,?)`);
+    const ins = db.prepare(`INSERT INTO cinema_tickets (showtime_id, seat, price, buyer, code) VALUES (?,?,?,?,?)`);
+    const crypto = require('crypto');
+    const newTickets = [];
     try {
-      db.transaction(() => { for (const s of seats) ins.run(st.id, s, st.price || 0, b.buyer || ''); })();
+      db.transaction(() => {
+        for (const s of seats) {
+          const code = 'CT-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+          const info = ins.run(st.id, s, st.price || 0, b.buyer || '', code);
+          newTickets.push({ id: info.lastInsertRowid, seat: s, price: st.price || 0, code });
+        }
+      })();
     } catch (e) {
       return res.status(409).json({ error: 'sebagian kursi sudah terjual — muat ulang peta kursi' });
     }
-    res.json({ ok: true, count: seats.length, total: seats.length * (st.price || 0) });
+    res.json({ ok: true, count: seats.length, total: seats.length * (st.price || 0), tickets: newTickets });
   });
   router.delete('/tickets/:id', (req, res) => {
     db.prepare(`DELETE FROM cinema_tickets WHERE id = ?`).run(req.params.id);
     res.json({ ok: true });
+  });
+
+  // ── TICKET VALIDATION (QR scan at the studio door) ──
+  router.post('/tickets/validate', (req, res) => {
+    const code = (req.body && req.body.code) ? String(req.body.code).trim().toUpperCase() : '';
+    if (!code) return res.status(400).json({ ok: false, status: 'invalid', error: 'Code wajib diisi' });
+    const t = db.prepare(`
+      SELECT t.*,
+        s.show_date, s.show_time, s.price AS showtime_price,
+        f.title AS film_title, f.duration AS film_duration,
+        st.name AS studio_name
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_films    f ON f.id = s.film_id
+      LEFT JOIN cinema_studios  st ON st.id = s.studio_id
+      WHERE t.code = ?
+    `).get(code);
+    if (!t) return res.status(404).json({ ok: false, status: 'invalid', error: 'Tiket tidak ditemukan' });
+    if (t.checked_in_at) {
+      return res.status(409).json({ ok: false, status: 'used', error: 'Tiket sudah dipakai', ticket: t, usedAt: t.checked_in_at });
+    }
+    const now = Math.floor(Date.now() / 1000);
+    db.prepare(`UPDATE cinema_tickets SET checked_in_at = ? WHERE id = ?`).run(now, t.id);
+    res.json({ ok: true, status: 'valid', ticket: { ...t, checked_in_at: now } });
   });
 
   // ── BOX OFFICE / reporting ──
