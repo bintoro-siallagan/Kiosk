@@ -17,8 +17,11 @@ export default function CinemaKiosk({ apiBase }) {
   const [seats, setSeats] = useState(new Set());
   const [bundleCatalog, setBundleCatalog] = useState([]);
   const [cart, setCart] = useState({});  // { [bundle_id]: qty }
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [done, setDone] = useState(null);
   const [msg, setMsg] = useState("");
+  const [sending, setSending] = useState(false);
   const base = `${apiBase || ""}/api/cinema`;
 
   useEffect(() => {
@@ -69,6 +72,8 @@ export default function CinemaKiosk({ apiBase }) {
       showtime_id: show.id,
       seats: [...seats],
       bundles: (bundleItems || cartItems).map(it => ({ bundle_id: it.bundle_id, qty: it.qty })),
+      buyer_email: email.trim() || undefined,
+      buyer_phone: phone.trim() || undefined,
     };
     fetch(`${base}/tickets`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       .then(r => r.json()).then(d => {
@@ -82,6 +87,8 @@ export default function CinemaKiosk({ apiBase }) {
             tickets: d.tickets || [],
             bundles: d.bundles || [],
             purchase_id: d.purchase_id,
+            email: email.trim(),
+            phone: phone.trim(),
           });
           setStep("done");
         }
@@ -90,8 +97,56 @@ export default function CinemaKiosk({ apiBase }) {
 
   const reset = () => {
     setStep("films"); setFilm(null); setShow(null); setSeatData(null);
-    setSeats(new Set()); setCart({}); setDone(null); setMsg("");
+    setSeats(new Set()); setCart({}); setEmail(""); setPhone(""); setDone(null); setMsg("");
   };
+
+  // Email — POST to backend (uses configured SMTP)
+  async function emailTickets() {
+    if (!done?.purchase_id) return;
+    let to = done.email || "";
+    if (!to) {
+      to = window.prompt("Kirim tiket ke email:", "") || "";
+      to = to.trim();
+      if (!to) return;
+    }
+    setSending(true);
+    try {
+      const r = await fetch(`${base}/tickets/send-email`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ purchase_id: done.purchase_id, email: to }),
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || "Gagal kirim");
+      setMsg(`✅ Tiket terkirim ke ${to}`);
+      setDone(cur => cur && ({ ...cur, email: to, emailSent: true }));
+    } catch (e) { setMsg("⚠ " + e.message); }
+    setSending(false);
+  }
+
+  // WhatsApp — client-side wa.me link, no backend needed
+  function shareWA() {
+    if (!done) return;
+    const lines = [
+      "🎬 *KaryaOS Cinema — Tiket Anda*", "",
+      `*${done.film.title}*`,
+      `📅 ${done.show.show_date} · ${done.show.start_time}`,
+      `🏛️ ${done.show.studio_name}${done.show.studio_type ? " · " + done.show.studio_type : ""}`,
+      `💺 Kursi: ${done.seats.join(", ")}`, "",
+      "*Kode tiket:*",
+      ...done.tickets.map(t => `• ${t.seat} — ${t.code}`),
+    ];
+    if (done.bundles?.length) {
+      lines.push("", "*🍿 F&B Combo:*");
+      done.bundles.forEach(b => lines.push(`• ${b.qty}× ${b.bundle_name} — ${rp((b.qty || 1) * (b.price || 0))}`));
+    }
+    lines.push("", `*Total:* ${rp(done.total)}`, "", "Tunjukkan QR di pintu studio.");
+    const text = encodeURIComponent(lines.join("\n"));
+    // Normalize Indonesian phone — 08xxxxx → 628xxxxx, +62... → 62...
+    const raw = (done.phone || "").replace(/[^\d+]/g, "");
+    const norm = raw.startsWith("+") ? raw.slice(1) : raw.startsWith("0") ? "62" + raw.slice(1) : raw;
+    const url = norm ? `https://wa.me/${norm}?text=${text}` : `https://wa.me/?text=${text}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
 
   function printTickets() {
     if (!done || !done.tickets || !done.tickets.length) return;
@@ -247,9 +302,22 @@ export default function CinemaKiosk({ apiBase }) {
           </>
         )}
 
-        {/* STEP: bundles (F&B combo picker) */}
+        {/* STEP: bundles (F&B combo picker + contact info) */}
         {step === "bundles" && (
           <>
+            <div style={{ background: "#0d1117", border: "1px solid #1b212c", borderRadius: 14, padding: 16, marginBottom: 18 }}>
+              <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 13, color: "#a78bfa", letterSpacing: 1.5, fontWeight: 700, marginBottom: 4 }}>📧 KIRIM E-TIKET (opsional)</div>
+              <div style={{ fontSize: 12, color: "#7d8590", marginBottom: 12 }}>
+                Isi email / nomor WA untuk menerima tiket digital + QR. Boleh dikosongkan kalau cukup cetak.
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                  placeholder="email@contoh.com" style={contactInp} />
+                <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
+                  placeholder="08xx-xxxx-xxxx (WA)" style={contactInp} />
+              </div>
+            </div>
+
             <H>Tambah Combo F&B?</H>
             <div style={{ fontSize: 13, color: "#7d8590", marginTop: -8, marginBottom: 16 }}>
               Pilih combo popcorn / minuman. Bisa ditukar di F&amp;B counter dengan QR tiket. Opsional — boleh dilewati.
@@ -320,12 +388,18 @@ export default function CinemaKiosk({ apiBase }) {
                 🍿 Tunjukkan QR tiket di F&B counter untuk menukar combo.
               </div>
             )}
-            <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 22, flexWrap: "wrap" }}>
-              <button onClick={printTickets} style={{ background: "#f59e0b", border: "none", borderRadius: 12, padding: "14px 26px", color: "#111", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                🖨️ Cetak Tiket {done.bundles?.length > 0 ? "+ Voucher F&B" : ""}
+            <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 22, flexWrap: "wrap" }}>
+              <button onClick={printTickets} style={btnGold}>
+                🖨️ Cetak {done.bundles?.length > 0 ? "+ Voucher F&B" : "Tiket"}
               </button>
-              <button onClick={reset} style={{ background: "#a855f7", border: "none", borderRadius: 12, padding: "14px 30px", color: "#fff", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-                Pesan Tiket Lagi
+              <button onClick={emailTickets} disabled={sending} style={btnEmail(sending)}>
+                {sending ? "Mengirim…" : done.emailSent ? "✅ Email terkirim" : "📧 Kirim Email"}
+              </button>
+              <button onClick={shareWA} style={btnWA}>
+                💬 Kirim via WhatsApp
+              </button>
+              <button onClick={reset} style={{ background: "#a855f7", border: "none", borderRadius: 12, padding: "14px 26px", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                Pesan Lagi
               </button>
             </div>
           </div>
@@ -395,3 +469,10 @@ function stepBtn(active) {
     color: active ? "#fbbf24" : "#5b6470", cursor: active ? "pointer" : "not-allowed",
   };
 }
+const contactInp = {
+  background: "#0a0e16", border: "1px solid #2a2b30", borderRadius: 9,
+  padding: "11px 13px", color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%",
+};
+const btnGold  = { background: "#f59e0b", border: "none", borderRadius: 12, padding: "14px 22px", color: "#111", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" };
+const btnWA    = { background: "#25D366", border: "none", borderRadius: 12, padding: "14px 22px", color: "#04130c", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" };
+const btnEmail = (busy) => ({ background: busy ? "#1b212c" : "#22d3ee", border: "none", borderRadius: 12, padding: "14px 22px", color: busy ? "#9ca3af" : "#04130c", fontSize: 13, fontWeight: 800, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" });

@@ -21,6 +21,12 @@
 const express = require('express');
 const Database = require('better-sqlite3');
 const path = require('path');
+let _emailMod = null;
+function getEmail() {
+  if (_emailMod) return _emailMod;
+  try { _emailMod = require('./email'); } catch (e) { _emailMod = null; }
+  return _emailMod;
+}
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS cinema_films (
@@ -135,6 +141,10 @@ function setupCinema(app, opts = {}) {
   try { db.exec("ALTER TABLE cinema_showtimes ADD COLUMN manual_closed_at INTEGER"); } catch {}
   try { db.exec("ALTER TABLE cinema_showtimes ADD COLUMN manual_closed_by TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_showtimes ADD COLUMN manual_close_reason TEXT"); } catch {}
+  // Buyer contact (for e-ticket via email / WA)
+  try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN buyer_email TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN buyer_phone TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN email_sent_at INTEGER"); } catch {}
 
   // Seed default bundles on first run (customisable in Admin → Cinema Bundles)
   if (db.prepare(`SELECT COUNT(*) c FROM cinema_bundles`).get().c === 0) {
@@ -356,7 +366,7 @@ function setupCinema(app, opts = {}) {
 
     const crypto = require('crypto');
     const purchaseId = 'CP-' + crypto.randomBytes(4).toString('hex').toUpperCase();
-    const ins   = db.prepare(`INSERT INTO cinema_tickets (showtime_id, seat, price, buyer, code, purchase_id) VALUES (?,?,?,?,?,?)`);
+    const ins   = db.prepare(`INSERT INTO cinema_tickets (showtime_id, seat, price, buyer, buyer_email, buyer_phone, code, purchase_id) VALUES (?,?,?,?,?,?,?,?)`);
     const insB  = db.prepare(`INSERT INTO cinema_purchase_bundles (purchase_id, bundle_id, bundle_name, qty, price) VALUES (?,?,?,?,?)`);
     const newTickets = [];
     const newBundles = [];
@@ -364,7 +374,7 @@ function setupCinema(app, opts = {}) {
       db.transaction(() => {
         for (const s of seats) {
           const code = 'CT-' + crypto.randomBytes(4).toString('hex').toUpperCase();
-          const info = ins.run(st.id, s, st.price || 0, b.buyer || '', code, purchaseId);
+          const info = ins.run(st.id, s, st.price || 0, b.buyer || '', b.buyer_email || '', b.buyer_phone || '', code, purchaseId);
           newTickets.push({ id: info.lastInsertRowid, seat: s, price: st.price || 0, code, purchase_id: purchaseId });
         }
         for (const r of bundleRows) {
@@ -523,6 +533,160 @@ function setupCinema(app, opts = {}) {
       ? db.prepare(`SELECT * FROM cinema_purchase_bundles WHERE purchase_id = ? ORDER BY id`).all(t.purchase_id)
       : [];
     res.json({ ok: true, status: 'valid', ticket: { ...t, checked_in_at: now }, bundles });
+  });
+
+  // ── E-TICKET via Email / WA ───────────────────────────────────────────
+  // Build purchase summary by purchase_id (preferred) or by a single ticket code.
+  function loadPurchase({ purchase_id, code }) {
+    const tickets = purchase_id
+      ? db.prepare(`SELECT t.*, f.title AS film_title, s.show_date, s.start_time,
+                           st.name AS studio_name, st.studio_type
+                    FROM cinema_tickets t
+                    LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+                    LEFT JOIN cinema_films    f ON f.id = s.film_id
+                    LEFT JOIN cinema_studios  st ON st.id = s.studio_id
+                    WHERE t.purchase_id = ? ORDER BY t.seat`).all(purchase_id)
+      : (code ? db.prepare(`SELECT t.*, f.title AS film_title, s.show_date, s.start_time,
+                                   st.name AS studio_name, st.studio_type
+                            FROM cinema_tickets t
+                            LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+                            LEFT JOIN cinema_films    f ON f.id = s.film_id
+                            LEFT JOIN cinema_studios  st ON st.id = s.studio_id
+                            WHERE t.code = ?`).all(String(code).trim().toUpperCase()) : []);
+    if (!tickets.length) return null;
+    const pid = tickets[0].purchase_id;
+    const bundles = pid
+      ? db.prepare(`SELECT * FROM cinema_purchase_bundles WHERE purchase_id = ?`).all(pid)
+      : [];
+    return { tickets, bundles, purchase_id: pid };
+  }
+
+  function buildEmailHTML({ tickets, bundles }) {
+    const rp = (n) => 'Rp ' + Math.round(n || 0).toLocaleString('id-ID');
+    const head = tickets[0] || {};
+    const seatsTotal = tickets.reduce((a, t) => a + (t.price || 0), 0);
+    const bundleTotal = bundles.reduce((a, b) => a + b.qty * b.price, 0);
+    const ticketBlocks = tickets.map(t => `
+      <tr><td style="padding:14px 0;border-top:1px dashed #e5e7eb">
+        <table width="100%" style="border:2px dashed #c084fc;border-radius:14px;background:#faf5ff;padding:14px"><tr>
+          <td valign="top" width="200" align="center">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=6&data=${encodeURIComponent(t.code)}" width="180" height="180" alt="${t.code}" style="display:block;background:#fff"/>
+            <div style="font-family:'Courier New',monospace;font-size:12px;margin-top:6px;letter-spacing:2px;color:#111"><b>${t.code}</b></div>
+          </td>
+          <td valign="top" style="padding-left:18px;font-size:13.5px;line-height:1.55;color:#111">
+            <div style="font-size:11px;color:#7c3aed;letter-spacing:3px;font-weight:800;margin-bottom:4px">🎬 KARYAOS CINEMA</div>
+            <div style="font-size:18px;font-weight:800;margin:0 0 8px">${t.film_title || '—'}</div>
+            <div><span style="color:#6b7280">Jadwal</span>&nbsp; ${t.show_date || ''} · ${t.start_time || ''}</div>
+            <div><span style="color:#6b7280">Studio</span>&nbsp; ${t.studio_name || ''} ${t.studio_type ? '· ' + t.studio_type : ''}</div>
+            <div><span style="color:#6b7280">Kursi</span>&nbsp; <b style="font-size:17px">${t.seat}</b></div>
+            <div><span style="color:#6b7280">Harga</span>&nbsp; ${rp(t.price)}</div>
+            <div style="margin-top:8px;font-size:11px;color:#6b7280">Tunjukkan QR ini saat masuk studio</div>
+          </td>
+        </tr></table>
+      </td></tr>`).join('');
+    const voucherBlock = bundles.length ? `
+      <tr><td style="padding:8px 0">
+        <table width="100%" style="border:2px solid #f59e0b;border-radius:14px;background:#fff7ed;padding:14px"><tr>
+          <td valign="top" width="200" align="center">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=6&data=${encodeURIComponent(head.code || head.purchase_id || '')}" width="180" height="180" alt="voucher" style="display:block;background:#fff"/>
+            <div style="font-family:'Courier New',monospace;font-size:11px;margin-top:6px;letter-spacing:2px;color:#111"><b>${head.code || head.purchase_id || ''}</b></div>
+          </td>
+          <td valign="top" style="padding-left:18px;font-size:13px;line-height:1.55;color:#111">
+            <div style="font-size:11px;color:#a16207;letter-spacing:3px;font-weight:800;margin-bottom:4px">🍿 F&amp;B VOUCHER</div>
+            <div style="font-size:16px;font-weight:800;margin:0 0 8px">Tukar di F&amp;B Counter</div>
+            <ul style="margin:6px 0;padding-left:20px">
+              ${bundles.map(b => `<li><b>${b.qty}×</b> ${b.bundle_name} <span style="color:#6b7280">— ${rp(b.qty * b.price)}</span></li>`).join('')}
+            </ul>
+            <div style="margin-top:6px;font-size:11px;color:#6b7280">Tunjukkan QR di atas ke staff F&amp;B saat menukar combo</div>
+          </td>
+        </tr></table>
+      </td></tr>` : '';
+    const grand = seatsTotal + bundleTotal;
+    return `
+<!doctype html>
+<html><body style="margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Roboto,Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0">
+    <tr><td align="center">
+      <table width="640" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:14px;overflow:hidden;max-width:100%">
+        <tr><td style="padding:24px 28px;background:#0d1117;color:#fff">
+          <div style="font-family:'Courier New',monospace;font-size:20px;font-weight:800;letter-spacing:2px">🎬 karya<span style="color:#a855f7">OS</span> Cinema</div>
+          <div style="font-size:13px;color:#9ca3af;margin-top:4px">Konfirmasi pembelian tiket</div>
+        </td></tr>
+        <tr><td style="padding:22px 28px;color:#111">
+          <div style="font-size:14px;color:#374151">Halo,<br/>Terima kasih sudah membeli tiket di KaryaOS Cinema. Berikut tiket Anda — simpan email ini atau buka langsung di pintu studio.</div>
+          <table width="100%" style="margin-top:16px;font-size:13px;border:1px solid #e5e7eb;border-radius:10px">
+            <tr><td style="padding:10px 14px"><b>Film:</b> ${head.film_title || '—'}</td></tr>
+            <tr><td style="padding:10px 14px;border-top:1px solid #f3f4f6"><b>Jadwal:</b> ${head.show_date || ''} · ${head.start_time || ''}</td></tr>
+            <tr><td style="padding:10px 14px;border-top:1px solid #f3f4f6"><b>Studio:</b> ${head.studio_name || ''} ${head.studio_type ? '· ' + head.studio_type : ''}</td></tr>
+            <tr><td style="padding:10px 14px;border-top:1px solid #f3f4f6"><b>Kursi:</b> ${tickets.map(t => t.seat).join(', ')}</td></tr>
+            <tr><td style="padding:10px 14px;border-top:1px solid #f3f4f6;color:#10b981"><b>Total:</b> ${rp(grand)}</td></tr>
+          </table>
+          <table width="100%" style="margin-top:8px">
+            ${voucherBlock}
+            ${ticketBlocks}
+          </table>
+          <div style="margin-top:18px;font-size:12px;color:#6b7280">Selamat menonton 🍿</div>
+        </td></tr>
+        <tr><td style="padding:16px 28px;background:#f9fafb;color:#9ca3af;font-size:11px;text-align:center">
+          KaryaOS · sistem operasi karys.tech · Konfirmasi otomatis.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+  }
+
+  function buildWAText({ tickets, bundles }) {
+    const rp = (n) => 'Rp ' + Math.round(n || 0).toLocaleString('id-ID');
+    const head = tickets[0] || {};
+    const seatsTotal = tickets.reduce((a, t) => a + (t.price || 0), 0);
+    const bundleTotal = bundles.reduce((a, b) => a + b.qty * b.price, 0);
+    const lines = [
+      `🎬 *KaryaOS Cinema — Tiket Anda*`, ``,
+      `*${head.film_title || '—'}*`,
+      `📅 ${head.show_date || ''} · ${head.start_time || ''}`,
+      `🏛️ ${head.studio_name || ''}${head.studio_type ? ' · ' + head.studio_type : ''}`,
+      `💺 Kursi: ${tickets.map(t => t.seat).join(', ')}`, ``,
+      `*Kode tiket:*`,
+      ...tickets.map(t => `• ${t.seat} — \`${t.code}\``),
+    ];
+    if (bundles.length) {
+      lines.push('', '*🍿 F&B Combo:*');
+      bundles.forEach(b => lines.push(`• ${b.qty}× ${b.bundle_name} — ${rp(b.qty * b.price)}`));
+    }
+    lines.push('', `*Total:* ${rp(seatsTotal + bundleTotal)}`, '', 'Tunjukkan kode QR di pintu studio (cek email atau struk cetak).');
+    return lines.join('\n');
+  }
+
+  router.post('/tickets/send-email', async (req, res) => {
+    const b = req.body || {};
+    const email = String(b.email || '').trim();
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      return res.status(400).json({ ok: false, error: 'Email tidak valid' });
+    }
+    const E = getEmail();
+    if (!E) return res.status(500).json({ ok: false, error: 'Modul email tidak tersedia' });
+    const cfg = E.getConfig();
+    if (!cfg.enabled) return res.status(503).json({ ok: false, error: 'Email belum di-enable di Admin → Settings' });
+    const pkg = loadPurchase({ purchase_id: b.purchase_id, code: b.code });
+    if (!pkg) return res.status(404).json({ ok: false, error: 'Tiket / purchase tidak ditemukan' });
+    try {
+      const html = buildEmailHTML(pkg);
+      const subj = `🎬 KaryaOS Cinema — Tiket ${pkg.tickets[0].film_title || ''} ${pkg.tickets[0].show_date || ''} ${pkg.tickets[0].start_time || ''}`;
+      const r = await E.sendEmail({ to: email, subject: subj, html });
+      const now = Math.floor(Date.now()/1000);
+      db.prepare(`UPDATE cinema_tickets SET email_sent_at = ?, buyer_email = COALESCE(NULLIF(buyer_email,''), ?) WHERE purchase_id = ?`)
+        .run(now, email, pkg.purchase_id);
+      res.json({ ok: true, messageId: r.messageId, email, tickets: pkg.tickets.length });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: e.message || 'Gagal kirim email' });
+    }
+  });
+
+  router.get('/tickets/wa-text', (req, res) => {
+    const pkg = loadPurchase({ purchase_id: req.query.purchase_id, code: req.query.code });
+    if (!pkg) return res.status(404).json({ ok: false, error: 'Tiket / purchase tidak ditemukan' });
+    res.json({ ok: true, text: buildWAText(pkg), purchase_id: pkg.purchase_id, tickets: pkg.tickets.length });
   });
 
   // ── BOX OFFICE / reporting ──
