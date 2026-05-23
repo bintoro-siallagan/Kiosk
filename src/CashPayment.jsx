@@ -110,7 +110,7 @@ const S = {
   footer: { textAlign: 'center', marginTop: 24, fontSize: 11, color: 'rgba(255,255,255,0.3)' },
 };
 
-export default function CashPayment({ items = [], amount = 0, subtotal = 0, promo = null, orderNum, onSuccess, onBack, isMember = false, pointsRedeemed = 0, pointsDiscount = 0 }) {
+export default function CashPayment({ items = [], amount = 0, subtotal = 0, promo = null, orderNum, onSuccess, onBack, isMember = false, pointsRedeemed = 0, pointsDiscount = 0, serviceCharge = 0, serviceChargeLabel = "Service Charge", serviceChargePct = 5, orderType = null }) {
   const [received, setReceived] = useState(0);
 
   const change   = received - amount;
@@ -209,6 +209,12 @@ export default function CashPayment({ items = [], amount = 0, subtotal = 0, prom
                 <span>− Rp {pointsDiscount.toLocaleString('id-ID')}</span>
               </div>
             )}
+            {serviceCharge > 0 && (
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#FBBF24",padding:"4px 0",fontWeight:600}}>
+                <span>🍽️ {serviceChargeLabel} {serviceChargePct}%</span>
+                <span>+ Rp {serviceCharge.toLocaleString('id-ID')}</span>
+              </div>
+            )}
             <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#666",padding:"4px 0",fontStyle:"italic"}}>
               <span>PPN</span>
               <span>sudah termasuk</span>
@@ -217,7 +223,7 @@ export default function CashPayment({ items = [], amount = 0, subtotal = 0, prom
 
           <div style={{ paddingTop: 12, borderTop: '2px solid rgba(255,255,255,0.15)' }}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-              <div style={S.label}>TOTAL</div>
+              <div style={S.label}>TOTAL{orderType ? (orderType === "dine-in" || orderType === "dine" ? " · 🪑" : " · 🛍️") : ""}</div>
               <div style={S.amount}>Rp {amount.toLocaleString('id-ID')}</div>
             </div>
             {isMember && (

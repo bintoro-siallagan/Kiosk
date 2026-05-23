@@ -3,6 +3,7 @@ import * as audio from "./audio.js";
 import QRISPayment from "./QRISPayment.jsx";
 import CashPayment from "./CashPayment.jsx";
 import { api } from "./api";
+import { calcServiceCharge, loadServiceChargeConfig } from "./pricing.js";
 
 const S = {
   page: {
@@ -99,9 +100,15 @@ export default function Payment({ cart, orderType, promo, tableData, customerDat
 
 
   const afterPoints = Math.max(0, afterPromo - pointsDiscount);
+
+  // Service charge — auto 5% dine-in (config dari /api/pos/config)
+  const [serviceConfig, setServiceConfig] = useState({ pct: 5, enabled: true, label: "Service Charge" });
+  useEffect(() => { loadServiceChargeConfig().then(setServiceConfig); }, []);
+  const serviceCharge = calcServiceCharge(afterPoints, orderType, serviceConfig);
+
   // Inclusive pricing: menu prices already gross. Tax extracted for disclosure only.
-  const tax    = Math.round(afterPoints * 11 / 111);
-  const amount = afterPoints; // customer pays exactly afterPoints
+  const tax    = Math.round((afterPoints) * 11 / 111);
+  const amount = afterPoints + serviceCharge; // customer pays afterPoints + service charge
 
   // === Map cart ke shape yang dipake child ===
   const items = cart.map(e => ({
@@ -260,10 +267,14 @@ export default function Payment({ cart, orderType, promo, tableData, customerDat
         subtotal={subtotal}
         promo={promo}
         orderNum={orderNum}
+        orderType={orderType}
         onSuccess={(info) => handlePaymentSuccess(info, "CASH")}
         onBack={() => setMethod(null)}
         isMember={!!customerData?.phone}
-        pointsRedeemed={pointsRedeemed} pointsDiscount={pointsDiscount} />
+        pointsRedeemed={pointsRedeemed} pointsDiscount={pointsDiscount}
+        serviceCharge={serviceCharge}
+        serviceChargeLabel={serviceConfig.label}
+        serviceChargePct={serviceConfig.pct} />
     );
   }
 

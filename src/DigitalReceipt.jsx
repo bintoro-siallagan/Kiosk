@@ -69,6 +69,25 @@ export default function DigitalReceipt({ orderId, onDone }) {
             <div style={R.rBrand}>KaryaOS</div>
             <div style={R.rAddr}>Self Order Kiosk</div>
             <div style={R.rAddr}>Jakarta, Indonesia</div>
+            {/* BIG type badge — dine-in vs takeaway prominent di header */}
+            {receipt.type && (
+              <div style={{
+                display: "inline-block", margin: "10px auto 4px",
+                padding: "6px 18px",
+                background: receipt.type === "dine"
+                  ? "linear-gradient(135deg, rgba(245,158,11,0.18), rgba(251,191,36,0.08))"
+                  : "linear-gradient(135deg, rgba(168,85,247,0.18), rgba(192,132,252,0.08))",
+                border: receipt.type === "dine"
+                  ? "1.5px solid rgba(245,158,11,0.5)"
+                  : "1.5px solid rgba(168,85,247,0.5)",
+                color: receipt.type === "dine" ? "#fbbf24" : "#c084fc",
+                borderRadius: 999,
+                fontSize: 13, fontWeight: 800, letterSpacing: 1.2,
+                fontFamily: "'Geist Mono', monospace", textTransform: "uppercase",
+              }}>
+                {receipt.type === "dine" ? `🪑 DINE-IN · MEJA ${receipt.table || "—"}` : "🛍️ TAKE-AWAY"}
+              </div>
+            )}
             <div style={R.divider}>{'─'.repeat(32)}</div>
           </div>
 
