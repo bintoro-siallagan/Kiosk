@@ -355,6 +355,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { id: "surf:kiosk",       title: "Kiosk F&B (Customer)", subtitle: "Customer self-order",                  icon: "🖥️", kbd: "Open", onSelect: () => openTab("?kiosk=1") },
       { id: "surf:flow",        title: "FlowApp QR-Order",     subtitle: "Customer order via QR meja",           icon: "📱", kbd: "Open", onSelect: () => openTab("?flow") },
       { id: "surf:cinema",      title: "Cinema Kiosk",         subtitle: "Customer beli tiket cinema",           icon: "🎬", kbd: "Open", onSelect: () => openTab("?cinema") },
+      { id: "surf:cinema-kds",   title: "Cinema KDS (F&B)",     subtitle: "Kitchen display untuk concession + in-studio", icon: "👨‍🍳", kbd: "Open", onSelect: () => openTab("?cinema-kds") },
       { id: "surf:cinema-snack", title: "In-Studio Order",     subtitle: "QR snack order mid-movie",             icon: "🍿", kbd: "Open", onSelect: () => openTab("?cinema-snack") },
       { id: "surf:cinema-board", title: "Cinema Lobby Board",  subtitle: "TV signage di lobby",                  icon: "📺", kbd: "Open", onSelect: () => openTab("?cinema-board") },
       { id: "surf:track",       title: "Order Tracking",       subtitle: "Customer cek status pesanan",          icon: "📍", kbd: "Open", onSelect: () => openTab("?track=1") },
@@ -447,6 +448,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     { title: "🎬 Cinema Vertical", accent: "#a855f7", items: [
       { label: "POS Cinema (Kasir)",      icon: "🎟️", c: "#fbbf24", on: () => openTab("?pos-cinema&fresh=1") },
       { label: "Cinema Kiosk (Customer)", icon: "🎬", c: "#a855f7", on: () => openTab("?cinema") },
+      { label: "Cinema KDS (F&B Staff)",  icon: "👨‍🍳", c: "#10b981", on: () => openTab("?cinema-kds") },
       { label: "In-Studio QR Order",      icon: "🍿", c: "#f59e0b", on: () => openTab("?cinema-snack") },
       { label: "Lobby Board (TV)",        icon: "📺", c: "#22d3ee", on: () => openTab("?cinema-board") },
       { label: "Command Center",          icon: "🎬", c: "#a855f7", on: () => openRight("tools", "cinema_command_center") },

@@ -1201,6 +1201,76 @@ function setupCinema(app, opts = {}) {
       .all(req.params.pid);
     res.json({ purchase_id: req.params.pid, bundles: rows });
   });
+  // ── KDS CINEMA — unified queue: concession bundles + in-studio orders ──
+  // GET /api/cinema/kds/queue?studio_id=X
+  // Returns: { concession: [...], in_studio: [...], counts: {...} }
+  router.get('/kds/queue', (req, res) => {
+    const studioFilter = req.query.studio_id ? parseInt(req.query.studio_id, 10) : null;
+    const sinceSec = Math.floor(Date.now() / 1000) - 6 * 3600; // last 6 hours
+    // Concession — bundles dari ticket purchases yg belum di-redeem
+    const concSql = `
+      SELECT pb.id, pb.purchase_id, pb.bundle_name, pb.qty, pb.price, pb.created_at, pb.redeemed_at,
+             t.seat, t.showtime_id, t.buyer,
+             st.name AS studio_name, st.id AS studio_id,
+             s.show_date, s.start_time, f.title AS film_title
+      FROM cinema_purchase_bundles pb
+      LEFT JOIN cinema_tickets t ON t.purchase_id = pb.purchase_id
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      WHERE pb.redeemed_at IS NULL AND pb.created_at > ?
+      ${studioFilter ? "AND st.id = ?" : ""}
+      GROUP BY pb.id
+      ORDER BY pb.created_at ASC
+      LIMIT 100
+    `;
+    const concParams = studioFilter ? [sinceSec, studioFilter] : [sinceSec];
+    const concession = db.prepare(concSql).all(...concParams).map(r => ({
+      id: r.id, type: 'concession',
+      bundle_name: r.bundle_name, qty: r.qty, price: r.price,
+      purchase_id: r.purchase_id, seat: r.seat, buyer: r.buyer,
+      film_title: r.film_title, studio_name: r.studio_name, studio_id: r.studio_id,
+      show_date: r.show_date, start_time: r.start_time,
+      created_at: r.created_at,
+      // Concession kanggap "active" sebelum redeemed (pending pickup at counter)
+      status: 'pending',
+    }));
+
+    // In-studio orders — status: pending atau preparing (delivered = done, skip)
+    const inSql = `
+      SELECT o.*, COUNT(i.id) AS items_count
+      FROM cinema_in_studio_orders o
+      LEFT JOIN cinema_in_studio_order_items i ON i.order_id = o.id
+      WHERE o.status IN ('pending','preparing') AND o.created_at > ?
+      ${studioFilter ? "AND o.studio_id = ?" : ""}
+      GROUP BY o.id
+      ORDER BY o.created_at ASC
+      LIMIT 100
+    `;
+    const inParams = studioFilter ? [sinceSec, studioFilter] : [sinceSec];
+    const inOrders = db.prepare(inSql).all(...inParams);
+    const inIds = inOrders.map(o => o.id);
+    let itemsByOrder = {};
+    if (inIds.length) {
+      const phs = inIds.map(() => '?').join(',');
+      const items = db.prepare(`SELECT * FROM cinema_in_studio_order_items WHERE order_id IN (${phs})`).all(...inIds);
+      for (const it of items) (itemsByOrder[it.order_id] = itemsByOrder[it.order_id] || []).push(it);
+    }
+    const in_studio = inOrders.map(o => ({
+      ...o, type: 'in_studio',
+      items: itemsByOrder[o.id] || [],
+    }));
+
+    res.json({
+      concession, in_studio,
+      counts: {
+        concession_pending: concession.length,
+        in_studio_pending: in_studio.filter(o => o.status === 'pending').length,
+        in_studio_preparing: in_studio.filter(o => o.status === 'preparing').length,
+      },
+    });
+  });
+
   router.post('/purchase-bundles/:id/redeem', (req, res) => {
     const b = req.body || {};
     const by = String(b.redeemed_by || b.staff_name || 'F&B counter');

@@ -33,6 +33,7 @@ const POSCDS                 = lazy(() => import("./POSCDS.jsx"));
 const CinemaKiosk            = lazy(() => import("./CinemaKiosk.jsx"));
 const CinemaInStudioOrder    = lazy(() => import("./CinemaInStudioOrder.jsx"));
 const CinemaBoard            = lazy(() => import("./CinemaBoard.jsx"));
+const CinemaKDS              = lazy(() => import("./Cinema/CinemaKDS.jsx"));
 const TableSelector          = lazy(() => import("./TableSelector.jsx"));
 const CustomerInput          = lazy(() => import("./CustomerInput.jsx"));
 const Payment                = lazy(() => import("./Payment.jsx"));
@@ -68,6 +69,7 @@ function getScene() {
   // POS scenes — MUST be checked BEFORE generic "cinema" / "pos" suffixes
   // ("pos-cinema" contains "cinema" so cinema check would steal it otherwise)
   if (q.includes("pos-cinema") || q.includes("poscinema")) return "pos-cinema";
+  if (q.includes("cinema-kds") || q.includes("cinemakds")) return "cinema-kds";
   if (q.includes("cinema-snack")) return "cinema-snack";
   if (q.includes("cinema-board")) return "cinema-board";
   if (q.includes("cinema")) return "cinema";
@@ -187,6 +189,8 @@ export default function App() {
     node = <CinemaInStudioOrder apiBase={API_HOST} />;
   } else if (scene === "cinema-board") {
     node = <CinemaBoard apiBase={API_HOST} />;
+  } else if (scene === "cinema-kds") {
+    node = <CinemaKDS />;
   } else if (scene === "customer-track") {
     node = <><PromoBroadcastBanner/><CustomerTrackingPage orderId={trackOrderId}/></>;
   } else if (scene === "track") {
