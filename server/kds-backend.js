@@ -139,6 +139,28 @@ function setupKDS(app, opts = {}) {
     for (const x of DEFAULT_STATIONS) s.run(x.id, x.name, x.color, x.category_filter, x.target_prep_seconds, x.sort_order);
   }
 
+  // ── Startup orphan cleanup: tickets di KDS yang order-nya sudah closed
+  // (completed/cancelled di table `orders`). Tanpa ini, KDS tampil order
+  // yang sebenernya udah selesai → confusing.
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    const cleanedCompleted = db.prepare(`
+      UPDATE kds_tickets SET status='served', served_at = COALESCE(served_at, ?)
+      WHERE status IN ('queued','preparing','ready')
+        AND order_ref IN (SELECT id FROM orders WHERE status='completed')
+    `).run(now);
+    const cleanedCancelled = db.prepare(`
+      UPDATE kds_tickets SET status='cancelled', served_at = COALESCE(served_at, ?)
+      WHERE status IN ('queued','preparing','ready')
+        AND order_ref IN (SELECT id FROM orders WHERE status='cancelled')
+    `).run(now);
+    if (cleanedCompleted.changes + cleanedCancelled.changes > 0) {
+      console.log(`[kds-backend] orphan cleanup: ${cleanedCompleted.changes} served + ${cleanedCancelled.changes} cancelled (order closed di backend)`);
+    }
+  } catch (e) {
+    console.warn('[kds-backend] orphan cleanup skipped:', e.message);
+  }
+
   const broadcast = (event, payload) => {
     try {
       if (typeof global.broadcastPosEvent === 'function') {

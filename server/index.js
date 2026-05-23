@@ -528,6 +528,34 @@ app.patch("/api/orders/:id/status", (req, res) => {
   broadcast("order:updated", orders[idx]);
   console.log(`📦 Order #${orders[idx].id} → ${status}`);
 
+  // ── Sync ke kds_tickets — kalau order completed/cancelled, auto-tutup
+  // tickets terkait biar KDS gak tampil order yang sudah closed di backend.
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    if (status === "completed") {
+      // Mark all open tickets for this order as 'served'
+      const tx = db.rawDb.prepare(`UPDATE kds_tickets SET status='served', served_at=? WHERE order_ref=? AND status IN ('queued','preparing','ready')`).run(now, String(orders[idx].id));
+      if (tx.changes > 0) {
+        console.log(`🍳 KDS sync: ${tx.changes} ticket(s) for order #${orders[idx].id} → served`);
+        broadcast("kds:ticket-updated", { order_ref: String(orders[idx].id), status: "served" });
+      }
+    } else if (status === "cancelled") {
+      const tx = db.rawDb.prepare(`UPDATE kds_tickets SET status='cancelled', served_at=? WHERE order_ref=? AND status IN ('queued','preparing','ready')`).run(now, String(orders[idx].id));
+      if (tx.changes > 0) {
+        console.log(`🍳 KDS sync: ${tx.changes} ticket(s) for order #${orders[idx].id} → cancelled`);
+        broadcast("kds:ticket-updated", { order_ref: String(orders[idx].id), status: "cancelled" });
+      }
+    } else if (status === "preparing" || status === "ready") {
+      const tx = db.rawDb.prepare(`UPDATE kds_tickets SET status=?, started_at=COALESCE(started_at, ?), ready_at=CASE WHEN ?='ready' THEN ? ELSE ready_at END WHERE order_ref=? AND status IN ('queued','preparing','ready')`).run(status, now, status, status === 'ready' ? now : null, String(orders[idx].id));
+      if (tx.changes > 0) {
+        broadcast("kds:ticket-updated", { order_ref: String(orders[idx].id), status });
+      }
+    }
+  } catch (e) {
+    // db.raw might not be available — log + continue. Order status itself OK.
+    console.warn(`KDS sync skipped (raw db not exposed): ${e.message}`);
+  }
+
   // Auto-earn points on completed
   if (status === "completed" && orders[idx].customerId && loyalty.getConfig().enabled) {
     const cust = customers.find(c => c.id === orders[idx].customerId);
