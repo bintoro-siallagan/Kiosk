@@ -82,6 +82,27 @@ CREATE TABLE IF NOT EXISTS cinema_ticket_voids (
 );
 CREATE INDEX IF NOT EXISTS idx_cinema_void_showtime ON cinema_ticket_voids(showtime_id);
 CREATE INDEX IF NOT EXISTS idx_cinema_void_date ON cinema_ticket_voids(voided_at);
+CREATE TABLE IF NOT EXISTS cinema_bundles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  description TEXT,
+  price INTEGER DEFAULT 0,
+  is_active INTEGER DEFAULT 1,
+  sort_order INTEGER DEFAULT 0,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE TABLE IF NOT EXISTS cinema_purchase_bundles (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  purchase_id TEXT NOT NULL,
+  bundle_id INTEGER,
+  bundle_name TEXT,
+  qty INTEGER DEFAULT 1,
+  price INTEGER DEFAULT 0,
+  redeemed_at INTEGER,
+  redeemed_by TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_cpb_purchase ON cinema_purchase_bundles(purchase_id);
 `;
 
 const SEED_FILMS = [
@@ -107,6 +128,19 @@ function setupCinema(app, opts = {}) {
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN code TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN checked_in_at INTEGER"); } catch {}
   try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_cinema_ticket_code ON cinema_tickets(code) WHERE code IS NOT NULL"); } catch {}
+  // Bundle-attach: purchase_id ties a multi-seat sale to its F&B bundles
+  try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN purchase_id TEXT"); } catch {}
+  try { db.exec("CREATE INDEX IF NOT EXISTS idx_cinema_ticket_purchase ON cinema_tickets(purchase_id)"); } catch {}
+
+  // Seed default bundles on first run (customisable in Admin → Cinema Bundles)
+  if (db.prepare(`SELECT COUNT(*) c FROM cinema_bundles`).get().c === 0) {
+    const sb = db.prepare(`INSERT INTO cinema_bundles (name, description, price, sort_order) VALUES (?,?,?,?)`);
+    sb.run('Combo Popcorn Medium + Coke',     'Popcorn medium + Coca-Cola medium',           50000, 1);
+    sb.run('Combo Popcorn Large + 2 Drink',   'Popcorn large + 2 minuman medium (sharing)',  85000, 2);
+    sb.run('Nachos + Cheese Dip',             'Nachos + saus keju',                          45000, 3);
+    sb.run('Hot Dog Combo',                   'Hot dog + medium drink',                      55000, 4);
+    sb.run('Air Mineral 600ml',               'Air mineral kemasan 600ml',                   10000, 5);
+  }
 
   // ── seed demo data on first run ──
   if (db.prepare(`SELECT COUNT(*) c FROM cinema_films`).get().c === 0) {
@@ -236,21 +270,106 @@ function setupCinema(app, opts = {}) {
     if (!b.showtime_id || !seats.length) return res.status(400).json({ error: 'showtime_id + seats wajib diisi' });
     const st = db.prepare(`SELECT * FROM cinema_showtimes WHERE id = ?`).get(b.showtime_id);
     if (!st) return res.status(404).json({ error: 'showtime tidak ditemukan' });
-    const ins = db.prepare(`INSERT INTO cinema_tickets (showtime_id, seat, price, buyer, code) VALUES (?,?,?,?,?)`);
+
+    // Normalise & validate bundles (one purchase shares its F&B bundles across all tickets)
+    const reqBundles = Array.isArray(b.bundles) ? b.bundles : [];
+    const bundleRows = [];
+    for (const it of reqBundles) {
+      const bid = parseInt(it.bundle_id, 10);
+      const qty = Math.max(1, parseInt(it.qty, 10) || 1);
+      if (!bid) continue;
+      const bn = db.prepare(`SELECT * FROM cinema_bundles WHERE id = ? AND is_active = 1`).get(bid);
+      if (!bn) return res.status(400).json({ error: `Bundle id ${bid} tidak ditemukan / tidak aktif` });
+      bundleRows.push({ bundle_id: bn.id, bundle_name: bn.name, qty, price: bn.price });
+    }
+    const bundlesTotal = bundleRows.reduce((a, r) => a + r.qty * r.price, 0);
+
     const crypto = require('crypto');
+    const purchaseId = 'CP-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+    const ins   = db.prepare(`INSERT INTO cinema_tickets (showtime_id, seat, price, buyer, code, purchase_id) VALUES (?,?,?,?,?,?)`);
+    const insB  = db.prepare(`INSERT INTO cinema_purchase_bundles (purchase_id, bundle_id, bundle_name, qty, price) VALUES (?,?,?,?,?)`);
     const newTickets = [];
+    const newBundles = [];
     try {
       db.transaction(() => {
         for (const s of seats) {
           const code = 'CT-' + crypto.randomBytes(4).toString('hex').toUpperCase();
-          const info = ins.run(st.id, s, st.price || 0, b.buyer || '', code);
-          newTickets.push({ id: info.lastInsertRowid, seat: s, price: st.price || 0, code });
+          const info = ins.run(st.id, s, st.price || 0, b.buyer || '', code, purchaseId);
+          newTickets.push({ id: info.lastInsertRowid, seat: s, price: st.price || 0, code, purchase_id: purchaseId });
+        }
+        for (const r of bundleRows) {
+          const info = insB.run(purchaseId, r.bundle_id, r.bundle_name, r.qty, r.price);
+          newBundles.push({ id: info.lastInsertRowid, ...r });
         }
       })();
     } catch (e) {
       return res.status(409).json({ error: 'sebagian kursi sudah terjual — muat ulang peta kursi' });
     }
-    res.json({ ok: true, count: seats.length, total: seats.length * (st.price || 0), tickets: newTickets });
+    const seatsTotal = seats.length * (st.price || 0);
+    res.json({
+      ok: true,
+      count: seats.length,
+      purchase_id: purchaseId,
+      total: seatsTotal + bundlesTotal,
+      seats_total: seatsTotal,
+      bundles_total: bundlesTotal,
+      tickets: newTickets,
+      bundles: newBundles,
+    });
+  });
+
+  // ── BUNDLES (F&B combo catalog) ──
+  router.get('/bundles', (req, res) => {
+    const all = String(req.query.all || '') === '1';
+    const sql = all
+      ? `SELECT * FROM cinema_bundles ORDER BY sort_order, name`
+      : `SELECT * FROM cinema_bundles WHERE is_active = 1 ORDER BY sort_order, name`;
+    res.json({ bundles: db.prepare(sql).all() });
+  });
+  router.post('/bundles', (req, res) => {
+    const b = req.body || {};
+    if (!b.name) return res.status(400).json({ error: 'name wajib diisi' });
+    const info = db.prepare(`INSERT INTO cinema_bundles (name, description, price, is_active, sort_order)
+                             VALUES (?,?,?,?,?)`)
+      .run(b.name, b.description || '', parseInt(b.price, 10) || 0,
+           b.is_active === false ? 0 : 1, parseInt(b.sort_order, 10) || 0);
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+  router.patch('/bundles/:id', (req, res) => {
+    const b = req.body || {};
+    const fields = []; const args = [];
+    for (const k of ['name', 'description', 'price', 'is_active', 'sort_order']) {
+      if (k in b) {
+        fields.push(`${k} = ?`);
+        args.push(k === 'is_active' ? (b[k] ? 1 : 0) : (k === 'price' || k === 'sort_order') ? parseInt(b[k], 10) || 0 : b[k]);
+      }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE cinema_bundles SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/bundles/:id', (req, res) => {
+    db.prepare(`DELETE FROM cinema_bundles WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
+  // ── PURCHASE BUNDLES (lookup + redeem at F&B counter) ──
+  router.get('/purchase/:pid/bundles', (req, res) => {
+    const rows = db.prepare(`SELECT * FROM cinema_purchase_bundles WHERE purchase_id = ? ORDER BY id`)
+      .all(req.params.pid);
+    res.json({ purchase_id: req.params.pid, bundles: rows });
+  });
+  router.post('/purchase-bundles/:id/redeem', (req, res) => {
+    const b = req.body || {};
+    const by = String(b.redeemed_by || b.staff_name || 'F&B counter');
+    const row = db.prepare(`SELECT * FROM cinema_purchase_bundles WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ ok: false, error: 'Bundle tidak ditemukan' });
+    if (row.redeemed_at) return res.status(409).json({ ok: false, error: 'Sudah di-redeem', redeemedAt: row.redeemed_at, redeemedBy: row.redeemed_by });
+    const now = Math.floor(Date.now() / 1000);
+    db.prepare(`UPDATE cinema_purchase_bundles SET redeemed_at = ?, redeemed_by = ? WHERE id = ?`)
+      .run(now, by, req.params.id);
+    res.json({ ok: true, id: row.id, redeemed_at: now, redeemed_by: by });
   });
   router.delete('/tickets/:id', (req, res) => {
     db.prepare(`DELETE FROM cinema_tickets WHERE id = ?`).run(req.params.id);
@@ -329,7 +448,11 @@ function setupCinema(app, opts = {}) {
     }
     const now = Math.floor(Date.now() / 1000);
     db.prepare(`UPDATE cinema_tickets SET checked_in_at = ? WHERE id = ?`).run(now, t.id);
-    res.json({ ok: true, status: 'valid', ticket: { ...t, checked_in_at: now } });
+    // Include F&B bundles attached to this purchase (heads-up to door staff)
+    const bundles = t.purchase_id
+      ? db.prepare(`SELECT * FROM cinema_purchase_bundles WHERE purchase_id = ? ORDER BY id`).all(t.purchase_id)
+      : [];
+    res.json({ ok: true, status: 'valid', ticket: { ...t, checked_in_at: now }, bundles });
   });
 
   // ── BOX OFFICE / reporting ──
@@ -350,7 +473,14 @@ function setupCinema(app, opts = {}) {
                                   LEFT JOIN cinema_studios st ON st.id = s.studio_id
                                   LEFT JOIN cinema_tickets t ON t.showtime_id = s.id
                                   GROUP BY s.id ORDER BY s.show_date, s.start_time`).all();
-    res.json({ totals, today, by_film, showtimes });
+    // F&B bundle revenue (across all purchases, then today)
+    const fnb = db.prepare(`SELECT COUNT(*) items, COALESCE(SUM(qty*price),0) revenue,
+                                   COALESCE(SUM(CASE WHEN redeemed_at IS NOT NULL THEN qty ELSE 0 END),0) redeemed
+                            FROM cinema_purchase_bundles`).get();
+    const fnb_today = db.prepare(`SELECT COUNT(*) items, COALESCE(SUM(qty*price),0) revenue
+                                  FROM cinema_purchase_bundles
+                                  WHERE date(created_at,'unixepoch','localtime') = date('now','localtime')`).get();
+    res.json({ totals, today, by_film, showtimes, fnb, fnb_today });
   });
 
   const mountPath = opts.mountPath || '/api/cinema';

@@ -80,6 +80,17 @@ export default function CinemaValidate({ apiBase = "" }) {
               {status === "used" && (
                 <Row k="Dipakai" v={<b style={{ color: "#f59e0b" }}>{new Date((last.usedAt || ticket.checked_in_at) * 1000).toLocaleString("id-ID")}</b>} />
               )}
+              {last.bundles?.length > 0 && (
+                <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px dashed #1f2937" }}>
+                  <div style={{ fontSize: 10, color: "#fbbf24", letterSpacing: 2, fontFamily: "'Geist Mono',monospace", marginBottom: 4 }}>🍿 F&amp;B COMBO (di-redeem di counter)</div>
+                  {last.bundles.map(b => (
+                    <div key={b.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, padding: "3px 0" }}>
+                      <span><b style={{ color: "#fbbf24" }}>{b.qty}×</b> {b.bundle_name}</span>
+                      <span style={{ color: b.redeemed_at ? "#10b981" : "#9ca3af" }}>{b.redeemed_at ? "✓ sudah" : "belum"}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {!ticket && last.error && (
