@@ -358,6 +358,21 @@ CREATE TABLE IF NOT EXISTS cinema_inventory_movements (
   created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
 CREATE INDEX IF NOT EXISTS idx_cim_item ON cinema_inventory_movements(inventory_item_id);
+-- Per-outlet × studio_type default pricing
+-- (auto-applied to new showtimes when price not provided)
+CREATE TABLE IF NOT EXISTS cinema_outlet_pricing (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  outlet TEXT NOT NULL,
+  studio_type TEXT NOT NULL DEFAULT 'Regular',
+  weekday_price INTEGER NOT NULL DEFAULT 50000,
+  weekend_price INTEGER NOT NULL DEFAULT 65000,
+  holiday_price INTEGER DEFAULT NULL,
+  notes TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  updated_at INTEGER,
+  UNIQUE(outlet, studio_type)
+);
+CREATE INDEX IF NOT EXISTS idx_cop_outlet ON cinema_outlet_pricing(outlet);
 `;
 
 const SEED_FILMS = [
@@ -519,6 +534,31 @@ function setupCinema(app, opts = {}) {
     sp.run('Paskal', 'Premiere', null,  null,      null,     120000, 'Premiere flat');
     // Paskal — fallback default
     sp.run('Paskal', null,       null,  null,      null,      45000, 'Default fallback');
+  }
+
+  // Seed default per-outlet pricing — picks up outlet_master codes if present,
+  // 2 baseline studio types (Regular / Premium). Idempotent — only runs once.
+  if (db.prepare(`SELECT COUNT(*) c FROM cinema_outlet_pricing`).get().c === 0) {
+    let outlets = [];
+    try {
+      outlets = db.prepare(`SELECT code FROM outlet_master WHERE is_active = 1 OR status = 'active' LIMIT 10`).all();
+    } catch {
+      // outlet_master may not exist yet — fall back to studios.outlet
+      try {
+        outlets = db.prepare(`SELECT DISTINCT outlet AS code FROM cinema_studios WHERE outlet IS NOT NULL AND outlet <> '' LIMIT 10`).all();
+      } catch { outlets = []; }
+    }
+    // Final fallback: at least seed a "Paskal" row so admin sees the table populated.
+    if (!outlets.length) outlets = [{ code: 'Paskal' }];
+    const ins = db.prepare(`INSERT INTO cinema_outlet_pricing (outlet, studio_type, weekday_price, weekend_price) VALUES (?,?,?,?)`);
+    for (const o of outlets) {
+      for (const t of ['Regular', 'Premium']) {
+        const wd = t === 'Premium' ? 75000 : 50000;
+        const we = t === 'Premium' ? 95000 : 65000;
+        try { ins.run(o.code, t, wd, we); } catch {}
+      }
+    }
+    console.log(`[cinema] seeded outlet pricing untuk ${outlets.length} outlet × 2 studio_type`);
   }
 
   // Seed default distributors + standard tiered share template on first run.
@@ -685,6 +725,127 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // ── OUTLET PRICING ────────────────────────────────────────────────────
+  // Default ticket pricing per outlet × studio_type. Used for auto-fill when
+  // a showtime is created tanpa price. Tolerant lookup: missing row → fallback
+  // 50k weekday / 65k weekend.
+  const VALID_STUDIO_TYPES = ['Regular', 'Premium', 'IMAX', 'VIP', 'Couple'];
+  function resolveOutletPrice(outlet, studioType, dateStr) {
+    const out = { price: 50000, source: 'default', config: null };
+    if (!outlet) return out;
+    const cfg = db.prepare(`SELECT * FROM cinema_outlet_pricing WHERE outlet = ? AND studio_type = ?`)
+      .get(outlet, studioType || 'Regular');
+    // Determine weekend / holiday from date
+    let isHoliday = false, isWeekend = false;
+    if (dateStr) {
+      try {
+        const d = new Date(String(dateStr) + 'T00:00:00');
+        const dow = d.getDay();          // 0=Sun, 6=Sat
+        isWeekend = (dow === 0 || dow === 6);
+      } catch {}
+      try {
+        const h = db.prepare(`SELECT 1 FROM cinema_holidays WHERE date = ? AND is_active = 1`).get(dateStr);
+        if (h) isHoliday = true;
+      } catch {}
+    }
+    if (cfg) {
+      out.config = cfg;
+      if (isHoliday) {
+        if (cfg.holiday_price != null) { out.price = cfg.holiday_price; out.source = 'holiday'; return out; }
+        // fallback to weekend price when holiday rate not set
+        out.price = cfg.weekend_price; out.source = 'weekend'; return out;
+      }
+      if (isWeekend) { out.price = cfg.weekend_price; out.source = 'weekend'; return out; }
+      out.price = cfg.weekday_price; out.source = 'weekday'; return out;
+    }
+    // No row → use defaults
+    if (isWeekend || isHoliday) { out.price = 65000; out.source = 'weekend'; }
+    else { out.price = 50000; out.source = 'weekday'; }
+    return out;
+  }
+
+  router.get('/outlet-pricing', (req, res) => {
+    const rows = db.prepare(`SELECT * FROM cinema_outlet_pricing ORDER BY outlet, studio_type`).all();
+    const byOutlet = {};
+    for (const r of rows) {
+      if (!byOutlet[r.outlet]) byOutlet[r.outlet] = [];
+      byOutlet[r.outlet].push(r);
+    }
+    res.json({ rows, by_outlet: byOutlet, studio_types: VALID_STUDIO_TYPES });
+  });
+
+  router.get('/outlet-pricing/lookup', (req, res) => {
+    const outlet = String(req.query.outlet || '').trim();
+    const studioType = String(req.query.studio_type || 'Regular').trim() || 'Regular';
+    const date = String(req.query.date || '').trim();
+    if (!outlet) return res.status(400).json({ ok: false, error: 'outlet wajib diisi' });
+    const r = resolveOutletPrice(outlet, studioType, date);
+    res.json({ ok: true, outlet, studio_type: studioType, date: date || null, price: r.price, source: r.source, config: r.config });
+  });
+
+  router.post('/outlet-pricing', (req, res) => {
+    const b = req.body || {};
+    const outlet = String(b.outlet || '').trim();
+    const studioType = String(b.studio_type || 'Regular').trim() || 'Regular';
+    if (!outlet) return res.status(400).json({ error: 'outlet wajib diisi' });
+    if (!VALID_STUDIO_TYPES.includes(studioType)) {
+      return res.status(400).json({ error: `studio_type harus salah satu dari: ${VALID_STUDIO_TYPES.join(', ')}` });
+    }
+    // Validate outlet exists in outlet_master (best-effort — tolerate missing table)
+    try {
+      const om = db.prepare(`SELECT code FROM outlet_master WHERE code = ?`).get(outlet);
+      if (!om) {
+        // Try matching by name as fallback (outlet field di studios sometimes pakai name)
+        const om2 = db.prepare(`SELECT name FROM outlet_master WHERE name = ?`).get(outlet);
+        if (!om2) return res.status(400).json({ error: `Outlet "${outlet}" tidak ditemukan di outlet_master` });
+      }
+    } catch {
+      // outlet_master not available — skip validation
+    }
+    const wd = Number(b.weekday_price);
+    const we = Number(b.weekend_price);
+    const hp = b.holiday_price === '' || b.holiday_price == null ? null : Number(b.holiday_price);
+    if (!(wd > 0) || !(we > 0)) return res.status(400).json({ error: 'weekday_price & weekend_price harus > 0' });
+    try {
+      const info = db.prepare(`INSERT INTO cinema_outlet_pricing
+        (outlet, studio_type, weekday_price, weekend_price, holiday_price, notes)
+        VALUES (?,?,?,?,?,?)`).run(outlet, studioType, wd, we, hp, b.notes || null);
+      res.json({ ok: true, id: info.lastInsertRowid });
+    } catch (e) {
+      if (String(e.message || '').includes('UNIQUE')) {
+        return res.status(409).json({ error: `Pricing untuk ${outlet} × ${studioType} sudah ada` });
+      }
+      res.status(500).json({ error: e.message || 'gagal menyimpan' });
+    }
+  });
+
+  router.patch('/outlet-pricing/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM cinema_outlet_pricing WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'pricing tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    if (b.weekday_price !== undefined) { fields.push('weekday_price = ?'); args.push(Number(b.weekday_price) || 0); }
+    if (b.weekend_price !== undefined) { fields.push('weekend_price = ?'); args.push(Number(b.weekend_price) || 0); }
+    if (b.holiday_price !== undefined) { fields.push('holiday_price = ?'); args.push(b.holiday_price === '' || b.holiday_price == null ? null : Number(b.holiday_price)); }
+    if (b.notes !== undefined) { fields.push('notes = ?'); args.push(b.notes || null); }
+    if (b.studio_type !== undefined) {
+      if (!VALID_STUDIO_TYPES.includes(b.studio_type)) {
+        return res.status(400).json({ error: `studio_type harus salah satu dari: ${VALID_STUDIO_TYPES.join(', ')}` });
+      }
+      fields.push('studio_type = ?'); args.push(b.studio_type);
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    fields.push("updated_at = strftime('%s','now')");
+    args.push(req.params.id);
+    db.prepare(`UPDATE cinema_outlet_pricing SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/outlet-pricing/:id', (req, res) => {
+    db.prepare(`DELETE FROM cinema_outlet_pricing WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
   // ── SHOWTIMES ──
   router.get('/showtimes', (req, res) => {
     let sql = `SELECT s.*, f.title AS film_title, f.rating AS film_rating, f.duration_min,
@@ -722,9 +883,22 @@ function setupCinema(app, opts = {}) {
     if (!b.film_id || !b.studio_id || !b.show_date || !b.start_time) {
       return res.status(400).json({ error: 'film_id, studio_id, show_date, start_time wajib diisi' });
     }
+    // Auto-fill price from cinema_outlet_pricing when not provided
+    let price = Number(b.price) || 0;
+    let priceSource = price > 0 ? 'manual' : null;
+    if (!price || price <= 0) {
+      try {
+        const studio = db.prepare(`SELECT outlet, studio_type FROM cinema_studios WHERE id = ?`).get(Number(b.studio_id));
+        if (studio && studio.outlet) {
+          const r = resolveOutletPrice(studio.outlet, studio.studio_type || 'Regular', String(b.show_date));
+          if (r && r.price > 0) { price = r.price; priceSource = r.source; }
+        }
+      } catch {}
+      if (!price || price <= 0) { price = 50000; priceSource = priceSource || 'default'; }
+    }
     const info = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price, format) VALUES (?,?,?,?,?,?)`)
-      .run(Number(b.film_id), Number(b.studio_id), String(b.show_date), String(b.start_time), Number(b.price) || 0, b.format || '2D');
-    res.json({ ok: true, id: info.lastInsertRowid });
+      .run(Number(b.film_id), Number(b.studio_id), String(b.show_date), String(b.start_time), price, b.format || '2D');
+    res.json({ ok: true, id: info.lastInsertRowid, price, price_source: priceSource });
   });
   router.delete('/showtimes/:id', (req, res) => {
     db.prepare(`DELETE FROM cinema_tickets WHERE showtime_id = ?`).run(req.params.id);

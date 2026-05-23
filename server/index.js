@@ -345,7 +345,21 @@ app.post("/api/orders", (req, res) => {
   // biaya layanan transaksi digital (QRIS dll) — nutup MDR; tunai & POS kasir bebas
   const convenienceFee = (typeof global.getConvenienceFee === 'function')
     ? global.getConvenienceFee(pay, source) : 0;
-  const total = subtotalAfterPromo + convenienceFee;       // gross + biaya layanan
+  // Service charge — auto 5% dine-in (config via pos_config.SERVICE_CHARGE_DINEIN_*)
+  let serviceCharge = 0;
+  try {
+    const isDineIn = type === "dine" || type === "dine-in" || type === "dinein";
+    if (isDineIn) {
+      const enRow = db.rawDb.prepare(`SELECT value FROM pos_config WHERE key='SERVICE_CHARGE_DINEIN_ENABLED'`).get();
+      const pctRow = db.rawDb.prepare(`SELECT value FROM pos_config WHERE key='SERVICE_CHARGE_DINEIN_PCT'`).get();
+      const enabled = enRow ? JSON.parse(enRow.value) : true;
+      const pct = pctRow ? Number(JSON.parse(pctRow.value)) || 0 : 5;
+      if (enabled && pct > 0) {
+        serviceCharge = Math.round(subtotalAfterPromo * pct / 100);
+      }
+    }
+  } catch (e) { /* config missing → no charge */ }
+  const total = subtotalAfterPromo + convenienceFee + serviceCharge;
 
   const order = {
     id:       `A${String(++orderCounter).padStart(2, "0")}`,
@@ -361,6 +375,7 @@ app.post("/api/orders", (req, res) => {
     subtotal,
     tax,
     convenienceFee,
+    serviceCharge,
     total,
     customerId,
     customerName,

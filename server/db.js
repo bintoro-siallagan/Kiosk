@@ -152,6 +152,28 @@ try {
 try { db.exec("ALTER TABLE orders ADD COLUMN convenience_fee INTEGER DEFAULT 0"); console.log("🧾 orders.convenience_fee added"); }
 catch (e) { /* column already exists */ }
 
+// Service charge (dine-in) — auto-apply 5% pas dine-in. Disimpan per-order
+// biar audit trail jelas + bisa lihat di laporan.
+try { db.exec("ALTER TABLE orders ADD COLUMN service_charge INTEGER DEFAULT 0"); console.log("🍽️ orders.service_charge added"); }
+catch (e) { /* column already exists */ }
+
+// Multi-outlet + new/recommendation tags untuk master menu
+try { db.exec("ALTER TABLE pos_menus ADD COLUMN is_new INTEGER DEFAULT 0"); console.log("🆕 pos_menus.is_new added"); } catch {}
+try { db.exec("ALTER TABLE pos_menus ADD COLUMN is_chef_choice INTEGER DEFAULT 0"); console.log("👨‍🍳 pos_menus.is_chef_choice added"); } catch {}
+try { db.exec("ALTER TABLE pos_menus ADD COLUMN new_until INTEGER"); console.log("📅 pos_menus.new_until added"); } catch {}
+try { db.exec("ALTER TABLE pos_menus ADD COLUMN badge_text TEXT"); console.log("🏷️ pos_menus.badge_text added"); } catch {}
+try { db.exec("ALTER TABLE pos_menus ADD COLUMN badge_color TEXT"); console.log("🎨 pos_menus.badge_color added"); } catch {}
+try { db.exec("ALTER TABLE pos_menus ADD COLUMN outlet_ids TEXT"); console.log("🏪 pos_menus.outlet_ids (JSON) added"); } catch {}
+
+// Service charge config — idempotent insert (skip kalau sudah ada)
+try {
+  const now = Math.floor(Date.now() / 1000);
+  const ins = db.prepare(`INSERT OR IGNORE INTO pos_config (key, value, type, description, category, updated_at) VALUES (?,?,?,?,?,?)`);
+  ins.run("SERVICE_CHARGE_DINEIN_PCT",     "5",       "json", "Service charge % otomatis untuk dine-in", "pricing", now);
+  ins.run("SERVICE_CHARGE_DINEIN_ENABLED", "true",    "json", "Aktifkan auto-service-charge dine-in",     "pricing", now);
+  ins.run("SERVICE_CHARGE_LABEL",          '"Service Charge"', "json", "Label service charge di struk",   "pricing", now);
+} catch (e) { /* pos_config belum dibuat saat migration ini jalan */ }
+
 const stmts = {
   insert: db.prepare(`
     INSERT OR REPLACE INTO orders (
@@ -159,13 +181,13 @@ const stmts = {
       subtotal, tax, total,
       customer_id, customer_name, customer_phone,
       promo_code, promo_discount, promo_free_items,
-      midtrans_id, cash_received, cash_change, points_redeemed, points_discount, points_earned, kasir, source, convenience_fee
+      midtrans_id, cash_received, cash_change, points_redeemed, points_discount, points_earned, kasir, source, convenience_fee, service_charge
     ) VALUES (
       @id, @time, @type, @table, @status, @pay, @items, @addons,
       @subtotal, @tax, @total,
       @customer_id, @customer_name, @customer_phone,
       @promo_code, @promo_discount, @promo_free_items,
-      @midtrans_id, @cash_received, @cash_change, @points_redeemed, @points_discount, @points_earned, @kasir, @source, @convenience_fee
+      @midtrans_id, @cash_received, @cash_change, @points_redeemed, @points_discount, @points_earned, @kasir, @source, @convenience_fee, @service_charge
     )
   `),
   updateStatus: db.prepare(`UPDATE orders SET status = ? WHERE id = ?`),
@@ -201,6 +223,7 @@ function orderToRow(o) {
     kasir:           o.kasir || null,
     source:          o.source || null,
     convenience_fee: o.convenienceFee ?? 0,
+    service_charge:  o.serviceCharge ?? 0,
   };
 }
 
@@ -232,6 +255,7 @@ function rowToOrder(r) {
     kasir: r.kasir || null,
     source: r.source || null,
     convenienceFee: r.convenience_fee || 0,
+    serviceCharge:  r.service_charge || 0,
     cancelledAt:    r.cancelled_at || null,
     cancelReason:   r.cancel_reason || null,
     cancelledBy:    r.cancelled_by || null,

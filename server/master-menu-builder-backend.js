@@ -398,12 +398,22 @@ function setupMenuBuilder(app, opts = {}) {
 
   // ========== FULL MENU SHAPE V2 (with sizes + packages) ==========
   router.get('/menu-full', (req, res) => {
-    const menus = db.prepare(`
+    const outlet = req.query.outlet;
+    const allMenus = db.prepare(`
       SELECT m.*, c.name AS category_name FROM pos_menus m
       LEFT JOIN pos_menu_categories c ON c.id = m.category_id
       WHERE m.is_available = 1
       ORDER BY c.display_order, m.display_order
     `).all();
+
+    // Outlet filter — fail-open: bad JSON or empty outlet_ids = available everywhere.
+    const menus = outlet ? allMenus.filter(m => {
+      if (!m.outlet_ids || m.outlet_ids === '' || m.outlet_ids === '[]') return true;
+      try {
+        const ids = JSON.parse(m.outlet_ids);
+        return Array.isArray(ids) && (ids.length === 0 || ids.includes(outlet));
+      } catch { return true; }
+    }) : allMenus;
 
     const enrichedMenus = menus.map(m => {
       const variants = db.prepare(`

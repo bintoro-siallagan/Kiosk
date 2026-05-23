@@ -643,9 +643,21 @@ function setupMasterItems(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // Outlet filter helper — fail-open: bad JSON or empty = show in all outlets.
+  function filterByOutlet(rows, outletId) {
+    if (!outletId) return rows;
+    return rows.filter(m => {
+      if (!m.outlet_ids || m.outlet_ids === '' || m.outlet_ids === '[]') return true;
+      try {
+        const ids = JSON.parse(m.outlet_ids);
+        return Array.isArray(ids) && (ids.length === 0 || ids.includes(outletId));
+      } catch { return true; }
+    });
+  }
+
   // ========== MENUS ==========
   router.get('/menus', (req, res) => {
-    const { category_id, available, search } = req.query;
+    const { category_id, available, search, outlet } = req.query;
     let sql = `SELECT m.*, c.name AS category_name FROM pos_menus m
                JOIN pos_menu_categories c ON c.id = m.category_id WHERE 1=1`;
     const params = [];
@@ -653,7 +665,8 @@ function setupMasterItems(app, opts = {}) {
     if (available !== undefined) { sql += ' AND m.is_available = ?'; params.push(available === 'true' ? 1 : 0); }
     if (search) { sql += ' AND (m.name LIKE ? OR m.id LIKE ?)'; params.push(`%${search}%`, `%${search}%`); }
     sql += ' ORDER BY c.display_order, m.display_order, m.name';
-    res.json(db.prepare(sql).all(...params));
+    const rows = db.prepare(sql).all(...params);
+    res.json(filterByOutlet(rows, outlet));
   });
 
   router.get('/menus/:id', (req, res) => {
@@ -671,19 +684,32 @@ function setupMasterItems(app, opts = {}) {
     res.json(menu);
   });
 
+  // Normalize outlet_ids body input → JSON string or null.
+  // Accepts: array, JSON string, '', null → returns null (= all outlets) or stringified array.
+  function normalizeOutletIds(input) {
+    if (input == null || input === '') return null;
+    let arr = input;
+    if (typeof input === 'string') {
+      try { arr = JSON.parse(input); } catch { return null; }
+    }
+    if (!Array.isArray(arr) || arr.length === 0) return null;
+    return JSON.stringify(arr.filter(x => typeof x === 'string' && x.length));
+  }
+
   router.post('/menus', (req, res) => {
     const b = req.body || {};
     if (!b.id || !b.name || !b.category_id || b.price === undefined) {
       return res.status(400).json({ error: 'id, name, category_id, price required' });
     }
     try {
+      const outletIds = normalizeOutletIds(b.outlet_ids);
       db.prepare(`
         INSERT INTO pos_menus (id, category_id, emoji, name, description, price,
-          free_extras, is_popular, is_available, image_url, display_order)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?)
+          free_extras, is_popular, is_available, image_url, display_order, outlet_ids)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
       `).run(b.id, b.category_id, b.emoji, b.name, b.description || '', b.price,
         b.free_extras || 0, b.is_popular ? 1 : 0, b.is_available !== false ? 1 : 0,
-        b.image_url, b.display_order || 0);
+        b.image_url, b.display_order || 0, outletIds);
       if (Array.isArray(b.allowed_extras)) {
         const s = db.prepare(`INSERT INTO pos_menu_extra_assignments (menu_id, extra_id) VALUES (?,?)`);
         for (const e of b.allowed_extras) s.run(b.id, e);
@@ -704,6 +730,10 @@ function setupMasterItems(app, opts = {}) {
       sets.push(`${k} = ?`);
       params.push(typeof b[k] === 'boolean' ? (b[k] ? 1 : 0) : b[k]);
     }
+    if (b.outlet_ids !== undefined) {
+      sets.push('outlet_ids = ?');
+      params.push(normalizeOutletIds(b.outlet_ids));
+    }
     if (sets.length) {
       sets.push(`updated_at = ?`); params.push(nowSec());
       params.push(req.params.id);
@@ -714,6 +744,27 @@ function setupMasterItems(app, opts = {}) {
       const s = db.prepare(`INSERT INTO pos_menu_extra_assignments (menu_id, extra_id) VALUES (?,?)`);
       for (const e of b.allowed_extras) s.run(req.params.id, e);
     }
+    res.json({ ok: true });
+  });
+
+  // PATCH /menus/:id — partial update including outlet_ids.
+  router.patch('/menus/:id', (req, res) => {
+    const b = req.body || {};
+    const allowed = ['category_id','emoji','name','description','price','free_extras',
+      'is_popular','is_available','image_url','display_order'];
+    const sets = [], params = [];
+    for (const k of allowed) if (b[k] !== undefined) {
+      sets.push(`${k} = ?`);
+      params.push(typeof b[k] === 'boolean' ? (b[k] ? 1 : 0) : b[k]);
+    }
+    if (b.outlet_ids !== undefined) {
+      sets.push('outlet_ids = ?');
+      params.push(normalizeOutletIds(b.outlet_ids));
+    }
+    if (!sets.length) return res.json({ ok: true, noop: true });
+    sets.push(`updated_at = ?`); params.push(nowSec());
+    params.push(req.params.id);
+    db.prepare(`UPDATE pos_menus SET ${sets.join(', ')} WHERE id = ?`).run(...params);
     res.json({ ok: true });
   });
 

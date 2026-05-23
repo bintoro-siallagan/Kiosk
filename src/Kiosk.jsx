@@ -6,6 +6,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import PromoInput from "./PromoInput.jsx";
 import { api, createSocket } from "./api.js";
 import { useMenu } from "./MenuContext.jsx";
+import { calcServiceCharge, loadServiceChargeConfig } from "./pricing.js";
 
 const fIDR = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
 
@@ -240,6 +241,8 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
   const [showPromo,  setShowPromo]  = useState(false);
   const [showPromoTeaser, setShowPromoTeaser] = useState(false);
   const [promoTeaserShown, setPromoTeaserShown] = useState(false);
+  const [serviceConfig, setServiceConfig] = useState({ pct: 5, enabled: true, label: "Service Charge" });
+  useEffect(() => { loadServiceChargeConfig().then(setServiceConfig); }, []);
   const [tableInfo,  setTableInfo]  = useState(tableInfoProp || null);
   useEffect(() => { if (tableInfoProp) setTableInfo(tableInfoProp); }, [tableInfoProp]);
 
@@ -344,8 +347,10 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
   const subtotal   = cart.reduce((s,e)=>s+(e.item.price+e.addonTotal)*e.qty, 0);
   const discount   = promo?.discount || 0;
   const afterDisc  = Math.max(0, subtotal - discount);
-  const total      = afterDisc;
-  const tax        = Math.round(afterDisc * 11 / 111);
+  // Service charge 5% otomatis untuk dine-in (config via /api/pos/config/SERVICE_CHARGE_DINEIN_*)
+  const serviceCharge = calcServiceCharge(afterDisc, orderType, serviceConfig);
+  const total      = afterDisc + serviceCharge;
+  const tax        = Math.round(total * 11 / 111);
 
   const addToCart = (item, addons, note, addonTotal) => {
     const addonLabels = getAddonLabels(addons, item.category);
@@ -527,6 +532,12 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
                 </div>
               )}
             </>
+          )}
+          {serviceCharge > 0 && (
+            <div style={{...K.billRow, color:"#FBBF24"}}>
+              <span style={K.billLabel}>🍽️ {serviceConfig.label} {serviceConfig.pct}%</span>
+              <span>{fIDR(serviceCharge)}</span>
+            </div>
           )}
           <div style={K.billRow}><span style={K.billLabel}>PPN 11%</span><span>{fIDR(tax)}</span></div>
           <div style={K.billDivider}/>
