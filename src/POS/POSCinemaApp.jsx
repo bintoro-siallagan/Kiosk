@@ -589,8 +589,12 @@ function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, p
                     border: sel ? TH.borderActive : TH.border,
                     boxShadow: sel ? TH.shadowSelected : TH.shadowCard,
                   }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 700, color: "#fff" }}>{b.name}</div>
-                    <div style={{ fontSize: 11.5, color: TH.sub, marginTop: 3, minHeight: 30 }}>{b.description || ""}</div>
+                    <div style={{ fontSize: 13.5, fontWeight: 800, color: "#fff", lineHeight: 1.25, letterSpacing: -0.2 }}>{b.name}</div>
+                    {b.description ? (
+                      <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 5, lineHeight: 1.5, minHeight: 30 }}>{b.description}</div>
+                    ) : (
+                      <div style={{ minHeight: 30 }} />
+                    )}
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 10 }}>
                       <div style={{ fontSize: 14, fontWeight: 700, color: TH.amber, fontFamily: "'Geist Mono',monospace" }}>{rp(b.price)}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 7 }}>

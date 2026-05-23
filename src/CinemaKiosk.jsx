@@ -638,7 +638,7 @@ export default function CinemaKiosk({ apiBase }) {
                       <div style={{ fontSize: 15, fontWeight: 800, flex: 1, letterSpacing: -0.3 }}>{b.name}</div>
                       <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 13, fontWeight: 800, color: "#10b981" }}>{rp(b.price)}</div>
                     </div>
-                    {b.description && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.5 }}>{b.description}</div>}
+                    {b.description && <div style={{ fontSize: 12.5, color: "#cbd5e1", lineHeight: 1.55, marginTop: 2 }}>{b.description}</div>}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
                       <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{qty > 0 ? `Subtotal · ${rp(qty * b.price)}` : "Belum dipilih"}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
