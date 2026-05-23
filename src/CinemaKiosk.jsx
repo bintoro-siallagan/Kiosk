@@ -16,6 +16,17 @@ const RATING_LABEL = { "SU": "Semua Umur", "13+": "13 tahun ke atas", "17+": "17
 const RESTRICTED_RATINGS = ["17+", "21+", "D21"];
 
 export default function CinemaKiosk({ apiBase }) {
+  // Outlet context — kiosk di outlet A liat jadwal & harga outlet A
+  // URL: ?cinema&outlet=JKT01 (admin set per-kiosk lewat URL config)
+  // Persist last selected outlet di localStorage biar refresh gak hilang
+  const outletCode = (() => {
+    try {
+      const fromUrl = new URLSearchParams(window.location.search).get("outlet");
+      if (fromUrl) { localStorage.setItem("cinema_kiosk_outlet", fromUrl); return fromUrl; }
+      return localStorage.getItem("cinema_kiosk_outlet") || "";
+    } catch { return ""; }
+  })();
+  const [outletInfo, setOutletInfo] = useState(null); // { code, name, area } from /api/outlet-master
   const [step, setStep] = useState("films");
   const [films, setFilms] = useState([]);
   const [showtimes, setShowtimes] = useState([]);
@@ -54,8 +65,22 @@ export default function CinemaKiosk({ apiBase }) {
 
   useEffect(() => {
     fetch(`${base}/films`).then(r => r.json()).then(d => setFilms(d.films || [])).catch(() => {});
-    fetch(`${base}/showtimes`).then(r => r.json()).then(d => setShowtimes(d.showtimes || [])).catch(() => {});
+    // Filter showtime by outlet kalau ada outlet code di URL/storage
+    const stUrl = outletCode ? `${base}/showtimes?outlet=${encodeURIComponent(outletCode)}` : `${base}/showtimes`;
+    fetch(stUrl).then(r => r.json()).then(d => setShowtimes(d.showtimes || [])).catch(() => {});
     fetch(`${base}/bundles`).then(r => r.json()).then(d => setBundleCatalog(d.bundles || [])).catch(() => {});
+    // Resolve outlet display name dari outlet_master
+    if (outletCode) {
+      fetch(`${apiBase || ""}/api/outlet-master`)
+        .then(r => r.json())
+        .then(d => {
+          const list = Array.isArray(d) ? d : (d.outlets || d.data || []);
+          const found = list.find(o => o.code === outletCode || o.name === outletCode);
+          if (found) setOutletInfo({ code: found.code, name: found.name, area: found.area });
+          else setOutletInfo({ code: outletCode, name: outletCode, area: "" });
+        })
+        .catch(() => setOutletInfo({ code: outletCode, name: outletCode, area: "" }));
+    }
     // eslint-disable-next-line
   }, []);
   // ── Customer rating (1-5 stars) on done step ──
@@ -397,6 +422,18 @@ export default function CinemaKiosk({ apiBase }) {
             style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10, color: "#e6edf3", fontSize: 16, padding: "8px 14px", cursor: "pointer", fontFamily: "inherit", transition: "background 0.15s ease, border-color 0.15s ease" }}>←</button>
         )}
         <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 20, fontWeight: 800, letterSpacing: -0.4 }}>🎬 karya<span style={{ color: "#a855f7" }}>OS</span> Cinema</div>
+        {outletInfo && (
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px",
+            background: "linear-gradient(135deg, rgba(168,85,247,0.15), rgba(168,85,247,0.05))",
+            border: "1px solid rgba(168,85,247,0.35)", borderRadius: 999,
+            fontSize: 11, fontFamily: "'Geist Mono',monospace", color: "#c084fc",
+            fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase",
+            boxShadow: "0 0 16px rgba(168,85,247,0.12)",
+          }}>
+            📍 {outletInfo.name}{outletInfo.area ? ` · ${outletInfo.area}` : ""}
+          </div>
+        )}
         <div style={{ flex: 1 }} />
         <div style={{ fontSize: 10, fontFamily: "'Geist Mono',monospace", letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.45)" }}>
           {["films", "showtimes", "seats", "bundles"].map((s, i) => (
