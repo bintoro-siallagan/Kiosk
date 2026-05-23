@@ -722,6 +722,75 @@ function Pay({ picked, saleData, paymentMethod, buyer, cashier, onBack, onPaid }
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [qrisStarted, setQrisStarted] = useState(false);
+  const [qrisData, setQrisData] = useState(null); // { qrUrl, qrString, midtransOrderId, deeplinkUrl }
+  const [qrisLoading, setQrisLoading] = useState(false);
+  const [qrisPaid, setQrisPaid] = useState(false);
+  const qrisPollRef = useRef(null);
+
+  // Auto-poll payment status saat QRIS generated
+  useEffect(() => {
+    if (!qrisData?.midtransOrderId || qrisPaid) return;
+    const internalOrderId = qrisData.midtransOrderId.split("KaryaOS-")[1]?.split("-")[0];
+    if (!internalOrderId) return;
+    const refOrderId = qrisData.internalOrderId || `CINEMA-${Date.now()}`;
+    qrisPollRef.current = setInterval(async () => {
+      try {
+        const r = await fetch(`${API_HOST}/api/payment/check/${refOrderId}`);
+        const d = await r.json();
+        if (d.paid) {
+          setQrisPaid(true);
+          clearInterval(qrisPollRef.current);
+          submitTickets({ ref: refOrderId, qris_confirmed: true });
+        }
+      } catch {}
+    }, 3000);
+    return () => clearInterval(qrisPollRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qrisData, qrisPaid]);
+
+  const generateQris = async () => {
+    setQrisLoading(true);
+    const internalOrderId = `CINEMA-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+    try {
+      const r = await fetch(`${API_HOST}/api/payment/qris`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: internalOrderId,
+          amount: total,
+          items: [{ n: `${picked?.film_title} × ${saleData?.seats?.length || 0} tiket`, p: total, q: 1, id: "cinema" }],
+          customerName: buyer.name || "Counter sale",
+        }),
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || "Gagal generate QRIS");
+      const payload = { ...d, internalOrderId };
+      setQrisData(payload);
+      setQrisStarted(true);
+      // Broadcast ke CDS dengan qrUrl
+      try {
+        fetch(`${API_HOST}/api/cinema/cds/state`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            stage: "pay",
+            film_title: picked?.film_title,
+            poster_url: picked?.poster_url,
+            studio_name: picked?.studio_name,
+            show_date: picked?.show_date,
+            start_time: picked?.start_time,
+            seats: saleData?.seats || [],
+            seats_total: saleData?.ticketSubtotal || 0,
+            bundles_total: saleData?.bundleSubtotal || 0,
+            total: total,
+            qrUrl: d.qrUrl || d.qrString,
+            outlet: (new URLSearchParams(window.location.search).get("outlet") || ""),
+          }),
+        });
+      } catch {}
+    } catch (e) {
+      setMsg("⚠ " + e.message);
+    }
+    setQrisLoading(false);
+  };
 
   const change = received - total;
   const cashEnough = received >= total;
@@ -769,7 +838,11 @@ function Pay({ picked, saleData, paymentMethod, buyer, cashier, onBack, onPaid }
   const confirm = () => {
     if (!canConfirm) return;
     if (paymentMethod === "cash") submitTickets({ cashReceived: received, cashChange: change });
-    else if (paymentMethod === "qris") submitTickets({ ref: "QRIS-" + Date.now() });
+    else if (paymentMethod === "qris") {
+      if (qrisPaid) return; // auto-submit sudah handle via polling
+      if (!qrisData) { setMsg("⚠ Generate QRIS dulu, customer scan, baru konfirmasi"); return; }
+      submitTickets({ ref: qrisData.internalOrderId || ("QRIS-" + Date.now()), qris_manual_confirm: true });
+    }
     else if (paymentMethod === "debit") submitTickets({ ref: refNo.trim() });
     else if (paymentMethod === "voucher") submitTickets({ ref: voucherCode.trim() });
   };
@@ -847,33 +920,44 @@ function Pay({ picked, saleData, paymentMethod, buyer, cashier, onBack, onPaid }
         )}
 
         {paymentMethod === "qris" && (
-          <div style={{ ...S.cardLarge, padding: 30, marginBottom: 14, textAlign: "center" }}>
+          <div style={{ ...S.cardLarge, padding: 24, marginBottom: 14, textAlign: "center" }}>
             <div style={S.subSectionTitle}>📲 QRIS</div>
             {!qrisStarted ? (
               <>
-                <div style={{ fontSize: 64, margin: "20px 0", filter: "drop-shadow(0 0 24px rgba(34,211,238,0.4))" }}>📲</div>
+                <div style={{ fontSize: 56, margin: "16px 0", filter: "drop-shadow(0 0 24px rgba(34,211,238,0.4))", lineHeight: 1 }}>📲</div>
                 <div style={{ fontSize: 14, color: TH.sub, marginBottom: 18 }}>
                   Klik "Generate QR" untuk mulai pembayaran QRIS.<br/>
-                  Customer scan QR di handphone → bayar → klik "Pembayaran Diterima" setelah konfirmasi.
+                  QR akan tampil di layar ini + Customer Display (CDS).
                 </div>
-                <button onClick={() => setQrisStarted(true)} className="primary-btn"
+                <button onClick={generateQris} disabled={qrisLoading} className="primary-btn"
                   style={{ ...S.primaryBtn, background: "linear-gradient(135deg,#22d3ee,#06b6d4)", color: "#04303a" }}>
-                  📲 Generate QRIS
+                  {qrisLoading ? "⏳ Generating..." : "📲 Generate QRIS"}
                 </button>
+              </>
+            ) : qrisPaid ? (
+              <>
+                <div style={{ fontSize: 64, margin: "14px 0", lineHeight: 1 }}>✅</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: TH.green, marginBottom: 6 }}>PEMBAYARAN DITERIMA</div>
+                <div style={{ fontSize: 12, color: TH.sub }}>Memproses tiket...</div>
               </>
             ) : (
               <>
-                <div style={{
-                  width: 220, height: 220, margin: "20px auto", borderRadius: 16,
-                  background: "linear-gradient(135deg, #fff, #f5f5f5)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 100, color: "#000",
-                  border: "2px dashed rgba(34,211,238,0.5)",
-                }}>📲</div>
-                <div style={{ fontSize: 13, color: TH.sub, marginBottom: 14 }}>
-                  ⚠ Demo mode — integrasi Midtrans/Xendit perlu key production.<br/>
-                  Klik tombol bawah setelah customer konfirmasi bayar.
+                {(qrisData?.qrUrl || qrisData?.qrString) ? (
+                  <div style={{ display: "inline-block", background: "#fff", padding: 14, borderRadius: 14, margin: "14px 0", boxShadow: "0 8px 24px rgba(34,211,238,0.25)" }}>
+                    <img src={qrisData.qrUrl || qrisData.qrString} alt="QRIS" style={{ width: 220, height: 220, display: "block" }} />
+                  </div>
+                ) : (
+                  <div style={{ width: 220, height: 220, margin: "14px auto", borderRadius: 14, background: "#1a1b1e", border: "1px dashed rgba(34,211,238,0.4)", display: "flex", alignItems: "center", justifyContent: "center", color: TH.sub, fontSize: 12 }}>⏳ QR loading...</div>
+                )}
+                <div style={{ fontSize: 14, fontWeight: 700, color: TH.cyan, marginBottom: 6, fontFamily: "'Geist Mono',monospace" }}>{rp(total)}</div>
+                <div style={{ fontSize: 12, color: TH.sub, marginBottom: 10 }}>
+                  Customer scan QR ini di e-wallet (GoPay/OVO/DANA/ShopeePay).<br/>
+                  <span style={{ color: TH.cyan }}>● Auto-detect pembayaran tiap 3 detik</span>
                 </div>
+                {qrisData?.deeplinkUrl && (
+                  <a href={qrisData.deeplinkUrl} target="_blank" rel="noreferrer" style={{ display: "inline-block", padding: "8px 16px", background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.3)", borderRadius: 8, color: TH.cyan, textDecoration: "none", fontSize: 11, fontWeight: 700, marginRight: 6 }}>📱 Open in app</a>
+                )}
+                <button onClick={() => { setQrisData(null); setQrisStarted(false); }} style={{ ...S.ghostBtn, marginLeft: 6 }}>↺ Generate Ulang</button>
               </>
             )}
           </div>
