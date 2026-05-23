@@ -52,11 +52,13 @@ export default function POSCinemaApp() {
   const [cashier, setCashier] = useState(() => {
     try { const raw = sessionStorage.getItem("posCashier"); return raw ? JSON.parse(raw) : null; } catch { return null; }
   });
-  const [stage, setStage] = useState("home"); // home | sell | success
+  const [stage, setStage] = useState("home"); // home | sell | pay | success
   const [picked, setPicked] = useState(null); // showtime obj
   const [seats, setSeats] = useState([]);     // selected seats
   const [bundles, setBundles] = useState([]); // selected bundles [{id, qty, ...}]
   const [buyer, setBuyer] = useState({ name: "", phone: "", email: "" });
+  const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [saleData, setSaleData] = useState(null); // intermediate buat payment stage
   const [lastSale, setLastSale] = useState(null);
 
   // Full-screen — escape global zoom + root cap
@@ -73,8 +75,15 @@ export default function POSCinemaApp() {
   };
   const handleLogout = () => { sessionStorage.removeItem("posCashier"); setCashier(null); setStage("home"); };
 
-  const resetSale = () => { setPicked(null); setSeats([]); setBundles([]); setBuyer({ name: "", phone: "", email: "" }); setStage("home"); };
+  const resetSale = () => {
+    setPicked(null); setSeats([]); setBundles([]);
+    setBuyer({ name: "", phone: "", email: "" });
+    setPaymentMethod("cash"); setSaleData(null);
+    setStage("home");
+  };
 
+  // Sell stage submit → save totals, move to pay stage (no submit yet)
+  const proceedToPay = (totals) => { setSaleData(totals); setStage("pay"); };
   const onSold = (ticketResult) => { setLastSale(ticketResult); setStage("success"); };
 
   if (!cashier) return <POSKasirLogin apiBase={API_HOST} onSelectKasir={handleLogin} />;
@@ -95,9 +104,21 @@ export default function POSCinemaApp() {
             seats={seats} setSeats={setSeats}
             bundles={bundles} setBundles={setBundles}
             buyer={buyer} setBuyer={setBuyer}
+            paymentMethod={paymentMethod} setPaymentMethod={setPaymentMethod}
             cashier={cashier}
             onCancel={resetSale}
-            onSold={onSold}
+            onProceed={proceedToPay}
+          />
+        )}
+        {stage === "pay" && picked && saleData && (
+          <Pay
+            picked={picked}
+            saleData={saleData}
+            paymentMethod={paymentMethod}
+            buyer={buyer}
+            cashier={cashier}
+            onBack={() => setStage("sell")}
+            onPaid={onSold}
           />
         )}
         {stage === "success" && lastSale && (
@@ -294,10 +315,9 @@ const ratingColor = (r) => ({ SU: TH.green, "13+": TH.cyan, "17+": TH.amber, D21
 // ═══════════════════════════════════════════════════════════════════
 // SELL — seat map + bundles + checkout
 // ═══════════════════════════════════════════════════════════════════
-function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, cashier, onCancel, onSold }) {
+function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, paymentMethod, setPaymentMethod, cashier, onCancel, onProceed }) {
   const [seatData, setSeatData] = useState(null);
   const [bundleList, setBundleList] = useState([]);
-  const [paymentMethod, setPaymentMethod] = useState("cash");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
 
@@ -329,29 +349,12 @@ function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, c
   const bundleSubtotal = bundles.reduce((s, b) => s + (b.price || 0) * (b.qty || 0), 0);
   const total = ticketSubtotal + bundleSubtotal;
 
-  const submit = async () => {
+  const submit = () => {
     if (!seats.length) { setMsg("⚠ Pilih minimal 1 kursi"); return; }
-    setBusy(true); setMsg("");
-    try {
-      const res = await fetch(`${API_HOST}/api/cinema/tickets`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          showtime_id: picked.id,
-          seats,
-          bundles: bundles.map(b => ({ id: b.id, qty: b.qty })),
-          buyer: buyer.name ? `${buyer.name}${buyer.phone ? " · " + buyer.phone : ""}` : `Counter sale (${cashier?.name})`,
-          email: buyer.email || null,
-          payment_method: paymentMethod,
-          cashier_name: cashier?.name,
-        }),
-      });
-      const d = await res.json();
-      if (d.error) { setMsg("⚠ " + d.error); setBusy(false); return; }
-      onSold({ ...d, picked, seats, bundles, buyer, total, paymentMethod });
-    } catch (e) {
-      setMsg("⚠ " + e.message); setBusy(false);
-    }
+    // Lanjut ke pay stage — submit ticket POST happens at Pay stage setelah
+    // user konfirmasi pembayaran. Bawa snapshot seats+bundles biar Pay stage
+    // bisa POST tanpa dependency parent state.
+    onProceed({ ticketSubtotal, bundleSubtotal, total, seats: [...seats], bundles: bundles.map(b => ({ ...b })) });
   };
 
   if (!seatData) return <div style={{ padding: 60, textAlign: "center", color: TH.sub }}>⏳ Memuat peta kursi…</div>;
@@ -547,6 +550,213 @@ function Row({ label, value }) {
     <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: TH.sub, marginTop: 4 }}>
       <span>{label}</span>
       <span style={{ fontFamily: "'Geist Mono',monospace", color: "#fff", fontWeight: 600 }}>{value}</span>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// PAY — payment processing per method (cash/qris/debit/voucher)
+// Submit tickets ke backend SETELAH payment confirmed.
+// ═══════════════════════════════════════════════════════════════════
+function Pay({ picked, saleData, paymentMethod, buyer, cashier, onBack, onPaid }) {
+  const total = saleData.total;
+  const [received, setReceived] = useState(0);
+  const [refNo, setRefNo] = useState("");
+  const [voucherCode, setVoucherCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [qrisStarted, setQrisStarted] = useState(false);
+
+  const change = received - total;
+  const cashEnough = received >= total;
+  // Detect if payment ready to confirm
+  const canConfirm = (() => {
+    if (busy) return false;
+    if (paymentMethod === "cash") return cashEnough;
+    if (paymentMethod === "qris") return qrisStarted;
+    if (paymentMethod === "debit" || paymentMethod === "voucher") return refNo.trim().length >= 4 || voucherCode.trim().length >= 4;
+    return false;
+  })();
+
+  const submitTickets = async (paymentRef = {}) => {
+    setBusy(true); setMsg("");
+    try {
+      const res = await fetch(`${API_HOST}/api/cinema/tickets`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          showtime_id: picked.id,
+          // hack: take from saleData chain — but we passed sell-time arrays via state
+          // simpler: pass through to backend, which infers from showtime+seats
+          // saleData hanya berisi totals, so kita perlu retrieve sells dari parent.
+          // → ambil dari parent via prop reference? No — passed via props.
+          // Workaround: store seats/bundles in saleData too.
+          seats: saleData.seats || [],
+          bundles: (saleData.bundles || []).map(b => ({ id: b.id, qty: b.qty })),
+          buyer: buyer.name ? `${buyer.name}${buyer.phone ? " · " + buyer.phone : ""}` : `Counter sale (${cashier?.name})`,
+          email: buyer.email || null,
+          payment_method: paymentMethod,
+          payment_ref: paymentRef.ref || null,
+          cash_received: paymentRef.cashReceived || null,
+          cash_change: paymentRef.cashChange || null,
+          cashier_name: cashier?.name,
+        }),
+      });
+      const d = await res.json();
+      if (d.error) { setMsg("⚠ " + d.error); setBusy(false); return; }
+      onPaid({ ...d, picked, seats: saleData.seats, bundles: saleData.bundles, buyer, total, paymentMethod, paymentRef });
+    } catch (e) {
+      setMsg("⚠ " + e.message); setBusy(false);
+    }
+  };
+
+  const confirm = () => {
+    if (!canConfirm) return;
+    if (paymentMethod === "cash") submitTickets({ cashReceived: received, cashChange: change });
+    else if (paymentMethod === "qris") submitTickets({ ref: "QRIS-" + Date.now() });
+    else if (paymentMethod === "debit") submitTickets({ ref: refNo.trim() });
+    else if (paymentMethod === "voucher") submitTickets({ ref: voucherCode.trim() });
+  };
+
+  const meta = {
+    cash:    { emoji: "💵", label: "Tunai",       color: "#10b981" },
+    debit:   { emoji: "💳", label: "Debit/Kredit", color: "#3b82f6" },
+    qris:    { emoji: "📲", label: "QRIS",        color: "#22d3ee" },
+    voucher: { emoji: "🎟️", label: "Voucher",     color: "#fbbf24" },
+  }[paymentMethod] || {};
+
+  return (
+    <div style={S.content}>
+      <div style={{ maxWidth: 720, margin: "10px auto 60px" }}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+          <button onClick={onBack} className="ghost-btn" style={S.ghostBtn} disabled={busy}>← Batal / Ubah</button>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 12, color: TH.dim, letterSpacing: 1.4, fontFamily: "'Geist Mono',monospace", fontWeight: 700, textTransform: "uppercase" }}>Pembayaran</span>
+            <span style={{
+              padding: "5px 14px", borderRadius: 999,
+              background: `${meta.color}1a`, border: `1px solid ${meta.color}55`, color: meta.color,
+              fontSize: 12, fontWeight: 800, letterSpacing: 0.8, fontFamily: "'Geist Mono',monospace",
+            }}>{meta.emoji} {meta.label.toUpperCase()}</span>
+          </div>
+        </div>
+
+        {/* Total card — big */}
+        <div style={{
+          ...S.cardLarge, padding: "28px 30px", textAlign: "center",
+          background: "linear-gradient(135deg, #F59E0B 0%, #fbbf24 50%, #F59E0B 100%)",
+          color: "#1a1205",
+          boxShadow: "0 8px 32px rgba(245,158,11,0.4), inset 0 1px 0 rgba(255,255,255,0.25)",
+          marginBottom: 20,
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase" }}>TOTAL TAGIHAN</div>
+          <div style={{ fontSize: 48, fontWeight: 800, marginTop: 4, letterSpacing: -1, fontFamily: "'Geist Mono',monospace" }}>{rp(total)}</div>
+          <div style={{ fontSize: 13, marginTop: 8, fontWeight: 600 }}>
+            🎬 {picked.film_title} · {picked.show_date} {picked.start_time} · {saleData.seats?.length || 0} kursi
+          </div>
+        </div>
+
+        {/* Per-method input */}
+        {paymentMethod === "cash" && (
+          <div style={{ ...S.cardLarge, padding: 22, marginBottom: 14 }}>
+            <div style={S.subSectionTitle}>💵 INPUT TUNAI DITERIMA</div>
+            <div style={{
+              fontSize: 42, fontWeight: 800, color: cashEnough ? TH.green : "#fff",
+              fontFamily: "'Geist Mono',monospace", letterSpacing: -0.6,
+              textAlign: "center", margin: "14px 0",
+            }}>{rp(received)}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 10 }}>
+              {[50000, 100000, 200000, 500000].map(n => (
+                <button key={n} onClick={() => setReceived(r => r + n)} className="ghost-btn"
+                  style={{ ...S.ghostBtn, padding: "12px", justifyContent: "center", fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>
+                  + {fmtK(n)}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setReceived(total)} style={{ ...S.ghostBtn, flex: 1, padding: "10px", color: TH.amber, borderColor: "rgba(245,158,11,0.4)", background: "rgba(245,158,11,0.1)", fontWeight: 700, justifyContent: "center" }}>UANG PAS</button>
+              <button onClick={() => setReceived(0)} style={{ ...S.ghostBtn, flex: 1, padding: "10px", color: TH.red, borderColor: "rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.06)", fontWeight: 700, justifyContent: "center" }}>RESET</button>
+            </div>
+            {cashEnough && (
+              <div style={{
+                marginTop: 16, padding: "12px 16px",
+                background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.4)", borderRadius: 10,
+                display: "flex", justifyContent: "space-between", alignItems: "center",
+              }}>
+                <span style={{ fontSize: 14, color: TH.green, fontWeight: 700 }}>💰 Kembalian</span>
+                <span style={{ fontSize: 22, color: TH.green, fontWeight: 800, fontFamily: "'Geist Mono',monospace" }}>{rp(change)}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {paymentMethod === "qris" && (
+          <div style={{ ...S.cardLarge, padding: 30, marginBottom: 14, textAlign: "center" }}>
+            <div style={S.subSectionTitle}>📲 QRIS</div>
+            {!qrisStarted ? (
+              <>
+                <div style={{ fontSize: 64, margin: "20px 0", filter: "drop-shadow(0 0 24px rgba(34,211,238,0.4))" }}>📲</div>
+                <div style={{ fontSize: 14, color: TH.sub, marginBottom: 18 }}>
+                  Klik "Generate QR" untuk mulai pembayaran QRIS.<br/>
+                  Customer scan QR di handphone → bayar → klik "Pembayaran Diterima" setelah konfirmasi.
+                </div>
+                <button onClick={() => setQrisStarted(true)} className="primary-btn"
+                  style={{ ...S.primaryBtn, background: "linear-gradient(135deg,#22d3ee,#06b6d4)", color: "#04303a" }}>
+                  📲 Generate QRIS
+                </button>
+              </>
+            ) : (
+              <>
+                <div style={{
+                  width: 220, height: 220, margin: "20px auto", borderRadius: 16,
+                  background: "linear-gradient(135deg, #fff, #f5f5f5)",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 100, color: "#000",
+                  border: "2px dashed rgba(34,211,238,0.5)",
+                }}>📲</div>
+                <div style={{ fontSize: 13, color: TH.sub, marginBottom: 14 }}>
+                  ⚠ Demo mode — integrasi Midtrans/Xendit perlu key production.<br/>
+                  Klik tombol bawah setelah customer konfirmasi bayar.
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {(paymentMethod === "debit") && (
+          <div style={{ ...S.cardLarge, padding: 22, marginBottom: 14 }}>
+            <div style={S.subSectionTitle}>💳 INFO TRANSAKSI KARTU</div>
+            <div style={{ fontSize: 13, color: TH.sub, marginTop: 8, marginBottom: 12 }}>
+              Swipe kartu di EDC. Setelah approve, masukkan 4 digit terakhir kartu atau approval code.
+            </div>
+            <input value={refNo} onChange={e => setRefNo(e.target.value)} placeholder="4 digit terakhir / Approval code"
+              className="premium-input"
+              style={{ ...S.input, fontSize: 18, letterSpacing: 2, textAlign: "center", fontFamily: "'Geist Mono',monospace", fontWeight: 700 }} />
+          </div>
+        )}
+
+        {paymentMethod === "voucher" && (
+          <div style={{ ...S.cardLarge, padding: 22, marginBottom: 14 }}>
+            <div style={S.subSectionTitle}>🎟️ KODE VOUCHER</div>
+            <div style={{ fontSize: 13, color: TH.sub, marginTop: 8, marginBottom: 12 }}>
+              Masukkan kode voucher / e-voucher dari customer.
+            </div>
+            <input value={voucherCode} onChange={e => setVoucherCode(e.target.value.toUpperCase())} placeholder="VOUCHER-XXXX"
+              className="premium-input"
+              style={{ ...S.input, fontSize: 18, letterSpacing: 2, textAlign: "center", fontFamily: "'Geist Mono',monospace", fontWeight: 700 }} />
+          </div>
+        )}
+
+        {msg && (
+          <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#fca5a5", marginBottom: 12 }}>{msg}</div>
+        )}
+
+        {/* Confirm */}
+        <button onClick={confirm} disabled={!canConfirm} className="primary-btn"
+          style={{ ...S.primaryBtn, width: "100%", padding: "16px", fontSize: 15, opacity: canConfirm ? 1 : 0.5, cursor: canConfirm ? "pointer" : "not-allowed" }}>
+          {busy ? "⏳ Memproses…" : `✓ KONFIRMASI ${meta.label?.toUpperCase()} · ${rp(total)}`}
+        </button>
+      </div>
     </div>
   );
 }
