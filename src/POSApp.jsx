@@ -70,17 +70,27 @@ function QuickOrderFlow({ cashier, onExit }) {
 export default function POSApp() {
   const [cashier, setCashier] = useState(() => {
     try {
-      // Force-login support — buka dari AdminHome dengan ?fresh=1 → wajib login ulang
       const url = new URL(window.location.href);
-      if (url.searchParams.get("fresh") === "1") {
-        sessionStorage.removeItem("posCashier");
+      const force = url.searchParams.get("fresh") === "1" || url.searchParams.get("login") === "1";
+      if (force) {
+        ["posCashier", "posCinemaCashier", "cashier", "currentUser", "user"].forEach(k => {
+          try { sessionStorage.removeItem(k); } catch {}
+          try { localStorage.removeItem(k); } catch {}
+        });
         url.searchParams.delete("fresh");
+        url.searchParams.delete("login");
         window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + url.hash);
+        console.log("[POS] Force-login: cleared all cashier keys");
         return null;
       }
       const raw = sessionStorage.getItem("posCashier");
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (parsed && typeof parsed === "object" && parsed.name) return parsed;
+      return null;
+    } catch (e) {
+      console.warn("[POS] cashier init err:", e);
+      return null;
+    }
   });
   const [view, setView] = useState("home"); // home | order | settle | settle-success | resume
   const [settlingTab, setSettlingTab] = useState(null);
@@ -97,6 +107,18 @@ export default function POSApp() {
     const pw = root.style.width, pm = root.style.maxWidth;
     root.style.width = "100%"; root.style.maxWidth = "none";
     return () => { root.style.width = pw; root.style.maxWidth = pm; };
+  }, []);
+
+  // Emergency global logout — call window.posLogout() in DevTools console
+  useEffect(() => {
+    window.posLogout = () => {
+      ["posCashier", "posCinemaCashier", "cashier", "currentUser", "user"].forEach(k => {
+        try { sessionStorage.removeItem(k); } catch {}
+        try { localStorage.removeItem(k); } catch {}
+      });
+      window.location.replace(window.location.pathname + "?pos=1&fresh=1");
+    };
+    return () => { delete window.posLogout; };
   }, []);
 
   // Status checklist opening/closing hari ini

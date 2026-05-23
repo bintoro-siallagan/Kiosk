@@ -49,20 +49,46 @@ const fmtK = (n) => n >= 1e6 ? (n / 1e6).toFixed(1) + "jt" : n >= 1e3 ? Math.rou
 // MAIN APP
 // ═══════════════════════════════════════════════════════════════════
 export default function POSCinemaApp() {
-  // Force-login support — kalau buka dari AdminHome dengan ?fresh=1, clear session dulu
+  // Force-login support — clear ALL auth keys kalau ?fresh=1 atau ?login=1
+  // Plus expose window.posLogout() emergency helper
   const [cashier, setCashier] = useState(() => {
     try {
       const url = new URL(window.location.href);
-      if (url.searchParams.get("fresh") === "1") {
-        sessionStorage.removeItem("posCashier");
+      const force = url.searchParams.get("fresh") === "1" || url.searchParams.get("login") === "1";
+      if (force) {
+        // Nuclear clear — kasir-related keys di session DAN localStorage
+        ["posCashier", "posCinemaCashier", "cashier", "currentUser", "user"].forEach(k => {
+          try { sessionStorage.removeItem(k); } catch {}
+          try { localStorage.removeItem(k); } catch {}
+        });
         url.searchParams.delete("fresh");
+        url.searchParams.delete("login");
         window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + url.hash);
+        console.log("[POSCinema] Force-login: cleared all cashier keys");
         return null;
       }
       const raw = sessionStorage.getItem("posCashier");
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
+      const parsed = raw ? JSON.parse(raw) : null;
+      // Validate — kalau bukan object dengan name, treat as invalid
+      if (parsed && typeof parsed === "object" && parsed.name) return parsed;
+      return null;
+    } catch (e) {
+      console.warn("[POSCinema] cashier init err:", e);
+      return null;
+    }
   });
+
+  // Emergency global helper — bisa dipanggil dari DevTools console: window.posLogout()
+  useEffect(() => {
+    window.posLogout = () => {
+      ["posCashier", "posCinemaCashier", "cashier", "currentUser", "user"].forEach(k => {
+        try { sessionStorage.removeItem(k); } catch {}
+        try { localStorage.removeItem(k); } catch {}
+      });
+      window.location.replace(window.location.pathname + "?pos-cinema&fresh=1");
+    };
+    return () => { delete window.posLogout; };
+  }, []);
   const [stage, setStage] = useState("home"); // home | sell | pay | success
   const [picked, setPicked] = useState(null); // showtime obj
   const [seats, setSeats] = useState([]);     // selected seats
