@@ -2949,7 +2949,10 @@ app.get("/api/receipt/:orderId", (req, res) => {
   const order = orders.find(o => o.id === req.params.orderId);
   if (!order) return res.status(404).json({ error: "Order not found" });
   const convenienceFee = order.convenienceFee || 0;
-  const tax = Math.round((order.total - convenienceFee) * 11 / 111);  // PPN goods only — biaya layanan non-taxable
+  const serviceCharge = order.serviceCharge || 0;
+  // PPN dihitung dari total dikurangi biaya non-taxable (conv fee + service charge)
+  const taxableBase = Math.max(0, order.total - convenienceFee - serviceCharge);
+  const tax = Math.round(taxableBase * 11 / 111);
   res.json({
     receiptNo:    `RCP-${order.id}-${Date.now().toString(36).toUpperCase()}`,
     orderId:      order.id,
@@ -2964,6 +2967,7 @@ app.get("/api/receipt/:orderId", (req, res) => {
     promoFreeItems: order.promoFreeItems || null,
     tax,
     convenienceFee,
+    serviceCharge,
     total:        order.total,
     payment: order.pay === "CASH" ? "TUNAI" : "QRIS",
     midtransId:   order.midtransId || null,
