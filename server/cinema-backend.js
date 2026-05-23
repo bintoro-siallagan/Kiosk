@@ -409,6 +409,12 @@ function setupCinema(app, opts = {}) {
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN buyer_email TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN buyer_phone TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN email_sent_at INTEGER"); } catch {}
+  // Payment audit — kiosk QRIS / POS cash / debit
+  try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN payment_ref TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN payment_method TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN payment_status TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN paid_at INTEGER"); } catch {}
+  try { db.exec("CREATE INDEX IF NOT EXISTS idx_cinema_ticket_paystatus ON cinema_tickets(payment_status)"); } catch {}
   // In-studio QR-order — payment audit trail (QRIS Midtrans/Xendit ref + paid_at)
   try { db.exec("ALTER TABLE cinema_in_studio_orders ADD COLUMN payment_ref TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_in_studio_orders ADD COLUMN payment_method TEXT"); } catch {}
@@ -1117,9 +1123,25 @@ function setupCinema(app, opts = {}) {
       }
     }
 
+    // ── Payment guard ──
+    // Customer kiosk wajib bawa payment_ref + paid=true (anti-spoof issue tiket gratis).
+    // POS Cinema (cashier) boleh bypass kalau payment_method='cash' atau staff source.
+    const isPaid = b.paid === true || b.paid === 'true';
+    const paymentRef = String(b.payment_ref || '').trim();
+    const paymentMethod = String(b.payment_method || '').trim().toLowerCase();
+    const fromKiosk = b.source === 'kiosk' || b.kiosk === true;
+    if (fromKiosk) {
+      if (!isPaid || !paymentRef) {
+        return res.status(402).json({ ok: false, error: 'Kiosk customer wajib bayar QRIS dulu (payment_ref + paid=true diperlukan).' });
+      }
+    }
+    const nowEpoch = Math.floor(Date.now() / 1000);
+    const paidAt = isPaid ? nowEpoch : null;
+    const payStatus = isPaid ? 'paid' : (paymentRef ? 'pending' : null);
+
     const crypto = require('crypto');
     const purchaseId = 'CP-' + crypto.randomBytes(4).toString('hex').toUpperCase();
-    const ins   = db.prepare(`INSERT INTO cinema_tickets (showtime_id, seat, price, buyer, buyer_email, buyer_phone, code, purchase_id) VALUES (?,?,?,?,?,?,?,?)`);
+    const ins   = db.prepare(`INSERT INTO cinema_tickets (showtime_id, seat, price, buyer, buyer_email, buyer_phone, code, purchase_id, payment_ref, payment_method, payment_status, paid_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`);
     const insB  = db.prepare(`INSERT INTO cinema_purchase_bundles (purchase_id, bundle_id, bundle_name, qty, price) VALUES (?,?,?,?,?)`);
     const newTickets = [];
     const newBundles = [];
@@ -1127,7 +1149,7 @@ function setupCinema(app, opts = {}) {
       db.transaction(() => {
         for (const s of seats) {
           const code = 'CT-' + crypto.randomBytes(4).toString('hex').toUpperCase();
-          const info = ins.run(st.id, s, st.price || 0, b.buyer || '', b.buyer_email || '', b.buyer_phone || '', code, purchaseId);
+          const info = ins.run(st.id, s, st.price || 0, b.buyer || '', b.buyer_email || '', b.buyer_phone || '', code, purchaseId, paymentRef || null, paymentMethod || null, payStatus, paidAt);
           newTickets.push({ id: info.lastInsertRowid, seat: s, price: st.price || 0, code, purchase_id: purchaseId });
         }
         for (const r of bundleRows) {
