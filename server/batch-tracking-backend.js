@@ -84,6 +84,20 @@ function setupBatchTracking(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  router.patch('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM stock_batches WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['batch_no', 'sku', 'item_name', 'qty', 'unit', 'location', 'received_at', 'expiry_at']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE stock_batches SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/batch-tracking';
   app.use(mountPath, router);
   console.log(`[batch-tracking] mounted at ${mountPath} — batch & expiry (FEFO)`);

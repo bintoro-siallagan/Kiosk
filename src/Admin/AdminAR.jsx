@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import ReportActions from "./ReportActions.jsx";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" }) : "—";
@@ -19,9 +20,11 @@ const ST = { unpaid: { c: "#f59e0b", t: "Belum bayar" }, partial: { c: "#3b82f6"
 const EMPTY = { customer: "", customer_type: "corporate", description: "", amount: "", due_days: "30" };
 
 export default function AdminAR({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [form, setForm] = useState(EMPTY);
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/ar`).then(r => r.json()).then(setD).catch(() => {});
@@ -36,6 +39,22 @@ export default function AdminAR({ apiBase = "" }) {
     }).then(r => r.json()).then(j => {
       if (j.ok) { setMsg("✓ Invoice piutang dibuat"); setForm(EMPTY); load(); } else setMsg(j.error || "gagal");
     }).catch(e => setMsg(String(e)));
+  };
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/ar/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const remove = async (item) => {
+    const ok = await confirm({ title: `Hapus "${item.invoice_number || item.customer || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/ar/${item.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
   const pay = (inv) => {
     const a = window.prompt(`Catat pembayaran — ${inv.customer}\nOutstanding: ${fmtRp(inv.outstanding)}\n\nJumlah bayar:`, String(inv.outstanding));
@@ -123,9 +142,13 @@ export default function AdminAR({ apiBase = "" }) {
                   <td style={S.td}><span style={{ color: ag.c, fontSize: 11, fontWeight: 600 }}>{ag.label}</span></td>
                   <td style={S.td}><span style={{ color: st.c, fontSize: 11, fontWeight: 700 }}>{st.t}</span></td>
                   <td style={S.td}>
-                    {inv.status !== "paid"
-                      ? <button onClick={() => pay(inv)} style={S.btnPay}>+ Catat Bayar</button>
-                      : <span style={{ color: "#10b981" }}>✓</span>}
+                    <div style={{ display: "flex", gap: 4, alignItems: "center", justifyContent: "flex-end" }}>
+                      {inv.status !== "paid"
+                        ? <button onClick={() => pay(inv)} style={S.btnPay}>+ Catat Bayar</button>
+                        : <span style={{ color: "#10b981" }}>✓</span>}
+                      <button onClick={() => setEditing({ ...inv })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                      <button onClick={() => remove(inv)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -133,9 +156,44 @@ export default function AdminAR({ apiBase = "" }) {
           </tbody>
         </table>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.invoice_number || '#'+editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>NO INVOICE</div><input value={editing.invoice_number || ""} onChange={e => setEditing({ ...editing, invoice_number: e.target.value })} style={modalInp} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>CUSTOMER</div><input value={editing.customer || ""} onChange={e => setEditing({ ...editing, customer: e.target.value })} style={modalInp} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>TIPE</div>
+                <select value={editing.customer_type || "corporate"} onChange={e => setEditing({ ...editing, customer_type: e.target.value })} style={modalInp}>
+                  {Object.entries(TYPE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              </div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>DESKRIPSI</div><input value={editing.description || ""} onChange={e => setEditing({ ...editing, description: e.target.value })} style={modalInp} /></div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>JUMLAH</div><input type="number" value={editing.amount || 0} onChange={e => setEditing({ ...editing, amount: Number(e.target.value) })} style={modalInp} /></div>
+                <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>DIBAYAR</div><input type="number" value={editing.paid_amount || 0} onChange={e => setEditing({ ...editing, paid_amount: Number(e.target.value) })} style={modalInp} /></div>
+              </div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>STATUS</div>
+                <select value={editing.status || "unpaid"} onChange={e => setEditing({ ...editing, status: e.target.value })} style={modalInp}>
+                  <option value="unpaid">unpaid</option>
+                  <option value="partial">partial</option>
+                  <option value="paid">paid</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 function Kpi({ label, v, c, sub }) {
   return (

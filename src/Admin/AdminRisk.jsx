@@ -2,15 +2,19 @@
 // Risk Management — risk register enterprise (likelihood × impact).
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const AC = "#dc2626";
 const LVL = { Critical: "#ef4444", High: "#f97316", Medium: "#f59e0b", Low: "#10b981" };
 const STT = { open: "#ef4444", mitigating: "#f59e0b", closed: "#10b981" };
+const CATS = ['Operasional', 'Keuangan', 'Kepatuhan', 'Strategis', 'Reputasi', 'Teknologi'];
 
 export default function AdminRisk({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
   const [form, setForm] = useState({ title: "", category: "Operasional", likelihood: "3", impact: "3", mitigation: "", owner: "" });
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/risk`).then(r => r.json()).then(setD).catch(() => {});
@@ -27,6 +31,24 @@ export default function AdminRisk({ apiBase = "" }) {
     fetch(`${apiBase}/api/risk/${rk.id}/status`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }),
     }).then(r => r.json()).then(j => { if (j.ok) load(); }).catch(() => {});
+  };
+
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/risk/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+
+  const remove = async (item) => {
+    const ok = await confirm({ title: `Hapus "${item.title || item.code || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/risk/${item.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Risk Management…</div>;
@@ -87,7 +109,7 @@ export default function AdminRisk({ apiBase = "" }) {
         <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
           <thead>
             <tr style={{ color: "#5b6470", fontSize: 10, textAlign: "left" }}>
-              {["RISIKO", "KATEGORI", "L×I", "SKOR", "LEVEL", "OWNER", "STATUS"].map(h => <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>)}
+              {["RISIKO", "KATEGORI", "L×I", "SKOR", "LEVEL", "OWNER", "STATUS", ""].map(h => <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -108,11 +130,64 @@ export default function AdminRisk({ apiBase = "" }) {
                     {["open", "mitigating", "closed"].map(st => <option key={st} value={st}>{st}</option>)}
                   </select>
                 </td>
+                <td style={S.td}>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <button onClick={() => setEditing({ ...rk })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                    <button onClick={() => remove(rk)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.title || editing.code || '#'+editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Judul Risiko
+                <input value={editing.title || ""} onChange={e => setEditing({ ...editing, title: e.target.value })} style={modalInp} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Kategori
+                <select value={editing.category || "Operasional"} onChange={e => setEditing({ ...editing, category: e.target.value })} style={modalInp}>
+                  {CATS.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <label style={{ fontSize: 11, color: "#9ca3af" }}>Likelihood (1-5)
+                  <select value={editing.likelihood || 3} onChange={e => setEditing({ ...editing, likelihood: Number(e.target.value) })} style={modalInp}>
+                    {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </label>
+                <label style={{ fontSize: 11, color: "#9ca3af" }}>Impact (1-5)
+                  <select value={editing.impact || 3} onChange={e => setEditing({ ...editing, impact: Number(e.target.value) })} style={modalInp}>
+                    {[1,2,3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
+                  </select>
+                </label>
+              </div>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Mitigasi
+                <input value={editing.mitigation || ""} onChange={e => setEditing({ ...editing, mitigation: e.target.value })} style={modalInp} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Owner
+                <input value={editing.owner || ""} onChange={e => setEditing({ ...editing, owner: e.target.value })} style={modalInp} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Status
+                <select value={editing.status || "open"} onChange={e => setEditing({ ...editing, status: e.target.value })} style={modalInp}>
+                  <option value="open">open</option>
+                  <option value="mitigating">mitigating</option>
+                  <option value="closed">closed</option>
+                </select>
+              </label>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -125,6 +200,8 @@ function Kpi({ label, v, c }) {
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },

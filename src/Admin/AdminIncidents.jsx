@@ -2,6 +2,7 @@
 // Incident Management — insiden operasional outlet.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const AC = "#dc2626";
 const SEV_C = { low: "#10b981", medium: "#f59e0b", high: "#f97316", critical: "#ef4444" };
@@ -10,9 +11,11 @@ const CAT_ICON = { Equipment: "🔧", Safety: "⚠️", Service: "🛎️", Hygi
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "—";
 
 export default function AdminIncidents({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
   const [form, setForm] = useState({ title: "", category: "Equipment", outlet: "Paskal", severity: "medium" });
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/incidents`).then(r => r.json()).then(setD).catch(() => {});
@@ -29,6 +32,24 @@ export default function AdminIncidents({ apiBase = "" }) {
     fetch(`${apiBase}/api/incidents`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, reported_by: "Admin" }),
     }).then(r => r.json()).then(j => { if (j.ok) { setMsg("✓ Insiden dilaporkan"); setForm({ ...form, title: "" }); load(); } else setMsg(j.error || "gagal"); }).catch(e => setMsg(String(e)));
+  };
+
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/incidents/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+
+  const remove = async (item) => {
+    const ok = await confirm({ title: `Hapus "${item.title || item.incident_no || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/incidents/${item.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Incident Management…</div>;
@@ -82,11 +103,40 @@ export default function AdminIncidents({ apiBase = "" }) {
                 <span style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}55`, borderRadius: 5, padding: "3px 8px", fontFamily: "'Geist Mono',monospace" }}>{st.l}</span>
                 {x.status === "open" && <button onClick={() => setStatus(x, "in_progress")} style={S.act("#f59e0b")}>Tangani</button>}
                 {x.status === "in_progress" && <button onClick={() => setStatus(x, "resolved")} style={S.act("#10b981")}>✓ Selesai</button>}
+                <button onClick={() => setEditing({ ...x })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                <button onClick={() => remove(x)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
               </div>
             );
           })}
         </div>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.title || editing.incident_no || '#'+editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <input value={editing.title || ""} onChange={e => setEditing({ ...editing, title: e.target.value })} placeholder="Judul insiden" style={modalInp} />
+              <select value={editing.category || ""} onChange={e => setEditing({ ...editing, category: e.target.value })} style={modalInp}>
+                {(d.categories || []).map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <input value={editing.outlet || ""} onChange={e => setEditing({ ...editing, outlet: e.target.value })} placeholder="Outlet" style={modalInp} />
+              <select value={editing.severity || ""} onChange={e => setEditing({ ...editing, severity: e.target.value })} style={modalInp}>
+                {(d.severities || []).map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <select value={editing.status || ""} onChange={e => setEditing({ ...editing, status: e.target.value })} style={modalInp}>
+                {["open", "in_progress", "resolved"].map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <textarea value={editing.description || ""} onChange={e => setEditing({ ...editing, description: e.target.value })} placeholder="Deskripsi" rows={2} style={{ ...modalInp, resize: "vertical", fontFamily: "inherit" }} />
+              <textarea value={editing.resolution || ""} onChange={e => setEditing({ ...editing, resolution: e.target.value })} placeholder="Resolusi" rows={2} style={{ ...modalInp, resize: "vertical", fontFamily: "inherit" }} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -109,3 +159,5 @@ const S = {
   btn: { background: "#dc2626", color: "#fff", border: "none", borderRadius: 7, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   act: (c) => ({ background: c, color: "#0a0e16", border: "none", borderRadius: 6, padding: "5px 11px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }),
 };
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };

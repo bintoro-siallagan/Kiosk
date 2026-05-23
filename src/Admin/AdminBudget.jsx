@@ -17,6 +17,7 @@ export default function AdminBudget({ apiBase = "" }) {
   const [cat, setCat] = useState("");
   const [amt, setAmt] = useState("");
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/budget`).then(r => r.json()).then(setD).catch(() => {});
@@ -35,6 +36,15 @@ export default function AdminBudget({ apiBase = "" }) {
   const del = (id) => {
     if (!window.confirm("Hapus budget kategori ini?")) return;
     fetch(`${apiBase}/api/budget/${id}`, { method: "DELETE" }).then(() => load());
+  };
+
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/budget/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Budget…</div>;
@@ -81,8 +91,9 @@ export default function AdminBudget({ apiBase = "" }) {
             <div key={b.id} style={{ padding: "11px 0", borderTop: "1px solid #161b22" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
                 <span style={{ fontSize: 13, fontWeight: 600, color: "#e6edf3" }}>{b.category_name}</span>
-                <span style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <span style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   <span style={{ fontSize: 11, color: st.c, fontWeight: 700 }}>{st.t}</span>
+                  <button onClick={() => setEditing({ ...b })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
                   <button onClick={() => del(b.id)} style={S.x}>×</button>
                 </span>
               </div>
@@ -97,6 +108,36 @@ export default function AdminBudget({ apiBase = "" }) {
           );
         })}
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.category_name || '#'+editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>
+                Periode (YYYY-MM)
+                <input value={editing.period || ""} onChange={e => setEditing({ ...editing, period: e.target.value })} placeholder="2026-05" style={{ ...modalInp, marginTop: 4 }} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>
+                Nama Kategori
+                <input value={editing.category_name || ""} onChange={e => setEditing({ ...editing, category_name: e.target.value })} placeholder="Nama kategori" style={{ ...modalInp, marginTop: 4 }} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>
+                Jumlah Budget (Rp)
+                <input type="number" value={editing.amount ?? ""} onChange={e => setEditing({ ...editing, amount: Number(e.target.value) })} placeholder="Budget" style={{ ...modalInp, marginTop: 4 }} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>
+                Catatan
+                <textarea value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} placeholder="Catatan opsional" rows={2} style={{ ...modalInp, marginTop: 4, resize: "vertical", fontFamily: "inherit" }} />
+              </label>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -120,3 +161,5 @@ const S = {
   btnPrimary: { background: "#a78bfa", color: "#140a2e", border: "none", borderRadius: 7, padding: "8px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
   x: { background: "transparent", border: "none", color: "#5b6470", fontSize: 16, cursor: "pointer", lineHeight: 1 },
 };
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };

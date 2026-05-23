@@ -2,6 +2,7 @@
 // AP Aging — Hutang Usaha (Accounts Payable) aging.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtJt = (n) => (n / 1e6).toFixed(1) + " jt";
@@ -9,14 +10,32 @@ const AC = "#dc2626";
 const BUCKET_C = { "Belum Jatuh Tempo": "#10b981", "1-30 Hari": "#f59e0b", "31-60 Hari": "#fb7185", ">60 Hari": "#ef4444" };
 
 export default function AdminApAging({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/ap-aging`).then(r => r.json()).then(setD).catch(() => {});
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/ap-aging/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const remove = async (item) => {
+    const ok = await confirm({ title: `Hapus "${item.invoice_no || item.vendor || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/ap-aging/${item.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
+  };
   const pay = (p) => {
     fetch(`${apiBase}/api/ap-aging/${p.id}/pay`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount: p.outstanding }),
@@ -74,15 +93,50 @@ export default function AdminApAging({ apiBase = "" }) {
                 <td style={{ ...S.td, ...S.mono, fontWeight: 700, color: "#cdd5df" }}>{fmtRp(p.outstanding)}</td>
                 <td style={{ ...S.td, ...S.mono, color: p.overdue ? "#ef4444" : "#9da7b3" }}>{p.overdue ? `telat ${-p.days_to_due} hr` : `${p.days_to_due} hr lagi`}</td>
                 <td style={S.td}><span style={{ fontSize: 9, fontWeight: 700, color: BUCKET_C[p.bucket], fontFamily: "'Geist Mono',monospace" }}>{p.bucket}</span></td>
-                <td style={S.td}><button onClick={() => pay(p)} style={S.btn}>Bayar</button></td>
+                <td style={S.td}>
+                  <div style={{ display: "flex", gap: 4, alignItems: "center", justifyContent: "flex-end" }}>
+                    <button onClick={() => pay(p)} style={S.btn}>Bayar</button>
+                    <button onClick={() => setEditing({ ...p })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                    <button onClick={() => remove(p)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.invoice_no || '#'+editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>VENDOR</div><input value={editing.vendor || ""} onChange={e => setEditing({ ...editing, vendor: e.target.value })} style={modalInp} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>NO INVOICE</div><input value={editing.invoice_no || ""} onChange={e => setEditing({ ...editing, invoice_no: e.target.value })} style={modalInp} /></div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>JUMLAH</div><input type="number" value={editing.amount || 0} onChange={e => setEditing({ ...editing, amount: Number(e.target.value) })} style={modalInp} /></div>
+                <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>DIBAYAR</div><input type="number" value={editing.paid_amount || 0} onChange={e => setEditing({ ...editing, paid_amount: Number(e.target.value) })} style={modalInp} /></div>
+              </div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>STATUS</div>
+                <select value={editing.status || "unpaid"} onChange={e => setEditing({ ...editing, status: e.target.value })} style={modalInp}>
+                  <option value="unpaid">unpaid</option>
+                  <option value="partial">partial</option>
+                  <option value="paid">paid</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 function Kpi({ label, v, c }) {
   return (

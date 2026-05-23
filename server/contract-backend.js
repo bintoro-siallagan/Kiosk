@@ -88,6 +88,27 @@ function setupContract(app, opts = {}) {
     res.json({ ok: true, months });
   });
 
+  router.patch('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM contract_docs WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    if (b.type !== undefined && !TYPES.includes(b.type)) return res.status(400).json({ error: 'jenis kontrak tidak valid' });
+    const fields = [], args = [];
+    for (const k of ['code', 'title', 'type', 'counterparty', 'value', 'outlet', 'start_date', 'end_date', 'is_active']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE contract_docs SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM contract_docs WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/contract';
   app.use(mountPath, router);
   console.log(`[contract] mounted at ${mountPath} — contract management`);

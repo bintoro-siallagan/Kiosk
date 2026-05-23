@@ -152,6 +152,27 @@ function setupTalenta(app, opts = {}) {
     res.json({ ok: true, synced: targets, records: total, at: now });
   });
 
+  // PATCH/DELETE — keyed by `entity` (PRIMARY KEY) instead of id
+  router.patch('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM talenta_sync WHERE entity = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['last_sync', 'status', 'record_count']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE talenta_sync SET ${fields.join(', ')} WHERE entity = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM talenta_sync WHERE entity = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/talenta';
   app.use(mountPath, router);
   const has = !!(process.env.TALENTA_CLIENT_ID && process.env.TALENTA_CLIENT_SECRET);

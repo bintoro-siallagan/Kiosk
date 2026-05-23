@@ -2,15 +2,18 @@
 // Compliance & Perizinan — izin & sertifikasi F&B + alert masa berlaku.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const AC = "#15803d";
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—";
 const ST = { valid: { c: "#10b981", l: "BERLAKU" }, expiring: { c: "#f59e0b", l: "SEGERA HABIS" }, expired: { c: "#ef4444", l: "KEDALUWARSA" } };
 
 export default function AdminCompliance({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
   const [form, setForm] = useState({ type: "Halal MUI", name: "", number: "", issuer: "", outlet: "", expiry_days: "365" });
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/compliance`).then(r => r.json()).then(setD).catch(() => {});
@@ -31,6 +34,24 @@ export default function AdminCompliance({ apiBase = "" }) {
     fetch(`${apiBase}/api/compliance/${l.id}/renew`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ extend_days: 365 }),
     }).then(r => r.json()).then(j => { if (j.ok) { setMsg(`✓ ${l.name} diperpanjang +1 tahun`); load(); } }).catch(() => {});
+  };
+
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/compliance/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+
+  const remove = async (item) => {
+    const ok = await confirm({ title: `Hapus "${item.name || item.number || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/compliance/${item.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Compliance…</div>;
@@ -95,11 +116,48 @@ export default function AdminCompliance({ apiBase = "" }) {
                 </div>
                 <span style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}55`, borderRadius: 5, padding: "3px 8px", width: 96, textAlign: "center", fontFamily: "'Geist Mono',monospace" }}>{st.l}</span>
                 <button onClick={() => renew(l)} style={S.btnRenew}>↻ Perpanjang</button>
+                <button onClick={() => setEditing({ ...l })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                <button onClick={() => remove(l)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
               </div>
             );
           })}
         </div>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.name || editing.number || '#'+editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Jenis
+                <select value={editing.type || "Halal MUI"} onChange={e => setEditing({ ...editing, type: e.target.value })} style={modalInp}>
+                  {(d?.types || []).map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Nama Izin
+                <input value={editing.name || ""} onChange={e => setEditing({ ...editing, name: e.target.value })} style={modalInp} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Nomor
+                <input value={editing.number || ""} onChange={e => setEditing({ ...editing, number: e.target.value })} style={modalInp} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Penerbit
+                <input value={editing.issuer || ""} onChange={e => setEditing({ ...editing, issuer: e.target.value })} style={modalInp} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Outlet
+                <input value={editing.outlet || ""} onChange={e => setEditing({ ...editing, outlet: e.target.value })} style={modalInp} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Tanggal Berlaku (YYYY-MM-DD)
+                <input type="date" value={editing.expiry_date ? new Date(editing.expiry_date * 1000).toISOString().slice(0,10) : ""}
+                  onChange={e => setEditing({ ...editing, expiry_date: Math.floor(new Date(e.target.value).getTime() / 1000) })} style={modalInp} />
+              </label>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -112,6 +170,8 @@ function Kpi({ label, v, c }) {
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },

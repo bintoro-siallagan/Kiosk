@@ -93,6 +93,27 @@ function setupAR(app, opts = {}) {
     res.json({ ok: true, status });
   });
 
+  router.patch('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM ar_invoices WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['invoice_number', 'customer', 'customer_type', 'description', 'amount', 'paid_amount', 'invoice_date', 'due_date', 'status']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    fields.push(`updated_at = strftime('%s','now')`);
+    args.push(req.params.id);
+    db.prepare(`UPDATE ar_invoices SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM ar_invoices WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/ar';
   app.use(mountPath, router);
   console.log(`[ar] mounted at ${mountPath} — accounts receivable`);

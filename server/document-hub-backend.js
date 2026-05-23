@@ -89,6 +89,29 @@ function setupDocumentHub(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  router.patch('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM sop_documents WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    if (b.category !== undefined && !CATEGORIES.includes(b.category)) return res.status(400).json({ error: 'kategori tidak valid' });
+    const fields = [], args = [];
+    for (const k of ['code', 'title', 'category', 'version', 'owner', 'status', 'acknowledged', 'audience']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    fields.push(`updated_at = ?`);
+    args.push(nowSec());
+    args.push(req.params.id);
+    db.prepare(`UPDATE sop_documents SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM sop_documents WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/document-hub';
   app.use(mountPath, router);
   console.log(`[document-hub] mounted at ${mountPath} — SOP & document repository`);

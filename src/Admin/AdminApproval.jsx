@@ -2,15 +2,18 @@
 // Approval Engine — approval bertingkat by nominal.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#f59e0b";
 const CAT_ICON = { refund: "↩️", void: "🚫", expense: "💸", purchase: "🛒" };
 
 export default function AdminApproval({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [form, setForm] = useState({ category: "refund", amount: "", description: "" });
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/approval`).then(r => r.json()).then(setD).catch(() => {});
@@ -26,6 +29,22 @@ export default function AdminApproval({ apiBase = "" }) {
       if (j.ok) { setMsg(`✓ Diajukan — butuh approval ${j.required_role}`); setForm({ category: "refund", amount: "", description: "" }); load(); }
       else setMsg(j.error || "gagal");
     }).catch(e => setMsg(String(e)));
+  };
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/approval/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const remove = async (item) => {
+    const ok = await confirm({ title: `Hapus request "#${item.id}"?`, message: `${item.description || item.category} — ${fmtRp(item.amount)}. Akan dihapus permanen.`, danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/approval/${item.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
   const decide = (id, decision) => {
     fetch(`${apiBase}/api/approval/${id}/decide`, {
@@ -103,6 +122,8 @@ export default function AdminApproval({ apiBase = "" }) {
             </div>
             <button onClick={() => decide(r.id, "approved")} style={S.btnOk}>✓ Approve</button>
             <button onClick={() => decide(r.id, "rejected")} style={S.btnNo}>✕ Reject</button>
+            <button onClick={() => setEditing({ ...r })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+            <button onClick={() => remove(r)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
           </div>
         ))}
       </div>
@@ -119,12 +140,46 @@ export default function AdminApproval({ apiBase = "" }) {
             <span style={{ fontWeight: 700, color: r.status === "approved" ? "#10b981" : "#ef4444" }}>
               {r.status === "approved" ? "✓ APPROVED" : "✕ REJECTED"}
             </span>
+            <button onClick={() => setEditing({ ...r })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+            <button onClick={() => remove(r)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
           </div>
         ))}
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit Request — #{editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>KATEGORI</div>
+                <select value={editing.category || "refund"} onChange={e => setEditing({ ...editing, category: e.target.value })} style={modalInp}>
+                  {d.rules.map(r => <option key={r.id} value={r.id}>{r.icon} {r.label}</option>)}
+                </select>
+              </div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>NOMINAL</div><input type="number" value={editing.amount || 0} onChange={e => setEditing({ ...editing, amount: Number(e.target.value) })} style={modalInp} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>DESKRIPSI</div><input value={editing.description || ""} onChange={e => setEditing({ ...editing, description: e.target.value })} style={modalInp} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>DIAJUKAN OLEH</div><input value={editing.requested_by || ""} onChange={e => setEditing({ ...editing, requested_by: e.target.value })} style={modalInp} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>REQUIRED ROLE</div><input value={editing.required_role || ""} onChange={e => setEditing({ ...editing, required_role: e.target.value })} style={modalInp} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>STATUS</div>
+                <select value={editing.status || "pending"} onChange={e => setEditing({ ...editing, status: e.target.value })} style={modalInp}>
+                  <option value="pending">pending</option>
+                  <option value="approved">approved</option>
+                  <option value="rejected">rejected</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 function Kpi({ label, v, c }) {
   return (

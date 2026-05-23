@@ -4,12 +4,14 @@
 import { useState, useEffect, useCallback } from "react";
 
 const AC = "#ca8a04";
+const DAY_SEC = 86400;
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "—";
 const ST = { fresh: "FRESH", expiring: "MENDEKATI", expired: "KEDALUWARSA" };
 
 export default function AdminBatchTracking({ apiBase = "" }) {
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/batch-tracking`).then(r => r.json()).then(setD).catch(() => {});
@@ -19,6 +21,20 @@ export default function AdminBatchTracking({ apiBase = "" }) {
   const discard = (b) => {
     fetch(`${apiBase}/api/batch-tracking/${b.id}/discard`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
       .then(r => r.json()).then(j => { if (j.ok) { setMsg(`✓ ${b.batch_no} dibuang`); load(); } else setMsg(j.error || "gagal"); }).catch(e => setMsg(String(e)));
+  };
+
+  const saveEdit = async () => {
+    const body = { ...editing };
+    if (body.expiry_date) {
+      body.expiry_at = Math.floor(new Date(body.expiry_date).getTime() / 1000);
+      delete body.expiry_date;
+    }
+    const r = await fetch(`${apiBase}/api/batch-tracking/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Batch Tracking…</div>;
@@ -71,13 +87,40 @@ export default function AdminBatchTracking({ apiBase = "" }) {
                   <span style={{ fontSize: 9, fontWeight: 700, color: b.color, background: b.color + "1f", border: `1px solid ${b.color}55`, borderRadius: 5, padding: "2px 7px", fontFamily: "'Geist Mono',monospace" }}>{ST[b.status]}</span>
                 </td>
                 <td style={S.td}>
-                  {b.status === "expired" && <button onClick={() => discard(b)} style={S.btn}>🗑 Buang</button>}
+                  <span style={{ display: "inline-flex", gap: 5 }}>
+                    <button onClick={() => setEditing({ ...b, expiry_date: b.expiry_at ? new Date(b.expiry_at * 1000).toISOString().slice(0, 10) : "" })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                    {b.status === "expired" && <button onClick={() => discard(b)} style={S.btn}>🗑 Buang</button>}
+                  </span>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.batch_no || '#'+editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <input value={editing.batch_no || ""} onChange={e => setEditing({ ...editing, batch_no: e.target.value })} placeholder="Batch No" style={modalInp} />
+              <input value={editing.sku || ""} onChange={e => setEditing({ ...editing, sku: e.target.value })} placeholder="SKU" style={modalInp} />
+              <input value={editing.item_name || ""} onChange={e => setEditing({ ...editing, item_name: e.target.value })} placeholder="Nama Item" style={modalInp} />
+              <input type="number" value={editing.qty ?? ""} onChange={e => setEditing({ ...editing, qty: Number(e.target.value) })} placeholder="Qty" style={modalInp} />
+              <input value={editing.unit || ""} onChange={e => setEditing({ ...editing, unit: e.target.value })} placeholder="Unit (kg/liter)" style={modalInp} />
+              <input value={editing.location || ""} onChange={e => setEditing({ ...editing, location: e.target.value })} placeholder="Lokasi" style={modalInp} />
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>
+                Tanggal Expired
+                <input type="date" value={editing.expiry_date || ""} onChange={e => setEditing({ ...editing, expiry_date: e.target.value })} style={{ ...modalInp, marginTop: 4 }} />
+              </label>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -100,3 +143,5 @@ const S = {
   td: { padding: "7px 8px" },
   btn: { background: "#ef444420", border: "1px solid #ef444455", color: "#f87171", fontSize: 11, fontWeight: 700, padding: "4px 10px", borderRadius: 6, cursor: "pointer", fontFamily: "'Geist Mono',monospace" },
 };
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };

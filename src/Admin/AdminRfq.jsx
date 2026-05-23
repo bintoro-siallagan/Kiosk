@@ -2,15 +2,18 @@
 // RFQ / Tender — banding penawaran multi-vendor sebelum PO.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#0891b2";
 
 export default function AdminRfq({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
   const [form, setForm] = useState({ item: "", qty: "", unit: "pcs" });
   const [quote, setQuote] = useState({});
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/rfq`).then(r => r.json()).then(setD).catch(() => {});
@@ -31,6 +34,24 @@ export default function AdminRfq({ apiBase = "" }) {
     if (!q.vendor || !(Number(q.price) > 0)) { setMsg("⚠ Vendor & harga wajib"); return; }
     post(`/api/rfq/${r.id}/quote`, { vendor: q.vendor, price: Number(q.price), lead_days: Number(q.lead_days) || 0 }, "✓ Penawaran ditambah");
     setQuote({ ...quote, [r.id]: {} });
+  };
+
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/rfq/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+
+  const remove = async (item) => {
+    const ok = await confirm({ title: `Hapus "${item.item || item.rfq_no || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/rfq/${item.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat RFQ / Tender…</div>;
@@ -61,6 +82,44 @@ export default function AdminRfq({ apiBase = "" }) {
         {msg ? <div style={{ fontSize: 12, marginTop: 8, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
       </div>
 
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.rfq_no || '#'+editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>No RFQ
+                <input value={editing.rfq_no || ""} onChange={e => setEditing({ ...editing, rfq_no: e.target.value })} style={modalInp} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Item
+                <input value={editing.item || ""} onChange={e => setEditing({ ...editing, item: e.target.value })} style={modalInp} />
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <label style={{ fontSize: 11, color: "#9ca3af" }}>Qty
+                  <input type="number" value={editing.qty || ""} onChange={e => setEditing({ ...editing, qty: Number(e.target.value) })} style={modalInp} />
+                </label>
+                <label style={{ fontSize: 11, color: "#9ca3af" }}>Satuan
+                  <input value={editing.unit || ""} onChange={e => setEditing({ ...editing, unit: e.target.value })} style={modalInp} />
+                </label>
+              </div>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Status
+                <select value={editing.status || "open"} onChange={e => setEditing({ ...editing, status: e.target.value })} style={modalInp}>
+                  <option value="open">open</option>
+                  <option value="awarded">awarded</option>
+                  <option value="closed">closed</option>
+                </select>
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Awarded Vendor
+                <input value={editing.awarded_vendor || ""} onChange={e => setEditing({ ...editing, awarded_vendor: e.target.value })} style={modalInp} />
+              </label>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ display: "grid", gap: 12, marginTop: 14 }}>
         {d.rfqs.map(r => {
           const q = quote[r.id] || {};
@@ -74,6 +133,8 @@ export default function AdminRfq({ apiBase = "" }) {
                 {r.status === "awarded"
                   ? <span style={{ fontSize: 10, fontWeight: 700, color: "#10b981", background: "#10b9811f", border: "1px solid #10b98155", borderRadius: 5, padding: "3px 9px", fontFamily: "'Geist Mono',monospace" }}>✓ AWARD: {r.awarded_vendor}</span>
                   : <button onClick={() => post(`/api/rfq/${r.id}/award`, {}, "✓ RFQ di-award ke penawaran terbaik")} style={S.btn} disabled={!r.best}>🏆 Award Termurah</button>}
+                <button onClick={() => setEditing({ ...r })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                <button onClick={() => remove(r)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
               </div>
               <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 8 }}>
                 <thead><tr style={{ color: "#5b6470", fontSize: 10, textAlign: "left" }}>
@@ -119,6 +180,8 @@ function Kpi({ label, v, c }) {
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },

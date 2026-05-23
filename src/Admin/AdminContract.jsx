@@ -2,6 +2,7 @@
 // Contract Management — kontrak vendor / sewa / franchise + alert.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—";
@@ -9,9 +10,11 @@ const AC = "#ca8a04";
 const ST = { active: { c: "#10b981", l: "AKTIF" }, expiring: { c: "#f59e0b", l: "SEGERA HABIS" }, expired: { c: "#ef4444", l: "KEDALUWARSA" } };
 
 export default function AdminContract({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
   const [form, setForm] = useState({ title: "", type: "Sewa Tempat", counterparty: "", value: "", outlet: "", duration_months: "12" });
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/contract`).then(r => r.json()).then(setD).catch(() => {});
@@ -23,6 +26,22 @@ export default function AdminContract({ apiBase = "" }) {
     fetch(`${apiBase}/api/contract`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, value: Number(form.value) || 0, duration_months: Number(form.duration_months) || 12 }),
     }).then(r => r.json()).then(j => { if (j.ok) { setMsg("✓ Kontrak ditambah"); setForm({ ...form, title: "", counterparty: "", value: "", outlet: "" }); load(); } else setMsg(j.error || "gagal"); }).catch(e => setMsg(String(e)));
+  };
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/contract/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const remove = async (item) => {
+    const ok = await confirm({ title: `Hapus "${item.title || item.code || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/contract/${item.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
   const renew = (c) => {
     fetch(`${apiBase}/api/contract/${c.id}/renew`, {
@@ -90,14 +109,44 @@ export default function AdminContract({ apiBase = "" }) {
                 </div>
                 <span style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}55`, borderRadius: 5, padding: "3px 8px", width: 96, textAlign: "center", fontFamily: "'Geist Mono',monospace" }}>{st.l}</span>
                 <button onClick={() => renew(c)} style={S.btnRenew}>↻ Perpanjang</button>
+                <button onClick={() => setEditing({ ...c })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                <button onClick={() => remove(c)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
               </div>
             );
           })}
         </div>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.title || editing.code || '#'+editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>KODE</div><input value={editing.code || ""} onChange={e => setEditing({ ...editing, code: e.target.value })} style={modalInp} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>JUDUL</div><input value={editing.title || ""} onChange={e => setEditing({ ...editing, title: e.target.value })} style={modalInp} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>JENIS</div>
+                <select value={editing.type || "Sewa Tempat"} onChange={e => setEditing({ ...editing, type: e.target.value })} style={modalInp}>
+                  {d.types.map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>PIHAK KONTRAK</div><input value={editing.counterparty || ""} onChange={e => setEditing({ ...editing, counterparty: e.target.value })} style={modalInp} /></div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>NILAI</div><input type="number" value={editing.value || 0} onChange={e => setEditing({ ...editing, value: Number(e.target.value) })} style={modalInp} /></div>
+                <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>OUTLET</div><input value={editing.outlet || ""} onChange={e => setEditing({ ...editing, outlet: e.target.value })} style={modalInp} /></div>
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 function Kpi({ label, v, c }) {
   return (

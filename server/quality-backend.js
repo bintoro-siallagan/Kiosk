@@ -73,6 +73,31 @@ function setupQuality(app, opts = {}) {
     res.json({ ok: true, result: resultOf(score) });
   });
 
+  router.patch('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM quality_inspections WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['code', 'type', 'outlet', 'inspector', 'score']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (b.findings !== undefined) {
+      const findings = Array.isArray(b.findings) ? b.findings.filter(Boolean).map(String)
+        : String(b.findings || '').split('\n').map(s => s.trim()).filter(Boolean);
+      fields.push(`findings = ?`); args.push(JSON.stringify(findings));
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE quality_inspections SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM quality_inspections WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/quality';
   app.use(mountPath, router);
   console.log(`[quality] mounted at ${mountPath} — quality & food safety`);

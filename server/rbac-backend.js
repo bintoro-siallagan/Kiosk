@@ -130,6 +130,33 @@ function setupRBAC(app, opts = {}) {
     res.json({ ok: true, role_id: b.role_id, module_id: b.module_id, level: b.level });
   });
 
+  // PATCH by composite key: /:role_id/:module_id — update level
+  router.patch('/:role_id/:module_id', (req, res) => {
+    const { role_id, module_id } = req.params;
+    const row = db.prepare(`SELECT * FROM rbac_permissions WHERE role_id = ? AND module_id = ?`).get(role_id, module_id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    if (b.level === undefined) return res.json({ ok: true, noop: true });
+    if (!LEVELS.includes(b.level)) return res.status(400).json({ error: 'level tidak valid' });
+    db.prepare(`UPDATE rbac_permissions SET level = ? WHERE role_id = ? AND module_id = ?`).run(b.level, role_id, module_id);
+    res.json({ ok: true });
+  });
+
+  // DELETE by composite key — reset to 'none'
+  router.delete('/:role_id/:module_id', (req, res) => {
+    const { role_id, module_id } = req.params;
+    const info = db.prepare(`UPDATE rbac_permissions SET level = 'none' WHERE role_id = ? AND module_id = ?`).run(role_id, module_id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
+  // DELETE entire role's permissions — /:role_id
+  router.delete('/:role_id', (req, res) => {
+    const info = db.prepare(`UPDATE rbac_permissions SET level = 'none' WHERE role_id = ?`).run(req.params.role_id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true, reset: info.changes });
+  });
+
   const mountPath = opts.mountPath || '/api/rbac';
   app.use(mountPath, router);
   console.log(`[rbac] mounted at ${mountPath} — role & permission matrix`);

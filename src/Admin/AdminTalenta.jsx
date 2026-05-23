@@ -3,6 +3,7 @@
 // dengan Talenta by Mekari.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const ago = (ts) => {
   if (!ts) return "belum pernah";
@@ -15,9 +16,11 @@ const ago = (ts) => {
 };
 
 export default function AdminTalenta({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [busy, setBusy] = useState("");
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/talenta/sync`).then(r => r.json()).then(setD).catch(() => {});
@@ -33,6 +36,24 @@ export default function AdminTalenta({ apiBase = "" }) {
       if (j.ok) { setMsg(`✓ Sync ${entity === "all" ? "semua entitas" : entity} — ${j.records} record`); load(); }
       else setMsg(j.error || "gagal");
     }).catch(e => setMsg(String(e))).finally(() => setBusy(""));
+  };
+
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/talenta/${editing.key}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+
+  const remove = async (item) => {
+    const ok = await confirm({ title: `Hapus entitas "${item.name || item.key}"?`, message: "Status sync untuk entitas ini akan dihapus. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/talenta/${item.key}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Talenta Integration…</div>;
@@ -90,6 +111,8 @@ export default function AdminTalenta({ apiBase = "" }) {
                 <button onClick={() => sync(e.key)} disabled={!!busy} style={S.btnSm}>
                   {busy === e.key ? "…" : "🔄 Sync"}
                 </button>
+                <button onClick={() => setEditing({ ...e })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                <button onClick={() => remove(e)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
               </div>
             ))}
           </div>
@@ -108,6 +131,37 @@ export default function AdminTalenta({ apiBase = "" }) {
           ))}
         </div>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={ev => ev.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.name || editing.key}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Entitas (read-only)
+                <input value={editing.key || ""} readOnly style={{ ...modalInp, opacity: 0.6 }} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Status Sync
+                <select value={editing.status || "idle"} onChange={ev => setEditing({ ...editing, status: ev.target.value })} style={modalInp}>
+                  <option value="idle">idle</option>
+                  <option value="synced">synced</option>
+                  <option value="syncing">syncing</option>
+                  <option value="error">error</option>
+                </select>
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Record Count
+                <input type="number" value={editing.record_count ?? 0} onChange={ev => setEditing({ ...editing, record_count: Number(ev.target.value) })} style={modalInp} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Last Sync (epoch detik)
+                <input type="number" value={editing.last_sync ?? 0} onChange={ev => setEditing({ ...editing, last_sync: Number(ev.target.value) })} style={modalInp} />
+              </label>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -120,6 +174,8 @@ function Kpi({ label, v, c }) {
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },

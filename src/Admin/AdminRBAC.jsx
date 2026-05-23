@@ -2,14 +2,17 @@
 // RBAC — permission matrix 15 role × 12 modul. Klik cell buat ganti level.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const LEVELS = ["none", "view", "edit", "approve", "full"];
 const LV_C = { none: "#161b22", view: "#3b82f6", edit: "#10b981", approve: "#f59e0b", full: "#a855f7" };
 const LV_AB = { none: "·", view: "V", edit: "E", approve: "A", full: "F" };
 
 export default function AdminRBAC({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(null); // { role, perms: { module_id: level } }
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/rbac`).then(r => r.json()).then(setD).catch(() => {});
@@ -33,6 +36,43 @@ export default function AdminRBAC({ apiBase = "" }) {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ role_id: roleId, module_id: modId, level: next }),
     }).then(r => r.json()).then(j => { if (j.ok) setMsg(`✓ ${roleId} · ${modId} → ${next}`); }).catch(() => {});
+  };
+
+  const openEdit = (role) => {
+    const perms = {};
+    for (const m of d.modules) perms[m.id] = lv(role.id, m.id);
+    setEditing({ role, perms });
+  };
+
+  const saveEdit = async () => {
+    const role = editing.role;
+    const updates = [];
+    for (const [module_id, level] of Object.entries(editing.perms)) {
+      updates.push(
+        fetch(`${apiBase}/api/rbac/${role.id}/${module_id}`, {
+          method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ level }),
+        })
+      );
+    }
+    try {
+      const responses = await Promise.all(updates);
+      const ok = responses.every(r => r.ok);
+      if (ok) { setMsg(`✓ Disimpan — ${role.name}`); setEditing(null); load(); }
+      else setMsg("gagal sebagian");
+    } catch (e) { setMsg(String(e)); }
+  };
+
+  const resetRole = async (role) => {
+    const ok = await confirm({
+      title: `Reset semua akses "${role.name}"?`,
+      message: "Semua permission role ini akan di-set ke 'none'. Tidak bisa dibatalkan.",
+      danger: true, okLabel: "Reset",
+    });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/rbac/${role.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg(`✓ Reset — ${role.name}`); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat RBAC Matrix…</div>;
@@ -75,6 +115,7 @@ export default function AdminRBAC({ apiBase = "" }) {
                   <div style={{ fontSize: 8, color: "#5b6470", marginTop: 2 }}>{m.name.split(" ")[0]}</div>
                 </th>
               ))}
+              <th style={{ ...S.modTh, minWidth: 80, fontSize: 9, color: "#5b6470" }}>AKSI</th>
             </tr>
           </thead>
           <tbody>
@@ -97,6 +138,10 @@ export default function AdminRBAC({ apiBase = "" }) {
                     </td>
                   );
                 })}
+                <td style={{ padding: 2, textAlign: "center", whiteSpace: "nowrap" }}>
+                  <button onClick={() => openEdit(r)} title="Edit semua permission role" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, marginRight: 4 }}>✏️</button>
+                  <button onClick={() => resetRole(r)} title="Reset semua permission role ke 'none'" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -105,6 +150,29 @@ export default function AdminRBAC({ apiBase = "" }) {
       <div style={{ fontSize: 11, color: "#5b6470", marginTop: 8 }}>
         💡 Tiap role punya dashboard &amp; akses berbeda. Perubahan tersimpan otomatis &amp; langsung berlaku.
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.role.icon} {editing.role.name}</div>
+            <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 12 }}>{editing.role.cat} — atur level akses per modul.</div>
+            <div style={{ display: "grid", gap: 8 }}>
+              {d.modules.map(m => (
+                <label key={m.id} style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#e6edf3" }}>
+                  <span style={{ flex: 1 }}>{m.icon} {m.name}</span>
+                  <select value={editing.perms[m.id] || "none"} onChange={e => setEditing({ ...editing, perms: { ...editing.perms, [m.id]: e.target.value } })} style={{ ...modalInp, width: 130 }}>
+                    {LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+                  </select>
+                </label>
+              ))}
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -127,3 +195,5 @@ const S = {
   modTh: { padding: "4px 2px", textAlign: "center", minWidth: 42 },
   roleTd: { padding: "6px 8px", borderTop: "1px solid #161b22", position: "sticky", left: 0, background: "#0d1117" },
 };
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
