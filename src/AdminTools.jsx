@@ -75,6 +75,9 @@ import CinemaCommandCenter from "./Admin/CinemaCommandCenter.jsx";
 import CinemaPromotion from "./Admin/CinemaPromotion.jsx";
 import CinemaHolidays from "./Admin/CinemaHolidays.jsx";
 import CinemaSeatTypes from "./Admin/CinemaSeatTypes.jsx";
+import CinemaCRM from "./Admin/CinemaCRM.jsx";
+import CinemaAnalytics from "./Admin/CinemaAnalytics.jsx";
+import CinemaCampaign from "./Admin/CinemaCampaign.jsx";
 import AdminSignage from "./Admin/AdminSignage.jsx";
 import AdminDemandForecast from "./Admin/AdminDemandForecast.jsx";
 import AdminAssetMaintenance from "./Admin/AdminAssetMaintenance.jsx";
@@ -215,6 +218,9 @@ export default function AdminTools({ initialTab }) {
         {tab === "cinema_promotion" && <CinemaPromotion apiBase={API} />}
         {tab === "cinema_holidays" && <CinemaHolidays apiBase={API} />}
         {tab === "cinema_seat_types" && <CinemaSeatTypes apiBase={API} />}
+        {tab === "cinema_crm" && <CinemaCRM apiBase={API} />}
+        {tab === "cinema_analytics" && <CinemaAnalytics apiBase={API} />}
+        {tab === "cinema_campaign" && <CinemaCampaign apiBase={API} />}
         {tab === "simple_purchase" && <AdminSimplePurchase apiBase={API} />}
         {tab === "petty_cash" && <AdminPettyCash apiBase={API} />}
         {tab === "purchase_invoice" && <AdminPurchaseInvoice apiBase={API} />}

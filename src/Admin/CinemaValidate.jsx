@@ -71,6 +71,11 @@ export default function CinemaValidate({ apiBase = "" }) {
           <div style={{ fontSize: 84, lineHeight: 1, marginBottom: 8 }}>{icon}</div>
           <div style={{ fontSize: 28, fontWeight: 800, color, letterSpacing: 2 }}>{label}</div>
           <div style={S.codePill}>{last.code}</div>
+          {last.late_entry && (
+            <div style={{ background: "#f59e0b", color: "#111", padding: "10px 18px", borderRadius: 12, marginTop: 12, fontWeight: 800, fontSize: 15, letterSpacing: 1, animation: "pulse 1s infinite", display: "inline-flex", alignItems: "center", gap: 8 }}>
+              ⚠️ LATE ENTRY · {last.minutes_late} menit terlambat
+            </div>
+          )}
           {ticket && (
             <div style={S.ticketBox}>
               <Row k="Film"    v={ticket.film_title || "—"} />

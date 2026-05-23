@@ -309,6 +309,26 @@ CREATE TABLE IF NOT EXISTS cinema_genre_combos (
   priority INTEGER DEFAULT 1,
   UNIQUE(genre_keyword, bundle_id)
 );
+-- Movie campaign engine (premiere/midnight/family/student day + custom)
+CREATE TABLE IF NOT EXISTS cinema_campaigns (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  campaign_type TEXT DEFAULT 'special' CHECK (campaign_type IN ('premiere','midnight','family','student','special')),
+  film_id INTEGER,
+  start_date TEXT,
+  end_date TEXT,
+  applicable_days TEXT,
+  start_time_band TEXT,
+  end_time_band TEXT,
+  special_price INTEGER,
+  discount_pct REAL DEFAULT 0,
+  min_attendees INTEGER DEFAULT 0,
+  description TEXT,
+  is_active INTEGER DEFAULT 1,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_ccamp_active ON cinema_campaigns(is_active);
+CREATE INDEX IF NOT EXISTS idx_ccamp_dates ON cinema_campaigns(start_date, end_date);
 `;
 
 const SEED_FILMS = [
@@ -954,7 +974,18 @@ function setupCinema(app, opts = {}) {
     const bundles = t.purchase_id
       ? db.prepare(`SELECT * FROM cinema_purchase_bundles WHERE purchase_id = ? ORDER BY id`).all(t.purchase_id)
       : [];
-    res.json({ ok: true, status: 'valid', ticket: { ...t, checked_in_at: now }, bundles });
+    // Late entry alert: if scanned >15 min after showtime start_time → flag
+    let late_entry = false, minutes_late = 0;
+    if (t.show_date && t.start_time) {
+      const [Y, M, D] = String(t.show_date).split('-').map(Number);
+      const [h, m]    = String(t.start_time).split(':').map(Number);
+      if (Y && M && D && !isNaN(h) && !isNaN(m)) {
+        const startSec = Math.floor(new Date(Y, M - 1, D, h, m, 0).getTime() / 1000);
+        minutes_late = Math.floor((now - startSec) / 60);
+        if (minutes_late > 15) late_entry = true;
+      }
+    }
+    res.json({ ok: true, status: 'valid', ticket: { ...t, checked_in_at: now }, bundles, late_entry, minutes_late });
   });
 
   // ── E-TICKET via Email / WA ───────────────────────────────────────────
@@ -1544,6 +1575,338 @@ function setupCinema(app, opts = {}) {
     const placeholders = [...matchedIds].map(() => '?').join(',');
     const combos = db.prepare(`SELECT * FROM cinema_bundles WHERE id IN (${placeholders}) AND is_active = 1`).all(...matchedIds);
     res.json({ combos });
+  });
+
+  // ── CRM / CUSTOMER INTELLIGENCE ──────────────────────────────────────
+  // Aggregate dari tiket + bundles → customer profile (genre favorite,
+  // total spend, freq, dst). Group by phone (preferred) atau email.
+  router.get('/crm/customers', (req, res) => {
+    const rows = db.prepare(`
+      SELECT
+        COALESCE(NULLIF(t.buyer_phone,''), NULLIF(t.buyer_email,''), 'unknown') AS contact,
+        t.buyer_phone, t.buyer_email,
+        COUNT(*) AS tickets,
+        COALESCE(SUM(t.price),0) AS spend_tickets,
+        MIN(t.sold_at) AS first_visit,
+        MAX(t.sold_at) AS last_visit
+      FROM cinema_tickets t
+      WHERE COALESCE(NULLIF(t.buyer_phone,''), NULLIF(t.buyer_email,''), '') <> ''
+      GROUP BY contact
+      ORDER BY spend_tickets DESC
+      LIMIT 500
+    `).all();
+    // Hydrate per-customer (top genre, bundle spend, top studio)
+    for (const r of rows) {
+      const useField = r.buyer_phone ? 'buyer_phone' : 'buyer_email';
+      const val      = r.buyer_phone || r.buyer_email;
+      const g = db.prepare(`
+        SELECT f.genre, COUNT(*) AS c
+        FROM cinema_tickets t
+        JOIN cinema_showtimes s ON s.id = t.showtime_id
+        JOIN cinema_films f ON f.id = s.film_id
+        WHERE t.${useField} = ? AND f.genre IS NOT NULL AND f.genre <> ''
+        GROUP BY f.genre ORDER BY c DESC LIMIT 1
+      `).get(val);
+      r.favorite_genre = g?.genre || null;
+      const studio = db.prepare(`
+        SELECT st.name, COUNT(*) AS c
+        FROM cinema_tickets t
+        JOIN cinema_showtimes s ON s.id = t.showtime_id
+        JOIN cinema_studios st ON st.id = s.studio_id
+        WHERE t.${useField} = ?
+        GROUP BY st.id ORDER BY c DESC LIMIT 1
+      `).get(val);
+      r.favorite_studio = studio?.name || null;
+      const b = db.prepare(`
+        SELECT COALESCE(SUM(b.qty * b.price),0) AS spend
+        FROM cinema_tickets t
+        JOIN cinema_purchase_bundles b ON b.purchase_id = t.purchase_id
+        WHERE t.${useField} = ?
+      `).get(val);
+      r.spend_bundles = b?.spend || 0;
+      r.total_spend = (r.spend_tickets || 0) + (r.spend_bundles || 0);
+    }
+    rows.sort((a, b) => b.total_spend - a.total_spend);
+    res.json({ customers: rows, total: rows.length });
+  });
+
+  router.get('/crm/customers/:contact', (req, res) => {
+    const c = decodeURIComponent(req.params.contact);
+    const tickets = db.prepare(`
+      SELECT t.*, f.title AS film_title, f.genre, s.show_date, s.start_time, st.name AS studio_name
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_films    f ON f.id = s.film_id
+      LEFT JOIN cinema_studios  st ON st.id = s.studio_id
+      WHERE t.buyer_phone = ? OR t.buyer_email = ?
+      ORDER BY t.sold_at DESC LIMIT 50
+    `).all(c, c);
+    const inStudio = db.prepare(`
+      SELECT * FROM cinema_in_studio_orders WHERE buyer_phone = ? ORDER BY created_at DESC LIMIT 50
+    `).all(c);
+    res.json({ contact: c, tickets, in_studio_orders: inStudio });
+  });
+
+  // ── ANALYTICS / MOVIE PERFORMANCE ────────────────────────────────────
+  router.get('/analytics/movies', (req, res) => {
+    const from = req.query.from || new Date(Date.now() - 30 * 86400 * 1000).toISOString().slice(0, 10);
+    const to   = req.query.to   || new Date().toISOString().slice(0, 10);
+    const rows = db.prepare(`
+      SELECT f.id, f.title, f.genre, f.status,
+        COUNT(t.id) AS tickets,
+        COALESCE(SUM(t.price),0) AS revenue,
+        (SELECT ROUND(AVG(rating),2) FROM cinema_film_ratings WHERE film_id = f.id) AS avg_rating,
+        (SELECT COUNT(*) FROM cinema_film_ratings WHERE film_id = f.id) AS ratings_count,
+        COUNT(DISTINCT s.id) AS showtimes
+      FROM cinema_films f
+      LEFT JOIN cinema_showtimes s ON s.film_id = f.id
+      LEFT JOIN cinema_tickets t ON t.showtime_id = s.id AND date(t.sold_at,'unixepoch','localtime') BETWEEN ? AND ?
+      GROUP BY f.id ORDER BY revenue DESC
+    `).all(from, to);
+    res.json({ from, to, rows });
+  });
+
+  router.get('/analytics/occupancy', (req, res) => {
+    const byTimeBand = db.prepare(`
+      SELECT
+        CASE
+          WHEN CAST(SUBSTR(s.start_time,1,2) AS INTEGER) < 12 THEN 'morning'
+          WHEN CAST(SUBSTR(s.start_time,1,2) AS INTEGER) < 17 THEN 'matinee'
+          WHEN CAST(SUBSTR(s.start_time,1,2) AS INTEGER) < 21 THEN 'prime'
+          ELSE 'late'
+        END AS time_band,
+        COUNT(DISTINCT s.id) AS showtimes,
+        COUNT(t.id) AS tickets,
+        COALESCE(SUM(t.price),0) AS revenue,
+        SUM(st.rows * st.cols) AS capacity
+      FROM cinema_showtimes s
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      LEFT JOIN cinema_tickets t ON t.showtime_id = s.id
+      WHERE s.show_date >= date('now','-30 days','localtime')
+      GROUP BY time_band
+    `).all();
+    const byDow = db.prepare(`
+      SELECT
+        strftime('%w', s.show_date) AS dow,
+        COUNT(t.id) AS tickets,
+        COALESCE(SUM(t.price),0) AS revenue,
+        COUNT(DISTINCT s.id) AS showtimes
+      FROM cinema_showtimes s
+      LEFT JOIN cinema_tickets t ON t.showtime_id = s.id
+      WHERE s.show_date >= date('now','-30 days','localtime')
+      GROUP BY dow ORDER BY dow
+    `).all();
+    res.json({ by_time_band: byTimeBand, by_day_of_week: byDow });
+  });
+
+  router.get('/analytics/attach-rate', (req, res) => {
+    const total = db.prepare(`SELECT COUNT(DISTINCT purchase_id) c FROM cinema_tickets WHERE purchase_id IS NOT NULL AND purchase_id <> ''`).get().c;
+    const withB = db.prepare(`SELECT COUNT(DISTINCT purchase_id) c FROM cinema_purchase_bundles`).get().c;
+    const attach_rate = total ? Math.round((withB / total) * 10000) / 100 : 0;
+    const byGenre = db.prepare(`
+      SELECT f.genre,
+        COUNT(DISTINCT t.purchase_id) AS purchases,
+        COUNT(DISTINCT CASE WHEN EXISTS (SELECT 1 FROM cinema_purchase_bundles b WHERE b.purchase_id = t.purchase_id) THEN t.purchase_id END) AS with_bundle
+      FROM cinema_tickets t
+      JOIN cinema_showtimes s ON s.id = t.showtime_id
+      JOIN cinema_films f ON f.id = s.film_id
+      WHERE t.purchase_id IS NOT NULL AND f.genre IS NOT NULL AND f.genre <> ''
+      GROUP BY f.genre
+    `).all().map(r => ({ ...r, attach_rate: r.purchases ? Math.round((r.with_bundle / r.purchases) * 10000) / 100 : 0 }));
+    const topCombos = db.prepare(`
+      SELECT bundle_name, COUNT(*) AS times_ordered, SUM(qty) AS total_qty, COALESCE(SUM(qty * price),0) AS revenue
+      FROM cinema_purchase_bundles
+      GROUP BY bundle_name ORDER BY times_ordered DESC LIMIT 10
+    `).all();
+    res.json({ attach_rate, total_purchases: total, with_bundles: withB, by_genre: byGenre, top_combos: topCombos });
+  });
+
+  router.get('/analytics/insights', (req, res) => {
+    const insights = [];
+    // Trending: 7d revenue vs prev 7d
+    const films = db.prepare(`SELECT id, title FROM cinema_films WHERE status = 'now_showing'`).all();
+    for (const f of films) {
+      const cur = db.prepare(`
+        SELECT COALESCE(SUM(t.price),0) AS r, COUNT(*) AS c FROM cinema_tickets t
+        JOIN cinema_showtimes s ON s.id = t.showtime_id
+        WHERE s.film_id = ? AND date(t.sold_at,'unixepoch','localtime') >= date('now','-7 days','localtime')
+      `).get(f.id);
+      const prev = db.prepare(`
+        SELECT COALESCE(SUM(t.price),0) AS r FROM cinema_tickets t
+        JOIN cinema_showtimes s ON s.id = t.showtime_id
+        WHERE s.film_id = ? AND date(t.sold_at,'unixepoch','localtime') BETWEEN date('now','-14 days','localtime') AND date('now','-8 days','localtime')
+      `).get(f.id);
+      if (prev.r > 0 && cur.r > prev.r * 1.5) {
+        const pct = Math.round((cur.r / prev.r - 1) * 100);
+        insights.push({ type: 'trending_up', film_id: f.id, title: f.title, severity: 'good', message: `Revenue naik ${pct}% (Rp ${prev.r.toLocaleString('id-ID')} → Rp ${cur.r.toLocaleString('id-ID')})` });
+      } else if (prev.r > 100000 && cur.r < prev.r * 0.5) {
+        const pct = Math.round((1 - cur.r / prev.r) * 100);
+        insights.push({ type: 'trending_down', film_id: f.id, title: f.title, severity: 'warn', message: `Revenue turun ${pct}% — pertimbangkan promo` });
+      }
+    }
+    // Low occupancy films (avg <30% in 7d)
+    const lowOcc = db.prepare(`
+      SELECT f.id, f.title, COUNT(t.id) AS tkt, SUM(st.rows * st.cols) AS cap, COUNT(DISTINCT s.id) AS shows
+      FROM cinema_films f
+      JOIN cinema_showtimes s ON s.film_id = f.id
+      JOIN cinema_studios st ON st.id = s.studio_id
+      LEFT JOIN cinema_tickets t ON t.showtime_id = s.id
+      WHERE f.status = 'now_showing' AND s.show_date >= date('now','-7 days','localtime')
+      GROUP BY f.id
+      HAVING cap > 0 AND tkt * 100.0 / cap < 30 AND shows >= 3
+    `).all();
+    for (const l of lowOcc) {
+      insights.push({ type: 'low_occupancy', film_id: l.id, title: l.title, severity: 'warn', message: `Okupansi cuma ${Math.round(l.tkt * 100 / l.cap)}% di ${l.shows} jadwal — kurangi slot atau promo` });
+    }
+    // Best combo attach (top 3)
+    const topBundle = db.prepare(`
+      SELECT bundle_name, COUNT(*) AS c, COALESCE(SUM(qty*price),0) AS rev
+      FROM cinema_purchase_bundles ORDER BY c DESC LIMIT 1
+    `).get();
+    if (topBundle?.c > 0) {
+      insights.push({ type: 'top_combo', severity: 'good', message: `Combo terlaris: "${topBundle.bundle_name}" (${topBundle.c}× · Rp ${topBundle.rev.toLocaleString('id-ID')})` });
+    }
+    // Peak hour
+    const peak = db.prepare(`
+      SELECT
+        CASE WHEN CAST(SUBSTR(s.start_time,1,2) AS INTEGER) < 12 THEN 'pagi'
+             WHEN CAST(SUBSTR(s.start_time,1,2) AS INTEGER) < 17 THEN 'matinee'
+             WHEN CAST(SUBSTR(s.start_time,1,2) AS INTEGER) < 21 THEN 'prime'
+             ELSE 'late' END AS band,
+        COUNT(t.id) AS tkt
+      FROM cinema_showtimes s LEFT JOIN cinema_tickets t ON t.showtime_id = s.id
+      WHERE s.show_date >= date('now','-30 days','localtime')
+      GROUP BY band ORDER BY tkt DESC LIMIT 1
+    `).get();
+    if (peak?.tkt > 0) {
+      insights.push({ type: 'peak_band', severity: 'info', message: `Peak hour: jam ${peak.band} (${peak.tkt} tiket / 30 hari)` });
+    }
+    res.json({ insights, generated_at: Math.floor(Date.now()/1000) });
+  });
+
+  // ── HQ FRANCHISE ROLLUP ──────────────────────────────────────────────
+  router.get('/franchise/rollup', (req, res) => {
+    const rows = db.prepare(`
+      SELECT
+        COALESCE(NULLIF(st.outlet,''), '— Tanpa outlet —') AS outlet,
+        COUNT(DISTINCT st.id) AS studios,
+        SUM(st.rows * st.cols) AS capacity_total
+      FROM cinema_studios st
+      GROUP BY outlet
+    `).all();
+    for (const r of rows) {
+      const outletWhere = r.outlet === '— Tanpa outlet —' ? `(st.outlet IS NULL OR st.outlet = '')` : `st.outlet = ?`;
+      const args = r.outlet === '— Tanpa outlet —' ? [] : [r.outlet];
+      const today = db.prepare(`
+        SELECT COUNT(t.id) AS tkt, COALESCE(SUM(t.price),0) AS revenue
+        FROM cinema_tickets t
+        JOIN cinema_showtimes s ON s.id = t.showtime_id
+        JOIN cinema_studios st ON st.id = s.studio_id
+        WHERE ${outletWhere} AND date(t.sold_at,'unixepoch','localtime') = date('now','localtime')
+      `).get(...args);
+      const m30 = db.prepare(`
+        SELECT COUNT(t.id) AS tkt, COALESCE(SUM(t.price),0) AS revenue
+        FROM cinema_tickets t
+        JOIN cinema_showtimes s ON s.id = t.showtime_id
+        JOIN cinema_studios st ON st.id = s.studio_id
+        WHERE ${outletWhere} AND date(t.sold_at,'unixepoch','localtime') >= date('now','-30 days','localtime')
+      `).get(...args);
+      const topF = db.prepare(`
+        SELECT f.title, COALESCE(SUM(t.price),0) AS rev, COUNT(t.id) AS tkt
+        FROM cinema_tickets t
+        JOIN cinema_showtimes s ON s.id = t.showtime_id
+        JOIN cinema_studios st ON st.id = s.studio_id
+        JOIN cinema_films f ON f.id = s.film_id
+        WHERE ${outletWhere} AND date(t.sold_at,'unixepoch','localtime') >= date('now','-30 days','localtime')
+        GROUP BY f.id ORDER BY rev DESC LIMIT 1
+      `).get(...args);
+      const issues = db.prepare(`
+        SELECT COUNT(*) c FROM cinema_studios WHERE ${outletWhere} AND maintenance_status NOT IN ('operational','')
+      `).get(...args);
+      r.tickets_today = today.tkt;
+      r.revenue_today = today.revenue;
+      r.tickets_30d   = m30.tkt;
+      r.revenue_30d   = m30.revenue;
+      r.top_film      = topF?.title || null;
+      r.top_film_revenue = topF?.rev || 0;
+      r.studio_issues = issues.c || 0;
+    }
+    rows.sort((a, b) => b.revenue_30d - a.revenue_30d);
+    res.json({ rollup: rows });
+  });
+
+  // ── MOVIE CAMPAIGN ENGINE ────────────────────────────────────────────
+  router.get('/campaigns', (req, res) => {
+    const sql = req.query.active === '1'
+      ? `SELECT c.*, f.title AS film_title FROM cinema_campaigns c LEFT JOIN cinema_films f ON f.id = c.film_id WHERE c.is_active = 1 ORDER BY c.start_date DESC`
+      : `SELECT c.*, f.title AS film_title FROM cinema_campaigns c LEFT JOIN cinema_films f ON f.id = c.film_id ORDER BY c.is_active DESC, c.start_date DESC`;
+    res.json({ campaigns: db.prepare(sql).all() });
+  });
+  router.post('/campaigns', (req, res) => {
+    const b = req.body || {};
+    if (!b.name) return res.status(400).json({ ok: false, error: 'name wajib' });
+    const info = db.prepare(`INSERT INTO cinema_campaigns
+      (name, campaign_type, film_id, start_date, end_date, applicable_days,
+       start_time_band, end_time_band, special_price, discount_pct, min_attendees, description, is_active)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+      .run(b.name, b.campaign_type || 'special',
+           b.film_id ? parseInt(b.film_id, 10) : null,
+           b.start_date || null, b.end_date || null,
+           b.applicable_days || null,
+           b.start_time_band || null, b.end_time_band || null,
+           b.special_price ? parseInt(b.special_price, 10) : null,
+           parseFloat(b.discount_pct) || 0,
+           parseInt(b.min_attendees, 10) || 0,
+           b.description || '',
+           b.is_active === false ? 0 : 1);
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+  router.patch('/campaigns/:id', (req, res) => {
+    const b = req.body || {};
+    const fields = []; const args = [];
+    for (const k of ['name', 'campaign_type', 'film_id', 'start_date', 'end_date', 'applicable_days',
+                     'start_time_band', 'end_time_band', 'special_price', 'discount_pct', 'min_attendees',
+                     'description', 'is_active']) {
+      if (k in b) {
+        fields.push(`${k} = ?`);
+        if (['film_id', 'special_price', 'min_attendees'].includes(k)) {
+          args.push(b[k] == null || b[k] === '' ? null : parseInt(b[k], 10));
+        } else if (k === 'discount_pct') args.push(parseFloat(b[k]) || 0);
+        else if (k === 'is_active') args.push(b[k] ? 1 : 0);
+        else args.push(b[k]);
+      }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE cinema_campaigns SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/campaigns/:id', (req, res) => {
+    db.prepare(`DELETE FROM cinema_campaigns WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+  // Quick-template seed for standard campaign types
+  router.post('/campaigns/template/:type', (req, res) => {
+    const b = req.body || {};
+    const templates = {
+      premiere: { name: 'Premiere Night',        campaign_type: 'premiere', start_time_band: 'prime',  end_time_band: 'late',     special_price: 100000, description: 'Harga premium untuk premiere film blockbuster' },
+      midnight: { name: 'Midnight Sale',         campaign_type: 'midnight', start_time_band: 'late',   end_time_band: 'late',     discount_pct: 25,      description: 'Diskon 25% untuk jadwal late night' },
+      family:   { name: 'Family Package Sunday', campaign_type: 'family',   applicable_days: 'sunday', min_attendees: 3,          discount_pct: 15,      description: 'Beli ≥3 tiket Minggu hemat 15%' },
+      student:  { name: 'Student Day',           campaign_type: 'student',  applicable_days: 'tuesday,wednesday,thursday',         discount_pct: 30,      description: 'Diskon 30% untuk pelajar Selasa-Kamis' },
+    };
+    const tpl = templates[req.params.type];
+    if (!tpl) return res.status(400).json({ ok: false, error: 'Tipe template invalid' });
+    const merged = { ...tpl, ...b };
+    const info = db.prepare(`INSERT INTO cinema_campaigns
+      (name, campaign_type, film_id, start_date, end_date, applicable_days,
+       start_time_band, end_time_band, special_price, discount_pct, min_attendees, description, is_active)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,1)`)
+      .run(merged.name, merged.campaign_type,
+           merged.film_id || null, merged.start_date || null, merged.end_date || null,
+           merged.applicable_days || null, merged.start_time_band || null, merged.end_time_band || null,
+           merged.special_price || null, merged.discount_pct || 0, merged.min_attendees || 0,
+           merged.description || '');
+    res.json({ ok: true, id: info.lastInsertRowid, campaign: merged });
   });
 
   // ── CINEMA COMMAND CENTER (realtime aggregator) ──────────────────────
