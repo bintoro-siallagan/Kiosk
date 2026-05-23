@@ -85,6 +85,27 @@ function setupSalesPipeline(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  router.patch('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM sales_leads WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['code', 'company', 'contact', 'value', 'stage', 'owner', 'source']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    fields.push(`updated_at = ?`); args.push(nowSec());
+    args.push(req.params.id);
+    db.prepare(`UPDATE sales_leads SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM sales_leads WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/sales-pipeline';
   app.use(mountPath, router);
   console.log(`[sales-pipeline] mounted at ${mountPath} — B2B lead funnel / CRM`);

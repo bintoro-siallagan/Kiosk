@@ -79,6 +79,30 @@ function setupDeliveryOrder(app, opts = {}) {
     res.json({ ok: true, status: next });
   });
 
+  router.patch('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM delivery_orders WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['do_no', 'so_ref', 'customer_name', 'destination', 'items', 'driver', 'status', 'shipped_at', 'delivered_at']) {
+      if (b[k] !== undefined) {
+        let v = b[k];
+        if (k === 'items' && Array.isArray(v)) v = JSON.stringify(v);
+        fields.push(`${k} = ?`); args.push(v);
+      }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE delivery_orders SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM delivery_orders WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/delivery-order';
   app.use(mountPath, router);
   console.log(`[delivery-order] mounted at ${mountPath} — B2B delivery order (surat jalan)`);

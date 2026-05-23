@@ -2,14 +2,17 @@
 // Helpdesk / Complaint Management — tiket komplain pelanggan + SLA.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const AC = "#f97316";
 const PRI = { high: "#ef4444", medium: "#f59e0b", low: "#5b6470" };
 const STT = { open: "#ef4444", in_progress: "#f59e0b", resolved: "#10b981", closed: "#5b6470" };
 
 export default function AdminHelpdesk({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ subject: "", category: "Komplain Produk", customer: "", outlet: "", priority: "medium" });
 
   const load = useCallback(() => {
@@ -27,6 +30,26 @@ export default function AdminHelpdesk({ apiBase = "" }) {
     fetch(`${apiBase}/api/helpdesk/${t.id}/status`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }),
     }).then(r => r.json()).then(j => { if (j.ok) load(); }).catch(() => {});
+  };
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/helpdesk/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const remove = async (item) => {
+    const ok = await confirm({
+      title: `Hapus tiket "${item.ticket_no}"?`,
+      message: `${item.subject}. Akan dihapus permanen. Tidak bisa dibatalkan.`,
+      danger: true, okLabel: "Hapus",
+    });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/helpdesk/${item.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Helpdesk…</div>;
@@ -74,7 +97,7 @@ export default function AdminHelpdesk({ apiBase = "" }) {
         <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
           <thead>
             <tr style={{ color: "#5b6470", fontSize: 10, textAlign: "left" }}>
-              {["TIKET", "KATEGORI", "PELANGGAN", "OUTLET", "PRIORITAS", "UMUR", "STATUS"].map(h => <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>)}
+              {["TIKET", "KATEGORI", "PELANGGAN", "OUTLET", "PRIORITAS", "UMUR", "STATUS", ""].map(h => <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -95,14 +118,62 @@ export default function AdminHelpdesk({ apiBase = "" }) {
                     {["open", "in_progress", "resolved", "closed"].map(st => <option key={st} value={st}>{st}</option>)}
                   </select>
                 </td>
+                <td style={S.td}>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <button onClick={() => setEditing({ ...t })} title="Edit" style={S.btnEdit}>✏️</button>
+                    <button onClick={() => remove(t)} title="Hapus" style={S.btnDel}>🗑️</button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={S.modalBg}>
+          <div onClick={e => e.stopPropagation()} style={S.modalBox}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#e6edf3", marginBottom: 12 }}>Edit Tiket {editing.ticket_no}</div>
+            <Field label="Subjek"><input value={editing.subject || ""} onChange={e => setEditing({ ...editing, subject: e.target.value })} style={modalInp} /></Field>
+            <Field label="Kategori">
+              <select value={editing.category || ""} onChange={e => setEditing({ ...editing, category: e.target.value })} style={modalInp}>
+                {(d.categories || []).map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </Field>
+            <Field label="Prioritas">
+              <select value={editing.priority || "medium"} onChange={e => setEditing({ ...editing, priority: e.target.value })} style={modalInp}>
+                {(d.priorities || ["low", "medium", "high"]).map(p => <option key={p} value={p}>{p}</option>)}
+              </select>
+            </Field>
+            <Field label="Status">
+              <select value={editing.status || "open"} onChange={e => setEditing({ ...editing, status: e.target.value })} style={modalInp}>
+                {["open", "in_progress", "resolved", "closed"].map(st => <option key={st} value={st}>{st}</option>)}
+              </select>
+            </Field>
+            <Field label="Pelanggan"><input value={editing.customer || ""} onChange={e => setEditing({ ...editing, customer: e.target.value })} style={modalInp} /></Field>
+            <Field label="Outlet"><input value={editing.outlet || ""} onChange={e => setEditing({ ...editing, outlet: e.target.value })} style={modalInp} /></Field>
+            <Field label="Owner (Assigned)"><input value={editing.owner || ""} onChange={e => setEditing({ ...editing, owner: e.target.value })} style={modalInp} /></Field>
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <button onClick={() => setEditing(null)} style={{ ...S.btn, background: "#21262d", color: "#e6edf3", flex: 1 }}>Batal</button>
+              <button onClick={saveEdit} style={{ ...S.btn, flex: 1 }}>Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+function Field({ label, children }) {
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ fontSize: 10, color: "#5b6470", fontWeight: 700, letterSpacing: 0.5, marginBottom: 4, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      {children}
+    </div>
+  );
+}
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 function Kpi({ label, v, c }) {
   return (
@@ -122,4 +193,8 @@ const S = {
   mono: { fontFamily: "'Geist Mono',monospace" },
   input: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 9px", color: "#e6edf3", fontSize: 12, fontFamily: "inherit", outline: "none", boxSizing: "border-box" },
   btn: { background: "#f97316", color: "#fff", border: "none", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
+  btnEdit: { background: "#f59e0b", color: "#fff", border: "none", borderRadius: 5, padding: "3px 6px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" },
+  btnDel: { background: "#ef4444", color: "#fff", border: "none", borderRadius: 5, padding: "3px 6px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" },
+  modalBg: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
+  modalBox: { background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 20, maxWidth: 480, width: "100%", boxShadow: "0 0 40px rgba(0,0,0,0.5)" },
 };

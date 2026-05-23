@@ -117,6 +117,35 @@ function setupGeneralLedger(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // PATCH memorial journal — hanya description (field non-akuntansi yg aman)
+  router.patch('/memorial/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM memorial_journals WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    // GL audit: hanya izinkan field yang aman (deskripsi/notes), TIDAK lines/total/ref
+    for (const k of ['description']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE memorial_journals SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  // DELETE memorial journal — heavily guarded: hanya posting hari ini (anggap draft)
+  router.delete('/memorial/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM memorial_journals WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const ageSec = nowSec() - (row.created_at || 0);
+    const DRAFT_WINDOW = 24 * 3600; // 24 jam: anggap draft, boleh hapus
+    if (ageSec > DRAFT_WINDOW) {
+      return res.status(403).json({ error: 'jurnal sudah ter-posting (>24 jam) — tidak bisa dihapus. Buat jurnal koreksi/balik untuk membatalkan.' });
+    }
+    db.prepare(`DELETE FROM memorial_journals WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/general-ledger';
   app.use(mountPath, router);
   console.log(`[general-ledger] mounted at ${mountPath} — GL on COA + memorial journal`);

@@ -2,15 +2,18 @@
 // Reconciliation Center — Bank, Cash Count & GL Reconciliation.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#0d9488";
 
 export default function AdminReconciliation({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [sec, setSec] = useState("bank");
   const [cc, setCc] = useState({ outlet: "Paskal", system_cash: "", counted_cash: "" });
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(null); // { kind: 'cash'|'bank', ...row }
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/reconciliation`).then(r => r.json()).then(setD).catch(() => {});
@@ -26,6 +29,33 @@ export default function AdminReconciliation({ apiBase = "" }) {
     if (!(Number(cc.system_cash) > 0)) { setMsg("⚠ Kas sistem wajib"); return; }
     post("cash-count", { ...cc, system_cash: Number(cc.system_cash), counted_cash: Number(cc.counted_cash), counted_by: "Supervisor" }, "✓ Cash count dicatat");
     setCc({ outlet: "Paskal", system_cash: "", counted_cash: "" });
+  };
+
+  const saveEdit = async () => {
+    const path = editing.kind === "cash" ? `cash-count/${editing.id}` : `bank-item/${editing.id}`;
+    const body = editing.kind === "cash"
+      ? { outlet: editing.outlet, system_cash: Number(editing.system_cash) || 0, counted_cash: Number(editing.counted_cash) || 0, counted_by: editing.counted_by || "Supervisor" }
+      : { txn_date: editing.txn_date, description: editing.description, amount: Number(editing.amount) || 0, side: editing.side, matched: Number(editing.matched) || 0 };
+    const r = await fetch(`${apiBase}/api/reconciliation/${path}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const remove = async (kind, item) => {
+    const label = kind === "cash" ? `cash count ${item.outlet}` : `${item.description}`;
+    const ok = await confirm({
+      title: `Hapus "${label}"?`,
+      message: "Akan dihapus permanen. Tidak bisa dibatalkan.",
+      danger: true, okLabel: "Hapus",
+    });
+    if (!ok) return;
+    const path = kind === "cash" ? `cash-count/${item.id}` : `bank-item/${item.id}`;
+    const r = await fetch(`${apiBase}/api/reconciliation/${path}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Reconciliation Center…</div>;
@@ -69,6 +99,8 @@ export default function AdminReconciliation({ apiBase = "" }) {
               <button onClick={() => post(`bank-match/${it.id}`, null, it.matched ? "✓ Unmatch" : "✓ Matched")} style={S.btn(it.matched ? "#10b981" : "#5b6470")}>
                 {it.matched ? "✓ matched" : "○ match"}
               </button>
+              <button onClick={() => setEditing({ kind: "bank", ...it })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+              <button onClick={() => remove("bank", it)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
             </div>
           ))}
         </div>
@@ -84,7 +116,7 @@ export default function AdminReconciliation({ apiBase = "" }) {
             <button onClick={addCount} style={S.btnPrimary}>+ Catat Count</button>
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead><tr style={{ color: "#5b6470", fontSize: 10, textAlign: "left" }}>{["OUTLET", "KAS SISTEM", "KAS FISIK", "SELISIH", "OLEH"].map(h => <th key={h} style={{ padding: "6px 8px" }}>{h}</th>)}</tr></thead>
+            <thead><tr style={{ color: "#5b6470", fontSize: 10, textAlign: "left" }}>{["OUTLET", "KAS SISTEM", "KAS FISIK", "SELISIH", "OLEH", "AKSI"].map(h => <th key={h} style={{ padding: "6px 8px" }}>{h}</th>)}</tr></thead>
             <tbody>
               {d.cash.counts.map(c => (
                 <tr key={c.id} style={{ borderTop: "1px solid #161b22", fontSize: 12 }}>
@@ -93,10 +125,67 @@ export default function AdminReconciliation({ apiBase = "" }) {
                   <td style={{ ...S.td, ...S.mono, color: "#9da7b3" }}>{fmtRp(c.counted_cash)}</td>
                   <td style={{ ...S.td, ...S.mono, fontWeight: 700, color: c.variance === 0 ? "#10b981" : "#ef4444" }}>{c.variance === 0 ? "✓ pas" : fmtRp(c.variance)}</td>
                   <td style={{ ...S.td, color: "#5b6470" }}>{c.counted_by}</td>
+                  <td style={S.td}>
+                    <button onClick={() => setEditing({ kind: "cash", ...c })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                    <button onClick={() => remove("cash", c)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, marginLeft: 4 }}>🗑️</button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #21262d", borderRadius: 12, padding: 22, width: 460, maxWidth: "92vw", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#e6edf3", marginBottom: 12 }}>
+              {editing.kind === "cash" ? "Edit Cash Count" : "Edit Bank Item"} — #{editing.id}
+            </div>
+            {editing.kind === "cash" ? (
+              <div style={{ display: "grid", gap: 9 }}>
+                <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>OUTLET
+                  <input value={editing.outlet || ""} onChange={e => setEditing({ ...editing, outlet: e.target.value })} style={modalInp} />
+                </label>
+                <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>KAS SISTEM (Rp)
+                  <input value={editing.system_cash || ""} onChange={e => setEditing({ ...editing, system_cash: e.target.value })} type="number" style={modalInp} />
+                </label>
+                <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>KAS FISIK (Rp)
+                  <input value={editing.counted_cash || ""} onChange={e => setEditing({ ...editing, counted_cash: e.target.value })} type="number" style={modalInp} />
+                </label>
+                <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>DIHITUNG OLEH
+                  <input value={editing.counted_by || ""} onChange={e => setEditing({ ...editing, counted_by: e.target.value })} style={modalInp} />
+                </label>
+              </div>
+            ) : (
+              <div style={{ display: "grid", gap: 9 }}>
+                <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>TANGGAL TXN
+                  <input value={editing.txn_date || ""} onChange={e => setEditing({ ...editing, txn_date: e.target.value })} style={modalInp} />
+                </label>
+                <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>DESKRIPSI
+                  <input value={editing.description || ""} onChange={e => setEditing({ ...editing, description: e.target.value })} style={modalInp} />
+                </label>
+                <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>NOMINAL (Rp, − = keluar)
+                  <input value={editing.amount || ""} onChange={e => setEditing({ ...editing, amount: e.target.value })} type="number" style={modalInp} />
+                </label>
+                <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>SISI
+                  <select value={editing.side || ""} onChange={e => setEditing({ ...editing, side: e.target.value })} style={modalInp}>
+                    {["book", "bank"].map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </label>
+                <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>STATUS MATCH
+                  <select value={editing.matched || 0} onChange={e => setEditing({ ...editing, matched: e.target.value })} style={modalInp}>
+                    <option value={0}>0 — unmatched</option>
+                    <option value={1}>1 — matched</option>
+                  </select>
+                </label>
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
+              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #21262d", color: "#9da7b3", padding: "8px 14px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: AC, border: "none", color: "#fff", padding: "8px 16px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>💾 Simpan</button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -127,6 +216,8 @@ function Kpi({ label, v, c }) {
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },

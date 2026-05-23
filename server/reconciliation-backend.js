@@ -115,6 +115,54 @@ function setupReconciliation(app, opts = {}) {
     res.json({ ok: true, reconciled: !!next });
   });
 
+  // Cash count
+  router.patch('/cash-count/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM cash_counts WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['outlet', 'system_cash', 'counted_cash', 'counted_by']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    // recompute variance if either changed
+    if (b.system_cash !== undefined || b.counted_cash !== undefined) {
+      const sys = b.system_cash !== undefined ? Number(b.system_cash) : row.system_cash;
+      const cnt = b.counted_cash !== undefined ? Number(b.counted_cash) : row.counted_cash;
+      fields.push(`variance = ?`); args.push(cnt - sys);
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE cash_counts SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/cash-count/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM cash_counts WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
+  // Bank recon item
+  router.patch('/bank-item/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM bank_recon WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['txn_date', 'description', 'amount', 'side', 'matched']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE bank_recon SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/bank-item/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM bank_recon WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/reconciliation';
   app.use(mountPath, router);
   console.log(`[reconciliation] mounted at ${mountPath} — bank / cash / GL reconciliation`);

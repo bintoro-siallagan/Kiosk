@@ -84,6 +84,38 @@ function setupInternalAudit(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  router.patch('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM internal_audits WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    // Completed audits become immutable audit-log — block edits
+    if (row.status === 'completed') {
+      return res.status(403).json({ error: 'audit sudah selesai — immutable audit log, tidak bisa diubah' });
+    }
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['title', 'area', 'auditor', 'period', 'status', 'rating', 'findings']) {
+      if (b[k] !== undefined) {
+        fields.push(`${k} = ?`);
+        args.push(k === 'findings' && typeof b[k] !== 'string' ? JSON.stringify(b[k]) : b[k]);
+      }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE internal_audits SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM internal_audits WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    // Only allow delete on scheduled (draft) audits — in-progress & completed are part of audit log
+    if (row.status !== 'scheduled') {
+      return res.status(403).json({ error: 'hanya audit dijadwalkan yang bisa dihapus — audit berjalan/selesai immutable' });
+    }
+    db.prepare(`DELETE FROM internal_audits WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/internal-audit';
   app.use(mountPath, router);
   console.log(`[internal-audit] mounted at ${mountPath} — internal audit program`);

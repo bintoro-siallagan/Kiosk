@@ -2,11 +2,13 @@
 // Food Cost Calculator — rakit resep, hitung biaya & margin.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#ea580c";
 
 export default function AdminFoodCostCalc({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
   const [name, setName] = useState("");
@@ -14,6 +16,7 @@ export default function AdminFoodCostCalc({ apiBase = "" }) {
   const [price, setPrice] = useState("");
   const [pick, setPick] = useState("");
   const [qty, setQty] = useState("");
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/food-cost-calc`).then(r => r.json()).then(j => {
@@ -33,6 +36,32 @@ export default function AdminFoodCostCalc({ apiBase = "" }) {
   const margin = sp > 0 ? Math.round((sp - totalCost) / sp * 100) : 0;
   const foodCostPct = sp > 0 ? Math.round(totalCost / sp * 100) : 0;
   const suggest = (target) => totalCost > 0 ? Math.round(totalCost / (1 - target / 100) / 500) * 500 : 0;
+
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/food-cost-calc/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        product_name: editing.product_name,
+        total_cost: Number(editing.total_cost) || 0,
+        selling_price: Number(editing.selling_price) || 0,
+      }),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const remove = async (item) => {
+    const ok = await confirm({
+      title: `Hapus "${item.product_name}"?`,
+      message: "Kalkulasi food cost akan dihapus permanen. Tidak bisa dibatalkan.",
+      danger: true, okLabel: "Hapus",
+    });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/food-cost-calc/${item.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
+  };
 
   const save = () => {
     if (!name.trim() || !rows.length) { setMsg("⚠ Nama produk & minimal 1 bahan wajib"); return; }
@@ -109,7 +138,7 @@ export default function AdminFoodCostCalc({ apiBase = "" }) {
         <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
           <thead>
             <tr style={{ color: "#5b6470", fontSize: 10, textAlign: "left" }}>
-              {["PRODUK", "BAHAN", "FOOD COST", "HARGA JUAL", "FC %", "MARGIN"].map(h => <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>)}
+              {["PRODUK", "BAHAN", "FOOD COST", "HARGA JUAL", "FC %", "MARGIN", "AKSI"].map(h => <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -121,11 +150,39 @@ export default function AdminFoodCostCalc({ apiBase = "" }) {
                 <td style={{ ...S.td, ...S.mono, color: "#9da7b3" }}>{fmtRp(c.selling_price)}</td>
                 <td style={{ ...S.td, ...S.mono, color: c.food_cost_pct > 35 ? "#ef4444" : "#10b981" }}>{c.food_cost_pct}%</td>
                 <td style={{ ...S.td, ...S.mono, fontWeight: 700, color: c.margin_pct >= 60 ? "#10b981" : "#f59e0b" }}>{c.margin_pct}%</td>
+                <td style={S.td}>
+                  <button onClick={() => setEditing({ ...c })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                  <button onClick={() => remove(c)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, marginLeft: 4 }}>🗑️</button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #21262d", borderRadius: 12, padding: 22, width: 460, maxWidth: "92vw", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#e6edf3", marginBottom: 12 }}>Edit Kalkulasi — #{editing.id}</div>
+            <div style={{ display: "grid", gap: 9 }}>
+              <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>NAMA PRODUK
+                <input value={editing.product_name || ""} onChange={e => setEditing({ ...editing, product_name: e.target.value })} style={modalInp} />
+              </label>
+              <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>TOTAL FOOD COST (Rp)
+                <input value={editing.total_cost || ""} onChange={e => setEditing({ ...editing, total_cost: e.target.value })} type="number" style={modalInp} />
+              </label>
+              <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>HARGA JUAL (Rp)
+                <input value={editing.selling_price || ""} onChange={e => setEditing({ ...editing, selling_price: e.target.value })} type="number" style={modalInp} />
+              </label>
+              <div style={{ fontSize: 11, color: "#5b6470", padding: "6px 0" }}>Bahan: {editing.ingredients ? (Array.isArray(editing.ingredients) ? editing.ingredients.length : 0) : 0} item · margin akan dihitung ulang otomatis</div>
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
+              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #21262d", color: "#9da7b3", padding: "8px 14px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: AC, border: "none", color: "#fff", padding: "8px 16px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -138,6 +195,8 @@ function Stat({ label, v, c }) {
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },

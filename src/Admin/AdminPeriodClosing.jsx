@@ -2,13 +2,16 @@
 // Period Closing — tutup periode akuntansi & stok.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const AC = "#475569";
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—";
 
 export default function AdminPeriodClosing({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/period-closing`).then(r => r.json()).then(setD).catch(() => {});
@@ -19,6 +22,27 @@ export default function AdminPeriodClosing({ apiBase = "" }) {
     fetch(`${apiBase}/api/period-closing/${path}`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined,
     }).then(r => r.json()).then(j => { if (j.ok) { setMsg(okMsg); load(); } else setMsg(j.error || "gagal"); }).catch(e => setMsg(String(e)));
+  };
+
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/period-closing/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const remove = async (pr) => {
+    const ok = await confirm({
+      title: `Hapus periode "${pr.period_name}"?`,
+      message: `${pr.closing_type === "accounting" ? "Akuntansi" : "Stok"}. Hanya periode terbuka (draft) yang bisa dihapus.`,
+      danger: true, okLabel: "Hapus",
+    });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/period-closing/${pr.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Period Closing…</div>;
@@ -33,11 +57,19 @@ export default function AdminPeriodClosing({ apiBase = "" }) {
           const ready = pr.done_count === pr.total;
           return (
             <div key={pr.id} style={{ background: "#0a0e16", border: "1px solid #161b22", borderTop: `2px solid ${closed ? "#10b981" : ready ? "#f59e0b" : "#475569"}`, borderRadius: 10, padding: "12px 14px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 6 }}>
                 <span style={{ fontSize: 14, fontWeight: 700, color: "#e6edf3" }}>{pr.period_name}</span>
-                <span style={{ fontSize: 10, fontWeight: 700, fontFamily: "'Geist Mono',monospace", color: closed ? "#10b981" : "#f59e0b" }}>
-                  {closed ? "🔒 CLOSED" : `${pr.done_count}/${pr.total}`}
-                </span>
+                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                  <span style={{ fontSize: 10, fontWeight: 700, fontFamily: "'Geist Mono',monospace", color: closed ? "#10b981" : "#f59e0b" }}>
+                    {closed ? "🔒 CLOSED" : `${pr.done_count}/${pr.total}`}
+                  </span>
+                  {!closed && (
+                    <>
+                      <button onClick={() => setEditing({ ...pr })} title="Edit" style={S.btnEdit}>✏️</button>
+                      <button onClick={() => remove(pr)} title="Hapus" style={S.btnDel}>🗑️</button>
+                    </>
+                  )}
+                </div>
               </div>
               <div style={{ margin: "9px 0" }}>
                 {pr.checklist.map((c, i) => (
@@ -80,9 +112,41 @@ export default function AdminPeriodClosing({ apiBase = "" }) {
 
       <Section title="PERIODE AKUNTANSI" icon="📊" list={d.accounting} />
       <Section title="PERIODE STOK" icon="📦" list={d.stock} />
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={S.modalBg}>
+          <div onClick={e => e.stopPropagation()} style={S.modalBox}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#e6edf3", marginBottom: 12 }}>Edit Periode</div>
+            <Field label="Nama Periode"><input value={editing.period_name || ""} onChange={e => setEditing({ ...editing, period_name: e.target.value })} style={modalInp} /></Field>
+            <Field label="Tipe">
+              <select value={editing.closing_type || "accounting"} onChange={e => setEditing({ ...editing, closing_type: e.target.value })} style={modalInp}>
+                <option value="accounting">accounting</option>
+                <option value="stock">stock</option>
+              </select>
+            </Field>
+            <Field label="Status"><input value={editing.status || ""} disabled style={{ ...modalInp, opacity: 0.6 }} /></Field>
+            <div style={{ fontSize: 10, color: "#5b6470", marginBottom: 8 }}>Periode <b>closed</b> immutable — server akan menolak edit.</div>
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <button onClick={() => setEditing(null)} style={{ ...S.btn, background: "#21262d", color: "#e6edf3", flex: 1 }}>Batal</button>
+              <button onClick={saveEdit} style={{ ...S.btn, flex: 1 }}>Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+function Field({ label, children }) {
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ fontSize: 10, color: "#5b6470", fontWeight: 700, letterSpacing: 0.5, marginBottom: 4, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      {children}
+    </div>
+  );
+}
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 function Kpi({ label, v, c }) {
   return (
@@ -98,5 +162,9 @@ const S = {
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 12, padding: 16 },
   kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
-  btn: { width: "100%", background: "#475569", color: "#fff", border: "none", borderRadius: 7, padding: "8px", fontSize: 12, fontWeight: 700, fontFamily: "inherit" },
+  btn: { width: "100%", background: "#475569", color: "#fff", border: "none", borderRadius: 7, padding: "8px", fontSize: 12, fontWeight: 700, fontFamily: "inherit", cursor: "pointer" },
+  btnEdit: { background: "#f59e0b", color: "#fff", border: "none", borderRadius: 5, padding: "3px 6px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" },
+  btnDel: { background: "#ef4444", color: "#fff", border: "none", borderRadius: 5, padding: "3px 6px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" },
+  modalBg: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
+  modalBox: { background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 20, maxWidth: 480, width: "100%", boxShadow: "0 0 40px rgba(0,0,0,0.5)" },
 };

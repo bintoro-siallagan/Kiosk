@@ -2,14 +2,18 @@
 // Shift Roster — penjadwalan shift staff.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const AC = "#059669";
 const SHIFT_C = { Pagi: "#f59e0b", Siang: "#3b82f6", Malam: "#a855f7" };
+const SHIFT_TYPES = ["Pagi", "Siang", "Malam"];
 const dayLabel = (d) => new Date(d + "T00:00:00").toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "short" });
 
 export default function AdminShiftRoster({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ staff_name: "", role: "Crew", outlet: "Paskal", shift_date: "", shift_type: "Pagi" });
 
   const load = useCallback(() => {
@@ -26,9 +30,25 @@ export default function AdminShiftRoster({ apiBase = "" }) {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
     }).then(r => r.json()).then(j => { if (j.ok) { setMsg("✓ Shift dijadwalkan"); setForm({ ...form, staff_name: "" }); load(); } else setMsg(j.error || "gagal"); }).catch(e => setMsg(String(e)));
   };
-  const remove = (sh) => {
-    fetch(`${apiBase}/api/shift-roster/${sh.id}/remove`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
-      .then(r => r.json()).then(j => { if (j.ok) { setMsg("✓ Shift dihapus"); load(); } }).catch(e => setMsg(String(e)));
+  const remove = async (sh) => {
+    const ok = await confirm({
+      title: `Hapus shift "${sh.staff_name}"?`,
+      message: `${sh.shift_type} · ${sh.outlet} · ${sh.shift_date}. Akan dihapus permanen.`,
+      danger: true, okLabel: "Hapus",
+    });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/shift-roster/${sh.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/shift-roster/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Shift Roster…</div>;
@@ -72,21 +92,54 @@ export default function AdminShiftRoster({ apiBase = "" }) {
               {dayLabel(day.date)} {day.is_today ? "· HARI INI" : ""}
             </div>
             {day.shifts.map(sh => (
-              <div key={sh.id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderTop: "1px solid #161b22", fontSize: 12 }}>
+              <div key={sh.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 0", borderTop: "1px solid #161b22", fontSize: 12 }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: SHIFT_C[sh.shift_type] }} />
                 <div style={{ flex: 1 }}>
                   <div style={{ color: "#e6edf3", fontWeight: 600 }}>{sh.staff_name} <span style={{ color: "#5b6470", fontWeight: 400, fontSize: 10 }}>{sh.role}</span></div>
                   <div style={{ fontSize: 10, color: "#5b6470" }}>{sh.outlet} · {sh.shift_type} {sh.hours}</div>
                 </div>
-                <button onClick={() => remove(sh)} style={S.del}>✕</button>
+                <button onClick={() => setEditing({ ...sh })} title="Edit" style={S.btnEdit}>✏️</button>
+                <button onClick={() => remove(sh)} title="Hapus" style={S.btnDel}>🗑️</button>
               </div>
             ))}
           </div>
         ))}
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={S.modalBg}>
+          <div onClick={e => e.stopPropagation()} style={S.modalBox}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#e6edf3", marginBottom: 12 }}>Edit Shift</div>
+            <Field label="Nama Staff"><input value={editing.staff_name || ""} onChange={e => setEditing({ ...editing, staff_name: e.target.value })} style={modalInp} /></Field>
+            <Field label="Role"><input value={editing.role || ""} onChange={e => setEditing({ ...editing, role: e.target.value })} style={modalInp} /></Field>
+            <Field label="Outlet"><input value={editing.outlet || ""} onChange={e => setEditing({ ...editing, outlet: e.target.value })} style={modalInp} /></Field>
+            <Field label="Tanggal"><input type="date" value={editing.shift_date || ""} onChange={e => setEditing({ ...editing, shift_date: e.target.value })} style={modalInp} /></Field>
+            <Field label="Tipe Shift">
+              <select value={editing.shift_type || "Pagi"} onChange={e => setEditing({ ...editing, shift_type: e.target.value })} style={modalInp}>
+                {SHIFT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+            </Field>
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <button onClick={() => setEditing(null)} style={{ ...S.btn, background: "#21262d", color: "#e6edf3", flex: 1 }}>Batal</button>
+              <button onClick={saveEdit} style={{ ...S.btn, flex: 1 }}>Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+function Field({ label, children }) {
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ fontSize: 10, color: "#5b6470", fontWeight: 700, letterSpacing: 0.5, marginBottom: 4, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      {children}
+    </div>
+  );
+}
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 function Kpi({ label, v, c }) {
   return (
@@ -105,4 +158,8 @@ const S = {
   input: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 9px", color: "#e6edf3", fontSize: 12, fontFamily: "inherit", outline: "none", boxSizing: "border-box" },
   btn: { background: "#059669", color: "#fff", border: "none", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   del: { background: "transparent", border: "none", color: "#5b6470", fontSize: 12, cursor: "pointer", fontWeight: 700 },
+  btnEdit: { background: "#f59e0b", color: "#fff", border: "none", borderRadius: 5, padding: "3px 6px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" },
+  btnDel: { background: "#ef4444", color: "#fff", border: "none", borderRadius: 5, padding: "3px 6px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" },
+  modalBg: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
+  modalBox: { background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 20, maxWidth: 480, width: "100%", boxShadow: "0 0 40px rgba(0,0,0,0.5)" },
 };

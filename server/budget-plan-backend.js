@@ -124,6 +124,55 @@ function setupBudgetPlan(app, opts = {}) {
     res.json({ ok: true, new_allocated: next });
   });
 
+  router.patch('/line/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM budget_lines WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['category', 'allocated', 'base_amount', 'notes']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE budget_lines SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/line/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM budget_lines WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    db.transaction(() => {
+      db.prepare(`DELETE FROM budget_revisions WHERE line_id = ?`).run(req.params.id);
+      db.prepare(`DELETE FROM budget_lines WHERE id = ?`).run(req.params.id);
+    })();
+    res.json({ ok: true });
+  });
+
+  router.patch('/period/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM budget_periods WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['name', 'period_type', 'status']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE budget_periods SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/period/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM budget_periods WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    db.transaction(() => {
+      db.prepare(`DELETE FROM budget_revisions WHERE period_id = ?`).run(req.params.id);
+      db.prepare(`DELETE FROM budget_lines WHERE period_id = ?`).run(req.params.id);
+      db.prepare(`DELETE FROM budget_periods WHERE id = ?`).run(req.params.id);
+    })();
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/budget-plan';
   app.use(mountPath, router);
   console.log(`[budget-plan] mounted at ${mountPath} — budget planning & allocation`);

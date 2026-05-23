@@ -2,6 +2,7 @@
 // Core Tax — PPN, PPh, faktur pajak & SPT Masa.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#b91c1c";
@@ -9,8 +10,10 @@ const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { d
 const ST = { draft: "#f59e0b", reported: "#3b82f6", paid: "#10b981", siap: "#10b981", pending: "#f59e0b" };
 
 export default function AdminCoreTax({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/core-tax`).then(r => r.json()).then(setD).catch(() => {});
@@ -21,6 +24,37 @@ export default function AdminCoreTax({ apiBase = "" }) {
     fetch(`${apiBase}/api/core-tax/${r.id}/status`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }),
     }).then(x => x.json()).then(j => { if (j.ok) { setMsg(`✓ ${r.label} → ${status}`); load(); } else setMsg(j.error || "gagal"); }).catch(e => setMsg(String(e)));
+  };
+
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/core-tax/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tax_type: editing.tax_type,
+        label: editing.label,
+        period: editing.period,
+        dpp: Number(editing.dpp) || 0,
+        rate: Number(editing.rate) || 0,
+        amount: Number(editing.amount) || 0,
+        flow: editing.flow,
+        status: editing.status,
+      }),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const remove = async (item) => {
+    const ok = await confirm({
+      title: `Hapus "${item.label}"?`,
+      message: "Record pajak akan dihapus permanen. Tidak bisa dibatalkan.",
+      danger: true, okLabel: "Hapus",
+    });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/core-tax/${item.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Core Tax…</div>;
@@ -91,7 +125,7 @@ export default function AdminCoreTax({ apiBase = "" }) {
         <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
           <thead>
             <tr style={{ color: "#5b6470", fontSize: 10, textAlign: "left" }}>
-              {["JENIS", "URAIAN", "DPP", "TARIF", "PAJAK", "STATUS"].map(h => <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>)}
+              {["JENIS", "URAIAN", "DPP", "TARIF", "PAJAK", "STATUS", "AKSI"].map(h => <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -103,12 +137,61 @@ export default function AdminCoreTax({ apiBase = "" }) {
                 <td style={{ ...S.td, ...S.mono, color: "#5b6470" }}>{r.rate > 0 ? r.rate + "%" : "—"}</td>
                 <td style={{ ...S.td, ...S.mono, fontWeight: 700, color: "#cdd5df" }}>{fmtRp(r.amount)}</td>
                 <td style={S.td}><span style={{ fontSize: 9, fontWeight: 700, color: ST[r.status], fontFamily: "'Geist Mono',monospace" }}>{r.status.toUpperCase()}</span></td>
+                <td style={S.td}>
+                  <button onClick={() => setEditing({ ...r })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                  <button onClick={() => remove(r)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, marginLeft: 4 }}>🗑️</button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
         {msg ? <div style={{ fontSize: 12, marginTop: 8, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #21262d", borderRadius: 12, padding: 22, width: 500, maxWidth: "92vw", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#e6edf3", marginBottom: 12 }}>Edit Record Pajak — #{editing.id}</div>
+            <div style={{ display: "grid", gap: 9 }}>
+              <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>JENIS PAJAK
+                <select value={editing.tax_type || ""} onChange={e => setEditing({ ...editing, tax_type: e.target.value })} style={modalInp}>
+                  {["PPN", "PPh 21", "PPh 23", "PPh 25", "PPh 4(2)"].map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </label>
+              <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>URAIAN
+                <input value={editing.label || ""} onChange={e => setEditing({ ...editing, label: e.target.value })} style={modalInp} />
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9 }}>
+                <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>DPP (Rp)
+                  <input value={editing.dpp || ""} onChange={e => setEditing({ ...editing, dpp: e.target.value })} type="number" style={modalInp} />
+                </label>
+                <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>TARIF (%)
+                  <input value={editing.rate || ""} onChange={e => setEditing({ ...editing, rate: e.target.value })} type="number" style={modalInp} />
+                </label>
+              </div>
+              <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>JUMLAH PAJAK (Rp)
+                <input value={editing.amount || ""} onChange={e => setEditing({ ...editing, amount: e.target.value })} type="number" style={modalInp} />
+              </label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9 }}>
+                <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>FLOW
+                  <select value={editing.flow || ""} onChange={e => setEditing({ ...editing, flow: e.target.value })} style={modalInp}>
+                    {["output", "input", "pph"].map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </label>
+                <label style={{ fontSize: 11, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>STATUS
+                  <select value={editing.status || ""} onChange={e => setEditing({ ...editing, status: e.target.value })} style={modalInp}>
+                    {["draft", "reported", "paid"].map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
+              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #21262d", color: "#9da7b3", padding: "8px 14px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: AC, border: "none", color: "#fff", padding: "8px 16px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -129,6 +212,8 @@ function Kpi({ label, v, c }) {
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },

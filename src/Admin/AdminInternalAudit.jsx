@@ -2,15 +2,18 @@
 // Internal Audit — audit-program: jadwal, temuan, corrective action.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const AC = "#7c3aed";
 const STT = { scheduled: { c: "#5b6470", l: "DIJADWALKAN" }, in_progress: { c: "#f59e0b", l: "BERJALAN" }, completed: { c: "#10b981", l: "SELESAI" } };
 const SEV = { Tinggi: "#ef4444", Sedang: "#f59e0b", Rendah: "#10b981" };
 
 export default function AdminInternalAudit({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
   const [exp, setExp] = useState(null);
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({ title: "", area: "Keuangan", auditor: "", period: "" });
 
   const load = useCallback(() => {
@@ -28,6 +31,26 @@ export default function AdminInternalAudit({ apiBase = "" }) {
     fetch(`${apiBase}/api/internal-audit/${a.id}/status`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }),
     }).then(r => r.json()).then(j => { if (j.ok) load(); }).catch(() => {});
+  };
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/internal-audit/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const remove = async (a) => {
+    const ok = await confirm({
+      title: `Hapus audit "${a.code}"?`,
+      message: `${a.title}. Hanya audit dijadwalkan yang bisa dihapus. Akan dihapus permanen.`,
+      danger: true, okLabel: "Hapus",
+    });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/internal-audit/${a.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Internal Audit…</div>;
@@ -79,6 +102,8 @@ export default function AdminInternalAudit({ apiBase = "" }) {
                     style={{ ...S.input, padding: "4px 6px", fontSize: 10, color: st.c, fontWeight: 700, width: 120 }}>
                     {["scheduled", "in_progress", "completed"].map(x => <option key={x} value={x}>{STT[x].l}</option>)}
                   </select>
+                  <button onClick={e => { e.stopPropagation(); setEditing({ ...a, findings_json: JSON.stringify(a.findings || [], null, 2) }); }} title="Edit" style={S.btnEdit}>✏️</button>
+                  <button onClick={e => { e.stopPropagation(); remove(a); }} title="Hapus" style={S.btnDel}>🗑️</button>
                 </div>
                 {exp === a.id && a.findings.map((f, i) => (
                   <div key={i} style={{ marginTop: 6, paddingLeft: 10, borderLeft: `2px solid ${SEV[f.severity] || "#5b6470"}` }}>
@@ -91,9 +116,54 @@ export default function AdminInternalAudit({ apiBase = "" }) {
           })}
         </div>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={S.modalBg}>
+          <div onClick={e => e.stopPropagation()} style={S.modalBox}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#e6edf3", marginBottom: 12 }}>Edit Audit {editing.code}</div>
+            <Field label="Judul"><input value={editing.title || ""} onChange={e => setEditing({ ...editing, title: e.target.value })} style={modalInp} /></Field>
+            <Field label="Area">
+              <select value={editing.area || ""} onChange={e => setEditing({ ...editing, area: e.target.value })} style={modalInp}>
+                {(d.areas || []).map(a => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </Field>
+            <Field label="Auditor"><input value={editing.auditor || ""} onChange={e => setEditing({ ...editing, auditor: e.target.value })} style={modalInp} /></Field>
+            <Field label="Periode"><input value={editing.period || ""} onChange={e => setEditing({ ...editing, period: e.target.value })} style={modalInp} /></Field>
+            <Field label="Status">
+              <select value={editing.status || "scheduled"} onChange={e => setEditing({ ...editing, status: e.target.value })} style={modalInp}>
+                {["scheduled", "in_progress", "completed"].map(x => <option key={x} value={x}>{STT[x].l}</option>)}
+              </select>
+            </Field>
+            <Field label="Rating"><input value={editing.rating || ""} onChange={e => setEditing({ ...editing, rating: e.target.value })} placeholder="Memuaskan / Perlu Perbaikan / —" style={modalInp} /></Field>
+            <Field label="Findings (JSON)">
+              <textarea value={editing.findings_json || ""} onChange={e => {
+                const v = e.target.value;
+                try { setEditing({ ...editing, findings_json: v, findings: JSON.parse(v) }); }
+                catch { setEditing({ ...editing, findings_json: v }); }
+              }} rows={5} style={{ ...modalInp, fontFamily: "'Geist Mono',monospace", fontSize: 11 }} />
+            </Field>
+            <div style={{ fontSize: 10, color: "#5b6470", marginBottom: 8 }}>Catatan: audit dengan status <b>completed</b> immutable — server akan menolak edit.</div>
+            <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+              <button onClick={() => setEditing(null)} style={{ ...S.btn, background: "#21262d", color: "#e6edf3", flex: 1 }}>Batal</button>
+              <button onClick={saveEdit} style={{ ...S.btn, flex: 1 }}>Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+function Field({ label, children }) {
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ fontSize: 10, color: "#5b6470", fontWeight: 700, letterSpacing: 0.5, marginBottom: 4, fontFamily: "'Geist Mono',monospace" }}>{label.toUpperCase()}</div>
+      {children}
+    </div>
+  );
+}
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 function Kpi({ label, v, c }) {
   return (
@@ -111,4 +181,8 @@ const S = {
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   input: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 9px", color: "#e6edf3", fontSize: 12, fontFamily: "inherit", outline: "none", boxSizing: "border-box" },
   btn: { background: "#7c3aed", color: "#fff", border: "none", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
+  btnEdit: { background: "#f59e0b", color: "#fff", border: "none", borderRadius: 5, padding: "3px 6px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" },
+  btnDel: { background: "#ef4444", color: "#fff", border: "none", borderRadius: 5, padding: "3px 6px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" },
+  modalBg: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
+  modalBox: { background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 20, maxWidth: 480, width: "100%", maxHeight: "90vh", overflow: "auto", boxShadow: "0 0 40px rgba(0,0,0,0.5)" },
 };

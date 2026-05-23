@@ -99,6 +99,31 @@ function setupPayroll(app, opts = {}) {
     res.json({ ok: true, ...tx() });
   });
 
+  router.patch('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM payroll_runs WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['processed_by']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE payroll_runs SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM payroll_runs WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    // Payroll runs are sensitive financial records — only allow delete if no finance posting was created
+    if (row.finance_expense_id) {
+      return res.status(403).json({ error: 'payroll sudah diposting ke finance — tidak bisa dihapus' });
+    }
+    db.prepare(`DELETE FROM payroll_runs WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/payroll';
   app.use(mountPath, router);
   console.log(`[payroll] mounted at ${mountPath} — HRIS → finance payroll`);
