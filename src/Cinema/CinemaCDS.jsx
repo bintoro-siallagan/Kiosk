@@ -104,20 +104,20 @@ export default function CinemaCDS() {
   if (stage === "done") {
     return (
       <Shell now={now} outlet={state.outlet}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: 40, textAlign: "center" }}>
-          <div style={{ fontSize: 96, marginBottom: 14, filter: "drop-shadow(0 0 32px rgba(16,185,129,0.5))" }}>🎬</div>
-          <div style={{ fontSize: 14, color: "#10b981", letterSpacing: 3, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>TIKET BERHASIL DIBELI</div>
-          <div style={{ fontSize: 44, fontWeight: 900, marginTop: 12, letterSpacing: -1 }}>{state.film_title || "Selamat menonton!"}</div>
-          <div style={{ fontSize: 18, color: "#9ca3af", marginTop: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: 40, textAlign: "center", gap: 10 }}>
+          <div style={{ fontSize: 80, lineHeight: 1, filter: "drop-shadow(0 0 32px rgba(16,185,129,0.5))" }}>🎬</div>
+          <div style={{ fontSize: 14, color: "#10b981", letterSpacing: 3, fontFamily: "'Geist Mono',monospace", fontWeight: 800, lineHeight: 1 }}>TIKET BERHASIL DIBELI</div>
+          <div style={{ fontSize: 44, fontWeight: 900, letterSpacing: -1, lineHeight: 1.15, margin: 0 }}>{state.film_title || "Selamat menonton!"}</div>
+          <div style={{ fontSize: 18, color: "#9ca3af", lineHeight: 1.4, margin: 0 }}>
             {state.studio_name} · {state.show_date} · {state.start_time}
           </div>
-          <div style={{ display: "flex", gap: 12, marginTop: 24, flexWrap: "wrap", justifyContent: "center" }}>
+          <div style={{ display: "flex", gap: 12, marginTop: 8, flexWrap: "wrap", justifyContent: "center" }}>
             {(state.seats || []).map(s => (
-              <span key={s} style={{ fontSize: 24, fontWeight: 900, padding: "10px 22px", borderRadius: 14, background: "linear-gradient(135deg,#f59e0b,#fbbf24)", color: "#1a1205", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5 }}>{s}</span>
+              <span key={s} style={{ fontSize: 24, fontWeight: 900, padding: "10px 22px", borderRadius: 14, background: "linear-gradient(135deg,#f59e0b,#fbbf24)", color: "#1a1205", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5, lineHeight: 1 }}>{s}</span>
             ))}
           </div>
-          <div style={{ marginTop: 26, fontSize: 16, color: "#7d8590" }}>Total dibayar</div>
-          <div style={{ fontSize: 38, fontWeight: 900, color: "#10b981", fontFamily: "'Geist Mono',monospace", letterSpacing: -1 }}>{rp(state.total)}</div>
+          <div style={{ marginTop: 12, fontSize: 16, color: "#7d8590", lineHeight: 1 }}>Total dibayar</div>
+          <div style={{ fontSize: 38, fontWeight: 900, color: "#10b981", fontFamily: "'Geist Mono',monospace", letterSpacing: -1, lineHeight: 1 }}>{rp(state.total)}</div>
         </div>
       </Shell>
     );
@@ -197,15 +197,15 @@ export default function CinemaCDS() {
   const currentShow = todayShows[carouselIdx % Math.max(1, todayShows.length)];
   return (
     <Shell now={now} outlet={state.outlet}>
-      <div style={{ display: "flex", flexDirection: "column", flex: 1, alignItems: "center", justifyContent: "center", padding: 30, textAlign: "center" }}>
-        <div style={{ fontSize: 120, marginBottom: 10, filter: "drop-shadow(0 0 32px rgba(168,85,247,0.4))" }}>🎬</div>
-        <div style={{ fontSize: 14, color: "#a855f7", letterSpacing: 4, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>karyaOS CINEMA</div>
-        <div style={{ fontSize: 56, fontWeight: 900, marginTop: 8, letterSpacing: -1.2, color: "#fff" }}>Selamat Datang</div>
-        <div style={{ fontSize: 16, color: "#9ca3af", marginTop: 10, maxWidth: 600 }}>Silakan pilih film & jadwal di counter — kasir akan bantu pesanan Anda</div>
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, alignItems: "center", justifyContent: "center", padding: 30, textAlign: "center", gap: 14 }}>
+        <div style={{ fontSize: 96, lineHeight: 1, filter: "drop-shadow(0 0 32px rgba(168,85,247,0.4))" }}>🎬</div>
+        <div style={{ fontSize: 14, color: "#a855f7", letterSpacing: 4, fontFamily: "'Geist Mono',monospace", fontWeight: 800, lineHeight: 1, margin: 0 }}>karyaOS CINEMA</div>
+        <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: -1.2, color: "#fff", lineHeight: 1.1, margin: 0 }}>Selamat Datang</div>
+        <div style={{ fontSize: 16, color: "#9ca3af", maxWidth: 600, lineHeight: 1.5, margin: 0 }}>Silakan pilih film & jadwal di counter — kasir akan bantu pesanan Anda</div>
 
-        {/* Rotating showtime carousel */}
+        {/* Rotating showtime carousel — extra spacing from welcome text */}
         {currentShow && (
-          <div style={{ marginTop: 38, maxWidth: 700, width: "100%", padding: 22, background: "linear-gradient(180deg, rgba(168,85,247,0.08), rgba(168,85,247,0.02))", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 18, boxShadow: "0 16px 48px rgba(0,0,0,0.4)" }}>
+          <div style={{ marginTop: 28, maxWidth: 700, width: "100%", padding: 22, background: "linear-gradient(180deg, rgba(168,85,247,0.08), rgba(168,85,247,0.02))", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 18, boxShadow: "0 16px 48px rgba(0,0,0,0.4)" }}>
             <div style={{ fontSize: 11, color: "#c084fc", letterSpacing: 3, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>TAYANG HARI INI</div>
             <div style={{ display: "flex", gap: 18, marginTop: 14, alignItems: "center" }}>
               {currentShow.poster_url ? (

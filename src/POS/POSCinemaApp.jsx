@@ -16,6 +16,39 @@ import QRCode from "qrcode";
 
 const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
+// Track CDS window reference across re-renders
+let cinemaCdsWindowRef = null;
+
+async function openCinemaCDSOnSecondScreen() {
+  if (cinemaCdsWindowRef && !cinemaCdsWindowRef.closed) {
+    cinemaCdsWindowRef.focus();
+    return cinemaCdsWindowRef;
+  }
+  const base = window.location.origin + window.location.pathname.replace(/\/?$/, "/");
+  const cdsUrl = `${base}?cinema-cds`;
+
+  let position = "";
+  try {
+    if ("getScreenDetails" in window) {
+      const screenDetails = await window.getScreenDetails();
+      const secondary = screenDetails.screens.find(s => !s.isPrimary);
+      if (secondary) {
+        position = `left=${secondary.availLeft},top=${secondary.availTop},width=${secondary.availWidth},height=${secondary.availHeight}`;
+      }
+    }
+  } catch {}
+  if (!position) position = `left=${window.screen.width},top=0,width=1920,height=1080`;
+
+  const features = `${position},toolbar=no,menubar=no,location=no,status=no,scrollbars=yes`;
+  cinemaCdsWindowRef = window.open(cdsUrl, "KaryaOSCinemaCDS", features);
+  if (!cinemaCdsWindowRef) {
+    alert("Popup diblok! Allow popup untuk kiosk.karys.tech di browser settings, lalu coba lagi.");
+    return null;
+  }
+  cinemaCdsWindowRef.focus();
+  return cinemaCdsWindowRef;
+}
+
 // Module-level — expose posLogout helper imediately on import (no component mount needed)
 // Call from DevTools console anywhere: posLogout()
 if (typeof window !== "undefined") {
@@ -189,7 +222,28 @@ export default function POSCinemaApp() {
         <TopBar cashier={cashier} stage={stage} onLogout={handleLogout} onHome={resetSale} />
 
         {stage === "home" && (
-          <Home onPick={(st) => { setPicked(st); setStage("sell"); }} />
+          <>
+            <Home onPick={(st) => { setPicked(st); setStage("sell"); }} />
+            {/* Floating button: buka Customer Display di layar kedua */}
+            <button
+              onClick={openCinemaCDSOnSecondScreen}
+              title="Buka Customer Display di layar kedua (TV second screen)"
+              onMouseEnter={(e) => { e.currentTarget.style.background = "#a855f7"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.transform = "translateX(-50%) translateY(-2px)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(168,85,247,0.1)"; e.currentTarget.style.color = "#c084fc"; e.currentTarget.style.transform = "translateX(-50%) translateY(0)"; }}
+              style={{
+                position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)",
+                zIndex: 1000, padding: "14px 28px",
+                background: "rgba(168,85,247,0.1)", color: "#c084fc",
+                border: "2px solid #a855f7", borderRadius: 100,
+                fontWeight: 800, fontSize: 14, letterSpacing: 0.5, fontFamily: "inherit",
+                cursor: "pointer", boxShadow: "0 8px 24px rgba(0,0,0,0.4), 0 0 0 4px rgba(168,85,247,0.1)",
+                display: "flex", alignItems: "center", gap: 10,
+                backdropFilter: "blur(8px)", transition: "all 0.2s ease", whiteSpace: "nowrap",
+              }}
+            >
+              <span style={{ fontSize: 18 }}>📺</span> Buka Layar Pelanggan
+            </button>
+          </>
         )}
         {stage === "sell" && picked && (
           <Sell
