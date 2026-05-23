@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 // Cinema Ticketing — pick a showtime, sell seats off a live seat map.
 // karyaOS cinema vertical (admin side). Talks to /api/cinema/*.
 const C = { card: "#0d1117", border: "#1b212c", sub: "#7d8590", dim: "#5b6470" };
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+const fmtTs = (s) => s ? new Date(s * 1000).toLocaleString("id-ID", { hour12: false }) : "—";
 const inp = { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 10px", color: "#fff", fontSize: 12.5, fontFamily: "inherit", boxSizing: "border-box", outline: "none" };
 
 export default function CinemaTicketing({ apiBase }) {
@@ -12,18 +14,42 @@ export default function CinemaTicketing({ apiBase }) {
   const [data, setData] = useState(null);
   const [selected, setSelected] = useState(new Set());
   const [msg, setMsg] = useState("");
+  const [tickets, setTickets] = useState([]);
   const base = `${apiBase}/api/cinema`;
+  const { confirm, prompt } = useUiKit();
 
   useEffect(() => {
     fetch(`${base}/showtimes`).then(r => r.json()).then(d => setShowtimes(d.showtimes || [])).catch(() => {});
   }, [apiBase]);
 
+  const loadTicketsForShow = (id) => {
+    if (!id) { setTickets([]); return; }
+    fetch(`${base}/tickets?showtime=${id}`).then(r => r.json()).then(d => setTickets(d.tickets || [])).catch(() => setTickets([]));
+  };
   const loadSeats = (id) => {
     if (!id) { setData(null); setSelected(new Set()); return; }
     fetch(`${base}/showtimes/${id}/seats`).then(r => r.json())
       .then(d => { setData(d && !d.error ? d : null); setSelected(new Set()); }).catch(() => {});
+    loadTicketsForShow(id);
   };
   const pick = (id) => { setShowId(id); setMsg(""); loadSeats(id); };
+
+  const voidTicket = async (t) => {
+    const reason = await prompt({ title: `Void tiket #${t.id} (kursi ${t.seat})`, label: "Alasan void:", placeholder: "Refund customer / kursi rusak / dll" });
+    if (reason == null) return;
+    const r = await fetch(`${base}/tickets/${t.id}/void`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ reason }) });
+    const d = await r.json();
+    if (d.error) { setMsg("⚠ " + d.error); return; }
+    setMsg(`✅ Tiket #${t.id} (kursi ${t.seat}) di-void`); loadSeats(showId);
+  };
+  const deleteTicket = async (t) => {
+    const ok = await confirm({ title: `Hapus tiket #${t.id}?`, message: `Kursi ${t.seat} · ${rp(t.price)} akan dihapus permanen.\n\nGunakan VOID untuk audit trail. Hapus hanya untuk koreksi data error.`, danger: true, okLabel: "Hapus Permanen" });
+    if (!ok) return;
+    const r = await fetch(`${base}/tickets/${t.id}`, { method: "DELETE" });
+    const d = await r.json();
+    if (d.error) { setMsg("⚠ " + d.error); return; }
+    setMsg(`🗑️ Tiket #${t.id} dihapus`); loadSeats(showId);
+  };
 
   const toggle = (seat) => {
     if (data && data.sold.includes(seat)) return;
@@ -128,6 +154,38 @@ export default function CinemaTicketing({ apiBase }) {
                 Jual Tiket
               </button>
             </div>
+          </div>
+
+          {/* Tiket terjual untuk showtime ini — void / hapus */}
+          <div style={{ marginTop: 14, background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", borderBottom: `1px solid ${C.border}` }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#e6edf3" }}>🎟️ Tiket Terjual Showtime Ini ({tickets.length})</span>
+              <span style={{ fontSize: 10.5, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>VOID = audit trail · DELETE = hard delete koreksi</span>
+            </div>
+            {tickets.length === 0 ? <div style={{ padding: "16px 14px", textAlign: "center", color: C.sub, fontSize: 12 }}>Belum ada tiket terjual.</div>
+              : (
+                <div style={{ maxHeight: 260, overflowY: "auto" }}>
+                  <div style={{ display: "flex", padding: "6px 14px", borderBottom: `1px solid ${C.border}`, color: C.dim, fontSize: 10, letterSpacing: 1, gap: 10, fontFamily: "'Geist Mono',monospace" }}>
+                    <span style={{ width: 60 }}>#ID</span><span style={{ width: 70 }}>KURSI</span><span style={{ width: 110, textAlign: "right" }}>HARGA</span><span style={{ width: 70 }}>STATUS</span><span style={{ flex: 1 }}>WAKTU JUAL</span><span style={{ width: 130, textAlign: "right" }}>AKSI</span>
+                  </div>
+                  {tickets.map(t => {
+                    const isVoid = t.status === "void" || t.status === "voided" || t.status === "cancelled";
+                    return (
+                      <div key={t.id} style={{ display: "flex", padding: "6px 14px", borderBottom: `1px solid ${C.border}`, gap: 10, fontSize: 12, alignItems: "center", opacity: isVoid ? 0.55 : 1 }}>
+                        <span style={{ width: 60, fontFamily: "'Geist Mono',monospace", color: "#fbbf24" }}>#{t.id}</span>
+                        <span style={{ width: 70, fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>{t.seat}</span>
+                        <span style={{ width: 110, textAlign: "right", fontFamily: "'Geist Mono',monospace", color: "#10b981", fontWeight: 700 }}>{rp(t.price)}</span>
+                        <span style={{ width: 70, fontSize: 10.5, color: isVoid ? "#ef4444" : "#10b981", fontWeight: 700 }}>{(t.status || "sold").toUpperCase()}</span>
+                        <span style={{ flex: 1, fontSize: 10.5, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{fmtTs(t.sold_at || t.created_at)}</span>
+                        <span style={{ width: 130, display: "flex", gap: 4, justifyContent: "flex-end" }}>
+                          {!isVoid && <button onClick={() => voidTicket(t)} style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 8px", borderRadius: 5, fontSize: 10.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>VOID</button>}
+                          <button onClick={() => deleteTicket(t)} style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 8px", borderRadius: 5, fontSize: 10.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>🗑️</button>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
           </div>
         </>
       )}

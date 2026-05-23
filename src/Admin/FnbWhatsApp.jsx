@@ -14,7 +14,28 @@ export default function FnbWhatsApp({ apiBase = "" }) {
   const [summary, setSummary] = useState({});
   const [send, setSend] = useState({ recipient_phone: "", recipient_name: "", template_name: "", message: "" });
   const [toast, setToast] = useState(null);
+  const { confirm } = useUiKit();
   const showToast = (m, k = "ok") => { setToast({ m, k }); setTimeout(() => setToast(null), 2200); };
+  const removeMsg = async (m) => {
+    const ok = await confirm({ title: "Hapus log pesan?", message: `Pesan ke ${m.recipient_phone} akan dihapus permanen.`, danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    await fetch(`${base}/wa-messages/${m.id}`, { method: "DELETE" });
+    showToast("Pesan dihapus"); load();
+  };
+  const clearAllMsgs = async () => {
+    const ok = await confirm({ title: "Bersihkan semua log pesan WA?", message: `Semua ${messages.length} pesan akan dihapus permanen. Tidak bisa dibatalkan.`, danger: true, okLabel: "Hapus Semua" });
+    if (!ok) return;
+    const r = await fetch(`${base}/wa-messages`, { method: "DELETE" });
+    const d = await r.json();
+    showToast(`${d.deleted || 0} log dihapus`); load();
+  };
+  const clearFailed = async () => {
+    const ok = await confirm({ title: "Hapus log pesan yang gagal?", message: "Hanya pesan dengan status 'failed' yang dihapus.", danger: true, okLabel: "Hapus Failed" });
+    if (!ok) return;
+    const r = await fetch(`${base}/wa-messages?status=failed`, { method: "DELETE" });
+    const d = await r.json();
+    showToast(`${d.deleted || 0} failed dihapus`); load();
+  };
   const load = useCallback(async () => {
     const c = await fetch(`${base}/wa-config`).then(r => r.json()); setCfg(c.config || {}); setCfgEdit(c.config || {});
     const m = await fetch(`${base}/wa-messages`).then(r => r.json()); setMessages(m.messages || []); setSummary(m.summary || {});
@@ -66,22 +87,29 @@ export default function FnbWhatsApp({ apiBase = "" }) {
         </div>
       )}
       {tab === "log" && (
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
-          <div style={{ display: "flex", padding: "8px 14px", borderBottom: `1px solid ${C.border}`, color: C.dim, fontSize: 11, letterSpacing: 1, gap: 10 }}>
-            <span style={{ width: 140 }}>WAKTU</span><span style={{ width: 140 }}>NOMOR</span><span style={{ flex: 1 }}>PESAN</span><span style={{ width: 90 }}>STATUS</span>
+        <>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, marginBottom: 8 }}>
+            <button onClick={clearFailed} disabled={!messages.length} style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "5px 12px", borderRadius: 7, fontSize: 11.5, fontWeight: 700, cursor: messages.length ? "pointer" : "not-allowed", fontFamily: "inherit", opacity: messages.length ? 1 : 0.5 }}>🗑️ Hapus Failed</button>
+            <button onClick={clearAllMsgs} disabled={!messages.length} style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "5px 12px", borderRadius: 7, fontSize: 11.5, fontWeight: 700, cursor: messages.length ? "pointer" : "not-allowed", fontFamily: "inherit", opacity: messages.length ? 1 : 0.5 }}>🗑️ Hapus Semua</button>
           </div>
-          {messages.length === 0 ? <Empty>Belum ada pesan.</Empty> : messages.map(m => {
-            const st = STATUS[m.status] || STATUS.queued;
-            return (
-              <div key={m.id} style={{ display: "flex", padding: "8px 14px", borderBottom: `1px solid ${C.border}`, gap: 10, fontSize: 12, alignItems: "center" }}>
-                <span style={{ width: 140, fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{fmtTs(m.created_at)}</span>
-                <span style={{ width: 140, fontFamily: "'Geist Mono',monospace" }}>{m.recipient_phone}{m.recipient_name ? <div style={{ fontSize: 10, color: C.dim }}>{m.recipient_name}</div> : null}</span>
-                <span style={{ flex: 1, color: C.sub, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={m.message}>{m.message}{m.error ? <span style={{ color: "#ef4444", marginLeft: 6 }}> · {m.error}</span> : ""}</span>
-                <span style={{ width: 90 }}><span style={{ background: st.color + "22", color: st.color, padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700 }}>{st.label}</span></span>
-              </div>
-            );
-          })}
-        </div>
+          <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
+            <div style={{ display: "flex", padding: "8px 14px", borderBottom: `1px solid ${C.border}`, color: C.dim, fontSize: 11, letterSpacing: 1, gap: 10 }}>
+              <span style={{ width: 140 }}>WAKTU</span><span style={{ width: 140 }}>NOMOR</span><span style={{ flex: 1 }}>PESAN</span><span style={{ width: 90 }}>STATUS</span><span style={{ width: 40 }}></span>
+            </div>
+            {messages.length === 0 ? <Empty>Belum ada pesan.</Empty> : messages.map(m => {
+              const st = STATUS[m.status] || STATUS.queued;
+              return (
+                <div key={m.id} style={{ display: "flex", padding: "8px 14px", borderBottom: `1px solid ${C.border}`, gap: 10, fontSize: 12, alignItems: "center" }}>
+                  <span style={{ width: 140, fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{fmtTs(m.created_at)}</span>
+                  <span style={{ width: 140, fontFamily: "'Geist Mono',monospace" }}>{m.recipient_phone}{m.recipient_name ? <div style={{ fontSize: 10, color: C.dim }}>{m.recipient_name}</div> : null}</span>
+                  <span style={{ flex: 1, color: C.sub, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={m.message}>{m.message}{m.error ? <span style={{ color: "#ef4444", marginLeft: 6 }}> · {m.error}</span> : ""}</span>
+                  <span style={{ width: 90 }}><span style={{ background: st.color + "22", color: st.color, padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700 }}>{st.label}</span></span>
+                  <button onClick={() => removeMsg(m)} style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }} title="Hapus">🗑️</button>
+                </div>
+              );
+            })}
+          </div>
+        </>
       )}
       {tab === "config" && (
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14 }}>

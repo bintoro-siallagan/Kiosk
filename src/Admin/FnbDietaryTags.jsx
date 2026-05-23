@@ -27,7 +27,15 @@ export default function FnbDietaryTags({ apiBase = "" }) {
   const [selected, setSelected] = useState(new Set());
   const [allTags, setAllTags] = useState([]);
   const [toast, setToast] = useState(null);
+  const { confirm } = useUiKit();
   const showToast = (m, k = "ok") => { setToast({ m, k }); setTimeout(() => setToast(null), 2200); };
+  const clearAllTags = async (g) => {
+    const ok = await confirm({ title: `Hapus semua tag untuk "${g.name || g.id}"?`, message: `${g.tags.length} tag akan dihapus permanen.`, danger: true, okLabel: "Hapus Semua" });
+    if (!ok) return;
+    await fetch(`${base}/dietary-tags/bulk`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ menu_item_id: g.id, menu_item_name: g.name || "", tags: [] }) });
+    showToast("Semua tag dihapus"); load();
+    if (String(g.id) === menuItemId) setSelected(new Set());
+  };
   const load = useCallback(async () => {
     const d = await fetch(`${base}/dietary-tags`).then(r => r.json()); setAllTags(d.tags || []);
   }, [base]);
@@ -93,7 +101,10 @@ export default function FnbDietaryTags({ apiBase = "" }) {
                   return <span key={t} style={{ background: tag.color + "22", color: tag.color, padding: "2px 7px", borderRadius: 5, fontSize: 11, fontWeight: 700 }}>{tag.icon} {tag.label}</span>;
                 })}
               </span>
-              <button onClick={() => { setMenuItemId(String(g.id)); setMenuItemName(g.name || ""); }} style={Ba("#a855f7")}>Edit</button>
+              <span style={{ display: "flex", gap: 5 }}>
+                <button onClick={() => { setMenuItemId(String(g.id)); setMenuItemName(g.name || ""); }} style={Ba("#f59e0b")} title="Edit tags">✏️ Edit</button>
+                <button onClick={() => clearAllTags(g)} style={Ba("#ef4444")} title="Hapus semua tag">🗑️</button>
+              </span>
             </div>
           ))
         }

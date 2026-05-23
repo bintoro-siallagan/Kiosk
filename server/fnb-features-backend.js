@@ -835,6 +835,21 @@ function setupFnbFeatures(app, opts = {}) {
            b.notes || '');
     res.json({ ok: true, id: info.lastInsertRowid });
   });
+  router.patch('/tips/:id', (req, res) => {
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['amount', 'staff_id', 'staff_name', 'tip_type', 'payment_method', 'notes']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(k === 'amount' ? parseInt(b[k], 10) : b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE fnb_tips SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/tips/:id', (req, res) => {
+    db.prepare(`DELETE FROM fnb_tips WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
   router.get('/tip-pool/:date', (req, res) => {
     const date = req.params.date;
     // Pool total: sum of pool-type tips for that date
@@ -1261,6 +1276,19 @@ function setupFnbFeatures(app, opts = {}) {
       COALESCE(SUM(CASE WHEN status='failed' THEN 1 ELSE 0 END),0) failed FROM fnb_wa_messages`).get();
     res.json({ messages: rows, summary: agg });
   });
+  router.delete('/wa-messages/:id', (req, res) => {
+    db.prepare(`DELETE FROM fnb_wa_messages WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+  router.delete('/wa-messages', (req, res) => {
+    // Clear all logs (or by status if ?status=failed)
+    if (req.query.status) {
+      const info = db.prepare(`DELETE FROM fnb_wa_messages WHERE status = ?`).run(req.query.status);
+      return res.json({ ok: true, deleted: info.changes });
+    }
+    const info = db.prepare(`DELETE FROM fnb_wa_messages`).run();
+    res.json({ ok: true, deleted: info.changes });
+  });
 
   // ── 14. BANK AUTO-RECON ──────────────────────────────────────────────
   router.get('/bank-transactions', (req, res) => {
@@ -1305,6 +1333,21 @@ function setupFnbFeatures(app, opts = {}) {
     db.prepare(`UPDATE fnb_bank_transactions SET matched_settlement_id = NULL, matched_at = NULL, match_confidence = NULL WHERE id = ?`).run(req.params.id);
     res.json({ ok: true });
   });
+  router.patch('/bank-transactions/:id', (req, res) => {
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['txn_date', 'amount', 'description', 'reference_no', 'bank_name', 'account_number', 'notes']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(k === 'amount' ? parseInt(b[k], 10) : b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE fnb_bank_transactions SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/bank-transactions/:id', (req, res) => {
+    db.prepare(`DELETE FROM fnb_bank_transactions WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
 
   // ── 15. ORDER TRANSFER ──────────────────────────────────────────────
   router.post('/order-transfers', (req, res) => {
@@ -1317,6 +1360,21 @@ function setupFnbFeatures(app, opts = {}) {
   router.get('/order-transfers', (req, res) => {
     const rows = db.prepare(`SELECT * FROM fnb_order_transfers ORDER BY created_at DESC LIMIT 200`).all();
     res.json({ transfers: rows });
+  });
+  router.patch('/order-transfers/:id', (req, res) => {
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['order_ref', 'from_table', 'to_table', 'transferred_by', 'reason', 'notes']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE fnb_order_transfers SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/order-transfers/:id', (req, res) => {
+    db.prepare(`DELETE FROM fnb_order_transfers WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
   });
 
   // ── 16. BILL SPLIT ───────────────────────────────────────────────────

@@ -12,8 +12,21 @@ export default function FnbTipPool({ apiBase = "" }) {
   const [poolData, setPoolData] = useState({ pool_total: 0, distributions: [] });
   const [entries, setEntries] = useState([]);
   const [newTip, setNewTip] = useState({ amount: "", staff_name: "", tip_type: "individual", notes: "" });
+  const [editingTip, setEditingTip] = useState(null);
   const [toast, setToast] = useState(null);
+  const { confirm } = useUiKit();
   const showToast = (m, k = "ok") => { setToast({ m, k }); setTimeout(() => setToast(null), 2200); };
+  const saveTipEdit = async () => {
+    const r = await fetch(`${base}/tips/${editingTip.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editingTip) });
+    const d = await r.json(); if (!d.ok) { showToast(d.error || "Gagal", "err"); return; }
+    showToast("Tip diupdate"); setEditingTip(null); loadTips(); loadPool();
+  };
+  const removeTip = async (t) => {
+    const ok = await confirm({ title: "Hapus tip log?", message: `Tip ${rp(t.amount)} ${t.staff_name ? `untuk ${t.staff_name}` : ""} akan dihapus permanen.`, danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    await fetch(`${base}/tips/${t.id}`, { method: "DELETE" });
+    showToast("Tip dihapus"); loadTips(); loadPool();
+  };
   const loadTips = useCallback(async () => {
     const d = await fetch(`${base}/tips?from=${date}&to=${date}`).then(r => r.json()); setTips(d.tips || []);
   }, [base, date]);
@@ -123,10 +136,37 @@ export default function FnbTipPool({ apiBase = "" }) {
             <span style={{ width: 110, fontSize: 11.5, color: C.sub }}>{t.tip_type === "pool" ? "🔄 Pool" : "👤 Individual"}</span>
             <span style={{ width: 110, fontFamily: "'Geist Mono',monospace", color: "#fbbf24", fontWeight: 700 }}>{rp(t.amount)}</span>
             <span style={{ flex: 1, fontSize: 11, color: C.dim }}>{t.notes || ""}</span>
+            <span style={{ display: "flex", gap: 4 }}>
+              <button onClick={() => setEditingTip({ ...t })} style={Ba("#f59e0b")} title="Edit">✏️</button>
+              <button onClick={() => removeTip(t)} style={Ba("#ef4444")} title="Hapus">🗑️</button>
+            </span>
           </div>
         ))}
       </div>
       {toast && <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: toast.k === "err" ? "#7f1d1d" : "#14532d", border: `1px solid ${toast.k === "err" ? "#ef4444" : "#22c55e"}`, color: "#fff", padding: "10px 20px", borderRadius: 10, fontSize: 13, fontWeight: 600, zIndex: 9999 }}>{toast.m}</div>}
+
+      {editingTip && (
+        <div onClick={() => setEditingTip(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9998, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 460, width: "100%" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit Tip</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div><div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, marginBottom: 4 }}>JUMLAH</div><input type="number" value={editingTip.amount || ""} onChange={e => setEditingTip({ ...editingTip, amount: e.target.value })} style={inp} /></div>
+              <div><div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, marginBottom: 4 }}>STAFF</div><input value={editingTip.staff_name || ""} onChange={e => setEditingTip({ ...editingTip, staff_name: e.target.value })} style={inp} /></div>
+              <div><div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, marginBottom: 4 }}>TIPE</div>
+                <select value={editingTip.tip_type || "individual"} onChange={e => setEditingTip({ ...editingTip, tip_type: e.target.value })} style={inp}>
+                  <option value="individual">Individual</option><option value="pool">Pool</option>
+                </select>
+              </div>
+              <div><div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, marginBottom: 4 }}>PAYMENT</div><input value={editingTip.payment_method || ""} onChange={e => setEditingTip({ ...editingTip, payment_method: e.target.value })} style={inp} /></div>
+            </div>
+            <div style={{ marginTop: 8 }}><div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, marginBottom: 4 }}>CATATAN</div><input value={editingTip.notes || ""} onChange={e => setEditingTip({ ...editingTip, notes: e.target.value })} style={inp} /></div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditingTip(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveTipEdit} style={B.save}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

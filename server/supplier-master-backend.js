@@ -83,6 +83,27 @@ function setupSupplierMaster(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  router.patch('/:id', (req, res) => {
+    const s = db.prepare(`SELECT * FROM supplier_master WHERE id = ?`).get(req.params.id);
+    if (!s) return res.status(404).json({ error: 'vendor tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    const num = new Set(['on_time_pct', 'quality_score', 'price_score']);
+    for (const k of ['name', 'category', 'contact', 'phone', 'payment_terms', 'on_time_pct', 'quality_score', 'price_score']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(num.has(k) ? Number(b[k]) : String(b[k])); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE supplier_master SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM supplier_master WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'vendor tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/supplier-master';
   app.use(mountPath, router);
   console.log(`[supplier-master] mounted at ${mountPath} — vendor master + scorecard`);

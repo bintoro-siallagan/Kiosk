@@ -11,6 +11,7 @@ export default function FnbRecipe({ apiBase = "" }) {
   const [rows, setRows] = useState([]);
   const [movements, setMovements] = useState([]);
   const [form, setForm] = useState({ menu_item_id: "", menu_item_name: "", ingredient_name: "", qty: "", unit: "", notes: "" });
+  const [editing, setEditing] = useState(null);
   const [toast, setToast] = useState(null);
   const showToast = (m, k = "ok") => { setToast({ m, k }); setTimeout(() => setToast(null), 2200); };
   const load = useCallback(async () => {
@@ -25,6 +26,11 @@ export default function FnbRecipe({ apiBase = "" }) {
     showToast("Recipe ditambahkan"); setForm({ menu_item_id: form.menu_item_id, menu_item_name: form.menu_item_name, ingredient_name: "", qty: "", unit: "", notes: "" }); load();
   };
   const { confirm, undoToast } = useUiKit();
+  const saveEdit = async () => {
+    const r = await fetch(`${base}/recipes/${editing.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing) });
+    const d = await r.json(); if (!d.ok) { showToast(d.error || "Gagal", "err"); return; }
+    showToast("Recipe diupdate"); setEditing(null); load();
+  };
   const remove = async (r) => {
     if (!(await confirm({ title: `Hapus ingredient "${r.ingredient_name}"?`, message: `dari recipe "${r.menu_item_name}"`, danger: true, okLabel: "Hapus" }))) return;
     await fetch(`${base}/recipes/${r.id}`, { method: "DELETE" }); load();
@@ -76,10 +82,11 @@ export default function FnbRecipe({ apiBase = "" }) {
                   </div>
                   {g.items.map(it => (
                     <div key={it.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderTop: `1px solid #1f2937`, fontSize: 12.5 }}>
-                      <span>{it.ingredient_name}</span>
+                      <span>{it.ingredient_name}{it.notes ? <span style={{ color: C.dim, fontSize: 11 }}> · {it.notes}</span> : null}</span>
                       <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
                         <span style={{ fontFamily: "'Geist Mono',monospace", color: "#fbbf24", fontWeight: 700 }}>{fmtNum(it.qty)} {it.unit}</span>
-                        <button onClick={() => remove(it)} style={Ba("#ef4444")}>×</button>
+                        <button onClick={() => setEditing({ ...it })} style={Ba("#f59e0b")} title="Edit">✏️</button>
+                        <button onClick={() => remove(it)} style={Ba("#ef4444")} title="Hapus">×</button>
                       </span>
                     </div>
                   ))}
@@ -110,6 +117,26 @@ export default function FnbRecipe({ apiBase = "" }) {
         </div>
       )}
       {toast && <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: toast.k === "err" ? "#7f1d1d" : "#14532d", border: `1px solid ${toast.k === "err" ? "#ef4444" : "#22c55e"}`, color: "#fff", padding: "10px 20px", borderRadius: 10, fontSize: 13, fontWeight: 600, zIndex: 9999 }}>{toast.m}</div>}
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9998, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 480, width: "100%" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit Ingredient — {editing.ingredient_name}</div>
+            <Field label="Ingredient"><input value={editing.ingredient_name} onChange={e => setEditing({ ...editing, ingredient_name: e.target.value })} style={inp} /></Field>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
+              <Field label="Qty / porsi"><input type="number" step="0.001" value={editing.qty} onChange={e => setEditing({ ...editing, qty: e.target.value })} style={inp} /></Field>
+              <Field label="Unit"><input value={editing.unit || ""} onChange={e => setEditing({ ...editing, unit: e.target.value })} style={inp} /></Field>
+            </div>
+            <div style={{ marginTop: 8 }}>
+              <Field label="Catatan"><input value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} style={inp} /></Field>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={B.save}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

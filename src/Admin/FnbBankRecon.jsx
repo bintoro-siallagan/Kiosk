@@ -50,6 +50,19 @@ export default function FnbBankRecon({ apiBase = "" }) {
     showToast("Matched"); load();
   };
   const unmatch = async (t) => { await fetch(`${base}/bank-transactions/${t.id}/unmatch`, { method: "POST" }); load(); };
+  const { confirm } = useUiKit();
+  const [editing, setEditing] = useState(null);
+  const saveEdit = async () => {
+    const r = await fetch(`${base}/bank-transactions/${editing.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing) });
+    const d = await r.json(); if (!d.ok) { showToast(d.error || "Gagal", "err"); return; }
+    showToast("Transaksi diupdate"); setEditing(null); load();
+  };
+  const removeTxn = async (t) => {
+    const ok = await confirm({ title: "Hapus transaksi bank?", message: `${t.txn_date} · ${rp(t.amount)} · ${t.description || ""}\n\nTidak bisa dibatalkan.`, danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    await fetch(`${base}/bank-transactions/${t.id}`, { method: "DELETE" });
+    showToast("Transaksi dihapus"); load();
+  };
   return (
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
@@ -82,7 +95,7 @@ export default function FnbBankRecon({ apiBase = "" }) {
       </div>
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
         <div style={{ display: "flex", padding: "8px 14px", borderBottom: `1px solid ${C.border}`, color: C.dim, fontSize: 11, letterSpacing: 1, gap: 10 }}>
-          <span style={{ width: 110 }}>TGL</span><span style={{ flex: 1.6 }}>DESKRIPSI</span><span style={{ width: 110 }}>REF</span><span style={{ width: 110 }}>BANK</span><span style={{ width: 130, textAlign: "right" }}>AMOUNT</span><span style={{ width: 130 }}>SETTLEMENT</span><span style={{ width: 130, textAlign: "right" }}>AKSI</span>
+          <span style={{ width: 110 }}>TGL</span><span style={{ flex: 1.6 }}>DESKRIPSI</span><span style={{ width: 110 }}>REF</span><span style={{ width: 110 }}>BANK</span><span style={{ width: 130, textAlign: "right" }}>AMOUNT</span><span style={{ width: 130 }}>SETTLEMENT</span><span style={{ width: 180, textAlign: "right" }}>AKSI</span>
         </div>
         {rows.length === 0 ? <Empty>Belum ada transaksi.</Empty> : rows.map(t => {
           const matched = !!t.matched_settlement_id;
@@ -94,14 +107,37 @@ export default function FnbBankRecon({ apiBase = "" }) {
               <span style={{ width: 110, fontSize: 11.5, color: C.sub }}>{t.bank_name || "—"}</span>
               <span style={{ width: 130, textAlign: "right", fontFamily: "'Geist Mono',monospace", color: t.amount >= 0 ? "#10b981" : "#ef4444", fontWeight: 700 }}>{rp(t.amount)}</span>
               <span style={{ width: 130, fontSize: 11.5, color: matched ? "#10b981" : "#ef4444", fontWeight: 700 }}>{matched ? `✓ #${t.matched_settlement_id}` : "✕ unmatched"}</span>
-              <span style={{ width: 130, display: "flex", gap: 4, justifyContent: "flex-end" }}>
+              <span style={{ width: 180, display: "flex", gap: 4, justifyContent: "flex-end" }}>
                 {!matched ? <button onClick={() => match(t)} style={Ba("#10b981")}>Match</button> : <button onClick={() => unmatch(t)} style={Ba("#ef4444")}>Unmatch</button>}
+                <button onClick={() => setEditing({ ...t })} style={Ba("#f59e0b")} title="Edit">✏️</button>
+                <button onClick={() => removeTxn(t)} style={Ba("#ef4444")} title="Hapus">🗑️</button>
               </span>
             </div>
           );
         })}
       </div>
       {toast && <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: toast.k === "err" ? "#7f1d1d" : "#14532d", border: `1px solid ${toast.k === "err" ? "#ef4444" : "#22c55e"}`, color: "#fff", padding: "10px 20px", borderRadius: 10, fontSize: 13, fontWeight: 600, zIndex: 9999 }}>{toast.m}</div>}
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9998, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 520, width: "100%" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit Transaksi Bank</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div><div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, marginBottom: 4 }}>TANGGAL</div><input type="date" value={editing.txn_date || ""} onChange={e => setEditing({ ...editing, txn_date: e.target.value })} style={inp} /></div>
+              <div><div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, marginBottom: 4 }}>AMOUNT</div><input type="number" value={editing.amount || ""} onChange={e => setEditing({ ...editing, amount: e.target.value })} style={inp} /></div>
+              <div><div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, marginBottom: 4 }}>BANK</div><input value={editing.bank_name || ""} onChange={e => setEditing({ ...editing, bank_name: e.target.value })} style={inp} /></div>
+              <div><div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, marginBottom: 4 }}>NO. REKENING</div><input value={editing.account_number || ""} onChange={e => setEditing({ ...editing, account_number: e.target.value })} style={inp} /></div>
+            </div>
+            <div style={{ marginTop: 8 }}><div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, marginBottom: 4 }}>DESKRIPSI</div><input value={editing.description || ""} onChange={e => setEditing({ ...editing, description: e.target.value })} style={inp} /></div>
+            <div style={{ marginTop: 8 }}><div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, marginBottom: 4 }}>REFERENCE NO</div><input value={editing.reference_no || ""} onChange={e => setEditing({ ...editing, reference_no: e.target.value })} style={inp} /></div>
+            <div style={{ marginTop: 8 }}><div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, marginBottom: 4 }}>CATATAN</div><input value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} style={inp} /></div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={B.save}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
