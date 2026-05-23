@@ -445,6 +445,9 @@ function setupCinema(app, opts = {}) {
   try { db.exec("ALTER TABLE cinema_studios ADD COLUMN maintenance_status TEXT DEFAULT 'operational'"); } catch {}
   try { db.exec("ALTER TABLE cinema_studios ADD COLUMN last_cleaned_at INTEGER"); } catch {}
   try { db.exec("ALTER TABLE cinema_studios ADD COLUMN last_cleaned_by TEXT"); } catch {}
+  // Custom seat-map per studio (JSON 2D array). null → fallback ke rows×cols grid.
+  // Schema: [ [ {type:'regular'|'void'|'premium'|'couple'|'disabled', label?:string, span?:number} | null, ... ], ... ]
+  try { db.exec("ALTER TABLE cinema_studios ADD COLUMN seat_map TEXT"); } catch {}
 
   // Seed cinema inventory + recipes on first run
   if (db.prepare(`SELECT COUNT(*) c FROM cinema_inventory_items`).get().c === 0) {
@@ -732,6 +735,20 @@ function setupCinema(app, opts = {}) {
                 : b[k]);
       }
     }
+    // seat_map — accept as object/array or JSON string, validate, persist as JSON text
+    if (b.seat_map !== undefined) {
+      let parsed = b.seat_map;
+      if (typeof parsed === 'string') {
+        try { parsed = JSON.parse(parsed); } catch { return res.status(400).json({ error: 'seat_map JSON invalid' }); }
+      }
+      if (parsed === null || parsed === '') {
+        fields.push('seat_map = ?'); args.push(null);
+      } else if (Array.isArray(parsed)) {
+        fields.push('seat_map = ?'); args.push(JSON.stringify(parsed));
+      } else {
+        return res.status(400).json({ error: 'seat_map harus array 2D atau null' });
+      }
+    }
     if (!fields.length) return res.json({ ok: true, noop: true });
     args.push(req.params.id);
     db.prepare(`UPDATE cinema_studios SET ${fields.join(', ')} WHERE id = ?`).run(...args);
@@ -958,9 +975,15 @@ function setupCinema(app, opts = {}) {
     // Pull duration via film for derived status
     const film = db.prepare(`SELECT duration_min FROM cinema_films WHERE id = ?`).get(st.film_id);
     const derived_status = computeStatus({ ...st, duration_min: film?.duration_min }, capacity, sold.length, Math.floor(Date.now()/1000));
+    // Custom seat_map (if defined per-studio) → return parsed array
+    let seatMap = null;
+    if (st.seat_map) {
+      try { seatMap = JSON.parse(st.seat_map); } catch {}
+    }
     res.json({
       showtime: { ...st, derived_status },
       rows: st.rows || 0, cols: st.cols || 0, capacity,
+      seat_map: seatMap,
       sold, sold_count: sold.length,
       held_by_others, my_holds,
       derived_status,

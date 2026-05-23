@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useUiKit } from "../components/uiKit.jsx";
+import CinemaStudioLayoutEditor from "./CinemaStudioLayoutEditor.jsx";
 
 // Cinema Operations — manage films, studios/screens and showtimes.
 // karyaOS cinema vertical (admin side). Talks to /api/cinema/*.
@@ -31,6 +32,7 @@ export default function CinemaOps({ apiBase }) {
   const [form, setForm] = useState({});
   const [msg, setMsg] = useState("");
   const [editing, setEditing] = useState(null); // { type:'film'|'studio'|'showtime', data:{} }
+  const [layoutStudio, setLayoutStudio] = useState(null); // studio object being layout-edited
 
   const base = `${apiBase}/api/cinema`;
   const reload = () => {
@@ -183,6 +185,7 @@ export default function CinemaOps({ apiBase }) {
                 </div>
                 <Badge color="#a855f7">{x.studio_type}</Badge>
                 <div style={{ fontSize: 12, fontFamily: "'Geist Mono',monospace", color: "#22d3ee", width: 86, textAlign: "right" }}>{x.capacity} kursi</div>
+                <button onClick={() => setLayoutStudio(x)} style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.3)", color: "#c084fc", borderRadius: 7, padding: "5px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>🪑 Layout</button>
                 {editBtn("studio", x)}
                 {delBtnAsk(x, `studios/${x.id}`, x.name)}
               </Row>
@@ -320,6 +323,17 @@ export default function CinemaOps({ apiBase }) {
             </div>
           </div>
         </div>
+      )}
+      {layoutStudio && (
+        <CinemaStudioLayoutEditor
+          studio={layoutStudio}
+          onClose={() => setLayoutStudio(null)}
+          onSaved={() => {
+            fetch(`${base}/studios`).then(r => r.json()).then(d => setStudios(d.studios || [])).catch(() => {});
+            setMsg("✓ Layout studio tersimpan");
+            setTimeout(() => setMsg(""), 2000);
+          }}
+        />
       )}
     </div>
   );
