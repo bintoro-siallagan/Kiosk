@@ -375,43 +375,153 @@ function Empty({ children }) {
 // STYLES
 // ============================================================
 const stationTabBtn = (active, color) => ({
-  padding: '6px 12px', background: active ? color : 'transparent',
-  color: active ? '#0a0a0a' : '#9ca3af', border: `1px solid ${active ? color : '#2a2a2a'}`,
-  borderRadius: 16, fontSize: 12, fontWeight: 500, cursor: 'pointer'
+  padding: '7px 14px',
+  background: active ? `${color}22` : 'rgba(255,255,255,0.025)',
+  color: active ? color : 'rgba(255,255,255,0.55)',
+  border: `1px solid ${active ? `${color}66` : 'rgba(255,255,255,0.08)'}`,
+  borderRadius: 18, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+  fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif",
+  boxShadow: active ? `0 0 16px ${color}33` : 'none',
+  transition: 'all 0.15s',
 });
 
+// Dark MacBook-premium — match POS surfaces (KDS dipakai daily by kitchen staff)
 const styles = {
-  root: { minHeight: '100vh', background: '#0a0a0a', color: '#fff', fontFamily: 'system-ui,-apple-system,sans-serif', display: 'flex', flexDirection: 'column' },
-  topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 20px', borderBottom: '1px solid #1f1f1f', flexWrap: 'wrap', gap: 12 },
-  brand: { fontSize: 20, fontWeight: 600, color: '#f97316' },
-  divider: { color: '#3a3a3a' },
+  root: {
+    minHeight: '100vh',
+    background: 'linear-gradient(160deg,#08090a 0%,#14151c 50%,#0a0b0e 100%)',
+    color: '#fff',
+    fontFamily: "'Inter','SF Pro Display',system-ui,-apple-system,sans-serif",
+    display: 'flex', flexDirection: 'column',
+  },
+  topBar: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '14px 24px',
+    borderBottom: '1px solid rgba(255,255,255,0.06)',
+    background: 'rgba(13,17,23,0.78)',
+    backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+    flexWrap: 'wrap', gap: 12, position: 'sticky', top: 0, zIndex: 10,
+  },
+  brand: {
+    fontSize: 20, fontWeight: 800, letterSpacing: -0.4,
+    background: 'linear-gradient(135deg,#F59E0B,#fbbf24)',
+    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+  },
+  divider: { color: 'rgba(255,255,255,0.15)' },
   stationTabs: { display: 'flex', gap: 6, flexWrap: 'wrap' },
-  statSmall: { fontSize: 12, color: '#9ca3af' },
-  btn: { padding: '6px 14px', background: '#1f1f1f', color: '#9ca3af', border: 'none', borderRadius: 6, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' },
+  statSmall: { fontSize: 12, color: 'rgba(255,255,255,0.55)' },
+  btn: {
+    padding: '8px 14px',
+    background: 'rgba(255,255,255,0.025)',
+    color: 'rgba(255,255,255,0.65)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+    transition: 'all 0.15s',
+  },
 
   body: { flex: 1, display: 'flex', gap: 0, overflow: 'hidden' },
-  columns: { flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: '#1f1f1f' },
-  column: { background: '#0a0a0a', display: 'flex', flexDirection: 'column', overflow: 'hidden' },
-  columnHeader: { padding: '14px 18px', borderTop: '3px solid', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  columnBody: { flex: 1, overflow: 'auto', padding: 12 },
-  countBadge: { padding: '4px 10px', borderRadius: 12, fontSize: 13, fontWeight: 600, minWidth: 28, textAlign: 'center' },
+  columns: {
+    flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: 1, background: 'rgba(255,255,255,0.04)', // separator
+  },
+  column: {
+    background: 'linear-gradient(180deg,#0d0f14 0%,#08090a 100%)',
+    display: 'flex', flexDirection: 'column', overflow: 'hidden',
+  },
+  columnHeader: {
+    padding: '14px 20px', borderTop: '3px solid',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    background: 'rgba(13,17,23,0.5)',
+  },
+  columnBody: { flex: 1, overflow: 'auto', padding: 14 },
+  countBadge: {
+    padding: '4px 11px', borderRadius: 12, fontSize: 13, fontWeight: 800,
+    minWidth: 30, textAlign: 'center', fontFamily: "'Geist Mono',monospace",
+  },
 
-  card: { background: '#1a1a1a', border: '1px solid #2a2a2a', borderLeft: '4px solid #6b7280', borderRadius: 8, marginBottom: 10, overflow: 'hidden' },
-  cardHeader: { padding: '10px 12px', borderBottom: '1px solid #2a2a2a', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 },
-  timer: { padding: '3px 8px', borderRadius: 4, fontSize: 13, fontWeight: 600, fontFamily: 'monospace' },
-  cardBody: { padding: '10px 12px' },
-  itemLine: { display: 'flex', gap: 8, marginBottom: 6 },
-  itemQty: { color: '#f97316', fontWeight: 600, fontSize: 14, minWidth: 24 },
-  itemDetail: { fontSize: 11, color: '#9ca3af', marginTop: 1 },
-  ticketNote: { padding: 8, background: '#3a2a0a', borderRadius: 4, fontSize: 11, color: '#fbbf24', marginTop: 6 },
-  cardActions: { display: 'flex', gap: 6, padding: '8px 12px', borderTop: '1px solid #2a2a2a' },
-  advanceBtn: { flex: 1, padding: '10px 14px', background: '#3b82f6', color: '#fff', border: '1px solid', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600, fontFamily: 'inherit' },
-  recallBtn: { padding: '8px 12px', background: '#2a2a2a', color: '#9ca3af', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 16, fontFamily: 'inherit' },
+  // Ticket card — glass dark with 4px left accent + multi-shadow
+  card: {
+    background: 'linear-gradient(180deg,#15171c 0%,#0d0f14 100%)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderLeft: '4px solid #6b7280',
+    borderRadius: 11, marginBottom: 10, overflow: 'hidden',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.3),0 6px 20px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.04)',
+    transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+  },
+  cardHeader: {
+    padding: '10px 14px',
+    borderBottom: '1px solid rgba(255,255,255,0.06)',
+    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8,
+  },
+  timer: {
+    padding: '4px 10px', borderRadius: 6, fontSize: 13, fontWeight: 800,
+    fontFamily: "'Geist Mono',monospace", letterSpacing: -0.2,
+  },
+  cardBody: { padding: '10px 14px' },
+  itemLine: { display: 'flex', gap: 10, marginBottom: 8 },
+  itemQty: {
+    color: '#fbbf24', fontWeight: 800, fontSize: 16, minWidth: 28,
+    fontFamily: "'Geist Mono',monospace",
+  },
+  itemDetail: { fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2 },
+  ticketNote: {
+    padding: '8px 11px',
+    background: 'rgba(251,191,36,0.08)',
+    border: '1px solid rgba(251,191,36,0.25)',
+    borderRadius: 7, fontSize: 11.5, color: '#fbbf24', marginTop: 8,
+    lineHeight: 1.4,
+  },
+  cardActions: {
+    display: 'flex', gap: 6, padding: '10px 14px',
+    borderTop: '1px solid rgba(255,255,255,0.06)',
+  },
+  advanceBtn: {
+    flex: 1, padding: '11px 14px',
+    background: 'linear-gradient(135deg,#3b82f6,#2563eb)',
+    color: '#fff', border: 'none', borderRadius: 8,
+    cursor: 'pointer', fontSize: 13, fontWeight: 800, fontFamily: 'inherit',
+    letterSpacing: 0.3,
+    boxShadow: '0 4px 14px rgba(59,130,246,0.35), inset 0 1px 0 rgba(255,255,255,0.18)',
+    transition: 'all 0.15s',
+  },
+  recallBtn: {
+    padding: '8px 12px',
+    background: 'rgba(255,255,255,0.04)',
+    color: 'rgba(255,255,255,0.55)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: 8, cursor: 'pointer', fontSize: 16, fontFamily: 'inherit',
+    transition: 'all 0.15s',
+  },
 
-  sidebar: { width: 320, background: '#0f0f0f', borderLeft: '1px solid #2a2a2a', padding: 20, overflow: 'auto' },
-  closeBtn: { width: 30, height: 30, borderRadius: 6, background: '#1f1f1f', color: '#9ca3af', border: 'none', fontSize: 18, cursor: 'pointer' },
-  itemRow86: { display: 'flex', gap: 8, padding: 10, background: '#1a1a1a', borderRadius: 6, marginBottom: 6, alignItems: 'center' },
-  restoreBtn: { padding: '6px 12px', background: '#065f46', color: '#a7f3d0', border: 'none', borderRadius: 4, cursor: 'pointer', fontSize: 11, fontWeight: 500, fontFamily: 'inherit' },
+  sidebar: {
+    width: 340,
+    background: 'rgba(8,9,15,0.85)',
+    backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+    borderLeft: '1px solid rgba(255,255,255,0.06)',
+    padding: 22, overflow: 'auto',
+    boxShadow: 'inset 1px 0 0 rgba(255,255,255,0.04)',
+  },
+  closeBtn: {
+    width: 32, height: 32, borderRadius: 8,
+    background: 'rgba(255,255,255,0.04)',
+    color: 'rgba(255,255,255,0.65)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    fontSize: 18, cursor: 'pointer', fontFamily: 'inherit',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+  },
+  itemRow86: {
+    display: 'flex', gap: 10, padding: '10px 14px',
+    background: 'rgba(255,255,255,0.025)',
+    border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: 9, marginBottom: 7, alignItems: 'center',
+  },
+  restoreBtn: {
+    padding: '6px 12px',
+    background: 'rgba(16,185,129,0.12)',
+    color: '#34d399',
+    border: '1px solid rgba(16,185,129,0.3)',
+    borderRadius: 6, cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit',
+  },
 };
 
 // Inject pulse animation
