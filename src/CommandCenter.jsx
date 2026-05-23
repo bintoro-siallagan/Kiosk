@@ -215,7 +215,7 @@ export default function CommandCenter(){
       <div style={{display:"flex",alignItems:"center",gap:12}}>
         <div style={{width:10,height:10,borderRadius:"50%",background:"#10b981",boxShadow:"0 0 10px #10b981",animation:"pp 2s infinite"}}/>
         <div>
-          <h1 style={{fontSize:22,fontWeight:700,letterSpacing:-1,color:"#fafafa"}}>Bites & Co. Command Center</h1>
+          <h1 style={{fontSize:22,fontWeight:700,letterSpacing:-1,color:"#fafafa"}}>karyaOS Command Center</h1>
           <p style={{fontSize:12,color:"#4a5568",fontFamily:"var(--m)",letterSpacing:1}}>REALTIME MONITORING DASHBOARD</p>
         </div>
       </div>

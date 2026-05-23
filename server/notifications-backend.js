@@ -393,9 +393,9 @@ function setupNotifications(app, opts = {}) {
     if (!sub) return res.status(404).json({ error: 'not found' });
     const testPayload = { test: true, sub_id: sub.id, ts: nowSec() };
     let result;
-    if (sub.channel === 'webhook') result = await deliverWebhook(sub.target, { title: 'Test', body: 'Test from bites-kiosk', payload: testPayload });
-    else if (sub.channel === 'email') result = await deliverEmail(sub.target, 'Test from bites-kiosk', 'Hello from notifications module test');
-    else if (sub.channel === 'telegram') result = await deliverTelegram(sub.target, '*Test* from bites-kiosk notifications');
+    if (sub.channel === 'webhook') result = await deliverWebhook(sub.target, { title: 'Test', body: 'Test from karyaOS', payload: testPayload });
+    else if (sub.channel === 'email') result = await deliverEmail(sub.target, 'Test from karyaOS', 'Hello from notifications module test');
+    else if (sub.channel === 'telegram') result = await deliverTelegram(sub.target, '*Test* from karyaOS notifications');
     res.json(result);
   });
 

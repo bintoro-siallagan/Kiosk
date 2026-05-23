@@ -109,7 +109,7 @@ const CONFIG_DEFAULTS = [
     description: 'Same card ref_no dipakai dalam X menit → anomali' },
 
   // UI
-  { key: 'KIOSK_NAME', value: '"Bites Kiosk"', type: 'json', category: 'ui',
+  { key: 'KIOSK_NAME', value: '"karyaOS"', type: 'json', category: 'ui',
     description: 'Display name kios' },
   { key: 'CURRENCY_SYMBOL', value: '"Rp"', type: 'json', category: 'ui' },
   { key: 'LOW_STOCK_THRESHOLD', value: '5', type: 'number', category: 'audit',
