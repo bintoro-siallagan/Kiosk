@@ -145,6 +145,23 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
   const [rightView, setRightView] = useState(initialView || "home");
   const [rightArg, setRightArg] = useState(null);
   const [railOpen, setRailOpen] = useState(false);
+  // Stock-terminal mode — hide left nav rail, dashboard goes full-width
+  const [navHidden, setNavHidden] = useState(() => {
+    try { return localStorage.getItem("ah-nav-hidden") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("ah-nav-hidden", navHidden ? "1" : "0"); } catch {}
+  }, [navHidden]);
+  // Keyboard shortcut: Esc toggles nav, "f" enters terminal mode
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.target?.tagName === "INPUT" || e.target?.tagName === "TEXTAREA") return;
+      if (e.key === "Escape") setNavHidden(h => !h);
+      else if (e.key === "f" || e.key === "F") setNavHidden(true);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   const [viewRole, setViewRole] = useState("super-admin");
   const [rbacMap, setRbacMap] = useState(null);
   const openRight = (kind, arg) => { setRightView(kind); setRightArg(arg || null); setRailOpen(false); window.scrollTo(0, 0); };
@@ -323,22 +340,51 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     sub: cat.ids.map(moduleNode),
   })) || [];
 
+  // F&B Enhanced sub-menu (nested) — mirror dari group.categories di adminModules
+  const fnbEnhGroup = GROUPS.find(g => g.name === "F&B Enhanced");
+  const fnbEnhToolsSub = fnbEnhGroup?.categories?.map(cat => ({
+    _k: `fnb-enh-cat:${cat.name}`, label: cat.name,
+    sub: cat.ids.map(moduleNode),
+  })) || [];
+
   const columns = [
-    { title: "Dashboard", accent: "#f59e0b", items: [
+    { title: "📊 Dashboard", accent: "#f59e0b", items: [
       { label: "Owner Dashboard", icon: "📊", c: "#f59e0b", on: () => openRight("tools", "dashboard") },
     ] },
-    { title: "Outlet", accent: "#22d3ee", items: [
+    { title: "🏪 Outlet", accent: "#22d3ee", items: [
       { label: "Pesanan / Transaksi", icon: "🧾", c: "#10b981", on: () => openRight("admin", "orders") },
       { label: "Menu & Stok", icon: "🍔", c: "#f59e0b", on: () => openRight("admin", "menu") },
       { label: "QR Meja", icon: "🪑", c: "#a855f7", on: () => openRight("admin", "qrgen") },
       { label: "Pengaturan", icon: "⚙️", c: "#7d8590", on: () => openRight("admin", "settings") },
     ] },
-    { title: "Surface Operasional F&B", accent: "#10b981", items: [
+    { title: "🛰️ Surface Operasional F&B", accent: "#10b981", items: [
       { label: "POS Kasir", icon: "🧾", c: "#10b981", on: () => openTab("?pos=1") },
       { label: "KDS Dapur", icon: "👨‍🍳", c: "#f97316", on: () => openTab("?kds=1") },
       { label: "CDS Display", icon: "📺", c: "#a855f7", on: () => openTab("?cds=1") },
       { label: "Kiosk", icon: "🖥️", c: "#06b6d4", on: () => openTab("?kiosk=1") },
       { label: "Tracking", icon: "📍", c: "#f59e0b", on: () => openTab("?track=1") },
+    ] },
+    // 🍽️ F&B Enhanced — dedicated column (mirror Cinema struktur)
+    { title: "🍽️ F&B Enhanced", accent: "#ec4899", items: [
+      { label: "Reservation",       icon: "📅", c: "#22d3ee", on: () => openRight("tools", "fnb_reservation") },
+      { label: "Bill Split",        icon: "🧾", c: "#10b981", on: () => openRight("tools", "fnb_bill_split") },
+      { label: "Order Transfer",    icon: "🔄", c: "#3b82f6", on: () => openRight("tools", "fnb_order_transfer") },
+      { label: "KDS Routing",       icon: "👨‍🍳", c: "#f97316", on: () => openRight("tools", "fnb_kds_routing") },
+      { label: "Delivery",          icon: "🚴", c: "#a855f7", on: () => openRight("tools", "fnb_delivery") },
+      { label: "Driver Tracking",   icon: "📍", c: "#06b6d4", on: () => openRight("tools", "fnb_driver_tracking") },
+      { label: "Recipe BOM",        icon: "🍱", c: "#10b981", on: () => openRight("tools", "fnb_recipe") },
+      { label: "Happy Hour",        icon: "🍻", c: "#fbbf24", on: () => openRight("tools", "fnb_happy_hour") },
+      { label: "Membership Tier",   icon: "👑", c: "#f59e0b", on: () => openRight("tools", "fnb_membership_tier") },
+      { label: "Payment Methods",   icon: "💳", c: "#ec4899", on: () => openRight("tools", "fnb_payment_methods") },
+      { label: "F&B Modules",       icon: "🛠️", c: "#ec4899", searchable: true,
+        getSub: (q) => {
+          if (!q.trim()) return fnbEnhToolsSub;
+          const filter = q.trim().toLowerCase();
+          const allFnb = fnbEnhGroup?.ids || [];
+          return allFnb.map(id => TABS.find(x => x.id === id)).filter(Boolean)
+            .filter(t => t.label.toLowerCase().includes(filter))
+            .map(t => ({ _k: "m:" + t.id, label: t.label, on: () => openRight("tools", t.id) }));
+        } },
     ] },
     // 🎬 Cinema — dedicated column terpisah dari F&B
     { title: "🎬 Cinema Vertical", accent: "#a855f7", items: [
@@ -359,7 +405,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
             .map(t => ({ _k: "m:" + t.id, label: t.label, on: () => openRight("tools", t.id) }));
         } },
     ] },
-    { title: "Manajemen & Data", accent: "#3b82f6", items: [
+    { title: "💼 Manajemen & Data", accent: "#3b82f6", items: [
       { label: "Member & Customer", icon: "👥", c: "#3b82f6", on: () => openRight("members") },
       { label: "Promo Code", icon: "🏷️", c: "#ec4899", on: () => openRight("promo") },
       { label: "Operasional / Shift", icon: "📋", c: "#f59e0b", on: () => openRight("shift") },
@@ -375,10 +421,27 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     ] },
   ];
 
-  const Section = ({ label, accent = "#f59e0b", right, mt }) => (
+  const Section = ({ label, accent = "#f59e0b", right, mt, pill = false }) => (
     <div style={{ ...S.sectionHead, marginTop: mt == null ? 16 : mt }}>
-      <span style={{ width: 3, height: 13, background: accent, borderRadius: 2 }} />
-      <span style={S.sectionLabel}>{label}</span>
+      {pill ? (
+        <span style={{
+          fontSize: 9.5, fontWeight: 800, letterSpacing: 1.4, fontFamily: "'Geist Mono',monospace",
+          padding: "4px 10px 4px 9px", borderRadius: 6,
+          background: `linear-gradient(135deg, ${accent}28, ${accent}10)`,
+          color: accent, border: `1px solid ${accent}55`,
+          textTransform: "uppercase",
+          boxShadow: `0 0 12px ${accent}33, inset 0 1px 0 0 ${accent}22`,
+          display: "inline-flex", alignItems: "center", gap: 6,
+        }}>
+          <span style={{ width: 5, height: 5, borderRadius: "50%", background: accent, boxShadow: `0 0 6px ${accent}` }} />
+          {label}
+        </span>
+      ) : (
+        <>
+          <span style={{ width: 3, height: 13, background: accent, borderRadius: 2 }} />
+          <span style={{ ...S.sectionLabel, color: accent }}>{label}</span>
+        </>
+      )}
       <span style={{ flex: 1 }} />
       {right}
     </div>
@@ -398,6 +461,13 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
         <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
           <button className="ah-hamburger" onClick={() => setRailOpen(o => !o)} title="Menu" aria-label="Menu"
             style={{ background: "#161619", border: "1px solid #2a2b30", borderRadius: 8, color: "#e6edf3", fontSize: 17, lineHeight: 1, padding: "6px 11px", cursor: "pointer", fontFamily: "inherit" }}>☰</button>
+          {/* Desktop nav toggle — hide rail → terminal/saham mode */}
+          <button onClick={() => setNavHidden(h => !h)} title={navHidden ? "Tampilkan nav (Esc)" : "Mode Saham — sembunyikan nav"} aria-label="Toggle nav"
+            className="ah-nav-toggle"
+            style={{ background: navHidden ? "#22d3ee15" : "#161619", border: `1px solid ${navHidden ? "#22d3ee55" : "#2a2b30"}`, borderRadius: 8, color: navHidden ? "#22d3ee" : "#9da7b3", fontSize: 11, fontWeight: 700, fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5, padding: "7px 11px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, boxShadow: navHidden ? "0 0 12px #22d3ee33" : "none", transition: "all .15s" }}>
+            <span style={{ fontSize: 13 }}>{navHidden ? "▶" : "◀"}</span>
+            <span>{navHidden ? "SHOW NAV" : "TERMINAL"}</span>
+          </button>
           <div style={{ position: "relative" }}>
             <img src="/logo.png" alt="KaryaOS" style={{ width: 40, height: 40, borderRadius: 10, objectFit: "contain", flexShrink: 0, filter: "drop-shadow(0 0 12px rgba(245,158,11,0.35))" }} />
           </div>
@@ -429,19 +499,19 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
         <span style={{ color: "#5b6470" }}>{now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</span>
       </div>
 
-      {/* Body — 2 bagian */}
-      <div style={S.body} className="ah-body">
+      {/* Body — 2 bagian (nav rail hideable for terminal/saham mode) */}
+      <div style={{ ...S.body, gridTemplateColumns: navHidden ? "1fr" : "264px 1fr" }} className={`ah-body${navHidden ? " ah-nav-hidden" : ""}`}>
 
         {/* KIRI: panel modul */}
         <div className="ah-backdrop no-print" data-open={railOpen} onClick={() => setRailOpen(false)} />
-        <aside style={S.left} className={`ah-rail no-print${railOpen ? " ah-rail-open" : ""}`}>
+        <aside style={{ ...S.left, display: navHidden ? "none" : undefined }} className={`ah-rail no-print${railOpen ? " ah-rail-open" : ""}`}>
           <select value={viewRole} onChange={e => setViewRole(e.target.value)} title="Tampilkan modul sesuai role"
             style={{ width: "100%", background: "#0e0e11", border: "1px solid #2a2b30", borderRadius: 8, padding: "8px 10px", color: "#c9a8ff", fontSize: 12, fontWeight: 700, fontFamily: "inherit", boxSizing: "border-box", marginBottom: 10, outline: "none", cursor: "pointer" }}>
             {ADMIN_ROLES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
           </select>
           {columns.map((col, ci) => (
             <div key={col.title}>
-              <Section label={col.title.toUpperCase()} accent={col.accent} mt={ci === 0 ? 0 : 14} />
+              <Section pill label={col.title.toUpperCase()} accent={col.accent} mt={ci === 0 ? 0 : 14} />
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {col.items.map(t => (
                   <RailNode key={t._k || t.label} node={t} depth={0} open={openNodes} onToggle={toggleNode} />
@@ -855,6 +925,13 @@ const CSS = `
 
 .ah-tick.ah-tick-up { animation: ah-tick-flash-up 1s ease-out; padding: 0 4px; border-radius: 4px; }
 .ah-tick.ah-tick-down { animation: ah-tick-flash-down 1s ease-out; padding: 0 4px; border-radius: 4px; }
+
+/* ═══ Terminal mode (nav hidden = full-width "lihat saham") ═══ */
+.ah-body { transition: grid-template-columns .25s ease; }
+.ah-nav-toggle:hover { background: #22d3ee15 !important; border-color: #22d3ee55 !important; color: #22d3ee !important; }
+@media (max-width: 768px) {
+  .ah-nav-toggle { display: none !important; }
+}
 
 @media (max-width: 768px) {
   .ah-intraday { grid-template-columns: 1fr !important; }
