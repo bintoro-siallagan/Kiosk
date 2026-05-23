@@ -1,17 +1,17 @@
 // karyaOS — F&B Combo / Set Meal Builder
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit, EmptyState, TooltipButton } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const empty = { name: "", description: "", combo_price: 0, category: "", image_url: "", available_from: "", available_to: "", applicable_days: "", is_active: 1, items: [] };
 
 export default function FnbCombo({ apiBase = "" }) {
   const base = (apiBase || "") + "/api/fnb";
+  const { confirm, toast: showToast, undoToast } = useUiKit();
   const [rows, setRows] = useState([]);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(empty);
   const [itemDraft, setItemDraft] = useState({ menu_item_id: "", menu_item_name: "", qty: 1, category: "main" });
-  const [toast, setToast] = useState(null);
-  const showToast = (m, k = "ok") => { setToast({ m, k }); setTimeout(() => setToast(null), 2200); };
   const load = useCallback(async () => { const d = await fetch(`${base}/combos?all=1`).then(r => r.json()); setRows(d.combos || []); }, [base]);
   useEffect(() => { load(); }, [load]);
   const addItem = () => {
@@ -28,7 +28,14 @@ export default function FnbCombo({ apiBase = "" }) {
     const d = await r.json(); if (!d.ok) { showToast(d.error, "err"); return; }
     showToast("Combo disimpan"); setEditing(null); setForm(empty); load();
   };
-  const remove = async (r) => { if (!confirm(`Hapus ${r.name}?`)) return; await fetch(`${base}/combos/${r.id}`, { method: "DELETE" }); load(); };
+  const remove = async (r) => {
+    if (!(await confirm({ title: `Hapus combo "${r.name}"?`, message: "Combo akan dihapus permanen. Tidak bisa di-undo.", danger: true, okLabel: "Hapus" }))) return;
+    await fetch(`${base}/combos/${r.id}`, { method: "DELETE" }); load();
+    undoToast(`Combo "${r.name}" dihapus`, async () => {
+      await fetch(`${base}/combos`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(r) });
+      load();
+    });
+  };
   return (
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
@@ -78,6 +85,10 @@ export default function FnbCombo({ apiBase = "" }) {
           </div>
         </div>
       )}
+      {rows.length === 0 ? (
+        <EmptyState icon="🍔" title="Belum ada combo" desc="Buat combo (set meal) untuk menggabungkan beberapa item jadi 1 harga bundle. Mis: Paket Nasi Goreng = main + drink + dessert."
+          action={!editing ? { label: "＋ Buat combo pertama", onClick: () => { setEditing("new"); setForm(empty); }, color: "#f59e0b" } : null} />
+      ) : (
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(320px,1fr))", gap: 12 }}>
         {rows.map(r => (
           <div key={r.id} style={{ background: C.card, border: `2px solid ${r.is_active ? "#f59e0b66" : C.border}`, borderRadius: 14, padding: 14, opacity: r.is_active ? 1 : 0.55 }}>
@@ -90,13 +101,13 @@ export default function FnbCombo({ apiBase = "" }) {
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 14, fontWeight: 800, color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>{rp(r.combo_price)}</div>
             <div style={{ display: "flex", gap: 5, marginTop: 8 }}>
-              <button onClick={() => { setEditing(r.id); setForm({ ...empty, ...r }); }} style={Ba("#a855f7")}>Edit</button>
-              <button onClick={() => remove(r)} style={Ba("#ef4444")}>×</button>
+              <TooltipButton tip="Edit combo ini" onClick={() => { setEditing(r.id); setForm({ ...empty, ...r }); }} style={Ba("#a855f7")}>Edit</TooltipButton>
+              <TooltipButton tip="Hapus combo" onClick={() => remove(r)} style={Ba("#ef4444")}>×</TooltipButton>
             </div>
           </div>
         ))}
       </div>
-      {toast && <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: toast.k === "err" ? "#7f1d1d" : "#14532d", border: `1px solid ${toast.k === "err" ? "#ef4444" : "#22c55e"}`, color: "#fff", padding: "10px 20px", borderRadius: 10, fontSize: 13, fontWeight: 600, zIndex: 9999 }}>{toast.m}</div>}
+      )}
     </div>
   );
 }

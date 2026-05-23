@@ -2,6 +2,7 @@
 // CRUD payment buttons + categories (Complimentary / FOC Mgmt / Diskon Karyawan).
 // Push ke outlet (per-outlet scope) + bulk-push.
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit, TooltipButton, BulkActionBar } from "../components/uiKit.jsx";
 
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
@@ -51,7 +52,8 @@ function MethodsTab({ base, showToast }) {
     const d = await r.json(); if (!d.ok) { showToast(d.error, "err"); return; }
     showToast(editing === "new" ? "Method dibuat" : "Method diperbarui"); setEditing(null); setForm(emptyM); load();
   };
-  const remove = async (r) => { if (!confirm(`Hapus ${r.name}?`)) return; await fetch(`${base}/payment-methods/${r.id}`, { method: "DELETE" }); load(); };
+  const { confirm } = useUiKit();
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus method "${r.name}"?`, message: "Method ini akan hilang dari semua outlet.", danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/payment-methods/${r.id}`, { method: "DELETE" }); load(); };
   const toggleSelect = (id) => setSelected(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const pushSelected = async () => {
     if (!selected.size) { showToast("Pilih method dulu", "err"); return; }
@@ -170,7 +172,8 @@ function CategoriesTab({ base, showToast }) {
     const d = await r.json(); if (!d.ok) { showToast(d.error, "err"); return; }
     showToast("Kategori disimpan"); setEditing(null); setForm(emptyC); load();
   };
-  const remove = async (r) => { if (!confirm(`Hapus kategori ${r.name}?`)) return; await fetch(`${base}/payment-categories/${r.id}`, { method: "DELETE" }); load(); };
+  const { confirm } = useUiKit();
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus kategori "${r.name}"?`, message: "Method yang pakai kategori ini akan jadi 'Lainnya'.", danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/payment-categories/${r.id}`, { method: "DELETE" }); load(); };
   return (
     <>
       <div style={{ marginBottom: 12 }}>{!editing && <button onClick={() => { setEditing("new"); setForm(emptyC); }} style={B.add}>＋ Kategori baru</button>}</div>

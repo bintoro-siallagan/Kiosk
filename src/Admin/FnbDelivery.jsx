@@ -1,5 +1,6 @@
 // karyaOS — F&B Delivery & Drivers (3 tab: drivers, zones, deliveries queue)
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit, TooltipButton } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtTs = (s) => s ? new Date(s * 1000).toLocaleString("id-ID", { hour12: false }) : "—";
@@ -103,7 +104,8 @@ function DriversTab({ base, showToast }) {
     const d = await r.json(); if (!d.ok) { showToast(d.error, "err"); return; }
     showToast("Driver disimpan"); setEditing(null); load();
   };
-  const remove = async (r) => { if (!confirm(`Hapus ${r.name}?`)) return; await fetch(`${base}/drivers/${r.id}`, { method: "DELETE" }); load(); };
+  const { confirm } = useUiKit();
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus driver "${r.name}"?`, message: "History delivery driver akan tetap tersimpan.", danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/drivers/${r.id}`, { method: "DELETE" }); load(); };
   return (
     <>
       <div style={{ marginBottom: 12 }}>{!editing && <button onClick={() => { setEditing("new"); setForm({ name: "", phone: "", vehicle_type: "motor", vehicle_plate: "", status: "available", outlet: "", is_active: 1 }); }} style={B.add}>＋ Driver baru</button>}</div>
@@ -165,7 +167,8 @@ function ZonesTab({ base, showToast }) {
     const d = await r.json(); if (!d.ok) { showToast(d.error, "err"); return; }
     showToast("Zone disimpan"); setEditing(null); setForm(empty); load();
   };
-  const remove = async (r) => { if (!confirm(`Hapus ${r.name}?`)) return; await fetch(`${base}/delivery-zones/${r.id}`, { method: "DELETE" }); load(); };
+  const { confirm } = useUiKit();
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus zone "${r.name}"?`, danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/delivery-zones/${r.id}`, { method: "DELETE" }); load(); };
   return (
     <>
       <div style={{ marginBottom: 12 }}>{!editing && <button onClick={() => { setEditing("new"); setForm(empty); }} style={B.add}>＋ Zone baru</button>}</div>

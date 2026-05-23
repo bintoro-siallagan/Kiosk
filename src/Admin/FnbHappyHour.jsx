@@ -1,5 +1,6 @@
 // karyaOS — F&B Happy Hour Pricing
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit, TooltipButton } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const empty = { name: "", outlet: "", category: "", start_time: "15:00", end_time: "18:00", applicable_days: "", discount_pct: 25, special_price: "", start_date: "", end_date: "", is_active: 1, description: "" };
@@ -24,7 +25,8 @@ export default function FnbHappyHour({ apiBase = "" }) {
     const d = await r.json(); if (!d.ok) { showToast(d.error, "err"); return; }
     showToast("Happy hour disimpan"); setEditing(null); setForm(empty); load();
   };
-  const remove = async (r) => { if (!confirm(`Hapus ${r.name}?`)) return; await fetch(`${base}/happy-hours/${r.id}`, { method: "DELETE" }); load(); };
+  const { confirm } = useUiKit();
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus happy hour "${r.name}"?`, danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/happy-hours/${r.id}`, { method: "DELETE" }); load(); };
   return (
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>

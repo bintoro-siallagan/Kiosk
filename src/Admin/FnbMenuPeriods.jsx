@@ -1,5 +1,6 @@
 // karyaOS — F&B Time-Based Menu Periods (Breakfast / Lunch / Tea / Dinner / Late)
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit, TooltipButton } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 const empty = { name: "", icon: "🍽️", start_time: "11:00", end_time: "14:30", applicable_days: "", sort_order: 0, is_active: 1, notes: "" };
 
@@ -21,7 +22,8 @@ export default function FnbMenuPeriods({ apiBase = "" }) {
     const d = await r.json(); if (!d.ok) { showToast(d.error, "err"); return; }
     showToast("Period disimpan"); setEditing(null); setForm(empty); load();
   };
-  const remove = async (r) => { if (!confirm(`Hapus ${r.name}?`)) return; await fetch(`${base}/menu-periods/${r.id}`, { method: "DELETE" }); load(); };
+  const { confirm } = useUiKit();
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus period "${r.name}"?`, danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/menu-periods/${r.id}`, { method: "DELETE" }); load(); };
   return (
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
