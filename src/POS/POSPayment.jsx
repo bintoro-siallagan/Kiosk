@@ -224,9 +224,9 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 14 }}>🏅 {loyaltyCustomer.name || loyaltyCustomer.phone}</div>
-                  <div style={{ fontSize: 12, color: '#92400e', marginTop: 2 }}>
-                    {loyaltyCustomer.tier?.emoji || ''} {loyaltyCustomer.tier?.name || loyaltyCustomer.current_tier_code}
-                    {' · '}{(loyaltyCustomer.current_points || 0).toLocaleString('id-ID')} poin
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 }}>
+                    {loyaltyCustomer.tier?.emoji || ''} <b style={{ color: '#fbbf24' }}>{loyaltyCustomer.tier?.name || loyaltyCustomer.current_tier_code}</b>
+                    {' · '}<b style={{ color: '#fbbf24', fontFamily: "'Geist Mono',monospace" }}>{(loyaltyCustomer.current_points || 0).toLocaleString('id-ID')}</b> poin
                   </div>
                 </div>
                 <button onClick={() => { setLoyaltyCustomer(null); setLoyaltyDiscount(0); setLoyaltyReward(null); setLoyaltyMsg(''); }}
@@ -314,10 +314,11 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
               <button key={t} onClick={() => { setActiveTender(t); setInputRef(''); setInputAmount(''); setInputPoints(''); setError(null); }}
                 style={{
                   ...styles.tenderBtn,
-                  background: active ? meta.color : '#fff',
-                  color: active ? '#fff' : '#1f2937',
-                  borderColor: active ? meta.color : '#e5e7eb',
-                  transform: active ? 'scale(1.02)' : 'none'
+                  background: active ? `${meta.color}22` : 'rgba(255,255,255,0.025)',
+                  color: active ? meta.color : '#fff',
+                  borderColor: active ? `${meta.color}80` : 'rgba(255,255,255,0.08)',
+                  boxShadow: active ? `0 0 0 1px ${meta.color}44, 0 8px 24px ${meta.color}22` : 'none',
+                  transform: active ? 'scale(1.02)' : 'none',
                 }}>
                 <div style={{ fontSize: 28 }}>{meta.emoji}</div>
                 <div style={{ fontSize: 12, fontWeight: 600, marginTop: 4 }}>{meta.label}</div>
@@ -450,143 +451,229 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
 // ============================================================
 // STYLES — tablet-optimized, touch-friendly
 // ============================================================
+// Dark MacBook-premium — match POSMenuPicker + POSMenu + AdminHome aesthetic
 const styles = {
   root: {
-    display: 'flex', gap: 16, padding: 16, height: '100vh', boxSizing: 'border-box',
-    background: '#f3f4f6', fontFamily: 'system-ui, -apple-system, sans-serif'
+    display: 'flex', gap: 14, padding: 14, height: '100vh', boxSizing: 'border-box',
+    background: 'linear-gradient(160deg,#08090a 0%,#14151c 50%,#0a0b0e 100%)',
+    color: '#fff',
+    fontFamily: "'Inter','SF Pro Display',system-ui,-apple-system,sans-serif",
   },
   leftPane: {
-    flex: 1, minWidth: 380, background: '#fff', borderRadius: 12, padding: 20,
-    display: 'flex', flexDirection: 'column', gap: 12, overflow: 'auto'
+    flex: 1, minWidth: 380,
+    background: 'linear-gradient(180deg,rgba(255,255,255,0.025),rgba(255,255,255,0.005))',
+    border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: 14, padding: 18,
+    display: 'flex', flexDirection: 'column', gap: 12, overflow: 'auto',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.3),0 8px 24px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.04)',
+    color: '#fff',
   },
   rightPane: {
-    flex: 1.2, minWidth: 420, background: '#fff', borderRadius: 12, padding: 20,
-    display: 'flex', flexDirection: 'column', gap: 12, overflow: 'auto'
+    flex: 1.2, minWidth: 420,
+    background: 'rgba(13,17,23,0.7)',
+    backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+    border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: 14, padding: 18,
+    display: 'flex', flexDirection: 'column', gap: 12, overflow: 'auto',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.3),0 8px 24px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.04)',
+    color: '#fff',
   },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'start' },
-  orderRef: { fontSize: 14, color: '#6b7280' },
-  customer: { fontSize: 13, color: '#374151', marginTop: 4 },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 },
+  orderRef: { fontSize: 11, color: 'rgba(255,255,255,0.45)', letterSpacing: 1.2, fontFamily: "'Geist Mono',monospace", fontWeight: 700, textTransform: 'uppercase' },
+  customer: { fontSize: 13, color: '#fff', marginTop: 4, fontWeight: 600 },
   cancelBtn: {
-    padding: '8px 14px', background: '#fee2e2', color: '#dc2626', border: 'none',
-    borderRadius: 6, cursor: 'pointer', fontWeight: 600, fontSize: 14
+    padding: '8px 14px',
+    background: 'rgba(239,68,68,0.12)', color: '#ef4444',
+    border: '1px solid rgba(239,68,68,0.3)',
+    borderRadius: 8, cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
   },
   totalBox: {
-    background: 'linear-gradient(135deg, #3b82f6, #1d4ed8)', color: '#fff',
-    padding: 20, borderRadius: 12, textAlign: 'center'
+    background: 'linear-gradient(135deg, #F59E0B 0%, #fbbf24 50%, #F59E0B 100%)',
+    color: '#1a1205',
+    padding: '22px 20px', borderRadius: 14, textAlign: 'center',
+    boxShadow: '0 8px 28px rgba(245,158,11,0.35), inset 0 1px 0 rgba(255,255,255,0.25)',
   },
-  totalLabel: { fontSize: 13, opacity: 0.85 },
-  totalAmount: { fontSize: 36, fontWeight: 700, marginTop: 4, letterSpacing: '-0.02em' },
-  runningBox: { background: '#f9fafb', borderRadius: 8, padding: 14 },
+  totalLabel: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", textTransform: 'uppercase' },
+  totalAmount: { fontSize: 38, fontWeight: 800, marginTop: 4, letterSpacing: '-0.6px', fontFamily: "'Geist Mono',monospace" },
+  runningBox: {
+    background: 'rgba(255,255,255,0.025)',
+    border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: 10, padding: 14, color: '#fff',
+  },
   runningRow: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-    padding: '6px 0', fontSize: 15
+    padding: '6px 0', fontSize: 14, color: '#fff',
+    fontFamily: "'Geist Mono',monospace",
   },
   changeRow: {
-    fontSize: 18, fontWeight: 700, color: '#10b981',
-    borderTop: '1px dashed #d1d5db', paddingTop: 10, marginTop: 4
+    fontSize: 19, fontWeight: 800, color: '#10b981',
+    borderTop: '1px dashed rgba(255,255,255,0.1)', paddingTop: 10, marginTop: 4,
+    fontFamily: "'Geist Mono',monospace",
   },
   tenderList: { flex: 1, minHeight: 80 },
   sectionTitle: {
-    fontSize: 11, textTransform: 'uppercase', color: '#6b7280',
-    fontWeight: 700, letterSpacing: '0.05em', marginBottom: 8
+    fontSize: 10, textTransform: 'uppercase', color: 'rgba(255,255,255,0.45)',
+    fontWeight: 700, letterSpacing: 1.5, marginBottom: 8,
+    fontFamily: "'Geist Mono',monospace",
   },
   empty: {
-    background: '#f9fafb', border: '2px dashed #e5e7eb', borderRadius: 8,
-    padding: 20, textAlign: 'center', color: '#9ca3af', fontSize: 13
+    background: 'rgba(255,255,255,0.02)',
+    border: '1px dashed rgba(255,255,255,0.1)',
+    borderRadius: 9, padding: 20, textAlign: 'center',
+    color: 'rgba(255,255,255,0.4)', fontSize: 12.5,
   },
   tenderLine: {
-    background: '#f9fafb', borderRadius: 8, padding: 12, marginBottom: 8,
-    display: 'flex', alignItems: 'center', gap: 8
+    background: 'rgba(255,255,255,0.025)',
+    border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: 9, padding: 12, marginBottom: 8,
+    display: 'flex', alignItems: 'center', gap: 8, color: '#fff',
   },
-  tenderRef: { fontSize: 11, color: '#6b7280', marginTop: 2 },
+  tenderRef: { fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2, fontFamily: "'Geist Mono',monospace" },
   removeBtn: {
-    width: 32, height: 32, borderRadius: 6, background: '#fee2e2', color: '#dc2626',
-    border: 'none', fontSize: 18, cursor: 'pointer'
+    width: 30, height: 30, borderRadius: 7,
+    background: 'rgba(239,68,68,0.12)', color: '#ef4444',
+    border: '1px solid rgba(239,68,68,0.25)',
+    fontSize: 17, cursor: 'pointer', fontFamily: 'inherit',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
   },
   errorBox: {
-    background: '#fef2f2', color: '#991b1b', padding: 12, borderRadius: 6,
-    fontSize: 13, border: '1px solid #fca5a5'
+    background: 'rgba(239,68,68,0.1)', color: '#fca5a5',
+    padding: '10px 14px', borderRadius: 8, fontSize: 12.5,
+    border: '1px solid rgba(239,68,68,0.3)',
   },
   finalizeBtn: {
-    padding: '16px 20px', background: '#10b981', color: '#fff', border: 'none',
-    borderRadius: 10, fontSize: 16, fontWeight: 700, cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(16,185,129,0.3)'
+    padding: '15px 20px',
+    background: 'linear-gradient(135deg, #10b981, #34d399)',
+    color: '#04130c', border: 'none',
+    borderRadius: 11, fontSize: 15, fontWeight: 800, cursor: 'pointer',
+    fontFamily: 'inherit', letterSpacing: 0.3,
+    boxShadow: '0 6px 20px rgba(16,185,129,0.4), inset 0 1px 0 rgba(255,255,255,0.25)',
+    transition: 'all 0.2s',
   },
   finalizeBtnDisabled: {
-    background: '#d1d5db', color: '#9ca3af', cursor: 'not-allowed', boxShadow: 'none'
+    background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)',
+    border: '1px solid rgba(255,255,255,0.06)',
+    cursor: 'not-allowed', boxShadow: 'none',
   },
   tenderGrid: {
-    display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(95px, 1fr))', gap: 10
+    display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: 10,
   },
   tenderBtn: {
-    padding: '14px 6px', border: '2px solid #e5e7eb', borderRadius: 10, cursor: 'pointer',
-    transition: 'all 0.15s', textAlign: 'center'
+    padding: '14px 6px',
+    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'rgba(255,255,255,0.025)',
+    color: '#fff',
+    borderRadius: 11, cursor: 'pointer',
+    transition: 'all 0.15s', textAlign: 'center', fontFamily: 'inherit',
   },
   inputSection: {
-    background: '#f9fafb', borderRadius: 10, padding: 16, marginTop: 12,
-    display: 'flex', flexDirection: 'column', gap: 8
+    background: 'rgba(255,255,255,0.025)',
+    border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: 11, padding: 16, marginTop: 12,
+    display: 'flex', flexDirection: 'column', gap: 8,
   },
-  inputLabel: { fontSize: 12, fontWeight: 600, color: '#374151', marginTop: 4 },
+  inputLabel: { fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.55)', marginTop: 4, letterSpacing: 1.2, fontFamily: "'Geist Mono',monospace", textTransform: 'uppercase' },
   input: {
-    fontSize: 24, padding: '12px 16px', border: '2px solid #d1d5db', borderRadius: 8,
-    fontWeight: 600, textAlign: 'right', width: '100%', boxSizing: 'border-box'
+    fontSize: 24, padding: '12px 16px',
+    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'rgba(0,0,0,0.25)',
+    color: '#fff',
+    borderRadius: 9, fontWeight: 700, textAlign: 'right',
+    width: '100%', boxSizing: 'border-box', outline: 'none',
+    fontFamily: "'Geist Mono',monospace", letterSpacing: '-0.3px',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
   },
-  helper: { fontSize: 13, color: '#6b7280', padding: '8px 12px', background: '#fff', borderRadius: 6 },
-  equivalent: { fontSize: 14, color: '#10b981', fontWeight: 600, textAlign: 'right' },
+  helper: {
+    fontSize: 12.5, color: 'rgba(255,255,255,0.65)',
+    padding: '8px 12px',
+    background: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.05)',
+    borderRadius: 7,
+  },
+  equivalent: { fontSize: 14, color: '#10b981', fontWeight: 700, textAlign: 'right', fontFamily: "'Geist Mono',monospace" },
   quickRow: { display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 },
   quickBtn: {
-    flex: 1, minWidth: 60, padding: '10px 8px', background: '#fff',
-    border: '1px solid #d1d5db', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600
+    flex: 1, minWidth: 60, padding: '10px 8px',
+    background: 'rgba(255,255,255,0.03)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    color: '#fff',
+    borderRadius: 7, cursor: 'pointer', fontSize: 13, fontWeight: 700, fontFamily: "'Geist Mono',monospace",
   },
   quickBtnExact: {
-    flex: 1.5, minWidth: 100, padding: '10px 8px', background: '#dbeafe',
-    border: '1px solid #93c5fd', color: '#1e40af', borderRadius: 6,
-    cursor: 'pointer', fontSize: 13, fontWeight: 700
+    flex: 1.5, minWidth: 100, padding: '10px 8px',
+    background: 'rgba(245,158,11,0.15)',
+    border: '1px solid rgba(245,158,11,0.4)',
+    color: '#fbbf24', borderRadius: 7,
+    cursor: 'pointer', fontSize: 13, fontWeight: 800, fontFamily: "'Geist Mono',monospace",
   },
   addBtn: {
-    padding: '12px 20px', background: '#1f2937', color: '#fff', border: 'none',
-    borderRadius: 8, fontSize: 15, fontWeight: 600, cursor: 'pointer', marginTop: 4
+    padding: '12px 20px',
+    background: 'linear-gradient(135deg,#F59E0B,#fbbf24)',
+    color: '#1a1205', border: 'none', borderRadius: 9,
+    fontSize: 14, fontWeight: 800, cursor: 'pointer', marginTop: 4,
+    fontFamily: 'inherit', letterSpacing: 0.3,
+    boxShadow: '0 4px 14px rgba(245,158,11,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
   },
   gatewayPanel: {
-    background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10,
-    padding: 14, display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 4,
+    background: 'rgba(59,130,246,0.08)',
+    border: '1px solid rgba(59,130,246,0.25)',
+    borderRadius: 11, padding: 14,
+    display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 4,
   },
-  gatewayTitle: { fontSize: 14, fontWeight: 700, color: '#1e40af' },
-  gatewayDesc: { fontSize: 12, color: '#3b5b8c', lineHeight: 1.4 },
+  gatewayTitle: { fontSize: 14, fontWeight: 800, color: '#60a5fa' },
+  gatewayDesc: { fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.4 },
   gatewayBtn: {
-    padding: '14px 18px', background: '#2563eb', color: '#fff', border: 'none',
-    borderRadius: 8, fontSize: 15, fontWeight: 700, cursor: 'pointer',
-    boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
+    padding: '14px 18px',
+    background: 'linear-gradient(135deg,#3b82f6,#2563eb)',
+    color: '#fff', border: 'none', borderRadius: 9,
+    fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
+    boxShadow: '0 6px 20px rgba(59,130,246,0.4), inset 0 1px 0 rgba(255,255,255,0.18)',
   },
-  gatewayHint: { fontSize: 11, color: '#94a3b8', textAlign: 'center' },
+  gatewayHint: { fontSize: 11, color: 'rgba(255,255,255,0.4)', textAlign: 'center' },
   loyaltyCard: {
-    background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10,
-    padding: 12, display: 'flex', flexDirection: 'column', gap: 8,
+    background: 'rgba(245,158,11,0.08)',
+    border: '1px solid rgba(245,158,11,0.3)',
+    borderRadius: 11, padding: 12,
+    display: 'flex', flexDirection: 'column', gap: 8,
   },
-  loyaltyLabel: { fontSize: 12, fontWeight: 700, color: '#b45309' },
+  loyaltyLabel: { fontSize: 11, fontWeight: 800, color: '#fbbf24', letterSpacing: 1, fontFamily: "'Geist Mono',monospace", textTransform: 'uppercase' },
   loyaltyInput: {
-    flex: 1, fontSize: 15, padding: '8px 10px', border: '1px solid #d1d5db',
-    borderRadius: 6, boxSizing: 'border-box',
+    flex: 1, fontSize: 14, padding: '8px 12px',
+    background: 'rgba(0,0,0,0.25)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    color: '#fff',
+    borderRadius: 7, boxSizing: 'border-box', fontFamily: 'inherit', outline: 'none',
   },
   loyaltyBtn: {
-    padding: '8px 16px', background: '#f59e0b', color: '#fff', border: 'none',
-    borderRadius: 6, fontWeight: 700, fontSize: 13, cursor: 'pointer',
+    padding: '8px 16px',
+    background: 'linear-gradient(135deg,#f59e0b,#fbbf24)',
+    color: '#1a1205', border: 'none', borderRadius: 7,
+    fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+    boxShadow: '0 3px 10px rgba(245,158,11,0.3)',
   },
-  loyaltyMsg: { fontSize: 12, color: '#92400e' },
+  loyaltyMsg: { fontSize: 12, color: '#fbbf24' },
   loyaltyClear: {
-    width: 26, height: 26, borderRadius: 6, background: '#fde68a', color: '#92400e',
-    border: 'none', fontSize: 16, cursor: 'pointer', flexShrink: 0,
+    width: 26, height: 26, borderRadius: 6,
+    background: 'rgba(245,158,11,0.15)', color: '#fbbf24',
+    border: '1px solid rgba(245,158,11,0.3)',
+    fontSize: 15, cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
   },
   loyaltyRedeemBtn: {
-    padding: '10px 14px', background: '#f59e0b', color: '#fff', border: 'none',
-    borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: 'pointer',
+    padding: '10px 14px',
+    background: 'linear-gradient(135deg,#f59e0b,#fbbf24)',
+    color: '#1a1205', border: 'none', borderRadius: 8,
+    fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+    boxShadow: '0 3px 10px rgba(245,158,11,0.3)',
   },
   loyaltyApplied: {
-    fontSize: 13, color: '#065f46', background: '#d1fae5', borderRadius: 6,
+    fontSize: 13, color: '#34d399',
+    background: 'rgba(16,185,129,0.1)',
+    border: '1px solid rgba(16,185,129,0.3)',
+    borderRadius: 7,
     padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8,
   },
   loyaltyUndo: {
-    background: 'none', border: 'none', color: '#dc2626', fontSize: 12,
-    cursor: 'pointer', textDecoration: 'underline', flexShrink: 0,
+    background: 'none', border: 'none', color: '#ef4444', fontSize: 12,
+    cursor: 'pointer', textDecoration: 'underline', flexShrink: 0, fontFamily: 'inherit',
   },
 };

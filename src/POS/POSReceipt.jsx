@@ -188,8 +188,11 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
   return (
     <div style={overlay} onClick={onClose}>
       <div style={modalBox} onClick={e=>e.stopPropagation()}>
-        <div style={{display:'flex', justifyContent:'space-between', marginBottom:12}}>
-          <h2 style={{margin:0}}>Struk Pesanan</h2>
+        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16}}>
+          <div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', letterSpacing: 1.4, fontFamily: "'Geist Mono',monospace", fontWeight: 700, textTransform: 'uppercase' }}>STRUK</div>
+            <h2 style={{margin:'2px 0 0', color:'#fff', fontSize:22, fontWeight:800, letterSpacing:'-0.4px'}}>Pesanan</h2>
+          </div>
           <button onClick={onClose} style={closeBtn}>×</button>
         </div>
 
@@ -271,8 +274,13 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
           <button onClick={onClose} style={{...btn, marginLeft:'auto'}}>Selesai</button>
         </div>
 
-        <div style={{marginTop:12, padding:10, background:'#f9fafb', borderRadius:6, fontSize:11, color:'#6b7280'}}>
-          <b>Tips:</b> Browser Print buka dialog cetak biasa (bisa save as PDF). Thermal Printer coba Bluetooth → backend → clipboard fallback. Pastikan kasir punya thermal printer ESC/POS compatible (most cheap 58/80mm bluetooth printers work).
+        <div style={{
+          marginTop:12, padding:'10px 14px',
+          background:'rgba(255,255,255,0.025)',
+          border:'1px solid rgba(255,255,255,0.06)',
+          borderRadius:8, fontSize:11.5, color:'rgba(255,255,255,0.55)', lineHeight:1.5,
+        }}>
+          <b style={{ color:'#fff' }}>Tips:</b> Browser Print buka dialog cetak biasa (bisa save as PDF). Thermal Printer coba Bluetooth → backend → clipboard fallback. Pastikan kasir punya thermal printer ESC/POS compatible.
         </div>
       </div>
     </div>
@@ -280,16 +288,48 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
 }
 
 // ============================================================
-// STYLES
+// STYLES — chrome dark MacBook-premium, receipt body tetap putih
+// (receipt body putih = mimic kertas kasir; preview cetak).
 // ============================================================
-const overlay = { position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1100 };
-const modalBox = { background:'#fff', borderRadius:12, padding:24, maxWidth:500, width:'95vw', maxHeight:'90vh', overflow:'auto' };
-const closeBtn = { width:36, height:36, borderRadius:8, background:'#f3f4f6', border:'none', fontSize:22, cursor:'pointer' };
-const receipt = { background:'#fff', border:'1px dashed #d1d5db', borderRadius:4, padding:'12px 16px', fontFamily:'Courier New, monospace', fontSize:12, color:'#000' };
+const overlay = {
+  position:'fixed', inset:0,
+  background:'rgba(0,0,0,0.75)',
+  backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)',
+  display:'flex', alignItems:'center', justifyContent:'center', zIndex:1100,
+};
+const modalBox = {
+  background:'linear-gradient(180deg,#15171c 0%,#0d0f14 100%)',
+  border:'1px solid rgba(255,255,255,0.08)',
+  color:'#fff',
+  borderRadius:14, padding:24, maxWidth:520, width:'95vw', maxHeight:'90vh', overflow:'auto',
+  boxShadow:'0 24px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)',
+  fontFamily:"'Inter','SF Pro Display',system-ui,-apple-system,sans-serif",
+};
+const closeBtn = {
+  width:36, height:36, borderRadius:8,
+  background:'rgba(255,255,255,0.06)',
+  border:'1px solid rgba(255,255,255,0.08)',
+  color:'#fff', fontSize:22, cursor:'pointer', fontFamily:'inherit',
+  display:'inline-flex', alignItems:'center', justifyContent:'center',
+};
+// Receipt body — keep light/paper style (kasir expect ini seperti kertas struk)
+const receipt = { background:'#fff', border:'1px dashed #d1d5db', borderRadius:6, padding:'14px 18px', fontFamily:'Courier New, monospace', fontSize:12, color:'#000' };
 const row = { display:'flex', justifyContent:'space-between', gap:8, padding:'1px 0' };
 const total = { fontSize:14, fontWeight:700, borderTop:'2px solid #000', paddingTop:4, marginTop:4 };
 const indent = { paddingLeft:12, color:'#555', fontSize:11 };
 const dashLine = { border:'none', borderTop:'1px dashed #000', margin:'6px 0' };
 const footer = { fontSize:10, textAlign:'center', marginTop:10, color:'#555' };
-const btnPrimary = { padding:'10px 16px', background:'#3b82f6', color:'#fff', border:'none', borderRadius:6, cursor:'pointer', fontWeight:600 };
-const btn = { padding:'10px 16px', background:'#f3f4f6', border:'1px solid #d1d5db', borderRadius:6, cursor:'pointer', fontSize:13 };
+const btnPrimary = {
+  padding:'10px 18px',
+  background:'linear-gradient(135deg,#F59E0B,#fbbf24)',
+  color:'#1a1205', border:'none', borderRadius:9,
+  cursor:'pointer', fontWeight:800, fontSize:13, fontFamily:'inherit', letterSpacing:0.3,
+  boxShadow:'0 4px 14px rgba(245,158,11,0.35), inset 0 1px 0 rgba(255,255,255,0.2)',
+};
+const btn = {
+  padding:'10px 16px',
+  background:'rgba(255,255,255,0.04)',
+  border:'1px solid rgba(255,255,255,0.08)',
+  color:'#fff',
+  borderRadius:9, cursor:'pointer', fontSize:13, fontWeight:600, fontFamily:'inherit',
+};
