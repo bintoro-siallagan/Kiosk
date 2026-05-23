@@ -6,7 +6,7 @@ const Q = {
   star:      { label: "⭐ Star",      color: "#10b981", desc: "High popularity + High margin — promosikan, ini bintang menu." },
   plowhorse: { label: "🐎 Plowhorse", color: "#f59e0b", desc: "High popularity + Low margin — naikkan harga atau turunkan food cost." },
   puzzle:    { label: "🧩 Puzzle",    color: "#22d3ee", desc: "Low popularity + High margin — promo, pindah posisi menu, rebranding." },
-  dog:       { label: "🐕 Dog",       color: "#ef4444", desc: "Low popularity + Low margin — pertimbangkan untuk dihapus." },
+  sleeper:   { label: "💤 Sleeper",   color: "#94a3b8", desc: "Low popularity + Low margin — review: tingkatkan promo atau pertimbangkan retire." },
 };
 
 export default function FnbMenuEngineering({ apiBase = "" }) {
@@ -61,7 +61,7 @@ export default function FnbMenuEngineering({ apiBase = "" }) {
             <span style={{ width: 120, textAlign: "right" }}>REVENUE</span>
           </div>
           {data.rows.map(r => {
-            const q = Q[r.quadrant] || Q.dog;
+            const q = Q[r.quadrant] || Q.sleeper;
             return (
               <div key={r.menu_item_id} style={{ display: "flex", padding: "9px 14px", borderBottom: `1px solid ${C.border}`, gap: 10, alignItems: "center" }}>
                 <span style={{ flex: 1.4 }}>

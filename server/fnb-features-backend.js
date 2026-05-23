@@ -1334,7 +1334,7 @@ function setupFnbFeatures(app, opts = {}) {
       const highPop  = popularity >= 1;
       const highProf = margin >= 65;
       const quadrant = highPop && highProf ? 'star' : highPop && !highProf ? 'plowhorse'
-                      : !highPop && highProf ? 'puzzle' : 'dog';
+                      : !highPop && highProf ? 'puzzle' : 'sleeper';
       return { ...r, margin_pct: +margin.toFixed(2), popularity_ratio: +popularity.toFixed(2), quadrant };
     }).sort((a, b) => b.revenue - a.revenue);
     const summary = {
@@ -1342,7 +1342,7 @@ function setupFnbFeatures(app, opts = {}) {
       star:      rows.filter(r => r.quadrant === 'star').length,
       plowhorse: rows.filter(r => r.quadrant === 'plowhorse').length,
       puzzle:    rows.filter(r => r.quadrant === 'puzzle').length,
-      dog:       rows.filter(r => r.quadrant === 'dog').length,
+      sleeper:   rows.filter(r => r.quadrant === 'sleeper').length,
     };
     res.json({ from, to, summary, rows });
   });
