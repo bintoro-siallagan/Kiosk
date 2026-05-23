@@ -89,7 +89,7 @@ export default function POSCinemaApp() {
   if (!cashier) return <POSKasirLogin apiBase={API_HOST} onSelectKasir={handleLogin} />;
 
   return (
-    <ShiftGate cashier={cashier}>
+    <ShiftGate cashier={cashier} onSwitchCashier={handleLogout}>
       <div style={S.root}>
         <style>{CSS}</style>
         <div style={S.mesh} aria-hidden />

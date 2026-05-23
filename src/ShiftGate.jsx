@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
 
-export default function ShiftGate({ children, cashier }) {
+export default function ShiftGate({ children, cashier, onSwitchCashier }) {
   const [shift, setShift]   = useState(undefined); // undefined=loading, null=closed, obj=active
   const [dayState, setDay]  = useState(null);      // { closed, closedAt, closedBy }
   const [busy, setBusy]     = useState(false);
@@ -73,6 +73,16 @@ export default function ShiftGate({ children, cashier }) {
     );
   }
   // Day open but no active shift → show Start Day / Open Shift
+  // Default switch cashier — fallback kalau parent tidak provide
+  const handleSwitchCashier = () => {
+    if (onSwitchCashier) { onSwitchCashier(); return; }
+    try {
+      sessionStorage.removeItem("posCashier");
+      sessionStorage.removeItem("posCinemaCashier");
+    } catch {}
+    window.location.reload();
+  };
+
   if (shift === null) {
     // Idle state — big icon + title + CTA
     if (step !== "shift") {
@@ -86,6 +96,9 @@ export default function ShiftGate({ children, cashier }) {
           </p>
           {err && <div style={S.err}>⚠ {err}</div>}
           <button onClick={() => setStep("shift")} style={S.btnPrimary}>🚀 START DAY · BUKA SHIFT</button>
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            <button onClick={handleSwitchCashier} style={S.btnGhost}>↻ Ganti Kasir / Logout</button>
+          </div>
           <div style={S.hint}>Auto-check setiap 20 detik · <span style={{ color: "#aaa", cursor: "pointer" }} onClick={check}>refresh manual</span></div>
         </div>
       );
@@ -118,9 +131,12 @@ export default function ShiftGate({ children, cashier }) {
             <div style={S.hintSm}>Modal awal kas laci untuk kembalian. Contoh: Rp 200.000</div>
           </div>
           {err && <div style={S.err}>⚠ {err}</div>}
-          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 18 }}>
-            <button onClick={() => { setStep(null); setErr(""); }} disabled={busy} style={S.btnGhost}>← Batal</button>
-            <button onClick={openShift} disabled={busy} style={S.btnPrimary}>{busy ? "⏳ Membuka…" : "✓ MULAI SHIFT"}</button>
+          <div style={{ display: "flex", gap: 10, justifyContent: "space-between", alignItems: "center", marginTop: 18 }}>
+            <button onClick={handleSwitchCashier} disabled={busy} style={{ ...S.btnGhost, padding: "10px 14px", fontSize: 12 }}>↻ Ganti Kasir</button>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={() => { setStep(null); setErr(""); }} disabled={busy} style={S.btnGhost}>← Batal</button>
+              <button onClick={openShift} disabled={busy} style={S.btnPrimary}>{busy ? "⏳ Membuka…" : "✓ MULAI SHIFT"}</button>
+            </div>
           </div>
         </div>
       </div>

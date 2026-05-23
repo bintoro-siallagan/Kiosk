@@ -157,7 +157,7 @@ export default function POSApp() {
   }
 
   return (
-    <ShiftGate cashier={cashier}>
+    <ShiftGate cashier={cashier} onSwitchCashier={handleLogout}>
       <PromoBroadcastBanner />
       <OfflineBanner />
       {view === "home" && (
