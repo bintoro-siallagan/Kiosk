@@ -315,12 +315,42 @@ function CinemaOpsInner({ apiBase }) {
                 <Field label="Poster URL">
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     {editing.data.poster_url && <img src={editing.data.poster_url} alt="poster" style={{ width: 40, height: 60, objectFit: "cover", borderRadius: 4, border: "1px solid #30363d" }} />}
-                    <input style={{ ...modalInp, flex: 1 }} placeholder="https://image.tmdb.org/..." value={editing.data.poster_url || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, poster_url: e.target.value } })} />
+                    <input style={{ ...modalInp, flex: 1 }} placeholder="URL atau upload file" value={editing.data.poster_url || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, poster_url: e.target.value } })} />
+                    <label style={{ background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.3)", color: "#22d3ee", borderRadius: 7, padding: "8px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                      📤 Upload
+                      <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
+                        const file = e.target.files?.[0]; if (!file) return;
+                        const fd = new FormData(); fd.append("file", file);
+                        setMsg("Uploading poster…");
+                        try {
+                          const r = await fetch(`${apiBase}/api/upload`, { method: "POST", body: fd });
+                          const d = await r.json();
+                          if (!d.ok) throw new Error(d.error || "Upload gagal");
+                          setEditing(prev => prev ? { ...prev, data: { ...prev.data, poster_url: d.url } } : prev);
+                          setMsg("✓ Poster di-upload");
+                        } catch (err) { setMsg("⚠ " + err.message); }
+                      }} />
+                    </label>
                   </div>
                 </Field>
-                <Field label="Trailer URL (YouTube)">
+                <Field label="Trailer URL (YouTube atau upload file)">
                   <div style={{ display: "flex", gap: 8 }}>
-                    <input style={{ ...modalInp, flex: 1 }} placeholder="https://www.youtube.com/watch?v=..." value={editing.data.trailer_url || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, trailer_url: e.target.value } })} />
+                    <input style={{ ...modalInp, flex: 1 }} placeholder="https://www.youtube.com/watch?v=... atau /uploads/trailer.mp4" value={editing.data.trailer_url || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, trailer_url: e.target.value } })} />
+                    <label style={{ background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.3)", color: "#22d3ee", borderRadius: 7, padding: "8px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                      📤 Upload
+                      <input type="file" accept="video/*" style={{ display: "none" }} onChange={async (e) => {
+                        const file = e.target.files?.[0]; if (!file) return;
+                        const fd = new FormData(); fd.append("file", file);
+                        setMsg(`Uploading trailer (${(file.size / 1024 / 1024).toFixed(1)}MB)…`);
+                        try {
+                          const r = await fetch(`${apiBase}/api/upload`, { method: "POST", body: fd });
+                          const d = await r.json();
+                          if (!d.ok) throw new Error(d.error || "Upload gagal");
+                          setEditing(prev => prev ? { ...prev, data: { ...prev.data, trailer_url: d.url } } : prev);
+                          setMsg("✓ Trailer di-upload");
+                        } catch (err) { setMsg("⚠ " + err.message); }
+                      }} />
+                    </label>
                     {editing.data.trailer_url && <a href={editing.data.trailer_url} target="_blank" rel="noreferrer" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none", fontFamily: "inherit", whiteSpace: "nowrap" }}>▶ Test</a>}
                   </div>
                 </Field>

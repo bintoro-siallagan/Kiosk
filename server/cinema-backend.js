@@ -1352,14 +1352,22 @@ function setupCinema(app, opts = {}) {
     if (!apiKey) return res.status(503).json({ ok: false, error: 'TMDB_API_KEY belum di-set' });
     try {
       const lang = req.query.lang || 'id-ID';
-      const [info, videos] = await Promise.all([
+      const [info, videos, videosAll] = await Promise.all([
         fetch(`https://api.themoviedb.org/3/movie/${req.params.id}?api_key=${apiKey}&language=${lang}`).then(r => r.json()),
         fetch(`https://api.themoviedb.org/3/movie/${req.params.id}/videos?api_key=${apiKey}&language=en-US`).then(r => r.json()),
+        fetch(`https://api.themoviedb.org/3/movie/${req.params.id}/videos?api_key=${apiKey}`).then(r => r.json()),
       ]);
-      // Prefer official trailer in English (Indonesian rarely tersedia)
-      const trailer = (videos.results || []).find(v => v.site === 'YouTube' && v.type === 'Trailer' && v.official)
-                   || (videos.results || []).find(v => v.site === 'YouTube' && v.type === 'Trailer')
-                   || (videos.results || []).find(v => v.site === 'YouTube');
+      // Combine en-US + all-locale results, dedupe by key, prefer official trailer
+      const seen = new Set();
+      const allVideos = [...(videos.results || []), ...(videosAll.results || [])].filter(v => {
+        if (seen.has(v.key)) return false;
+        seen.add(v.key);
+        return true;
+      });
+      const trailer = allVideos.find(v => v.site === 'YouTube' && v.type === 'Trailer' && v.official)
+                   || allVideos.find(v => v.site === 'YouTube' && v.type === 'Trailer')
+                   || allVideos.find(v => v.site === 'YouTube' && v.type === 'Teaser')
+                   || allVideos.find(v => v.site === 'YouTube');
       res.json({
         ok: true,
         title: info.title,

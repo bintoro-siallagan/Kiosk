@@ -53,6 +53,43 @@ app.use(cors());
 app.use("/audio", express.static(require("path").join(__dirname, "audio")));
 app.use("/screensaver", express.static(require("path").join(__dirname, "screensaver")));
 
+// ─── UPLOADS — poster film, trailer file, dll ────────────────────────
+const fs = require("fs");
+const uploadDir = require("path").join(__dirname, "uploads");
+try { fs.mkdirSync(uploadDir, { recursive: true }); } catch {}
+app.use("/uploads", express.static(uploadDir, { maxAge: "7d" }));
+const multer = require("multer");
+const uploadStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) => {
+    const ext = require("path").extname(file.originalname).toLowerCase().slice(0, 8);
+    const safe = file.fieldname.replace(/[^a-z0-9_-]/gi, "").slice(0, 16);
+    cb(null, `${safe}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}${ext}`);
+  },
+});
+const upload = multer({
+  storage: uploadStorage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB (poster jpg/png biasanya <5MB, video <50MB)
+  fileFilter: (req, file, cb) => {
+    const ok = /\.(jpg|jpeg|png|webp|gif|mp4|mov|webm|m4v)$/i.test(file.originalname);
+    if (!ok) return cb(new Error("File type not allowed (only image/video)"));
+    cb(null, true);
+  },
+});
+
+// POST /api/upload — multipart form-data, field name "file"
+// Response: { ok:true, url:"/uploads/filename.ext", filename, size, mimetype }
+app.post("/api/upload", upload.single("file"), (req, res) => {
+  if (!req.file) return res.status(400).json({ ok: false, error: "No file uploaded (field name: file)" });
+  res.json({
+    ok: true,
+    url: `/uploads/${req.file.filename}`,
+    filename: req.file.filename,
+    size: req.file.size,
+    mimetype: req.file.mimetype,
+  });
+});
+
 
 // ─── ADMIN: Email/SMTP config ────────────────────────────────────────
 app.get("/api/admin/email-config", (_, res) => res.json(emailModule.getMaskedConfig()));
