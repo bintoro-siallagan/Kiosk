@@ -292,12 +292,110 @@ CREATE TABLE IF NOT EXISTS fnb_deliveries (
 );
 CREATE INDEX IF NOT EXISTS idx_fd_status ON fnb_deliveries(status);
 CREATE INDEX IF NOT EXISTS idx_fd_driver ON fnb_deliveries(driver_id);
+-- 12. KDS multi-station routing
+CREATE TABLE IF NOT EXISTS fnb_kds_stations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  icon TEXT,
+  category_keywords TEXT,
+  printer_name TEXT,
+  sort_order INTEGER DEFAULT 0,
+  is_active INTEGER DEFAULT 1,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+-- 13. WhatsApp Business
+CREATE TABLE IF NOT EXISTS fnb_wa_config (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  provider TEXT DEFAULT 'fonnte',
+  api_key TEXT,
+  sender_number TEXT,
+  business_account_id TEXT,
+  webhook_token TEXT,
+  is_enabled INTEGER DEFAULT 0,
+  notes TEXT,
+  updated_at INTEGER
+);
+CREATE TABLE IF NOT EXISTS fnb_wa_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  recipient_phone TEXT NOT NULL,
+  recipient_name TEXT,
+  template_name TEXT,
+  message TEXT,
+  status TEXT DEFAULT 'queued' CHECK (status IN ('queued','sent','delivered','failed','read')),
+  provider_msg_id TEXT,
+  error TEXT,
+  sent_at INTEGER,
+  delivered_at INTEGER,
+  read_at INTEGER,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_fwm_status ON fnb_wa_messages(status);
+-- 14. Bank auto-recon
+CREATE TABLE IF NOT EXISTS fnb_bank_transactions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  txn_date TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  description TEXT,
+  reference_no TEXT,
+  bank_name TEXT,
+  account_number TEXT,
+  matched_settlement_id INTEGER,
+  matched_at INTEGER,
+  match_confidence REAL,
+  notes TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_fbt_date ON fnb_bank_transactions(txn_date);
+CREATE INDEX IF NOT EXISTS idx_fbt_matched ON fnb_bank_transactions(matched_settlement_id);
+-- 15. Order transfer log
+CREATE TABLE IF NOT EXISTS fnb_order_transfers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER,
+  order_ref TEXT,
+  from_table TEXT,
+  to_table TEXT,
+  transferred_by TEXT,
+  reason TEXT,
+  notes TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+-- 16. Bill split log
+CREATE TABLE IF NOT EXISTS fnb_bill_splits (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  parent_order_id INTEGER,
+  parent_order_ref TEXT,
+  split_label TEXT,
+  items_json TEXT,
+  subtotal INTEGER DEFAULT 0,
+  payment_method TEXT,
+  payment_status TEXT DEFAULT 'pending' CHECK (payment_status IN ('pending','paid','cancelled')),
+  paid_at INTEGER,
+  paid_by TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_fbs_order ON fnb_bill_splits(parent_order_id);
 `;
 
 function setupFnbFeatures(app, opts = {}) {
   const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
+  // ALTER: driver realtime location (idempotent)
+  try { db.exec("ALTER TABLE fnb_drivers ADD COLUMN last_lat REAL"); } catch {}
+  try { db.exec("ALTER TABLE fnb_drivers ADD COLUMN last_lng REAL"); } catch {}
+  try { db.exec("ALTER TABLE fnb_drivers ADD COLUMN last_ping_at INTEGER"); } catch {}
+  // Seed KDS stations on first run
+  if (db.prepare(`SELECT COUNT(*) c FROM fnb_kds_stations`).get().c === 0) {
+    const ss = db.prepare(`INSERT INTO fnb_kds_stations (name, icon, category_keywords, printer_name, sort_order) VALUES (?,?,?,?,?)`);
+    ss.run('Hot Kitchen', '🔥', 'main,pasta,grill,wok,fried',     'printer-kitchen-1', 1);
+    ss.run('Cold Station', '🥗', 'salad,cold,appetizer,sushi',     'printer-kitchen-2', 2);
+    ss.run('Beverage',     '🥤', 'minuman,drink,juice,coffee,tea', 'printer-bar-1',     3);
+    ss.run('Dessert',      '🍰', 'dessert,cake,ice cream,sweets',  'printer-pastry',    4);
+  }
+  // Seed WA config row if absent
+  if (db.prepare(`SELECT COUNT(*) c FROM fnb_wa_config`).get().c === 0) {
+    db.prepare(`INSERT INTO fnb_wa_config (provider, is_enabled) VALUES ('fonnte', 0)`).run();
+  }
 
   // Seed data on first run
   if (db.prepare(`SELECT COUNT(*) c FROM fnb_membership_tiers`).get().c === 0) {
@@ -1002,6 +1100,251 @@ function setupFnbFeatures(app, opts = {}) {
     const distance = parseFloat(b.distance_km) || 0;
     const fee = (match?.base_fee || 0) + Math.max(0, distance - 3) * (match?.per_km_fee || 0);
     res.json({ ok: true, zone: match, distance_km: distance, fee });
+  });
+
+  // ── 12. KDS MULTI-STATION ROUTING ───────────────────────────────────
+  router.get('/kds-stations', (req, res) => {
+    const sql = req.query.all === '1'
+      ? `SELECT * FROM fnb_kds_stations ORDER BY sort_order, name`
+      : `SELECT * FROM fnb_kds_stations WHERE is_active = 1 ORDER BY sort_order, name`;
+    res.json({ stations: db.prepare(sql).all() });
+  });
+  router.post('/kds-stations', (req, res) => {
+    const b = req.body || {};
+    if (!b.name) return res.status(400).json({ ok: false, error: 'name wajib' });
+    const info = db.prepare(`INSERT INTO fnb_kds_stations (name, icon, category_keywords, printer_name, sort_order, is_active) VALUES (?,?,?,?,?,?)`)
+      .run(b.name, b.icon || '🍳', b.category_keywords || '', b.printer_name || '',
+           parseInt(b.sort_order, 10) || 0, b.is_active === false ? 0 : 1);
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+  router.patch('/kds-stations/:id', (req, res) => {
+    const b = req.body || {};
+    const fields = []; const args = [];
+    for (const k of ['name', 'icon', 'category_keywords', 'printer_name', 'sort_order', 'is_active']) {
+      if (k in b) { fields.push(`${k} = ?`); args.push(k === 'is_active' ? (b[k] ? 1 : 0) : k === 'sort_order' ? parseInt(b[k], 10) || 0 : b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE fnb_kds_stations SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/kds-stations/:id', (req, res) => { db.prepare(`DELETE FROM fnb_kds_stations WHERE id = ?`).run(req.params.id); res.json({ ok: true }); });
+  // Route an item — returns matching station based on category match
+  router.get('/kds-route', (req, res) => {
+    const cat = String(req.query.category || '').toLowerCase();
+    const stations = db.prepare(`SELECT * FROM fnb_kds_stations WHERE is_active = 1 ORDER BY sort_order`).all();
+    const matched = stations.find(s => (s.category_keywords || '').split(',').map(x => x.trim().toLowerCase()).some(k => k && cat.includes(k)));
+    res.json({ station: matched || stations[0] || null });
+  });
+
+  // ── 13. WHATSAPP BUSINESS ────────────────────────────────────────────
+  router.get('/wa-config', (req, res) => {
+    const cfg = db.prepare(`SELECT * FROM fnb_wa_config ORDER BY id LIMIT 1`).get();
+    if (cfg) cfg.api_key = cfg.api_key ? '••••' + cfg.api_key.slice(-4) : '';
+    res.json({ config: cfg });
+  });
+  router.patch('/wa-config', (req, res) => {
+    const b = req.body || {};
+    const cur = db.prepare(`SELECT * FROM fnb_wa_config ORDER BY id LIMIT 1`).get();
+    if (!cur) { db.prepare(`INSERT INTO fnb_wa_config (provider, is_enabled) VALUES (?, ?)`).run(b.provider || 'fonnte', b.is_enabled ? 1 : 0); }
+    const fields = []; const args = [];
+    for (const k of ['provider', 'api_key', 'sender_number', 'business_account_id', 'webhook_token', 'is_enabled', 'notes']) {
+      if (k in b && b[k] !== '••••') {
+        fields.push(`${k} = ?`);
+        args.push(k === 'is_enabled' ? (b[k] ? 1 : 0) : b[k]);
+      }
+    }
+    fields.push('updated_at = ?'); args.push(Math.floor(Date.now()/1000));
+    const id = cur?.id || db.prepare(`SELECT id FROM fnb_wa_config ORDER BY id LIMIT 1`).get().id;
+    db.prepare(`UPDATE fnb_wa_config SET ${fields.join(', ')} WHERE id = ?`).run(...args, id);
+    res.json({ ok: true });
+  });
+  router.post('/wa-send', async (req, res) => {
+    const b = req.body || {};
+    if (!b.recipient_phone || !b.message) return res.status(400).json({ ok: false, error: 'recipient_phone + message wajib' });
+    const cfg = db.prepare(`SELECT * FROM fnb_wa_config ORDER BY id LIMIT 1`).get();
+    const enabled = cfg?.is_enabled && cfg?.api_key && cfg?.sender_number;
+    const info = db.prepare(`INSERT INTO fnb_wa_messages (recipient_phone, recipient_name, template_name, message, status) VALUES (?,?,?,?,?)`)
+      .run(b.recipient_phone, b.recipient_name || '', b.template_name || '', b.message, enabled ? 'queued' : 'failed');
+    if (!enabled) {
+      db.prepare(`UPDATE fnb_wa_messages SET error = ?, status = 'failed' WHERE id = ?`)
+        .run('WA integration belum di-enable di config', info.lastInsertRowid);
+      return res.json({ ok: false, id: info.lastInsertRowid, error: 'WA integration belum di-enable' });
+    }
+    // Stub: simulate sending. Production: hit provider API (Fonnte/Wati/Twilio/Meta Cloud).
+    db.prepare(`UPDATE fnb_wa_messages SET status = 'sent', sent_at = ?, provider_msg_id = ? WHERE id = ?`)
+      .run(Math.floor(Date.now()/1000), 'stub-' + info.lastInsertRowid, info.lastInsertRowid);
+    res.json({ ok: true, id: info.lastInsertRowid, simulated: true });
+  });
+  router.get('/wa-messages', (req, res) => {
+    const where = []; const params = {};
+    if (req.query.status) { where.push('status = @status'); params.status = req.query.status; }
+    if (req.query.phone)  { where.push('recipient_phone = @phone'); params.phone = req.query.phone; }
+    const W = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const rows = db.prepare(`SELECT * FROM fnb_wa_messages ${W} ORDER BY created_at DESC LIMIT 200`).all(params);
+    const agg = db.prepare(`SELECT COUNT(*) total,
+      COALESCE(SUM(CASE WHEN status='sent' OR status='delivered' OR status='read' THEN 1 ELSE 0 END),0) sent,
+      COALESCE(SUM(CASE WHEN status='failed' THEN 1 ELSE 0 END),0) failed FROM fnb_wa_messages`).get();
+    res.json({ messages: rows, summary: agg });
+  });
+
+  // ── 14. BANK AUTO-RECON ──────────────────────────────────────────────
+  router.get('/bank-transactions', (req, res) => {
+    const where = []; const params = {};
+    if (req.query.from) { where.push('txn_date >= @from'); params.from = req.query.from; }
+    if (req.query.to)   { where.push('txn_date <= @to');   params.to = req.query.to; }
+    if (req.query.status === 'unmatched') where.push('matched_settlement_id IS NULL');
+    if (req.query.status === 'matched')   where.push('matched_settlement_id IS NOT NULL');
+    const W = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const rows = db.prepare(`SELECT * FROM fnb_bank_transactions ${W} ORDER BY txn_date DESC, id DESC LIMIT 500`).all(params);
+    const agg = db.prepare(`SELECT
+      COUNT(*) total,
+      COALESCE(SUM(CASE WHEN matched_settlement_id IS NULL THEN 1 ELSE 0 END),0) unmatched,
+      COALESCE(SUM(CASE WHEN matched_settlement_id IS NOT NULL THEN 1 ELSE 0 END),0) matched,
+      COALESCE(SUM(amount),0) total_amount
+      FROM fnb_bank_transactions ${W}`).get(params);
+    res.json({ transactions: rows, summary: agg });
+  });
+  router.post('/bank-transactions/import', (req, res) => {
+    const b = req.body || {};
+    const rows = Array.isArray(b.rows) ? b.rows : [];
+    if (!rows.length) return res.status(400).json({ ok: false, error: 'rows wajib' });
+    const ins = db.prepare(`INSERT INTO fnb_bank_transactions (txn_date, amount, description, reference_no, bank_name, account_number) VALUES (?,?,?,?,?,?)`);
+    let imported = 0;
+    db.transaction(() => {
+      for (const r of rows) {
+        if (!r.txn_date || r.amount == null) continue;
+        ins.run(r.txn_date, parseInt(r.amount, 10), r.description || '', r.reference_no || '', r.bank_name || b.bank_name || '', r.account_number || b.account_number || '');
+        imported++;
+      }
+    })();
+    res.json({ ok: true, imported });
+  });
+  router.post('/bank-transactions/:id/match', (req, res) => {
+    const b = req.body || {};
+    const now = Math.floor(Date.now()/1000);
+    db.prepare(`UPDATE fnb_bank_transactions SET matched_settlement_id = ?, matched_at = ?, match_confidence = ?, notes = ? WHERE id = ?`)
+      .run(b.settlement_id || null, now, parseFloat(b.confidence) || 1.0, b.notes || '', req.params.id);
+    res.json({ ok: true });
+  });
+  router.post('/bank-transactions/:id/unmatch', (req, res) => {
+    db.prepare(`UPDATE fnb_bank_transactions SET matched_settlement_id = NULL, matched_at = NULL, match_confidence = NULL WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
+  // ── 15. ORDER TRANSFER ──────────────────────────────────────────────
+  router.post('/order-transfers', (req, res) => {
+    const b = req.body || {};
+    if (!b.order_id || !b.to_table) return res.status(400).json({ ok: false, error: 'order_id + to_table wajib' });
+    const info = db.prepare(`INSERT INTO fnb_order_transfers (order_id, order_ref, from_table, to_table, transferred_by, reason, notes) VALUES (?,?,?,?,?,?,?)`)
+      .run(parseInt(b.order_id, 10), b.order_ref || '', b.from_table || '', b.to_table, b.transferred_by || 'manager', b.reason || '', b.notes || '');
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+  router.get('/order-transfers', (req, res) => {
+    const rows = db.prepare(`SELECT * FROM fnb_order_transfers ORDER BY created_at DESC LIMIT 200`).all();
+    res.json({ transfers: rows });
+  });
+
+  // ── 16. BILL SPLIT ───────────────────────────────────────────────────
+  router.post('/bill-splits', (req, res) => {
+    const b = req.body || {};
+    if (!b.parent_order_id) return res.status(400).json({ ok: false, error: 'parent_order_id wajib' });
+    const splits = Array.isArray(b.splits) ? b.splits : [];
+    const ins = db.prepare(`INSERT INTO fnb_bill_splits (parent_order_id, parent_order_ref, split_label, items_json, subtotal, payment_method, payment_status) VALUES (?,?,?,?,?,?,?)`);
+    const ids = [];
+    db.transaction(() => {
+      for (const s of splits) {
+        const info = ins.run(parseInt(b.parent_order_id, 10), b.parent_order_ref || '',
+          s.label || '', JSON.stringify(s.items || []), parseInt(s.subtotal, 10) || 0,
+          s.payment_method || '', s.payment_status || 'pending');
+        ids.push(info.lastInsertRowid);
+      }
+    })();
+    res.json({ ok: true, ids, count: ids.length });
+  });
+  router.get('/bill-splits/:orderId', (req, res) => {
+    const rows = db.prepare(`SELECT * FROM fnb_bill_splits WHERE parent_order_id = ? ORDER BY id`).all(req.params.orderId);
+    for (const r of rows) { try { r.items = JSON.parse(r.items_json || '[]'); } catch { r.items = []; } }
+    res.json({ splits: rows });
+  });
+  router.patch('/bill-splits/:id', (req, res) => {
+    const b = req.body || {};
+    const fields = []; const args = [];
+    if (b.payment_status) { fields.push('payment_status = ?'); args.push(b.payment_status); if (b.payment_status === 'paid') { fields.push('paid_at = ?'); args.push(Math.floor(Date.now()/1000)); } }
+    if (b.payment_method) { fields.push('payment_method = ?'); args.push(b.payment_method); }
+    if (b.paid_by) { fields.push('paid_by = ?'); args.push(b.paid_by); }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE fnb_bill_splits SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/bill-splits/:id', (req, res) => { db.prepare(`DELETE FROM fnb_bill_splits WHERE id = ?`).run(req.params.id); res.json({ ok: true }); });
+
+  // ── 17. DRIVER TRACKING (realtime location) ─────────────────────────
+  router.post('/drivers/:id/ping', (req, res) => {
+    const b = req.body || {};
+    const lat = parseFloat(b.lat); const lng = parseFloat(b.lng);
+    if (isNaN(lat) || isNaN(lng)) return res.status(400).json({ ok: false, error: 'lat + lng wajib' });
+    const now = Math.floor(Date.now()/1000);
+    db.prepare(`UPDATE fnb_drivers SET last_lat = ?, last_lng = ?, last_ping_at = ? WHERE id = ?`).run(lat, lng, now, req.params.id);
+    res.json({ ok: true, last_ping_at: now });
+  });
+  router.get('/drivers/live', (req, res) => {
+    const drivers = db.prepare(`SELECT id, name, phone, vehicle_type, vehicle_plate, status, last_lat, last_lng, last_ping_at, outlet FROM fnb_drivers WHERE is_active = 1`).all();
+    const now = Math.floor(Date.now()/1000);
+    for (const d of drivers) {
+      d.ping_age_sec = d.last_ping_at ? (now - d.last_ping_at) : null;
+      d.is_online    = d.ping_age_sec != null && d.ping_age_sec < 120;
+    }
+    res.json({ drivers, now });
+  });
+
+  // ── 18. MENU ENGINEERING MATRIX ─────────────────────────────────────
+  // Classifies menu items by popularity (% of avg sales) × profitability
+  // (food cost margin). 4 quadrants:
+  //   Star      — high pop + high profit (push these)
+  //   Plowhorse — high pop + low profit  (rework pricing/cost)
+  //   Puzzle    — low pop + high profit  (promote/relocate)
+  //   Dog       — low pop + low profit   (consider removing)
+  router.get('/analytics/menu-engineering', (req, res) => {
+    const from = req.query.from || new Date(Date.now() - 30 * 86400 * 1000).toISOString().slice(0, 10);
+    const to   = req.query.to   || new Date().toISOString().slice(0, 10);
+    // Best-effort query — assume an `orders` table with items_json or an
+    // `order_items` table. We try the most common shape and fall back.
+    let items = [];
+    try {
+      items = db.prepare(`
+        SELECT
+          mi.id AS menu_item_id, mi.name AS title,
+          COALESCE(mi.category, '—') AS category,
+          COALESCE(mi.price, 0) AS price,
+          COALESCE(mi.food_cost, 0) AS food_cost,
+          COALESCE((SELECT SUM(oi.qty) FROM order_items oi WHERE oi.menu_item_id = mi.id
+            AND date(oi.created_at,'unixepoch','localtime') BETWEEN ? AND ?), 0) AS qty_sold,
+          COALESCE((SELECT SUM(oi.qty * oi.price) FROM order_items oi WHERE oi.menu_item_id = mi.id
+            AND date(oi.created_at,'unixepoch','localtime') BETWEEN ? AND ?), 0) AS revenue
+        FROM menu_items mi
+      `).all(from, to, from, to);
+    } catch (e) { /* table not found — produce empty matrix gracefully */ }
+    const totalQty = items.reduce((a, r) => a + (r.qty_sold || 0), 0);
+    const avgQty   = items.length ? totalQty / items.length : 0;
+    const rows = items.map(r => {
+      const margin = r.price > 0 ? (r.price - (r.food_cost || 0)) / r.price * 100 : 0;
+      const popularity = avgQty > 0 ? (r.qty_sold || 0) / avgQty : 0;
+      const highPop  = popularity >= 1;
+      const highProf = margin >= 65;
+      const quadrant = highPop && highProf ? 'star' : highPop && !highProf ? 'plowhorse'
+                      : !highPop && highProf ? 'puzzle' : 'dog';
+      return { ...r, margin_pct: +margin.toFixed(2), popularity_ratio: +popularity.toFixed(2), quadrant };
+    }).sort((a, b) => b.revenue - a.revenue);
+    const summary = {
+      total_items: rows.length, avg_qty: +avgQty.toFixed(2),
+      star:      rows.filter(r => r.quadrant === 'star').length,
+      plowhorse: rows.filter(r => r.quadrant === 'plowhorse').length,
+      puzzle:    rows.filter(r => r.quadrant === 'puzzle').length,
+      dog:       rows.filter(r => r.quadrant === 'dog').length,
+    };
+    res.json({ from, to, summary, rows });
   });
 
   // Mount

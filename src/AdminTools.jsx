@@ -133,6 +133,13 @@ import FnbMembershipTier from "./Admin/FnbMembershipTier.jsx";
 import FnbBirthdayPromo from "./Admin/FnbBirthdayPromo.jsx";
 import FnbReferral from "./Admin/FnbReferral.jsx";
 import FnbDelivery from "./Admin/FnbDelivery.jsx";
+import FnbMenuEngineering from "./Admin/FnbMenuEngineering.jsx";
+import FnbBillSplit from "./Admin/FnbBillSplit.jsx";
+import FnbOrderTransfer from "./Admin/FnbOrderTransfer.jsx";
+import FnbKdsRouting from "./Admin/FnbKdsRouting.jsx";
+import FnbWhatsApp from "./Admin/FnbWhatsApp.jsx";
+import FnbBankRecon from "./Admin/FnbBankRecon.jsx";
+import FnbDriverTracking from "./Admin/FnbDriverTracking.jsx";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -235,6 +242,13 @@ export default function AdminTools({ initialTab }) {
         {tab === "fnb_birthday_promo" && <FnbBirthdayPromo apiBase={API} />}
         {tab === "fnb_referral" && <FnbReferral apiBase={API} />}
         {tab === "fnb_delivery" && <FnbDelivery apiBase={API} />}
+        {tab === "fnb_menu_engineering" && <FnbMenuEngineering apiBase={API} />}
+        {tab === "fnb_bill_split" && <FnbBillSplit apiBase={API} />}
+        {tab === "fnb_order_transfer" && <FnbOrderTransfer apiBase={API} />}
+        {tab === "fnb_kds_routing" && <FnbKdsRouting apiBase={API} />}
+        {tab === "fnb_whatsapp" && <FnbWhatsApp apiBase={API} />}
+        {tab === "fnb_bank_recon" && <FnbBankRecon apiBase={API} />}
+        {tab === "fnb_driver_tracking" && <FnbDriverTracking apiBase={API} />}
         {tab === "cinema_event_booking" && <CinemaEventBooking apiBase={API} />}
         {tab === "cinema_price_list" && <CinemaPriceList apiBase={API} />}
         {tab === "cinema_command_center" && <CinemaCommandCenter apiBase={API} />}
