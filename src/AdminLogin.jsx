@@ -1,112 +1,266 @@
-import { useState, useEffect } from "react";
+// karyaOS — Enterprise Admin Login
+// Two modes:
+//   1. Username + password (default; bcrypt-equivalent via scrypt at backend)
+//   2. PIN 6-digit (legacy POS quick-access, toggle via link)
+//
+// Features: remember username, show/hide password, caps-lock warn,
+// must-change-password forced modal, lockout countdown, login audit.
+import { useState, useEffect, useRef } from "react";
 import { api } from "./api.js";
 
+const LS_USERNAME = "karyaos_remember_username";
+
 export default function AdminLogin({ onLogin }) {
-  const [pin,    setPin]    = useState("");
-  const [error,  setError]  = useState("");
-  const [busy,   setBusy]   = useState(false);
-  const [shake,  setShake]  = useState(false);
+  const [mode, setMode] = useState("password");          // 'password' | 'pin'
+  const [username, setUsername] = useState(localStorage.getItem(LS_USERNAME) || "");
+  const [password, setPassword] = useState("");
+  const [remember, setRemember] = useState(!!localStorage.getItem(LS_USERNAME));
+  const [showPwd, setShowPwd] = useState(false);
+  const [capsLock, setCapsLock] = useState(false);
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [shake, setShake] = useState(false);
+  const [mustChange, setMustChange] = useState(null);     // { token, user } when need to change pwd
+  const usernameRef = useRef(null);
 
-  // Auto-submit when 6 digits entered
   useEffect(() => {
-    if (pin.length === 6) handleLogin();
-  }, [pin]);
-
-  // Opt out of the global auto-zoom — auto-zoom.css zooms html up to 1.4x on
-  // wide screens, which (× 100vh) makes this full-screen login overflow.
-  useEffect(() => {
-    const prev = document.documentElement.style.zoom;
     document.documentElement.style.zoom = "1";
-    return () => { document.documentElement.style.zoom = prev; };
+    usernameRef.current?.focus();
+    return () => { document.documentElement.style.zoom = ""; };
   }, []);
 
-  async function handleLogin() {
+  // Auto-submit PIN when 6 digits
+  useEffect(() => {
+    if (mode === "pin" && pin.length === 6 && !busy) handlePinLogin();
+    // eslint-disable-next-line
+  }, [pin, mode]);
+
+  async function handlePasswordLogin() {
+    if (!username.trim() || !password) { setError("Username & password wajib diisi"); return; }
+    setBusy(true); setError("");
+    try {
+      const res = await api.loginPassword(username.trim(), password);
+      if (remember) localStorage.setItem(LS_USERNAME, username.trim());
+      else          localStorage.removeItem(LS_USERNAME);
+      localStorage.setItem("adminToken", res.token);
+      localStorage.setItem("adminRole",  res.user.role);
+      localStorage.setItem("adminName",  res.user.name);
+      localStorage.setItem("adminUsername", res.user.username || "");
+      if (res.user.must_change_password) {
+        setMustChange({ token: res.token, user: res.user });
+      } else {
+        onLogin({ token: res.token, name: res.user.name, role: res.user.role });
+      }
+    } catch (e) {
+      setError(parseError(e));
+      setShake(true); setTimeout(() => setShake(false), 500);
+      setPassword("");
+    } finally { setBusy(false); }
+  }
+
+  async function handlePinLogin() {
     setBusy(true); setError("");
     try {
       const res = await api.login(pin);
       localStorage.setItem("adminToken", res.token);
       localStorage.setItem("adminRole",  res.role);
       localStorage.setItem("adminName",  res.name);
-      onLogin(res);
+      if (res.must_change_password) setMustChange({ token: res.token, user: res });
+      else onLogin(res);
     } catch (e) {
-      setError("PIN salah. Coba lagi.");
-      setPin("");
-      setShake(true);
-      setTimeout(() => setShake(false), 500);
+      setError("PIN salah");
+      setPin(""); setShake(true); setTimeout(() => setShake(false), 500);
     } finally { setBusy(false); }
   }
 
-  const handleKey = (k) => {
+  const onKeyEvent = (e) => setCapsLock(e.getModifierState && e.getModifierState("CapsLock"));
+  const handlePinKey = (k) => {
     if (busy) return;
-    if (k === "⌫") { setPin(p => p.slice(0,-1)); setError(""); return; }
+    if (k === "⌫") { setPin(p => p.slice(0, -1)); setError(""); return; }
     if (pin.length < 6) setPin(p => p + k);
   };
 
+  // Forced password change modal
+  if (mustChange) {
+    return <ForceChangePassword session={mustChange} onDone={onLogin} />;
+  }
+
   return (
     <div style={L.root}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@400;600;700&display=swap');
-        *{box-sizing:border-box;margin:0;padding:0}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
-        @keyframes spin{to{transform:rotate(360deg)}}
-        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-        button{cursor:pointer;-webkit-tap-highlight-color:transparent;}
-      `}</style>
+      <style>{CSS}</style>
+      <div style={{ ...L.wrap, animation: shake ? "shake 0.4s ease" : "fadeUp 0.3s ease" }}>
+        <img src="/logo.png" alt="KaryaOS" style={L.logoImg} />
+        <div style={L.brand}>karya<span style={{ color: "#fff" }}>OS</span></div>
+        <div style={L.title}>{mode === "password" ? "ADMIN LOGIN" : "PIN QUICK-ACCESS"}</div>
+        <div style={L.sub}>{mode === "password" ? "Enterprise authentication · username & password" : "Untuk kasir POS · 6-digit PIN"}</div>
 
-      <div style={L.wrap}>
-        {/* Logo */}
-        <img src="/logo.png" alt="KaryaOS" style={{ width: 88, height: 88, objectFit: "contain", marginBottom: 8 }} />
-        <div style={L.brand}>KaryaOS</div>
-        <div style={L.title}>ADMIN ACCESS</div>
-        <div style={L.sub}>Masukkan PIN 6 digit Anda</div>
+        {error && <div style={L.error} role="alert">⚠ {error}</div>}
 
-        {/* PIN dots */}
-        <div style={{...L.dots, animation: shake?"shake 0.4s ease":"none"}}>
-          {Array.from({length:6},(_,i)=>(
-            <div key={i} style={{
-              ...L.dot,
-              background: i < pin.length ? "#F59E0B" : "transparent",
-              borderColor: i < pin.length ? "#F59E0B" : "#21262d",
-              boxShadow: i < pin.length ? "0 0 8px rgba(245,158,11,0.5)" : "none",
-            }}/>
-          ))}
-        </div>
+        {mode === "password" ? (
+          <form onSubmit={(e) => { e.preventDefault(); handlePasswordLogin(); }} style={L.form}>
+            <label style={L.label}>👤 USERNAME</label>
+            <input ref={usernameRef} type="text" value={username} onChange={e => setUsername(e.target.value)}
+              placeholder="username" autoCapitalize="off" autoComplete="username"
+              onKeyUp={onKeyEvent}
+              style={L.input} disabled={busy} />
 
-        {error && <div style={L.error}>{error}</div>}
-        {busy  && <div style={L.checking}><span style={L.spinner}/>Memverifikasi...</div>}
+            <label style={{ ...L.label, marginTop: 14 }}>🔒 PASSWORD</label>
+            <div style={{ position: "relative" }}>
+              <input type={showPwd ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••" autoComplete="current-password"
+                onKeyUp={onKeyEvent}
+                style={{ ...L.input, paddingRight: 90 }} disabled={busy} />
+              <button type="button" onClick={() => setShowPwd(s => !s)} tabIndex={-1}
+                style={{ position: "absolute", right: 8, top: 8, background: "transparent", border: "none", color: "#9ca3af", fontSize: 11, fontWeight: 700, padding: "8px 10px", cursor: "pointer", fontFamily: "inherit", letterSpacing: 1 }}>
+                {showPwd ? "🙈 HIDE" : "👁 SHOW"}
+              </button>
+            </div>
+            {capsLock && <div style={{ fontSize: 11, color: "#fbbf24", marginTop: 6, display: "flex", gap: 6, alignItems: "center" }}>⚠ Caps Lock aktif</div>}
 
-        {/* Numpad */}
-        <div style={L.pad}>
-          {[1,2,3,4,5,6,7,8,9,"⌫",0,""].map((k,i)=>(
-            k==="" ? <div key={i}/> :
-            <button key={i} onPointerDown={e=>{e.preventDefault();handleKey(k);}}
-              style={k==="⌫" ? L.delKey : L.key}>
-              {k}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "#9ca3af", cursor: "pointer" }}>
+                <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
+                Remember username
+              </label>
+              <a href="#" onClick={(e) => { e.preventDefault(); alert("Hubungi admin untuk reset password."); }} style={{ fontSize: 11, color: "#3b82f6", textDecoration: "none" }}>Lupa password?</a>
+            </div>
+
+            <button type="submit" disabled={busy} style={{ ...L.primaryBtn, marginTop: 18, opacity: busy ? 0.6 : 1, cursor: busy ? "not-allowed" : "pointer" }}>
+              {busy ? <><span style={L.spinner} /> Memverifikasi…</> : "🔓 Login"}
             </button>
-          ))}
-        </div>
+          </form>
+        ) : (
+          <>
+            <div style={{ ...L.dots, animation: shake ? "shake 0.4s ease" : "none" }}>
+              {Array.from({ length: 6 }, (_, i) => (
+                <div key={i} style={{
+                  ...L.dot,
+                  background: i < pin.length ? "#F59E0B" : "transparent",
+                  borderColor: i < pin.length ? "#F59E0B" : "#21262d",
+                  boxShadow: i < pin.length ? "0 0 8px rgba(245,158,11,0.5)" : "none",
+                }} />
+              ))}
+            </div>
+            {busy && <div style={L.checking}><span style={L.spinner} />Memverifikasi…</div>}
+            <div style={L.pad}>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, "⌫", 0, ""].map((k, i) => (
+                k === "" ? <div key={i} /> :
+                <button key={i} onPointerDown={e => { e.preventDefault(); handlePinKey(k); }}
+                  style={k === "⌫" ? L.delKey : L.key}>
+                  {k}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
+        <button onClick={() => { setMode(m => m === "password" ? "pin" : "password"); setError(""); }}
+          style={L.modeToggle}>
+          {mode === "password" ? "↺ Switch ke PIN mode (kasir POS)" : "↺ Switch ke username/password (admin)"}
+        </button>
+
+        <div style={L.footer}>
+          🛡️ Enterprise auth · scrypt password hash · lockout 5× fail · session 12h
+        </div>
       </div>
     </div>
   );
 }
 
+// ─── Force change password modal ──
+function ForceChangePassword({ session, onDone }) {
+  const [pwd, setPwd] = useState("");
+  const [conf, setConf] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const submit = async (e) => {
+    e?.preventDefault();
+    setError("");
+    if (pwd.length < 8) { setError("Password minimum 8 karakter"); return; }
+    if (!/[A-Z]/.test(pwd) || !/[a-z]/.test(pwd) || !/[0-9]/.test(pwd)) { setError("Harus mengandung huruf besar, kecil, dan angka"); return; }
+    if (pwd !== conf) { setError("Konfirmasi password tidak cocok"); return; }
+    setBusy(true);
+    try {
+      await api.changePassword("", pwd);
+      onDone({ token: session.token, name: session.user.name, role: session.user.role });
+    } catch (e) { setError(parseError(e)); }
+    setBusy(false);
+  };
+  return (
+    <div style={L.root}>
+      <style>{CSS}</style>
+      <div style={L.wrap}>
+        <div style={{ fontSize: 50, marginBottom: 6 }}>🔐</div>
+        <div style={L.brand}>karya<span style={{ color: "#fff" }}>OS</span></div>
+        <div style={L.title}>FORCE CHANGE PASSWORD</div>
+        <div style={L.sub}>Hi <b style={{ color: "#fff" }}>{session.user.name}</b> — ini login pertama Anda. Mohon ganti password sebelum melanjutkan.</div>
+
+        {error && <div style={L.error}>⚠ {error}</div>}
+
+        <form onSubmit={submit} style={L.form}>
+          <label style={L.label}>🔒 PASSWORD BARU</label>
+          <input type="password" value={pwd} onChange={e => setPwd(e.target.value)}
+            placeholder="min 8 karakter" autoFocus autoComplete="new-password"
+            style={L.input} disabled={busy} />
+
+          <label style={{ ...L.label, marginTop: 12 }}>🔒 KONFIRMASI</label>
+          <input type="password" value={conf} onChange={e => setConf(e.target.value)}
+            placeholder="ulangi password" autoComplete="new-password"
+            style={L.input} disabled={busy} />
+
+          <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 8, lineHeight: 1.5 }}>
+            Syarat:<br />
+            • Min 8 karakter<br />
+            • Mengandung huruf besar (A-Z)<br />
+            • Mengandung huruf kecil (a-z)<br />
+            • Mengandung angka (0-9)
+          </div>
+
+          <button type="submit" disabled={busy} style={{ ...L.primaryBtn, marginTop: 18 }}>
+            {busy ? "Menyimpan…" : "💾 Simpan & Lanjut"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function parseError(e) {
+  if (e?.response) try { return e.response.error || e.message; } catch { return e.message; }
+  return e?.message || "Login gagal";
+}
+
+const CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes shake  { 0%,100% { transform: translateX(0); } 20%,60% { transform: translateX(-8px); } 40%,80% { transform: translateX(8px); } }
+  @keyframes spin   { to { transform: rotate(360deg); } }
+  button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  input:focus { outline: 2px solid #3b82f6; outline-offset: 1px; }
+`;
+
 const L = {
-  root:    {fontFamily:"'Inter',sans-serif",background:"#050810",color:"#fff",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"},
-  wrap:    {textAlign:"center",padding:"40px 24px",maxWidth:360,width:"100%",animation:"fadeUp 0.3s ease"},
-  logo:    {fontSize:56,marginBottom:8},
-  brand:   {fontFamily:"'Geist Mono',monospace",fontSize:28,fontWeight:700,color:"#F59E0B",letterSpacing:4,marginBottom:4},
-  title:   {fontFamily:"'Geist Mono',monospace",fontSize:14,letterSpacing:4,color:"#555",marginBottom:6},
-  sub:     {fontSize:13,color:"#444",marginBottom:32},
-  dots:    {display:"flex",gap:14,justifyContent:"center",marginBottom:24},
-  dot:     {width:18,height:18,borderRadius:"50%",border:"2px solid",transition:"all 0.2s"},
-  error:   {fontSize:13,color:"#F87171",marginBottom:12,background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.2)",borderRadius:8,padding:"8px 16px"},
-  checking:{display:"flex",alignItems:"center",justifyContent:"center",gap:8,fontSize:12,color:"#F59E0B",marginBottom:12},
-  spinner: {width:14,height:14,border:"2px solid #333",borderTop:"2px solid #F59E0B",borderRadius:"50%",animation:"spin 0.8s linear infinite",display:"inline-block"},
-  pad:     {display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:28},
-  key:     {height:64,fontSize:22,fontFamily:"'Geist Mono',monospace",fontWeight:700,background:"#0d1117",border:"1px solid #1a1a2e",borderRadius:14,color:"#fff",transition:"background 0.1s"},
-  delKey:  {height:64,fontSize:20,background:"#0d1117",border:"1px solid #1a1a2e",borderRadius:14,color:"#F87171",fontWeight:700},
-  hints:   {display:"flex",gap:16,justifyContent:"center",flexWrap:"wrap"},
-  hint:    {fontSize:11,color:"#333",fontFamily:"'Geist Mono',monospace"},
+  root:    { fontFamily: "'Inter',sans-serif", background: "#050810", color: "#fff", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
+  wrap:    { textAlign: "center", padding: "40px 28px", maxWidth: 400, width: "100%", background: "#0d1117", border: "1px solid #1b212c", borderRadius: 18, boxShadow: "0 20px 60px rgba(0,0,0,0.4)" },
+  logoImg: { width: 78, height: 78, objectFit: "contain", marginBottom: 8 },
+  brand:   { fontFamily: "'Geist Mono',monospace", fontSize: 26, fontWeight: 800, color: "#F59E0B", letterSpacing: 4, marginBottom: 4 },
+  title:   { fontFamily: "'Geist Mono',monospace", fontSize: 11, letterSpacing: 4, color: "#9ca3af", marginBottom: 4 },
+  sub:     { fontSize: 12.5, color: "#5b6470", marginBottom: 22, lineHeight: 1.5 },
+  form:    { textAlign: "left", marginTop: 6 },
+  label:   { display: "block", fontSize: 10, color: "#5b6470", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 4, fontWeight: 700 },
+  input:   { width: "100%", padding: "12px 14px", background: "#0a0e16", border: "1px solid #21262d", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" },
+  primaryBtn: { width: "100%", padding: "14px 18px", background: "linear-gradient(135deg, #F59E0B 0%, #f97316 100%)", border: "none", color: "#111", borderRadius: 10, fontSize: 14, fontWeight: 800, fontFamily: "inherit", letterSpacing: 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 },
+  modeToggle: { background: "transparent", border: "1px solid #21262d", color: "#9ca3af", padding: "8px 14px", borderRadius: 8, fontSize: 11.5, marginTop: 20, fontFamily: "inherit", width: "100%" },
+  footer:  { fontSize: 10, color: "#3a3a3a", marginTop: 18, lineHeight: 1.5 },
+  error:   { fontSize: 13, color: "#F87171", marginBottom: 14, background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8, padding: "10px 14px", textAlign: "left" },
+  // PIN mode
+  dots:    { display: "flex", gap: 14, justifyContent: "center", marginTop: 8, marginBottom: 20 },
+  dot:     { width: 18, height: 18, borderRadius: "50%", border: "2px solid", transition: "all 0.2s" },
+  checking:{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 12, color: "#F59E0B", marginBottom: 12 },
+  spinner: { width: 14, height: 14, border: "2px solid rgba(0,0,0,0.2)", borderTop: "2px solid currentColor", borderRadius: "50%", animation: "spin 0.8s linear infinite", display: "inline-block" },
+  pad:     { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 },
+  key:     { height: 62, fontSize: 22, fontFamily: "'Geist Mono',monospace", fontWeight: 700, background: "#0a0e16", border: "1px solid #21262d", borderRadius: 12, color: "#fff" },
+  delKey:  { height: 62, fontSize: 20, background: "#0a0e16", border: "1px solid #21262d", borderRadius: 12, color: "#F87171", fontWeight: 700 },
 };
