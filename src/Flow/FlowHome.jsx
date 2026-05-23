@@ -80,7 +80,7 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
       </div>
 
       {cartCount > 0 && (
-        <button onClick={() => onNavigate("menu")} style={S.cartFloater}>
+        <button className="flow-cart-floater" onClick={() => onNavigate("menu")} style={S.cartFloater}>
           <div style={S.cartFloaterLeft}>
             <span style={S.cartCount}>{cartCount}</span>
             <span>Lanjutkan Pesan</span>
@@ -96,8 +96,8 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
 
 function ActionCard({ icon, title, subtitle, accent, comingSoon, onClick }) {
   return (
-    <button onClick={comingSoon ? undefined : onClick} disabled={comingSoon} style={{ ...S.actionCard, ...(comingSoon ? { opacity: 0.5, cursor: "not-allowed" } : {}) }}>
-      <div style={{ ...S.actionIcon, background: `${accent}20`, color: accent }}>{icon}</div>
+    <button className="flow-action-card" onClick={comingSoon ? undefined : onClick} disabled={comingSoon} style={{ ...S.actionCard, ...(comingSoon ? { opacity: 0.5, cursor: "not-allowed" } : {}) }}>
+      <div style={{ ...S.actionIcon, background: `${accent}15`, color: accent, border: `1px solid ${accent}30`, boxShadow: `0 4px 14px ${accent}1f, inset 0 1px 0 rgba(255,255,255,0.05)` }}>{icon}</div>
       <div style={S.actionTitle}>{title}</div>
       <div style={S.actionSub}>{subtitle}</div>
       {comingSoon && <div style={S.soonBadge}>Soon</div>}
@@ -108,41 +108,64 @@ function ActionCard({ icon, title, subtitle, accent, comingSoon, onClick }) {
 const S = {
   container: { width: "min(440px, 100%)", minHeight: "100vh", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 20, position: "relative" },
   header: { display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 8 },
-  logo: { fontFamily: "'Inter', sans-serif", fontSize: 28, color: "#FF6B35", letterSpacing: 2 },
-  logoutBtn: { padding: "6px 12px", borderRadius: 8, background: "transparent", border: "1px solid #2a2a2a", color: "#9CA3AF", fontSize: 11, cursor: "pointer", fontFamily: "inherit" },
-  profile: { background: "linear-gradient(135deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.02) 100%)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 16, padding: "20px 18px", animation: "fadeUp 0.4s ease" },
-  greeting: { fontSize: 18, fontWeight: 700, marginBottom: 10 },
-  tableBadge: { display: "inline-block", padding: "5px 12px", borderRadius: 16, background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", color: "#FF6B35", fontSize: 11, fontWeight: 600 },
-  modeBadge: { display: "inline-block", padding: "5px 12px", borderRadius: 16, background: "rgba(59,130,246,0.15)", color: "#60A5FA", fontSize: 11, fontWeight: 600 },
-  statsRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 },
-  statBox: { background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.05)", borderRadius: 12, padding: "12px 14px" },
-  statLabel: { fontSize: 10, color: "#9CA3AF", letterSpacing: 1, fontWeight: 600, marginBottom: 4 },
-  statValue: { fontFamily: "'Inter', sans-serif", fontSize: 28, color: "#FF6B35", lineHeight: 1, letterSpacing: 1 },
-  statUnit: { fontSize: 14, color: "#9CA3AF", marginLeft: 2 },
-  statBadge: { fontSize: 10, marginTop: 6, fontWeight: 600 },
+  logo: { fontFamily: "'Inter', sans-serif", fontSize: 26, fontWeight: 800, color: "#FF6B35", letterSpacing: "-0.5px" },
+  logoutBtn: { padding: "7px 14px", borderRadius: 9, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 11, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1, textTransform: "uppercase", transition: "all 0.2s ease" },
+  profile: {
+    background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.005))",
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: 18, padding: "22px 20px",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.3), 0 12px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04)",
+    position: "relative", overflow: "hidden",
+    backgroundImage: "radial-gradient(400px 200px at 80% 0%, rgba(245,158,11,0.08), transparent)",
+    animation: "fadeUp 0.4s ease",
+  },
+  greeting: { fontSize: 19, fontWeight: 750, marginBottom: 10, letterSpacing: "-0.4px" },
+  tableBadge: { display: "inline-block", padding: "5px 12px", borderRadius: 16, background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", color: "#FF6B35", fontSize: 11, fontWeight: 700, letterSpacing: 0.5, fontFamily: "'JetBrains Mono', monospace" },
+  modeBadge: { display: "inline-block", padding: "5px 12px", borderRadius: 16, background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.25)", color: "#60A5FA", fontSize: 11, fontWeight: 700, letterSpacing: 0.5, fontFamily: "'JetBrains Mono', monospace" },
+  statsRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 18 },
+  statBox: {
+    background: "rgba(0,0,0,0.3)",
+    backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+    border: "1px solid rgba(255,255,255,0.06)",
+    borderRadius: 13, padding: "13px 15px",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
+  },
+  statLabel: { fontSize: 9.5, color: "rgba(255,255,255,0.45)", letterSpacing: 1.5, fontWeight: 600, marginBottom: 6, textTransform: "uppercase", fontFamily: "'JetBrains Mono', monospace" },
+  statValue: { fontFamily: "'Inter', sans-serif", fontSize: 28, fontWeight: 800, color: "#FF6B35", lineHeight: 1, letterSpacing: "-1px" },
+  statUnit: { fontSize: 13, color: "rgba(255,255,255,0.4)", marginLeft: 3, fontWeight: 600 },
+  statBadge: { fontSize: 10, marginTop: 8, fontWeight: 600, letterSpacing: 0.3 },
   actionsGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
-  actionCard: { position: "relative", padding: "16px 12px", borderRadius: 14, background: "linear-gradient(180deg, #161616 0%, #0d0d0d 100%)", border: "1px solid #2a2a2a", color: "white", cursor: "pointer", fontFamily: "inherit", textAlign: "left" },
-  actionIcon: { width: 40, height: 40, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, marginBottom: 8 },
-  actionTitle: { fontSize: 13, fontWeight: 700 },
-  actionSub: { fontSize: 10, color: "#9CA3AF", marginTop: 2 },
-  soonBadge: { position: "absolute", top: 8, right: 8, padding: "2px 6px", borderRadius: 4, background: "rgba(245,158,11,0.15)", color: "#FF6B35", fontSize: 8, fontWeight: 700, letterSpacing: 1 },
-  footer: { textAlign: "center", fontSize: 10, color: "#4B5563", letterSpacing: 1, padding: "12px 0" },
+  actionCard: {
+    position: "relative", padding: "16px 14px", borderRadius: 15,
+    background: "linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.005))",
+    border: "1px solid rgba(255,255,255,0.06)",
+    color: "white", cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.3), 0 6px 18px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.03)",
+  },
+  actionIcon: { width: 42, height: 42, borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, marginBottom: 10 },
+  actionTitle: { fontSize: 13, fontWeight: 750, letterSpacing: "-0.2px" },
+  actionSub: { fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 3, lineHeight: 1.4 },
+  soonBadge: { position: "absolute", top: 8, right: 8, padding: "2px 7px", borderRadius: 4, background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.25)", color: "#FF6B35", fontSize: 8, fontWeight: 700, letterSpacing: 1, fontFamily: "'JetBrains Mono', monospace" },
+  footer: { textAlign: "center", fontSize: 9.5, color: "rgba(255,255,255,0.3)", letterSpacing: 2, padding: "14px 0", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase" },
   cartFloater: {
     position: "sticky", bottom: 20, marginTop: "auto",
-    width: "100%", padding: "14px 18px", borderRadius: 14,
-    background: "linear-gradient(135deg, #FF6B35, #D97706)",
-    border: "none", color: "#111",
+    width: "100%", padding: "15px 20px", borderRadius: 15,
+    background: "linear-gradient(135deg, #FF6B35, #F59E0B)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    color: "#1a0f00",
     display: "flex", justifyContent: "space-between", alignItems: "center",
     fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-    boxShadow: "0 12px 28px rgba(245,158,11,0.3)",
+    letterSpacing: "-0.2px",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.3), 0 14px 32px rgba(255,107,53,0.4), inset 0 1px 0 rgba(255,255,255,0.2)",
     animation: "fadeUp 0.4s ease",
   },
   cartFloaterLeft: { display: "flex", alignItems: "center", gap: 10 },
   cartCount: {
-    background: "#111", color: "#FF6B35",
-    width: 24, height: 24, borderRadius: 12,
+    background: "rgba(0,0,0,0.25)", color: "#fff",
+    width: 26, height: 26, borderRadius: 13,
     display: "inline-flex", alignItems: "center", justifyContent: "center",
     fontSize: 13, fontWeight: 800,
+    border: "1px solid rgba(255,255,255,0.15)",
   },
-  cartFloaterTotal: { fontFamily: "'Inter', sans-serif", fontSize: 18, letterSpacing: 1 },
+  cartFloaterTotal: { fontFamily: "'Inter', sans-serif", fontSize: 17, letterSpacing: "-0.3px", fontWeight: 800 },
 };

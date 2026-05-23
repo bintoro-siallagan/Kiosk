@@ -106,13 +106,20 @@ export default function FlowApp() {
   return (
     <div style={S.app}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;750;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-        body { background: #000; }
+        body { background: #08090a; }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         @keyframes successPop { 0% { transform: scale(0); } 60% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .flow-action-card { transition: all 0.25s cubic-bezier(0.4,0,0.2,1); }
+        .flow-action-card:not(:disabled):hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.12) !important; box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 14px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.05) !important; }
+        .flow-action-card:not(:disabled):active { transform: translateY(0); }
+        .flow-cart-floater { transition: all 0.25s cubic-bezier(0.4,0,0.2,1); }
+        .flow-cart-floater:hover { transform: translateY(-2px) scale(1.01); box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 18px 40px rgba(255,107,53,0.45), inset 0 1px 0 rgba(255,255,255,0.2) !important; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
       `}</style>
 
       {screen === "welcome" && (
@@ -186,7 +193,12 @@ export default function FlowApp() {
 const S = {
   app: {
     minHeight: "100vh",
-    background: "linear-gradient(180deg, #0a0a0a 0%, #000 100%)",
+    background: `
+      radial-gradient(800px 600px at 30% 10%, rgba(245,158,11,0.04), transparent),
+      radial-gradient(600px 400px at 80% 70%, rgba(59,130,246,0.03), transparent),
+      linear-gradient(160deg, #08090a 0%, #14151c 50%, #0a0b0e 100%)
+    `,
+    backgroundAttachment: "fixed",
     fontFamily: "'Inter', sans-serif",
     color: "white",
     display: "flex", flexDirection: "column", alignItems: "center",

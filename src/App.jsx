@@ -25,6 +25,7 @@ const DigitalReceipt         = lazy(() => import("./DigitalReceipt.jsx"));
 const AdminHome              = lazy(() => import("./AdminHome.jsx"));
 const OrderTracking          = lazy(() => import("./OrderTracking.jsx"));
 const POSApp                 = lazy(() => import("./POSApp.jsx"));
+const POSCinemaApp           = lazy(() => import("./POS/POSCinemaApp.jsx"));
 const KDS                    = lazy(() => import("./KDS/KDS.jsx"));
 const FlowApp                = lazy(() => import("./Flow/FlowApp.jsx"));
 const POSSatisfaction        = lazy(() => import("./POS/POSSatisfaction.jsx"));
@@ -66,6 +67,7 @@ function getScene() {
   if (q.includes("shift"))     return "shift";
   if (q.includes("cds"))      return "cds";
   if (q.includes("kds"))      return "kds";
+  if (q.includes("pos-cinema") || q.includes("poscinema")) return "pos-cinema";
   if (q.includes("pos"))       return "pos";
   // Check if table QR scan
   if (new URLSearchParams(q).get("table")) return "table-select";
@@ -175,8 +177,9 @@ export default function App() {
   } else if (scene === "table-select" && checkoutData) {
     node = (
       <ShiftGate><TableSelector
-        onSelect={handleTableSelect}
+        onPick={handleTableSelect}
         onBack={go("kiosk")}
+        onCancel={go("kiosk")}
       /></ShiftGate>
     );
   } else if (scene === "customer-input" && checkoutData) {
@@ -226,6 +229,8 @@ export default function App() {
     );
   } else if (scene === "pos") {
     node = <POSApp />;
+  } else if (scene === "pos-cinema") {
+    node = <POSCinemaApp />;
   } else if (scene === "cds") {
     node = <POSCDS />;
   } else if (scene === "kds") {

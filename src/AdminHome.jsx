@@ -403,6 +403,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     ] },
     // 🎬 Cinema — dedicated column terpisah dari F&B
     { title: "🎬 Cinema Vertical", accent: "#a855f7", items: [
+      { label: "POS Cinema (Kasir)",      icon: "🎟️", c: "#fbbf24", on: () => openTab("?pos-cinema") },
       { label: "Cinema Kiosk (Customer)", icon: "🎬", c: "#a855f7", on: () => openTab("?cinema") },
       { label: "In-Studio QR Order",      icon: "🍿", c: "#f59e0b", on: () => openTab("?cinema-snack") },
       { label: "Lobby Board (TV)",        icon: "📺", c: "#22d3ee", on: () => openTab("?cinema-board") },
