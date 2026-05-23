@@ -1,28 +1,49 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { unlockAudio, loadAudioConfig } from "./audio.js";
-import CustomerTrackingPage from "./CustomerTrackingPage.jsx";
+
+// Static (always in initial bundle): customer-facing default + tiny gates
+// — Kiosk is the default scene so it must boot instantly
+// — Login screens must be instant (auth gate)
+// — Small shared chrome (banners, gate) bundles cheaply with the shell
 import PromoBroadcastBanner from "./PromoBroadcastBanner.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
-import POSCelebration from "./POS/POSCelebration.jsx";
-import POSCDS from "./POSCDS.jsx";
-import AdminLogin    from "./AdminLogin.jsx";
-import Kiosk         from "./Kiosk.jsx";
-import CinemaKiosk   from "./CinemaKiosk.jsx";
-import CinemaInStudioOrder from "./CinemaInStudioOrder.jsx";
-import CinemaBoard from "./CinemaBoard.jsx";
-import TableSelector from "./TableSelector.jsx";
-import CustomerInput from "./CustomerInput.jsx";
-import Payment       from "./Payment.jsx";
-import DigitalReceipt from "./DigitalReceipt.jsx";
-import AdminHome     from "./AdminHome.jsx";
-import OrderTracking from "./OrderTracking.jsx";
-import ShiftGate     from "./ShiftGate.jsx";
-import POSApp        from "./POSApp.jsx";
-import KDS           from "./KDS/KDS.jsx";
+import AdminLogin from "./AdminLogin.jsx";
+import Kiosk from "./Kiosk.jsx";
+import ShiftGate from "./ShiftGate.jsx";
 
-import FlowApp from "./Flow/FlowApp.jsx";
-import POSSatisfaction from "./POS/POSSatisfaction.jsx";
-import { MenuProvider } from "./MenuContext.jsx";
+// Lazy-loaded scenes — each becomes its own chunk via Vite dynamic import.
+const CustomerTrackingPage   = lazy(() => import("./CustomerTrackingPage.jsx"));
+const POSCelebration         = lazy(() => import("./POS/POSCelebration.jsx"));
+const POSCDS                 = lazy(() => import("./POSCDS.jsx"));
+const CinemaKiosk            = lazy(() => import("./CinemaKiosk.jsx"));
+const CinemaInStudioOrder    = lazy(() => import("./CinemaInStudioOrder.jsx"));
+const CinemaBoard            = lazy(() => import("./CinemaBoard.jsx"));
+const TableSelector          = lazy(() => import("./TableSelector.jsx"));
+const CustomerInput          = lazy(() => import("./CustomerInput.jsx"));
+const Payment                = lazy(() => import("./Payment.jsx"));
+const DigitalReceipt         = lazy(() => import("./DigitalReceipt.jsx"));
+const AdminHome              = lazy(() => import("./AdminHome.jsx"));
+const OrderTracking          = lazy(() => import("./OrderTracking.jsx"));
+const POSApp                 = lazy(() => import("./POSApp.jsx"));
+const KDS                    = lazy(() => import("./KDS/KDS.jsx"));
+const FlowApp                = lazy(() => import("./Flow/FlowApp.jsx"));
+const POSSatisfaction        = lazy(() => import("./POS/POSSatisfaction.jsx"));
+
+// Generic scene-loading fallback — quiet, dark-theme aligned.
+function SceneLoading() {
+  return (
+    <div className="karyaos-scene-loading" style={{
+      position: "fixed", inset: 0, display: "flex",
+      alignItems: "center", justifyContent: "center",
+      background: "#050810", color: "#5b6470",
+      fontFamily: "'Geist Mono','Inter',monospace", fontSize: 13,
+      letterSpacing: 1, textTransform: "uppercase",
+    }}>
+      <span className="karyaos-spinner" aria-hidden="true">⏳</span>
+      <span style={{ marginLeft: 10 }}>Memuat…</span>
+    </div>
+  );
+}
 
 const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 function getScene() {
@@ -127,29 +148,39 @@ export default function App() {
   // Admin routes — check login
   const adminRoutes = ["home","admin","report","esb-sync","esb-notif","members","promo","shift","command","tools"];
 
+  // Build the scene node first, then wrap the whole thing in one Suspense
+  // boundary so React can stream lazy-loaded chunks without each branch
+  // having to install its own fallback.
+  let node;
 
-  if (adminRoutes.includes(scene) && !adminSession) return <AdminLogin onLogin={handleAdminLogin}/>;
-
-  if (scene === "admin-login") return <AdminLogin onLogin={handleAdminLogin}/>;
-  if (adminRoutes.includes(scene)) return <AdminHome initialView={scene} adminSession={adminSession} onLogout={handleAdminLogout} onExit={() => setScene("kiosk")} />;
-  if (scene === "flow") return <ShiftGate><FlowApp /></ShiftGate>;
-  if (scene === "cinema") return <CinemaKiosk apiBase={API_HOST} />;
-  if (scene === "cinema-snack") return <CinemaInStudioOrder apiBase={API_HOST} />;
-  if (scene === "cinema-board") return <CinemaBoard apiBase={API_HOST} />;
-  if (scene === "customer-track") return <><PromoBroadcastBanner/><CustomerTrackingPage orderId={trackOrderId}/></>;
-  if (scene === "track")       return <OrderTracking onHome={go("kiosk")}/>;
-
-  if (scene === "table-select" && checkoutData) {
-    return (
+  if (adminRoutes.includes(scene) && !adminSession) {
+    // AdminLogin is static — no Suspense needed for this gate.
+    node = <AdminLogin onLogin={handleAdminLogin}/>;
+  } else if (scene === "admin-login") {
+    node = <AdminLogin onLogin={handleAdminLogin}/>;
+  } else if (adminRoutes.includes(scene)) {
+    node = <AdminHome initialView={scene} adminSession={adminSession} onLogout={handleAdminLogout} onExit={() => setScene("kiosk")} />;
+  } else if (scene === "flow") {
+    node = <ShiftGate><FlowApp /></ShiftGate>;
+  } else if (scene === "cinema") {
+    node = <CinemaKiosk apiBase={API_HOST} />;
+  } else if (scene === "cinema-snack") {
+    node = <CinemaInStudioOrder apiBase={API_HOST} />;
+  } else if (scene === "cinema-board") {
+    node = <CinemaBoard apiBase={API_HOST} />;
+  } else if (scene === "customer-track") {
+    node = <><PromoBroadcastBanner/><CustomerTrackingPage orderId={trackOrderId}/></>;
+  } else if (scene === "track") {
+    node = <OrderTracking onHome={go("kiosk")}/>;
+  } else if (scene === "table-select" && checkoutData) {
+    node = (
       <ShiftGate><TableSelector
         onSelect={handleTableSelect}
         onBack={go("kiosk")}
       /></ShiftGate>
     );
-  }
-
-  if (scene === "customer-input" && checkoutData) {
-    return (
+  } else if (scene === "customer-input" && checkoutData) {
+    node = (
       <ShiftGate><CustomerInput
         cart={checkoutData.cart}
         orderType={checkoutData.orderType}
@@ -157,10 +188,8 @@ export default function App() {
         onBack={() => setScene(checkoutData.orderType === "dine" ? "table-select" : "kiosk")}
       /></ShiftGate>
     );
-  }
-
-  if (scene === "payment" && checkoutData && customerData) {
-    return (
+  } else if (scene === "payment" && checkoutData && customerData) {
+    node = (
       <ShiftGate><Payment
         cart={checkoutData.cart}
         orderType={checkoutData.orderType}
@@ -171,19 +200,15 @@ export default function App() {
         onBack={() => setScene("customer-input")}
       /></ShiftGate>
     );
-  }
-
-  if (scene === "receipt") {
-    return (
+  } else if (scene === "receipt") {
+    node = (
       <DigitalReceipt
         orderId={lastOrderId}
         onDone={() => setScene("kiosk-feedback")}
       />
     );
-  }
-
-  if (scene === "kiosk-feedback") {
-    return (
+  } else if (scene === "kiosk-feedback") {
+    node = (
       <POSSatisfaction
         order={{ ref: lastOrderId }}
         apiBase={API_HOST}
@@ -191,31 +216,34 @@ export default function App() {
         onDone={() => setScene("kiosk-celebration")}
       />
     );
-  }
-
-  if (scene === "kiosk-celebration") {
-    return (
+  } else if (scene === "kiosk-celebration") {
+    node = (
       <POSCelebration
         order={{ ref: lastOrderId }}
         apiBase={API_HOST}
         onDone={() => { setScene("kiosk"); setCheckout(null); setCustomer(null); setTable(null); setLastOrder(null); }}
       />
     );
+  } else if (scene === "pos") {
+    node = <POSApp />;
+  } else if (scene === "cds") {
+    node = <POSCDS />;
+  } else if (scene === "kds") {
+    node = <KDS apiBase={import.meta.env.VITE_API_URL || "http://localhost:3001"} wsUrl="/api/pos/broadcast/ws" />;
+  } else {
+    // Default scene — customer Kiosk. Static, no lazy chunks needed.
+    node = (
+      <ShiftGate>
+        <PromoBroadcastBanner/>
+        <OfflineBanner/>
+        <Kiosk
+          onCheckout={handleKioskCheckout}
+          onAdminAccess={go("admin-login")}
+          tableInfo={tableData}
+        />
+      </ShiftGate>
+    );
   }
 
-  if (scene === "pos") return <POSApp />;
-  if (scene === "cds") return <POSCDS />;
-  if (scene === "kds") return <KDS apiBase={import.meta.env.VITE_API_URL || "http://localhost:3001"} wsUrl="/api/pos/broadcast/ws" />;
-
-  return (
-    <ShiftGate>
-      <PromoBroadcastBanner/>
-      <OfflineBanner/>
-      <Kiosk
-      onCheckout={handleKioskCheckout}
-      onAdminAccess={go("admin-login")}
-      tableInfo={tableData}
-    />
-    </ShiftGate>
-  );
+  return <Suspense fallback={<SceneLoading />}>{node}</Suspense>;
 }

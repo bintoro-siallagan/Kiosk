@@ -1,146 +1,152 @@
 /**
  * AdminTools.jsx — Staff, Gudang, Waste, Config, Audit Trail
  * Route: scene "tools" from Admin sidebar
+ *
+ * Modules are lazy-loaded via React.lazy so each Admin*.jsx ends up as its
+ * own chunk; only the currently-active module is downloaded.
  */
-import { useState, useEffect, useCallback } from "react";
-import AdminMenuBuilder from "./Admin/AdminMenuBuilder.jsx";
-import AdminProcurementGaps from "./Admin/AdminProcurementGaps.jsx";
-import AdminAggregator from "./Admin/AdminAggregator.jsx";
-import AdminPaymentGateway from "./Admin/AdminPaymentGateway.jsx";
-import AdminLoyalty from "./Admin/AdminLoyalty.jsx";
-import AdminCashierKPI from "./Admin/AdminCashierKPI.jsx";
-import AdminChecklist from "./Admin/AdminChecklist.jsx";
-import AdminHRIS from "./Admin/AdminHRIS.jsx";
-import AdminBroadcast from "./Admin/AdminBroadcast.jsx";
-import AdminPriceList from "./Admin/AdminPriceList.jsx";
-import AdminGoodsDelivery from "./Admin/AdminGoodsDelivery.jsx";
-import AdminPurchaseInvoice from "./Admin/AdminPurchaseInvoice.jsx";
-import AdminSettlement from "./Admin/AdminSettlement.jsx";
-import AdminJournal from "./Admin/AdminJournal.jsx";
-import AdminFinancialStatements from "./Admin/AdminFinancialStatements.jsx";
-import AdminFinanceCenter from "./Admin/AdminFinanceCenter.jsx";
-import AdminFinanceAlert from "./Admin/AdminFinanceAlert.jsx";
-import AdminAR from "./Admin/AdminAR.jsx";
-import AdminBudget from "./Admin/AdminBudget.jsx";
-import AdminPayroll from "./Admin/AdminPayroll.jsx";
-import AdminFranchise from "./Admin/AdminFranchise.jsx";
-import AdminFoodCost from "./Admin/AdminFoodCost.jsx";
-import AdminConvenienceFee from "./Admin/AdminConvenienceFee.jsx";
-import AdminReward from "./Admin/AdminReward.jsx";
-import AdminRewardBenefit from "./Admin/AdminRewardBenefit.jsx";
-import AdminMotivation from "./Admin/AdminMotivation.jsx";
-import AdminHRCommand from "./Admin/AdminHRCommand.jsx";
-import AdminAntiFraud from "./Admin/AdminAntiFraud.jsx";
-import AdminTalenta from "./Admin/AdminTalenta.jsx";
-import AdminCustomerIntel from "./Admin/AdminCustomerIntel.jsx";
-import AdminMarketingBehavior from "./Admin/AdminMarketingBehavior.jsx";
-import AdminLoyaltyPromo from "./Admin/AdminLoyaltyPromo.jsx";
-import AdminFeedbackSegment from "./Admin/AdminFeedbackSegment.jsx";
-import AdminClvChurn from "./Admin/AdminClvChurn.jsx";
-import AdminGeoEngagement from "./Admin/AdminGeoEngagement.jsx";
-import AdminCampaign from "./Admin/AdminCampaign.jsx";
-import AdminRBAC from "./Admin/AdminRBAC.jsx";
-import AdminApproval from "./Admin/AdminApproval.jsx";
-import AdminDeviceSession from "./Admin/AdminDeviceSession.jsx";
-import AdminSecurityCenter from "./Admin/AdminSecurityCenter.jsx";
-import AdminRoleDashboard from "./Admin/AdminRoleDashboard.jsx";
-import AdminItemMaster from "./Admin/AdminItemMaster.jsx";
-import AdminItemPricing from "./Admin/AdminItemPricing.jsx";
-import AdminItemConfig from "./Admin/AdminItemConfig.jsx";
-import AdminItemRules from "./Admin/AdminItemRules.jsx";
-import AdminItemIntel from "./Admin/AdminItemIntel.jsx";
-import AdminProductHub from "./Admin/AdminProductHub.jsx";
-import AdminProductVersioning from "./Admin/AdminProductVersioning.jsx";
-import AdminGoodsReceived from "./Admin/AdminGoodsReceived.jsx";
-import AdminStockOpname from "./Admin/AdminStockOpname.jsx";
-import AdminProduction from "./Admin/AdminProduction.jsx";
-import AdminStockTransfer from "./Admin/AdminStockTransfer.jsx";
-import AdminBatchTracking from "./Admin/AdminBatchTracking.jsx";
-import AdminOutletMaster from "./Admin/AdminOutletMaster.jsx";
-import AdminIncidents from "./Admin/AdminIncidents.jsx";
-import EscalationMatrix from "./Admin/EscalationMatrix.jsx";
-import OptimizationCenter from "./Admin/OptimizationCenter.jsx";
-import CinemaOps from "./Admin/CinemaOps.jsx";
-import CinemaTicketing from "./Admin/CinemaTicketing.jsx";
-import CinemaBoxOffice from "./Admin/CinemaBoxOffice.jsx";
-import CinemaValidate from "./Admin/CinemaValidate.jsx";
-import CinemaRefund from "./Admin/CinemaRefund.jsx";
-import CinemaBundles from "./Admin/CinemaBundles.jsx";
-import CinemaBundleRedeem from "./Admin/CinemaBundleRedeem.jsx";
-import CinemaDistribution from "./Admin/CinemaDistribution.jsx";
-import CinemaInStudioQueue from "./Admin/CinemaInStudioQueue.jsx";
-import CinemaEventBooking from "./Admin/CinemaEventBooking.jsx";
-import CinemaPriceList from "./Admin/CinemaPriceList.jsx";
-import CinemaCommandCenter from "./Admin/CinemaCommandCenter.jsx";
-import CinemaPromotion from "./Admin/CinemaPromotion.jsx";
-import CinemaHolidays from "./Admin/CinemaHolidays.jsx";
-import CinemaSeatTypes from "./Admin/CinemaSeatTypes.jsx";
-import CinemaCRM from "./Admin/CinemaCRM.jsx";
-import CinemaAnalytics from "./Admin/CinemaAnalytics.jsx";
-import CinemaCampaign from "./Admin/CinemaCampaign.jsx";
-import CinemaInventory from "./Admin/CinemaInventory.jsx";
-import AdminSignage from "./Admin/AdminSignage.jsx";
-import AdminDemandForecast from "./Admin/AdminDemandForecast.jsx";
-import AdminAssetMaintenance from "./Admin/AdminAssetMaintenance.jsx";
-import AdminShiftRoster from "./Admin/AdminShiftRoster.jsx";
-import AdminNotificationCenter from "./Admin/AdminNotificationCenter.jsx";
-import AdminAutoReorder from "./Admin/AdminAutoReorder.jsx";
-import AdminPurchaseReturn from "./Admin/AdminPurchaseReturn.jsx";
-import AdminInternalReturn from "./Admin/AdminInternalReturn.jsx";
-import AdminStockList from "./Admin/AdminStockList.jsx";
-import AdminSalesOrder from "./Admin/AdminSalesOrder.jsx";
-import AdminSalesReturn from "./Admin/AdminSalesReturn.jsx";
-import AdminB2bCustomer from "./Admin/AdminB2bCustomer.jsx";
-import AdminQuotation from "./Admin/AdminQuotation.jsx";
-import AdminDeliveryOrder from "./Admin/AdminDeliveryOrder.jsx";
-import AdminSalesInvoice from "./Admin/AdminSalesInvoice.jsx";
-import AdminSelfAudit from "./Admin/AdminSelfAudit.jsx";
-import AdminConsolidation from "./Admin/AdminConsolidation.jsx";
-import AdminCoreTax from "./Admin/AdminCoreTax.jsx";
-import AdminCashFlow from "./Admin/AdminCashFlow.jsx";
-import AdminApAging from "./Admin/AdminApAging.jsx";
-import AdminSupplierMaster from "./Admin/AdminSupplierMaster.jsx";
-import AdminCompliance from "./Admin/AdminCompliance.jsx";
-import AdminSalesPipeline from "./Admin/AdminSalesPipeline.jsx";
-import AdminContract from "./Admin/AdminContract.jsx";
-import AdminRfq from "./Admin/AdminRfq.jsx";
-import AdminRisk from "./Admin/AdminRisk.jsx";
-import AdminQuality from "./Admin/AdminQuality.jsx";
-import AdminInternalAudit from "./Admin/AdminInternalAudit.jsx";
-import AdminDocumentHub from "./Admin/AdminDocumentHub.jsx";
-import AdminHelpdesk from "./Admin/AdminHelpdesk.jsx";
-import AdminMasterUnit from "./Admin/AdminMasterUnit.jsx";
-import AdminMasterCategory from "./Admin/AdminMasterCategory.jsx";
-import AdminFoodCostCalc from "./Admin/AdminFoodCostCalc.jsx";
-import AdminSalesStockSync from "./Admin/AdminSalesStockSync.jsx";
-import AdminSimplePurchase from "./Admin/AdminSimplePurchase.jsx";
-import AdminPettyCash from "./Admin/AdminPettyCash.jsx";
-import AdminBudgetPlan from "./Admin/AdminBudgetPlan.jsx";
-import AdminGeneralLedger from "./Admin/AdminGeneralLedger.jsx";
-import AdminCoa from "./Admin/AdminCoa.jsx";
-import AdminReconciliation from "./Admin/AdminReconciliation.jsx";
-import AdminReleasePayment from "./Admin/AdminReleasePayment.jsx";
-import AdminPeriodClosing from "./Admin/AdminPeriodClosing.jsx";
-import OwnerDashboard from "./Admin/OwnerDashboard.jsx";
-import FnbRecipe from "./Admin/FnbRecipe.jsx";
-import FnbCombo from "./Admin/FnbCombo.jsx";
-import FnbMenuPeriods from "./Admin/FnbMenuPeriods.jsx";
-import FnbDietaryTags from "./Admin/FnbDietaryTags.jsx";
-import FnbHappyHour from "./Admin/FnbHappyHour.jsx";
-import FnbReservation from "./Admin/FnbReservation.jsx";
-import FnbTipPool from "./Admin/FnbTipPool.jsx";
-import FnbMembershipTier from "./Admin/FnbMembershipTier.jsx";
-import FnbBirthdayPromo from "./Admin/FnbBirthdayPromo.jsx";
-import FnbReferral from "./Admin/FnbReferral.jsx";
-import FnbDelivery from "./Admin/FnbDelivery.jsx";
-import FnbMenuEngineering from "./Admin/FnbMenuEngineering.jsx";
-import FnbBillSplit from "./Admin/FnbBillSplit.jsx";
-import FnbOrderTransfer from "./Admin/FnbOrderTransfer.jsx";
-import FnbKdsRouting from "./Admin/FnbKdsRouting.jsx";
-import FnbWhatsApp from "./Admin/FnbWhatsApp.jsx";
-import FnbBankRecon from "./Admin/FnbBankRecon.jsx";
-import FnbDriverTracking from "./Admin/FnbDriverTracking.jsx";
-import FnbPaymentMethods from "./Admin/FnbPaymentMethods.jsx";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+
+// ── Lazy module imports (each becomes its own chunk via Vite) ────────────
+const AdminMenuBuilder            = lazy(() => import("./Admin/AdminMenuBuilder.jsx"));
+const AdminProcurementGaps        = lazy(() => import("./Admin/AdminProcurementGaps.jsx"));
+const AdminAggregator             = lazy(() => import("./Admin/AdminAggregator.jsx"));
+const AdminPaymentGateway         = lazy(() => import("./Admin/AdminPaymentGateway.jsx"));
+const AdminLoyalty                = lazy(() => import("./Admin/AdminLoyalty.jsx"));
+const AdminCashierKPI             = lazy(() => import("./Admin/AdminCashierKPI.jsx"));
+const AdminChecklist              = lazy(() => import("./Admin/AdminChecklist.jsx"));
+const AdminHRIS                   = lazy(() => import("./Admin/AdminHRIS.jsx"));
+const AdminBroadcast              = lazy(() => import("./Admin/AdminBroadcast.jsx"));
+const AdminPriceList              = lazy(() => import("./Admin/AdminPriceList.jsx"));
+const AdminGoodsDelivery          = lazy(() => import("./Admin/AdminGoodsDelivery.jsx"));
+const AdminPurchaseInvoice        = lazy(() => import("./Admin/AdminPurchaseInvoice.jsx"));
+const AdminSettlement             = lazy(() => import("./Admin/AdminSettlement.jsx"));
+const AdminJournal                = lazy(() => import("./Admin/AdminJournal.jsx"));
+const AdminFinancialStatements    = lazy(() => import("./Admin/AdminFinancialStatements.jsx"));
+const AdminFinanceCenter          = lazy(() => import("./Admin/AdminFinanceCenter.jsx"));
+const AdminFinanceAlert           = lazy(() => import("./Admin/AdminFinanceAlert.jsx"));
+const AdminAR                     = lazy(() => import("./Admin/AdminAR.jsx"));
+const AdminBudget                 = lazy(() => import("./Admin/AdminBudget.jsx"));
+const AdminPayroll                = lazy(() => import("./Admin/AdminPayroll.jsx"));
+const AdminFranchise              = lazy(() => import("./Admin/AdminFranchise.jsx"));
+const AdminFoodCost               = lazy(() => import("./Admin/AdminFoodCost.jsx"));
+const AdminConvenienceFee         = lazy(() => import("./Admin/AdminConvenienceFee.jsx"));
+const AdminReward                 = lazy(() => import("./Admin/AdminReward.jsx"));
+const AdminRewardBenefit          = lazy(() => import("./Admin/AdminRewardBenefit.jsx"));
+const AdminMotivation             = lazy(() => import("./Admin/AdminMotivation.jsx"));
+const AdminHRCommand              = lazy(() => import("./Admin/AdminHRCommand.jsx"));
+const AdminAntiFraud              = lazy(() => import("./Admin/AdminAntiFraud.jsx"));
+const AdminTalenta                = lazy(() => import("./Admin/AdminTalenta.jsx"));
+const AdminCustomerIntel          = lazy(() => import("./Admin/AdminCustomerIntel.jsx"));
+const AdminMarketingBehavior      = lazy(() => import("./Admin/AdminMarketingBehavior.jsx"));
+const AdminLoyaltyPromo           = lazy(() => import("./Admin/AdminLoyaltyPromo.jsx"));
+const AdminFeedbackSegment        = lazy(() => import("./Admin/AdminFeedbackSegment.jsx"));
+const AdminClvChurn               = lazy(() => import("./Admin/AdminClvChurn.jsx"));
+const AdminGeoEngagement          = lazy(() => import("./Admin/AdminGeoEngagement.jsx"));
+const AdminCampaign               = lazy(() => import("./Admin/AdminCampaign.jsx"));
+const AdminRBAC                   = lazy(() => import("./Admin/AdminRBAC.jsx"));
+const AdminApproval               = lazy(() => import("./Admin/AdminApproval.jsx"));
+const AdminDeviceSession          = lazy(() => import("./Admin/AdminDeviceSession.jsx"));
+const AdminSecurityCenter         = lazy(() => import("./Admin/AdminSecurityCenter.jsx"));
+const AdminRoleDashboard          = lazy(() => import("./Admin/AdminRoleDashboard.jsx"));
+const AdminItemMaster             = lazy(() => import("./Admin/AdminItemMaster.jsx"));
+const AdminItemPricing            = lazy(() => import("./Admin/AdminItemPricing.jsx"));
+const AdminItemConfig             = lazy(() => import("./Admin/AdminItemConfig.jsx"));
+const AdminItemRules              = lazy(() => import("./Admin/AdminItemRules.jsx"));
+const AdminItemIntel              = lazy(() => import("./Admin/AdminItemIntel.jsx"));
+const AdminProductHub             = lazy(() => import("./Admin/AdminProductHub.jsx"));
+const AdminProductVersioning      = lazy(() => import("./Admin/AdminProductVersioning.jsx"));
+const AdminGoodsReceived          = lazy(() => import("./Admin/AdminGoodsReceived.jsx"));
+const AdminStockOpname            = lazy(() => import("./Admin/AdminStockOpname.jsx"));
+const AdminProduction             = lazy(() => import("./Admin/AdminProduction.jsx"));
+const AdminStockTransfer          = lazy(() => import("./Admin/AdminStockTransfer.jsx"));
+const AdminBatchTracking          = lazy(() => import("./Admin/AdminBatchTracking.jsx"));
+const AdminOutletMaster           = lazy(() => import("./Admin/AdminOutletMaster.jsx"));
+const AdminIncidents              = lazy(() => import("./Admin/AdminIncidents.jsx"));
+const EscalationMatrix            = lazy(() => import("./Admin/EscalationMatrix.jsx"));
+const OptimizationCenter          = lazy(() => import("./Admin/OptimizationCenter.jsx"));
+const CinemaOps                   = lazy(() => import("./Admin/CinemaOps.jsx"));
+const CinemaTicketing             = lazy(() => import("./Admin/CinemaTicketing.jsx"));
+const CinemaBoxOffice             = lazy(() => import("./Admin/CinemaBoxOffice.jsx"));
+const CinemaValidate              = lazy(() => import("./Admin/CinemaValidate.jsx"));
+const CinemaRefund                = lazy(() => import("./Admin/CinemaRefund.jsx"));
+const CinemaBundles               = lazy(() => import("./Admin/CinemaBundles.jsx"));
+const CinemaBundleRedeem          = lazy(() => import("./Admin/CinemaBundleRedeem.jsx"));
+const CinemaDistribution          = lazy(() => import("./Admin/CinemaDistribution.jsx"));
+const CinemaInStudioQueue         = lazy(() => import("./Admin/CinemaInStudioQueue.jsx"));
+const CinemaEventBooking          = lazy(() => import("./Admin/CinemaEventBooking.jsx"));
+const CinemaPriceList             = lazy(() => import("./Admin/CinemaPriceList.jsx"));
+const CinemaCommandCenter         = lazy(() => import("./Admin/CinemaCommandCenter.jsx"));
+const CinemaPromotion             = lazy(() => import("./Admin/CinemaPromotion.jsx"));
+const CinemaHolidays              = lazy(() => import("./Admin/CinemaHolidays.jsx"));
+const CinemaSeatTypes             = lazy(() => import("./Admin/CinemaSeatTypes.jsx"));
+const CinemaCRM                   = lazy(() => import("./Admin/CinemaCRM.jsx"));
+const CinemaAnalytics             = lazy(() => import("./Admin/CinemaAnalytics.jsx"));
+const CinemaCampaign              = lazy(() => import("./Admin/CinemaCampaign.jsx"));
+const CinemaInventory             = lazy(() => import("./Admin/CinemaInventory.jsx"));
+const AdminSignage                = lazy(() => import("./Admin/AdminSignage.jsx"));
+const AdminDemandForecast         = lazy(() => import("./Admin/AdminDemandForecast.jsx"));
+const AdminAssetMaintenance       = lazy(() => import("./Admin/AdminAssetMaintenance.jsx"));
+const AdminShiftRoster            = lazy(() => import("./Admin/AdminShiftRoster.jsx"));
+const AdminNotificationCenter     = lazy(() => import("./Admin/AdminNotificationCenter.jsx"));
+const AdminAutoReorder            = lazy(() => import("./Admin/AdminAutoReorder.jsx"));
+const AdminPurchaseReturn         = lazy(() => import("./Admin/AdminPurchaseReturn.jsx"));
+const AdminInternalReturn         = lazy(() => import("./Admin/AdminInternalReturn.jsx"));
+const AdminStockList              = lazy(() => import("./Admin/AdminStockList.jsx"));
+const AdminSalesOrder             = lazy(() => import("./Admin/AdminSalesOrder.jsx"));
+const AdminSalesReturn            = lazy(() => import("./Admin/AdminSalesReturn.jsx"));
+const AdminB2bCustomer            = lazy(() => import("./Admin/AdminB2bCustomer.jsx"));
+const AdminQuotation              = lazy(() => import("./Admin/AdminQuotation.jsx"));
+const AdminDeliveryOrder          = lazy(() => import("./Admin/AdminDeliveryOrder.jsx"));
+const AdminSalesInvoice           = lazy(() => import("./Admin/AdminSalesInvoice.jsx"));
+const AdminSelfAudit              = lazy(() => import("./Admin/AdminSelfAudit.jsx"));
+const AdminConsolidation          = lazy(() => import("./Admin/AdminConsolidation.jsx"));
+const AdminCoreTax                = lazy(() => import("./Admin/AdminCoreTax.jsx"));
+const AdminCashFlow               = lazy(() => import("./Admin/AdminCashFlow.jsx"));
+const AdminApAging                = lazy(() => import("./Admin/AdminApAging.jsx"));
+const AdminSupplierMaster         = lazy(() => import("./Admin/AdminSupplierMaster.jsx"));
+const AdminCompliance             = lazy(() => import("./Admin/AdminCompliance.jsx"));
+const AdminSalesPipeline          = lazy(() => import("./Admin/AdminSalesPipeline.jsx"));
+const AdminContract               = lazy(() => import("./Admin/AdminContract.jsx"));
+const AdminRfq                    = lazy(() => import("./Admin/AdminRfq.jsx"));
+const AdminRisk                   = lazy(() => import("./Admin/AdminRisk.jsx"));
+const AdminQuality                = lazy(() => import("./Admin/AdminQuality.jsx"));
+const AdminInternalAudit          = lazy(() => import("./Admin/AdminInternalAudit.jsx"));
+const AdminDocumentHub            = lazy(() => import("./Admin/AdminDocumentHub.jsx"));
+const AdminHelpdesk               = lazy(() => import("./Admin/AdminHelpdesk.jsx"));
+const AdminMasterUnit             = lazy(() => import("./Admin/AdminMasterUnit.jsx"));
+const AdminMasterCategory         = lazy(() => import("./Admin/AdminMasterCategory.jsx"));
+const AdminFoodCostCalc           = lazy(() => import("./Admin/AdminFoodCostCalc.jsx"));
+const AdminSalesStockSync         = lazy(() => import("./Admin/AdminSalesStockSync.jsx"));
+const AdminSimplePurchase         = lazy(() => import("./Admin/AdminSimplePurchase.jsx"));
+const AdminPettyCash              = lazy(() => import("./Admin/AdminPettyCash.jsx"));
+const AdminBudgetPlan             = lazy(() => import("./Admin/AdminBudgetPlan.jsx"));
+const AdminGeneralLedger          = lazy(() => import("./Admin/AdminGeneralLedger.jsx"));
+const AdminCoa                    = lazy(() => import("./Admin/AdminCoa.jsx"));
+const AdminReconciliation         = lazy(() => import("./Admin/AdminReconciliation.jsx"));
+const AdminReleasePayment         = lazy(() => import("./Admin/AdminReleasePayment.jsx"));
+const AdminPeriodClosing          = lazy(() => import("./Admin/AdminPeriodClosing.jsx"));
+const OwnerDashboard              = lazy(() => import("./Admin/OwnerDashboard.jsx"));
+const FnbRecipe                   = lazy(() => import("./Admin/FnbRecipe.jsx"));
+const FnbCombo                    = lazy(() => import("./Admin/FnbCombo.jsx"));
+const FnbMenuPeriods              = lazy(() => import("./Admin/FnbMenuPeriods.jsx"));
+const FnbDietaryTags              = lazy(() => import("./Admin/FnbDietaryTags.jsx"));
+const FnbHappyHour                = lazy(() => import("./Admin/FnbHappyHour.jsx"));
+const FnbReservation              = lazy(() => import("./Admin/FnbReservation.jsx"));
+const FnbTipPool                  = lazy(() => import("./Admin/FnbTipPool.jsx"));
+const FnbMembershipTier           = lazy(() => import("./Admin/FnbMembershipTier.jsx"));
+const FnbBirthdayPromo            = lazy(() => import("./Admin/FnbBirthdayPromo.jsx"));
+const FnbReferral                 = lazy(() => import("./Admin/FnbReferral.jsx"));
+const FnbDelivery                 = lazy(() => import("./Admin/FnbDelivery.jsx"));
+const FnbMenuEngineering          = lazy(() => import("./Admin/FnbMenuEngineering.jsx"));
+const FnbBillSplit                = lazy(() => import("./Admin/FnbBillSplit.jsx"));
+const FnbOrderTransfer            = lazy(() => import("./Admin/FnbOrderTransfer.jsx"));
+const FnbKdsRouting               = lazy(() => import("./Admin/FnbKdsRouting.jsx"));
+const FnbWhatsApp                 = lazy(() => import("./Admin/FnbWhatsApp.jsx"));
+const FnbBankRecon                = lazy(() => import("./Admin/FnbBankRecon.jsx"));
+const FnbDriverTracking           = lazy(() => import("./Admin/FnbDriverTracking.jsx"));
+const FnbPaymentMethods           = lazy(() => import("./Admin/FnbPaymentMethods.jsx"));
+
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
@@ -157,6 +163,24 @@ async function apiPost(path, body) {
 }
 async function apiPatch(path, body) {
   return api(path, { method: "PATCH", body: JSON.stringify(body) });
+}
+
+// ── Suspense fallback used while a lazy module chunk is being downloaded ──
+function ModuleLoading() {
+  return (
+    <div className="karyaos-module-loading" style={{
+      padding: 40,
+      color: "#5b6470",
+      textAlign: "center",
+      fontFamily: "'Geist Mono', 'Inter', monospace",
+      fontSize: 13,
+      letterSpacing: 1,
+      textTransform: "uppercase",
+    }}>
+      <span className="karyaos-spinner" aria-hidden="true">⏳</span>
+      <span style={{ marginLeft: 10 }}>Memuat modul…</span>
+    </div>
+  );
 }
 
 // ── Styles ──
@@ -192,6 +216,7 @@ export default function AdminTools({ initialTab }) {
     <div style={S.root}>
       <div style={S.main}>
         <div style={S.body}>
+        <Suspense fallback={<ModuleLoading />}>
         {tab === "dashboard" && <OwnerDashboard apiBase={API} onNavigate={(key) => {
           const navMap = { finance: "finance", gl: "general_ledger", aggregator: "aggregator", payment_gateway: "payment", refund_cancel: "anti_fraud", hr: "hris", loyalty: "loyalty" };
           setTab(navMap[key] || key);
@@ -340,6 +365,7 @@ export default function AdminTools({ initialTab }) {
         {tab === "item_intel" && <AdminItemIntel apiBase={API} />}
         {tab === "product_hub" && <AdminProductHub apiBase={API} />}
         {tab === "product_ver" && <AdminProductVersioning apiBase={API} />}
+        </Suspense>
         </div>
       </div>
 

@@ -109,3 +109,21 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+/* ── Lazy-chunk loading indicator ────────────────────────────────────────
+   Used by <Suspense> fallbacks in App.jsx, AdminHome.jsx, AdminTools.jsx.
+   Subtle pulsing hourglass — matches the karyaOS dark/monospace aesthetic. */
+@keyframes karyaos-spinner-pulse {
+  0%   { opacity: 0.35; transform: scale(1);    }
+  50%  { opacity: 1;    transform: scale(1.08); }
+  100% { opacity: 0.35; transform: scale(1);    }
+}
+.karyaos-spinner {
+  display: inline-block;
+  animation: karyaos-spinner-pulse 1.2s ease-in-out infinite;
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.4));
+}
+.karyaos-module-loading,
+.karyaos-scene-loading {
+  user-select: none;
+}

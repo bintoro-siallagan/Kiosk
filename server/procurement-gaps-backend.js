@@ -444,7 +444,7 @@ function setupProcurementGaps(app, opts = {}) {
   router.get('/advances', (req, res) => {
     const { supplier_id, status } = req.query;
     let sql = `
-      SELECT a.*, s.name AS supplier_name, po.doc_no AS po_doc_no
+      SELECT a.*, s.name AS supplier_name, po.po_number AS po_doc_no
       FROM advance_purchases a
       LEFT JOIN suppliers s ON s.id = a.supplier_id
       LEFT JOIN purchase_orders po ON po.id = a.po_id

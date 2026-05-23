@@ -2,17 +2,32 @@
 // Dashboard Baru — home. Status operasional · KPI (period + tren +
 // target) · performa outlet · live sales · monitoring · penjualan.
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
-import CommandCenter from "./CommandCenter.jsx";
-import AdminTools from "./AdminTools.jsx";
-import Admin from "./Admin.jsx";
-import Report from "./Report.jsx";
-import ESBSync from "./ESBSync.jsx";
-import ESBNotif from "./ESBNotif.jsx";
-import MemberList from "./MemberList.jsx";
-import PromoManager from "./PromoManager.jsx";
-import ShiftManager from "./ShiftManager.jsx";
+import { useState, useEffect, useCallback, useRef, useMemo, lazy, Suspense } from "react";
+// Right-panel views are lazy-loaded so the AdminHome shell stays light.
+// They are only fetched once the operator opens the matching panel.
+const CommandCenter = lazy(() => import("./CommandCenter.jsx"));
+const AdminTools    = lazy(() => import("./AdminTools.jsx"));
+const Admin         = lazy(() => import("./Admin.jsx"));
+const Report        = lazy(() => import("./Report.jsx"));
+const ESBSync       = lazy(() => import("./ESBSync.jsx"));
+const ESBNotif      = lazy(() => import("./ESBNotif.jsx"));
+const MemberList    = lazy(() => import("./MemberList.jsx"));
+const PromoManager  = lazy(() => import("./PromoManager.jsx"));
+const ShiftManager  = lazy(() => import("./ShiftManager.jsx"));
 import { TABS, GROUPS } from "./adminModules.js";
+
+function PanelLoading() {
+  return (
+    <div className="karyaos-module-loading" style={{
+      padding: 40, color: "#5b6470", textAlign: "center",
+      fontFamily: "'Geist Mono','Inter',monospace", fontSize: 13,
+      letterSpacing: 1, textTransform: "uppercase",
+    }}>
+      <span className="karyaos-spinner" aria-hidden="true">⏳</span>
+      <span style={{ marginLeft: 10 }}>Memuat panel…</span>
+    </div>
+  );
+}
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
@@ -530,6 +545,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
                   style={{ background: "#161b22", border: "1px solid #30363d", borderRadius: 8, color: "#e6edf3", fontSize: 12, fontWeight: 700, padding: "7px 14px", cursor: "pointer", fontFamily: "inherit" }}>✕ Tutup</button>
               </div>
               <div style={{ position: "relative", transform: "translateZ(0)", height: "calc(100vh - 150px)", overflow: "hidden", borderRadius: 14, border: "1px solid #1e1f23" }}>
+                <Suspense fallback={<PanelLoading />}>
                 {rightView === "tools" && <AdminTools key={rightArg} initialTab={rightArg || "dashboard"} />}
                 {rightView === "admin" && <Admin key={rightArg} initialTab={rightArg || "orders"} adminSession={adminSession} onLogout={onLogout} onExit={closeRight} onReport={() => openRight("report")} onESBSync={() => openRight("esb-sync")} onESBNotif={() => openRight("esb-notif")} onMembers={() => openRight("members")} onPromo={() => openRight("promo")} onShift={() => openRight("shift")} onTools={(t) => openRight(t === "command" ? "command" : "tools", t)} />}
                 {rightView === "command" && <CommandCenter />}
@@ -539,6 +555,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
                 {rightView === "shift" && <ShiftManager onBack={closeRight} />}
                 {rightView === "esb-sync" && <ESBSync onBack={closeRight} />}
                 {rightView === "esb-notif" && <ESBNotif onBack={closeRight} />}
+                </Suspense>
               </div>
             </div>
           ) : (<>
