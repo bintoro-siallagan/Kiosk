@@ -27,12 +27,12 @@ const ROW_LETTER = (i) => {
 };
 
 const SEAT_TYPES = [
-  { key: "regular",  emoji: "💺", label: "Regular",  color: "#10b981", desc: "Kursi standar" },
-  { key: "premium",  emoji: "👑", label: "Premium",  color: "#fbbf24", desc: "Recliner / sofa" },
-  { key: "couple",   emoji: "💑", label: "Couple",   color: "#ec4899", desc: "Double / love-seat" },
-  { key: "disabled", emoji: "♿", label: "Disabled", color: "#22d3ee", desc: "Aksesibilitas" },
-  { key: "vip",      emoji: "⭐", label: "VIP",      color: "#a855f7", desc: "Premium plus" },
-  { key: "void",     emoji: "⬜", label: "Aisle/Void", color: "#5b6470", desc: "Gang / kosong" },
+  { key: "regular",  emoji: "💺", label: "Regular",  color: "#10b981", desc: "Kursi standar",     defaultPrice: 50000 },
+  { key: "premium",  emoji: "👑", label: "Premium",  color: "#fbbf24", desc: "Recliner / sofa",   defaultPrice: 75000 },
+  { key: "couple",   emoji: "💑", label: "Couple",   color: "#ec4899", desc: "Double / love-seat", defaultPrice: 90000 },
+  { key: "disabled", emoji: "♿", label: "Disabled", color: "#22d3ee", desc: "Aksesibilitas",     defaultPrice: 50000 },
+  { key: "vip",      emoji: "⭐", label: "VIP",      color: "#a855f7", desc: "Premium plus",      defaultPrice: 150000 },
+  { key: "void",     emoji: "⬜", label: "Aisle/Void", color: "#5b6470", desc: "Gang / kosong",   defaultPrice: 0 },
 ];
 const TYPE_BY_KEY = Object.fromEntries(SEAT_TYPES.map(t => [t.key, t]));
 
@@ -77,6 +77,17 @@ export default function CinemaStudioLayoutEditor({ studio, onClose, onSaved }) {
   const [paintMode, setPaintMode] = useState(false); // hold drag to paint
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  // Per-seat-type pricing — { regular: 50000, premium: 75000, couple: 90000, vip: 150000, disabled: 50000 }
+  const [seatTypePrices, setSeatTypePrices] = useState(() => {
+    if (studio?.seat_type_prices) {
+      try {
+        const parsed = typeof studio.seat_type_prices === "string" ? JSON.parse(studio.seat_type_prices) : studio.seat_type_prices;
+        if (parsed && typeof parsed === "object") return parsed;
+      } catch {}
+    }
+    // Default dari SEAT_TYPES defaultPrice
+    return SEAT_TYPES.filter(t => t.key !== "void").reduce((acc, t) => ({ ...acc, [t.key]: t.defaultPrice }), {});
+  });
 
   // Adjust map to current rows × cols (preserve existing cells)
   const resizeMap = useCallback((newRows, newCols) => {
@@ -187,7 +198,7 @@ export default function CinemaStudioLayoutEditor({ studio, onClose, onSaved }) {
     try {
       const r = await fetch(`${API_HOST}/api/cinema/studios/${studio.id}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rows, cols, seat_map: seatMap }),
+        body: JSON.stringify({ rows, cols, seat_map: seatMap, seat_type_prices: seatTypePrices }),
       });
       const d = await r.json();
       if (!r.ok || d.error) throw new Error(d.error || "Gagal simpan");
@@ -253,6 +264,30 @@ export default function CinemaStudioLayoutEditor({ studio, onClose, onSaved }) {
 
         <div style={{ fontSize: 11, color: "#7d8590", marginBottom: 10 }}>
           💡 Pilih tipe di atas → klik cell di grid bawah untuk paint. Tahan mouse untuk drag-paint banyak cell sekaligus.
+        </div>
+
+        {/* PRICE PER SEAT TYPE */}
+        <div style={{ marginBottom: 14, padding: 12, background: "rgba(16,185,129,0.05)", border: "1px solid rgba(16,185,129,0.15)", borderRadius: 10 }}>
+          <div style={{ fontSize: 11, color: "#10b981", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 8 }}>💰 HARGA PER KATEGORI KURSI</div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {SEAT_TYPES.filter(t => t.key !== "void").map(t => (
+              <div key={t.key} style={{ display: "flex", alignItems: "center", gap: 6, padding: "6px 10px", background: "rgba(255,255,255,0.03)", border: `1px solid ${t.color}33`, borderRadius: 8 }}>
+                <span style={{ fontSize: 14 }}>{t.emoji}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: t.color, fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5, minWidth: 52 }}>{t.label.toUpperCase()}</span>
+                <span style={{ fontSize: 10, color: "#7d8590", fontFamily: "'Geist Mono',monospace" }}>Rp</span>
+                <input
+                  type="number"
+                  value={seatTypePrices[t.key] ?? ""}
+                  onChange={(e) => setSeatTypePrices(prev => ({ ...prev, [t.key]: parseInt(e.target.value, 10) || 0 }))}
+                  placeholder={t.defaultPrice}
+                  style={{ width: 80, background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, padding: "5px 8px", color: "#fff", fontSize: 12, fontFamily: "'Geist Mono',monospace", fontWeight: 700, outline: "none", textAlign: "right" }}
+                />
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 10, color: "#7d8590", marginTop: 6 }}>
+            Saat tiket dibeli, harga otomatis ambil dari kategori kursi yang dipilih. Kosongkan kalau mau fallback ke showtime.price.
+          </div>
         </div>
 
         {/* SCREEN indicator */}

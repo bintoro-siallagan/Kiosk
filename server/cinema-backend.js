@@ -448,6 +448,9 @@ function setupCinema(app, opts = {}) {
   // Custom seat-map per studio (JSON 2D array). null → fallback ke rows×cols grid.
   // Schema: [ [ {type:'regular'|'void'|'premium'|'couple'|'disabled', label?:string, span?:number} | null, ... ], ... ]
   try { db.exec("ALTER TABLE cinema_studios ADD COLUMN seat_map TEXT"); } catch {}
+  // Per-seat-type pricing JSON: { regular: 50000, premium: 75000, couple: 90000, vip: 150000, disabled: 50000 }
+  // null → fallback ke showtime.price (regular all)
+  try { db.exec("ALTER TABLE cinema_studios ADD COLUMN seat_type_prices TEXT"); } catch {}
 
   // Seed cinema inventory + recipes on first run
   if (db.prepare(`SELECT COUNT(*) c FROM cinema_inventory_items`).get().c === 0) {
@@ -749,6 +752,23 @@ function setupCinema(app, opts = {}) {
         return res.status(400).json({ error: 'seat_map harus array 2D atau null' });
       }
     }
+    // seat_type_prices — { regular: 50000, premium: 75000, ... }
+    if (b.seat_type_prices !== undefined) {
+      let parsed = b.seat_type_prices;
+      if (typeof parsed === 'string') {
+        try { parsed = JSON.parse(parsed); } catch { return res.status(400).json({ error: 'seat_type_prices JSON invalid' }); }
+      }
+      if (parsed === null || parsed === '') {
+        fields.push('seat_type_prices = ?'); args.push(null);
+      } else if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+        // Normalize values ke integer (anti-spoof)
+        const clean = {};
+        for (const [k, v] of Object.entries(parsed)) clean[k] = Math.max(0, parseInt(v, 10) || 0);
+        fields.push('seat_type_prices = ?'); args.push(JSON.stringify(clean));
+      } else {
+        return res.status(400).json({ error: 'seat_type_prices harus object atau null' });
+      }
+    }
     if (!fields.length) return res.json({ ok: true, noop: true });
     args.push(req.params.id);
     db.prepare(`UPDATE cinema_studios SET ${fields.join(', ')} WHERE id = ?`).run(...args);
@@ -975,15 +995,19 @@ function setupCinema(app, opts = {}) {
     // Pull duration via film for derived status
     const film = db.prepare(`SELECT duration_min FROM cinema_films WHERE id = ?`).get(st.film_id);
     const derived_status = computeStatus({ ...st, duration_min: film?.duration_min }, capacity, sold.length, Math.floor(Date.now()/1000));
-    // Custom seat_map (if defined per-studio) → return parsed array
-    let seatMap = null;
+    // Custom seat_map + seat_type_prices (if defined per-studio)
+    let seatMap = null, seatTypePrices = null;
     if (st.seat_map) {
       try { seatMap = JSON.parse(st.seat_map); } catch {}
+    }
+    if (st.seat_type_prices) {
+      try { seatTypePrices = JSON.parse(st.seat_type_prices); } catch {}
     }
     res.json({
       showtime: { ...st, derived_status },
       rows: st.rows || 0, cols: st.cols || 0, capacity,
       seat_map: seatMap,
+      seat_type_prices: seatTypePrices,
       sold, sold_count: sold.length,
       held_by_others, my_holds,
       derived_status,
@@ -1162,6 +1186,23 @@ function setupCinema(app, opts = {}) {
     const paidAt = isPaid ? nowEpoch : null;
     const payStatus = isPaid ? 'paid' : (paymentRef ? 'pending' : null);
 
+    // Per-seat price lookup — seat_map (type per cell) + seat_type_prices (price per type)
+    const studio = db.prepare(`SELECT seat_map, seat_type_prices FROM cinema_studios WHERE id = ?`).get(st.studio_id);
+    let seatMap = null, typePrices = null;
+    try { seatMap = studio?.seat_map ? JSON.parse(studio.seat_map) : null; } catch {}
+    try { typePrices = studio?.seat_type_prices ? JSON.parse(studio.seat_type_prices) : null; } catch {}
+    const seatTypeMap = {}; // { 'A1': 'premium', 'A2': 'regular', ... }
+    if (Array.isArray(seatMap)) {
+      for (const row of seatMap) for (const cell of (row || [])) {
+        if (cell && cell.label && cell.type && cell.type !== 'void') seatTypeMap[cell.label] = cell.type;
+      }
+    }
+    const priceForSeat = (seatLabel) => {
+      const t = seatTypeMap[seatLabel] || 'regular';
+      if (typePrices && typePrices[t] != null) return typePrices[t];
+      return st.price || 0;
+    };
+
     const crypto = require('crypto');
     const purchaseId = 'CP-' + crypto.randomBytes(4).toString('hex').toUpperCase();
     const ins   = db.prepare(`INSERT INTO cinema_tickets (showtime_id, seat, price, buyer, buyer_email, buyer_phone, code, purchase_id, payment_ref, payment_method, payment_status, paid_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`);
@@ -1172,8 +1213,9 @@ function setupCinema(app, opts = {}) {
       db.transaction(() => {
         for (const s of seats) {
           const code = 'CT-' + crypto.randomBytes(4).toString('hex').toUpperCase();
-          const info = ins.run(st.id, s, st.price || 0, b.buyer || '', b.buyer_email || '', b.buyer_phone || '', code, purchaseId, paymentRef || null, paymentMethod || null, payStatus, paidAt);
-          newTickets.push({ id: info.lastInsertRowid, seat: s, price: st.price || 0, code, purchase_id: purchaseId });
+          const seatPrice = priceForSeat(s);
+          const info = ins.run(st.id, s, seatPrice, b.buyer || '', b.buyer_email || '', b.buyer_phone || '', code, purchaseId, paymentRef || null, paymentMethod || null, payStatus, paidAt);
+          newTickets.push({ id: info.lastInsertRowid, seat: s, price: seatPrice, type: seatTypeMap[s] || 'regular', code, purchase_id: purchaseId });
         }
         for (const r of bundleRows) {
           const info = insB.run(purchaseId, r.bundle_id, r.bundle_name, r.qty, r.price);
@@ -1191,7 +1233,7 @@ function setupCinema(app, opts = {}) {
       db.prepare(`DELETE FROM cinema_seat_holds WHERE showtime_id = ? AND seat IN (${placeholders}) AND hold_token = ?`)
         .run(st.id, ...seats, holdToken);
     }
-    const seatsTotal = seats.length * (st.price || 0);
+    const seatsTotal = newTickets.reduce((a, t) => a + (t.price || 0), 0);
     res.json({
       ok: true,
       count: seats.length,
