@@ -164,7 +164,7 @@ export default function POSApp() {
   }
 
   return (
-    <ShiftGate>
+    <ShiftGate cashier={cashier}>
       <PromoBroadcastBanner />
       <OfflineBanner />
       {view === "home" && (
