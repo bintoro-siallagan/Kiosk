@@ -3,7 +3,6 @@
 // Flow: menu → pay (QRIS) → submit order → done
 //       Customer wajib bayar dulu (QRIS) sebelum order masuk antrian staff.
 import { useState, useEffect, useRef } from "react";
-import DelightPopup from "./components/DelightPopup.jsx";
 
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const BG = "#050810";
@@ -31,7 +30,6 @@ export default function CinemaInStudioOrder({ apiBase }) {
   const [done, setDone] = useState(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
-  const [showDelight, setShowDelight] = useState(false);
 
   // PAYMENT state
   const [payOrderId, setPayOrderId] = useState(null);   // internal order id used as payment ref
@@ -123,7 +121,6 @@ export default function CinemaInStudioOrder({ apiBase }) {
       const d = await r.json();
       if (!d.ok) throw new Error(d.error || "Gagal kirim ke dapur");
       setDone({ ...d, seat: seat.trim(), studioName, total, payment_ref: payOrderId });
-      setShowDelight(true);
       setStage("done");
     } catch (e) { setMsg("⚠ Bayar sukses, tapi gagal kirim ke staff: " + e.message); }
     setBusy(false);
@@ -166,14 +163,6 @@ export default function CinemaInStudioOrder({ apiBase }) {
       <div style={{ position: "fixed", inset: 0, background: BG_GRADIENT, color: "#e6edf3", fontFamily: "'Inter',sans-serif", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center" }}>
         <div aria-hidden style={{ position: "fixed", inset: 0, background: BG_MESH, pointerEvents: "none" }} />
         <style>{`@keyframes karyaIsoBounce { 0% { opacity: 0; transform: translateY(20px) scale(0.92); } 60% { opacity: 1; transform: translateY(-4px) scale(1.02); } 100% { opacity: 1; transform: translateY(0) scale(1); } }`}</style>
-        <DelightPopup
-          show={showDelight}
-          emoji="🍿"
-          title="Pesanan diterima!"
-          sub={`Snack akan diantar ke kursi ${done.seat} dalam 5-10 menit.`}
-          accent="#10b981"
-          onClose={() => setShowDelight(false)}
-        />
         <div style={{ position: "relative", zIndex: 1, animation: "karyaIsoBounce 0.6s cubic-bezier(.2,.7,.3,1)" }}>
           <div style={{ fontSize: 64 }}>✅🍿</div>
           <div style={{ fontSize: 28, fontWeight: 900, marginTop: 10, letterSpacing: -0.6, color: "#10b981" }}>Pembayaran sukses!</div>
