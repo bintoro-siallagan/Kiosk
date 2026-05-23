@@ -33,6 +33,7 @@ export default function CinemaOps({ apiBase }) {
   const [msg, setMsg] = useState("");
   const [editing, setEditing] = useState(null); // { type:'film'|'studio'|'showtime', data:{} }
   const [layoutStudio, setLayoutStudio] = useState(null); // studio object being layout-edited
+  const [tmdbModal, setTmdbModal] = useState(null);       // { query, loading, results }
 
   const base = `${apiBase}/api/cinema`;
   const reload = () => {
@@ -70,6 +71,7 @@ export default function CinemaOps({ apiBase }) {
       body = {
         title: data.title, genre: data.genre, duration_min: data.duration_min,
         rating: data.rating, status: data.status, synopsis: data.synopsis,
+        poster_url: data.poster_url, trailer_url: data.trailer_url,
       };
     } else if (type === "studio") {
       body = { name: data.name, studio_type: data.studio_type, rows: data.rows, cols: data.cols, outlet: data.outlet };
@@ -251,7 +253,24 @@ export default function CinemaOps({ apiBase }) {
 
             {editing.type === "film" && (
               <div style={{ display: "grid", gap: 10 }}>
-                <Field label="Judul"><input style={modalInp} value={editing.data.title || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, title: e.target.value } })} /></Field>
+                <Field label="Judul">
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input style={{ ...modalInp, flex: 1 }} value={editing.data.title || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, title: e.target.value } })} />
+                    <button onClick={async () => {
+                      const q = editing.data.title?.trim();
+                      if (!q) { setMsg("Isi judul dulu untuk lookup TMDB"); return; }
+                      setTmdbModal({ query: q, loading: true, results: [] });
+                      try {
+                        const r = await fetch(`${base}/tmdb/search?q=${encodeURIComponent(q)}`);
+                        const d = await r.json();
+                        if (!d.ok) throw new Error(d.error || "Lookup gagal");
+                        setTmdbModal({ query: q, loading: false, results: d.results || [] });
+                      } catch (e) {
+                        setTmdbModal({ query: q, loading: false, results: [], error: e.message });
+                      }
+                    }} style={{ background: "linear-gradient(135deg,#a855f7,#c084fc)", border: "none", color: "#fff", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>🎥 TMDB</button>
+                  </div>
+                </Field>
                 <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 10 }}>
                   <Field label="Genre"><input style={modalInp} value={editing.data.genre || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, genre: e.target.value } })} /></Field>
                   <Field label="Durasi (mnt)"><input type="number" style={modalInp} value={editing.data.duration_min || 0} onChange={e => setEditing({ ...editing, data: { ...editing.data, duration_min: e.target.value } })} /></Field>
@@ -269,6 +288,18 @@ export default function CinemaOps({ apiBase }) {
                   </Field>
                 </div>
                 <Field label="Sinopsis"><textarea rows={3} style={{ ...modalInp, resize: "vertical" }} value={editing.data.synopsis || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, synopsis: e.target.value } })} /></Field>
+                <Field label="Poster URL">
+                  <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                    {editing.data.poster_url && <img src={editing.data.poster_url} alt="poster" style={{ width: 40, height: 60, objectFit: "cover", borderRadius: 4, border: "1px solid #30363d" }} />}
+                    <input style={{ ...modalInp, flex: 1 }} placeholder="https://image.tmdb.org/..." value={editing.data.poster_url || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, poster_url: e.target.value } })} />
+                  </div>
+                </Field>
+                <Field label="Trailer URL (YouTube)">
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input style={{ ...modalInp, flex: 1 }} placeholder="https://www.youtube.com/watch?v=..." value={editing.data.trailer_url || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, trailer_url: e.target.value } })} />
+                    {editing.data.trailer_url && <a href={editing.data.trailer_url} target="_blank" rel="noreferrer" style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 700, textDecoration: "none", fontFamily: "inherit", whiteSpace: "nowrap" }}>▶ Test</a>}
+                  </div>
+                </Field>
               </div>
             )}
 
@@ -334,6 +365,58 @@ export default function CinemaOps({ apiBase }) {
             setTimeout(() => setMsg(""), 2000);
           }}
         />
+      )}
+
+      {tmdbModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.78)", backdropFilter: "blur(8px)", zIndex: 9001, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: "linear-gradient(160deg,#050810 0%,#0c0f1a 50%,#08090f 100%)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 22, width: "100%", maxWidth: 720, maxHeight: "90vh", overflowY: "auto", color: "#e6edf3" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 17, fontWeight: 800 }}>🎥 Hasil TMDB</div>
+                <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>Query: "{tmdbModal.query}"</div>
+              </div>
+              <button onClick={() => setTmdbModal(null)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 7, color: "#e6edf3", padding: "6px 12px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+            </div>
+            {tmdbModal.loading && <div style={{ padding: 30, textAlign: "center", color: "#9ca3af" }}>⏳ Mencari di TMDB...</div>}
+            {tmdbModal.error && <div style={{ padding: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, color: "#fca5a5", fontSize: 13 }}>⚠ {tmdbModal.error}<br/><span style={{ fontSize: 11, opacity: 0.7 }}>Pastikan TMDB_API_KEY sudah di-set di server .env (free signup di themoviedb.org)</span></div>}
+            {!tmdbModal.loading && !tmdbModal.error && tmdbModal.results.length === 0 && <div style={{ padding: 30, textAlign: "center", color: "#9ca3af" }}>Tidak ada hasil</div>}
+            <div style={{ display: "grid", gap: 8 }}>
+              {tmdbModal.results.map(m => (
+                <button key={m.tmdb_id} onClick={async () => {
+                  // Fetch full detail dengan trailer
+                  try {
+                    const r = await fetch(`${base}/tmdb/movie/${m.tmdb_id}`);
+                    const d = await r.json();
+                    if (!d.ok) throw new Error(d.error);
+                    setEditing(prev => ({
+                      ...prev,
+                      data: {
+                        ...prev.data,
+                        title: prev.data.title || d.title,
+                        synopsis: prev.data.synopsis || d.overview || "",
+                        duration_min: prev.data.duration_min || d.runtime || 0,
+                        genre: prev.data.genre || d.genres || "",
+                        poster_url: d.poster_url || prev.data.poster_url,
+                        trailer_url: d.trailer_url || prev.data.trailer_url,
+                      },
+                    }));
+                    setTmdbModal(null);
+                  } catch (e) {
+                    setTmdbModal({ ...tmdbModal, error: e.message });
+                  }
+                }} style={{ display: "flex", gap: 12, padding: 10, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, cursor: "pointer", fontFamily: "inherit", textAlign: "left", color: "#e6edf3" }}>
+                  {m.poster_url ? <img src={m.poster_url} alt="" style={{ width: 56, height: 84, objectFit: "cover", borderRadius: 6, flexShrink: 0 }} /> : <div style={{ width: 56, height: 84, background: "#1a1b1e", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>🎬</div>}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: -0.2 }}>{m.title}</div>
+                    {m.original_title !== m.title && <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>{m.original_title}</div>}
+                    <div style={{ fontSize: 11, color: "#7d8590", marginTop: 4, fontFamily: "'Geist Mono',monospace" }}>{m.release_date || "—"} · ⭐ {m.vote_average?.toFixed(1) || "—"}</div>
+                    <div style={{ fontSize: 11.5, color: "#9ca3af", marginTop: 4, lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{m.overview || "—"}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

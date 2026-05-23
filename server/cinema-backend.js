@@ -1316,6 +1316,70 @@ function setupCinema(app, opts = {}) {
     });
   });
 
+  // ── TMDB LOOKUP — search film + fetch poster & trailer URL ──
+  // GET /api/cinema/tmdb/search?q=Inception
+  // Set TMDB_API_KEY env (free signup di https://www.themoviedb.org/signup)
+  router.get('/tmdb/search', async (req, res) => {
+    const q = String(req.query.q || '').trim();
+    if (!q) return res.status(400).json({ ok: false, error: 'query q wajib' });
+    const apiKey = process.env.TMDB_API_KEY;
+    if (!apiKey) return res.status(503).json({ ok: false, error: 'TMDB_API_KEY belum di-set di server env' });
+    try {
+      const lang = req.query.lang || 'id-ID';
+      const url = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&language=${lang}&query=${encodeURIComponent(q)}&include_adult=false`;
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`TMDB ${r.status}`);
+      const d = await r.json();
+      const results = (d.results || []).slice(0, 10).map(m => ({
+        tmdb_id: m.id,
+        title: m.title,
+        original_title: m.original_title,
+        release_date: m.release_date,
+        overview: m.overview,
+        vote_average: m.vote_average,
+        poster_url: m.poster_path ? `https://image.tmdb.org/t/p/w500${m.poster_path}` : null,
+        backdrop_url: m.backdrop_path ? `https://image.tmdb.org/t/p/w1280${m.backdrop_path}` : null,
+      }));
+      res.json({ ok: true, count: results.length, results });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: e.message });
+    }
+  });
+
+  // GET /api/cinema/tmdb/movie/:id — full details + trailer key (YouTube)
+  router.get('/tmdb/movie/:id', async (req, res) => {
+    const apiKey = process.env.TMDB_API_KEY;
+    if (!apiKey) return res.status(503).json({ ok: false, error: 'TMDB_API_KEY belum di-set' });
+    try {
+      const lang = req.query.lang || 'id-ID';
+      const [info, videos] = await Promise.all([
+        fetch(`https://api.themoviedb.org/3/movie/${req.params.id}?api_key=${apiKey}&language=${lang}`).then(r => r.json()),
+        fetch(`https://api.themoviedb.org/3/movie/${req.params.id}/videos?api_key=${apiKey}&language=en-US`).then(r => r.json()),
+      ]);
+      // Prefer official trailer in English (Indonesian rarely tersedia)
+      const trailer = (videos.results || []).find(v => v.site === 'YouTube' && v.type === 'Trailer' && v.official)
+                   || (videos.results || []).find(v => v.site === 'YouTube' && v.type === 'Trailer')
+                   || (videos.results || []).find(v => v.site === 'YouTube');
+      res.json({
+        ok: true,
+        title: info.title,
+        original_title: info.original_title,
+        overview: info.overview,
+        runtime: info.runtime,           // duration_min equivalent
+        genres: (info.genres || []).map(g => g.name).join(', '),
+        release_date: info.release_date,
+        poster_url: info.poster_path ? `https://image.tmdb.org/t/p/w500${info.poster_path}` : null,
+        backdrop_url: info.backdrop_path ? `https://image.tmdb.org/t/p/w1280${info.backdrop_path}` : null,
+        trailer_key: trailer?.key || null,
+        trailer_url: trailer ? `https://www.youtube.com/watch?v=${trailer.key}` : null,
+        vote_average: info.vote_average,
+        tagline: info.tagline,
+      });
+    } catch (e) {
+      res.status(500).json({ ok: false, error: e.message });
+    }
+  });
+
   router.post('/purchase-bundles/:id/redeem', (req, res) => {
     const b = req.body || {};
     const by = String(b.redeemed_by || b.staff_name || 'F&B counter');
@@ -1616,7 +1680,8 @@ function setupCinema(app, opts = {}) {
     const fields = []; const args = [];
     for (const k of ['title', 'genre', 'duration_min', 'rating', 'status', 'synopsis',
                      'distributor_id', 'license_start', 'license_end', 'revenue_share_pct',
-                     'min_run_days', 'distributor_notes']) {
+                     'min_run_days', 'distributor_notes',
+                     'poster_url', 'trailer_url', 'subtitle', 'language', 'available_formats']) {
       if (k in b) {
         fields.push(`${k} = ?`);
         args.push(k === 'duration_min' || k === 'min_run_days' || k === 'distributor_id' ? (b[k] == null || b[k] === '' ? null : parseInt(b[k], 10))
