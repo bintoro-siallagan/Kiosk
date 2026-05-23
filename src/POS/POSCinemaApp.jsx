@@ -1073,6 +1073,29 @@ function TicketQR({ code }) {
 
 function Success({ sale, onAnother }) {
   const tickets = sale.tickets || sale.codes?.map((c, i) => ({ code: c, seat: sale.seats?.[i] })) || [];
+  // Fetch ticket branding config (per-outlet → fallback DEFAULT)
+  const [ticketBrand, setTicketBrand] = useState("🎬 karyaOS CINEMA");
+  const [ticketFooter, setTicketFooter] = useState("Tunjukkan QR ini di pintu masuk studio");
+  useEffect(() => {
+    const outlet = new URLSearchParams(window.location.search).get("outlet") || "";
+    const brandKeys = outlet ? [`CINEMA_TICKET_BRAND:${outlet}`, "CINEMA_TICKET_BRAND_DEFAULT"] : ["CINEMA_TICKET_BRAND_DEFAULT"];
+    const footerKeys = outlet ? [`CINEMA_TICKET_FOOTER:${outlet}`, "CINEMA_TICKET_FOOTER_DEFAULT"] : ["CINEMA_TICKET_FOOTER_DEFAULT"];
+    const fetchFirst = async (keys) => {
+      for (const k of keys) {
+        try {
+          const r = await fetch(`${API_HOST}/api/pos/config/${encodeURIComponent(k)}`);
+          if (!r.ok) continue;
+          const d = await r.json();
+          let v = d.value;
+          try { v = typeof v === "string" ? JSON.parse(v) : v; } catch {}
+          if (v && typeof v === "string") return v;
+        } catch {}
+      }
+      return null;
+    };
+    fetchFirst(brandKeys).then(v => v && setTicketBrand(v));
+    fetchFirst(footerKeys).then(v => v && setTicketFooter(v));
+  }, []);
   return (
     <div style={S.content}>
       <style>{`
@@ -1147,9 +1170,9 @@ function Success({ sale, onAnother }) {
           {tickets.length > 0 ? tickets.map((t, i) => (
             <Fragment key={t.code || i}>
               <div className="ticket-print" style={{ background: "rgba(255,255,255,0.02)", border: TH.border, borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
-                {/* Film header — self-contained per ticket */}
+                {/* Film header — self-contained per ticket (brand dari pos_config) */}
                 <div style={{ paddingBottom: 8, borderBottom: "1px dashed rgba(255,255,255,0.1)" }}>
-                  <div style={{ fontSize: 9, color: TH.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.5, fontWeight: 700 }}>🎬 karyaOS CINEMA</div>
+                  <div style={{ fontSize: 9, color: TH.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.5, fontWeight: 700 }}>{ticketBrand}</div>
                   <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginTop: 3, lineHeight: 1.2 }}>{sale.picked?.film_title}</div>
                   <div style={{ fontSize: 10, color: TH.sub, marginTop: 2, fontFamily: "'Geist Mono',monospace" }}>
                     {sale.picked?.studio_name} · {sale.picked?.show_date} {sale.picked?.start_time} · {sale.picked?.format || "2D"}
@@ -1168,9 +1191,9 @@ function Success({ sale, onAnother }) {
                     <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 12, color: "#fbbf24", marginTop: 2, letterSpacing: 0.8, wordBreak: "break-all" }}>{t.code || "—"}</div>
                   </div>
                 </div>
-                {/* Footer instruction */}
+                {/* Footer instruction — custom dari pos_config */}
                 <div style={{ fontSize: 10, color: TH.sub, lineHeight: 1.4, paddingTop: 6, borderTop: "1px dashed rgba(255,255,255,0.06)" }}>
-                  📲 Tunjukkan QR ini di pintu masuk studio. Tiket #{i + 1} dari {tickets.length}.
+                  📲 {ticketFooter} · Tiket #{i + 1} dari {tickets.length}.
                 </div>
               </div>
               {/* Cut indicator antar tiket — visible on screen + print */}

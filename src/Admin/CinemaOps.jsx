@@ -606,23 +606,34 @@ function CdsBrandingPanel({ apiBase, outlets }) {
   const [selectedOutlet, setSelectedOutlet] = useState("DEFAULT");
   const [bgUrl, setBgUrl] = useState("");
   const [idleText, setIdleText] = useState("");
+  const [ticketBrand, setTicketBrand] = useState("");
+  const [ticketFooter, setTicketFooter] = useState("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
   const cfgKey = selectedOutlet === "DEFAULT" ? "CINEMA_CDS_BG_DEFAULT" : `CINEMA_CDS_BG:${selectedOutlet}`;
   const idleKey = selectedOutlet === "DEFAULT" ? "CINEMA_CDS_IDLE_TEXT_DEFAULT" : `CINEMA_CDS_IDLE_TEXT:${selectedOutlet}`;
+  const ticketBrandKey = selectedOutlet === "DEFAULT" ? "CINEMA_TICKET_BRAND_DEFAULT" : `CINEMA_TICKET_BRAND:${selectedOutlet}`;
+  const ticketFooterKey = selectedOutlet === "DEFAULT" ? "CINEMA_TICKET_FOOTER_DEFAULT" : `CINEMA_TICKET_FOOTER:${selectedOutlet}`;
 
   // Load current value when outlet changes
   useEffect(() => {
     setLoading(true);
+    const parseVal = (d) => {
+      try { return typeof d?.value === "string" ? JSON.parse(d.value) : (d?.value || ""); } catch { return ""; }
+    };
     Promise.all([
       fetch(`${apiBase}/api/pos/config/${encodeURIComponent(cfgKey)}`).then(r => r.json()).catch(() => ({})),
       fetch(`${apiBase}/api/pos/config/${encodeURIComponent(idleKey)}`).then(r => r.json()).catch(() => ({})),
-    ]).then(([bg, txt]) => {
-      try { setBgUrl(typeof bg?.value === "string" ? JSON.parse(bg.value) : (bg?.value || "")); } catch { setBgUrl(""); }
-      try { setIdleText(typeof txt?.value === "string" ? JSON.parse(txt.value) : (txt?.value || "")); } catch { setIdleText(""); }
+      fetch(`${apiBase}/api/pos/config/${encodeURIComponent(ticketBrandKey)}`).then(r => r.json()).catch(() => ({})),
+      fetch(`${apiBase}/api/pos/config/${encodeURIComponent(ticketFooterKey)}`).then(r => r.json()).catch(() => ({})),
+    ]).then(([bg, txt, tb, tf]) => {
+      setBgUrl(parseVal(bg));
+      setIdleText(parseVal(txt));
+      setTicketBrand(parseVal(tb));
+      setTicketFooter(parseVal(tf));
     }).finally(() => setLoading(false));
-  }, [apiBase, cfgKey, idleKey]);
+  }, [apiBase, cfgKey, idleKey, ticketBrandKey, ticketFooterKey]);
 
   const saveConfig = async (key, value) => {
     try {
@@ -722,6 +733,32 @@ function CdsBrandingPanel({ apiBase, outlets }) {
             style={{ ...inp, flex: 1 }} />
           <button onClick={handleSaveText} style={{ background: "#a855f7", border: "none", color: "#fff", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>💾 Save</button>
         </div>
+      </div>
+
+      {/* TICKET PRINT BRANDING */}
+      <div style={{ marginBottom: 14, padding: 14, background: "rgba(34,211,238,0.04)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 10 }}>
+        <div style={{ fontSize: 12, color: "#22d3ee", letterSpacing: 1.5, fontFamily: "Geist Mono,monospace", fontWeight: 800, marginBottom: 10 }}>🎟️ BRANDING TIKET PRINT</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div>
+            <div style={{ fontSize: 10, color: C.sub, marginBottom: 4 }}>HEADER BRAND (default: "🎬 karyaOS CINEMA")</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input type="text" value={ticketBrand} onChange={e => setTicketBrand(e.target.value)}
+                placeholder="🎬 karyaOS CINEMA · Jakarta Central"
+                style={{ ...inp, flex: 1 }} />
+              <button onClick={async () => { try { await saveConfig(ticketBrandKey, ticketBrand); setMsg("✓ Header brand tersimpan"); } catch (e) { setMsg("⚠ " + e.message); } }} style={{ background: "#22d3ee", border: "none", color: "#04303a", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>💾</button>
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: C.sub, marginBottom: 4 }}>FOOTER TEXT (default: "Tunjukkan QR di pintu masuk studio")</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <input type="text" value={ticketFooter} onChange={e => setTicketFooter(e.target.value)}
+                placeholder="Datang 15 menit sebelum jam tayang · No refund"
+                style={{ ...inp, flex: 1 }} />
+              <button onClick={async () => { try { await saveConfig(ticketFooterKey, ticketFooter); setMsg("✓ Footer tersimpan"); } catch (e) { setMsg("⚠ " + e.message); } }} style={{ background: "#22d3ee", border: "none", color: "#04303a", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>💾</button>
+            </div>
+          </div>
+        </div>
+        <div style={{ fontSize: 10, color: C.sub, marginTop: 8 }}>💡 Pakai outlet-specific atau DEFAULT untuk fallback semua outlet. Emoji support 🎬🍿✨</div>
       </div>
 
       {msg && <div style={{ padding: "8px 12px", background: msg.startsWith("✓") ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", border: `1px solid ${msg.startsWith("✓") ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`, borderRadius: 8, fontSize: 12, color: msg.startsWith("✓") ? "#10b981" : "#fca5a5" }}>{msg}</div>}
