@@ -4,6 +4,7 @@ import { PROFILES as AUDIO_PROFILES } from "./audio.js";
 import { api, createSocket } from "./api.js";
 import ZReport from "./ZReport.jsx";
 import FlowQRGen from "./Flow/FlowQRGen.jsx";
+import TableStatusManager from "./Admin/TableStatusManager.jsx";
 
 const fIDR = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
 const fTime = (d) => new Date(d).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});
@@ -1172,11 +1173,15 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
           <div style={{animation:"fadeUp 0.3s ease"}}>
             <div style={D.pageHeader}>
               <div>
-                <div style={D.pageTitle}>QR Meja</div>
-                <div style={D.pageSub}>Generate & print QR code untuk setiap meja</div>
+                <div style={D.pageTitle}>Meja & QR Code</div>
+                <div style={D.pageSub}>Status meja, manual release & generate QR per meja</div>
               </div>
             </div>
-            <FlowQRGen />
+            <TableStatusManager />
+            <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ ...D.pageTitle, fontSize: 16, marginBottom: 12 }}>📱 Generate QR Code per Meja</div>
+              <FlowQRGen />
+            </div>
           </div>
         )}
 
