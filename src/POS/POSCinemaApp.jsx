@@ -247,7 +247,9 @@ function ShowtimeCard({ st, onPick }) {
     cancelled: { c: TH.red, l: "DIBATALKAN" },
   }[status] || { c: TH.dim, l: "—" };
 
-  const sellable = status === "scheduled" && !isFull;
+  // Bisa jual saat 'scheduled' (belum mulai) ATAU 'running' (sedang tayang,
+  // late entry). Tidak bisa jual saat 'closed' / 'sold_out' / 'cancelled'.
+  const sellable = (status === "scheduled" || status === "running") && !isFull;
 
   return (
     <button onClick={sellable ? onPick : null} disabled={!sellable}
