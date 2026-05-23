@@ -953,6 +953,55 @@ function setupCinema(app, opts = {}) {
       .run(Number(b.film_id), Number(b.studio_id), String(b.show_date), String(b.start_time), price, b.format || '2D');
     res.json({ ok: true, id: info.lastInsertRowid, price, price_source: priceSource });
   });
+  // ── BULK SCHEDULE — push 1 film+jam ke N outlet sekaligus ──
+  // POST /showtimes/bulk { film_id, outlets:['JKT01','BDG01',...], show_date, start_time, format, price?, studio_type? }
+  // Logic: untuk tiap outlet → pilih studio (preference studio_type, fallback first active),
+  // create showtime di studio itu. Skip outlet kalau gak ada studio active.
+  router.post('/showtimes/bulk', (req, res) => {
+    const b = req.body || {};
+    const filmId = parseInt(b.film_id, 10);
+    const outlets = Array.isArray(b.outlets) ? b.outlets.map(String).filter(Boolean) : [];
+    const showDate = String(b.show_date || '').trim();
+    const startTime = String(b.start_time || '').trim();
+    if (!filmId || !outlets.length || !showDate || !startTime) {
+      return res.status(400).json({ error: 'film_id, outlets[], show_date, start_time wajib' });
+    }
+    const studioType = String(b.studio_type || '').trim() || null;
+    const format = String(b.format || '2D').trim();
+    const manualPrice = Number(b.price) || 0;
+
+    const created = [];
+    const skipped = [];
+    const ins = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price, format) VALUES (?,?,?,?,?,?)`);
+    for (const outlet of outlets) {
+      // Pilih studio: preference studio_type → first active → skip
+      let studio = null;
+      if (studioType) {
+        studio = db.prepare(`SELECT id, studio_type FROM cinema_studios WHERE outlet = ? AND studio_type = ? AND is_active = 1 LIMIT 1`).get(outlet, studioType);
+      }
+      if (!studio) {
+        studio = db.prepare(`SELECT id, studio_type FROM cinema_studios WHERE outlet = ? AND is_active = 1 ORDER BY id LIMIT 1`).get(outlet);
+      }
+      if (!studio) {
+        skipped.push({ outlet, reason: 'no active studio' });
+        continue;
+      }
+      // Resolve price
+      let price = manualPrice;
+      let source = price > 0 ? 'manual' : null;
+      if (!price) {
+        try {
+          const r = resolveOutletPrice(outlet, studio.studio_type || 'Regular', showDate);
+          if (r?.price > 0) { price = r.price; source = r.source; }
+        } catch {}
+        if (!price) { price = 50000; source = source || 'default'; }
+      }
+      const info = ins.run(filmId, studio.id, showDate, startTime, price, format);
+      created.push({ outlet, studio_id: studio.id, showtime_id: info.lastInsertRowid, price, price_source: source });
+    }
+    res.json({ ok: true, created, skipped, summary: { total: outlets.length, ok: created.length, skipped: skipped.length } });
+  });
+
   router.delete('/showtimes/:id', (req, res) => {
     db.prepare(`DELETE FROM cinema_tickets WHERE showtime_id = ?`).run(req.params.id);
     db.prepare(`DELETE FROM cinema_showtimes WHERE id = ?`).run(req.params.id);

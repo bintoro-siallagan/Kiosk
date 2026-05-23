@@ -58,6 +58,15 @@ function CinemaOpsInner({ apiBase }) {
   const [editing, setEditing] = useState(null); // { type:'film'|'studio'|'showtime', data:{} }
   const [layoutStudio, setLayoutStudio] = useState(null); // studio object being layout-edited
   const [tmdbModal, setTmdbModal] = useState(null);       // { query, loading, results }
+  const [bulkOutlets, setBulkOutlets] = useState([]);     // list outlet untuk bulk-push
+  const [selectedOutlets, setSelectedOutlets] = useState(new Set());
+  const [bulkResult, setBulkResult] = useState(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
+  useEffect(() => {
+    fetch(`${apiBase}/api/outlet-master`).then(r => r.json()).then(d => {
+      setBulkOutlets((d.outlets || d.data || []).filter(o => o.status === "active"));
+    }).catch(() => {});
+  }, [apiBase]);
 
   const base = `${apiBase}/api/cinema`;
   const reload = () => {
@@ -240,6 +249,85 @@ function CinemaOpsInner({ apiBase }) {
             <input style={{ ...inp, width: 96 }} type="number" placeholder="Harga" value={f("price")} onChange={set("price")} />
             {btn("+ Jadwalkan", () => add("showtimes", { film_id: f("film_id"), studio_id: f("studio_id"), show_date: f("show_date"), start_time: f("start_time"), format: f("format") || "2D", price: f("price") || 0 }))}
           </Form>
+
+          {/* BULK MULTI-OUTLET PUSH */}
+          {bulkOutlets.length > 0 && (
+            <div style={{ marginTop: 10, padding: 14, background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: 12, color: "#c084fc", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>🌐 PUSH KE BANYAK OUTLET SEKALIGUS</div>
+                  <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>Centang outlet target → backend auto-pilih studio yang tersedia per outlet</div>
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button onClick={() => setSelectedOutlets(new Set(bulkOutlets.map(o => o.code)))} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#e6edf3", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>Semua</button>
+                  <button onClick={() => setSelectedOutlets(new Set())} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#e6edf3", borderRadius: 6, padding: "5px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>Kosongkan</button>
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 6, marginBottom: 10 }}>
+                {bulkOutlets.map(o => {
+                  const sel = selectedOutlets.has(o.code);
+                  return (
+                    <label key={o.code} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", background: sel ? "rgba(168,85,247,0.15)" : "rgba(255,255,255,0.02)", border: sel ? "1px solid rgba(168,85,247,0.5)" : "1px solid rgba(255,255,255,0.06)", borderRadius: 8, cursor: "pointer", fontSize: 12 }}>
+                      <input type="checkbox" checked={sel} onChange={(e) => {
+                        setSelectedOutlets(prev => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(o.code); else next.delete(o.code);
+                          return next;
+                        });
+                      }} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, color: "#e6edf3", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.name}</div>
+                        <div style={{ fontSize: 10, color: "#7d8590", fontFamily: "'Geist Mono',monospace" }}>{o.code} · {o.area || "—"}</div>
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+                <div style={{ fontSize: 12, color: "#9ca3af" }}>
+                  <b style={{ color: "#c084fc", fontFamily: "'Geist Mono',monospace" }}>{selectedOutlets.size}</b> outlet dicentang · pakai film+tanggal+jam+format+harga dari form atas
+                </div>
+                <button onClick={async () => {
+                  if (selectedOutlets.size === 0) { setMsg("Centang minimal 1 outlet"); return; }
+                  if (!f("film_id") || !f("show_date") || !f("start_time")) { setMsg("Film, tanggal, dan jam wajib diisi di form atas"); return; }
+                  setBulkBusy(true); setMsg(""); setBulkResult(null);
+                  try {
+                    const r = await fetch(`${base}/showtimes/bulk`, {
+                      method: "POST", headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        film_id: parseInt(f("film_id"), 10),
+                        outlets: [...selectedOutlets],
+                        show_date: f("show_date"),
+                        start_time: f("start_time"),
+                        format: f("format") || "2D",
+                        price: parseInt(f("price"), 10) || 0,
+                      }),
+                    });
+                    const d = await r.json();
+                    if (!r.ok || !d.ok) throw new Error(d.error || "Push gagal");
+                    setBulkResult(d);
+                    setSelectedOutlets(new Set());
+                    reload();
+                  } catch (e) { setMsg("⚠ " + e.message); }
+                  setBulkBusy(false);
+                }} disabled={bulkBusy || selectedOutlets.size === 0} style={{
+                  background: selectedOutlets.size > 0 ? "linear-gradient(135deg,#a855f7,#c084fc)" : "rgba(255,255,255,0.05)",
+                  border: "none", borderRadius: 8, padding: "9px 18px",
+                  color: selectedOutlets.size > 0 ? "#fff" : "#5b6470",
+                  fontSize: 12, fontWeight: 800, cursor: selectedOutlets.size > 0 ? "pointer" : "not-allowed", fontFamily: "inherit",
+                  boxShadow: selectedOutlets.size > 0 ? "0 4px 12px rgba(168,85,247,0.3)" : "none",
+                }}>{bulkBusy ? "⏳ Push..." : `🚀 PUSH KE ${selectedOutlets.size} OUTLET`}</button>
+              </div>
+              {bulkResult && (
+                <div style={{ marginTop: 10, padding: "10px 12px", background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 8, fontSize: 12 }}>
+                  <div style={{ color: "#10b981", fontWeight: 700 }}>✓ Sukses: {bulkResult.created.length} jadwal dibuat</div>
+                  {bulkResult.skipped.length > 0 && (
+                    <div style={{ color: "#eab308", marginTop: 4 }}>⚠ Skipped: {bulkResult.skipped.length} outlet ({bulkResult.skipped.map(s => s.outlet).join(", ")}) — {bulkResult.skipped[0]?.reason}</div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           <List empty={showtimes.length === 0} emptyText="Belum ada jadwal tayang.">
             {showtimes.map(x => {
               const ds = x.derived_status || "scheduled";
