@@ -9,7 +9,7 @@
 //   GET /api/cinema/bundles
 //   POST /api/cinema/tickets { showtime_id, seats[], bundles[], buyer, payment }
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from "react";
 import POSKasirLogin from "./POSKasirLogin.jsx";
 import ShiftGate from "../ShiftGate.jsx";
 import QRCode from "qrcode";
@@ -1080,10 +1080,40 @@ function Success({ sale, onAnother }) {
           @page { size: A4; margin: 10mm; }
           body, html { background: #fff !important; color: #000 !important; }
           .no-print { display: none !important; }
-          .ticket-print { background: #fff !important; color: #000 !important; border: 1px solid #ccc !important; page-break-inside: avoid; }
+          /* Tiap tiket: 1 page = mudah dipotong di printer thermal cinema (auto-cut),
+             atau di home printer A4 manual gunting per halaman */
+          .ticket-print {
+            background: #fff !important; color: #000 !important;
+            border: 2px dashed #555 !important;
+            page-break-inside: avoid;
+            page-break-after: always;     /* tiap tiket = halaman terpisah */
+            break-after: page;
+            margin: 0 auto !important;
+            max-width: 480px !important;
+            padding: 18px !important;
+            box-shadow: none !important;
+          }
+          .ticket-print:last-child { page-break-after: auto; }
           .ticket-print * { color: #000 !important; }
-          .ticket-seat-pill { background: #fbbf24 !important; color: #000 !important; }
+          .ticket-seat-pill { background: #fbbf24 !important; color: #000 !important; border: 1px solid #b45309 !important; }
           .topbar-glass { display: none !important; }
+          /* Header info film tetap muncul di halaman pertama saja */
+          .success-card > div:first-child { page-break-after: avoid; }
+          /* Visual cut indicator — scissors + dashed line di antara tiket
+             (visible on screen too, signals 'cut here') */
+          .ticket-cut-line {
+            text-align: center;
+            font-size: 10px; color: #555 !important;
+            padding: 2px 0;
+            background: repeating-linear-gradient(90deg, #777 0 4px, transparent 4px 8px) center / 100% 1px no-repeat;
+          }
+        }
+        /* Screen view: subtle cut indicator di antara tiket */
+        .ticket-cut-line {
+          font-size: 10px; color: #5b6470;
+          letter-spacing: 4px; text-align: center;
+          padding: 4px 0; margin: 2px 0;
+          font-family: 'Geist Mono', monospace;
         }
       `}</style>
       <div className="success-card" style={{ ...S.cardLarge, padding: 28, maxWidth: 880, margin: "30px auto" }}>
@@ -1111,25 +1141,41 @@ function Success({ sale, onAnother }) {
           </div>
         </div>
 
-        {/* Per-ticket QR cards */}
+        {/* Per-ticket QR cards — masing-masing self-contained (film + studio + jam),
+            page-break-after: always saat print → tiap tiket = 1 halaman = mudah dipotong */}
         <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(360px,1fr))", gap: 14 }}>
           {tickets.length > 0 ? tickets.map((t, i) => (
-            <div key={t.code || i} className="ticket-print" style={{ background: "rgba(255,255,255,0.02)", border: TH.border, borderRadius: 12, padding: 16, display: "flex", gap: 14, alignItems: "center" }}>
-              <TicketQR code={t.code || ""} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 10, color: TH.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.5, fontWeight: 700 }}>KURSI</div>
-                <div className="ticket-seat-pill" style={{
-                  display: "inline-block", fontSize: 22, fontWeight: 900, padding: "4px 14px", borderRadius: 8, marginTop: 4,
-                  fontFamily: "'Geist Mono',monospace", background: "linear-gradient(135deg,#f59e0b,#fbbf24)", color: "#1a1205", letterSpacing: -0.4,
-                }}>{t.seat || sale.seats?.[i] || "—"}</div>
-                <div style={{ fontSize: 10, color: TH.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.2, marginTop: 12 }}>KODE TIKET</div>
-                <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 12, color: "#fbbf24", marginTop: 2, letterSpacing: 0.8, wordBreak: "break-all" }}>{t.code || "—"}</div>
-                <div style={{ fontSize: 10, color: TH.sub, marginTop: 8, lineHeight: 1.4 }}>
-                  Tunjukkan QR ini di pintu masuk studio<br />
-                  <span style={{ color: TH.dim }}>{sale.picked?.show_date} · {sale.picked?.start_time}</span>
+            <Fragment key={t.code || i}>
+              <div className="ticket-print" style={{ background: "rgba(255,255,255,0.02)", border: TH.border, borderRadius: 12, padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+                {/* Film header — self-contained per ticket */}
+                <div style={{ paddingBottom: 8, borderBottom: "1px dashed rgba(255,255,255,0.1)" }}>
+                  <div style={{ fontSize: 9, color: TH.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.5, fontWeight: 700 }}>🎬 karyaOS CINEMA</div>
+                  <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", marginTop: 3, lineHeight: 1.2 }}>{sale.picked?.film_title}</div>
+                  <div style={{ fontSize: 10, color: TH.sub, marginTop: 2, fontFamily: "'Geist Mono',monospace" }}>
+                    {sale.picked?.studio_name} · {sale.picked?.show_date} {sale.picked?.start_time} · {sale.picked?.format || "2D"}
+                  </div>
+                </div>
+                {/* Body: QR + seat info */}
+                <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+                  <TicketQR code={t.code || ""} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 10, color: TH.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.5, fontWeight: 700 }}>KURSI</div>
+                    <div className="ticket-seat-pill" style={{
+                      display: "inline-block", fontSize: 22, fontWeight: 900, padding: "4px 14px", borderRadius: 8, marginTop: 4,
+                      fontFamily: "'Geist Mono',monospace", background: "linear-gradient(135deg,#f59e0b,#fbbf24)", color: "#1a1205", letterSpacing: -0.4,
+                    }}>{t.seat || sale.seats?.[i] || "—"}</div>
+                    <div style={{ fontSize: 10, color: TH.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.2, marginTop: 10 }}>KODE TIKET</div>
+                    <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 12, color: "#fbbf24", marginTop: 2, letterSpacing: 0.8, wordBreak: "break-all" }}>{t.code || "—"}</div>
+                  </div>
+                </div>
+                {/* Footer instruction */}
+                <div style={{ fontSize: 10, color: TH.sub, lineHeight: 1.4, paddingTop: 6, borderTop: "1px dashed rgba(255,255,255,0.06)" }}>
+                  📲 Tunjukkan QR ini di pintu masuk studio. Tiket #{i + 1} dari {tickets.length}.
                 </div>
               </div>
-            </div>
+              {/* Cut indicator antar tiket — visible on screen + print */}
+              {i < tickets.length - 1 && <div className="ticket-cut-line">✂ — — — — — — — — — POTONG — — — — — — — — —</div>}
+            </Fragment>
           )) : (
             <div style={{ gridColumn: "1 / -1", padding: 40, textAlign: "center", color: TH.dim, background: "rgba(255,255,255,0.02)", borderRadius: 12, border: TH.border }}>
               ⚠ Kode tiket belum diterima dari server. Coba refresh atau hubungi admin.
