@@ -728,6 +728,19 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
         <div style={K.cartPanelFooter}>
           {cart.length>0 ? (
             <>
+              {/* Subtotal + service charge breakdown — kalau dine-in */}
+              {serviceCharge > 0 && (
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4,fontSize:12,color:"rgba(255,255,255,0.55)"}}>
+                  <span>Subtotal</span>
+                  <span>{fIDR(subtotal)}</span>
+                </div>
+              )}
+              {serviceCharge > 0 && (
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,fontSize:12,color:"#FBBF24"}}>
+                  <span>🍽️ {serviceConfig.label} {serviceConfig.pct}%</span>
+                  <span>+{fIDR(serviceCharge)}</span>
+                </div>
+              )}
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                 <span style={{fontFamily:"'Inter',sans-serif",fontSize:18,letterSpacing:1,color:"#aaa"}}>TOTAL</span>
                 <span style={{fontFamily:"'Inter',sans-serif",fontSize:30,color:"#FF6B35"}}>{fIDR(total)}</span>
