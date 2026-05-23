@@ -60,6 +60,15 @@ const COA = [
   ['6-1600', 'Beban Penyusutan', 'Beban', 'Beban Operasional'],
   ['6-1700', 'Beban Admin Bank & MDR', 'Beban', 'Beban Operasional'],
   ['6-1900', 'Beban Operasional Lain-lain', 'Beban', 'Beban Operasional'],
+  // ── Cinema vertical accounts ──
+  ['2-1500', 'Hutang Royalti Distributor Film',  'Kewajiban',  'Kewajiban Lancar'],
+  ['4-1500', 'Penjualan Tiket Cinema',           'Pendapatan', 'Pendapatan Cinema'],
+  ['4-1510', 'Penjualan F&B Cinema — Bundle',    'Pendapatan', 'Pendapatan Cinema'],
+  ['4-1520', 'Penjualan F&B Cinema — In-Studio', 'Pendapatan', 'Pendapatan Cinema'],
+  ['4-1530', 'Penjualan Event Booking Cinema',   'Pendapatan', 'Pendapatan Cinema'],
+  ['5-2100', 'HPP — Royalti Distributor Film',   'HPP',        'Harga Pokok Cinema'],
+  ['5-2200', 'HPP — Bahan F&B Cinema',           'HPP',        'Harga Pokok Cinema'],
+  ['6-2100', 'Beban Operasional Cinema',         'Beban',      'Beban Cinema'],
 ];
 
 function setupCoa(app, opts = {}) {
@@ -67,10 +76,10 @@ function setupCoa(app, opts = {}) {
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
 
-  if (db.prepare(`SELECT COUNT(*) c FROM coa_accounts`).get().c === 0) {
-    const ins = db.prepare(`INSERT INTO coa_accounts (code, name, account_type, account_group, normal_balance, is_active) VALUES (?,?,?,?,?,1)`);
-    for (const [code, name, type, group] of COA) ins.run(code, name, type, group, NORMAL[type]);
-  }
+  // Idempotent seed — INSERT OR IGNORE so new accounts (cinema, dst) muncul
+  // di DB yang sudah lama tanpa overwrite akun custom user.
+  const ins = db.prepare(`INSERT OR IGNORE INTO coa_accounts (code, name, account_type, account_group, normal_balance, is_active) VALUES (?,?,?,?,?,1)`);
+  for (const [code, name, type, group] of COA) ins.run(code, name, type, group, NORMAL[type]);
 
   const router = express.Router();
   router.use(express.json());
