@@ -76,6 +76,18 @@ const upload = multer({
   },
 });
 
+// ─── CDS Cinema — second display state (broadcast to /?cinema-cds clients) ───
+// POS Cinema POST current sale state → backend broadcast via WS ke semua CDS terminal.
+// Latest state cached supaya CDS yg baru connect langsung dapet snapshot.
+let cinemaCdsState = { stage: "idle", outlet: null, ts: Date.now() };
+app.post("/api/cinema/cds/state", (req, res) => {
+  const state = req.body || {};
+  cinemaCdsState = { ...state, ts: Date.now() };
+  broadcast("cinema_cds:state", cinemaCdsState);
+  res.json({ ok: true });
+});
+app.get("/api/cinema/cds/state", (_req, res) => res.json(cinemaCdsState));
+
 // POST /api/upload — multipart form-data, field name "file"
 // Response: { ok:true, url:"/uploads/filename.ext", filename, size, mimetype }
 app.post("/api/upload", upload.single("file"), (req, res) => {

@@ -136,6 +136,49 @@ export default function POSCinemaApp() {
   const proceedToPay = (totals) => { setSaleData(totals); setStage("pay"); };
   const onSold = (ticketResult) => { setLastSale(ticketResult); setStage("success"); };
 
+  // ── CDS broadcast — kirim state ke /?cinema-cds setiap perubahan ──
+  const broadcastCds = useCallback((extra = {}) => {
+    let payload = { stage: "idle", outlet: (new URLSearchParams(window.location.search).get("outlet") || ""), ...extra };
+    if (picked && (stage === "sell" || stage === "pay" || stage === "success")) {
+      payload = {
+        ...payload,
+        stage: stage === "pay" ? (extra.qrUrl ? "pay" : "selling") : stage === "success" ? "done" : "selling",
+        film_title: picked.film_title,
+        poster_url: picked.poster_url,
+        genre: picked.genre,
+        duration_min: picked.duration_min,
+        rating: picked.film_rating || picked.rating,
+        studio_name: picked.studio_name,
+        show_date: picked.show_date,
+        start_time: picked.start_time,
+        format: picked.format,
+        seats: [...(seats || [])],
+        bundles: (bundles || []).map(b => ({ name: b.name, qty: b.qty, price: b.price })),
+        seats_total: saleData?.ticketSubtotal || 0,
+        bundles_total: saleData?.bundleSubtotal || 0,
+        total: saleData?.total || 0,
+        ...extra,
+      };
+    }
+    fetch(`${API_HOST}/api/cinema/cds/state`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }).catch(() => {});
+  }, [picked, stage, seats, bundles, saleData]);
+
+  // Broadcast saat stage / picked / seats / bundles berubah
+  useEffect(() => { broadcastCds(); }, [broadcastCds]);
+
+  // Reset CDS state saat keluar dari sale (resetSale di-call)
+  useEffect(() => {
+    if (stage === "home") {
+      fetch(`${API_HOST}/api/cinema/cds/state`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stage: "idle", outlet: (new URLSearchParams(window.location.search).get("outlet") || "") }),
+      }).catch(() => {});
+    }
+  }, [stage]);
+
   if (!cashier) return <POSKasirLogin apiBase={API_HOST} onSelectKasir={handleLogin} />;
 
   return (
