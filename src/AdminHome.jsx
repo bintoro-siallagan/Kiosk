@@ -280,15 +280,17 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     <div style={S.root}>
       <style>{CSS}</style>
 
-      {/* Topbar */}
-      <div style={S.topbar} className="no-print">
+      {/* Topbar — polished with glow + brand pop */}
+      <div style={S.topbar} className="no-print ah-topbar">
         <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
           <button className="ah-hamburger" onClick={() => setRailOpen(o => !o)} title="Menu" aria-label="Menu"
             style={{ background: "#161619", border: "1px solid #2a2b30", borderRadius: 8, color: "#e6edf3", fontSize: 17, lineHeight: 1, padding: "6px 11px", cursor: "pointer", fontFamily: "inherit" }}>☰</button>
-          <img src="/logo.png" alt="KaryaOS" style={{ width: 38, height: 38, borderRadius: 9, objectFit: "contain", flexShrink: 0 }} />
+          <div style={{ position: "relative" }}>
+            <img src="/logo.png" alt="KaryaOS" style={{ width: 40, height: 40, borderRadius: 10, objectFit: "contain", flexShrink: 0, filter: "drop-shadow(0 0 12px rgba(245,158,11,0.35))" }} />
+          </div>
           <div>
-            <div style={S.brand}>karya<span style={{ color: "#f59e0b" }}>OS</span></div>
-            <div style={S.brandSub}>ENTERPRISE F&B OPERATING SYSTEM</div>
+            <div style={S.brand}>karya<span style={{ background: "linear-gradient(135deg,#f59e0b,#fbbf24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>OS</span></div>
+            <div style={S.brandSub}>ENTERPRISE OPERATING SYSTEM · F&B + CINEMA</div>
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
@@ -298,8 +300,8 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
         </div>
       </div>
 
-      {/* Status operasional strip */}
-      <div style={S.opStrip} className="no-print">
+      {/* Status operasional strip (hanya tampil di mobile saat hero hidden) */}
+      <div style={{ ...S.opStrip, display: rightView === "home" ? "none" : "flex" }} className="no-print">
         <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
           <span className="livedot" style={{ width: 8, height: 8, borderRadius: "50%", background: isOpen ? "#10b981" : "#ef4444", display: "inline-block", boxShadow: `0 0 7px ${isOpen ? "#10b981" : "#ef4444"}` }} />
           <b style={{ color: isOpen ? "#10b981" : "#ef4444" }}>{isOpen ? "OUTLET BEROPERASI" : "DI LUAR JAM OPERASIONAL"}</b>
@@ -357,28 +359,70 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
               </div>
             </div>
           ) : (<>
-          {/* Period selector + KPI */}
-          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 8 }}>
-            <div style={S.segWrap}>
-              {PERIODS.map(p => (
-                <button key={p.k} onClick={() => setPeriod(p.k)}
-                  style={{ ...S.seg, ...(period === p.k ? S.segOn : {}) }}>{p.l}</button>
-              ))}
+          {/* ═══ HERO BANNER (animated, gradient mesh, big number) ═══ */}
+          <div style={S.hero} className="ah-hero">
+            <div style={S.heroMesh} />
+            <div style={S.heroContent}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 20, flexWrap: "wrap" }}>
+                <div style={{ flex: 1, minWidth: 280 }}>
+                  <div style={S.heroGreet}>
+                    <span>{hour < 11 ? "☀️" : hour < 15 ? "🌤️" : hour < 19 ? "🌅" : "🌙"}</span>
+                    <span>{greet}, <b style={{ color: "#fff" }}>{adminSession?.name || "Admin"}</b></span>
+                  </div>
+                  <div style={S.heroKicker}>
+                    <span className="livedot" style={{ width: 7, height: 7, borderRadius: "50%", background: isOpen ? "#10b981" : "#ef4444", display: "inline-block", boxShadow: `0 0 8px ${isOpen ? "#10b981" : "#ef4444"}` }} />
+                    {isOpen ? "OUTLET BEROPERASI" : "DI LUAR JAM"} · SHIFT {shift.n.toUpperCase()} · {now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 14, marginTop: 14, flexWrap: "wrap" }}>
+                    <div style={S.heroBigNumber}>{fmtRp(curRev)}</div>
+                    {revDelta !== 0 && (
+                      <div style={{ ...S.heroDelta, color: revDelta >= 0 ? "#10b981" : "#ef4444", background: revDelta >= 0 ? "#10b98115" : "#ef444415", border: `1px solid ${revDelta >= 0 ? "#10b98144" : "#ef444444"}` }}>
+                        {revDelta >= 0 ? "▲" : "▼"} {Math.abs(revDelta)}% vs sebelumnya
+                      </div>
+                    )}
+                  </div>
+                  <div style={S.heroSubLine}>
+                    💰 Penjualan {periodLabel.toLowerCase()} · <b style={{ color: "#fbbf24" }}>{curOrders.length}</b> order · target <b style={{ color: targetPct >= 100 ? "#10b981" : "#fbbf24" }}>{fmtK(target)}</b>
+                  </div>
+                  {/* Target progress bar */}
+                  <div style={S.heroProgress}>
+                    <div style={{ ...S.heroProgressFill, width: `${Math.min(100, targetPct)}%`, background: targetPct >= 100 ? "linear-gradient(90deg,#10b981,#22d3ee)" : targetPct >= 60 ? "linear-gradient(90deg,#f59e0b,#fbbf24)" : "linear-gradient(90deg,#ef4444,#f97316)" }} />
+                    <span style={S.heroProgressLbl}>{targetPct}%</span>
+                  </div>
+                </div>
+                {/* Right side — circular progress ring + period selector */}
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 12 }}>
+                  <div style={S.segWrap}>
+                    {PERIODS.map(p => (
+                      <button key={p.k} onClick={() => setPeriod(p.k)}
+                        style={{ ...S.seg, ...(period === p.k ? S.segOn : {}) }}>{p.l}</button>
+                    ))}
+                  </div>
+                  <div style={S.heroClock}>{now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</div>
+                  <div style={S.heroQuickStats}>
+                    <span title="Outlet aktif">🏪 <b style={{ color: "#22d3ee" }}>{activeOutlets}/{outlets.length || 6}</b></span>
+                    <span title="Order berjalan">🧾 <b style={{ color: "#f59e0b" }}>{orders.length}</b></span>
+                    <span title="Alert"><span style={{ color: crit > 0 ? "#ef4444" : "#10b981" }}>🔔 <b>{notifs.length}</b></span></span>
+                    <span title="System health">🩺 <b style={{ color: health >= 75 ? "#10b981" : health >= 50 ? "#f59e0b" : "#ef4444" }}>{health ?? "…"}</b></span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-          <div style={S.kpiRow}>
-            {kpis.map(x => (
-              <div key={x.label} className="card" style={S.kpi}>
-                <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-                  <div style={{ ...S.chip, background: `${x.c}1a`, color: x.c, border: `1px solid ${x.c}33` }}>{x.icon}</div>
+          <div style={S.kpiRow} className="ah-kpi-row">
+            {kpis.map((x, i) => (
+              <div key={x.label} className="card ah-kpi-card" style={{ ...S.kpi, animationDelay: `${i * 60}ms`, borderTop: `2px solid ${x.c}` }}>
+                <div style={{ ...S.kpiGlow, background: `radial-gradient(circle at 100% 0%, ${x.c}1a, transparent 60%)` }} />
+                <div style={{ display: "flex", alignItems: "center", gap: 9, position: "relative" }}>
+                  <div style={{ ...S.chip, background: `${x.c}1a`, color: x.c, border: `1px solid ${x.c}33`, boxShadow: `0 0 12px ${x.c}22` }}>{x.icon}</div>
                   <div style={{ ...S.kpiLabel, flex: 1 }}>{x.label}</div>
                   <Delta v={x.delta} />
                 </div>
-                <div style={{ ...S.kpiVal, color: x.c }}>{x.val}</div>
-                <div style={S.kpiSub}>{x.sub}</div>
+                <div style={{ ...S.kpiVal, color: x.c, textShadow: `0 0 24px ${x.c}40`, position: "relative" }}>{x.val}</div>
+                <div style={{ ...S.kpiSub, position: "relative" }}>{x.sub}</div>
                 {x.progress != null && (
-                  <div style={{ height: 4, background: "#1a1b1e", borderRadius: 2, marginTop: 6 }}>
-                    <div style={{ height: "100%", width: Math.min(100, x.progress) + "%", background: x.progress >= 100 ? "#10b981" : x.progress >= 60 ? "#f59e0b" : "#ef4444", borderRadius: 2 }} />
+                  <div style={{ height: 4, background: "#1a1b1e", borderRadius: 2, marginTop: 6, position: "relative" }}>
+                    <div style={{ height: "100%", width: Math.min(100, x.progress) + "%", background: x.progress >= 100 ? "linear-gradient(90deg,#10b981,#22d3ee)" : x.progress >= 60 ? "linear-gradient(90deg,#f59e0b,#fbbf24)" : "linear-gradient(90deg,#ef4444,#f97316)", borderRadius: 2, boxShadow: `0 0 8px ${x.c}66` }} />
                   </div>
                 )}
               </div>
@@ -531,7 +575,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
         <button className="tile" style={S.footBtn} onClick={onExit}>← Kiosk</button>
         {onLogout && <button className="tile" style={{ ...S.footBtn, color: "#f87171", borderColor: "#f8717133" }} onClick={onLogout}>Logout</button>}
         <span style={{ flex: 1 }} />
-        <span style={S.footNote}>karyaOS · 115 modul backend · v4</span>
+        <span style={S.footNote}>karyaOS · 145+ modul · 🎬 Cinema · 🍽️ F&B · 🛡️ Enterprise · v5</span>
       </div>
     </div>
   );
@@ -547,6 +591,24 @@ const CSS = `
 ::-webkit-scrollbar-track { background:transparent }
 @keyframes lp { 0%,100%{opacity:1} 50%{opacity:.3} }
 .livedot { animation: lp 1.6s infinite; }
+
+/* ═══ DASHBOARD HERO — animated entry, glow, dramatic ═══ */
+@keyframes ah-fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ah-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ah-mesh-rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes ah-glow-pulse { 0%,100% { opacity: .55; } 50% { opacity: 1; } }
+@keyframes ah-number-pop { 0% { opacity: 0; transform: scale(.85); letter-spacing: -2px; } 60% { transform: scale(1.04); } 100% { opacity: 1; transform: scale(1); letter-spacing: -1.2px; } }
+@keyframes ah-shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+.ah-hero { animation: ah-fade-up .55s cubic-bezier(.2,.85,.25,1) both; }
+.ah-hero .ah-hero-mesh { animation: ah-mesh-rotate 60s linear infinite; }
+.ah-hero h1, .ah-hero .ah-big-num { animation: ah-number-pop .8s cubic-bezier(.18,1.05,.4,1) both .15s; }
+
+.ah-kpi-row .ah-kpi-card { animation: ah-fade-up .45s cubic-bezier(.2,.85,.25,1) both; position: relative; overflow: hidden; transition: transform .18s, border-color .18s, box-shadow .18s; }
+.ah-kpi-row .ah-kpi-card:hover { transform: translateY(-3px); border-color: #2a2b30 !important; box-shadow: 0 12px 32px rgba(0,0,0,.5); }
+
+.ah-section-card { animation: ah-fade-up .45s cubic-bezier(.2,.85,.25,1) both; }
+
 .ah-hamburger { display: none; }
 .ah-backdrop { display: none; }
 @media (max-width: 768px) {
@@ -584,6 +646,21 @@ const S = {
   body: { display: "grid", gridTemplateColumns: "264px 1fr", gap: 20, alignItems: "start", marginTop: 12 },
   left: { display: "flex", flexDirection: "column" },
   right: { display: "flex", flexDirection: "column", minWidth: 0 },
+  // ═══ HERO BANNER STYLES ═══
+  hero: { position: "relative", background: "linear-gradient(135deg, #0d0e13 0%, #14151c 50%, #0d0e13 100%)", border: "1px solid #26272d", borderRadius: 18, padding: "22px 26px 26px", marginBottom: 14, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,.4), inset 0 1px 0 0 #ffffff0a" },
+  heroMesh: { position: "absolute", inset: "-50%", background: "radial-gradient(circle at 30% 50%, #f59e0b1a, transparent 50%), radial-gradient(circle at 70% 30%, #3b82f615, transparent 50%), radial-gradient(circle at 50% 80%, #10b98112, transparent 50%)", pointerEvents: "none", opacity: 0.75 },
+  heroContent: { position: "relative", zIndex: 1 },
+  heroGreet: { fontSize: 14, color: "#9da7b3", display: "flex", alignItems: "center", gap: 8, marginBottom: 4 },
+  heroKicker: { fontSize: 10.5, color: "#62636b", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase", display: "flex", alignItems: "center", gap: 7 },
+  heroBigNumber: { fontSize: 44, fontWeight: 800, color: "#f0f0f2", fontFamily: "'Geist Mono',monospace", letterSpacing: -1.2, lineHeight: 1, textShadow: "0 0 40px rgba(245,158,11,0.2)" },
+  heroDelta: { fontSize: 12, fontWeight: 700, padding: "4px 10px", borderRadius: 7, fontFamily: "'Geist Mono',monospace" },
+  heroSubLine: { fontSize: 12.5, color: "#7a7b82", marginTop: 6 },
+  heroProgress: { position: "relative", height: 10, background: "#0a0b0e", border: "1px solid #1e1f23", borderRadius: 6, marginTop: 12, overflow: "hidden", maxWidth: 460 },
+  heroProgressFill: { height: "100%", borderRadius: 5, transition: "width .5s ease-out", boxShadow: "0 0 16px currentColor" },
+  heroProgressLbl: { position: "absolute", right: 8, top: -2, fontSize: 10, color: "#9da7b3", fontFamily: "'Geist Mono',monospace", fontWeight: 700 },
+  heroClock: { fontSize: 22, fontWeight: 700, color: "#f0f0f2", fontFamily: "'Geist Mono',monospace", lineHeight: 1, letterSpacing: 0.5 },
+  heroQuickStats: { display: "flex", gap: 14, fontSize: 11.5, color: "#9da7b3", fontFamily: "'Geist Mono',monospace" },
+  kpiGlow: { position: "absolute", inset: 0, pointerEvents: "none", opacity: 0.85 },
   segWrap: { display: "flex", gap: 2, background: "#0e0e11", border: "1px solid #1e1f23", borderRadius: 9, padding: 3 },
   seg: { background: "transparent", border: "none", color: "#7a7b82", fontSize: 11, fontWeight: 600, padding: "5px 13px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit" },
   segOn: { background: "#26272b", color: "#f0f0f2" },
