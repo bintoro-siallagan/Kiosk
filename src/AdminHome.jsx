@@ -2,7 +2,7 @@
 // Dashboard Baru — home. Status operasional · KPI (period + tren +
 // target) · performa outlet · live sales · monitoring · penjualan.
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import CommandCenter from "./CommandCenter.jsx";
 import AdminTools from "./AdminTools.jsx";
 import Admin from "./Admin.jsx";
@@ -35,6 +35,73 @@ const ADMIN_ROLES = [
   { id: "marketing", label: "🎯 Marketing Team" }, { id: "hr", label: "👥 HR Staff" },
   { id: "cashier", label: "🧑‍💼 Cashier / Crew" }, { id: "auditor", label: "🔍 Auditor" },
 ];
+
+// ═══ STOCK-TERMINAL primitives ═══════════════════════════════════════════
+// Sparkline — tiny inline SVG line+area chart. Renders even on 2 points.
+function Sparkline({ data, color = "#10b981", width = 110, height = 28, fill = true }) {
+  if (!data || data.length < 2) return <svg width={width} height={height} />;
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data, 0);
+  const range = max - min || 1;
+  const stepX = width / (data.length - 1);
+  const pts = data.map((v, i) => [i * stepX, height - 2 - ((v - min) / range) * (height - 4)]);
+  const line = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+  const area = `${line} L${width},${height} L0,${height} Z`;
+  const last = pts[pts.length - 1];
+  const gradId = `sg-${color.replace("#", "")}`;
+  return (
+    <svg width={width} height={height} style={{ display: "block", overflow: "visible" }}>
+      <defs>
+        <linearGradient id={gradId} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.32" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {fill && <path d={area} fill={`url(#${gradId})`} />}
+      <path d={line} fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={last[0]} cy={last[1]} r="2.4" fill={color} style={{ filter: `drop-shadow(0 0 4px ${color})` }} />
+    </svg>
+  );
+}
+
+// Circular refresh ring — countdown to next data poll (Bloomberg-style).
+function RefreshRing({ pct, secs, size = 36 }) {
+  const r = (size - 4) / 2, c = 2 * Math.PI * r;
+  return (
+    <div style={{ position: "relative", width: size, height: size }}>
+      <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#1f2027" strokeWidth="2.5" />
+        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#22d3ee" strokeWidth="2.5" strokeLinecap="round"
+          strokeDasharray={c} strokeDashoffset={c * (1 - pct)} style={{ transition: "stroke-dashoffset .8s linear", filter: "drop-shadow(0 0 4px #22d3ee88)" }} />
+      </svg>
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "#22d3ee" }}>{secs}</div>
+    </div>
+  );
+}
+
+// Animated number — flashes green/red on value change, like a stock price tick.
+function TickValue({ value, fmt = (v) => v, color = "#e6edf3", className = "" }) {
+  const prevRef = useRef(value);
+  const [flash, setFlash] = useState(null); // "up" | "down" | null
+  useEffect(() => {
+    if (prevRef.current !== value) {
+      const dir = value > prevRef.current ? "up" : value < prevRef.current ? "down" : null;
+      if (dir) {
+        setFlash(dir);
+        const t = setTimeout(() => setFlash(null), 900);
+        return () => clearTimeout(t);
+      }
+    }
+    prevRef.current = value;
+  }, [value]);
+  const flashColor = flash === "up" ? "#10b981" : flash === "down" ? "#ef4444" : null;
+  return (
+    <span className={`ah-tick ${flash ? `ah-tick-${flash}` : ""} ${className}`}
+      style={{ color: flashColor || color, transition: "color .9s ease-out", textShadow: flashColor ? `0 0 18px ${flashColor}80` : undefined }}>
+      {fmt(value)}
+    </span>
+  );
+}
 
 function RailNode({ node, depth, open, onToggle }) {
   const [q, setQ] = useState("");
@@ -102,14 +169,17 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     };
   }, []);
 
+  const REFRESH_MS = 15000;
+  const [lastRefresh, setLastRefresh] = useState(Date.now());
   useEffect(() => {
     const loadOrders = () => fetch(`${API}/api/orders`).then(r => r.json()).then(o => {
       const arr = Array.isArray(o) ? o : [];
       setAllOrders(arr);
       setOrders(arr.filter(x => !["completed", "cancelled", "refunded", "partial_refund"].includes(x.status)));
+      setLastRefresh(Date.now());
     }).catch(() => {});
     loadOrders();
-    const iv = setInterval(loadOrders, 15000);
+    const iv = setInterval(loadOrders, REFRESH_MS);
     const loadNotif = () => fetch(`${API}/api/notification-center`).then(r => r.json()).then(d => setNotifs(d.notifications || [])).catch(() => {});
     loadNotif();
     const ivN = setInterval(loadNotif, 20000);
@@ -117,6 +187,11 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     fetch(`${API}/api/outlet-master`).then(r => r.json()).then(d => setOutlets(d.outlets || [])).catch(() => {});
     return () => { clearInterval(iv); clearInterval(ivN); };
   }, []);
+
+  // Countdown for refresh ring
+  const refreshElapsed = now.getTime() - lastRefresh;
+  const refreshPct = Math.min(1, refreshElapsed / REFRESH_MS);
+  const refreshSecs = Math.max(0, Math.ceil((REFRESH_MS - refreshElapsed) / 1000));
 
   const hour = now.getHours();
   const greet = hour < 11 ? "Selamat pagi" : hour < 15 ? "Selamat siang" : hour < 19 ? "Selamat sore" : "Selamat malam";
@@ -177,12 +252,50 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
   const PRIO = { critical: { o: 0, c: "#dc2626", l: "KRITIS" }, high: { o: 1, c: "#ef4444", l: "TINGGI" }, medium: { o: 2, c: "#f59e0b", l: "SEDANG" }, low: { o: 3, c: "#5b6470", l: "RENDAH" } };
   const feed = [...notifs].sort((a, b) => (PRIO[a.priority]?.o ?? 9) - (PRIO[b.priority]?.o ?? 9));
 
+  // ── intraday hourly buckets (today) — for line chart + sparklines ──
+  const hourly = useMemo(() => {
+    const buckets = Array.from({ length: 24 }, (_, h) => ({ h, rev: 0, orders: 0 }));
+    const dayStart = t0.getTime();
+    allOrders.forEach(o => {
+      if (o.status !== "completed" || !o.time || o.time < dayStart || o.time >= dayStart + DAY) return;
+      const h = new Date(o.time).getHours();
+      buckets[h].rev += o.total || 0;
+      buckets[h].orders += 1;
+    });
+    return buckets;
+  }, [allOrders, t0.getTime()]);
+  const intradayLast = hour;
+  const intradayWindow = hourly.slice(Math.max(0, intradayLast - 11), intradayLast + 1);
+  // For sparklines: cumulative-revenue today, order-count today, alerts (last 12 buckets), health flat
+  const sparkRev = useMemo(() => {
+    let cum = 0;
+    return hourly.slice(0, intradayLast + 1).map(b => (cum += b.rev));
+  }, [hourly, intradayLast]);
+  const sparkOrd = hourly.slice(0, intradayLast + 1).map(b => b.orders);
+
   const kpis = [
-    { label: `Penjualan ${periodLabel}`, val: fmtRp(curRev), c: "#10b981", icon: "💰", delta: revDelta, progress: targetPct, sub: `target ${fmtK(target)}` },
-    { label: `Order ${periodLabel}`, val: String(curOrders.length), c: "#3b82f6", icon: "🧾", delta: ordDelta, sub: `${orders.length} aktif sekarang` },
-    { label: "Alert Aktif", val: String(notifs.length), c: crit > 0 ? "#ef4444" : "#f59e0b", icon: "🔔", sub: crit ? `${crit} perlu tindakan` : "semua aman" },
-    { label: "System Health", val: health == null ? "…" : health + " / 100", c: health >= 75 ? "#10b981" : health >= 50 ? "#f59e0b" : "#ef4444", icon: "🔎", sub: "self-audit score" },
+    { label: `Penjualan ${periodLabel}`, val: fmtRp(curRev), valNum: curRev, c: "#10b981", icon: "💰", delta: revDelta, progress: targetPct, sub: `target ${fmtK(target)}`, spark: sparkRev },
+    { label: `Order ${periodLabel}`, val: String(curOrders.length), valNum: curOrders.length, c: "#3b82f6", icon: "🧾", delta: ordDelta, sub: `${orders.length} aktif sekarang`, spark: sparkOrd },
+    { label: "Alert Aktif", val: String(notifs.length), valNum: notifs.length, c: crit > 0 ? "#ef4444" : "#f59e0b", icon: "🔔", sub: crit ? `${crit} perlu tindakan` : "semua aman", spark: null },
+    { label: "System Health", val: health == null ? "…" : health + " / 100", valNum: health || 0, c: health >= 75 ? "#10b981" : health >= 50 ? "#f59e0b" : "#ef4444", icon: "🔎", sub: "self-audit score", spark: null },
   ];
+
+  // ── Ticker tape items — NYSE-style scrolling marquee with per-outlet rev + delta ──
+  const tickerItems = useMemo(() => {
+    const items = [];
+    // Headline: total rev + delta
+    items.push({ k: "TOTAL", v: fmtRp(curRev), d: revDelta, c: revDelta >= 0 ? "#10b981" : "#ef4444" });
+    items.push({ k: "ORDERS", v: String(curOrders.length), d: ordDelta, c: ordDelta >= 0 ? "#10b981" : "#ef4444" });
+    items.push({ k: "TARGET", v: targetPct + "%", c: targetPct >= 100 ? "#10b981" : targetPct >= 60 ? "#f59e0b" : "#ef4444" });
+    // Per-outlet
+    outlets.slice(0, 12).forEach(o => {
+      items.push({ k: (o.code || o.name || "OUT").toUpperCase().slice(0, 6), v: fmtK(o.revenue_today || 0), d: o.trend_pct, c: (o.trend_pct ?? 0) >= 0 ? "#10b981" : "#ef4444" });
+    });
+    // Alerts + health
+    items.push({ k: "ALERT", v: String(notifs.length), c: crit > 0 ? "#ef4444" : "#10b981" });
+    items.push({ k: "HEALTH", v: (health ?? "—") + "/100", c: health >= 75 ? "#10b981" : health >= 50 ? "#f59e0b" : "#ef4444" });
+    return items;
+  }, [curRev, revDelta, curOrders.length, ordDelta, targetPct, outlets, notifs.length, crit, health]);
   const moduleNode = (id) => {
     const t = TABS.find(x => x.id === id);
     return { _k: "m:" + id, label: t ? t.label : id, on: () => openRight("tools", id) };
@@ -405,10 +518,40 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
                     <span title="Alert"><span style={{ color: crit > 0 ? "#ef4444" : "#10b981" }}>🔔 <b>{notifs.length}</b></span></span>
                     <span title="System health">🩺 <b style={{ color: health >= 75 ? "#10b981" : health >= 50 ? "#f59e0b" : "#ef4444" }}>{health ?? "…"}</b></span>
                   </div>
+                  {/* Refresh ring + last update */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
+                    <RefreshRing pct={refreshPct} secs={refreshSecs} />
+                    <div style={{ fontSize: 9.5, color: "#62636b", fontFamily: "'Geist Mono',monospace", lineHeight: 1.3 }}>
+                      <div>NEXT TICK</div>
+                      <div style={{ color: "#9da7b3" }}>upd {ago(lastRefresh)} lalu</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* ═══ TICKER TAPE — NYSE-style scrolling marquee ═══ */}
+          <div style={S.tickerTape} className="ah-ticker">
+            <div style={S.tickerBadge}>● LIVE</div>
+            <div style={S.tickerScroller}>
+              <div className="ah-ticker-track">
+                {[...tickerItems, ...tickerItems].map((it, i) => (
+                  <span key={i} style={S.tickerItem}>
+                    <span style={S.tickerSym}>{it.k}</span>
+                    <span style={{ ...S.tickerVal, color: it.c }}>{it.v}</span>
+                    {it.d != null && (
+                      <span style={{ ...S.tickerDelta, color: it.d >= 0 ? "#10b981" : "#ef4444" }}>
+                        {it.d >= 0 ? "▲" : "▼"} {Math.abs(it.d)}%
+                      </span>
+                    )}
+                    <span style={S.tickerSep}>·</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
           <div style={S.kpiRow} className="ah-kpi-row">
             {kpis.map((x, i) => (
               <div key={x.label} className="card ah-kpi-card" style={{ ...S.kpi, animationDelay: `${i * 60}ms`, borderTop: `2px solid ${x.c}` }}>
@@ -418,8 +561,15 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
                   <div style={{ ...S.kpiLabel, flex: 1 }}>{x.label}</div>
                   <Delta v={x.delta} />
                 </div>
-                <div style={{ ...S.kpiVal, color: x.c, textShadow: `0 0 24px ${x.c}40`, position: "relative" }}>{x.val}</div>
-                <div style={{ ...S.kpiSub, position: "relative" }}>{x.sub}</div>
+                <div style={{ ...S.kpiVal, color: x.c, textShadow: `0 0 24px ${x.c}40`, position: "relative" }}>
+                  <TickValue value={x.valNum} fmt={() => x.val} color={x.c} />
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 6, position: "relative", marginTop: 2 }}>
+                  <div style={{ ...S.kpiSub, position: "relative" }}>{x.sub}</div>
+                  {x.spark && x.spark.length >= 2 && (
+                    <div style={{ flexShrink: 0 }}><Sparkline data={x.spark} color={x.c} width={86} height={26} /></div>
+                  )}
+                </div>
                 {x.progress != null && (
                   <div style={{ height: 4, background: "#1a1b1e", borderRadius: 2, marginTop: 6, position: "relative" }}>
                     <div style={{ height: "100%", width: Math.min(100, x.progress) + "%", background: x.progress >= 100 ? "linear-gradient(90deg,#10b981,#22d3ee)" : x.progress >= 60 ? "linear-gradient(90deg,#f59e0b,#fbbf24)" : "linear-gradient(90deg,#ef4444,#f97316)", borderRadius: 2, boxShadow: `0 0 8px ${x.c}66` }} />
@@ -452,30 +602,113 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
               ))}
           </div>
 
-          {/* Live sales */}
-          <Section label="LIVE SALES" accent="#10b981" mt={14}
+          {/* ═══ INTRADAY CHART — line + area, hourly bars below ═══ */}
+          <Section label="INTRADAY · PER JAM HARI INI" accent="#22d3ee" mt={14}
+            right={<span style={{ fontSize: 10.5, color: "#5b6470", fontFamily: "'Geist Mono',monospace", display: "flex", alignItems: "center", gap: 8 }}>
+              <span className="livedot" style={{ width: 6, height: 6, borderRadius: "50%", background: "#22d3ee", display: "inline-block", boxShadow: "0 0 6px #22d3ee" }} />
+              {intradayWindow.reduce((s,b) => s + b.orders, 0)} tx · OHLC {String(intradayWindow[0]?.h ?? 0).padStart(2,"0")}:00–{String((intradayWindow[intradayWindow.length-1]?.h ?? 0)).padStart(2,"0")}:59</span>} />
+          <div className="card" style={{ ...S.bigCard, padding: "16px 18px" }}>
+            {(() => {
+              const w = 100, h = 100;
+              const data = intradayWindow.map(b => b.rev);
+              const maxV = Math.max(1, ...data);
+              if (data.length < 2) return <div style={{ fontSize: 11, color: "#5b6470" }}>Belum ada transaksi hari ini</div>;
+              const stepX = w / (data.length - 1);
+              const pts = data.map((v, i) => [i * stepX, h - 2 - (v / maxV) * (h - 8)]);
+              const line = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(" ");
+              const area = `${line} L${w},${h} L0,${h} Z`;
+              const last = pts[pts.length - 1];
+              return (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 160px", gap: 14, alignItems: "stretch" }} className="ah-intraday">
+                  <div style={{ position: "relative", height: 180 }}>
+                    <svg viewBox={`0 0 ${w} ${h}`} preserveAspectRatio="none" width="100%" height="100%" style={{ display: "block" }}>
+                      <defs>
+                        <linearGradient id="intra-grad" x1="0" x2="0" y1="0" y2="1">
+                          <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.5" />
+                          <stop offset="100%" stopColor="#22d3ee" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      {/* gridlines */}
+                      {[0.25, 0.5, 0.75].map(g => (
+                        <line key={g} x1="0" x2={w} y1={h * g} y2={h * g} stroke="#1a1b1e" strokeWidth="0.3" strokeDasharray="0.6 0.6" />
+                      ))}
+                      <path d={area} fill="url(#intra-grad)" />
+                      <path d={line} fill="none" stroke="#22d3ee" strokeWidth="0.8" strokeLinecap="round" strokeLinejoin="round" vectorEffect="non-scaling-stroke" style={{ filter: "drop-shadow(0 0 4px #22d3ee99)" }} />
+                      <circle cx={last[0]} cy={last[1]} r="1.4" fill="#22d3ee" style={{ filter: "drop-shadow(0 0 4px #22d3ee)" }}>
+                        <animate attributeName="r" values="1.4;2.4;1.4" dur="1.6s" repeatCount="indefinite" />
+                      </circle>
+                      {/* hour labels — non-scaled overlay drawn via foreignObject would be heavy, use bar row below */}
+                    </svg>
+                    {/* hour labels */}
+                    <div style={{ position: "absolute", left: 0, right: 0, bottom: -4, display: "flex", justifyContent: "space-between", fontSize: 9, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>
+                      {intradayWindow.map((b, i) => (
+                        i === 0 || i === intradayWindow.length - 1 || i === Math.floor(intradayWindow.length / 2)
+                          ? <span key={i}>{String(b.h).padStart(2, "0")}:00</span>
+                          : <span key={i} style={{ opacity: 0.3 }}>·</span>
+                      ))}
+                    </div>
+                  </div>
+                  {/* OHLC-style stats panel */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, fontFamily: "'Geist Mono',monospace", fontSize: 11 }}>
+                    {(() => {
+                      const total = data.reduce((s, v) => s + v, 0);
+                      const peakH = intradayWindow[data.indexOf(maxV)]?.h ?? 0;
+                      const lastH = intradayWindow[intradayWindow.length - 1];
+                      const prevH = intradayWindow[intradayWindow.length - 2];
+                      const tick = lastH && prevH ? lastH.rev - prevH.rev : 0;
+                      return (
+                        <>
+                          <div style={S.ohlcRow}><span style={S.ohlcLbl}>LAST</span><span style={{ color: "#10b981", fontWeight: 700 }}>{fmtK(lastH?.rev || 0)}</span></div>
+                          <div style={S.ohlcRow}><span style={S.ohlcLbl}>TICK</span><span style={{ color: tick >= 0 ? "#10b981" : "#ef4444", fontWeight: 700 }}>{tick >= 0 ? "▲" : "▼"} {fmtK(Math.abs(tick))}</span></div>
+                          <div style={S.ohlcRow}><span style={S.ohlcLbl}>HIGH</span><span style={{ color: "#fbbf24" }}>{fmtK(maxV)}</span></div>
+                          <div style={S.ohlcRow}><span style={S.ohlcLbl}>PEAK</span><span style={{ color: "#9da7b3" }}>{String(peakH).padStart(2,"0")}:00</span></div>
+                          <div style={S.ohlcRow}><span style={S.ohlcLbl}>VOL</span><span style={{ color: "#22d3ee" }}>{intradayWindow.reduce((s,b)=>s+b.orders,0)} tx</span></div>
+                          <div style={S.ohlcRow}><span style={S.ohlcLbl}>SUM</span><span style={{ color: "#e6edf3", fontWeight: 700 }}>{fmtK(total)}</span></div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          {/* ═══ TRADE TAPE — Bloomberg-style scrolling order log ═══ */}
+          <Section label="TRADE TAPE — LIVE ORDER LOG" accent="#10b981" mt={14}
             right={<span style={{ fontSize: 10.5, color: "#5b6470", fontFamily: "'Geist Mono',monospace", display: "flex", alignItems: "center", gap: 6 }}>
               <span className="livedot" style={{ width: 7, height: 7, borderRadius: "50%", background: "#10b981", display: "inline-block", boxShadow: "0 0 6px #10b981" }} />
-              LIVE · {curOrders.length} transaksi {periodLabel.toLowerCase()}</span>} />
-          <div className="card" style={{ ...S.bigCard, padding: "12px 14px" }}>
-            {recentSales.length === 0 ? <div style={{ fontSize: 11, color: "#5b6470" }}>Belum ada transaksi</div>
-              : <div style={S.ticker}>
-                  {recentSales.map(o => {
+              LIVE · {curOrders.length} tx {periodLabel.toLowerCase()}</span>} />
+          <div className="card" style={{ ...S.bigCard, padding: 0, overflow: "hidden" }}>
+            {recentSales.length === 0 ? <div style={{ fontSize: 11, color: "#5b6470", padding: "14px 16px" }}>Belum ada transaksi</div>
+              : (<>
+                <div style={S.tapeHead}>
+                  <span style={{ width: 70 }}>TIME</span>
+                  <span style={{ width: 60 }}>ID</span>
+                  <span style={{ width: 38 }}>TYPE</span>
+                  <span style={{ flex: 1 }}>STATUS</span>
+                  <span style={{ width: 100, textAlign: "right" }}>QTY×PRICE</span>
+                  <span style={{ width: 110, textAlign: "right" }}>VALUE</span>
+                </div>
+                <div style={S.tapeBody}>
+                  {recentSales.map((o, idx) => {
                     const st = o.status === "completed" ? "#10b981" : o.status === "cancelled" ? "#ef4444" : "#f59e0b";
+                    const stLbl = o.status === "completed" ? "FILLED" : o.status === "cancelled" ? "CANX" : (o.status || "OPEN").toUpperCase();
+                    const qty = (o.items || []).reduce((s, x) => s + (x.q || 0), 0);
+                    const avg = qty > 0 ? Math.round((o.total || 0) / qty) : (o.total || 0);
+                    const time = o.time ? new Date(o.time).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "—";
                     return (
-                      <div key={o.id} style={S.saleCard}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span style={{ fontFamily: "'Geist Mono',monospace", fontWeight: 700, fontSize: 11, color: "#9da7b3" }}>#{o.id}</span>
-                          <span style={{ fontSize: 12 }}>{o.type === "dine" ? "🪑" : "🛍️"}</span>
-                        </div>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: "#10b981", fontFamily: "'Geist Mono',monospace", margin: "5px 0 3px" }}>{fmtRp(o.total)}</div>
-                        <div style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10, color: "#5b6470" }}>
-                          <span style={{ width: 5, height: 5, borderRadius: "50%", background: st }} />{ago(o.time)} lalu
-                        </div>
+                      <div key={o.id} className="ah-tape-row" style={{ ...S.tapeRow, borderLeft: `3px solid ${st}`, animationDelay: `${idx * 25}ms` }}>
+                        <span style={{ width: 70, color: "#5b6470" }}>{time}</span>
+                        <span style={{ width: 60, color: "#9da7b3", fontWeight: 700 }}>#{o.id}</span>
+                        <span style={{ width: 38, fontSize: 14 }}>{o.type === "dine" ? "🪑" : "🛍️"}</span>
+                        <span style={{ flex: 1, color: st, fontWeight: 700 }}>{stLbl}</span>
+                        <span style={{ width: 100, textAlign: "right", color: "#7a7b82" }}>{qty}×{fmtK(avg)}</span>
+                        <span style={{ width: 110, textAlign: "right", color: "#10b981", fontWeight: 800 }}>{fmtRp(o.total)}</span>
                       </div>
                     );
                   })}
-                </div>}
+                </div>
+              </>)}
           </div>
 
           {/* Antrian + revenue */}
@@ -609,6 +842,25 @@ const CSS = `
 
 .ah-section-card { animation: ah-fade-up .45s cubic-bezier(.2,.85,.25,1) both; }
 
+/* ═══ STOCK-TERMINAL primitives — ticker, tape, tick-flash ═══ */
+@keyframes ah-marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+@keyframes ah-tape-in { from { opacity: 0; transform: translateX(-8px); background: rgba(16,185,129,.18); } to { opacity: 1; transform: translateX(0); background: transparent; } }
+@keyframes ah-tick-flash-up { 0% { background: rgba(16,185,129,.22); } 100% { background: transparent; } }
+@keyframes ah-tick-flash-down { 0% { background: rgba(239,68,68,.22); } 100% { background: transparent; } }
+
+.ah-ticker .ah-ticker-track { display: inline-flex; white-space: nowrap; animation: ah-marquee 60s linear infinite; will-change: transform; }
+.ah-ticker:hover .ah-ticker-track { animation-play-state: paused; }
+
+.ah-tape-row { animation: ah-tape-in .5s cubic-bezier(.2,.85,.25,1) both; transition: background .15s; }
+.ah-tape-row:hover { background: #14151a !important; }
+
+.ah-tick.ah-tick-up { animation: ah-tick-flash-up 1s ease-out; padding: 0 4px; border-radius: 4px; }
+.ah-tick.ah-tick-down { animation: ah-tick-flash-down 1s ease-out; padding: 0 4px; border-radius: 4px; }
+
+@media (max-width: 768px) {
+  .ah-intraday { grid-template-columns: 1fr !important; }
+}
+
 .ah-hamburger { display: none; }
 .ah-backdrop { display: none; }
 @media (max-width: 768px) {
@@ -687,6 +939,20 @@ const S = {
   barLbl: { fontSize: 9.5, color: "#62636b", fontFamily: "'Geist Mono',monospace" },
   ticker: { display: "flex", gap: 9, overflowX: "auto", paddingBottom: 4 },
   saleCard: { minWidth: 124, flexShrink: 0, background: "#121214", border: "1px solid #1c1d20", borderRadius: 10, padding: "9px 11px" },
+  // ═══ Stock-terminal: ticker tape + trade tape + OHLC stats ═══
+  tickerTape: { display: "flex", alignItems: "center", gap: 10, background: "linear-gradient(90deg,#0a0b0e 0%, #0e0e11 100%)", border: "1px solid #1e1f23", borderRadius: 10, padding: "8px 0 8px 12px", margin: "10px 0 14px", overflow: "hidden", boxShadow: "inset 0 1px 0 0 #ffffff08" },
+  tickerBadge: { fontSize: 9, fontWeight: 800, color: "#ef4444", fontFamily: "'Geist Mono',monospace", letterSpacing: 1, background: "#ef444415", border: "1px solid #ef444444", borderRadius: 4, padding: "3px 7px", flexShrink: 0, animation: "lp 1.6s infinite" },
+  tickerScroller: { flex: 1, overflow: "hidden", maskImage: "linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%)", WebkitMaskImage: "linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%)" },
+  tickerItem: { display: "inline-flex", alignItems: "center", gap: 7, fontFamily: "'Geist Mono',monospace", fontSize: 11.5, padding: "0 4px" },
+  tickerSym: { color: "#7a7b82", fontWeight: 700, letterSpacing: 0.6 },
+  tickerVal: { fontWeight: 800 },
+  tickerDelta: { fontSize: 10, fontWeight: 700 },
+  tickerSep: { color: "#3a3b40", margin: "0 10px" },
+  tapeHead: { display: "flex", alignItems: "center", gap: 8, padding: "9px 14px", fontSize: 9, fontWeight: 800, color: "#62636b", fontFamily: "'Geist Mono',monospace", letterSpacing: 1, borderBottom: "1px solid #1e1f23", background: "#0a0b0e" },
+  tapeBody: { display: "flex", flexDirection: "column", maxHeight: 264, overflowY: "auto" },
+  tapeRow: { display: "flex", alignItems: "center", gap: 8, padding: "8px 14px", fontSize: 11.5, fontFamily: "'Geist Mono',monospace", borderBottom: "1px solid #14151a" },
+  ohlcRow: { display: "flex", justifyContent: "space-between", alignItems: "center", background: "#121214", border: "1px solid #1c1d20", borderRadius: 6, padding: "5px 10px" },
+  ohlcLbl: { fontSize: 9, color: "#5b6470", letterSpacing: 1.2, fontWeight: 700 },
   feed: { display: "flex", flexDirection: "column", gap: 5, maxHeight: 232, overflowY: "auto" },
   feedRow: { display: "flex", alignItems: "center", gap: 9, background: "#121214", border: "1px solid #1c1d20", borderRadius: 8, padding: "6px 10px" },
   prioBadge: { fontSize: 8.5, fontWeight: 800, borderRadius: 4, padding: "2px 6px", fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5, flexShrink: 0, width: 44, textAlign: "center" },
