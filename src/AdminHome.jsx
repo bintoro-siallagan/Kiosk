@@ -183,13 +183,26 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     { label: "Alert Aktif", val: String(notifs.length), c: crit > 0 ? "#ef4444" : "#f59e0b", icon: "🔔", sub: crit ? `${crit} perlu tindakan` : "semua aman" },
     { label: "System Health", val: health == null ? "…" : health + " / 100", c: health >= 75 ? "#10b981" : health >= 50 ? "#f59e0b" : "#ef4444", icon: "🔎", sub: "self-audit score" },
   ];
-  const toolsSub = GROUPS.filter(g => canSee(g.module)).map(g => ({
-    _k: "g:" + g.name, label: `${g.icon} ${g.name}`,
-    sub: g.ids.map(id => {
-      const t = TABS.find(x => x.id === id);
-      return { _k: "m:" + id, label: t ? t.label : id, on: () => openRight("tools", id) };
-    }),
-  }));
+  const moduleNode = (id) => {
+    const t = TABS.find(x => x.id === id);
+    return { _k: "m:" + id, label: t ? t.label : id, on: () => openRight("tools", id) };
+  };
+  const toolsSub = GROUPS.filter(g => canSee(g.module)).map(g => {
+    // 3-level nesting: kalau group punya `categories`, render category sub-bucket
+    if (g.categories?.length) {
+      return {
+        _k: "g:" + g.name, label: `${g.icon} ${g.name}`,
+        sub: g.categories.map(cat => ({
+          _k: `g:${g.name}:${cat.name}`, label: cat.name,
+          sub: cat.ids.map(moduleNode),
+        })),
+      };
+    }
+    return {
+      _k: "g:" + g.name, label: `${g.icon} ${g.name}`,
+      sub: g.ids.map(moduleNode),
+    };
+  });
   const columns = [
     { title: "Dashboard", accent: "#f59e0b", items: [
       { label: "Owner Dashboard", icon: "📊", c: "#f59e0b", on: () => openRight("tools", "dashboard") },
