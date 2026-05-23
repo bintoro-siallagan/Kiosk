@@ -177,7 +177,7 @@ export default function DigitalReceipt({ orderId, onDone }) {
 
           {/* Footer */}
           <div style={R.footer}>
-            <div>Terima kasih atas kunjungan Anda! 🙏</div>
+            <div>✨ Terima kasih atas kunjungan Anda ✨</div>
             <div style={{marginTop:6,fontSize:11}}>Simpan struk ini sebagai bukti pembayaran</div>
             <div style={{marginTop:16,display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
               <div style={{fontSize:10,color:"#777"}}>📲 Scan untuk cek status pesanan</div>

@@ -128,8 +128,8 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
     if (calc.change > 0) {
       out += bold + `KEMBALIAN: ${fmtIDR(calc.change).padStart(20)}\n` + boldOff;
     }
-    out += '\n' + center + 'Terima Kasih!\n';
-    out += 'Sampai jumpa lagi 🙏\n' + left;
+    out += '\n' + center + '*** Terima Kasih ***\n';
+    out += 'Sampai jumpa kembali\n' + left;
     out += feed3 + cut;
     return out;
   };
@@ -259,8 +259,8 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
           )}
 
           <div className="footer" style={footer}>
-            Terima Kasih!<br/>
-            Sampai jumpa lagi 🙏
+            ✨ Terima Kasih ✨<br/>
+            Sampai jumpa kembali
           </div>
         </div>
 

@@ -682,8 +682,8 @@ export default function CinemaKiosk({ apiBase }) {
             <div style={{ marginTop: 22, background: "linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.005))", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 18, maxWidth: 440, margin: "22px auto 0", boxShadow: "0 8px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)" }}>
               {rateSent ? (
                 <div style={{ textAlign: "center", padding: "10px 0" }}>
-                  <div style={{ fontSize: 28, marginBottom: 4 }}>🙏</div>
-                  <div style={{ fontSize: 13, color: "#10b981", fontWeight: 700 }}>Terima kasih atas rating-nya!</div>
+                  <div style={{ fontSize: 32, marginBottom: 6, filter: "drop-shadow(0 0 16px rgba(251,191,36,0.45))" }}>✨</div>
+                  <div style={{ fontSize: 13, color: "#fbbf24", fontWeight: 700, letterSpacing: 0.3 }}>Terima kasih atas rating Anda</div>
                 </div>
               ) : (
                 <>

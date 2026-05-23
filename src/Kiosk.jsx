@@ -799,6 +799,8 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
 // ─── STYLES ───────────────────────────────────────────────────────────────────
 const FONT_CSS = `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap');`;
 const KIOSK_CSS = `
+  :root{color-scheme:dark;--bg:#08090a;--text:#fff;--text-h:#fff;--border:#1e1f23}
+  html,body{background:#08090a;color:#fff}
   *{box-sizing:border-box;margin:0;padding:0}
   ::-webkit-scrollbar{width:3px;height:3px}
   ::-webkit-scrollbar-thumb{background:rgba(255,107,53,0.6);border-radius:2px}
@@ -829,8 +831,10 @@ const KIOSK_CSS = `
 const PREMIUM_BG = "linear-gradient(160deg,#08090a 0%,#14151c 50%,#0a0b0e 100%)";
 const PREMIUM_OVERLAY = "radial-gradient(800px 600px at 30% 10%,rgba(245,158,11,0.04),transparent),radial-gradient(600px 400px at 80% 70%,rgba(59,130,246,0.03),transparent)";
 const GLASS_BG = "rgba(13,17,23,0.7)";
-const CARD_BG = "linear-gradient(180deg,rgba(255,255,255,0.025),rgba(255,255,255,0.005))";
-const BORDER_DEFAULT = "1px solid rgba(255,255,255,0.06)";
+// Opaque dark card — fallback ke #0d1117 walaupun body putih (light-mode browser).
+// Sebelumnya rgba(white,0.025) hampir transparan → teks white-on-white invisible.
+const CARD_BG = "linear-gradient(180deg,#15171c 0%,#0d0f14 100%)";
+const BORDER_DEFAULT = "1px solid rgba(255,255,255,0.08)";
 const BORDER_FOCUS = "1px solid rgba(255,255,255,0.12)";
 const SHADOW_CARD = "0 1px 2px rgba(0,0,0,0.3),0 8px 24px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.04)";
 const SHADOW_CTA = "0 1px 2px rgba(0,0,0,0.3),0 10px 32px rgba(255,107,53,0.32),inset 0 1px 0 rgba(255,255,255,0.18)";
@@ -899,8 +903,8 @@ const K = {
   tag:        {position:"absolute",top:8,left:8,zIndex:2,fontSize:9,fontWeight:700,letterSpacing:1,padding:"3px 8px",borderRadius:20,boxShadow:"0 4px 12px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.2)"},
   inCartBadge:{position:"absolute",top:8,right:8,zIndex:2,background:"linear-gradient(135deg,#FF6B35,#F59E0B)",color:"#fff",borderRadius:"50%",width:26,height:26,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,boxShadow:"0 4px 14px rgba(255,107,53,0.45),inset 0 1px 0 rgba(255,255,255,0.25)"},
   imgWrap:    {background:"linear-gradient(180deg,rgba(255,255,255,0.03) 0%,rgba(255,255,255,0.005) 100%)",padding:"12px",display:"flex",alignItems:"center",justifyContent:"center",minHeight:120},
-  cardInfo:   {padding:"10px 12px",flex:1,display:"flex",flexDirection:"column"},
-  cardName:   {fontSize:14,fontWeight:750,lineHeight:1.25,marginBottom:4,letterSpacing:"-0.3px"},
+  cardInfo:   {padding:"10px 12px",flex:1,display:"flex",flexDirection:"column",color:"#fff"},
+  cardName:   {fontSize:14,fontWeight:750,lineHeight:1.25,marginBottom:4,letterSpacing:"-0.3px",color:"#fff"},
   cardDesc:   {fontSize:10,color:"rgba(255,255,255,0.4)",lineHeight:1.5,marginBottom:6,flex:1},
   calBadge:   {fontSize:9,color:"rgba(255,255,255,0.45)",background:"rgba(255,255,255,0.05)",border:BORDER_DEFAULT,padding:"2px 7px",borderRadius:20,fontFamily:"'Geist Mono',monospace",letterSpacing:0.5},
   addonHint:  {fontSize:9,color:"#FF6B35",background:"rgba(255,107,53,0.08)",padding:"2px 7px",borderRadius:20,border:"1px solid rgba(255,107,53,0.2)",fontFamily:"'Geist Mono',monospace",letterSpacing:0.5},
@@ -923,11 +927,11 @@ const K = {
   backBtn:    {background:"transparent",border:BORDER_DEFAULT,borderRadius:10,padding:"8px 14px",color:"rgba(255,255,255,0.55)",fontSize:11,letterSpacing:1.5,fontFamily:"'Geist Mono',monospace",textTransform:"uppercase",transition:"all 0.2s ease"},
   confirmTitle:{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,letterSpacing:"-0.5px",color:"#FF6B35"},
   typePill:   {background:"rgba(255,255,255,0.04)",border:BORDER_DEFAULT,borderRadius:20,padding:"5px 14px",fontSize:11,color:"rgba(255,255,255,0.65)",fontFamily:"'Geist Mono',monospace",letterSpacing:0.5},
-  confirmBody:{flex:1,overflowY:"auto",padding:"20px 24px",display:"flex",flexDirection:"column",gap:0},
+  confirmBody:{flex:1,overflowY:"auto",padding:"20px 24px",display:"flex",flexDirection:"column",gap:0,background:"#08090a",color:"#fff"},
   confirmItems:{display:"flex",flexDirection:"column",gap:12,marginBottom:20},
-  confirmItem:{display:"flex",alignItems:"flex-start",gap:14,background:CARD_BG,borderRadius:16,padding:"16px",border:BORDER_DEFAULT,boxShadow:SHADOW_CARD},
-  confirmItemInfo:{flex:1},
-  confirmItemName:{fontSize:16,fontWeight:750,marginBottom:4,letterSpacing:"-0.3px"},
+  confirmItem:{display:"flex",alignItems:"flex-start",gap:14,background:CARD_BG,borderRadius:16,padding:"16px",border:BORDER_DEFAULT,boxShadow:SHADOW_CARD,color:"#fff"},
+  confirmItemInfo:{flex:1,color:"#fff"},
+  confirmItemName:{fontSize:16,fontWeight:750,marginBottom:4,letterSpacing:"-0.3px",color:"#fff"},
   confirmItemAddon:{fontSize:12,color:"#FF6B35",marginBottom:3},
   confirmItemNote:{fontSize:11,color:"rgba(255,255,255,0.45)",marginBottom:6,fontStyle:"italic"},
   confirmItemPrice:{fontSize:16,fontWeight:800,color:"#FF6B35",fontFamily:"'Inter',sans-serif",letterSpacing:"-0.5px",whiteSpace:"nowrap"},

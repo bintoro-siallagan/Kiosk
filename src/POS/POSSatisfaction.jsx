@@ -37,10 +37,37 @@ export default function POSSatisfaction({ order, apiBase = '', source = 'pos', o
   if (step === 'thanks') {
     return (
       <div style={S.overlay}>
-        <div style={S.box}>
-          <div style={{ fontSize: 64 }}>🙏</div>
-          <h2 style={{ margin: '12px 0 4px', color: '#0f172a' }}>Makasih banyak!</h2>
-          <div style={{ color: '#64748b', fontSize: 14 }}>Masukan kamu bikin kami makin baik.</div>
+        <div style={{ ...S.box, position: 'relative', overflow: 'hidden' }}>
+          {/* Sparkle particles background */}
+          <div style={S.sparkleField} aria-hidden>
+            <span style={{ ...S.sparkle, top: '12%',  left: '18%', animationDelay: '0s'    }}>✨</span>
+            <span style={{ ...S.sparkle, top: '22%',  left: '78%', animationDelay: '0.3s'  }}>⭐</span>
+            <span style={{ ...S.sparkle, top: '55%',  left: '8%',  animationDelay: '0.6s'  }}>✨</span>
+            <span style={{ ...S.sparkle, top: '68%',  left: '85%', animationDelay: '0.9s'  }}>⭐</span>
+            <span style={{ ...S.sparkle, top: '82%',  left: '40%', animationDelay: '0.4s'  }}>✨</span>
+          </div>
+          <div style={{ fontSize: 78, lineHeight: 1, filter: 'drop-shadow(0 0 30px rgba(245,158,11,0.4))', animation: 'pos-thanks-pop 0.7s cubic-bezier(0.18,1.05,0.4,1) both' }}>✨</div>
+          <h2 style={{
+            margin: '14px 0 6px', fontSize: 32, fontWeight: 800, letterSpacing: -0.8, lineHeight: 1.1,
+            background: 'linear-gradient(135deg,#f59e0b 0%,#fbbf24 50%,#f59e0b 100%)',
+            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+            position: 'relative',
+          }}>Terima Kasih</h2>
+          <div style={{ color: '#64748b', fontSize: 14, fontWeight: 500, marginTop: 6, position: 'relative' }}>
+            Penilaian kamu sangat berarti buat kami 💛
+          </div>
+          <style>{`
+            @keyframes pos-thanks-pop {
+              0%   { opacity:0; transform:scale(0.6) rotate(-12deg); }
+              60%  { transform:scale(1.15) rotate(4deg); }
+              100% { opacity:1; transform:scale(1) rotate(0); }
+            }
+            @keyframes pos-sparkle-float {
+              0%,100% { opacity:0; transform:translateY(0) scale(0.6) rotate(0); }
+              30%     { opacity:1; transform:translateY(-8px) scale(1.1) rotate(8deg); }
+              60%     { opacity:0.6; transform:translateY(4px) scale(0.85) rotate(-6deg); }
+            }
+          `}</style>
         </div>
       </div>
     );
@@ -107,5 +134,13 @@ const S = {
   skip: {
     marginTop: 8, background: 'none', border: 'none', color: '#94a3b8',
     fontSize: 13, cursor: 'pointer', textDecoration: 'underline',
+  },
+  sparkleField: {
+    position: 'absolute', inset: 0, pointerEvents: 'none',
+  },
+  sparkle: {
+    position: 'absolute', fontSize: 18,
+    animation: 'pos-sparkle-float 2.4s ease-in-out infinite both',
+    filter: 'drop-shadow(0 0 8px rgba(251,191,36,0.6))',
   },
 };

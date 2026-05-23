@@ -394,9 +394,16 @@ function SlideMember() {
 function SlideThanks() {
   return (
     <div style={S.ssCenter}>
-      <div style={S.ssThanksIcon}>☕</div>
-      <div style={{...S.ssItemName, fontSize:"min(96px,10vh,9vw)", color:"#FF6B35", textShadow:"0 0 60px rgba(255,107,53,0.4)"}}>Terima Kasih</div>
-      <div style={S.ssItemDesc}>Sudah mampir ke KaryaOS!</div>
+      <div style={{ ...S.ssThanksIcon, filter: "drop-shadow(0 0 40px rgba(251,191,36,0.5))" }}>✨</div>
+      <div style={{
+        ...S.ssItemName,
+        fontSize:"min(110px,11vh,10vw)",
+        background:"linear-gradient(135deg,#f59e0b 0%,#fbbf24 40%,#f59e0b 80%)",
+        WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text",
+        fontWeight:800, letterSpacing:"-2px", lineHeight:1,
+        filter:"drop-shadow(0 0 60px rgba(251,191,36,0.35))",
+      }}>Terima Kasih</div>
+      <div style={S.ssItemDesc}>Sudah mampir ke KaryaOS</div>
       <div style={S.ssSocial}>📷 @karyaos</div>
     </div>
   );
@@ -776,7 +783,13 @@ function CDSSuccess({ state }) {
       <div style={S.successTitle}>Pembayaran Berhasil!</div>
       <div style={S.successOrderId}>Order #{order.id || ""}</div>
       <div style={S.successAmount}>{fmt(order.total || 0)}</div>
-      <div style={S.successThanks}>Terima kasih 🙏</div>
+      <div style={{
+        ...S.successThanks,
+        background: 'linear-gradient(135deg,#f59e0b 0%,#fbbf24 50%,#f59e0b 100%)',
+        WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+        fontWeight: 800, letterSpacing: '-0.5px',
+        filter: 'drop-shadow(0 0 24px rgba(251,191,36,0.3))',
+      }}>✨ Terima Kasih ✨</div>
       <div style={S.idleHint}>Menampilkan QR tracking...</div>
     </div>
   );
