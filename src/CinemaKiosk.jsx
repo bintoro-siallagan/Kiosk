@@ -109,6 +109,7 @@ export default function CinemaKiosk({ apiBase }) {
       .then(r => r.json()).then(d => { if (d && !d.error) setSeatData(d); return d; });
   };
   const [ageGate, setAgeGate] = useState(null);  // film pending age confirm
+  const [previewFilm, setPreviewFilm] = useState(null);  // film card click → preview modal with trailer
   const pickFilm = (f) => {
     setMsg("");
     // Lazy-fetch suggested combos based on film genre
@@ -470,7 +471,7 @@ export default function CinemaKiosk({ apiBase }) {
             <H>Pilih Film</H>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 14 }}>
               {films.filter(f => f.status === "now_showing").map(f => (
-                <button key={f.id} onClick={() => pickFilm(f)} className="karya-film-card" style={{ ...card(), padding: 0, overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.6), 0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
+                <button key={f.id} onClick={() => setPreviewFilm(f)} className="karya-film-card" style={{ ...card(), padding: 0, overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.6), 0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
                   {f.poster_url ? (
                     <img src={f.poster_url} alt={f.title} loading="lazy"
                       style={{ width: "100%", aspectRatio: "2/3", objectFit: "cover", display: "block", background: "#0a0e16" }} />
@@ -802,6 +803,15 @@ export default function CinemaKiosk({ apiBase }) {
       )}
 
       {/* Age verification gate (LSF Indonesia: 17+ / D21 / 21+) */}
+      {/* TRAILER PREVIEW MODAL — klik film card → preview poster + trailer + button Pesan */}
+      {previewFilm && (
+        <FilmPreviewModal
+          film={previewFilm}
+          onClose={() => setPreviewFilm(null)}
+          onPick={() => { const f = previewFilm; setPreviewFilm(null); pickFilm(f); }}
+        />
+      )}
+
       {ageGate && (
         <div onClick={cancelAgeGate} style={{
           position: "fixed", inset: 0, background: "rgba(5,8,16,0.78)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", zIndex: 99998,
@@ -912,6 +922,112 @@ const contactInp = {
 };
 const btnGold  = { background: "linear-gradient(135deg,#f59e0b,#fbbf24)", border: "none", borderRadius: 12, padding: "14px 22px", color: "#111", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(245,158,11,0.3), inset 0 1px 0 rgba(255,255,255,0.2)", letterSpacing: 0.3, transition: "transform 0.15s ease, filter 0.15s ease" };
 const btnWA    = { background: "linear-gradient(135deg,#25D366,#34de7a)", border: "none", borderRadius: 12, padding: "14px 22px", color: "#04130c", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(37,211,102,0.3), inset 0 1px 0 rgba(255,255,255,0.2)", letterSpacing: 0.3, transition: "transform 0.15s ease, filter 0.15s ease" };
+
+// Extract YouTube video ID dari berbagai bentuk URL
+function extractYouTubeId(url) {
+  if (!url) return null;
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([A-Za-z0-9_-]{11})/,
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+// FilmPreviewModal — modal preview film: poster + trailer + info + Pesan Tiket button
+function FilmPreviewModal({ film, onClose, onPick }) {
+  const ytId = extractYouTubeId(film.trailer_url);
+  const isUploadedVideo = film.trailer_url && (film.trailer_url.startsWith("/uploads/") || /\.(mp4|webm|mov|m4v)$/i.test(film.trailer_url));
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(16px)",
+      WebkitBackdropFilter: "blur(16px)", zIndex: 99999,
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+      animation: "karyaKioskFadeUp 0.3s ease-out",
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: "linear-gradient(160deg,#0a0e16,#050810)",
+        border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20,
+        maxWidth: 920, width: "100%", maxHeight: "92vh", overflowY: "auto",
+        color: "#e6edf3", boxShadow: "0 32px 96px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05)",
+      }}>
+        {/* Close button */}
+        <button onClick={onClose} style={{
+          position: "absolute", top: 30, right: 30, zIndex: 10,
+          width: 44, height: 44, borderRadius: 999,
+          background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.15)",
+          color: "#fff", fontSize: 20, cursor: "pointer", fontFamily: "inherit",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          backdropFilter: "blur(8px)",
+        }}>✕</button>
+
+        {/* Trailer player on top — large 16:9 */}
+        {ytId ? (
+          <div style={{ width: "100%", aspectRatio: "16/9", background: "#000", borderRadius: "20px 20px 0 0", overflow: "hidden" }}>
+            <iframe
+              src={`https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&modestbranding=1`}
+              title={film.title} frameBorder="0"
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+              style={{ width: "100%", height: "100%", border: "none" }}
+            />
+          </div>
+        ) : isUploadedVideo ? (
+          <video
+            src={film.trailer_url}
+            autoPlay controls
+            style={{ width: "100%", aspectRatio: "16/9", background: "#000", borderRadius: "20px 20px 0 0", display: "block" }}
+          />
+        ) : film.poster_url ? (
+          <div style={{ width: "100%", aspectRatio: "16/9", background: `url(${film.poster_url}) center/cover, #0a0e16`, borderRadius: "20px 20px 0 0", position: "relative" }}>
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.2), rgba(5,8,16,0.85))" }} />
+            <div style={{ position: "absolute", bottom: 20, left: 20, fontSize: 11, color: "rgba(255,255,255,0.5)", fontFamily: "'Geist Mono',monospace", letterSpacing: 1.5, fontWeight: 700 }}>🎞️ Trailer belum tersedia</div>
+          </div>
+        ) : (
+          <div style={{ width: "100%", aspectRatio: "16/9", background: "linear-gradient(135deg,#1e1b4b,#0a0e16)", borderRadius: "20px 20px 0 0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 80 }}>🎞️</div>
+        )}
+
+        {/* Film info + CTA */}
+        <div style={{ padding: 28 }}>
+          <div style={{ display: "flex", gap: 22, flexWrap: "wrap" }}>
+            {/* Poster sidebar */}
+            {film.poster_url && (
+              <img src={film.poster_url} alt={film.title}
+                style={{ width: 140, aspectRatio: "2/3", objectFit: "cover", borderRadius: 12, flexShrink: 0, boxShadow: "0 12px 32px rgba(0,0,0,0.5)" }} />
+            )}
+            {/* Info */}
+            <div style={{ flex: 1, minWidth: 240 }}>
+              <div style={{ fontSize: 28, fontWeight: 900, letterSpacing: -0.7, lineHeight: 1.15, marginBottom: 6 }}>{film.title}</div>
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 12, fontSize: 13, color: "rgba(255,255,255,0.7)" }}>
+                <span style={{ fontSize: 12, fontWeight: 800, padding: "3px 10px", borderRadius: 6, background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.4)", color: "#c084fc", fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5 }}>{film.rating || "SU"}</span>
+                {film.genre && <span>{film.genre}</span>}
+                {film.duration_min ? <span>· {film.duration_min} mnt</span> : null}
+                {film.avg_rating ? <span style={{ color: "#fbbf24" }}>· ★ {film.avg_rating}</span> : null}
+              </div>
+              {film.synopsis && (
+                <div style={{ fontSize: 13.5, color: "rgba(255,255,255,0.7)", lineHeight: 1.6, marginBottom: 18 }}>{film.synopsis}</div>
+              )}
+              {/* CTA */}
+              <button onClick={onPick} style={{
+                width: "100%", padding: "16px 28px",
+                background: "linear-gradient(135deg,#f59e0b,#fbbf24)",
+                border: "none", borderRadius: 14, color: "#1a1205",
+                fontSize: 16, fontWeight: 900, letterSpacing: 0.5, cursor: "pointer",
+                fontFamily: "inherit", boxShadow: "0 8px 24px rgba(245,158,11,0.4), inset 0 1px 0 rgba(255,255,255,0.3)",
+                transition: "transform 0.15s ease, filter 0.15s ease",
+              }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.filter = "brightness(1.06)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.filter = "none"; }}
+              >🎟️ Pesan Tiket Sekarang</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Seat type styling — sinkron dengan CinemaStudioLayoutEditor
 const SEAT_COLOR = { regular: "#10b981", premium: "#fbbf24", couple: "#ec4899", disabled: "#22d3ee", vip: "#a855f7" };
