@@ -60,6 +60,19 @@ export default function CinemaStudioLayoutEditor({ studio, onClose, onSaved }) {
     }
     return generateDefaultMap(studio?.rows || 8, studio?.cols || 12);
   });
+  // Custom row labels — derived from first cell's row prefix, fallback to A,B,C...
+  // Stored as separate state so user bisa rename "A" → "Premium" / "VIP"
+  const [rowLabels, setRowLabels] = useState(() => {
+    const initial = [];
+    for (let r = 0; r < (studio?.rows || 8); r++) {
+      // Extract prefix dari label cell pertama yang gak void
+      const existing = (studio?.seat_map ? (typeof studio.seat_map === "string" ? JSON.parse(studio.seat_map) : studio.seat_map) : null);
+      const firstSeat = existing && existing[r]?.find(c => c && c.type !== "void" && c.label);
+      const match = firstSeat?.label?.match(/^([A-Za-z]+)/);
+      initial.push(match ? match[1] : ROW_LETTER(r));
+    }
+    return initial;
+  });
   const [activeType, setActiveType] = useState("regular");
   const [paintMode, setPaintMode] = useState(false); // hold drag to paint
   const [busy, setBusy] = useState(false);
@@ -79,6 +92,11 @@ export default function CinemaStudioLayoutEditor({ studio, onClose, onSaved }) {
       }
       return out;
     });
+    setRowLabels(prev => {
+      const out = [];
+      for (let r = 0; r < newRows; r++) out.push(prev[r] || ROW_LETTER(r));
+      return out;
+    });
   }, []);
 
   useEffect(() => { resizeMap(rows, cols); }, [rows, cols, resizeMap]);
@@ -86,25 +104,67 @@ export default function CinemaStudioLayoutEditor({ studio, onClose, onSaved }) {
   const paintCell = (r, c) => {
     setSeatMap(prev => {
       const out = prev.map(row => row.slice());
-      const t = TYPE_BY_KEY[activeType];
       if (activeType === "void") {
         out[r][c] = { type: "void" };
       } else {
-        const label = out[r][c]?.label || `${ROW_LETTER(r)}${c + 1}`;
+        const label = out[r][c]?.label || `${rowLabels[r] || ROW_LETTER(r)}${c + 1}`;
         out[r][c] = { type: activeType, label };
       }
       return out;
     });
   };
 
+  const eraseCell = (r, c) => {
+    // Right-click → hapus cell jadi void
+    setSeatMap(prev => {
+      const out = prev.map(row => row.slice());
+      out[r][c] = { type: "void" };
+      return out;
+    });
+  };
+
+  const updateRowLabel = (r, newLabel) => {
+    const clean = String(newLabel || "").trim().toUpperCase().slice(0, 6);
+    setRowLabels(prev => {
+      const out = [...prev];
+      out[r] = clean || ROW_LETTER(r);
+      return out;
+    });
+    // Re-label all seats in this row
+    setSeatMap(prev => {
+      const out = prev.map(row => row.slice());
+      let seatNum = 1;
+      for (let c = 0; c < (out[r] || []).length; c++) {
+        const cell = out[r][c];
+        if (!cell || cell.type === "void") continue;
+        out[r][c] = { ...cell, label: `${clean || ROW_LETTER(r)}${seatNum++}` };
+      }
+      return out;
+    });
+  };
+
+  const deleteRow = (r) => {
+    if (!confirm(`Hapus seluruh baris ${rowLabels[r] || ROW_LETTER(r)}?`)) return;
+    setSeatMap(prev => prev.filter((_, i) => i !== r));
+    setRowLabels(prev => prev.filter((_, i) => i !== r));
+    setRows(prev => Math.max(1, prev - 1));
+  };
+
+  const deleteCol = (c) => {
+    if (!confirm(`Hapus seluruh kolom ${c + 1}?`)) return;
+    setSeatMap(prev => prev.map(row => row.filter((_, i) => i !== c)));
+    setCols(prev => Math.max(1, prev - 1));
+  };
+
   const autoNumber = () => {
-    // Re-generate labels: row letter + sequential per-row, skip voids
+    // Re-generate labels: row label + sequential per-row, skip voids
     setSeatMap(prev => {
       return prev.map((row, r) => {
         let seatNum = 1;
+        const prefix = rowLabels[r] || ROW_LETTER(r);
         return row.map(cell => {
           if (!cell || cell.type === "void") return cell;
-          const label = `${ROW_LETTER(r)}${seatNum++}`;
+          const label = `${prefix}${seatNum++}`;
           return { ...cell, label };
         });
       });
@@ -208,9 +268,31 @@ export default function CinemaStudioLayoutEditor({ studio, onClose, onSaved }) {
           onMouseUp={() => setPaintMode(false)}
           onMouseLeave={() => setPaintMode(false)}
         >
+          {/* Column header: numbers 1..cols + delete-col buttons */}
+          <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+            <div style={{ width: 56 }} />
+            {seatMap[0]?.map((_, c) => (
+              <div key={c} style={{ width: 32, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                <div style={{ fontSize: 9, color: "#7d8590", fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>{c + 1}</div>
+                <button onClick={() => deleteCol(c)} title={`Hapus kolom ${c + 1}`} style={{ background: "transparent", border: "none", color: "#5b6470", fontSize: 11, cursor: "pointer", padding: 0, lineHeight: 1, fontFamily: "inherit" }}>✕</button>
+              </div>
+            ))}
+          </div>
           {seatMap.map((row, r) => (
             <div key={r} style={{ display: "flex", gap: 4, alignItems: "center" }}>
-              <div style={{ width: 20, fontSize: 11, fontFamily: "'Geist Mono',monospace", color: "#7d8590", fontWeight: 800 }}>{ROW_LETTER(r)}</div>
+              {/* Row label input + delete-row */}
+              <input
+                value={rowLabels[r] || ROW_LETTER(r)}
+                onChange={(e) => updateRowLabel(r, e.target.value)}
+                title="Klik untuk rename label baris"
+                style={{
+                  width: 36, height: 28, padding: 0, textAlign: "center",
+                  background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.2)",
+                  borderRadius: 6, color: "#c084fc", fontSize: 11, fontWeight: 800,
+                  fontFamily: "'Geist Mono',monospace", outline: "none", textTransform: "uppercase",
+                }}
+              />
+              <button onClick={() => deleteRow(r)} title="Hapus baris" style={{ width: 16, background: "transparent", border: "none", color: "#5b6470", fontSize: 11, cursor: "pointer", padding: 0, lineHeight: 1, fontFamily: "inherit" }}>✕</button>
               {row.map((cell, c) => {
                 const t = cell && cell.type ? TYPE_BY_KEY[cell.type] : null;
                 const isVoid = !cell || cell.type === "void";
@@ -219,7 +301,8 @@ export default function CinemaStudioLayoutEditor({ studio, onClose, onSaved }) {
                     key={c}
                     onMouseDown={(e) => { e.preventDefault(); paintCell(r, c); }}
                     onMouseEnter={() => { if (paintMode) paintCell(r, c); }}
-                    title={cell?.label || `(${r + 1}, ${c + 1})`}
+                    onContextMenu={(e) => { e.preventDefault(); eraseCell(r, c); }}
+                    title={`${cell?.label || `(${r + 1},${c + 1})`} · klik=paint · klik-kanan=hapus`}
                     style={{
                       width: 32, height: 32, borderRadius: 6,
                       background: isVoid ? "transparent" : (t?.color + "22"),
@@ -230,12 +313,17 @@ export default function CinemaStudioLayoutEditor({ studio, onClose, onSaved }) {
                       display: "flex", alignItems: "center", justifyContent: "center",
                       transition: "transform 0.08s ease",
                     }}>
-                    {isVoid ? "" : (cell.label?.replace(/^[A-Z]+/, "") || "")}
+                    {isVoid ? "" : (cell.label?.replace(/^[A-Za-z]+/, "") || "")}
                   </button>
                 );
               })}
             </div>
           ))}
+        </div>
+
+        {/* Tip */}
+        <div style={{ marginTop: 8, fontSize: 11, color: "#7d8590", textAlign: "center" }}>
+          🖱️ Klik = paint dengan tipe terpilih · 🖱️ Klik-kanan cell = hapus jadi void · ✕ di kolom/baris = hapus seluruh baris/kolom · Edit label baris langsung di input ungu kiri
         </div>
 
         {/* Summary */}
