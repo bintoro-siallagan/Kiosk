@@ -245,7 +245,7 @@ export default function CinemaOps({ apiBase }) {
       )}
 
       {editing && (
-        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000 }}>
+        <div onClick={() => { setEditing(null); setTmdbModal(null); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 20, width: 520, maxWidth: "92vw", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#a855f7", marginBottom: 14, fontFamily: "'Geist Mono',monospace" }}>
               EDIT {editing.type.toUpperCase()} #{editing.data.id}
@@ -388,18 +388,19 @@ export default function CinemaOps({ apiBase }) {
                     const r = await fetch(`${base}/tmdb/movie/${m.tmdb_id}`);
                     const d = await r.json();
                     if (!d.ok) throw new Error(d.error);
-                    setEditing(prev => ({
-                      ...prev,
-                      data: {
-                        ...prev.data,
-                        title: prev.data.title || d.title,
-                        synopsis: prev.data.synopsis || d.overview || "",
-                        duration_min: prev.data.duration_min || d.runtime || 0,
-                        genre: prev.data.genre || d.genres || "",
-                        poster_url: d.poster_url || prev.data.poster_url,
-                        trailer_url: d.trailer_url || prev.data.trailer_url,
-                      },
-                    }));
+                    setEditing(prev => {
+                      const base = prev && prev.data ? prev.data : { id: null };
+                      const data = {
+                        ...base,
+                        title: base.title || d.title,
+                        synopsis: base.synopsis || d.overview || "",
+                        duration_min: base.duration_min || d.runtime || 0,
+                        genre: base.genre || d.genres || "",
+                        poster_url: d.poster_url || base.poster_url,
+                        trailer_url: d.trailer_url || base.trailer_url,
+                      };
+                      return prev ? { ...prev, data } : { type: "film", data };
+                    });
                     setTmdbModal(null);
                   } catch (e) {
                     setTmdbModal({ ...tmdbModal, error: e.message });
