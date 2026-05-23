@@ -34,7 +34,7 @@ const RATING_NAME  = { "SU": "Semua Umur", "13+": "Remaja 13+", "17+": "Remaja 1
 const STATUSES = [["now_showing", "Tayang"], ["coming_soon", "Segera"], ["archived", "Arsip"]];
 const STUDIO_TYPES = ["Regular", "IMAX", "Premiere", "4DX"];
 const FORMATS = ["2D", "3D", "IMAX", "4DX"];
-const TABS = [["film", "🎬 Film"], ["studio", "🏛️ Studio"], ["showtime", "🗓️ Jadwal Tayang"]];
+const TABS = [["film", "🎬 Film"], ["studio", "🏛️ Studio"], ["showtime", "🗓️ Jadwal Tayang"], ["branding", "🎨 Branding CDS"]];
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const statusLabel = (s) => (STATUSES.find(x => x[0] === s) || [s, s])[1];
 const statusColor = (s) => s === "now_showing" ? "#10b981" : s === "coming_soon" ? "#eab308" : "#5b6470";
@@ -356,6 +356,10 @@ function CinemaOpsInner({ apiBase }) {
         </>
       )}
 
+      {tab === "branding" && (
+        <CdsBrandingPanel apiBase={apiBase} outlets={bulkOutlets} />
+      )}
+
       {editing && editing.data && (
         <div onClick={() => { setEditing(null); setTmdbModal(null); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 20, width: 520, maxWidth: "92vw", maxHeight: "90vh", overflowY: "auto" }}>
@@ -595,3 +599,137 @@ function Row({ children }) {
 function Badge({ children, color }) {
   return <span style={{ fontSize: 11, fontWeight: 700, color, background: color + "22", borderRadius: 6, padding: "3px 9px", whiteSpace: "nowrap" }}>{children}</span>;
 }
+
+// CdsBrandingPanel — Admin set background image untuk Cinema Customer Display (CDS)
+// per-outlet (key: CINEMA_CDS_BG:OUTLET_CODE) atau default (key: CINEMA_CDS_BG_DEFAULT)
+function CdsBrandingPanel({ apiBase, outlets }) {
+  const [selectedOutlet, setSelectedOutlet] = useState("DEFAULT");
+  const [bgUrl, setBgUrl] = useState("");
+  const [idleText, setIdleText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  const cfgKey = selectedOutlet === "DEFAULT" ? "CINEMA_CDS_BG_DEFAULT" : `CINEMA_CDS_BG:${selectedOutlet}`;
+  const idleKey = selectedOutlet === "DEFAULT" ? "CINEMA_CDS_IDLE_TEXT_DEFAULT" : `CINEMA_CDS_IDLE_TEXT:${selectedOutlet}`;
+
+  // Load current value when outlet changes
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      fetch(`${apiBase}/api/pos/config/${encodeURIComponent(cfgKey)}`).then(r => r.json()).catch(() => ({})),
+      fetch(`${apiBase}/api/pos/config/${encodeURIComponent(idleKey)}`).then(r => r.json()).catch(() => ({})),
+    ]).then(([bg, txt]) => {
+      try { setBgUrl(typeof bg?.value === "string" ? JSON.parse(bg.value) : (bg?.value || "")); } catch { setBgUrl(""); }
+      try { setIdleText(typeof txt?.value === "string" ? JSON.parse(txt.value) : (txt?.value || "")); } catch { setIdleText(""); }
+    }).finally(() => setLoading(false));
+  }, [apiBase, cfgKey, idleKey]);
+
+  const saveConfig = async (key, value) => {
+    try {
+      const r = await fetch(`${apiBase}/api/pos/config/${encodeURIComponent(key)}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ value: JSON.stringify(value) }),
+      });
+      if (!r.ok) {
+        // Try POST kalau key belum ada
+        await fetch(`${apiBase}/api/pos/config`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ key, value: JSON.stringify(value), type: "string", category: "cinema_branding" }),
+        });
+      }
+    } catch (e) { throw e; }
+  };
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setMsg(`Uploading ${(file.size / 1024 / 1024).toFixed(1)}MB...`);
+    try {
+      const fd = new FormData(); fd.append("file", file);
+      const r = await fetch(`${apiBase}/api/upload`, { method: "POST", body: fd });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || "Upload gagal");
+      setBgUrl(d.url);
+      await saveConfig(cfgKey, d.url);
+      setMsg("✓ Background tersimpan");
+    } catch (err) { setMsg("⚠ " + err.message); }
+  };
+
+  const handleSaveText = async () => {
+    setMsg("Menyimpan...");
+    try { await saveConfig(idleKey, idleText); setMsg("✓ Idle text tersimpan"); }
+    catch (e) { setMsg("⚠ " + e.message); }
+  };
+
+  const clearBg = async () => {
+    if (!confirm("Hapus background image?")) return;
+    setBgUrl("");
+    await saveConfig(cfgKey, "");
+    setMsg("✓ Background dihapus");
+  };
+
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 18 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: -0.2 }}>🎨 Cinema CDS Branding</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Custom background image + idle message untuk layar second display per outlet</div>
+        </div>
+        <select value={selectedOutlet} onChange={e => setSelectedOutlet(e.target.value)}
+          style={{ background: "#0a0e16", border: "1px solid #30363d", color: "#fff", borderRadius: 8, padding: "8px 12px", fontSize: 12, fontFamily: "inherit", outline: "none" }}>
+          <option value="DEFAULT">🌐 Default (fallback semua outlet)</option>
+          {outlets?.map(o => <option key={o.code} value={o.code}>{o.code} · {o.name}</option>)}
+        </select>
+      </div>
+
+      {/* Preview */}
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ fontSize: 11, color: C.sub, marginBottom: 6, fontFamily: "Geist Mono,monospace", letterSpacing: 1.5, fontWeight: 700 }}>PREVIEW {selectedOutlet === "DEFAULT" ? "DEFAULT" : selectedOutlet}</div>
+        <div style={{
+          width: "100%", aspectRatio: "16/9", maxHeight: 320,
+          background: bgUrl ? `url(${bgUrl}) center/cover` : "linear-gradient(160deg,#050810,#0c0f1a)",
+          borderRadius: 12, border: "1px solid rgba(255,255,255,0.08)",
+          position: "relative", overflow: "hidden",
+        }}>
+          {bgUrl && <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.2), rgba(5,8,16,0.6))" }} />}
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#fff", textAlign: "center", padding: 20 }}>
+            <div style={{ fontSize: 48, lineHeight: 1, marginBottom: 8 }}>🎬</div>
+            <div style={{ fontSize: 12, color: "#c084fc", letterSpacing: 3, fontFamily: "Geist Mono,monospace", fontWeight: 800 }}>karyaOS CINEMA</div>
+            <div style={{ fontSize: 22, fontWeight: 900, marginTop: 4 }}>Selamat Datang</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 4 }}>{idleText || "Silakan pilih film & jadwal di counter"}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Background controls */}
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
+        <label style={{ background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.4)", color: "#c084fc", borderRadius: 8, padding: "9px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+          📤 Upload Background Image
+          <input type="file" accept="image/*" style={{ display: "none" }} onChange={handleUpload} />
+        </label>
+        <input type="text" value={bgUrl} onChange={e => setBgUrl(e.target.value)}
+          onBlur={() => saveConfig(cfgKey, bgUrl)}
+          placeholder="atau paste URL https://..." style={{ ...inp, flex: 1, minWidth: 240 }} />
+        {bgUrl && <button onClick={clearBg} style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5", borderRadius: 7, padding: "8px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>✕ Hapus</button>}
+      </div>
+
+      {/* Idle message */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 11, color: C.sub, marginBottom: 6, fontFamily: "Geist Mono,monospace", letterSpacing: 1.5, fontWeight: 700 }}>IDLE MESSAGE (Optional)</div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <input type="text" value={idleText} onChange={e => setIdleText(e.target.value)}
+            placeholder=mis: Selamat menonton di Cinema XXI Jakarta!
+            style={{ ...inp, flex: 1 }} />
+          <button onClick={handleSaveText} style={{ background: "#a855f7", border: "none", color: "#fff", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>💾 Save</button>
+        </div>
+      </div>
+
+      {msg && <div style={{ padding: "8px 12px", background: msg.startsWith("✓") ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", border: `1px solid ${msg.startsWith("✓") ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`, borderRadius: 8, fontSize: 12, color: msg.startsWith("✓") ? "#10b981" : "#fca5a5" }}>{msg}</div>}
+
+      <div style={{ marginTop: 14, padding: 10, background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 8, fontSize: 11, color: "#9ca3af", lineHeight: 1.6 }}>
+        💡 <b>Tips:</b> Background ideal 1920×1080 (Full HD) atau 16:9 ratio. CDS akan apply overlay gradient gelap di atas image agar text tetap readable. Default fallback: gradient dark blue/purple.
+      </div>
+    </div>
+  );
+}
+

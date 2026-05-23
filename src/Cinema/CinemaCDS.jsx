@@ -23,8 +23,47 @@ export default function CinemaCDS() {
   const [showtimes, setShowtimes] = useState([]); // today rotating
   const [carouselIdx, setCarouselIdx] = useState(0);
   const [now, setNow] = useState(new Date());
+  const [branding, setBranding] = useState({ bgUrl: "", idleText: "" }); // custom CDS branding
   const wsRef = useRef(null);
   const reconnectRef = useRef(null);
+
+  // Determine outlet from URL
+  const outletCode = (() => {
+    try { return new URLSearchParams(window.location.search).get("outlet") || ""; } catch { return ""; }
+  })();
+
+  // Fetch branding config — per outlet (CINEMA_CDS_BG:OUTLET) fallback ke default
+  useEffect(() => {
+    const load = async () => {
+      const bgKeys = outletCode ? [`CINEMA_CDS_BG:${outletCode}`, "CINEMA_CDS_BG_DEFAULT"] : ["CINEMA_CDS_BG_DEFAULT"];
+      const textKeys = outletCode ? [`CINEMA_CDS_IDLE_TEXT:${outletCode}`, "CINEMA_CDS_IDLE_TEXT_DEFAULT"] : ["CINEMA_CDS_IDLE_TEXT_DEFAULT"];
+      let bgUrl = "", idleText = "";
+      for (const k of bgKeys) {
+        try {
+          const r = await fetch(`${API_HOST}/api/pos/config/${encodeURIComponent(k)}`);
+          if (!r.ok) continue;
+          const d = await r.json();
+          let v = d.value;
+          try { v = typeof v === "string" ? JSON.parse(v) : v; } catch {}
+          if (v && typeof v === "string") { bgUrl = v.startsWith("http") || v.startsWith("/") ? v : ""; if (bgUrl) break; }
+        } catch {}
+      }
+      for (const k of textKeys) {
+        try {
+          const r = await fetch(`${API_HOST}/api/pos/config/${encodeURIComponent(k)}`);
+          if (!r.ok) continue;
+          const d = await r.json();
+          let v = d.value;
+          try { v = typeof v === "string" ? JSON.parse(v) : v; } catch {}
+          if (v && typeof v === "string") { idleText = v; break; }
+        } catch {}
+      }
+      // Prefix dengan API_HOST kalau relative /uploads/...
+      if (bgUrl && bgUrl.startsWith("/")) bgUrl = API_HOST + bgUrl;
+      setBranding({ bgUrl, idleText });
+    };
+    load();
+  }, [outletCode]);
 
   // Full-screen takeover
   useEffect(() => {
@@ -82,7 +121,7 @@ export default function CinemaCDS() {
   // ═══════════════════════════════════════════════
   if (stage === "pay" && state.qrUrl) {
     return (
-      <Shell now={now} outlet={state.outlet}>
+      <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: 40, textAlign: "center" }}>
           <div style={{ fontSize: 14, color: "#fbbf24", letterSpacing: 3, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 18 }}>📱 SCAN QRIS UNTUK BAYAR</div>
           <div style={{ background: "#fff", padding: 24, borderRadius: 24, boxShadow: "0 24px 80px rgba(245,158,11,0.3), 0 0 0 4px rgba(245,158,11,0.2)" }}>
@@ -103,7 +142,7 @@ export default function CinemaCDS() {
   // ═══════════════════════════════════════════════
   if (stage === "done") {
     return (
-      <Shell now={now} outlet={state.outlet}>
+      <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: 40, textAlign: "center", gap: 10 }}>
           <div style={{ fontSize: 80, lineHeight: 1, filter: "drop-shadow(0 0 32px rgba(16,185,129,0.5))" }}>🎬</div>
           <div style={{ fontSize: 14, color: "#10b981", letterSpacing: 3, fontFamily: "'Geist Mono',monospace", fontWeight: 800, lineHeight: 1 }}>TIKET BERHASIL DIBELI</div>
@@ -128,7 +167,7 @@ export default function CinemaCDS() {
   // ═══════════════════════════════════════════════
   if ((stage === "selling" || stage === "selected") && (state.film_title || state.poster_url)) {
     return (
-      <Shell now={now} outlet={state.outlet}>
+      <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl}>
         <div style={{ display: "flex", flex: 1, padding: 30, gap: 30, alignItems: "center" }}>
           {/* Left: Poster */}
           <div style={{ flexShrink: 0 }}>
@@ -204,12 +243,12 @@ export default function CinemaCDS() {
   const todayShows = showtimes.filter(s => s.show_date === today).slice(0, 12);
   const currentShow = todayShows[carouselIdx % Math.max(1, todayShows.length)];
   return (
-    <Shell now={now} outlet={state.outlet}>
+    <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl}>
       <div style={{ display: "flex", flexDirection: "column", flex: 1, alignItems: "center", justifyContent: "center", padding: 30, textAlign: "center", gap: 14 }}>
         <div style={{ fontSize: 96, lineHeight: 1, filter: "drop-shadow(0 0 32px rgba(168,85,247,0.4))" }}>🎬</div>
         <div style={{ fontSize: 14, color: "#a855f7", letterSpacing: 4, fontFamily: "'Geist Mono',monospace", fontWeight: 800, lineHeight: 1, margin: 0 }}>karyaOS CINEMA</div>
-        <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: -1.2, color: "#fff", lineHeight: 1.1, margin: 0 }}>Selamat Datang</div>
-        <div style={{ fontSize: 16, color: "#9ca3af", maxWidth: 600, lineHeight: 1.5, margin: 0 }}>Silakan pilih film & jadwal di counter — kasir akan bantu pesanan Anda</div>
+        <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: -1.2, color: "#fff", lineHeight: 1.1, margin: 0, textShadow: branding.bgUrl ? "0 2px 16px rgba(0,0,0,0.8)" : "none" }}>Selamat Datang</div>
+        <div style={{ fontSize: 16, color: branding.bgUrl ? "#e6edf3" : "#9ca3af", maxWidth: 600, lineHeight: 1.5, margin: 0, textShadow: branding.bgUrl ? "0 1px 6px rgba(0,0,0,0.8)" : "none" }}>{branding.idleText || "Silakan pilih film & jadwal di counter — kasir akan bantu pesanan Anda"}</div>
 
         {/* Rotating showtime carousel — extra spacing from welcome text */}
         {currentShow && (
@@ -241,9 +280,16 @@ export default function CinemaCDS() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-function Shell({ children, now, outlet }) {
+function Shell({ children, now, outlet, bgUrl }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: "linear-gradient(160deg,#050810 0%,#0c0f1a 50%,#08090f 100%)", color: "#e6edf3", fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif", display: "flex", flexDirection: "column" }}>
+    <div style={{
+      position: "fixed", inset: 0,
+      background: bgUrl ? `url(${bgUrl}) center/cover fixed` : "linear-gradient(160deg,#050810 0%,#0c0f1a 50%,#08090f 100%)",
+      color: "#e6edf3", fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif",
+      display: "flex", flexDirection: "column",
+    }}>
+      {/* Dark overlay biar text tetap readable di custom background */}
+      {bgUrl && <div aria-hidden style={{ position: "fixed", inset: 0, background: "linear-gradient(180deg, rgba(5,8,16,0.45), rgba(5,8,16,0.7))", pointerEvents: "none" }} />}
       {/* Mesh overlay */}
       <div aria-hidden style={{ position: "fixed", inset: 0, background: "radial-gradient(900px 700px at 20% 5%, rgba(168,85,247,0.08), transparent 60%), radial-gradient(700px 500px at 85% 80%, rgba(245,158,11,0.06), transparent 60%)", pointerEvents: "none" }} />
       {/* Topbar */}
