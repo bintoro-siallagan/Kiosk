@@ -1,6 +1,26 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Component } from "react";
 import { useUiKit } from "../components/uiKit.jsx";
 import CinemaStudioLayoutEditor from "./CinemaStudioLayoutEditor.jsx";
+
+// Error boundary — biar crash di Cinema Ops gak bikin admin blank total
+class CinemaOpsErrorBoundary extends Component {
+  state = { error: null };
+  static getDerivedStateFromError(error) { return { error }; }
+  componentDidCatch(error, info) { console.error("[CinemaOps] crash:", error, info); }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 30, color: "#fca5a5", fontFamily: "'Inter',sans-serif" }}>
+          <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>⚠ Cinema Ops crashed</div>
+          <div style={{ fontSize: 13, color: "#9ca3af", marginBottom: 16 }}>Error: {String(this.state.error?.message || this.state.error)}</div>
+          <button onClick={() => this.setState({ error: null })} style={{ background: "#a855f7", border: "none", borderRadius: 8, padding: "8px 18px", color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>↻ Reset</button>
+          <pre style={{ marginTop: 14, padding: 14, background: "#0d1117", border: "1px solid #30363d", borderRadius: 8, fontSize: 11, overflow: "auto", color: "#7d8590" }}>{String(this.state.error?.stack || "")}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 // Cinema Operations — manage films, studios/screens and showtimes.
 // karyaOS cinema vertical (admin side). Talks to /api/cinema/*.
@@ -22,7 +42,11 @@ const statusColor = (s) => s === "now_showing" ? "#10b981" : s === "coming_soon"
 const DS_LABEL = { scheduled: "Terjadwal", running: "Berlangsung", closed: "Tutup", sold_out: "Sold Out", cancelled: "Batal" };
 const DS_COLOR = { scheduled: "#10b981", running: "#f59e0b", closed: "#6b7280", sold_out: "#ef4444", cancelled: "#dc2626" };
 
-export default function CinemaOps({ apiBase }) {
+export default function CinemaOpsWrapped(props) {
+  return <CinemaOpsErrorBoundary><CinemaOpsInner {...props} /></CinemaOpsErrorBoundary>;
+}
+
+function CinemaOpsInner({ apiBase }) {
   const { confirm } = useUiKit();
   const [tab, setTab] = useState("film");
   const [films, setFilms] = useState([]);
@@ -244,11 +268,11 @@ export default function CinemaOps({ apiBase }) {
         </>
       )}
 
-      {editing && (
+      {editing && editing.data && (
         <div onClick={() => { setEditing(null); setTmdbModal(null); }} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 10000 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 20, width: 520, maxWidth: "92vw", maxHeight: "90vh", overflowY: "auto" }}>
             <div style={{ fontSize: 15, fontWeight: 700, color: "#a855f7", marginBottom: 14, fontFamily: "'Geist Mono',monospace" }}>
-              EDIT {editing.type.toUpperCase()} #{editing.data.id}
+              EDIT {(editing.type || "").toUpperCase()} #{editing.data.id ?? "new"}
             </div>
 
             {editing.type === "film" && (
