@@ -718,7 +718,7 @@ function CdsBrandingPanel({ apiBase, outlets }) {
         <div style={{ fontSize: 11, color: C.sub, marginBottom: 6, fontFamily: "Geist Mono,monospace", letterSpacing: 1.5, fontWeight: 700 }}>IDLE MESSAGE (Optional)</div>
         <div style={{ display: "flex", gap: 8 }}>
           <input type="text" value={idleText} onChange={e => setIdleText(e.target.value)}
-            placeholder=mis: Selamat menonton di Cinema XXI Jakarta!
+            placeholder="mis: Selamat menonton di Cinema XXI Jakarta!"
             style={{ ...inp, flex: 1 }} />
           <button onClick={handleSaveText} style={{ background: "#a855f7", border: "none", color: "#fff", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>💾 Save</button>
         </div>
