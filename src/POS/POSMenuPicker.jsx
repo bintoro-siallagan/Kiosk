@@ -132,18 +132,21 @@ export default function POSMenuPicker({ onCheckout, apiBase = '/api/master', cas
 
       {/* RIGHT — cart */}
       <div style={styles.right}>
-        <h3 style={{marginTop:0}}>🛒 Pesanan ({cart.length})</h3>
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:14 }}>
+          <h3 style={{margin:0, color:'#fff', fontWeight:800, fontSize:18, letterSpacing:'-0.3px'}}>🛒 Pesanan</h3>
+          <span style={{ fontSize:11, color:'rgba(255,255,255,0.45)', fontFamily:"'Geist Mono',monospace", letterSpacing:1 }}>{cart.length} ITEM</span>
+        </div>
         <div style={styles.cartList}>
           {cart.length === 0 && <div style={styles.empty}>Keranjang kosong<br/><span style={{fontSize:12}}>Klik menu untuk menambahkan</span></div>}
           {cart.map(c => (
             <div key={c.uid} style={styles.cartItem}>
               <div style={{flex:1}}>
-                <div style={{fontWeight:600}}>{c.display_name}</div>
-                {c.size_name && <div style={{fontSize:11, color:'#6b7280'}}>Size: {c.size_name}</div>}
+                <div style={{fontWeight:700, color:'#fff', fontSize:13.5}}>{c.display_name}</div>
+                {c.size_name && <div style={{fontSize:11, color:'rgba(255,255,255,0.45)'}}>Size: {c.size_name}</div>}
                 {c.extras?.filter(e=>e.qty>0).map(e => (
-                  <div key={e.extra_id} style={{fontSize:11, color:'#6b7280'}}>+ {e.name} {e.qty>1 ? `×${e.qty}` : ''}</div>
+                  <div key={e.extra_id} style={{fontSize:11, color:'rgba(255,255,255,0.45)'}}>+ {e.name} {e.qty>1 ? `×${e.qty}` : ''}</div>
                 ))}
-                <div style={{fontSize:13, color:'#1f2937', marginTop:4, fontWeight:600}}>{fmtIDR(c.line_total)}</div>
+                <div style={{fontSize:13, color:'#F59E0B', marginTop:4, fontWeight:700, fontFamily:"'Geist Mono',monospace"}}>{fmtIDR(c.line_total)}</div>
               </div>
               <div style={{display:'flex', alignItems:'center', gap:4}}>
                 <button onClick={()=>updateQty(c.uid, -1)} style={styles.qtyBtn}>−</button>
@@ -156,9 +159,9 @@ export default function POSMenuPicker({ onCheckout, apiBase = '/api/master', cas
         </div>
 
         <div style={styles.cartFooter}>
-          <div style={{display:'flex', justifyContent:'space-between', fontSize:18, marginBottom:12}}>
-            <b>Subtotal</b>
-            <b>{fmtIDR(subtotal)}</b>
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:12}}>
+            <span style={{ fontSize:11, color:'rgba(255,255,255,0.5)', letterSpacing:1.2, fontFamily:"'Geist Mono',monospace", fontWeight:700, textTransform:'uppercase' }}>Subtotal</span>
+            <span style={{ fontSize:22, color:'#fff', fontWeight:800, fontFamily:"'Geist Mono',monospace", letterSpacing:'-0.4px' }}>{fmtIDR(subtotal)}</span>
           </div>
           <button onClick={checkout} disabled={cart.length===0} style={cart.length===0 ? styles.checkoutDisabled : styles.checkout}>
             Lanjut ke Pembayaran →
@@ -202,10 +205,14 @@ function MenuCard({ menu, onClick }) {
 
 function PackageCard({ pkg, onClick }) {
   return (
-    <button onClick={onClick} style={{...styles.card, borderColor:'#a78bfa', background:'linear-gradient(135deg, #f5f3ff 0%, #fff 100%)'}}>
+    <button onClick={onClick} style={{
+      ...styles.card,
+      borderColor:'rgba(168,85,247,0.35)',
+      background:'linear-gradient(180deg, rgba(168,85,247,0.08) 0%, #15171c 60%, #0d0f14 100%)',
+    }}>
       <div style={{fontSize:32}}>{pkg.emoji || '🎁'}</div>
       <div style={styles.cardTitle}>{pkg.name}</div>
-      <div style={{...styles.popularBadge, background:'#a78bfa'}}>Package</div>
+      <div style={{...styles.popularBadge, background:'linear-gradient(135deg,#a855f7,#c084fc)', color:'#fff'}}>Package</div>
       <div style={styles.cardDesc}>{pkg.description || ''}</div>
       <div style={styles.cardPrice}>{fmtIDR(pkg.package_price)}</div>
     </button>
@@ -282,11 +289,11 @@ function MenuPickerModal({ menu, extras, onAdd, onClose }) {
           <h2 style={{margin:0}}>{menu.emoji} {menu.name}</h2>
           <button onClick={onClose} style={styles.closeBtn}>×</button>
         </div>
-        {menu.description && <p style={{color:'#6b7280', marginTop:8}}>{menu.description}</p>}
+        {menu.description && <p style={{color:'rgba(255,255,255,0.55)', marginTop:8, fontSize:13}}>{menu.description}</p>}
 
         {hasSizes && (
           <div style={{marginTop:16}}>
-            <h4 style={{marginBottom:8}}>Pilih Ukuran</h4>
+            <h4 style={{marginBottom:8, color:'#fff', fontWeight:700, fontSize:14}}>Pilih Ukuran</h4>
             <div style={{display:'flex', gap:8, flexWrap:'wrap'}}>
               {menu.size_variants.map(v => {
                 const p = menu.price + (v.price_adjustment || 0);
@@ -294,12 +301,13 @@ function MenuPickerModal({ menu, extras, onAdd, onClose }) {
                 return (
                   <button key={v.size_id} onClick={()=>setSizeId(v.size_id)} style={{
                     ...styles.sizeBtn,
-                    background: active ? '#3b82f6' : '#fff',
-                    color: active ? '#fff' : '#1f2937',
-                    borderColor: active ? '#3b82f6' : '#e5e7eb'
+                    background: active ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.03)',
+                    color: active ? '#fbbf24' : '#fff',
+                    borderColor: active ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.08)',
+                    boxShadow: active ? '0 0 16px rgba(245,158,11,0.2)' : 'none',
                   }}>
-                    <div style={{fontWeight:600}}>{v.size_name}</div>
-                    <div style={{fontSize:12, marginTop:4}}>{fmtIDR(p)}</div>
+                    <div style={{fontWeight:700}}>{v.size_name}</div>
+                    <div style={{fontSize:12, marginTop:4, fontFamily:"'Geist Mono',monospace", color: active ? '#fbbf24' : 'rgba(255,255,255,0.7)'}}>{fmtIDR(p)}</div>
                   </button>
                 );
               })}
@@ -309,20 +317,20 @@ function MenuPickerModal({ menu, extras, onAdd, onClose }) {
 
         {availableExtras.length > 0 && (
           <div style={{marginTop:16}}>
-            <h4 style={{marginBottom:8}}>
-              Extras {freeExtras > 0 && <span style={{fontSize:12, color:'#10b981', fontWeight:400}}>({freeExtras} gratis)</span>}
+            <h4 style={{marginBottom:8, color:'#fff', fontWeight:700, fontSize:14}}>
+              Extras {freeExtras > 0 && <span style={{fontSize:12, color:'#10b981', fontWeight:600}}>({freeExtras} gratis)</span>}
             </h4>
-            <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(160px, 1fr))', gap:6, maxHeight:200, overflow:'auto'}}>
+            <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(170px, 1fr))', gap:6, maxHeight:220, overflow:'auto'}}>
               {availableExtras.map(e => {
                 const qty = extraQtys[e.id] || 0;
                 return (
                   <div key={e.id} style={styles.extraRow}>
-                    <div style={{flex:1, fontSize:13}}>
+                    <div style={{flex:1, fontSize:13, color:'#fff'}}>
                       {e.emoji} {e.name}<br/>
-                      <span style={{fontSize:11, color:'#6b7280'}}>{fmtIDR(e.extra_price)}</span>
+                      <span style={{fontSize:11, color:'rgba(255,255,255,0.45)', fontFamily:"'Geist Mono',monospace"}}>{fmtIDR(e.extra_price)}</span>
                     </div>
                     <button onClick={()=>updateExtra(e.id, -1)} disabled={qty===0} style={{...styles.qtyBtn, opacity: qty===0 ? 0.4 : 1}}>−</button>
-                    <div style={{minWidth:20, textAlign:'center', fontWeight:600}}>{qty}</div>
+                    <div style={{minWidth:20, textAlign:'center', fontWeight:700, color:'#fff', fontFamily:"'Geist Mono',monospace"}}>{qty}</div>
                     <button onClick={()=>updateExtra(e.id, 1)} style={styles.qtyBtn}>+</button>
                   </div>
                 );
@@ -333,8 +341,8 @@ function MenuPickerModal({ menu, extras, onAdd, onClose }) {
 
         <div style={styles.modalFooter}>
           <div style={{flex:1}}>
-            <div style={{fontSize:12, color:'#6b7280'}}>Total</div>
-            <div style={{fontSize:22, fontWeight:700}}>{fmtIDR(lineTotal)}</div>
+            <div style={{fontSize:11, color:'rgba(255,255,255,0.45)', letterSpacing:1.2, fontFamily:"'Geist Mono',monospace", fontWeight:700, textTransform:'uppercase'}}>TOTAL</div>
+            <div style={{fontSize:24, fontWeight:800, color:'#fff', fontFamily:"'Geist Mono',monospace", letterSpacing:'-0.5px'}}>{fmtIDR(lineTotal)}</div>
           </div>
           <button onClick={submit} style={styles.addBtn}>+ Tambah ke Pesanan</button>
         </div>
@@ -371,33 +379,42 @@ function PackagePickerModal({ pkg, onAdd, onClose }) {
           <h2 style={{margin:0}}>{pkg.emoji} {pkg.name}</h2>
           <button onClick={onClose} style={styles.closeBtn}>×</button>
         </div>
-        {pkg.description && <p style={{color:'#6b7280', marginTop:8}}>{pkg.description}</p>}
+        {pkg.description && <p style={{color:'rgba(255,255,255,0.55)', marginTop:8, fontSize:13}}>{pkg.description}</p>}
 
-        <h4 style={{marginTop:16, marginBottom:8}}>Isi Package</h4>
-        <div style={{background:'#f9fafb', borderRadius:8, padding:12}}>
+        <h4 style={{marginTop:16, marginBottom:8, color:'#fff', fontWeight:700, fontSize:14}}>Isi Package</h4>
+        <div style={{
+          background:'rgba(255,255,255,0.025)',
+          border:'1px solid rgba(255,255,255,0.06)',
+          borderRadius:9, padding:'10px 14px',
+        }}>
           {detail.items?.map((it, i) => (
-            <div key={i} style={{padding:'6px 0', display:'flex', justifyContent:'space-between'}}>
+            <div key={i} style={{padding:'7px 0', display:'flex', justifyContent:'space-between', color:'#fff', borderBottom: i < detail.items.length-1 ? '1px solid rgba(255,255,255,0.04)' : 'none'}}>
               <div>
                 <b>{it.menu_emoji} {it.menu_name}</b>
-                {it.size_name && <span style={{color:'#6b7280', marginLeft:8}}>({it.size_name})</span>}
+                {it.size_name && <span style={{color:'rgba(255,255,255,0.45)', marginLeft:8, fontSize:12}}>({it.size_name})</span>}
               </div>
-              <div>× {it.qty}</div>
+              <div style={{fontFamily:"'Geist Mono',monospace", color:'#fbbf24', fontWeight:700}}>× {it.qty}</div>
             </div>
           ))}
         </div>
 
         {detail.savings > 0 && (
-          <div style={{marginTop:12, padding:10, background:'#f0fdf4', borderRadius:6, color:'#065f46', fontSize:13}}>
-            🎉 Hemat <b>{fmtIDR(detail.savings)}</b> ({detail.savings_pct?.toFixed(0)}%) dibanding beli individual!
+          <div style={{
+            marginTop:12, padding:'10px 14px',
+            background:'rgba(16,185,129,0.1)',
+            border:'1px solid rgba(16,185,129,0.3)',
+            borderRadius:8, color:'#34d399', fontSize:13, fontWeight:600,
+          }}>
+            🎉 Hemat <b style={{fontFamily:"'Geist Mono',monospace"}}>{fmtIDR(detail.savings)}</b> ({detail.savings_pct?.toFixed(0)}%) dibanding beli individual!
           </div>
         )}
 
         <div style={styles.modalFooter}>
           <div style={{flex:1}}>
-            <div style={{fontSize:12, color:'#6b7280', textDecoration: detail.savings > 0 ? 'line-through' : 'none'}}>
+            <div style={{fontSize:12, color:'rgba(255,255,255,0.35)', textDecoration: detail.savings > 0 ? 'line-through' : 'none', fontFamily:"'Geist Mono',monospace"}}>
               {detail.savings > 0 && fmtIDR(detail.individual_total)}
             </div>
-            <div style={{fontSize:22, fontWeight:700}}>{fmtIDR(pkg.package_price)}</div>
+            <div style={{fontSize:24, fontWeight:800, color:'#fff', fontFamily:"'Geist Mono',monospace", letterSpacing:'-0.5px'}}>{fmtIDR(pkg.package_price)}</div>
           </div>
           <button onClick={submit} style={styles.addBtn}>+ Tambah ke Pesanan</button>
         </div>
@@ -407,40 +424,163 @@ function PackagePickerModal({ pkg, onAdd, onClose }) {
 }
 
 // ============================================================
-// STYLES
+// STYLES — Dark MacBook-premium (match POSMenu Order Baru)
 // ============================================================
 const styles = {
-  root: { display:'flex', gap:16, padding:16, height:'100vh', boxSizing:'border-box', background:'#f3f4f6', fontFamily:'system-ui,-apple-system,sans-serif' },
-  left: { flex:1.5, background:'#fff', borderRadius:12, padding:16, display:'flex', flexDirection:'column', overflow:'hidden' },
-  right: { flex:1, minWidth:340, maxWidth:420, background:'#fff', borderRadius:12, padding:16, display:'flex', flexDirection:'column' },
+  root: {
+    display:'flex', gap:14, padding:14, height:'100vh', boxSizing:'border-box',
+    background:'linear-gradient(160deg,#08090a 0%,#14151c 50%,#0a0b0e 100%)',
+    color:'#fff',
+    fontFamily:"'Inter','SF Pro Display',system-ui,-apple-system,sans-serif",
+  },
+  left: {
+    flex:1.5,
+    background:'linear-gradient(180deg,rgba(255,255,255,0.025),rgba(255,255,255,0.005))',
+    border:'1px solid rgba(255,255,255,0.06)',
+    borderRadius:14, padding:14, display:'flex', flexDirection:'column', overflow:'hidden',
+    boxShadow:'0 1px 2px rgba(0,0,0,0.3),0 8px 24px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.04)',
+  },
+  right: {
+    flex:1, minWidth:340, maxWidth:420,
+    background:'rgba(13,17,23,0.7)',
+    backdropFilter:'blur(12px)',
+    WebkitBackdropFilter:'blur(12px)',
+    border:'1px solid rgba(255,255,255,0.06)',
+    borderRadius:14, padding:14, display:'flex', flexDirection:'column',
+    color:'#fff',
+    boxShadow:'0 1px 2px rgba(0,0,0,0.3),0 8px 24px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.04)',
+  },
   searchBar: { marginBottom:12 },
-  search: { width:'100%', padding:'10px 14px', borderRadius:8, border:'1px solid #d1d5db', fontSize:14, boxSizing:'border-box' },
-  cats: { display:'flex', gap:6, marginBottom:16, overflowX:'auto', paddingBottom:4 },
-  grid: { display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(170px, 1fr))', gap:12, overflow:'auto', flex:1 },
-  card: { background:'#fff', border:'2px solid #e5e7eb', borderRadius:10, padding:12, textAlign:'left', cursor:'pointer', transition:'all 0.15s', position:'relative', display:'flex', flexDirection:'column', gap:4 },
-  cardTitle: { fontSize:14, fontWeight:600, marginTop:4 },
-  cardDesc: { fontSize:11, color:'#6b7280', minHeight:30 },
-  cardPrice: { fontSize:15, fontWeight:700, color:'#1f2937', marginTop:'auto' },
-  cardBadge: { position:'absolute', top:6, right:6, fontSize:9, fontWeight:600, background:'#dbeafe', color:'#1e40af', padding:'2px 6px', borderRadius:4 },
-  popularBadge: { position:'absolute', top:6, left:6, fontSize:9, fontWeight:700, background:'#fbbf24', color:'#78350f', padding:'2px 6px', borderRadius:4, textTransform:'uppercase' },
-  cartList: { flex:1, overflow:'auto', marginBottom:12 },
-  empty: { padding:40, textAlign:'center', color:'#9ca3af' },
-  cartItem: { display:'flex', padding:10, background:'#f9fafb', borderRadius:8, marginBottom:8, alignItems:'center', gap:6 },
-  qtyBtn: { width:30, height:30, borderRadius:4, background:'#fff', border:'1px solid #d1d5db', cursor:'pointer', fontSize:16, fontWeight:600 },
-  removeBtn: { width:30, height:30, borderRadius:4, background:'#fee2e2', color:'#dc2626', border:'none', cursor:'pointer', fontSize:18, marginLeft:4 },
-  cartFooter: { borderTop:'1px solid #e5e7eb', paddingTop:12 },
-  checkout: { width:'100%', padding:'14px 20px', background:'#10b981', color:'#fff', border:'none', borderRadius:10, fontSize:16, fontWeight:700, cursor:'pointer' },
-  checkoutDisabled: { width:'100%', padding:'14px 20px', background:'#d1d5db', color:'#9ca3af', border:'none', borderRadius:10, fontSize:16, fontWeight:700, cursor:'not-allowed' },
-  modalOverlay: { position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000 },
-  modalBox: { background:'#fff', borderRadius:12, padding:24, maxWidth:600, width:'95vw', maxHeight:'90vh', overflow:'auto' },
-  closeBtn: { width:36, height:36, borderRadius:8, background:'#f3f4f6', border:'none', fontSize:22, cursor:'pointer' },
-  sizeBtn: { padding:'12px 20px', border:'2px solid #e5e7eb', borderRadius:8, cursor:'pointer', textAlign:'center', minWidth:90 },
-  extraRow: { display:'flex', alignItems:'center', gap:4, padding:6, background:'#f9fafb', borderRadius:6 },
-  modalFooter: { display:'flex', alignItems:'center', gap:12, marginTop:20, paddingTop:16, borderTop:'1px solid #e5e7eb' },
-  addBtn: { padding:'12px 24px', background:'#10b981', color:'#fff', border:'none', borderRadius:8, fontSize:14, fontWeight:700, cursor:'pointer' }
+  search: {
+    width:'100%', padding:'10px 14px', borderRadius:9,
+    background:'rgba(255,255,255,0.03)',
+    border:'1px solid rgba(255,255,255,0.08)',
+    color:'#fff', fontSize:13, boxSizing:'border-box', outline:'none', fontFamily:'inherit',
+    transition:'border-color 0.15s, box-shadow 0.15s',
+  },
+  cats: { display:'flex', gap:6, marginBottom:14, overflowX:'auto', paddingBottom:4 },
+  grid: { display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(170px, 1fr))', gap:12, overflow:'auto', flex:1, padding:2 },
+  card: {
+    background:'linear-gradient(180deg,#15171c 0%,#0d0f14 100%)',
+    border:'1px solid rgba(255,255,255,0.08)',
+    borderRadius:12, padding:14, textAlign:'left',
+    cursor:'pointer', position:'relative', display:'flex', flexDirection:'column', gap:4,
+    color:'#fff',
+    boxShadow:'0 1px 2px rgba(0,0,0,0.3),0 4px 16px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.04)',
+    transition:'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+  },
+  cardTitle: { fontSize:14, fontWeight:700, marginTop:4, color:'#fff', letterSpacing:'-0.2px' },
+  cardDesc: { fontSize:11, color:'rgba(255,255,255,0.45)', minHeight:30, lineHeight:1.5 },
+  cardPrice: { fontSize:16, fontWeight:800, color:'#F59E0B', marginTop:'auto', fontFamily:"'Geist Mono',monospace", letterSpacing:'-0.3px' },
+  cardBadge: {
+    position:'absolute', top:8, right:8, fontSize:9, fontWeight:700,
+    background:'rgba(59,130,246,0.15)', color:'#60a5fa', padding:'2px 7px', borderRadius:5,
+    border:'1px solid rgba(59,130,246,0.3)', fontFamily:"'Geist Mono',monospace", letterSpacing:0.5,
+  },
+  popularBadge: {
+    position:'absolute', top:8, left:8, fontSize:9, fontWeight:800,
+    background:'linear-gradient(135deg,#fbbf24,#f59e0b)', color:'#1a1205',
+    padding:'3px 8px', borderRadius:5, textTransform:'uppercase', letterSpacing:0.6,
+    boxShadow:'0 2px 8px rgba(245,158,11,0.35)',
+  },
+  cartList: { flex:1, overflow:'auto', marginBottom:12, paddingRight:2 },
+  empty: {
+    padding:40, textAlign:'center', color:'rgba(255,255,255,0.35)',
+    fontFamily:"'Geist Mono',monospace", letterSpacing:0.5, fontSize:12,
+  },
+  cartItem: {
+    display:'flex', padding:'10px 12px',
+    background:'rgba(255,255,255,0.025)',
+    border:'1px solid rgba(255,255,255,0.06)',
+    borderRadius:10, marginBottom:8, alignItems:'center', gap:6,
+    color:'#fff',
+  },
+  qtyBtn: {
+    width:28, height:28, borderRadius:6,
+    background:'rgba(255,255,255,0.05)',
+    border:'1px solid rgba(255,255,255,0.08)',
+    color:'#fff', cursor:'pointer', fontSize:14, fontWeight:700, fontFamily:'inherit',
+    display:'inline-flex', alignItems:'center', justifyContent:'center',
+    transition:'all 0.15s',
+  },
+  removeBtn: {
+    width:28, height:28, borderRadius:6,
+    background:'rgba(239,68,68,0.12)', color:'#ef4444',
+    border:'1px solid rgba(239,68,68,0.25)',
+    cursor:'pointer', fontSize:16, marginLeft:4, fontFamily:'inherit',
+    display:'inline-flex', alignItems:'center', justifyContent:'center',
+    transition:'all 0.15s',
+  },
+  cartFooter: {
+    borderTop:'1px solid rgba(255,255,255,0.08)',
+    paddingTop:12,
+  },
+  checkout: {
+    width:'100%', padding:'14px 20px',
+    background:'linear-gradient(135deg,#F59E0B,#fbbf24)',
+    color:'#1a1205', border:'none', borderRadius:11,
+    fontSize:15, fontWeight:800, cursor:'pointer', fontFamily:'inherit', letterSpacing:0.3,
+    boxShadow:'0 6px 18px rgba(245,158,11,0.35), inset 0 1px 0 rgba(255,255,255,0.2)',
+    transition:'all 0.2s',
+  },
+  checkoutDisabled: {
+    width:'100%', padding:'14px 20px',
+    background:'rgba(255,255,255,0.05)', color:'rgba(255,255,255,0.3)',
+    border:'1px solid rgba(255,255,255,0.06)',
+    borderRadius:11, fontSize:15, fontWeight:700, cursor:'not-allowed', fontFamily:'inherit',
+  },
+  modalOverlay: {
+    position:'fixed', inset:0, background:'rgba(0,0,0,0.75)',
+    backdropFilter:'blur(8px)', WebkitBackdropFilter:'blur(8px)',
+    display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000,
+  },
+  modalBox: {
+    background:'linear-gradient(180deg,#15171c 0%,#0d0f14 100%)',
+    border:'1px solid rgba(255,255,255,0.08)',
+    color:'#fff',
+    borderRadius:14, padding:24, maxWidth:600, width:'95vw', maxHeight:'90vh', overflow:'auto',
+    boxShadow:'0 24px 60px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05)',
+  },
+  closeBtn: {
+    width:36, height:36, borderRadius:8,
+    background:'rgba(255,255,255,0.06)',
+    border:'1px solid rgba(255,255,255,0.08)',
+    color:'#fff', fontSize:22, cursor:'pointer', fontFamily:'inherit',
+    display:'inline-flex', alignItems:'center', justifyContent:'center',
+  },
+  sizeBtn: {
+    padding:'12px 20px',
+    border:'1px solid rgba(255,255,255,0.08)',
+    background:'rgba(255,255,255,0.03)',
+    color:'#fff', borderRadius:10,
+    cursor:'pointer', textAlign:'center', minWidth:90, fontFamily:'inherit',
+    transition:'all 0.15s',
+  },
+  extraRow: {
+    display:'flex', alignItems:'center', gap:6, padding:'7px 10px',
+    background:'rgba(255,255,255,0.025)',
+    border:'1px solid rgba(255,255,255,0.06)',
+    borderRadius:8, color:'#fff',
+  },
+  modalFooter: {
+    display:'flex', alignItems:'center', gap:12, marginTop:20, paddingTop:16,
+    borderTop:'1px solid rgba(255,255,255,0.08)',
+  },
+  addBtn: {
+    padding:'12px 24px',
+    background:'linear-gradient(135deg,#F59E0B,#fbbf24)',
+    color:'#1a1205', border:'none', borderRadius:9,
+    fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'inherit', letterSpacing:0.3,
+    boxShadow:'0 4px 14px rgba(245,158,11,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
+  },
 };
 const catBtn = (active) => ({
-  padding:'8px 16px', borderRadius:20, border: active ? '2px solid #3b82f6' : '2px solid #e5e7eb',
-  background: active ? '#3b82f6' : '#fff', color: active ? '#fff' : '#1f2937',
-  fontWeight: active ? 600 : 400, cursor:'pointer', whiteSpace:'nowrap', fontSize:13
+  padding:'8px 14px', borderRadius:20,
+  border: active ? '1px solid rgba(245,158,11,0.4)' : '1px solid rgba(255,255,255,0.08)',
+  background: active ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.025)',
+  color: active ? '#fbbf24' : 'rgba(255,255,255,0.55)',
+  fontWeight: active ? 700 : 500, cursor:'pointer', whiteSpace:'nowrap',
+  fontSize:12.5, fontFamily:'inherit',
+  boxShadow: active ? '0 0 16px rgba(245,158,11,0.15)' : 'none',
+  transition:'all 0.15s',
 });
