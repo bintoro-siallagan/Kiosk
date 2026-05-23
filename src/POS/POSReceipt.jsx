@@ -188,8 +188,10 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
   return (
     <div style={fullScreenRoot}>
       <div style={successCard}>
-        {/* Big success icon — match POSSuccess */}
-        <div style={successIcon}>✅</div>
+        {/* Big success icon — wrapped supaya animation scale/rotate gak overlap title */}
+        <div style={{ height: 110, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+          <div style={successIcon}>✅</div>
+        </div>
 
         {/* Title amber gradient + Order ID kicker */}
         <h1 style={successTitle}>PEMBAYARAN BERHASIL</h1>
@@ -323,20 +325,22 @@ const successCard = {
   position: 'relative',
 };
 const successIcon = {
-  fontSize: 96, marginBottom: 18,
+  fontSize: 80, lineHeight: 1,
   filter: 'drop-shadow(0 0 40px rgba(16,185,129,0.5))',
   animation: 'pos-receipt-pop 0.7s cubic-bezier(0.18,1.05,0.4,1) both',
+  display: 'inline-block',
+  transformOrigin: 'center center',
 };
 const successTitle = {
-  fontSize: 36, fontWeight: 800, letterSpacing: -0.6,
+  fontSize: 32, fontWeight: 800, letterSpacing: -0.6,
   background: 'linear-gradient(135deg,#F59E0B 0%,#fbbf24 50%,#F59E0B 100%)',
   WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-  margin: '0 0 8px', lineHeight: 1.2,
+  margin: '0 0 12px', lineHeight: 1.2,
   filter: 'drop-shadow(0 0 24px rgba(251,191,36,0.25))',
 };
 const successOrderId = {
   fontSize: 12, color: 'rgba(255,255,255,0.55)',
-  letterSpacing: 2, marginBottom: 32, fontWeight: 700,
+  letterSpacing: 2, marginBottom: 36, marginTop: 0, fontWeight: 700,
   fontFamily: "'Geist Mono',monospace", textTransform: 'uppercase',
 };
 const detailsCard = {
