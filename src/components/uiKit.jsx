@@ -188,20 +188,20 @@ export function UiKitProvider({ children }) {
                 style={{ background: "transparent", border: "1px solid #2a2b30", color: "#9ca3af", padding: "3px 9px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit" }}>×</button>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "8px 16px", fontSize: 13 }}>
-              <kbd style={kbdStyle}>?</kbd><span style={{ color: "#9ca3af" }}>Toggle keyboard shortcuts overlay</span>
-              <kbd style={kbdStyle}>/</kbd><span style={{ color: "#9ca3af" }}>Focus search bar</span>
-              <kbd style={kbdStyle}>Ctrl+N</kbd><span style={{ color: "#9ca3af" }}>New item (di modul yang support)</span>
-              <kbd style={kbdStyle}>Ctrl+S</kbd><span style={{ color: "#9ca3af" }}>Save form</span>
-              <kbd style={kbdStyle}>Esc</kbd><span style={{ color: "#9ca3af" }}>Close modal / cancel</span>
-              <kbd style={kbdStyle}>Enter</kbd><span style={{ color: "#9ca3af" }}>Submit form / confirm prompt</span>
+              <kbd style={ckKbd}>?</kbd><span style={{ color: "#9ca3af" }}>Toggle keyboard shortcuts overlay</span>
+              <kbd style={ckKbd}>/</kbd><span style={{ color: "#9ca3af" }}>Focus search bar</span>
+              <kbd style={ckKbd}>Ctrl+N</kbd><span style={{ color: "#9ca3af" }}>New item (di modul yang support)</span>
+              <kbd style={ckKbd}>Ctrl+S</kbd><span style={{ color: "#9ca3af" }}>Save form</span>
+              <kbd style={ckKbd}>Esc</kbd><span style={{ color: "#9ca3af" }}>Close modal / cancel</span>
+              <kbd style={ckKbd}>Enter</kbd><span style={{ color: "#9ca3af" }}>Submit form / confirm prompt</span>
               {Object.entries(registeredShortcuts).map(([k, d]) => (
                 <span key={k} style={{ display: "contents" }}>
-                  <kbd style={kbdStyle}>{k}</kbd><span style={{ color: "#9ca3af" }}>{d}</span>
+                  <kbd style={ckKbd}>{k}</kbd><span style={{ color: "#9ca3af" }}>{d}</span>
                 </span>
               ))}
             </div>
             <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #2a2b30", fontSize: 11, color: "#6b7280", textAlign: "center" }}>
-              Tip: tekan <kbd style={kbdStyle}>?</kbd> kapanpun untuk membuka panel ini
+              Tip: tekan <kbd style={ckKbd}>?</kbd> kapanpun untuk membuka panel ini
             </div>
           </div>
         </div>
@@ -632,6 +632,262 @@ export function useCrud({ apiBase = "", path, onChange, labelKey = "name", idKey
 
   return { editing, setEditing, openEdit, openNew, cancel, save, remove };
 }
+
+// ════════════════════════════════════════════════════════════════════
+// COMMAND PALETTE — Cmd+K Apple-style universal search
+// Usage:
+//   <CommandPalette
+//     items={[{ id, title, subtitle?, icon?, kbd?, onSelect }]}
+//     placeholder="Cari modul, action…"
+//     hotkey="k"        // default "k" (Cmd+K / Ctrl+K)
+//   />
+//
+// Auto-binds Cmd+K / Ctrl+K to open. Esc closes. ↑↓ navigate. Enter selects.
+// ════════════════════════════════════════════════════════════════════
+export function CommandPalette({ items = [], placeholder = "Cari modul, action, atau ketik perintah…", hotkey = "k", recentKey = "ck-recents" }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [cursor, setCursor] = useState(0);
+  const inputRef = useRef(null);
+  const listRef = useRef(null);
+  const [recents, setRecents] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(recentKey) || "[]"); } catch { return []; }
+  });
+
+  // Open via Cmd+K / Ctrl+K
+  useEffect(() => {
+    const onKey = (e) => {
+      const isModKey = e.metaKey || e.ctrlKey;
+      if (isModKey && e.key.toLowerCase() === hotkey.toLowerCase()) {
+        e.preventDefault();
+        setOpen(o => !o);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [hotkey]);
+
+  // Focus input + reset cursor on open
+  useEffect(() => {
+    if (open) {
+      setQuery("");
+      setCursor(0);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [open]);
+
+  // Filter items
+  const filtered = useMemo(() => {
+    if (!query.trim()) {
+      // Show recents first, then all items
+      const recentMap = new Map(recents.map((r, i) => [r, i]));
+      const recentItems = items.filter(it => recentMap.has(it.id));
+      recentItems.sort((a, b) => recentMap.get(a.id) - recentMap.get(b.id));
+      const rest = items.filter(it => !recentMap.has(it.id));
+      return [...recentItems, ...rest].slice(0, 50);
+    }
+    const q = query.toLowerCase().trim();
+    const tokens = q.split(/\s+/);
+    const scored = items
+      .map(it => {
+        const hay = `${it.title || ""} ${it.subtitle || ""} ${it.keywords || ""}`.toLowerCase();
+        let score = 0;
+        for (const t of tokens) {
+          if (!t) continue;
+          if (hay.startsWith(t)) score += 30;
+          else if (hay.includes(" " + t)) score += 18;
+          else if (hay.includes(t)) score += 8;
+          else return null;
+        }
+        // Title boost
+        if ((it.title || "").toLowerCase().includes(q)) score += 12;
+        return { it, score };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.score - a.score)
+      .map(x => x.it)
+      .slice(0, 50);
+    return scored;
+  }, [items, query, recents]);
+
+  // Keep cursor in range
+  useEffect(() => { if (cursor >= filtered.length) setCursor(Math.max(0, filtered.length - 1)); }, [filtered.length, cursor]);
+
+  // Scroll cursor into view
+  useEffect(() => {
+    if (!open) return;
+    const list = listRef.current;
+    if (!list) return;
+    const active = list.querySelector('[data-active="true"]');
+    if (active) active.scrollIntoView({ block: "nearest" });
+  }, [cursor, open]);
+
+  const close = () => setOpen(false);
+  const select = (item) => {
+    if (!item) return;
+    // Save recent
+    setRecents(prev => {
+      const next = [item.id, ...prev.filter(id => id !== item.id)].slice(0, 8);
+      try { localStorage.setItem(recentKey, JSON.stringify(next)); } catch {}
+      return next;
+    });
+    close();
+    item.onSelect?.();
+  };
+
+  const onKeyDown = (e) => {
+    if (e.key === "Escape") { e.preventDefault(); close(); return; }
+    if (e.key === "ArrowDown") { e.preventDefault(); setCursor(c => Math.min(filtered.length - 1, c + 1)); return; }
+    if (e.key === "ArrowUp")   { e.preventDefault(); setCursor(c => Math.max(0, c - 1)); return; }
+    if (e.key === "Enter")     { e.preventDefault(); select(filtered[cursor]); return; }
+  };
+
+  if (!open) return null;
+
+  return (
+    <div onClick={close} role="dialog" aria-modal="true" aria-label="Command palette"
+      style={{
+        position: "fixed", inset: 0, zIndex: 99999,
+        background: "rgba(0,0,0,0.5)",
+        backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+        display: "flex", alignItems: "flex-start", justifyContent: "center",
+        paddingTop: "12vh", paddingLeft: 20, paddingRight: 20,
+        animation: "uiKitFadeIn 0.15s ease-out",
+      }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: "100%", maxWidth: 640,
+        background: "linear-gradient(180deg,#15171c 0%,#0d0f14 100%)",
+        border: "1px solid rgba(255,255,255,0.1)",
+        borderRadius: 16, overflow: "hidden",
+        boxShadow: "0 24px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04), inset 0 1px 0 rgba(255,255,255,0.06)",
+        fontFamily: "'Inter','SF Pro Display',system-ui,-apple-system,sans-serif",
+        color: "#fff",
+        animation: "ck-pop 0.18s cubic-bezier(0.18,1.05,0.4,1) both",
+      }}>
+        {/* Search input */}
+        <div style={{ display: "flex", alignItems: "center", padding: "14px 18px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <span style={{ fontSize: 18, marginRight: 10, opacity: 0.55 }}>⌘</span>
+          <input
+            ref={inputRef}
+            value={query}
+            onChange={e => { setQuery(e.target.value); setCursor(0); }}
+            onKeyDown={onKeyDown}
+            placeholder={placeholder}
+            spellCheck={false}
+            autoComplete="off"
+            style={{
+              flex: 1, background: "transparent", border: "none", outline: "none",
+              color: "#fff", fontSize: 15, fontFamily: "inherit", padding: 0,
+              letterSpacing: -0.2,
+            }}
+          />
+          <kbd style={ckKbd}>ESC</kbd>
+        </div>
+
+        {/* Results list */}
+        <div ref={listRef} style={{ maxHeight: "55vh", overflowY: "auto", padding: "6px 0" }}>
+          {filtered.length === 0 ? (
+            <div style={{ padding: "30px 20px", textAlign: "center", color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
+              Tidak ada hasil untuk <b style={{ color: "rgba(255,255,255,0.7)" }}>"{query}"</b>
+            </div>
+          ) : (
+            <>
+              {!query.trim() && recents.length > 0 && (
+                <div style={ckGroupLabel}>TERAKHIR DIBUKA</div>
+              )}
+              {filtered.map((it, i) => {
+                // Insert divider between recents and rest
+                const showAllLabel = !query.trim() && recents.length > 0 && i === recents.length;
+                return (
+                  <span key={it.id}>
+                    {showAllLabel && <div style={ckGroupLabel}>SEMUA MODUL</div>}
+                    <div
+                      data-active={cursor === i}
+                      onMouseEnter={() => setCursor(i)}
+                      onClick={() => select(it)}
+                      style={{
+                        ...ckItem,
+                        background: cursor === i ? "rgba(245,158,11,0.1)" : "transparent",
+                        borderLeft: cursor === i ? "2px solid #fbbf24" : "2px solid transparent",
+                      }}>
+                      <span style={ckItemIcon}>{it.icon || "▸"}</span>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", letterSpacing: -0.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.title}</div>
+                        {it.subtitle && (
+                          <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.45)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{it.subtitle}</div>
+                        )}
+                      </span>
+                      {it.kbd && <kbd style={ckKbd}>{it.kbd}</kbd>}
+                      {cursor === i && <span style={{ fontSize: 11, color: "#fbbf24", fontFamily: "'Geist Mono',monospace", fontWeight: 700, letterSpacing: 1, marginLeft: 8 }}>↵</span>}
+                    </div>
+                  </span>
+                );
+              })}
+            </>
+          )}
+        </div>
+
+        {/* Footer hint */}
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center",
+          padding: "10px 16px", borderTop: "1px solid rgba(255,255,255,0.06)",
+          fontSize: 11, color: "rgba(255,255,255,0.4)",
+          fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5,
+        }}>
+          <span style={{ display: "flex", gap: 14 }}>
+            <span><kbd style={ckKbdSm}>↑↓</kbd> Navigasi</span>
+            <span><kbd style={ckKbdSm}>↵</kbd> Pilih</span>
+            <span><kbd style={ckKbdSm}>ESC</kbd> Tutup</span>
+          </span>
+          <span>{filtered.length} hasil</span>
+        </div>
+
+        <style>{`
+          @keyframes ck-pop {
+            from { opacity: 0; transform: scale(0.96) translateY(-8px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+          }
+        `}</style>
+      </div>
+    </div>
+  );
+}
+
+const ckItem = {
+  display: "flex", alignItems: "center", gap: 12,
+  padding: "10px 18px",
+  cursor: "pointer",
+  transition: "background 0.1s ease, border-color 0.1s ease",
+  fontFamily: "inherit",
+};
+const ckItemIcon = {
+  width: 28, height: 28, borderRadius: 7,
+  background: "rgba(255,255,255,0.04)",
+  border: "1px solid rgba(255,255,255,0.06)",
+  display: "flex", alignItems: "center", justifyContent: "center",
+  fontSize: 14, flexShrink: 0,
+};
+const ckGroupLabel = {
+  fontSize: 10, color: "rgba(255,255,255,0.35)",
+  fontFamily: "'Geist Mono',monospace", letterSpacing: 1.5, fontWeight: 700,
+  textTransform: "uppercase",
+  padding: "10px 20px 4px",
+};
+const ckKbd = {
+  fontSize: 10, padding: "2px 8px", borderRadius: 5,
+  background: "rgba(255,255,255,0.06)",
+  border: "1px solid rgba(255,255,255,0.1)",
+  color: "rgba(255,255,255,0.5)",
+  fontFamily: "'Geist Mono',monospace", fontWeight: 700, letterSpacing: 0.5,
+};
+const ckKbdSm = {
+  fontSize: 9, padding: "1px 6px", borderRadius: 4,
+  background: "rgba(255,255,255,0.05)",
+  border: "1px solid rgba(255,255,255,0.08)",
+  color: "rgba(255,255,255,0.5)",
+  fontFamily: "'Geist Mono',monospace", fontWeight: 700,
+  marginRight: 5,
+};
 
 export const theme = {
   card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470", text: "#e6edf3",

@@ -15,6 +15,7 @@ const MemberList    = lazy(() => import("./MemberList.jsx"));
 const PromoManager  = lazy(() => import("./PromoManager.jsx"));
 const ShiftManager  = lazy(() => import("./ShiftManager.jsx"));
 import { TABS, GROUPS } from "./adminModules.js";
+import { CommandPalette } from "./components/uiKit.jsx";
 
 function PanelLoading() {
   return (
@@ -332,6 +333,47 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     const t = TABS.find(x => x.id === id);
     return { _k: "m:" + id, label: t ? t.label : id, on: () => openRight("tools", id) };
   };
+
+  // ⌘K Command Palette — universal search across all modules + actions
+  const commandItems = useMemo(() => {
+    const tabItems = TABS.map(t => {
+      const g = GROUPS.find(gr => gr.ids.includes(t.id));
+      return {
+        id: "tab:" + t.id,
+        title: t.label,
+        subtitle: g ? `${g.icon || ""} ${g.name}` : "",
+        icon: t.label.split(" ")[0]?.match(/\p{Emoji}/u) ? t.label.split(" ")[0] : "▸",
+        keywords: t.id + " " + (g?.name || ""),
+        onSelect: () => openRight("tools", t.id),
+      };
+    });
+    const surfaceItems = [
+      { id: "surf:pos",         title: "POS Kasir",            subtitle: "Buka POS terminal di tab baru",        icon: "🧾", kbd: "Open", onSelect: () => openTab("?pos=1") },
+      { id: "surf:pos-cinema",  title: "POS Cinema (Kasir)",   subtitle: "Jual tiket cinema di counter",         icon: "🎟️", kbd: "Open", onSelect: () => openTab("?pos-cinema") },
+      { id: "surf:kds",         title: "KDS Dapur",            subtitle: "Kitchen display untuk staff dapur",    icon: "👨‍🍳", kbd: "Open", onSelect: () => openTab("?kds=1") },
+      { id: "surf:cds",         title: "CDS Customer Display", subtitle: "Layar besar untuk customer",           icon: "📺", kbd: "Open", onSelect: () => openTab("?cds=1") },
+      { id: "surf:kiosk",       title: "Kiosk F&B (Customer)", subtitle: "Customer self-order",                  icon: "🖥️", kbd: "Open", onSelect: () => openTab("?kiosk=1") },
+      { id: "surf:flow",        title: "FlowApp QR-Order",     subtitle: "Customer order via QR meja",           icon: "📱", kbd: "Open", onSelect: () => openTab("?flow") },
+      { id: "surf:cinema",      title: "Cinema Kiosk",         subtitle: "Customer beli tiket cinema",           icon: "🎬", kbd: "Open", onSelect: () => openTab("?cinema") },
+      { id: "surf:cinema-snack", title: "In-Studio Order",     subtitle: "QR snack order mid-movie",             icon: "🍿", kbd: "Open", onSelect: () => openTab("?cinema-snack") },
+      { id: "surf:cinema-board", title: "Cinema Lobby Board",  subtitle: "TV signage di lobby",                  icon: "📺", kbd: "Open", onSelect: () => openTab("?cinema-board") },
+      { id: "surf:track",       title: "Order Tracking",       subtitle: "Customer cek status pesanan",          icon: "📍", kbd: "Open", onSelect: () => openTab("?track=1") },
+    ];
+    const actionItems = [
+      { id: "act:owner",     title: "Owner Dashboard",   subtitle: "Real-time KPI + alerts",            icon: "📊", onSelect: () => openRight("tools", "dashboard") },
+      { id: "act:command",   title: "Command Center",    subtitle: "Real-time operations monitoring",  icon: "🛰️", onSelect: () => openRight("command") },
+      { id: "act:orders",    title: "Pesanan / Transaksi",subtitle:"Order list outlet",                 icon: "🧾", onSelect: () => openRight("admin", "orders") },
+      { id: "act:menu",      title: "Menu & Stok",       subtitle: "Master menu + availability",       icon: "🍔", onSelect: () => openRight("admin", "menu") },
+      { id: "act:qrgen",     title: "QR Meja",           subtitle: "Generate QR per meja",             icon: "🪑", onSelect: () => openRight("admin", "qrgen") },
+      { id: "act:settings",  title: "Pengaturan",        subtitle: "Outlet + payment config",          icon: "⚙️", onSelect: () => openRight("admin", "settings") },
+      { id: "act:members",   title: "Member & Customer", subtitle: "CRM + loyalty",                    icon: "👥", onSelect: () => openRight("members") },
+      { id: "act:promo",     title: "Promo Code",        subtitle: "Voucher + diskon",                 icon: "🏷️", onSelect: () => openRight("promo") },
+      { id: "act:shift",     title: "Operasional / Shift", subtitle: "Buka/tutup shift kasir",         icon: "📋", onSelect: () => openRight("shift") },
+      { id: "act:report",    title: "Laporan",           subtitle: "Z-report + sales analytics",       icon: "📊", onSelect: () => openRight("report") },
+      { id: "act:logout",    title: "Logout",            subtitle: "Keluar dari sesi admin",           icon: "🚪", onSelect: () => onLogout?.() },
+    ];
+    return [...surfaceItems, ...actionItems, ...tabItems];
+  }, []);
   const toolsSub = GROUPS.filter(g => canSee(g.module)).map(g => {
     // 3-level nesting: kalau group punya `categories`, render category sub-bucket
     if (g.categories?.length) {
@@ -483,6 +525,35 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
             style={{ background: navHidden ? "#22d3ee15" : "#161619", border: `1px solid ${navHidden ? "#22d3ee55" : "#2a2b30"}`, borderRadius: 8, color: navHidden ? "#22d3ee" : "#9da7b3", fontSize: 11, fontWeight: 700, fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5, padding: "7px 11px", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, boxShadow: navHidden ? "0 0 12px #22d3ee33" : "none", transition: "all .15s" }}>
             <span style={{ fontSize: 13 }}>{navHidden ? "▶" : "◀"}</span>
             <span>{navHidden ? "SHOW NAV" : "TERMINAL"}</span>
+          </button>
+          {/* ⌘K hint chip — clicking simulates the shortcut */}
+          <button
+            onClick={() => {
+              // Trigger CommandPalette's Cmd+K handler via synthetic event
+              const ev = new KeyboardEvent("keydown", { key: "k", ctrlKey: true, metaKey: true, bubbles: true });
+              document.dispatchEvent(ev);
+            }}
+            title="Buka command palette (⌘K / Ctrl+K)"
+            aria-label="Open command palette"
+            style={{
+              background: "rgba(255,255,255,0.025)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 8,
+              color: "#9ca3af",
+              fontSize: 11, fontWeight: 700,
+              fontFamily: "'Geist Mono',monospace", letterSpacing: 0.4,
+              padding: "7px 12px", cursor: "pointer",
+              display: "inline-flex", alignItems: "center", gap: 8,
+              transition: "all .15s",
+            }}>
+            <span style={{ fontSize: 13 }}>🔍</span>
+            <span>Cari…</span>
+            <span style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 4, padding: "1px 6px",
+              fontSize: 9.5, color: "rgba(255,255,255,0.55)", letterSpacing: 0.6,
+            }}>⌘K</span>
           </button>
           <div style={{ position: "relative" }}>
             <img src="/logo.png" alt="KaryaOS" style={{ width: 40, height: 40, borderRadius: 10, objectFit: "contain", flexShrink: 0, filter: "drop-shadow(0 0 12px rgba(245,158,11,0.35))" }} />
@@ -895,8 +966,11 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       <div style={S.footer} className="no-print">
         {onLogout && <button className="tile" style={{ ...S.footBtn, color: "#f87171", borderColor: "#f8717133" }} onClick={onLogout}>Logout</button>}
         <span style={{ flex: 1 }} />
-        <span style={S.footNote}>karyaOS · 145+ modul · 🎬 Cinema · 🍽️ F&B · 🛡️ Enterprise · v5</span>
+        <span style={S.footNote}>karyaOS · 145+ modul · 🎬 Cinema · 🍽️ F&B · 🛡️ Enterprise · v5 · <kbd style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 4, padding: "1px 5px", fontSize: 9.5, color: "rgba(255,255,255,0.6)", fontFamily: "'Geist Mono',monospace" }}>⌘K</kbd> untuk cari</span>
       </div>
+
+      {/* ⌘K Universal Command Palette */}
+      <CommandPalette items={commandItems} placeholder="Cari modul, surface, atau action…" />
     </div>
   );
 }
