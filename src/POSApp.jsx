@@ -26,23 +26,16 @@ function QuickOrderFlow({ cashier, onExit }) {
 
   if (stage === "menu") {
     return (
-      <>
-        <button
-          onClick={onExit}
-          style={{ position: "fixed", top: 12, left: 12, zIndex: 10000, padding: "8px 14px",
-                   background: "#1a1a1a", color: "#fff", border: "1px solid #444",
-                   borderRadius: 8, cursor: "pointer", fontSize: 13 }}
-        >← Home</button>
-        <POSMenuPicker
-          apiBase={`${API_HOST}/api/master`}
-          cashier={cashier}
-          behaviorBase={API_HOST}
-          onCheckout={({ items, subtotal }) => {
-            setOrder({ ref: `QO-${Date.now()}`, total: subtotal, items, cashier: cashier?.name });
-            setStage("payment");
-          }}
-        />
-      </>
+      <POSMenuPicker
+        apiBase={`${API_HOST}/api/master`}
+        cashier={cashier}
+        behaviorBase={API_HOST}
+        onExit={onExit}
+        onCheckout={({ items, subtotal }) => {
+          setOrder({ ref: `QO-${Date.now()}`, total: subtotal, items, cashier: cashier?.name });
+          setStage("payment");
+        }}
+      />
     );
   }
   if (stage === "payment" && order) {

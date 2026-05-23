@@ -15,7 +15,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 const fmtIDR = (n) => new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', maximumFractionDigits:0}).format(Math.round(n||0));
 const API_HOST = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
-export default function POSMenuPicker({ onCheckout, apiBase = '/api/master', cashier, behaviorBase = '' }) {
+export default function POSMenuPicker({ onCheckout, onExit, apiBase = '/api/master', cashier, behaviorBase = '' }) {
   const [data, setData] = useState({ menus: [], packages: [] });
   const [categories, setCategories] = useState([]);
   const [extras, setExtras] = useState([]);
@@ -97,11 +97,31 @@ export default function POSMenuPicker({ onCheckout, apiBase = '/api/master', cas
   if (loading) return <div style={{padding:40, textAlign:'center'}}>Loading menu...</div>;
 
   return (
-    <div style={styles.root}>
+    <div style={styles.shell}>
+      <style>{`
+        .qs-card { box-shadow: 0 1px 2px rgba(0,0,0,0.3),0 4px 16px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.04); }
+        .qs-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.16) !important; box-shadow: 0 1px 2px rgba(0,0,0,0.3),0 12px 32px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.08) !important; }
+        .qs-card:active { transform: translateY(0) scale(0.985); }
+        .qs-search:focus { border-color: rgba(245,158,11,0.4) !important; box-shadow: 0 0 0 3px rgba(245,158,11,0.12) !important; }
+      `}</style>
+      {/* Top header bar — match POSMenu Order Baru */}
+      <header style={styles.header}>
+        {onExit && (
+          <button onClick={onExit} style={styles.iconBtn}>← Back</button>
+        )}
+        <div style={styles.summary}>
+          <span style={styles.modeChip}>⚡ Quick Service</span>
+          <span style={styles.dot}>·</span>
+          <span style={styles.muted}>Order cepat tanpa pilih meja</span>
+        </div>
+        <div style={styles.kasir}>👤 {cashier?.name || "Kasir"}</div>
+      </header>
+
+      <div style={styles.root}>
       {/* LEFT — menu */}
       <div style={styles.left}>
         <div style={styles.searchBar}>
-          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari menu..." style={styles.search} />
+          <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="🔍 Cari menu..." className="qs-search" style={styles.search} />
         </div>
 
         <div style={styles.cats}>
@@ -175,6 +195,7 @@ export default function POSMenuPicker({ onCheckout, apiBase = '/api/master', cas
       {picking?.isPackage && (
         <PackagePickerModal pkg={picking.pkg} onAdd={addToCart} onClose={()=>setPicking(null)} />
       )}
+      </div>
     </div>
   );
 }
@@ -190,30 +211,33 @@ function MenuCard({ menu, onClick }) {
   const isRange = hasSizes && new Set(menu.size_variants.map(v => menu.price + v.price_adjustment)).size > 1;
 
   return (
-    <button onClick={onClick} style={styles.card}>
-      <div style={{fontSize:32}}>{menu.emoji || '🍴'}</div>
+    <button onClick={onClick} style={styles.card} className="qs-card">
+      {/* Visual image-placeholder area — emoji big, like POSMenu Order Baru */}
+      <div style={styles.cardImg}>
+        <span style={{ fontSize: 44, filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.5))" }}>{menu.emoji || '🍴'}</span>
+        {menu.is_popular && <div style={styles.popularBadge}>⭐ Popular</div>}
+        {hasSizes && <div style={styles.cardBadge}>{menu.size_variants.length} ukuran</div>}
+      </div>
       <div style={styles.cardTitle}>{menu.name}</div>
-      {menu.is_popular ? <div style={styles.popularBadge}>⭐ Popular</div> : null}
-      <div style={styles.cardDesc}>{menu.description || ''}</div>
       <div style={styles.cardPrice}>
         {isRange ? `mulai ${fmtIDR(minPrice)}` : fmtIDR(basePrice)}
       </div>
-      {hasSizes && <div style={styles.cardBadge}>{menu.size_variants.length} ukuran</div>}
     </button>
   );
 }
 
 function PackageCard({ pkg, onClick }) {
   return (
-    <button onClick={onClick} style={{
+    <button onClick={onClick} className="qs-card" style={{
       ...styles.card,
       borderColor:'rgba(168,85,247,0.35)',
       background:'linear-gradient(180deg, rgba(168,85,247,0.08) 0%, #15171c 60%, #0d0f14 100%)',
     }}>
-      <div style={{fontSize:32}}>{pkg.emoji || '🎁'}</div>
+      <div style={{ ...styles.cardImg, background:'linear-gradient(180deg, rgba(168,85,247,0.15), rgba(168,85,247,0.04))' }}>
+        <span style={{ fontSize: 44, filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.5))" }}>{pkg.emoji || '🎁'}</span>
+        <div style={{...styles.popularBadge, background:'linear-gradient(135deg,#a855f7,#c084fc)', color:'#fff'}}>Package</div>
+      </div>
       <div style={styles.cardTitle}>{pkg.name}</div>
-      <div style={{...styles.popularBadge, background:'linear-gradient(135deg,#a855f7,#c084fc)', color:'#fff'}}>Package</div>
-      <div style={styles.cardDesc}>{pkg.description || ''}</div>
       <div style={styles.cardPrice}>{fmtIDR(pkg.package_price)}</div>
     </button>
   );
@@ -424,14 +448,47 @@ function PackagePickerModal({ pkg, onAdd, onClose }) {
 }
 
 // ============================================================
-// STYLES — Dark MacBook-premium (match POSMenu Order Baru)
+// STYLES — Dark MacBook-premium (match POSMenu Order Baru layout)
 // ============================================================
 const styles = {
+  // Outer shell with top header bar + body
+  shell: {
+    minHeight: "100vh", boxSizing: "border-box",
+    background: "linear-gradient(160deg,#08090a 0%,#14151c 50%,#0a0b0e 100%)",
+    color: "#fff",
+    fontFamily: "'Inter','SF Pro Display',system-ui,-apple-system,sans-serif",
+    display: "flex", flexDirection: "column",
+  },
+  // Top header bar — match POSMenu Order Baru
+  header: {
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    padding: "12px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)",
+    background: "rgba(13,17,23,0.78)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+    position: "sticky", top: 0, zIndex: 10,
+  },
+  iconBtn: {
+    background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.08)",
+    color: "rgba(255,255,255,0.65)", padding: "7px 14px", borderRadius: 8,
+    fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", letterSpacing: 0.3,
+  },
+  summary: { display: "flex", gap: 8, alignItems: "center", flex: 1, marginLeft: 14, color: "rgba(255,255,255,0.65)", fontSize: 12.5 },
+  modeChip: {
+    background: "linear-gradient(135deg, rgba(245,158,11,0.18), rgba(251,191,36,0.08))",
+    border: "1px solid rgba(245,158,11,0.4)",
+    color: "#fbbf24", padding: "4px 10px", borderRadius: 7,
+    fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+  },
+  dot: { color: "#3a3b40", fontSize: 11 },
+  muted: { color: "rgba(255,255,255,0.4)", fontSize: 12, fontStyle: "italic" },
+  kasir: {
+    fontSize: 12.5, color: "rgba(255,255,255,0.7)", fontWeight: 600,
+    background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
+    padding: "6px 12px", borderRadius: 8,
+  },
+  // Body grid — menu side + cart side
   root: {
-    display:'flex', gap:14, padding:14, height:'100vh', boxSizing:'border-box',
-    background:'linear-gradient(160deg,#08090a 0%,#14151c 50%,#0a0b0e 100%)',
+    display:'flex', gap:14, padding:14, flex: 1, boxSizing:'border-box', minHeight: 0,
     color:'#fff',
-    fontFamily:"'Inter','SF Pro Display',system-ui,-apple-system,sans-serif",
   },
   left: {
     flex:1.5,
@@ -463,25 +520,36 @@ const styles = {
   card: {
     background:'linear-gradient(180deg,#15171c 0%,#0d0f14 100%)',
     border:'1px solid rgba(255,255,255,0.08)',
-    borderRadius:12, padding:14, textAlign:'left',
-    cursor:'pointer', position:'relative', display:'flex', flexDirection:'column', gap:4,
-    color:'#fff',
+    borderRadius:14, padding:0, textAlign:'left',
+    cursor:'pointer', position:'relative', display:'flex', flexDirection:'column',
+    color:'#fff', overflow: 'hidden',
     boxShadow:'0 1px 2px rgba(0,0,0,0.3),0 4px 16px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.04)',
     transition:'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+    fontFamily: 'inherit',
   },
-  cardTitle: { fontSize:14, fontWeight:700, marginTop:4, color:'#fff', letterSpacing:'-0.2px' },
-  cardDesc: { fontSize:11, color:'rgba(255,255,255,0.45)', minHeight:30, lineHeight:1.5 },
-  cardPrice: { fontSize:16, fontWeight:800, color:'#F59E0B', marginTop:'auto', fontFamily:"'Geist Mono',monospace", letterSpacing:'-0.3px' },
+  // Visual image-placeholder area at top — emoji centered, gradient bg
+  cardImg: {
+    width: '100%', height: 110,
+    background: 'linear-gradient(180deg, rgba(255,107,53,0.08) 0%, rgba(255,255,255,0.02) 100%)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    position: 'relative',
+    borderBottom: '1px solid rgba(255,255,255,0.04)',
+  },
+  cardTitle: { fontSize:13.5, fontWeight:700, color:'#fff', letterSpacing:'-0.2px', padding: '10px 12px 4px', lineHeight: 1.3, minHeight: 38 },
+  cardPrice: { fontSize:15, fontWeight:800, color:'#F59E0B', fontFamily:"'Geist Mono',monospace", letterSpacing:'-0.3px', padding: '0 12px 12px' },
   cardBadge: {
-    position:'absolute', top:8, right:8, fontSize:9, fontWeight:700,
-    background:'rgba(59,130,246,0.15)', color:'#60a5fa', padding:'2px 7px', borderRadius:5,
-    border:'1px solid rgba(59,130,246,0.3)', fontFamily:"'Geist Mono',monospace", letterSpacing:0.5,
+    position:'absolute', bottom:6, right:6, fontSize:9, fontWeight:700,
+    background:'rgba(13,17,23,0.85)', color:'#60a5fa',
+    padding:'3px 7px', borderRadius:5,
+    border:'1px solid rgba(59,130,246,0.35)',
+    fontFamily:"'Geist Mono',monospace", letterSpacing:0.5,
+    backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
   },
   popularBadge: {
-    position:'absolute', top:8, left:8, fontSize:9, fontWeight:800,
+    position:'absolute', top:6, left:6, fontSize:9, fontWeight:800,
     background:'linear-gradient(135deg,#fbbf24,#f59e0b)', color:'#1a1205',
     padding:'3px 8px', borderRadius:5, textTransform:'uppercase', letterSpacing:0.6,
-    boxShadow:'0 2px 8px rgba(245,158,11,0.35)',
+    boxShadow:'0 2px 8px rgba(245,158,11,0.4)',
   },
   cartList: { flex:1, overflow:'auto', marginBottom:12, paddingRight:2 },
   empty: {
