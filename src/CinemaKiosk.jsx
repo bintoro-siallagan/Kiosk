@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 // films → showtimes → seats → F&B bundles → confirmation. Uses /api/cinema/*.
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const BG = "#050810";
+const STATUS_LABEL = { scheduled: "", running: "Berlangsung", closed: "Tutup", sold_out: "Sold Out", cancelled: "Batal" };
+const STATUS_COLOR = { running: "#f59e0b", closed: "#6b7280", sold_out: "#ef4444", cancelled: "#dc2626" };
 
 export default function CinemaKiosk({ apiBase }) {
   const [step, setStep] = useState("films");
@@ -181,14 +183,26 @@ export default function CinemaKiosk({ apiBase }) {
             <H>{film.title}</H>
             <div style={{ fontSize: 13, color: "#7d8590", marginTop: -8, marginBottom: 16 }}>{film.genre} · {film.duration_min} mnt · {film.rating}</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 12 }}>
-              {filmShows.map(s => (
-                <button key={s.id} onClick={() => pickShow(s)} style={card()}>
-                  <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 22, fontWeight: 700 }}>{s.start_time}</div>
-                  <div style={{ fontSize: 12.5, color: "#7d8590", marginTop: 4 }}>{s.show_date}</div>
-                  <div style={{ fontSize: 12.5, color: "#7d8590" }}>{s.studio_name} · {s.studio_type}</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#10b981", marginTop: 8 }}>{rp(s.price)}</div>
-                </button>
-              ))}
+              {filmShows.map(s => {
+                const ds = s.derived_status || "scheduled";
+                const locked = ds !== "scheduled";
+                return (
+                  <button key={s.id} onClick={() => !locked && pickShow(s)} disabled={locked}
+                    style={{ ...card(), opacity: locked ? 0.6 : 1, cursor: locked ? "not-allowed" : "pointer", position: "relative" }}>
+                    <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 22, fontWeight: 700 }}>{s.start_time}</div>
+                    <div style={{ fontSize: 12.5, color: "#7d8590", marginTop: 4 }}>{s.show_date}</div>
+                    <div style={{ fontSize: 12.5, color: "#7d8590" }}>{s.studio_name} · {s.studio_type}</div>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, gap: 8 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#10b981" }}>{rp(s.price)}</div>
+                      {locked && (
+                        <span style={{ fontSize: 10, fontWeight: 800, color: STATUS_COLOR[ds] || "#9ca3af", background: (STATUS_COLOR[ds] || "#9ca3af") + "22", borderRadius: 6, padding: "3px 8px", letterSpacing: 1 }}>
+                          {STATUS_LABEL[ds] || ds}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
               {filmShows.length === 0 && <div style={{ color: "#5b6470", fontSize: 14 }}>Belum ada jadwal untuk film ini.</div>}
             </div>
           </>

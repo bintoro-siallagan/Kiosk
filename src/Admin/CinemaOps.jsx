@@ -11,6 +11,9 @@ const TABS = [["film", "🎬 Film"], ["studio", "🏛️ Studio"], ["showtime", 
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const statusLabel = (s) => (STATUSES.find(x => x[0] === s) || [s, s])[1];
 const statusColor = (s) => s === "now_showing" ? "#10b981" : s === "coming_soon" ? "#eab308" : "#5b6470";
+// Derived showtime status (computed from time + sold + manual_closed_at)
+const DS_LABEL = { scheduled: "Terjadwal", running: "Berlangsung", closed: "Tutup", sold_out: "Sold Out", cancelled: "Batal" };
+const DS_COLOR = { scheduled: "#10b981", running: "#f59e0b", closed: "#6b7280", sold_out: "#ef4444", cancelled: "#dc2626" };
 
 export default function CinemaOps({ apiBase }) {
   const [tab, setTab] = useState("film");
@@ -39,6 +42,17 @@ export default function CinemaOps({ apiBase }) {
       .catch(() => setMsg("Gagal menyimpan"));
   };
   const del = (path) => { fetch(`${base}/${path}`, { method: "DELETE" }).then(() => reload()).catch(() => {}); };
+  const closeShow = (id) => {
+    const reason = window.prompt("Alasan tutup showtime (opsional):", "") ?? "";
+    fetch(`${base}/showtimes/${id}/close`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason, manager_name: "ops" }),
+    }).then(r => r.json()).then(d => { if (d.error) setMsg(d.error); else reload(); }).catch(() => setMsg("Gagal menutup"));
+  };
+  const reopenShow = (id) => {
+    fetch(`${base}/showtimes/${id}/reopen`, { method: "POST" })
+      .then(r => r.json()).then(d => { if (d.error) setMsg(d.error); else reload(); }).catch(() => setMsg("Gagal membuka"));
+  };
 
   const btn = (label, onClick, color = "#a855f7") => (
     <button onClick={onClick} style={{ background: color + "1f", border: `1px solid ${color}55`, borderRadius: 7, padding: "7px 14px", color, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>{label}</button>
@@ -144,18 +158,27 @@ export default function CinemaOps({ apiBase }) {
             {btn("+ Jadwalkan", () => add("showtimes", { film_id: f("film_id"), studio_id: f("studio_id"), show_date: f("show_date"), start_time: f("start_time"), price: f("price") || 0 }))}
           </Form>
           <List empty={showtimes.length === 0} emptyText="Belum ada jadwal tayang.">
-            {showtimes.map(x => (
-              <Row key={x.id}>
-                <div style={{ flex: 2, minWidth: 150 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700 }}>{x.film_title || "—"}</div>
-                  <div style={{ fontSize: 11, color: C.sub }}>{x.studio_name || "—"} · {x.studio_type || ""}{x.capacity ? ` · ${x.capacity} kursi` : ""}</div>
-                </div>
-                <Badge color="#22d3ee">{x.show_date}</Badge>
-                <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 13, fontWeight: 700, width: 56 }}>{x.start_time}</div>
-                <div style={{ fontSize: 12, fontFamily: "'Geist Mono',monospace", color: "#10b981", width: 96, textAlign: "right" }}>{rp(x.price)}</div>
-                {delBtn(`showtimes/${x.id}`)}
-              </Row>
-            ))}
+            {showtimes.map(x => {
+              const ds = x.derived_status || "scheduled";
+              const isClosedManual = !!x.manual_closed_at;
+              const soldText = (x.sold_count != null && x.capacity != null) ? `${x.sold_count}/${x.capacity}` : "";
+              return (
+                <Row key={x.id}>
+                  <div style={{ flex: 2, minWidth: 150 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700 }}>{x.film_title || "—"}</div>
+                    <div style={{ fontSize: 11, color: C.sub }}>{x.studio_name || "—"} · {x.studio_type || ""}{x.capacity ? ` · ${x.capacity} kursi` : ""}{soldText ? ` · ${soldText} terjual` : ""}</div>
+                  </div>
+                  <Badge color="#22d3ee">{x.show_date}</Badge>
+                  <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 13, fontWeight: 700, width: 56 }}>{x.start_time}</div>
+                  <Badge color={DS_COLOR[ds] || "#5b6470"}>{DS_LABEL[ds] || ds}</Badge>
+                  <div style={{ fontSize: 12, fontFamily: "'Geist Mono',monospace", color: "#10b981", width: 80, textAlign: "right" }}>{rp(x.price)}</div>
+                  {isClosedManual
+                    ? btn("🔓 Buka lagi", () => reopenShow(x.id), "#10b981")
+                    : btn("🔒 Tutup", () => closeShow(x.id), "#f59e0b")}
+                  {delBtn(`showtimes/${x.id}`)}
+                </Row>
+              );
+            })}
           </List>
         </>
       )}

@@ -42,7 +42,8 @@ export default function CinemaTicketing({ apiBase }) {
 
   const price = data && data.showtime ? (data.showtime.price || 0) : 0;
   const occupancy = data && data.capacity ? Math.round(data.sold_count / data.capacity * 100) : 0;
-  const stLabel = (s) => `${s.film_title || "—"} · ${s.studio_name || "—"} · ${s.show_date} ${s.start_time}`;
+  const STATUS_LABEL_KI = { scheduled: "", running: " · BERLANGSUNG", closed: " · TUTUP", sold_out: " · SOLD OUT", cancelled: " · BATAL" };
+  const stLabel = (s) => `${s.film_title || "—"} · ${s.studio_name || "—"} · ${s.show_date} ${s.start_time}${STATUS_LABEL_KI[s.derived_status] || ""}`;
 
   return (
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>

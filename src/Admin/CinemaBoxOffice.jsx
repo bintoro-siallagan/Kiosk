@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 // karyaOS cinema vertical (admin side). Reads /api/cinema/box-office.
 const C = { card: "#0d1117", border: "#1b212c", sub: "#7d8590", dim: "#5b6470" };
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+const DS_LABEL = { scheduled: "Terjadwal", running: "Berlangsung", closed: "Tutup", sold_out: "Sold Out", cancelled: "Batal" };
+const DS_COLOR = { scheduled: "#10b981", running: "#f59e0b", closed: "#6b7280", sold_out: "#ef4444", cancelled: "#dc2626" };
 
 export default function CinemaBoxOffice({ apiBase }) {
   const [data, setData] = useState(null);
@@ -82,6 +84,9 @@ export default function CinemaBoxOffice({ apiBase }) {
                       <div style={{ fontSize: 12.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.film_title || "—"}</div>
                       <div style={{ fontSize: 11, color: C.sub }}>{s.studio_name || "—"} · {s.show_date} {s.start_time}</div>
                     </div>
+                    {(() => { const ds = s.derived_status || "scheduled"; return (
+                      <span style={{ fontSize: 10, fontWeight: 800, color: DS_COLOR[ds], background: (DS_COLOR[ds] || "#5b6470") + "22", borderRadius: 6, padding: "3px 8px", letterSpacing: 1, whiteSpace: "nowrap" }}>{DS_LABEL[ds] || ds}</span>
+                    ); })()}
                     <div style={{ flex: 1, minWidth: 80, height: 8, background: "#161b22", borderRadius: 4, overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${Math.max(2, occ)}%`, background: col, borderRadius: 4 }} />
                     </div>

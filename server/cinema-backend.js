@@ -131,6 +131,10 @@ function setupCinema(app, opts = {}) {
   // Bundle-attach: purchase_id ties a multi-seat sale to its F&B bundles
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN purchase_id TEXT"); } catch {}
   try { db.exec("CREATE INDEX IF NOT EXISTS idx_cinema_ticket_purchase ON cinema_tickets(purchase_id)"); } catch {}
+  // Manual early-close for showtimes (overrides time-derived status)
+  try { db.exec("ALTER TABLE cinema_showtimes ADD COLUMN manual_closed_at INTEGER"); } catch {}
+  try { db.exec("ALTER TABLE cinema_showtimes ADD COLUMN manual_closed_by TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_showtimes ADD COLUMN manual_close_reason TEXT"); } catch {}
 
   // Seed default bundles on first run (customisable in Admin → Cinema Bundles)
   if (db.prepare(`SELECT COUNT(*) c FROM cinema_bundles`).get().c === 0) {
@@ -164,6 +168,34 @@ function setupCinema(app, opts = {}) {
 
   const router = express.Router();
   router.use(express.json());
+
+  // ── DERIVED STATUS ──────────────────────────────────────────────────
+  // Returns one of: scheduled | running | closed | sold_out | cancelled.
+  // Lock for ticket sales = anything other than "scheduled".
+  function computeStatus(s, capacity, sold, nowSec) {
+    if (!s) return 'scheduled';
+    if (s.status === 'cancelled') return 'cancelled';
+    if (s.manual_closed_at) return 'closed';
+    if (capacity > 0 && sold >= capacity) return 'sold_out';
+    if (!s.show_date || !s.start_time) return 'scheduled';
+    const [Y, M, D] = String(s.show_date).split('-').map(Number);
+    const [h, m]    = String(s.start_time).split(':').map(Number);
+    if (!Y || !M || !D || isNaN(h) || isNaN(m)) return 'scheduled';
+    const startSec = Math.floor(new Date(Y, M - 1, D, h, m, 0).getTime() / 1000);
+    const dur      = ((s.duration_min || s.film_duration || 120) * 60);
+    if (nowSec < startSec) return 'scheduled';
+    if (nowSec < startSec + dur) return 'running';
+    return 'closed';
+  }
+  function soldCountFor(showtimeId) {
+    return db.prepare(`SELECT COUNT(*) c FROM cinema_tickets WHERE showtime_id = ?`).get(showtimeId).c;
+  }
+  function decorateShowtime(s) {
+    if (!s) return s;
+    const capacity = s.capacity || (s.rows && s.cols ? s.rows * s.cols : 0);
+    const sold = soldCountFor(s.id);
+    return { ...s, capacity, sold_count: sold, derived_status: computeStatus(s, capacity, sold, Math.floor(Date.now()/1000)) };
+  }
 
   // ── SUMMARY ──
   router.get('/summary', (req, res) => {
@@ -222,7 +254,27 @@ function setupCinema(app, opts = {}) {
     const p = [];
     if (req.query.date) { sql += ` WHERE s.show_date = ?`; p.push(req.query.date); }
     sql += ` ORDER BY s.show_date, s.start_time`;
-    res.json({ showtimes: db.prepare(sql).all(...p) });
+    const rows = db.prepare(sql).all(...p).map(decorateShowtime);
+    res.json({ showtimes: rows });
+  });
+  // Manager close / reopen — overrides time-derived status
+  router.post('/showtimes/:id/close', (req, res) => {
+    const b = req.body || {};
+    const by = String(b.manager_name || b.manager_id || b.closed_by || 'manager');
+    const reason = String(b.reason || '').trim();
+    const s = db.prepare(`SELECT * FROM cinema_showtimes WHERE id = ?`).get(req.params.id);
+    if (!s) return res.status(404).json({ ok: false, error: 'Showtime tidak ditemukan' });
+    const now = Math.floor(Date.now() / 1000);
+    db.prepare(`UPDATE cinema_showtimes SET manual_closed_at = ?, manual_closed_by = ?, manual_close_reason = ? WHERE id = ?`)
+      .run(now, by, reason, req.params.id);
+    res.json({ ok: true, manual_closed_at: now, manual_closed_by: by, reason });
+  });
+  router.post('/showtimes/:id/reopen', (req, res) => {
+    const s = db.prepare(`SELECT * FROM cinema_showtimes WHERE id = ?`).get(req.params.id);
+    if (!s) return res.status(404).json({ ok: false, error: 'Showtime tidak ditemukan' });
+    db.prepare(`UPDATE cinema_showtimes SET manual_closed_at = NULL, manual_closed_by = NULL, manual_close_reason = NULL WHERE id = ?`)
+      .run(req.params.id);
+    res.json({ ok: true });
   });
   router.post('/showtimes', (req, res) => {
     const b = req.body || {};
@@ -250,7 +302,10 @@ function setupCinema(app, opts = {}) {
     if (!st) return res.status(404).json({ error: 'showtime tidak ditemukan' });
     const sold = db.prepare(`SELECT seat FROM cinema_tickets WHERE showtime_id = ?`).all(req.params.id).map(r => r.seat);
     const capacity = (st.rows || 0) * (st.cols || 0);
-    res.json({ showtime: st, rows: st.rows || 0, cols: st.cols || 0, capacity, sold, sold_count: sold.length });
+    // Pull duration via film for derived status
+    const film = db.prepare(`SELECT duration_min FROM cinema_films WHERE id = ?`).get(st.film_id);
+    const derived_status = computeStatus({ ...st, duration_min: film?.duration_min }, capacity, sold.length, Math.floor(Date.now()/1000));
+    res.json({ showtime: { ...st, derived_status }, rows: st.rows || 0, cols: st.cols || 0, capacity, sold, sold_count: sold.length, derived_status });
   });
   router.get('/tickets', (req, res) => {
     let sql = `SELECT t.*, f.title AS film_title, st.name AS studio_name,
@@ -270,6 +325,21 @@ function setupCinema(app, opts = {}) {
     if (!b.showtime_id || !seats.length) return res.status(400).json({ error: 'showtime_id + seats wajib diisi' });
     const st = db.prepare(`SELECT * FROM cinema_showtimes WHERE id = ?`).get(b.showtime_id);
     if (!st) return res.status(404).json({ error: 'showtime tidak ditemukan' });
+
+    // Lock: refuse sale when showtime not in 'scheduled' state
+    const film = db.prepare(`SELECT duration_min FROM cinema_films WHERE id = ?`).get(st.film_id);
+    const capacity = db.prepare(`SELECT (rows*cols) c FROM cinema_studios WHERE id = ?`).get(st.studio_id)?.c || 0;
+    const soldCount = soldCountFor(st.id);
+    const derived = computeStatus({ ...st, duration_min: film?.duration_min }, capacity, soldCount, Math.floor(Date.now()/1000));
+    if (derived !== 'scheduled') {
+      const msgMap = {
+        running:   'Showtime sudah dimulai — penjualan ditutup.',
+        closed:    'Showtime sudah selesai / ditutup manual.',
+        sold_out:  'Showtime sudah sold out.',
+        cancelled: 'Showtime dibatalkan.',
+      };
+      return res.status(409).json({ ok: false, error: msgMap[derived] || 'Showtime tidak menerima penjualan', derived_status: derived });
+    }
 
     // Normalise & validate bundles (one purchase shares its F&B bundles across all tickets)
     const reqBundles = Array.isArray(b.bundles) ? b.bundles : [];
@@ -465,14 +535,18 @@ function setupCinema(app, opts = {}) {
                                 JOIN cinema_showtimes s ON s.id = t.showtime_id
                                 JOIN cinema_films f ON f.id = s.film_id
                                 GROUP BY f.id ORDER BY revenue DESC`).all();
-    const showtimes = db.prepare(`SELECT s.id, f.title AS film_title, st.name AS studio_name,
-                                         s.show_date, s.start_time, (st.rows * st.cols) AS capacity,
+    const showtimes = db.prepare(`SELECT s.id, s.status, s.manual_closed_at, s.show_date, s.start_time,
+                                         f.title AS film_title, f.duration_min,
+                                         st.name AS studio_name, (st.rows * st.cols) AS capacity,
                                          COUNT(t.id) AS sold, COALESCE(SUM(t.price),0) AS revenue
                                   FROM cinema_showtimes s
                                   LEFT JOIN cinema_films f ON f.id = s.film_id
                                   LEFT JOIN cinema_studios st ON st.id = s.studio_id
                                   LEFT JOIN cinema_tickets t ON t.showtime_id = s.id
-                                  GROUP BY s.id ORDER BY s.show_date, s.start_time`).all();
+                                  GROUP BY s.id ORDER BY s.show_date, s.start_time`).all().map(r => ({
+      ...r,
+      derived_status: computeStatus(r, r.capacity, r.sold, Math.floor(Date.now()/1000)),
+    }));
     // F&B bundle revenue (across all purchases, then today)
     const fnb = db.prepare(`SELECT COUNT(*) items, COALESCE(SUM(qty*price),0) revenue,
                                    COALESCE(SUM(CASE WHEN redeemed_at IS NOT NULL THEN qty ELSE 0 END),0) redeemed
