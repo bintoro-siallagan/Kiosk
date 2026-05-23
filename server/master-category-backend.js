@@ -94,6 +94,39 @@ function setupMasterCategory(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  router.patch('/:id', (req, res) => {
+    const c = db.prepare(`SELECT * FROM product_category_master WHERE id = ?`).get(req.params.id);
+    if (!c) return res.status(404).json({ error: 'kategori tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['name', 'sales_account', 'cogs_account']) {
+      if (b[k] !== undefined && String(b[k]).trim()) { fields.push(`${k} = ?`); args.push(String(b[k]).trim()); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE product_category_master SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    // If parent renamed COA, optionally propagate to subs:
+    if ((b.sales_account || b.cogs_account) && c.parent_code === null) {
+      const subFields = [], subArgs = [];
+      if (b.sales_account) { subFields.push('sales_account = ?'); subArgs.push(String(b.sales_account)); }
+      if (b.cogs_account)  { subFields.push('cogs_account = ?');  subArgs.push(String(b.cogs_account)); }
+      subArgs.push(c.code);
+      db.prepare(`UPDATE product_category_master SET ${subFields.join(', ')} WHERE parent_code = ?`).run(...subArgs);
+    }
+    res.json({ ok: true });
+  });
+
+  router.delete('/:id', (req, res) => {
+    const c = db.prepare(`SELECT * FROM product_category_master WHERE id = ?`).get(req.params.id);
+    if (!c) return res.status(404).json({ error: 'kategori tidak ditemukan' });
+    // Hapus parent juga ikut hapus children
+    if (c.parent_code === null) {
+      db.prepare(`DELETE FROM product_category_master WHERE parent_code = ?`).run(c.code);
+    }
+    db.prepare(`DELETE FROM product_category_master WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/master-category';
   app.use(mountPath, router);
   console.log(`[master-category] mounted at ${mountPath} — product category + COA mapping`);

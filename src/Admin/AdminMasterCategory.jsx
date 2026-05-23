@@ -1,15 +1,18 @@
 // src/Admin/AdminMasterCategory.jsx
-// Master Category — kategori & sub-kategori produk + mapping COA.
+// Master Category — kategori & sub-kategori produk + mapping COA (CRUD lengkap).
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const AC = "#0891b2";
 
 export default function AdminMasterCategory({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
   const [cat, setCat] = useState({ name: "", sales_account: "4-1100", cogs_account: "5-1100" });
   const [sub, setSub] = useState({ name: "", parent_code: "" });
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/master-category`).then(r => r.json()).then(j => {
@@ -26,6 +29,27 @@ export default function AdminMasterCategory({ apiBase = "" }) {
   const toggle = (c) => {
     fetch(`${apiBase}/api/master-category/${c.id}/toggle`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
       .then(r => r.json()).then(j => { if (j.ok) load(); }).catch(() => {});
+  };
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/master-category/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Kategori disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const remove = async (c, isSub = false) => {
+    const childCount = !isSub ? (c.subs?.length || 0) : 0;
+    const ok = await confirm({
+      title: `Hapus ${isSub ? "sub-kategori" : "kategori"} "${c.name}"?`,
+      message: isSub ? "Sub-kategori akan dihapus permanen." : (childCount > 0 ? `Kategori ini punya ${childCount} sub-kategori — SEMUA akan ikut terhapus.` : "Kategori akan dihapus permanen."),
+      danger: true, okLabel: "Hapus",
+    });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/master-category/${c.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg(`✓ ${isSub ? "Sub-kategori" : "Kategori"} dihapus`); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Master Category…</div>;
@@ -80,19 +104,58 @@ export default function AdminMasterCategory({ apiBase = "" }) {
                 <span style={{ fontSize: 10, color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>📈 {c.sales_account}</span>
                 <span style={{ fontSize: 10, color: "#f59e0b", fontFamily: "'Geist Mono',monospace" }}>📉 {c.cogs_account}</span>
                 <button onClick={() => toggle(c)} style={S.tog(c.is_active)}>{c.is_active ? "● AKTIF" : "○ OFF"}</button>
+                <button onClick={() => setEditing({ ...c })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                <button onClick={() => remove(c)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
               </div>
               <div style={{ fontSize: 10, color: "#5b6470", marginTop: 2 }}>{c.sales_account_name} · {c.cogs_account_name}</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
                 {c.subs.map(sb => (
-                  <button key={sb.code} onClick={() => toggle(sb)} style={{ fontSize: 11, color: sb.is_active ? "#9da7b3" : "#5b6470", background: "#0d1117", border: "1px solid #21262d", borderRadius: 6, padding: "3px 9px", cursor: "pointer", fontFamily: "inherit", textDecoration: sb.is_active ? "none" : "line-through" }}>
-                    ↳ {sb.name}
-                  </button>
+                  <span key={sb.code} style={{ display: "inline-flex", alignItems: "center", background: "#0d1117", border: "1px solid #21262d", borderRadius: 6 }}>
+                    <button onClick={() => toggle(sb)} style={{ fontSize: 11, color: sb.is_active ? "#9da7b3" : "#5b6470", background: "transparent", border: "none", padding: "3px 9px", cursor: "pointer", fontFamily: "inherit", textDecoration: sb.is_active ? "none" : "line-through" }}>
+                      ↳ {sb.name}
+                    </button>
+                    <button onClick={() => setEditing({ ...sb, _isSub: true })} title="Edit sub" style={{ background: "transparent", border: "none", color: "#f59e0b", padding: "2px 4px", cursor: "pointer", fontSize: 10 }}>✏️</button>
+                    <button onClick={() => remove(sb, true)} title="Hapus sub" style={{ background: "transparent", border: "none", color: "#ef4444", padding: "2px 6px 2px 2px", cursor: "pointer", fontSize: 10 }}>×</button>
+                  </span>
                 ))}
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 480, width: "100%" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit {editing._isSub ? "Sub-Kategori" : "Kategori"} — {editing.code}</div>
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>NAMA</div>
+              <input value={editing.name || ""} onChange={e => setEditing({ ...editing, name: e.target.value })} style={S.input} />
+            </div>
+            {!editing._isSub && (
+              <>
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>SALES ACCOUNT</div>
+                  <select value={editing.sales_account || ""} onChange={e => setEditing({ ...editing, sales_account: e.target.value })} style={S.input}>
+                    {d.coa_accounts.revenue.map(a => <option key={a.code} value={a.code}>📈 {a.code} · {a.name}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>COGS ACCOUNT</div>
+                  <select value={editing.cogs_account || ""} onChange={e => setEditing({ ...editing, cogs_account: e.target.value })} style={S.input}>
+                    {d.coa_accounts.cogs.map(a => <option key={a.code} value={a.code}>📉 {a.code} · {a.name}</option>)}
+                  </select>
+                </div>
+                <div style={{ fontSize: 10, color: "#7a7b82", marginTop: 6 }}>ℹ️ Mengubah COA di sini juga update semua sub-kategori dalam kategori ini.</div>
+              </>
+            )}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={S.btn}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

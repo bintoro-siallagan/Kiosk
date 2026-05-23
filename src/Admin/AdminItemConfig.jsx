@@ -1,14 +1,19 @@
 // src/Admin/AdminItemConfig.jsx
-// Item Config — Inventory Config + Modifier System.
+// Item Config — Inventory Config + Modifier System (CRUD lengkap).
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#0d9488";
+const emptyGroup = { name: "", mod_type: "single", options: [{ name: "", price: 0 }] };
 
 export default function AdminItemConfig({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [filter, setFilter] = useState("all");
+  const [editing, setEditing] = useState(null); // modifier group editing/creating
+  const [msg, setMsg] = useState("");
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/item-config`).then(r => r.json()).then(setD).catch(() => {});
@@ -23,6 +28,27 @@ export default function AdminItemConfig({ apiBase = "" }) {
     fetch(`${apiBase}/api/item-config/inventory/${it.item_code}`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     }).then(r => r.json()).then(j => { if (j.ok) load(); }).catch(() => {});
+  };
+
+  const saveGroup = async () => {
+    if (!editing.name?.trim()) { setMsg("⚠ Nama wajib"); return; }
+    const isNew = !editing.id;
+    const url = isNew ? `${apiBase}/api/item-config/modifiers` : `${apiBase}/api/item-config/modifiers/${editing.id}`;
+    const r = await fetch(url, {
+      method: isNew ? "POST" : "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg(isNew ? "✓ Modifier ditambah" : "✓ Modifier disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const removeGroup = async (g) => {
+    const ok = await confirm({ title: `Hapus modifier group "${g.name}"?`, message: `${g.options.length} opsi akan hilang. Tidak bisa dibatalkan.`, danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/item-config/modifiers/${g.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Modifier dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Item Config…</div>;
@@ -45,8 +71,12 @@ export default function AdminItemConfig({ apiBase = "" }) {
 
       {/* Modifier system */}
       <div style={{ ...S.card, marginTop: 14 }}>
-        <div style={S.kicker}>➕ MODIFIER SYSTEM</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(210px,1fr))", gap: 10, marginTop: 10 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={S.kicker}>➕ MODIFIER SYSTEM</span>
+          <button onClick={() => setEditing({ ...emptyGroup, options: [{ name: "", price: 0 }] })} style={{ background: AC, color: "#fff", border: "none", padding: "6px 12px", borderRadius: 7, fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ Group Baru</button>
+        </div>
+        {msg ? <div style={{ fontSize: 12, marginTop: 8, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 10, marginTop: 10 }}>
           {d.modifiers.map(g => (
             <div key={g.id} style={{ background: "#0a0e16", border: "1px solid #161b22", borderRadius: 9, padding: "11px 13px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
@@ -59,10 +89,45 @@ export default function AdminItemConfig({ apiBase = "" }) {
                   <span style={{ color: o.price > 0 ? "#10b981" : "#5b6470", fontFamily: "'Geist Mono',monospace" }}>{o.price > 0 ? "+" + fmtRp(o.price) : "gratis"}</span>
                 </div>
               ))}
+              <div style={{ display: "flex", gap: 4, marginTop: 8, paddingTop: 6, borderTop: "1px solid #161b22" }}>
+                <button onClick={() => setEditing({ ...g, options: [...(g.options || [])] })} style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 9px", borderRadius: 5, fontSize: 10.5, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, flex: 1 }}>✏️ Edit</button>
+                <button onClick={() => removeGroup(g)} style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 9px", borderRadius: 5, fontSize: 10.5, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+              </div>
             </div>
           ))}
         </div>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>{editing.id ? `✏️ Edit Modifier Group` : "+ Group Modifier Baru"}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>NAMA GROUP</div><input value={editing.name || ""} onChange={e => setEditing({ ...editing, name: e.target.value })} placeholder="Ukuran / Topping / Es / ..." style={inpStyle} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>TIPE</div>
+                <select value={editing.mod_type || "single"} onChange={e => setEditing({ ...editing, mod_type: e.target.value })} style={inpStyle}>
+                  <option value="single">Single (pilih 1)</option>
+                  <option value="multi">Multi (pilih banyak)</option>
+                  <option value="addon">Add-on</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 6 }}>OPSI</div>
+            {(editing.options || []).map((o, i) => (
+              <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 120px auto", gap: 6, marginBottom: 6 }}>
+                <input value={o.name} onChange={e => setEditing({ ...editing, options: editing.options.map((op, idx) => idx === i ? { ...op, name: e.target.value } : op) })} placeholder="Nama opsi (Reguler / Large / Boba…)" style={inpStyle} />
+                <input type="number" value={o.price || 0} onChange={e => setEditing({ ...editing, options: editing.options.map((op, idx) => idx === i ? { ...op, price: Number(e.target.value) } : op) })} placeholder="+harga" style={inpStyle} />
+                <button onClick={() => setEditing({ ...editing, options: editing.options.filter((_, idx) => idx !== i) })} style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "0 10px", borderRadius: 6, cursor: "pointer", fontSize: 13, fontFamily: "inherit" }}>×</button>
+              </div>
+            ))}
+            <button onClick={() => setEditing({ ...editing, options: [...(editing.options || []), { name: "", price: 0 }] })} style={{ background: "#161b22", border: "1px dashed #30363d", color: "#9ca3af", padding: "5px 12px", borderRadius: 6, fontSize: 11, cursor: "pointer", fontFamily: "inherit", marginTop: 4 }}>+ Opsi</button>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveGroup} style={{ background: AC, color: "#fff", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>{editing.id ? "💾 Simpan" : "+ Tambah"}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Inventory config */}
       <div style={{ ...S.card, marginTop: 14 }}>
@@ -132,3 +197,4 @@ const S = {
   toggle: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 6, padding: "4px 9px", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "'Geist Mono',monospace" },
   flag: { background: "transparent", border: "none", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
 };
+const inpStyle = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "7px 10px", color: "#e6edf3", fontSize: 12.5, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };

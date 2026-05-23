@@ -1,15 +1,18 @@
 // src/Admin/AdminMasterUnit.jsx
-// Master Unit — master satuan / unit of measure inventory.
+// Master Unit — master satuan / unit of measure inventory (CRUD lengkap).
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const AC = "#0e7490";
 const CAT_C = { Berat: "#f59e0b", Volume: "#3b82f6", Jumlah: "#10b981" };
 
 export default function AdminMasterUnit({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
   const [form, setForm] = useState({ code: "", name: "", symbol: "", category: "Jumlah", conversion: "1" });
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/master-unit`).then(r => r.json()).then(setD).catch(() => {});
@@ -29,6 +32,22 @@ export default function AdminMasterUnit({ apiBase = "" }) {
   const toggle = (u) => {
     fetch(`${apiBase}/api/master-unit/${u.id}/toggle`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
       .then(r => r.json()).then(j => { if (j.ok) load(); }).catch(() => {});
+  };
+  const saveEdit = async () => {
+    const r = await fetch(`${apiBase}/api/master-unit/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Satuan disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+  const remove = async (u) => {
+    const ok = await confirm({ title: `Hapus satuan "${u.name}" (${u.code})?`, message: `Satuan akan dihapus permanen. Item yang masih pakai satuan ini mungkin error — pastikan tidak ada referensi.`, danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/master-unit/${u.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Satuan dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Master Unit…</div>;
@@ -72,7 +91,7 @@ export default function AdminMasterUnit({ apiBase = "" }) {
           <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 8 }}>
             <thead>
               <tr style={{ color: "#5b6470", fontSize: 10, textAlign: "left" }}>
-                {["KODE", "NAMA", "SIMBOL", "KONVERSI", "STATUS"].map(h => <th key={h} style={{ padding: "5px 8px", fontWeight: 600 }}>{h}</th>)}
+                {["KODE", "NAMA", "SIMBOL", "KONVERSI", "STATUS", "AKSI"].map(h => <th key={h} style={{ padding: "5px 8px", fontWeight: 600 }}>{h}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -89,12 +108,41 @@ export default function AdminMasterUnit({ apiBase = "" }) {
                       {u.is_active ? "● AKTIF" : "○ OFF"}
                     </button>
                   </td>
+                  <td style={S.td}>
+                    <span style={{ display: "flex", gap: 4 }}>
+                      <button onClick={() => setEditing({ ...u })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                      <button onClick={() => remove(u)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+                    </span>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       ))}
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 480, width: "100%" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit Satuan — {editing.code}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              <div style={{ gridColumn: "1/-1" }}><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>NAMA SATUAN</div><input value={editing.name || ""} onChange={e => setEditing({ ...editing, name: e.target.value })} style={S.input} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>SIMBOL</div><input value={editing.symbol || ""} onChange={e => setEditing({ ...editing, symbol: e.target.value })} style={S.input} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>KATEGORI</div>
+                <select value={editing.category || "Jumlah"} onChange={e => setEditing({ ...editing, category: e.target.value })} style={S.input}>
+                  {d.all_categories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>BASE UNIT</div><input value={editing.base_unit || ""} onChange={e => setEditing({ ...editing, base_unit: e.target.value })} style={S.input} /></div>
+              <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>KONVERSI</div><input type="number" step="0.001" value={editing.conversion || 1} onChange={e => setEditing({ ...editing, conversion: Number(e.target.value) })} style={S.input} /></div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={S.btn}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

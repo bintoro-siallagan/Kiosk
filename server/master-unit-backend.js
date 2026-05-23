@@ -83,6 +83,29 @@ function setupMasterUnit(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  router.patch('/:id', (req, res) => {
+    const u = db.prepare(`SELECT * FROM master_uom WHERE id = ?`).get(req.params.id);
+    if (!u) return res.status(404).json({ error: 'satuan tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    if (b.name !== undefined)        { fields.push('name = ?');        args.push(String(b.name).trim()); }
+    if (b.symbol !== undefined)      { fields.push('symbol = ?');      args.push(String(b.symbol).trim()); }
+    if (b.category !== undefined && CATEGORIES.includes(b.category)) {
+                                      fields.push('category = ?');    args.push(b.category); }
+    if (b.base_unit !== undefined)   { fields.push('base_unit = ?');   args.push(String(b.base_unit).trim()); }
+    if (b.conversion !== undefined)  { fields.push('conversion = ?');  args.push(Number(b.conversion) > 0 ? Number(b.conversion) : 1); }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE master_uom SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM master_uom WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'satuan tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/master-unit';
   app.use(mountPath, router);
   console.log(`[master-unit] mounted at ${mountPath} — unit of measure master`);

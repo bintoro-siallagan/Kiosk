@@ -102,6 +102,34 @@ function setupItemConfig(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // ── Modifier Group CRUD ─────────────────────────────────────────────
+  router.post('/modifiers', (req, res) => {
+    const b = req.body || {};
+    if (!b.name || !String(b.name).trim()) return res.status(400).json({ error: 'nama wajib' });
+    const options = Array.isArray(b.options) ? b.options : [];
+    db.prepare(`INSERT INTO modifier_groups (name, mod_type, options) VALUES (?,?,?)`)
+      .run(String(b.name).trim(), b.mod_type || 'single', JSON.stringify(options));
+    res.json({ ok: true });
+  });
+  router.patch('/modifiers/:id', (req, res) => {
+    const g = db.prepare(`SELECT * FROM modifier_groups WHERE id = ?`).get(req.params.id);
+    if (!g) return res.status(404).json({ error: 'group tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    if (b.name !== undefined)     { fields.push('name = ?');     args.push(String(b.name).trim()); }
+    if (b.mod_type !== undefined) { fields.push('mod_type = ?'); args.push(String(b.mod_type)); }
+    if (b.options !== undefined)  { fields.push('options = ?');  args.push(JSON.stringify(Array.isArray(b.options) ? b.options : [])); }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE modifier_groups SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/modifiers/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM modifier_groups WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'group tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/item-config';
   app.use(mountPath, router);
   console.log(`[item-config] mounted at ${mountPath} — inventory config & modifiers`);
