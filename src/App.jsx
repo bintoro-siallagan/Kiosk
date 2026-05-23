@@ -1,6 +1,21 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { unlockAudio, loadAudioConfig } from "./audio.js";
 
+// Module-level — emergency logout helper available from any scene
+// Call from DevTools console: posLogout()  (default POS Cinema), or
+// posLogout('pos'|'pos-cinema'|'admin') to choose redirect target.
+if (typeof window !== "undefined") {
+  window.posLogout = (target = "pos-cinema") => {
+    ["posCashier", "posCinemaCashier", "cashier", "currentUser", "user", "adminToken", "adminRole", "adminName"].forEach(k => {
+      try { sessionStorage.removeItem(k); } catch {}
+      try { localStorage.removeItem(k); } catch {}
+    });
+    const map = { pos: "?pos=1&fresh=1", "pos-cinema": "?pos-cinema&fresh=1", admin: "?admin=1" };
+    window.location.replace(window.location.pathname + (map[target] || map["pos-cinema"]));
+  };
+  console.log("%c[karyaOS] posLogout() helper ready — call from console to force fresh login", "color:#fbbf24");
+}
+
 // Static (always in initial bundle): customer-facing default + tiny gates
 // — Kiosk is the default scene so it must boot instantly
 // — Login screens must be instant (auth gate)

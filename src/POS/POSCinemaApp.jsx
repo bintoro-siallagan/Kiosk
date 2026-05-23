@@ -15,6 +15,18 @@ import ShiftGate from "../ShiftGate.jsx";
 
 const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
+// Module-level — expose posLogout helper imediately on import (no component mount needed)
+// Call from DevTools console anywhere: posLogout()
+if (typeof window !== "undefined") {
+  window.posLogout = () => {
+    ["posCashier", "posCinemaCashier", "cashier", "currentUser", "user"].forEach(k => {
+      try { sessionStorage.removeItem(k); } catch {}
+      try { localStorage.removeItem(k); } catch {}
+    });
+    window.location.replace(window.location.pathname + "?pos-cinema&fresh=1");
+  };
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // THEME — MacBook-premium cinema palette
 // ═══════════════════════════════════════════════════════════════════
