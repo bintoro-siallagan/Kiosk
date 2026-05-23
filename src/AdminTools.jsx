@@ -64,6 +64,7 @@ import CinemaOps from "./Admin/CinemaOps.jsx";
 import CinemaTicketing from "./Admin/CinemaTicketing.jsx";
 import CinemaBoxOffice from "./Admin/CinemaBoxOffice.jsx";
 import CinemaValidate from "./Admin/CinemaValidate.jsx";
+import CinemaRefund from "./Admin/CinemaRefund.jsx";
 import AdminSignage from "./Admin/AdminSignage.jsx";
 import AdminDemandForecast from "./Admin/AdminDemandForecast.jsx";
 import AdminAssetMaintenance from "./Admin/AdminAssetMaintenance.jsx";
@@ -193,6 +194,7 @@ export default function AdminTools({ initialTab }) {
         {tab === "cinema_ticketing" && <CinemaTicketing apiBase={API} />}
         {tab === "cinema_box_office" && <CinemaBoxOffice apiBase={API} />}
         {tab === "cinema_validate" && <CinemaValidate apiBase={API} />}
+        {tab === "cinema_refund" && <CinemaRefund apiBase={API} />}
         {tab === "simple_purchase" && <AdminSimplePurchase apiBase={API} />}
         {tab === "petty_cash" && <AdminPettyCash apiBase={API} />}
         {tab === "purchase_invoice" && <AdminPurchaseInvoice apiBase={API} />}

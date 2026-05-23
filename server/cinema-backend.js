@@ -66,6 +66,22 @@ CREATE TABLE IF NOT EXISTS cinema_tickets (
   UNIQUE(showtime_id, seat)
 );
 CREATE INDEX IF NOT EXISTS idx_cinema_ticket_showtime ON cinema_tickets(showtime_id);
+CREATE TABLE IF NOT EXISTS cinema_ticket_voids (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ticket_id INTEGER,
+  showtime_id INTEGER NOT NULL,
+  seat TEXT NOT NULL,
+  price INTEGER DEFAULT 0,
+  code TEXT,
+  buyer TEXT,
+  sold_at INTEGER,
+  checked_in_at INTEGER,
+  voided_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  void_reason TEXT,
+  voided_by TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_cinema_void_showtime ON cinema_ticket_voids(showtime_id);
+CREATE INDEX IF NOT EXISTS idx_cinema_void_date ON cinema_ticket_voids(voided_at);
 `;
 
 const SEED_FILMS = [
@@ -203,10 +219,15 @@ function setupCinema(app, opts = {}) {
     res.json({ showtime: st, rows: st.rows || 0, cols: st.cols || 0, capacity, sold, sold_count: sold.length });
   });
   router.get('/tickets', (req, res) => {
-    let sql = `SELECT * FROM cinema_tickets`;
+    let sql = `SELECT t.*, f.title AS film_title, st.name AS studio_name,
+                      s.show_date, s.start_time
+               FROM cinema_tickets t
+               LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+               LEFT JOIN cinema_films    f ON f.id = s.film_id
+               LEFT JOIN cinema_studios  st ON st.id = s.studio_id`;
     const p = [];
-    if (req.query.showtime) { sql += ` WHERE showtime_id = ?`; p.push(req.query.showtime); }
-    sql += ` ORDER BY sold_at DESC`;
+    if (req.query.showtime) { sql += ` WHERE t.showtime_id = ?`; p.push(req.query.showtime); }
+    sql += ` ORDER BY t.sold_at DESC`;
     res.json({ tickets: db.prepare(sql).all(...p) });
   });
   router.post('/tickets', (req, res) => {
@@ -234,6 +255,57 @@ function setupCinema(app, opts = {}) {
   router.delete('/tickets/:id', (req, res) => {
     db.prepare(`DELETE FROM cinema_tickets WHERE id = ?`).run(req.params.id);
     res.json({ ok: true });
+  });
+
+  // ── VOID / REFUND TIKET (manager-authorised, audit-logged) ──
+  // Deletes the ticket from cinema_tickets (so the seat is freed for re-sale)
+  // and appends the row to cinema_ticket_voids with reason + actor.
+  router.post('/tickets/:id/void', (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const b = req.body || {};
+    const reason = String(b.reason || '').trim();
+    const actor  = String(b.manager_name || b.manager_id || b.voided_by || 'manager');
+    if (!reason) return res.status(400).json({ ok: false, error: 'Alasan void wajib diisi' });
+    const t = db.prepare(`SELECT * FROM cinema_tickets WHERE id = ?`).get(id);
+    if (!t) return res.status(404).json({ ok: false, error: 'Tiket tidak ditemukan' });
+    if (t.checked_in_at && !b.allow_used) {
+      return res.status(409).json({
+        ok: false, used: true, ticket: t,
+        error: 'Tiket sudah di-check-in. Kirim ulang dengan allow_used:true untuk paksa void.',
+      });
+    }
+    const insV = db.prepare(`INSERT INTO cinema_ticket_voids
+      (ticket_id, showtime_id, seat, price, code, buyer, sold_at, checked_in_at, void_reason, voided_by)
+      VALUES (?,?,?,?,?,?,?,?,?,?)`);
+    const del = db.prepare(`DELETE FROM cinema_tickets WHERE id = ?`);
+    let voidId;
+    db.transaction(() => {
+      const info = insV.run(t.id, t.showtime_id, t.seat, t.price, t.code, t.buyer, t.sold_at, t.checked_in_at, reason, actor);
+      voidId = info.lastInsertRowid;
+      del.run(t.id);
+    })();
+    res.json({ ok: true, void_id: voidId, ticket: t, reason, voided_by: actor });
+  });
+
+  router.get('/voids', (req, res) => {
+    const where = []; const params = {};
+    if (req.query.from)     { where.push(`date(v.voided_at,'unixepoch','localtime') >= @from`);     params.from = req.query.from; }
+    if (req.query.to)       { where.push(`date(v.voided_at,'unixepoch','localtime') <= @to`);       params.to = req.query.to; }
+    if (req.query.showtime) { where.push(`v.showtime_id = @showtime`);                              params.showtime = req.query.showtime; }
+    const W = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const rows = db.prepare(`
+      SELECT v.*, f.title AS film_title, st.name AS studio_name, s.show_date, s.start_time
+      FROM cinema_ticket_voids v
+      LEFT JOIN cinema_showtimes s ON s.id = v.showtime_id
+      LEFT JOIN cinema_films    f ON f.id = s.film_id
+      LEFT JOIN cinema_studios  st ON st.id = s.studio_id
+      ${W} ORDER BY v.voided_at DESC LIMIT 200
+    `).all(params);
+    const summary = db.prepare(`
+      SELECT COUNT(*) count, COALESCE(SUM(price),0) refunded
+      FROM cinema_ticket_voids v ${W}
+    `).get(params);
+    res.json({ rows, summary });
   });
 
   // ── TICKET VALIDATION (QR scan at the studio door) ──
