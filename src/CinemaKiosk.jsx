@@ -256,7 +256,26 @@ export default function CinemaKiosk({ apiBase }) {
     releaseHolds();
     setStep("films"); setFilm(null); setShow(null); setSeatData(null);
     setSeats(new Set()); setCart({}); setEmail(""); setPhone(""); setDone(null); setMsg("");
+    setPromoCode(""); setPromoApplied(null); setPromoMsg("");
+    setAutoResetIn(0);
   };
+
+  // ── Auto-reset countdown setelah transaksi selesai (step='done') ──
+  // Kiosk customer-facing: balik ke home buat customer berikutnya
+  const AUTO_RESET_SEC = 20;
+  const [autoResetIn, setAutoResetIn] = useState(0);
+  useEffect(() => {
+    if (step !== "done") { setAutoResetIn(0); return; }
+    setAutoResetIn(AUTO_RESET_SEC);
+    const id = setInterval(() => {
+      setAutoResetIn(s => {
+        if (s <= 1) { clearInterval(id); reset(); return 0; }
+        return s - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   // ── Countdown timer for the active hold ──
   useEffect(() => {
@@ -754,9 +773,23 @@ export default function CinemaKiosk({ apiBase }) {
               <button onClick={reset} style={{ background: "linear-gradient(135deg,#a855f7,#c084fc)", border: "none", borderRadius: 12, padding: "14px 26px", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(168,85,247,0.35), inset 0 1px 0 rgba(255,255,255,0.2)", letterSpacing: 0.3, transition: "transform 0.15s ease, filter 0.15s ease" }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.filter = "brightness(1.08)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.filter = "none"; }}>
-                Pesan Lagi
+                ← Kembali ke Home
               </button>
             </div>
+            {/* Auto-reset countdown banner */}
+            {autoResetIn > 0 && (
+              <div style={{
+                marginTop: 18, display: "inline-flex", alignItems: "center", gap: 10,
+                padding: "10px 18px", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)",
+                borderRadius: 999, fontSize: 12.5, color: "#c084fc", fontFamily: "'Geist Mono',monospace",
+                fontWeight: 700, letterSpacing: 0.8,
+              }}>
+                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 999, background: "#c084fc", animation: "kioskAutoPulse 1s ease-in-out infinite" }} />
+                BALIK KE HOME DALAM {autoResetIn}s
+                <button onClick={reset} style={{ background: "transparent", border: "1px solid rgba(192,132,252,0.35)", borderRadius: 7, color: "#c084fc", padding: "4px 10px", fontSize: 11, fontWeight: 800, fontFamily: "inherit", cursor: "pointer", letterSpacing: 1, marginLeft: 4 }}>SKIP</button>
+              </div>
+            )}
+            <style>{`@keyframes kioskAutoPulse { 0%,100% { opacity:0.4 } 50% { opacity:1 } }`}</style>
           </div>
         )}
       </div>
