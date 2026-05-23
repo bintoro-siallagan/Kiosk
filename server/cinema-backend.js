@@ -208,6 +208,22 @@ CREATE TABLE IF NOT EXISTS cinema_studio_bookings (
 );
 CREATE INDEX IF NOT EXISTS idx_csb_studio ON cinema_studio_bookings(studio_id);
 CREATE INDEX IF NOT EXISTS idx_csb_date ON cinema_studio_bookings(event_date);
+-- Price list master: tier harga per outlet × studio_type × format × day × waktu
+-- (NULL = wildcard / berlaku untuk semua). Resolusi pakai specificity score.
+CREATE TABLE IF NOT EXISTS cinema_price_list (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  outlet TEXT NOT NULL,
+  studio_type TEXT,        -- "Regular" / "IMAX" / "Premiere" / NULL = semua
+  format TEXT,             -- "2D" / "3D" / "4DX" / NULL = semua
+  day_type TEXT,           -- "weekday" / "weekend" / "holiday" / NULL = semua
+  time_band TEXT,          -- "morning" / "matinee" / "prime" / "late" / NULL = semua
+  price INTEGER NOT NULL,
+  is_active INTEGER DEFAULT 1,
+  notes TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_cpl_outlet ON cinema_price_list(outlet);
+CREATE INDEX IF NOT EXISTS idx_cpl_active ON cinema_price_list(is_active);
 `;
 
 const SEED_FILMS = [
@@ -254,6 +270,28 @@ function setupCinema(app, opts = {}) {
   try { db.exec("CREATE INDEX IF NOT EXISTS idx_cinema_films_distributor ON cinema_films(distributor_id)"); } catch {}
   // VAT pct on distributors (idempotent for existing DBs)
   try { db.exec("ALTER TABLE cinema_distributors ADD COLUMN vat_pct REAL DEFAULT 11"); } catch {}
+  // Format (2D/3D/IMAX/4DX) — showtime-level (1 film bisa multi-format jadwal)
+  try { db.exec("ALTER TABLE cinema_showtimes ADD COLUMN format TEXT DEFAULT '2D'"); } catch {}
+  // Available formats per film (CSV) — metadata informasi
+  try { db.exec("ALTER TABLE cinema_films ADD COLUMN available_formats TEXT DEFAULT '2D'"); } catch {}
+
+  // Seed default price list per outlet (Paskal seeded — admin tambah outlet lain)
+  if (db.prepare(`SELECT COUNT(*) c FROM cinema_price_list`).get().c === 0) {
+    const sp = db.prepare(`INSERT INTO cinema_price_list (outlet, studio_type, format, day_type, time_band, price, notes) VALUES (?,?,?,?,?,?,?)`);
+    // Paskal — Regular
+    sp.run('Paskal', 'Regular',  '2D',  'weekday', 'matinee', 35000, 'WD matinee');
+    sp.run('Paskal', 'Regular',  '2D',  'weekday', 'prime',   45000, 'WD prime');
+    sp.run('Paskal', 'Regular',  '2D',  'weekend', null,      55000, 'Weekend regular 2D');
+    sp.run('Paskal', 'Regular',  '3D',  'weekday', null,      55000, 'WD 3D');
+    sp.run('Paskal', 'Regular',  '3D',  'weekend', null,      65000, 'WE 3D');
+    // Paskal — IMAX
+    sp.run('Paskal', 'IMAX',     '2D',  null,      null,      75000, 'IMAX 2D all-time');
+    sp.run('Paskal', 'IMAX',     '3D',  null,      null,      95000, 'IMAX 3D all-time');
+    // Paskal — Premiere
+    sp.run('Paskal', 'Premiere', null,  null,      null,     120000, 'Premiere flat');
+    // Paskal — fallback default
+    sp.run('Paskal', null,       null,  null,      null,      45000, 'Default fallback');
+  }
 
   // Seed default distributors + standard tiered share template on first run.
   // Tiered share scheme = standar industri bioskop Indonesia (cinema share):
@@ -438,8 +476,8 @@ function setupCinema(app, opts = {}) {
     if (!b.film_id || !b.studio_id || !b.show_date || !b.start_time) {
       return res.status(400).json({ error: 'film_id, studio_id, show_date, start_time wajib diisi' });
     }
-    const info = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price) VALUES (?,?,?,?,?)`)
-      .run(Number(b.film_id), Number(b.studio_id), String(b.show_date), String(b.start_time), Number(b.price) || 0);
+    const info = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price, format) VALUES (?,?,?,?,?,?)`)
+      .run(Number(b.film_id), Number(b.studio_id), String(b.show_date), String(b.start_time), Number(b.price) || 0, b.format || '2D');
     res.json({ ok: true, id: info.lastInsertRowid });
   });
   router.delete('/showtimes/:id', (req, res) => {
@@ -1167,6 +1205,91 @@ function setupCinema(app, opts = {}) {
       cinema_share: byDistributor.reduce((a, r) => a + r.cinema_share, 0),
     };
     res.json({ totals, by_distributor: byDistributor, by_film: byFilm, by_tier: byTier });
+  });
+
+  // ── PRICE LIST MASTER ─────────────────────────────────────────────────
+  // Resolution: hitung specificity score (kolom non-NULL = +1) lalu price tertinggi
+  // score wins. Tie → harga terbaru. Selalu fallback ke aturan paling umum.
+  function dayTypeFromDate(d) {
+    if (!d) return 'weekday';
+    const [Y, M, D] = String(d).split('-').map(Number);
+    if (!Y || !M || !D) return 'weekday';
+    const dow = new Date(Y, M - 1, D).getDay();    // 0=Min, 6=Sab
+    return (dow === 0 || dow === 5 || dow === 6) ? 'weekend' : 'weekday';
+  }
+  function timeBandFromTime(t) {
+    if (!t) return 'matinee';
+    const h = parseInt(String(t).split(':')[0], 10) || 0;
+    if (h < 12) return 'morning';
+    if (h < 17) return 'matinee';
+    if (h < 21) return 'prime';
+    return 'late';
+  }
+  function resolvePrice({ outlet, studio_type, format, day_type, time_band }) {
+    const rows = db.prepare(`SELECT * FROM cinema_price_list WHERE outlet = ? AND is_active = 1`).all(outlet || '');
+    if (!rows.length) return null;
+    let best = null, bestScore = -1;
+    for (const r of rows) {
+      // Match: NULL field = wildcard cocok; non-NULL harus persis sama.
+      if (r.studio_type && studio_type && r.studio_type !== studio_type) continue;
+      if (r.studio_type && !studio_type) continue;
+      if (r.format      && format      && r.format      !== format)      continue;
+      if (r.format      && !format)      continue;
+      if (r.day_type    && day_type    && r.day_type    !== day_type)    continue;
+      if (r.day_type    && !day_type)    continue;
+      if (r.time_band   && time_band   && r.time_band   !== time_band)   continue;
+      if (r.time_band   && !time_band)   continue;
+      const score = (r.studio_type ? 1 : 0) + (r.format ? 1 : 0) + (r.day_type ? 1 : 0) + (r.time_band ? 1 : 0);
+      if (score > bestScore) { best = r; bestScore = score; }
+    }
+    return best;
+  }
+
+  router.get('/price-list', (req, res) => {
+    const rows = req.query.outlet
+      ? db.prepare(`SELECT * FROM cinema_price_list WHERE outlet = ? ORDER BY studio_type, format, day_type, time_band`).all(req.query.outlet)
+      : db.prepare(`SELECT * FROM cinema_price_list ORDER BY outlet, studio_type, format, day_type, time_band`).all();
+    // Distinct outlets for picker
+    const outlets = db.prepare(`SELECT DISTINCT outlet FROM cinema_price_list ORDER BY outlet`).all().map(r => r.outlet);
+    res.json({ rows, outlets });
+  });
+  router.post('/price-list', (req, res) => {
+    const b = req.body || {};
+    if (!b.outlet || b.price == null) return res.status(400).json({ ok: false, error: 'outlet + price wajib' });
+    const info = db.prepare(`INSERT INTO cinema_price_list (outlet, studio_type, format, day_type, time_band, price, is_active, notes) VALUES (?,?,?,?,?,?,?,?)`)
+      .run(String(b.outlet), b.studio_type || null, b.format || null, b.day_type || null, b.time_band || null,
+           parseInt(b.price, 10) || 0, b.is_active === false ? 0 : 1, b.notes || '');
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+  router.patch('/price-list/:id', (req, res) => {
+    const b = req.body || {};
+    const fields = []; const args = [];
+    for (const k of ['outlet', 'studio_type', 'format', 'day_type', 'time_band', 'price', 'is_active', 'notes']) {
+      if (k in b) {
+        fields.push(`${k} = ?`);
+        if (k === 'price') args.push(parseInt(b[k], 10) || 0);
+        else if (k === 'is_active') args.push(b[k] ? 1 : 0);
+        else args.push(b[k] === '' ? null : b[k]);
+      }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE cinema_price_list SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/price-list/:id', (req, res) => {
+    db.prepare(`DELETE FROM cinema_price_list WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+  // Resolve: kasih input outlet/studio/format/date/time → kembali aturan terbaik.
+  router.get('/price-list/resolve', (req, res) => {
+    const outlet      = req.query.outlet || '';
+    const studio_type = req.query.studio_type || null;
+    const format      = req.query.format || null;
+    const day_type    = req.query.day_type || (req.query.date ? dayTypeFromDate(req.query.date) : null);
+    const time_band   = req.query.time_band || (req.query.time ? timeBandFromTime(req.query.time) : null);
+    const best = resolvePrice({ outlet, studio_type, format, day_type, time_band });
+    res.json({ ok: true, price: best ? best.price : null, rule: best, resolved: { outlet, studio_type, format, day_type, time_band } });
   });
 
   // ── FILM RATINGS ──────────────────────────────────────────────────────

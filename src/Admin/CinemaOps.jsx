@@ -4,9 +4,13 @@ import { useState, useEffect } from "react";
 // karyaOS cinema vertical (admin side). Talks to /api/cinema/*.
 const C = { card: "#0d1117", border: "#1b212c", sub: "#7d8590", dim: "#5b6470" };
 const inp = { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "7px 9px", color: "#fff", fontSize: 12, fontFamily: "inherit", boxSizing: "border-box", outline: "none" };
-const RATINGS = ["SU", "13+", "17+", "21+"];
+// LSF Indonesia age classification — SU=Semua Umur, 13+, 17+, D21=Dewasa 21+
+const RATINGS = ["SU", "13+", "17+", "D21"];
+const RATING_COLOR = { "SU": "#10b981", "13+": "#22d3ee", "17+": "#f59e0b", "D21": "#ef4444" };
+const RATING_NAME  = { "SU": "Semua Umur", "13+": "Remaja 13+", "17+": "Remaja 17+", "D21": "Dewasa 21+" };
 const STATUSES = [["now_showing", "Tayang"], ["coming_soon", "Segera"], ["archived", "Arsip"]];
-const STUDIO_TYPES = ["Regular", "IMAX", "Premiere"];
+const STUDIO_TYPES = ["Regular", "IMAX", "Premiere", "4DX"];
+const FORMATS = ["2D", "3D", "IMAX", "4DX"];
 const TABS = [["film", "🎬 Film"], ["studio", "🏛️ Studio"], ["showtime", "🗓️ Jadwal Tayang"]];
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const statusLabel = (s) => (STATUSES.find(x => x[0] === s) || [s, s])[1];
@@ -104,7 +108,7 @@ export default function CinemaOps({ apiBase }) {
                   <div style={{ fontSize: 13, fontWeight: 700 }}>{x.title}</div>
                   <div style={{ fontSize: 11, color: C.sub }}>{x.genre || "—"} · {x.duration_min || 0} mnt</div>
                 </div>
-                <Badge color="#6366f1">{x.rating}</Badge>
+                <Badge color={RATING_COLOR[x.rating] || "#6366f1"}>{x.rating}</Badge>
                 <Badge color={statusColor(x.status)}>{statusLabel(x.status)}</Badge>
                 {delBtn(`films/${x.id}`)}
               </Row>
@@ -154,8 +158,11 @@ export default function CinemaOps({ apiBase }) {
             </select>
             <input style={{ ...inp, width: 130 }} type="date" value={f("show_date")} onChange={set("show_date")} />
             <input style={{ ...inp, width: 84 }} type="time" value={f("start_time")} onChange={set("start_time")} />
+            <select style={{ ...inp, width: 78 }} value={f("format") || "2D"} onChange={set("format")} title="Format film">
+              {FORMATS.map(fm => <option key={fm} value={fm}>{fm}</option>)}
+            </select>
             <input style={{ ...inp, width: 96 }} type="number" placeholder="Harga" value={f("price")} onChange={set("price")} />
-            {btn("+ Jadwalkan", () => add("showtimes", { film_id: f("film_id"), studio_id: f("studio_id"), show_date: f("show_date"), start_time: f("start_time"), price: f("price") || 0 }))}
+            {btn("+ Jadwalkan", () => add("showtimes", { film_id: f("film_id"), studio_id: f("studio_id"), show_date: f("show_date"), start_time: f("start_time"), format: f("format") || "2D", price: f("price") || 0 }))}
           </Form>
           <List empty={showtimes.length === 0} emptyText="Belum ada jadwal tayang.">
             {showtimes.map(x => {
@@ -170,6 +177,7 @@ export default function CinemaOps({ apiBase }) {
                   </div>
                   <Badge color="#22d3ee">{x.show_date}</Badge>
                   <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 13, fontWeight: 700, width: 56 }}>{x.start_time}</div>
+                  <Badge color="#a78bfa">{x.format || "2D"}</Badge>
                   <Badge color={DS_COLOR[ds] || "#5b6470"}>{DS_LABEL[ds] || ds}</Badge>
                   <div style={{ fontSize: 12, fontFamily: "'Geist Mono',monospace", color: "#10b981", width: 80, textAlign: "right" }}>{rp(x.price)}</div>
                   {isClosedManual

@@ -7,6 +7,10 @@ const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const BG = "#050810";
 const STATUS_LABEL = { scheduled: "", running: "Berlangsung", closed: "Tutup", sold_out: "Sold Out", cancelled: "Batal" };
 const STATUS_COLOR = { running: "#f59e0b", closed: "#6b7280", sold_out: "#ef4444", cancelled: "#dc2626" };
+// LSF Indonesia age classification
+const RATING_COLOR = { "SU": "#10b981", "13+": "#22d3ee", "17+": "#f59e0b", "D21": "#ef4444", "21+": "#ef4444" };
+const RATING_LABEL = { "SU": "Semua Umur", "13+": "13 tahun ke atas", "17+": "17 tahun ke atas", "D21": "Dewasa 21+", "21+": "Dewasa 21+" };
+const RESTRICTED_RATINGS = ["17+", "21+", "D21"];
 
 export default function CinemaKiosk({ apiBase }) {
   const [step, setStep] = useState("films");
@@ -72,7 +76,19 @@ export default function CinemaKiosk({ apiBase }) {
     return fetch(`${base}/showtimes/${showtimeId}/seats?hold_token=${encodeURIComponent(holdToken)}`)
       .then(r => r.json()).then(d => { if (d && !d.error) setSeatData(d); return d; });
   };
-  const pickFilm = (f) => { setFilm(f); setMsg(""); setStep("showtimes"); };
+  const [ageGate, setAgeGate] = useState(null);  // film pending age confirm
+  const pickFilm = (f) => {
+    setMsg("");
+    if (RESTRICTED_RATINGS.includes(f.rating)) {
+      setAgeGate(f); return;
+    }
+    setFilm(f); setStep("showtimes");
+  };
+  const confirmAgeGate = () => {
+    const f = ageGate; setAgeGate(null);
+    if (f) { setFilm(f); setStep("showtimes"); }
+  };
+  const cancelAgeGate = () => setAgeGate(null);
   const pickShow = (s) => {
     setMsg("");
     fetch(`${base}/showtimes/${s.id}/seats?hold_token=${encodeURIComponent(holdToken)}`).then(r => r.json())
@@ -356,7 +372,7 @@ export default function CinemaKiosk({ apiBase }) {
                   <div style={{ fontSize: 16, fontWeight: 700 }}>{f.title}</div>
                   <div style={{ fontSize: 12.5, color: "#7d8590", marginTop: 4 }}>{f.genre || "—"} · {f.duration_min || 0} mnt</div>
                   <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: "#a78bfa", background: "#a855f722", borderRadius: 6, padding: "3px 10px" }}>{f.rating}</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: RATING_COLOR[f.rating] || "#a78bfa", background: (RATING_COLOR[f.rating] || "#a78bfa") + "22", borderRadius: 6, padding: "3px 10px", letterSpacing: 0.5 }}>{f.rating}</span>
                     {f.avg_rating ? (
                       <span style={{ fontSize: 11, fontWeight: 700, color: "#fbbf24" }}>★ {f.avg_rating} <span style={{ color: "#5b6470", fontWeight: 400 }}>({f.ratings_count})</span></span>
                     ) : null}
@@ -401,7 +417,10 @@ export default function CinemaKiosk({ apiBase }) {
                 return (
                   <button key={s.id} onClick={() => !locked && pickShow(s)} disabled={locked}
                     style={{ ...card(), opacity: locked ? 0.6 : 1, cursor: locked ? "not-allowed" : "pointer", position: "relative" }}>
-                    <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 22, fontWeight: 700 }}>{s.start_time}</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                      <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 22, fontWeight: 700 }}>{s.start_time}</div>
+                      <span style={{ fontSize: 10, fontWeight: 800, color: "#a78bfa", background: "#a855f722", borderRadius: 5, padding: "3px 8px", letterSpacing: 1, fontFamily: "'Geist Mono',monospace" }}>{s.format || "2D"}</span>
+                    </div>
                     <div style={{ fontSize: 12.5, color: "#7d8590", marginTop: 4 }}>{s.show_date}</div>
                     <div style={{ fontSize: 12.5, color: "#7d8590" }}>{s.studio_name} · {s.studio_type}</div>
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8, gap: 8 }}>
@@ -605,6 +624,40 @@ export default function CinemaKiosk({ apiBase }) {
                 color: seats.size ? "#04130c" : "#5b6470", fontSize: 15, fontWeight: 700, cursor: seats.size ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
               {bundleCatalog.length > 0 ? "Lanjut → F&B" : "Beli Tiket"}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Age verification gate (LSF Indonesia: 17+ / D21 / 21+) */}
+      {ageGate && (
+        <div onClick={cancelAgeGate} style={{
+          position: "fixed", inset: 0, background: "rgba(5,8,16,0.85)", zIndex: 99998,
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: "#0d1117", border: `2px solid ${RATING_COLOR[ageGate.rating] || "#ef4444"}`, borderRadius: 18,
+            padding: "28px 30px", maxWidth: 420, textAlign: "center", color: "#fff",
+            boxShadow: `0 0 40px ${(RATING_COLOR[ageGate.rating] || "#ef4444")}55`,
+          }}>
+            <div style={{ fontSize: 70, marginBottom: 6 }}>🔞</div>
+            <div style={{
+              display: "inline-block", fontSize: 22, fontWeight: 900, letterSpacing: 2,
+              color: RATING_COLOR[ageGate.rating] || "#ef4444",
+              background: (RATING_COLOR[ageGate.rating] || "#ef4444") + "22",
+              border: `2px solid ${(RATING_COLOR[ageGate.rating] || "#ef4444")}66`,
+              borderRadius: 12, padding: "8px 22px", marginBottom: 14,
+            }}>{ageGate.rating}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 6 }}>Konfirmasi Usia</div>
+            <div style={{ fontSize: 13, color: "#9ca3af", lineHeight: 1.55, marginBottom: 20 }}>
+              Film <b style={{ color: "#fff" }}>{ageGate.title}</b> klasifikasi <b style={{ color: RATING_COLOR[ageGate.rating] }}>{RATING_LABEL[ageGate.rating]}</b> menurut LSF (Lembaga Sensor Film).
+              Pastikan usia Anda sesuai sebelum melanjutkan pembelian.
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button onClick={cancelAgeGate} style={{ flex: 1, background: "#1b212c", border: "1px solid #2a2b30", color: "#9ca3af", padding: "11px 18px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={confirmAgeGate} style={{ flex: 2, background: RATING_COLOR[ageGate.rating] || "#ef4444", border: "none", color: "#fff", padding: "11px 18px", borderRadius: 10, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+                ✓ Usia saya cukup
+              </button>
+            </div>
           </div>
         </div>
       )}
