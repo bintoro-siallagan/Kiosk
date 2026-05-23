@@ -164,6 +164,7 @@ export function createSocket(onMessage) {
   const wsUrl = BASE.replace("http", "ws");
   let ws;
   let reconnectTimer;
+  let pingInterval;
   let retries = 0;
   let intentionalClose = false;
 
@@ -175,16 +176,25 @@ export function createSocket(onMessage) {
       else            console.log("🔌 WebSocket connected");
       retries = 0;
       clearTimeout(reconnectTimer);
+      // App-level keep-alive — 25s ping biar nginx idle timeout (60s) gak nutup
+      if (pingInterval) clearInterval(pingInterval);
+      pingInterval = setInterval(() => {
+        try {
+          if (ws?.readyState === 1) ws.send(JSON.stringify({ event: "ping", ts: Date.now() }));
+        } catch {}
+      }, 25_000);
     };
 
     ws.onmessage = (e) => {
       try {
         const msg = JSON.parse(e.data);
+        if (msg.event === "pong") return; // ignore keepalive echo
         onMessage(msg);
       } catch {}
     };
 
     ws.onclose = (e) => {
+      if (pingInterval) { clearInterval(pingInterval); pingInterval = null; }
       if (intentionalClose || e.code === 1000) return;
       // Exponential backoff: 1s, 2s, 4s, ..., max 30s
       const delay = Math.min(30000, 1000 * Math.pow(2, retries));
@@ -199,10 +209,29 @@ export function createSocket(onMessage) {
     ws.onerror = () => { /* let onclose handle reconnect */ };
   }
 
+  // Reconnect saat tab kembali visible / network online
+  const onVisible = () => {
+    if (intentionalClose) return;
+    if (document.visibilityState === "visible" && ws?.readyState !== 1) {
+      retries = 0;
+      clearTimeout(reconnectTimer);
+      connect();
+    }
+  };
+  document.addEventListener("visibilitychange", onVisible);
+  window.addEventListener("online", onVisible);
+
   connect();
 
   return {
     send: (event, data) => ws?.readyState === 1 && ws.send(JSON.stringify({ event, data })),
-    close: () => { intentionalClose = true; clearTimeout(reconnectTimer); ws?.close(1000); },
+    close: () => {
+      intentionalClose = true;
+      clearTimeout(reconnectTimer);
+      if (pingInterval) clearInterval(pingInterval);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", onVisible);
+      ws?.close(1000);
+    },
   };
 }

@@ -40,10 +40,14 @@ export default function POSCDS() {
 
   useEffect(() => {
     let mounted = true;
+    let retryCount = 0;
+    let pingInterval = null;
+    let disconnectVisualTimer = null;
 
     const connect = () => {
       if (!mounted) return;
-      setConnStatus("connecting");
+      // Hanya tampil "connecting" kalau bukan reconnect cepat (cegah flicker)
+      if (retryCount === 0) setConnStatus("connecting");
       try {
         const ws = new WebSocket(WS_URL);
         wsRef.current = ws;
@@ -51,13 +55,27 @@ export default function POSCDS() {
         ws.onopen = () => {
           if (!mounted) return;
           setConnStatus("connected");
+          retryCount = 0;
+          if (disconnectVisualTimer) { clearTimeout(disconnectVisualTimer); disconnectVisualTimer = null; }
           console.log("[CDS] WebSocket connected");
+
+          // Client-side keep-alive — kirim ping JSON tiap 25s biar nginx idle
+          // timeout (60s default) gak menutup connection.
+          if (pingInterval) clearInterval(pingInterval);
+          pingInterval = setInterval(() => {
+            try {
+              if (ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ event: "ping", ts: Date.now() }));
+              }
+            } catch {}
+          }, 25_000);
         };
 
         ws.onmessage = (msg) => {
           if (!mounted) return;
           try {
             const parsed = JSON.parse(msg.data);
+            if (parsed.event === "pong") return; // server-side pong echo
             const event = parsed.event || parsed.type;
             const data = parsed.data || parsed.payload || {};
             handleEvent(event, data);
@@ -70,19 +88,49 @@ export default function POSCDS() {
 
         ws.onclose = () => {
           if (!mounted) return;
-          setConnStatus("disconnected");
-          reconnectTimerRef.current = setTimeout(connect, 3000);
+          if (pingInterval) { clearInterval(pingInterval); pingInterval = null; }
+          // Cegah flicker — hanya tampil "disconnected" setelah 5 detik gagal
+          // reconnect. Untuk reconnect cepat (< 5s) user tidak akan lihat
+          // disrupting visual.
+          if (disconnectVisualTimer) clearTimeout(disconnectVisualTimer);
+          disconnectVisualTimer = setTimeout(() => {
+            if (mounted) setConnStatus("disconnected");
+          }, 5_000);
+
+          // Exponential backoff capped at 30s: 1s, 2s, 4s, 8s, 16s, 30s, 30s…
+          retryCount++;
+          const delay = Math.min(30_000, 1000 * Math.pow(2, retryCount - 1));
+          console.log(`[CDS] WS disconnected — reconnect attempt ${retryCount} in ${delay}ms`);
+          reconnectTimerRef.current = setTimeout(connect, delay);
         };
       } catch (e) {
         if (!mounted) return;
-        reconnectTimerRef.current = setTimeout(connect, 3000);
+        retryCount++;
+        const delay = Math.min(30_000, 1000 * Math.pow(2, retryCount - 1));
+        reconnectTimerRef.current = setTimeout(connect, delay);
       }
     };
+
+    // Reconnect saat tab kembali visible (mobile/tablet sleep wake)
+    const onVisible = () => {
+      if (!mounted) return;
+      if (document.visibilityState === "visible" && wsRef.current?.readyState !== WebSocket.OPEN) {
+        retryCount = 0;
+        if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
+        connect();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("online", onVisible);
 
     connect();
 
     return () => {
       mounted = false;
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("online", onVisible);
+      if (pingInterval) clearInterval(pingInterval);
+      if (disconnectVisualTimer) clearTimeout(disconnectVisualTimer);
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       if (wsRef.current) {
         wsRef.current.onclose = null;

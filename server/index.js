@@ -225,6 +225,17 @@ wss.on("connection", (ws) => {
   // Send current state on connect
   ws.send(JSON.stringify({ event: "init", data: { orders, menu }, ts: Date.now() }));
   ws.on("pong",  () => { ws.isAlive = true; });
+  // App-level ping/pong (client kirim JSON ping → server reply pong).
+  // Berguna untuk keep-alive lewat nginx + tracking client liveness.
+  ws.on("message", (data) => {
+    try {
+      const m = JSON.parse(data.toString());
+      if (m && m.event === "ping") {
+        ws.isAlive = true;
+        ws.send(JSON.stringify({ event: "pong", ts: Date.now() }));
+      }
+    } catch {}
+  });
   ws.on("error", (e) => console.warn("⚠️  WS client error:", e.message));
   ws.on("close", () => console.log("🔌 Client disconnected"));
 });
