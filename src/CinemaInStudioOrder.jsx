@@ -163,11 +163,11 @@ export default function CinemaInStudioOrder({ apiBase }) {
       <div style={{ position: "fixed", inset: 0, background: BG_GRADIENT, color: "#e6edf3", fontFamily: "'Inter',sans-serif", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center" }}>
         <div aria-hidden style={{ position: "fixed", inset: 0, background: BG_MESH, pointerEvents: "none" }} />
         <style>{`@keyframes karyaIsoBounce { 0% { opacity: 0; transform: translateY(20px) scale(0.92); } 60% { opacity: 1; transform: translateY(-4px) scale(1.02); } 100% { opacity: 1; transform: translateY(0) scale(1); } }`}</style>
-        <div style={{ position: "relative", zIndex: 1, animation: "karyaIsoBounce 0.6s cubic-bezier(.2,.7,.3,1)" }}>
-          <div style={{ fontSize: 64 }}>✅🍿</div>
-          <div style={{ fontSize: 28, fontWeight: 900, marginTop: 10, letterSpacing: -0.6, color: "#10b981" }}>Pembayaran sukses!</div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 6 }}>Order <b style={{ color: "#fbbf24", fontFamily: "'Geist Mono',monospace", letterSpacing: 1.5 }}>{done.order_code}</b></div>
-          <div style={{ position: "relative", background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 20, marginTop: 18, minWidth: 280, textAlign: "left", maxWidth: 380, overflow: "hidden", boxShadow: "0 16px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
+        <div style={{ position: "relative", zIndex: 1, animation: "karyaIsoBounce 0.6s cubic-bezier(.2,.7,.3,1)", display: "flex", flexDirection: "column", alignItems: "center", gap: 14, width: "100%", maxWidth: 420 }}>
+          <div style={{ fontSize: 56, lineHeight: 1, filter: "drop-shadow(0 0 24px rgba(16,185,129,0.35))" }}>✅</div>
+          <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.2, letterSpacing: -0.6, color: "#10b981", margin: 0 }}>Pembayaran sukses!</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.4, margin: 0 }}>Order <b style={{ color: "#fbbf24", fontFamily: "'Geist Mono',monospace", letterSpacing: 1.5 }}>{done.order_code}</b></div>
+          <div style={{ position: "relative", background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 20, minWidth: 280, textAlign: "left", width: "100%", boxSizing: "border-box", overflow: "hidden", boxShadow: "0 16px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
             <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(400px 200px at 50% 0%, rgba(16,185,129,0.08), transparent 70%)", pointerEvents: "none" }} />
             <div style={{ position: "relative" }}>
               <Line k="Kursi" v={<b style={{ fontSize: 18, letterSpacing: -0.3 }}>{done.seat}</b>} />
@@ -184,10 +184,10 @@ export default function CinemaInStudioOrder({ apiBase }) {
               </div>
             </div>
           </div>
-          <div style={{ fontSize: 12.5, color: "#10b981", marginTop: 14, maxWidth: 380, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 12.5, color: "#10b981", maxWidth: 380, lineHeight: 1.5, margin: 0 }}>
             ✓ Sudah dibayar via QRIS — staff sedang menyiapkan pesanan. Antar ke kursi <b>{done.seat}</b>.
           </div>
-          <button onClick={reset} style={{ marginTop: 22, background: "linear-gradient(135deg,#a855f7,#c084fc)", border: "none", borderRadius: 12, padding: "14px 32px", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(168,85,247,0.35), inset 0 1px 0 rgba(255,255,255,0.2)", letterSpacing: 0.3, transition: "transform 0.15s ease, filter 0.15s ease" }}
+          <button onClick={reset} style={{ marginTop: 6, background: "linear-gradient(135deg,#a855f7,#c084fc)", border: "none", borderRadius: 12, padding: "14px 32px", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(168,85,247,0.35), inset 0 1px 0 rgba(255,255,255,0.2)", letterSpacing: 0.3, transition: "transform 0.15s ease, filter 0.15s ease" }}
             onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.filter = "brightness(1.08)"; }}
             onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.filter = "none"; }}>
             Pesan Lagi
