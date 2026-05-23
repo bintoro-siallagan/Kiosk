@@ -224,6 +224,91 @@ CREATE TABLE IF NOT EXISTS cinema_price_list (
 );
 CREATE INDEX IF NOT EXISTS idx_cpl_outlet ON cinema_price_list(outlet);
 CREATE INDEX IF NOT EXISTS idx_cpl_active ON cinema_price_list(is_active);
+-- Seat types per studio (regular / couple / vip / disabled) + per-seat surcharge
+CREATE TABLE IF NOT EXISTS cinema_seat_types (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  studio_id INTEGER NOT NULL,
+  seat TEXT NOT NULL,
+  seat_type TEXT DEFAULT 'regular' CHECK (seat_type IN ('regular','couple','vip','disabled')),
+  price_modifier INTEGER DEFAULT 0,
+  UNIQUE(studio_id, seat)
+);
+CREATE INDEX IF NOT EXISTS idx_cst_studio ON cinema_seat_types(studio_id);
+-- Cleaning logs per studio (optionally tied to showtime)
+CREATE TABLE IF NOT EXISTS cinema_cleaning_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  studio_id INTEGER NOT NULL,
+  cleaned_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  cleaned_by TEXT,
+  notes TEXT,
+  showtime_id INTEGER
+);
+CREATE INDEX IF NOT EXISTS idx_ccl_studio ON cinema_cleaning_logs(studio_id);
+-- Promotions: promo codes (percentage/fixed) per type (movie/combo/bank/member/all)
+CREATE TABLE IF NOT EXISTS cinema_promotions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  code TEXT UNIQUE,
+  name TEXT NOT NULL,
+  description TEXT,
+  promo_type TEXT NOT NULL DEFAULT 'all' CHECK (promo_type IN ('movie','combo','bank','member','all')),
+  discount_type TEXT NOT NULL DEFAULT 'percentage' CHECK (discount_type IN ('percentage','fixed')),
+  discount_value REAL NOT NULL DEFAULT 0,
+  min_purchase INTEGER DEFAULT 0,
+  max_discount INTEGER,
+  applies_to_film_id INTEGER,
+  applies_to_bundle_id INTEGER,
+  bank_name TEXT,
+  valid_from TEXT,
+  valid_to TEXT,
+  max_redemptions INTEGER,
+  redemption_count INTEGER DEFAULT 0,
+  is_active INTEGER DEFAULT 1,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_cprom_code ON cinema_promotions(code);
+CREATE INDEX IF NOT EXISTS idx_cprom_active ON cinema_promotions(is_active);
+CREATE TABLE IF NOT EXISTS cinema_promo_redemptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  promo_id INTEGER NOT NULL,
+  purchase_id TEXT,
+  customer_phone TEXT,
+  customer_email TEXT,
+  discount_amount INTEGER DEFAULT 0,
+  redeemed_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_cpr_promo ON cinema_promo_redemptions(promo_id);
+-- Post-show multi-aspect feedback (movie / audio / cleanliness / comfort)
+CREATE TABLE IF NOT EXISTS cinema_post_show_feedback (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ticket_code TEXT,
+  showtime_id INTEGER,
+  film_id INTEGER,
+  rating_movie INTEGER CHECK (rating_movie BETWEEN 1 AND 5),
+  rating_audio INTEGER CHECK (rating_audio BETWEEN 1 AND 5),
+  rating_cleanliness INTEGER CHECK (rating_cleanliness BETWEEN 1 AND 5),
+  rating_comfort INTEGER CHECK (rating_comfort BETWEEN 1 AND 5),
+  comment TEXT,
+  customer_phone TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_cpsf_film ON cinema_post_show_feedback(film_id);
+-- Indonesian public holidays (used by price-list day_type='holiday' resolution)
+CREATE TABLE IF NOT EXISTS cinema_holidays (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  date TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  is_active INTEGER DEFAULT 1,
+  notes TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+-- Genre→combo recommendation map (cinema_bundles already exists)
+CREATE TABLE IF NOT EXISTS cinema_genre_combos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  genre_keyword TEXT NOT NULL,
+  bundle_id INTEGER NOT NULL,
+  priority INTEGER DEFAULT 1,
+  UNIQUE(genre_keyword, bundle_id)
+);
 `;
 
 const SEED_FILMS = [
@@ -274,6 +359,52 @@ function setupCinema(app, opts = {}) {
   try { db.exec("ALTER TABLE cinema_showtimes ADD COLUMN format TEXT DEFAULT '2D'"); } catch {}
   // Available formats per film (CSV) — metadata informasi
   try { db.exec("ALTER TABLE cinema_films ADD COLUMN available_formats TEXT DEFAULT '2D'"); } catch {}
+  // Movie metadata expansion (subtitle, language, trailer, poster)
+  try { db.exec("ALTER TABLE cinema_films ADD COLUMN subtitle TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_films ADD COLUMN language TEXT DEFAULT 'Indonesia'"); } catch {}
+  try { db.exec("ALTER TABLE cinema_films ADD COLUMN trailer_url TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_films ADD COLUMN poster_url TEXT"); } catch {}
+  // Studio maintenance / cleaning status
+  try { db.exec("ALTER TABLE cinema_studios ADD COLUMN maintenance_status TEXT DEFAULT 'operational'"); } catch {}
+  try { db.exec("ALTER TABLE cinema_studios ADD COLUMN last_cleaned_at INTEGER"); } catch {}
+  try { db.exec("ALTER TABLE cinema_studios ADD COLUMN last_cleaned_by TEXT"); } catch {}
+
+  // Seed Indonesian public holidays 2026 on first run
+  if (db.prepare(`SELECT COUNT(*) c FROM cinema_holidays`).get().c === 0) {
+    const sh = db.prepare(`INSERT INTO cinema_holidays (date, name) VALUES (?, ?)`);
+    [
+      ['2026-01-01', 'Tahun Baru Masehi'],
+      ['2026-02-17', 'Tahun Raya Imlek'],
+      ['2026-03-19', 'Hari Raya Nyepi'],
+      ['2026-04-03', 'Wafat Isa Almasih'],
+      ['2026-05-01', 'Hari Buruh'],
+      ['2026-05-14', 'Kenaikan Isa Almasih'],
+      ['2026-05-22', 'Hari Raya Waisak'],
+      ['2026-06-01', 'Hari Lahir Pancasila'],
+      ['2026-08-17', 'HUT Kemerdekaan RI'],
+      ['2026-12-25', 'Hari Raya Natal'],
+    ].forEach(([d, n]) => sh.run(d, n));
+  }
+  // Seed genre→combo suggestions
+  if (db.prepare(`SELECT COUNT(*) c FROM cinema_genre_combos`).get().c === 0) {
+    const bundleIds = db.prepare(`SELECT id, name FROM cinema_bundles ORDER BY id`).all();
+    if (bundleIds.length) {
+      const sg = db.prepare(`INSERT OR IGNORE INTO cinema_genre_combos (genre_keyword, bundle_id, priority) VALUES (?,?,?)`);
+      // Horror → Popcorn + Coke (Combo 1) + Nachos (Combo 3)
+      if (bundleIds[0]) sg.run('horror',    bundleIds[0].id, 10);
+      if (bundleIds[2]) sg.run('horror',    bundleIds[2].id, 9);
+      // Action / Adventure → Combo Large (Combo 2)
+      if (bundleIds[1]) sg.run('action',    bundleIds[1].id, 10);
+      if (bundleIds[1]) sg.run('adventure', bundleIds[1].id, 9);
+      // Drama / Romance → Combo small + drink
+      if (bundleIds[0]) sg.run('drama',     bundleIds[0].id, 8);
+      if (bundleIds[0]) sg.run('romance',   bundleIds[0].id, 8);
+      // Animation / SU → Hot Dog + drink
+      if (bundleIds[3]) sg.run('animation', bundleIds[3].id, 10);
+      // Comedy → Nachos
+      if (bundleIds[2]) sg.run('comedy',    bundleIds[2].id, 9);
+    }
+  }
 
   // Seed default price list per outlet (Paskal seeded — admin tambah outlet lain)
   if (db.prepare(`SELECT COUNT(*) c FROM cinema_price_list`).get().c === 0) {
@@ -1207,11 +1338,289 @@ function setupCinema(app, opts = {}) {
     res.json({ totals, by_distributor: byDistributor, by_film: byFilm, by_tier: byTier });
   });
 
+  // ── SEAT TYPES (couple / VIP / disabled / regular) ───────────────────
+  router.get('/studios/:id/seat-types', (req, res) => {
+    const rows = db.prepare(`SELECT * FROM cinema_seat_types WHERE studio_id = ?`).all(req.params.id);
+    res.json({ seat_types: rows });
+  });
+  router.post('/studios/:id/seat-types/bulk', (req, res) => {
+    const b = req.body || {};
+    const assignments = Array.isArray(b.assignments) ? b.assignments : [];
+    db.transaction(() => {
+      for (const a of assignments) {
+        if (!a.seat || !a.seat_type) continue;
+        db.prepare(`INSERT INTO cinema_seat_types (studio_id, seat, seat_type, price_modifier) VALUES (?,?,?,?)
+                    ON CONFLICT(studio_id, seat) DO UPDATE
+                      SET seat_type = excluded.seat_type, price_modifier = excluded.price_modifier`)
+          .run(req.params.id, String(a.seat), a.seat_type, parseInt(a.price_modifier, 10) || 0);
+      }
+    })();
+    res.json({ ok: true, count: assignments.length });
+  });
+  router.delete('/studios/:id/seat-types/:seat', (req, res) => {
+    db.prepare(`DELETE FROM cinema_seat_types WHERE studio_id = ? AND seat = ?`).run(req.params.id, req.params.seat);
+    res.json({ ok: true });
+  });
+
+  // ── STUDIO MAINTENANCE / CLEANING ─────────────────────────────────────
+  router.patch('/studios/:id/maintenance', (req, res) => {
+    const b = req.body || {};
+    const valid = ['operational', 'cleaning', 'maintenance', 'closed'];
+    if (!valid.includes(b.maintenance_status)) return res.status(400).json({ ok: false, error: 'Status invalid' });
+    db.prepare(`UPDATE cinema_studios SET maintenance_status = ? WHERE id = ?`).run(b.maintenance_status, req.params.id);
+    res.json({ ok: true });
+  });
+  router.post('/studios/:id/clean', (req, res) => {
+    const b = req.body || {};
+    const now = Math.floor(Date.now() / 1000);
+    db.prepare(`INSERT INTO cinema_cleaning_logs (studio_id, cleaned_by, notes, showtime_id) VALUES (?,?,?,?)`)
+      .run(req.params.id, b.cleaned_by || '', b.notes || '', b.showtime_id || null);
+    db.prepare(`UPDATE cinema_studios SET last_cleaned_at = ?, last_cleaned_by = ?, maintenance_status = 'operational' WHERE id = ?`)
+      .run(now, b.cleaned_by || '', req.params.id);
+    res.json({ ok: true, cleaned_at: now });
+  });
+  router.get('/studios/:id/cleaning-logs', (req, res) => {
+    const rows = db.prepare(`SELECT * FROM cinema_cleaning_logs WHERE studio_id = ? ORDER BY cleaned_at DESC LIMIT 50`).all(req.params.id);
+    res.json({ logs: rows });
+  });
+
+  // ── HOLIDAYS ──────────────────────────────────────────────────────────
+  router.get('/holidays', (req, res) => {
+    const rows = db.prepare(`SELECT * FROM cinema_holidays ORDER BY date`).all();
+    res.json({ holidays: rows });
+  });
+  router.post('/holidays', (req, res) => {
+    const b = req.body || {};
+    if (!b.date || !b.name) return res.status(400).json({ ok: false, error: 'date + name wajib' });
+    try {
+      const info = db.prepare(`INSERT INTO cinema_holidays (date, name, notes) VALUES (?,?,?)`)
+        .run(b.date, b.name, b.notes || '');
+      res.json({ ok: true, id: info.lastInsertRowid });
+    } catch (e) {
+      res.status(409).json({ ok: false, error: 'Tanggal sudah ada' });
+    }
+  });
+  router.patch('/holidays/:id', (req, res) => {
+    const b = req.body || {};
+    const fields = []; const args = [];
+    for (const k of ['date', 'name', 'notes', 'is_active']) {
+      if (k in b) { fields.push(`${k} = ?`); args.push(k === 'is_active' ? (b[k] ? 1 : 0) : b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE cinema_holidays SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/holidays/:id', (req, res) => {
+    db.prepare(`DELETE FROM cinema_holidays WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
+  // ── PROMOTIONS / PROMO CODES ──────────────────────────────────────────
+  router.get('/promotions', (req, res) => {
+    const all = String(req.query.all || '') === '1';
+    const sql = all
+      ? `SELECT * FROM cinema_promotions ORDER BY is_active DESC, code`
+      : `SELECT * FROM cinema_promotions WHERE is_active = 1 ORDER BY code`;
+    res.json({ promotions: db.prepare(sql).all() });
+  });
+  router.post('/promotions', (req, res) => {
+    const b = req.body || {};
+    if (!b.name) return res.status(400).json({ ok: false, error: 'name wajib' });
+    if (b.code && db.prepare(`SELECT 1 FROM cinema_promotions WHERE UPPER(code) = ?`).get(String(b.code).toUpperCase())) {
+      return res.status(409).json({ ok: false, error: 'Kode sudah dipakai' });
+    }
+    const info = db.prepare(`INSERT INTO cinema_promotions
+      (code, name, description, promo_type, discount_type, discount_value,
+       min_purchase, max_discount, applies_to_film_id, applies_to_bundle_id,
+       bank_name, valid_from, valid_to, max_redemptions, is_active)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+      .run(b.code ? String(b.code).toUpperCase() : null, b.name, b.description || '',
+           b.promo_type || 'all', b.discount_type || 'percentage', parseFloat(b.discount_value) || 0,
+           parseInt(b.min_purchase, 10) || 0, b.max_discount ? parseInt(b.max_discount, 10) : null,
+           b.applies_to_film_id ? parseInt(b.applies_to_film_id, 10) : null,
+           b.applies_to_bundle_id ? parseInt(b.applies_to_bundle_id, 10) : null,
+           b.bank_name || '', b.valid_from || null, b.valid_to || null,
+           b.max_redemptions ? parseInt(b.max_redemptions, 10) : null,
+           b.is_active === false ? 0 : 1);
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+  router.patch('/promotions/:id', (req, res) => {
+    const b = req.body || {};
+    const fields = []; const args = [];
+    for (const k of ['code', 'name', 'description', 'promo_type', 'discount_type', 'discount_value',
+                     'min_purchase', 'max_discount', 'applies_to_film_id', 'applies_to_bundle_id',
+                     'bank_name', 'valid_from', 'valid_to', 'max_redemptions', 'is_active']) {
+      if (k in b) {
+        fields.push(`${k} = ?`);
+        if (k === 'is_active') args.push(b[k] ? 1 : 0);
+        else if (['discount_value'].includes(k)) args.push(parseFloat(b[k]) || 0);
+        else if (['min_purchase', 'max_discount', 'applies_to_film_id', 'applies_to_bundle_id', 'max_redemptions'].includes(k)) {
+          args.push(b[k] == null || b[k] === '' ? null : parseInt(b[k], 10));
+        } else if (k === 'code') args.push(b[k] ? String(b[k]).toUpperCase() : null);
+        else args.push(b[k]);
+      }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE cinema_promotions SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/promotions/:id', (req, res) => {
+    db.prepare(`DELETE FROM cinema_promotions WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
+  // Apply promo: validate + return discount (does NOT redeem; that happens on POST /tickets)
+  router.post('/promotions/apply', (req, res) => {
+    const b = req.body || {};
+    const code = String(b.code || '').trim().toUpperCase();
+    if (!code) return res.status(400).json({ ok: false, error: 'Kode promo wajib' });
+    const p = db.prepare(`SELECT * FROM cinema_promotions WHERE UPPER(code) = ? AND is_active = 1`).get(code);
+    if (!p) return res.status(404).json({ ok: false, error: 'Kode promo tidak ditemukan / sudah tidak aktif' });
+    const today = new Date().toISOString().slice(0, 10);
+    if (p.valid_from && today < p.valid_from) return res.status(400).json({ ok: false, error: `Promo berlaku mulai ${p.valid_from}` });
+    if (p.valid_to && today > p.valid_to)     return res.status(400).json({ ok: false, error: `Promo berakhir ${p.valid_to}` });
+    if (p.max_redemptions && p.redemption_count >= p.max_redemptions) {
+      return res.status(400).json({ ok: false, error: 'Kuota promo sudah habis' });
+    }
+    const subtotal = parseInt(b.subtotal, 10) || 0;
+    if (p.min_purchase && subtotal < p.min_purchase) {
+      return res.status(400).json({ ok: false, error: `Minimal pembelian Rp ${(p.min_purchase || 0).toLocaleString('id-ID')}` });
+    }
+    // Filter constraints
+    if (p.applies_to_film_id && b.film_id && parseInt(b.film_id, 10) !== p.applies_to_film_id) {
+      return res.status(400).json({ ok: false, error: 'Promo hanya untuk film tertentu' });
+    }
+    // Compute discount
+    let discount = p.discount_type === 'percentage'
+      ? Math.floor(subtotal * (p.discount_value || 0) / 100)
+      : Math.min(p.discount_value || 0, subtotal);
+    if (p.max_discount && discount > p.max_discount) discount = p.max_discount;
+    res.json({ ok: true, promo: p, discount, subtotal, total_after: subtotal - discount });
+  });
+
+  // ── POST-SHOW FEEDBACK (multi-aspect: movie/audio/cleanliness/comfort) ─
+  router.post('/feedback/post-show', (req, res) => {
+    const b = req.body || {};
+    const info = db.prepare(`INSERT INTO cinema_post_show_feedback
+      (ticket_code, showtime_id, film_id, rating_movie, rating_audio,
+       rating_cleanliness, rating_comfort, comment, customer_phone)
+      VALUES (?,?,?,?,?,?,?,?,?)`)
+      .run(b.ticket_code || null, b.showtime_id || null, b.film_id || null,
+           b.rating_movie || null, b.rating_audio || null,
+           b.rating_cleanliness || null, b.rating_comfort || null,
+           b.comment || '', b.customer_phone || '');
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+  router.get('/feedback/post-show', (req, res) => {
+    const where = []; const params = {};
+    if (req.query.from) { where.push(`date(created_at,'unixepoch','localtime') >= @from`); params.from = req.query.from; }
+    if (req.query.film_id) { where.push(`film_id = @film_id`); params.film_id = parseInt(req.query.film_id, 10); }
+    const W = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const rows = db.prepare(`SELECT * FROM cinema_post_show_feedback ${W} ORDER BY created_at DESC LIMIT 200`).all(params);
+    const agg = db.prepare(`
+      SELECT COUNT(*) total,
+             ROUND(AVG(rating_movie),2)       avg_movie,
+             ROUND(AVG(rating_audio),2)       avg_audio,
+             ROUND(AVG(rating_cleanliness),2) avg_cleanliness,
+             ROUND(AVG(rating_comfort),2)     avg_comfort
+      FROM cinema_post_show_feedback ${W}
+    `).get(params);
+    res.json({ rows, agg });
+  });
+
+  // ── GENRE → COMBO SUGGESTION ─────────────────────────────────────────
+  router.get('/films/:id/suggested-combos', (req, res) => {
+    const film = db.prepare(`SELECT genre FROM cinema_films WHERE id = ?`).get(req.params.id);
+    if (!film || !film.genre) return res.json({ combos: [] });
+    const genre = String(film.genre).toLowerCase();
+    const maps = db.prepare(`SELECT * FROM cinema_genre_combos`).all();
+    const matchedIds = new Set();
+    for (const m of maps) {
+      if (genre.includes(String(m.genre_keyword).toLowerCase())) matchedIds.add(m.bundle_id);
+    }
+    if (!matchedIds.size) return res.json({ combos: [] });
+    const placeholders = [...matchedIds].map(() => '?').join(',');
+    const combos = db.prepare(`SELECT * FROM cinema_bundles WHERE id IN (${placeholders}) AND is_active = 1`).all(...matchedIds);
+    res.json({ combos });
+  });
+
+  // ── CINEMA COMMAND CENTER (realtime aggregator) ──────────────────────
+  router.get('/command-center', (req, res) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    // Showtimes happening today + derived occupancy
+    const showtimesToday = db.prepare(`
+      SELECT s.*, f.title AS film_title, f.duration_min, f.rating AS film_rating,
+             st.name AS studio_name, st.studio_type, (st.rows * st.cols) AS capacity,
+             (SELECT COUNT(*) FROM cinema_tickets WHERE showtime_id = s.id) AS sold
+      FROM cinema_showtimes s
+      LEFT JOIN cinema_films    f  ON f.id  = s.film_id
+      LEFT JOIN cinema_studios  st ON st.id = s.studio_id
+      WHERE s.show_date = ?
+      ORDER BY s.start_time
+    `).all(today).map(s => ({ ...s, derived_status: computeStatus(s, s.capacity, s.sold, nowSec) }));
+
+    // Today's revenue (tickets + bundles)
+    const ticketRev = db.prepare(`SELECT COUNT(*) c, COALESCE(SUM(price),0) revenue
+      FROM cinema_tickets
+      WHERE date(sold_at,'unixepoch','localtime') = date('now','localtime')`).get();
+    const bundleRev = db.prepare(`SELECT COUNT(*) c, COALESCE(SUM(qty*price),0) revenue
+      FROM cinema_purchase_bundles
+      WHERE date(created_at,'unixepoch','localtime') = date('now','localtime')`).get();
+    const inStudioRev = db.prepare(`SELECT COUNT(*) c, COALESCE(SUM(total),0) revenue
+      FROM cinema_in_studio_orders
+      WHERE date(created_at,'unixepoch','localtime') = date('now','localtime')`).get();
+
+    // Queue snapshots
+    const queue = db.prepare(`SELECT status, COUNT(*) c FROM cinema_in_studio_orders
+      WHERE date(created_at,'unixepoch','localtime') = date('now','localtime')
+      GROUP BY status`).all().reduce((a, r) => (a[r.status] = r.c, a), {});
+
+    // Studio status (non-operational ones)
+    const studios = db.prepare(`SELECT id, name, studio_type, maintenance_status, last_cleaned_at, last_cleaned_by FROM cinema_studios`).all();
+    const issues  = studios.filter(s => s.maintenance_status && s.maintenance_status !== 'operational');
+
+    // Latest feedback
+    const feedback = db.prepare(`
+      SELECT p.*, f.title AS film_title
+      FROM cinema_post_show_feedback p
+      LEFT JOIN cinema_films f ON f.id = p.film_id
+      ORDER BY p.created_at DESC LIMIT 5
+    `).all();
+
+    // Recent voids (operational issues)
+    const recentVoids = db.prepare(`SELECT COUNT(*) c FROM cinema_ticket_voids
+      WHERE voided_at >= ?`).get(nowSec - 86400).c;
+
+    res.json({
+      today,
+      showtimes_today: showtimesToday,
+      revenue: {
+        tickets:    ticketRev.revenue,
+        bundles:    bundleRev.revenue,
+        in_studio:  inStudioRev.revenue,
+        total:      ticketRev.revenue + bundleRev.revenue + inStudioRev.revenue,
+        tickets_count: ticketRev.c,
+      },
+      queue,
+      studios,
+      studio_issues: issues,
+      feedback,
+      void_count_24h: recentVoids,
+    });
+  });
+
   // ── PRICE LIST MASTER ─────────────────────────────────────────────────
   // Resolution: hitung specificity score (kolom non-NULL = +1) lalu price tertinggi
   // score wins. Tie → harga terbaru. Selalu fallback ke aturan paling umum.
   function dayTypeFromDate(d) {
     if (!d) return 'weekday';
+    // Check holidays first (overrides weekend/weekday)
+    const isHoliday = db.prepare(`SELECT 1 FROM cinema_holidays WHERE date = ? AND is_active = 1`).get(d);
+    if (isHoliday) return 'holiday';
     const [Y, M, D] = String(d).split('-').map(Number);
     if (!Y || !M || !D) return 'weekday';
     const dow = new Date(Y, M - 1, D).getDay();    // 0=Min, 6=Sab

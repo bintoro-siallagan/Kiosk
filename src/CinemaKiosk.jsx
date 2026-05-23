@@ -21,7 +21,11 @@ export default function CinemaKiosk({ apiBase }) {
   const [seatData, setSeatData] = useState(null);
   const [seats, setSeats] = useState(new Set());
   const [bundleCatalog, setBundleCatalog] = useState([]);
+  const [suggestedCombos, setSuggestedCombos] = useState([]);  // genre-based recommendation
   const [cart, setCart] = useState({});  // { [bundle_id]: qty }
+  const [promoCode, setPromoCode] = useState("");
+  const [promoApplied, setPromoApplied] = useState(null);  // {promo, discount, ...}
+  const [promoMsg, setPromoMsg] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [done, setDone] = useState(null);
@@ -79,6 +83,8 @@ export default function CinemaKiosk({ apiBase }) {
   const [ageGate, setAgeGate] = useState(null);  // film pending age confirm
   const pickFilm = (f) => {
     setMsg("");
+    // Lazy-fetch suggested combos based on film genre
+    fetch(`${base}/films/${f.id}/suggested-combos`).then(r => r.json()).then(d => setSuggestedCombos(d.combos || [])).catch(() => setSuggestedCombos([]));
     if (RESTRICTED_RATINGS.includes(f.rating)) {
       setAgeGate(f); return;
     }
@@ -88,6 +94,28 @@ export default function CinemaKiosk({ apiBase }) {
     const f = ageGate; setAgeGate(null);
     if (f) { setFilm(f); setStep("showtimes"); }
   };
+
+  // Promo code apply (validates at backend, returns discount)
+  const grandSubtotal = () => seats.size * (show?.price || 0) + Object.entries(cart).reduce((a, [id, qty]) => {
+    const b = bundleCatalog.find(x => x.id === parseInt(id, 10));
+    return a + (b ? b.price * qty : 0);
+  }, 0);
+  async function applyPromo() {
+    const code = promoCode.trim();
+    if (!code) return;
+    setPromoMsg(""); setPromoApplied(null);
+    try {
+      const r = await fetch(`${base}/promotions/apply`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, subtotal: grandSubtotal(), film_id: show?.film_id }),
+      });
+      const d = await r.json();
+      if (!d.ok) { setPromoMsg("⚠ " + (d.error || "Promo tidak valid")); return; }
+      setPromoApplied(d);
+      setPromoMsg(`✅ Hemat ${rp(d.discount)} dengan kode ${code.toUpperCase()}`);
+    } catch (e) { setPromoMsg("⚠ Koneksi gagal"); }
+  }
+  function clearPromo() { setPromoApplied(null); setPromoCode(""); setPromoMsg(""); }
   const cancelAgeGate = () => setAgeGate(null);
   const pickShow = (s) => {
     setMsg("");
@@ -367,15 +395,31 @@ export default function CinemaKiosk({ apiBase }) {
             <H>Pilih Film</H>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 14 }}>
               {films.filter(f => f.status === "now_showing").map(f => (
-                <button key={f.id} onClick={() => pickFilm(f)} style={card()}>
-                  <div style={{ fontSize: 38, marginBottom: 8 }}>🎞️</div>
-                  <div style={{ fontSize: 16, fontWeight: 700 }}>{f.title}</div>
-                  <div style={{ fontSize: 12.5, color: "#7d8590", marginTop: 4 }}>{f.genre || "—"} · {f.duration_min || 0} mnt</div>
-                  <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: RATING_COLOR[f.rating] || "#a78bfa", background: (RATING_COLOR[f.rating] || "#a78bfa") + "22", borderRadius: 6, padding: "3px 10px", letterSpacing: 0.5 }}>{f.rating}</span>
-                    {f.avg_rating ? (
-                      <span style={{ fontSize: 11, fontWeight: 700, color: "#fbbf24" }}>★ {f.avg_rating} <span style={{ color: "#5b6470", fontWeight: 400 }}>({f.ratings_count})</span></span>
-                    ) : null}
+                <button key={f.id} onClick={() => pickFilm(f)} style={{ ...card(), padding: 0, overflow: "hidden" }}>
+                  {f.poster_url ? (
+                    <img src={f.poster_url} alt={f.title} loading="lazy"
+                      style={{ width: "100%", aspectRatio: "2/3", objectFit: "cover", display: "block", background: "#0a0e16" }} />
+                  ) : (
+                    <div style={{ width: "100%", aspectRatio: "2/3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 60, background: "#0a0e16" }}>🎞️</div>
+                  )}
+                  <div style={{ padding: 14 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4, lineHeight: 1.3 }}>{f.title}</div>
+                    <div style={{ fontSize: 11.5, color: "#7d8590" }}>{f.genre || "—"} · {f.duration_min || 0} mnt</div>
+                    {(f.language || f.subtitle) && (
+                      <div style={{ fontSize: 10.5, color: "#5b6470", marginTop: 3, fontFamily: "'Geist Mono',monospace" }}>
+                        {f.language && `🗣 ${f.language}`}{f.subtitle && ` · 💬 ${f.subtitle}`}
+                      </div>
+                    )}
+                    <div style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: RATING_COLOR[f.rating] || "#a78bfa", background: (RATING_COLOR[f.rating] || "#a78bfa") + "22", borderRadius: 6, padding: "3px 10px", letterSpacing: 0.5 }}>{f.rating}</span>
+                      {f.avg_rating ? (
+                        <span style={{ fontSize: 11, fontWeight: 700, color: "#fbbf24" }}>★ {f.avg_rating} <span style={{ color: "#5b6470", fontWeight: 400 }}>({f.ratings_count})</span></span>
+                      ) : null}
+                      {f.trailer_url && (
+                        <a href={f.trailer_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}
+                           style={{ fontSize: 10, color: "#ef4444", textDecoration: "none", fontWeight: 700, marginLeft: "auto" }}>▶ Trailer</a>
+                      )}
+                    </div>
                   </div>
                 </button>
               ))}
@@ -496,6 +540,26 @@ export default function CinemaKiosk({ apiBase }) {
               </div>
             </div>
 
+            {/* Genre-based combo suggestion */}
+            {suggestedCombos.length > 0 && (
+              <div style={{ background: "linear-gradient(135deg,#f59e0b22 0%,#ec489922 100%)", border: "1px solid #f59e0b66", borderRadius: 14, padding: 14, marginBottom: 18 }}>
+                <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 11, color: "#fbbf24", letterSpacing: 1.5, fontWeight: 700, marginBottom: 8 }}>
+                  ✨ DIREKOMENDASIKAN UNTUK {film?.genre?.toUpperCase() || "FILM INI"}
+                </div>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {suggestedCombos.map(b => {
+                    const inCart = cart[b.id] > 0;
+                    return (
+                      <button key={b.id} onClick={() => incBundle(b.id)}
+                        style={{ background: inCart ? "#10b98122" : "#0a0e16", border: `1px solid ${inCart ? "#10b98166" : "#2a2b30"}`, borderRadius: 10, padding: "8px 14px", color: "#fff", fontSize: 12, fontFamily: "inherit", cursor: "pointer", textAlign: "left" }}>
+                        <div style={{ fontWeight: 700 }}>{inCart ? "✓ " : "+ "}{b.name}</div>
+                        <div style={{ fontSize: 11, color: "#10b981", fontFamily: "'Geist Mono',monospace", marginTop: 2 }}>{rp(b.price)}</div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <H>Tambah Combo F&B?</H>
             <div style={{ fontSize: 13, color: "#7d8590", marginTop: -8, marginBottom: 16 }}>
               Pilih combo popcorn / minuman. Bisa ditukar di F&amp;B counter dengan QR tiket. Opsional — boleh dilewati.
@@ -522,6 +586,30 @@ export default function CinemaKiosk({ apiBase }) {
                 );
               })}
               {bundleCatalog.length === 0 && <div style={{ color: "#5b6470", fontSize: 14 }}>Tidak ada combo tersedia.</div>}
+            </div>
+
+            {/* Promo code */}
+            <div style={{ marginTop: 22, background: "#0d1117", border: "1px solid #1b212c", borderRadius: 14, padding: 14 }}>
+              <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 11, color: "#fbbf24", letterSpacing: 1.5, fontWeight: 700, marginBottom: 8 }}>🎁 PUNYA KODE PROMO?</div>
+              {promoApplied ? (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#10b98115", border: "1px solid #10b98155", borderRadius: 10, padding: "10px 14px" }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#10b981" }}>✓ {promoApplied.promo.name}</div>
+                    <div style={{ fontSize: 12, color: "#7d8590", marginTop: 2 }}>Hemat <b style={{ color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>{rp(promoApplied.discount)}</b></div>
+                  </div>
+                  <button onClick={clearPromo} style={{ background: "transparent", border: "1px solid #ef444466", color: "#fca5a5", padding: "6px 12px", borderRadius: 8, fontSize: 11.5, cursor: "pointer", fontFamily: "inherit" }}>× Lepas</button>
+                </div>
+              ) : (
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input value={promoCode} onChange={e => setPromoCode(e.target.value.toUpperCase())} placeholder="Mis: BCA20"
+                    style={{ flex: 1, padding: "10px 12px", background: "#0a0e16", border: "1px solid #2a2b30", borderRadius: 9, color: "#fff", fontSize: 13, fontFamily: "'Geist Mono',monospace", letterSpacing: 2, outline: "none", boxSizing: "border-box" }} />
+                  <button onClick={applyPromo} disabled={!promoCode.trim()}
+                    style={{ background: promoCode.trim() ? "#fbbf24" : "#1b212c", border: "none", borderRadius: 9, padding: "10px 22px", color: promoCode.trim() ? "#111" : "#5b6470", fontSize: 13, fontWeight: 800, cursor: promoCode.trim() ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
+                    Apply
+                  </button>
+                </div>
+              )}
+              {promoMsg && <div style={{ marginTop: 8, fontSize: 12, color: promoApplied ? "#10b981" : "#fca5a5" }}>{promoMsg}</div>}
             </div>
           </>
         )}
@@ -675,8 +763,8 @@ export default function CinemaKiosk({ apiBase }) {
       {step === "bundles" && (
         <div style={{ flexShrink: 0, borderTop: "1px solid #161b22", background: "#0a0e16", padding: "14px 24px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
           <div style={{ fontSize: 12, color: "#7d8590" }}>
-            <div>Tiket <b style={{ color: "#fff" }}>{rp(seatsTotal)}</b> · F&amp;B <b style={{ color: "#fff" }}>{rp(bundlesTotal)}</b></div>
-            <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 17, fontWeight: 700, color: "#10b981", marginTop: 2 }}>Total {rp(grandTotal)}</div>
+            <div>Tiket <b style={{ color: "#fff" }}>{rp(seatsTotal)}</b> · F&amp;B <b style={{ color: "#fff" }}>{rp(bundlesTotal)}</b>{promoApplied ? <> · <span style={{ color: "#fbbf24" }}>Promo −{rp(promoApplied.discount)}</span></> : null}</div>
+            <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 17, fontWeight: 700, color: "#10b981", marginTop: 2 }}>Total {rp(Math.max(0, grandTotal - (promoApplied?.discount || 0)))}</div>
             {holdRemaining > 0 && (
               <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 11, color: holdRemaining < 60 ? "#ef4444" : "#fbbf24", marginTop: 4, letterSpacing: 1 }}>
                 ⏱ Kursi disimpan {String(Math.floor(holdRemaining / 60)).padStart(2, "0")}:{String(holdRemaining % 60).padStart(2, "0")}
@@ -689,7 +777,7 @@ export default function CinemaKiosk({ apiBase }) {
             </button>
             <button onClick={() => buy(cartItems)}
               style={{ background: "#10b981", border: "none", borderRadius: 12, padding: "13px 28px", color: "#04130c", fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-              Bayar {rp(grandTotal)}
+              Bayar {rp(Math.max(0, grandTotal - (promoApplied?.discount || 0)))}
             </button>
           </div>
         </div>

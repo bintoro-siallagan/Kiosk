@@ -99,7 +99,11 @@ export default function CinemaOps({ apiBase }) {
             <input style={{ ...inp, width: 90 }} type="number" placeholder="Durasi" value={f("duration_min")} onChange={set("duration_min")} />
             <select style={{ ...inp, width: 84 }} value={f("rating") || "SU"} onChange={set("rating")}>{RATINGS.map(r => <option key={r} value={r}>{r}</option>)}</select>
             <select style={{ ...inp, width: 110 }} value={f("status") || "now_showing"} onChange={set("status")}>{STATUSES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select>
-            {btn("+ Tambah", () => add("films", { title: f("title"), genre: f("genre"), duration_min: f("duration_min"), rating: f("rating") || "SU", status: f("status") || "now_showing" }))}
+            <input style={{ ...inp, width: 110 }} placeholder="Bahasa" value={f("language")} onChange={set("language")} />
+            <input style={{ ...inp, width: 110 }} placeholder="Subtitle" value={f("subtitle")} onChange={set("subtitle")} />
+            <input style={{ ...inp, flex: 1, minWidth: 140 }} placeholder="Poster URL" value={f("poster_url")} onChange={set("poster_url")} />
+            <input style={{ ...inp, flex: 1, minWidth: 140 }} placeholder="Trailer URL (YouTube)" value={f("trailer_url")} onChange={set("trailer_url")} />
+            {btn("+ Tambah", () => add("films", { title: f("title"), genre: f("genre"), duration_min: f("duration_min"), rating: f("rating") || "SU", status: f("status") || "now_showing", language: f("language") || "Indonesia", subtitle: f("subtitle") || "", poster_url: f("poster_url") || "", trailer_url: f("trailer_url") || "" }))}
           </Form>
           <List empty={films.length === 0} emptyText="Belum ada film.">
             {films.map(x => (
