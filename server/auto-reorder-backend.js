@@ -40,7 +40,7 @@ function setupAutoReorder(app, opts = {}) {
   router.get('/', (req, res) => {
     const items = analyze();
     const needReorder = items.filter(i => i.status === 'reorder');
-    const generated = many(`SELECT pr_number, status, total_estimated, created_at FROM purchase_requests
+    const generated = many(`SELECT id, pr_number, status, total_estimated, created_at, priority, notes, needed_date, department FROM purchase_requests
       WHERE requested_by = 'Auto-Reorder Engine' ORDER BY created_at DESC`).map(pr => ({
       ...pr, items: (db.prepare(`SELECT COUNT(*) c FROM pr_items pi JOIN purchase_requests p ON p.id = pi.pr_id WHERE p.pr_number = ?`).get(pr.pr_number) || { c: 0 }).c,
     }));
@@ -74,6 +74,32 @@ function setupAutoReorder(app, opts = {}) {
         `Stok ${it.stock} ${it.unit} ≤ reorder point ${it.reorder_point}`);
     })();
     res.json({ ok: true, pr_number: prNumber, items: low.length, total_estimated: totalEst });
+  });
+
+  // PATCH/DELETE bekerja terhadap PR auto-generated (purchase_requests milik 'Auto-Reorder Engine').
+  router.patch('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM purchase_requests WHERE id = ? AND requested_by = 'Auto-Reorder Engine'`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'PR auto-generated tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['pr_number', 'department', 'priority', 'status', 'notes', 'total_estimated', 'needed_date']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    fields.push(`updated_at = ?`); args.push(nowSec());
+    args.push(req.params.id);
+    db.prepare(`UPDATE purchase_requests SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM purchase_requests WHERE id = ? AND requested_by = 'Auto-Reorder Engine'`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'PR auto-generated tidak ditemukan' });
+    db.transaction(() => {
+      try { db.prepare(`DELETE FROM pr_items WHERE pr_id = ?`).run(req.params.id); } catch { /* noop */ }
+      db.prepare(`DELETE FROM purchase_requests WHERE id = ?`).run(req.params.id);
+    })();
+    res.json({ ok: true });
   });
 
   const mountPath = opts.mountPath || '/api/auto-reorder';

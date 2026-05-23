@@ -2,16 +2,21 @@
 // Auto-Reorder Engine — integrasi Inventory → Procurement.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#3730a3";
 const ST = { reorder: { c: "#ef4444", l: "PERLU REORDER" }, watch: { c: "#f59e0b", l: "PANTAU" }, ok: { c: "#10b981", l: "AMAN" } };
+const PRIORITIES = ["low", "normal", "high", "urgent"];
+const STATUSES = ["draft", "submitted", "approved", "rejected", "cancelled"];
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "—";
 
 export default function AdminAutoReorder({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/auto-reorder`).then(r => r.json()).then(setD).catch(() => {});
@@ -26,6 +31,30 @@ export default function AdminAutoReorder({ apiBase = "" }) {
         else setMsg(j.error || "gagal");
         load();
       }).catch(e => setMsg(String(e))).finally(() => setBusy(false));
+  };
+
+  const saveEdit = async () => {
+    const payload = {
+      priority: editing.priority,
+      status: editing.status,
+      notes: editing.notes,
+      department: editing.department,
+    };
+    const r = await fetch(`${apiBase}/api/auto-reorder/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+
+  const remove = async (item) => {
+    const ok = await confirm({ title: `Hapus "${item.pr_number || '#' + item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/auto-reorder/${item.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Auto-Reorder Engine…</div>;
@@ -95,12 +124,46 @@ export default function AdminAutoReorder({ apiBase = "" }) {
             <span style={{ flex: 1, color: "#9da7b3" }}>{pr.items} item · {fmtDate(pr.created_at)}</span>
             <span style={{ fontFamily: "'Geist Mono',monospace", color: "#cdd5df" }}>{fmtRp(pr.total_estimated)}</span>
             <span style={{ fontSize: 10, fontWeight: 700, color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>→ {pr.status.toUpperCase()}</span>
+            <button onClick={() => setEditing({ ...pr })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+            <button onClick={() => remove(pr)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
           </div>
         ))}
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit PR — {editing.pr_number || '#' + editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Department
+                <input value={editing.department || ""} onChange={e => setEditing({ ...editing, department: e.target.value })} style={modalInp} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Priority
+                <select value={editing.priority || "normal"} onChange={e => setEditing({ ...editing, priority: e.target.value })} style={modalInp}>
+                  {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Status
+                <select value={editing.status || "submitted"} onChange={e => setEditing({ ...editing, status: e.target.value })} style={modalInp}>
+                  {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Notes
+                <textarea value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} rows={3} style={{ ...modalInp, resize: "vertical" }} />
+              </label>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 function Kpi({ label, v, c }) {
   return (

@@ -3,11 +3,13 @@
 // konfirmasi terima → stok naik + expired date dicatat.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "—";
 const fromDateInput = (s) => s ? Math.floor(new Date(s + "T00:00:00").getTime() / 1000) : null;
 
 export default function AdminGoodsDelivery({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [gds, setGds] = useState([]);
   const [outlets, setOutlets] = useState([]);
   const [items, setItems] = useState([]);
@@ -18,6 +20,7 @@ export default function AdminGoodsDelivery({ apiBase = "" }) {
   const [pickId, setPickId] = useState("");
   const [pickQty, setPickQty] = useState("");
   const [recv, setRecv] = useState({});
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/goods-delivery`).then(r => r.json())
@@ -76,6 +79,34 @@ export default function AdminGoodsDelivery({ apiBase = "" }) {
       .then(r => r.json()).then(j => { if (j.ok) { setMsg("✓ " + gd.gd_number + " ditutup — dokumen final"); load(); } else setMsg(j.error || "gagal"); }).catch(e => setMsg(String(e)));
   };
 
+  const saveEdit = () => {
+    if (!editing) return;
+    const body = {
+      gd_number: editing.gd_number,
+      po_ref: editing.po_ref || "",
+      to_outlet: editing.to_outlet,
+      status: editing.status,
+      shipped_by: editing.shipped_by || "",
+      notes: editing.notes || "",
+    };
+    fetch(`${apiBase}/api/goods-delivery/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    }).then(r => r.json()).then(j => {
+      if (j.ok) { setMsg("✓ " + editing.gd_number + " diperbarui"); setEditing(null); load(); }
+      else setMsg(j.error || "gagal");
+    }).catch(e => setMsg(String(e)));
+  };
+
+  const remove = async (gd) => {
+    const ok = await confirm({ title: "Hapus GD?", message: `Hapus ${gd.gd_number}? Tindakan ini tidak dapat dibatalkan.`, danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    fetch(`${apiBase}/api/goods-delivery/${gd.id}`, { method: "DELETE" })
+      .then(r => r.json()).then(j => {
+        if (j.ok) { setMsg("✓ " + gd.gd_number + " dihapus"); load(); }
+        else setMsg(j.error || "gagal");
+      }).catch(e => setMsg(String(e)));
+  };
+
   const inTransit = gds.filter(g => g.status === "in_transit");
   const received = gds.filter(g => g.status === "received");
   const closed = gds.filter(g => g.status === "closed");
@@ -129,9 +160,13 @@ export default function AdminGoodsDelivery({ apiBase = "" }) {
           <div style={{ color: "#5b6470", fontSize: 13, padding: "12px 0" }}>Tidak ada pengiriman berjalan.</div>
         ) : inTransit.map(gd => (
           <div key={gd.id} style={{ border: "1px solid #21262d", borderRadius: 8, padding: 12, marginTop: 10 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, alignItems: "center", gap: 8 }}>
               <span style={{ color: "#e6edf3", fontWeight: 700, fontSize: 13 }}>{gd.gd_number} → {gd.to_outlet}</span>
-              <span style={{ color: "#5b6470", fontSize: 11 }}>{gd.po_ref || "tanpa PO"} · {fmtDate(gd.shipped_at)}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ color: "#5b6470", fontSize: 11 }}>{gd.po_ref || "tanpa PO"} · {fmtDate(gd.shipped_at)}</span>
+                <button onClick={() => setEditing({ ...gd })} title="Edit" style={S.btnEdit}>✏️</button>
+                <button onClick={() => remove(gd)} title="Hapus" style={S.btnDel}>🗑️</button>
+              </span>
             </div>
             {gd.items.map(it => (
               <div key={it.id} style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr 1.3fr", gap: 8, alignItems: "center", marginBottom: 6 }}>
@@ -163,14 +198,58 @@ export default function AdminGoodsDelivery({ apiBase = "" }) {
                       <span style={{ color: "#10b981" }}>✓ diterima {fmtDate(gd.received_at)}</span>
                       <button onClick={() => closeGd(gd)} style={S.btnClose}>🔒 Tutup GD</button>
                     </>}
+                <button onClick={() => setEditing({ ...gd })} title="Edit" style={S.btnEdit}>✏️</button>
+                <button onClick={() => remove(gd)} title="Hapus" style={S.btnDel}>🗑️</button>
               </span>
             </div>
           ))}
         </div>
       )}
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.gd_number || '#' + editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <label style={S.lab}>GD Number
+                <input value={editing.gd_number || ""} onChange={e => setEditing({ ...editing, gd_number: e.target.value })} style={modalInp} />
+              </label>
+              <label style={S.lab}>PO Ref
+                <input value={editing.po_ref || ""} onChange={e => setEditing({ ...editing, po_ref: e.target.value })} style={modalInp} />
+              </label>
+              <label style={S.lab}>Outlet Tujuan
+                <select value={editing.to_outlet || ""} onChange={e => setEditing({ ...editing, to_outlet: e.target.value })} style={modalInp}>
+                  <option value="">— pilih —</option>
+                  {outlets.map(o => <option key={o} value={o}>{o}</option>)}
+                  {editing.to_outlet && !outlets.includes(editing.to_outlet) && <option value={editing.to_outlet}>{editing.to_outlet}</option>}
+                </select>
+              </label>
+              <label style={S.lab}>Status
+                <select value={editing.status || ""} onChange={e => setEditing({ ...editing, status: e.target.value })} style={modalInp}>
+                  <option value="in_transit">in_transit</option>
+                  <option value="received">received</option>
+                  <option value="closed">closed</option>
+                </select>
+              </label>
+              <label style={S.lab}>Shipped By
+                <input value={editing.shipped_by || ""} onChange={e => setEditing({ ...editing, shipped_by: e.target.value })} style={modalInp} />
+              </label>
+              <label style={S.lab}>Catatan
+                <input value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} style={modalInp} />
+              </label>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 const S = {
   intro: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 10, padding: "12px 16px", fontSize: 13, color: "#9da7b3", lineHeight: 1.6, marginBottom: 14 },
@@ -183,4 +262,7 @@ const S = {
   btnGhost: { background: "#161b22", color: "#e6edf3", border: "1px solid #21262d", borderRadius: 7, padding: "8px 14px", fontSize: 13, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
   x: { background: "transparent", border: "none", color: "#f87171", fontSize: 14, cursor: "pointer" },
   btnClose: { background: "#161b22", color: "#9da7b3", border: "1px solid #21262d", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
+  btnEdit: { background: "#f59e0b22", color: "#f59e0b", border: "1px solid #f59e0b55", borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" },
+  btnDel: { background: "#ef444422", color: "#ef4444", border: "1px solid #ef444455", borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" },
+  lab: { display: "grid", gap: 4, fontSize: 11, color: "#9ca3af", fontWeight: 600 },
 };

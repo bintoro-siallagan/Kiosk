@@ -88,6 +88,12 @@ function setupItemPricing(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  router.delete('/:code', (req, res) => {
+    const info = db.prepare(`DELETE FROM item_pricing WHERE item_code = ?`).run(req.params.code);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/item-pricing';
   app.use(mountPath, router);
   console.log(`[item-pricing] mounted at ${mountPath} — multi-price & channel rule`);

@@ -2,6 +2,7 @@
 // Purchase Return — retur barang ke supplier.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#be123c";
@@ -9,9 +10,11 @@ const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { d
 const REASON_C = { Rusak: "#ef4444", Kedaluwarsa: "#f59e0b", "Salah Kirim": "#3b82f6", "Kualitas Buruk": "#a855f7", "Kelebihan Kirim": "#0d9488" };
 
 export default function AdminPurchaseReturn({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
   const [form, setForm] = useState({ supplier: "", po_ref: "", sku: "", qty: "", reason: "Rusak" });
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/purchase-return`).then(r => r.json()).then(j => {
@@ -35,6 +38,36 @@ export default function AdminPurchaseReturn({ apiBase = "" }) {
   const complete = (r) => {
     fetch(`${apiBase}/api/purchase-return/${r.id}/complete`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
       .then(x => x.json()).then(j => { if (j.ok) { setMsg(`✓ ${r.return_no} diproses — stok ter-update`); load(); } else setMsg(j.error || "gagal"); }).catch(e => setMsg(String(e)));
+  };
+
+  const saveEdit = () => {
+    if (!editing) return;
+    const body = {
+      supplier: editing.supplier, po_ref: editing.po_ref,
+      reason: editing.reason, status: editing.status,
+      total_value: Number(editing.total_value) || 0,
+      created_by: editing.created_by,
+    };
+    fetch(`${apiBase}/api/purchase-return/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    }).then(r => r.json()).then(j => {
+      if (j.ok) { setMsg("✓ Retur diupdate"); setEditing(null); load(); }
+      else setMsg(j.error || "gagal");
+    }).catch(e => setMsg(String(e)));
+  };
+
+  const remove = async (r) => {
+    const ok = await confirm({
+      title: "Hapus retur?", danger: true,
+      message: `Hapus retur ${r.return_no} (${r.supplier}, nilai ${fmtRp(r.total_value)})? Tindakan ini tidak bisa dibatalkan.`,
+      okLabel: "Hapus",
+    });
+    if (!ok) return;
+    fetch(`${apiBase}/api/purchase-return/${r.id}`, { method: "DELETE" })
+      .then(x => x.json()).then(j => {
+        if (j.ok) { setMsg("✓ Retur dihapus"); load(); }
+        else setMsg(j.error || "gagal");
+      }).catch(e => setMsg(String(e)));
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Purchase Return…</div>;
@@ -88,6 +121,8 @@ export default function AdminPurchaseReturn({ apiBase = "" }) {
                   {done
                     ? <span style={{ fontSize: 10, fontWeight: 700, color: "#10b981", fontFamily: "'Geist Mono',monospace", width: 90, textAlign: "right" }}>✓ DIPROSES</span>
                     : <button onClick={() => complete(r)} style={S.act}>Proses Retur</button>}
+                  <button onClick={() => setEditing({ ...r })} title="Edit" style={S.iconBtn("#f59e0b")}>✏️</button>
+                  <button onClick={() => remove(r)} title="Hapus" style={S.iconBtn("#ef4444")}>🗑️</button>
                 </div>
                 <div style={{ marginTop: 7, display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {r.items.map((it, i) => (
@@ -101,9 +136,49 @@ export default function AdminPurchaseReturn({ apiBase = "" }) {
           })}
         </div>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.return_no || '#' + editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <label style={lbl}>Supplier
+                <input value={editing.supplier || ""} onChange={e => setEditing({ ...editing, supplier: e.target.value })} style={modalInp} />
+              </label>
+              <label style={lbl}>PO Ref
+                <input value={editing.po_ref || ""} onChange={e => setEditing({ ...editing, po_ref: e.target.value })} style={modalInp} />
+              </label>
+              <label style={lbl}>Alasan
+                <select value={editing.reason || "Rusak"} onChange={e => setEditing({ ...editing, reason: e.target.value })} style={modalInp}>
+                  {(d.reasons || []).map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </label>
+              <label style={lbl}>Status
+                <select value={editing.status || "draft"} onChange={e => setEditing({ ...editing, status: e.target.value })} style={modalInp}>
+                  <option value="draft">draft</option>
+                  <option value="completed">completed</option>
+                </select>
+              </label>
+              <label style={lbl}>Total Nilai
+                <input type="number" value={editing.total_value || ""} onChange={e => setEditing({ ...editing, total_value: e.target.value })} style={modalInp} />
+              </label>
+              <label style={lbl}>Dibuat Oleh
+                <input value={editing.created_by || ""} onChange={e => setEditing({ ...editing, created_by: e.target.value })} style={modalInp} />
+              </label>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const lbl = { display: "grid", gap: 4, fontSize: 11, color: "#9ca3af", fontWeight: 600 };
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 function Kpi({ label, v, c }) {
   return (
@@ -122,4 +197,5 @@ const S = {
   input: { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 9px", color: "#e6edf3", fontSize: 12, fontFamily: "inherit", outline: "none", boxSizing: "border-box" },
   btn: { background: "#be123c", color: "#fff", border: "none", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   act: { background: "#f59e0b", color: "#0a0e16", border: "none", borderRadius: 6, padding: "5px 11px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
+  iconBtn: (c) => ({ background: c + "1f", border: `1px solid ${c}55`, color: c, fontSize: 12, padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit" }),
 };

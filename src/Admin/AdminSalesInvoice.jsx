@@ -2,15 +2,18 @@
 // Sales Invoice — faktur penjualan B2B + pencatatan pembayaran.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#4338ca";
 const STAT = { unpaid: { c: "#ef4444", l: "BELUM BAYAR" }, partial: { c: "#f59e0b", l: "SEBAGIAN" }, paid: { c: "#10b981", l: "LUNAS" } };
 
 export default function AdminSalesInvoice({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
   const [open, setOpen] = useState(null);
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/sales-invoice`).then(r => r.json()).then(setD).catch(() => {});
@@ -23,6 +26,37 @@ export default function AdminSalesInvoice({ apiBase = "" }) {
     fetch(`${apiBase}/api/sales-invoice/${inv.id}/pay`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount: Number(a) }),
     }).then(r => r.json()).then(j => { if (j.ok) { setMsg(`✓ ${inv.invoice_no} — ${j.status} · sisa ${fmtRp(j.outstanding)}`); load(); } else setMsg(j.error || "gagal"); }).catch(e => setMsg(String(e)));
+  };
+
+  const saveEdit = () => {
+    if (!editing) return;
+    const body = {
+      customer_name: editing.customer_name, customer_type: editing.customer_type,
+      so_ref: editing.so_ref, payment_terms: editing.payment_terms,
+      status: editing.status,
+      total: Number(editing.total) || 0,
+      paid_amount: Number(editing.paid_amount) || 0,
+    };
+    fetch(`${apiBase}/api/sales-invoice/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    }).then(r => r.json()).then(j => {
+      if (j.ok) { setMsg("✓ Invoice diupdate"); setEditing(null); load(); }
+      else setMsg(j.error || "gagal");
+    }).catch(e => setMsg(String(e)));
+  };
+
+  const remove = async (inv) => {
+    const ok = await confirm({
+      title: "Hapus invoice?", danger: true,
+      message: `Hapus invoice ${inv.invoice_no} (${inv.customer_name}, total ${fmtRp(inv.total)})? Tindakan ini tidak bisa dibatalkan.`,
+      okLabel: "Hapus",
+    });
+    if (!ok) return;
+    fetch(`${apiBase}/api/sales-invoice/${inv.id}`, { method: "DELETE" })
+      .then(r => r.json()).then(j => {
+        if (j.ok) { setMsg("✓ Invoice dihapus"); load(); }
+        else setMsg(j.error || "gagal");
+      }).catch(e => setMsg(String(e)));
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Sales Invoice…</div>;
@@ -61,6 +95,8 @@ export default function AdminSalesInvoice({ apiBase = "" }) {
                   <span style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}55`, borderRadius: 5, padding: "2px 8px", fontFamily: "'Geist Mono',monospace" }}>{st.l}</span>
                   {inv.status !== "paid" && <button onClick={() => pay(inv)} style={S.act}>💵 Catat Bayar</button>}
                   <button onClick={() => setOpen(open === inv.id ? null : inv.id)} style={S.btnGhost}>{open === inv.id ? "▲" : "▼ COA"}</button>
+                  <button onClick={() => setEditing({ ...inv })} title="Edit" style={S.iconBtn("#f59e0b")}>✏️</button>
+                  <button onClick={() => remove(inv)} title="Hapus" style={S.iconBtn("#ef4444")}>🗑️</button>
                 </div>
                 {open === inv.id && (
                   <div style={{ marginTop: 9, background: "#0d1117", border: "1px solid #161b22", borderRadius: 7, padding: "9px 11px" }}>
@@ -80,9 +116,51 @@ export default function AdminSalesInvoice({ apiBase = "" }) {
           })}
         </div>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.invoice_no || '#' + editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <label style={lbl}>Customer
+                <input value={editing.customer_name || ""} onChange={e => setEditing({ ...editing, customer_name: e.target.value })} style={modalInp} />
+              </label>
+              <label style={lbl}>Tipe Customer
+                <input value={editing.customer_type || ""} onChange={e => setEditing({ ...editing, customer_type: e.target.value })} style={modalInp} />
+              </label>
+              <label style={lbl}>SO Ref
+                <input value={editing.so_ref || ""} onChange={e => setEditing({ ...editing, so_ref: e.target.value })} style={modalInp} />
+              </label>
+              <label style={lbl}>Termin Pembayaran
+                <input value={editing.payment_terms || ""} onChange={e => setEditing({ ...editing, payment_terms: e.target.value })} style={modalInp} />
+              </label>
+              <label style={lbl}>Status
+                <select value={editing.status || "unpaid"} onChange={e => setEditing({ ...editing, status: e.target.value })} style={modalInp}>
+                  <option value="unpaid">unpaid</option>
+                  <option value="partial">partial</option>
+                  <option value="paid">paid</option>
+                </select>
+              </label>
+              <label style={lbl}>Total
+                <input type="number" value={editing.total || ""} onChange={e => setEditing({ ...editing, total: e.target.value })} style={modalInp} />
+              </label>
+              <label style={lbl}>Sudah Dibayar
+                <input type="number" value={editing.paid_amount || ""} onChange={e => setEditing({ ...editing, paid_amount: e.target.value })} style={modalInp} />
+              </label>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const lbl = { display: "grid", gap: 4, fontSize: 11, color: "#9ca3af", fontWeight: 600 };
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 function Kpi({ label, v, c }) {
   return (
@@ -100,4 +178,5 @@ const S = {
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   act: { background: "#4338ca", color: "#fff", border: "none", borderRadius: 6, padding: "5px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
   btnGhost: { background: "#161b22", color: "#9da7b3", border: "1px solid #21262d", borderRadius: 7, padding: "6px 11px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
+  iconBtn: (c) => ({ background: c + "1f", border: `1px solid ${c}55`, color: c, fontSize: 12, padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit" }),
 };

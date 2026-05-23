@@ -53,6 +53,34 @@ function setupConvenienceFee(app, opts = {}) {
     res.json({ ok: true, ...getConfig() });
   });
 
+  router.patch('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM convenience_fee_config WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['enabled', 'amount', 'label']) {
+      if (b[k] !== undefined) {
+        if (k === 'enabled') { fields.push(`enabled = ?`); args.push(b.enabled ? 1 : 0); }
+        else if (k === 'amount') { fields.push(`amount = ?`); args.push(Math.max(0, Number(b.amount) || 0)); }
+        else { fields.push(`label = ?`); args.push((b.label || '').toString().trim() || 'Biaya Layanan'); }
+      }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    fields.push(`updated_at = strftime('%s','now')`);
+    args.push(req.params.id);
+    db.prepare(`UPDATE convenience_fee_config SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true, ...getConfig() });
+  });
+
+  // DELETE = reset config ke default (enabled=0, amount=0). Karena singleton, baris tidak dihapus.
+  router.delete('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM convenience_fee_config WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    db.prepare(`UPDATE convenience_fee_config
+      SET enabled = 0, amount = 0, label = 'Biaya Layanan', updated_at = strftime('%s','now') WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true, reset: true, ...getConfig() });
+  });
+
   const mountPath = opts.mountPath || '/api/convenience-fee';
   app.use(mountPath, router);
   console.log(`[convenience-fee] mounted at ${mountPath} — biaya layanan digital payment`);

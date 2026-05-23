@@ -2,6 +2,7 @@
 // Sales Order — penjualan B2B (antar PT, lintas brand, korporat).
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#6d28d9";
@@ -10,10 +11,12 @@ const STAT = { draft: { c: "#f59e0b", l: "DRAFT" }, confirmed: { c: "#3b82f6", l
 const NEXT = { draft: "Konfirmasi", confirmed: "Fulfill", fulfilled: "Buat Invoice" };
 
 export default function AdminSalesOrder({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
   const [open, setOpen] = useState(null);
   const [form, setForm] = useState({ customer_type: "Korporat", customer_name: "", payment_terms: "NET 14", iname: "", iqty: "", iprice: "", items: [] });
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/sales-order`).then(r => r.json()).then(setD).catch(() => {});
@@ -38,6 +41,35 @@ export default function AdminSalesOrder({ apiBase = "" }) {
   const advance = (o) => {
     fetch(`${apiBase}/api/sales-order/${o.id}/advance`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
       .then(r => r.json()).then(j => { if (j.ok) { setMsg(`✓ ${o.so_number} → ${j.status}`); load(); } else setMsg(j.error || "gagal"); }).catch(e => setMsg(String(e)));
+  };
+
+  const saveEdit = () => {
+    if (!editing) return;
+    const body = {
+      customer_name: editing.customer_name, customer_type: editing.customer_type,
+      payment_terms: editing.payment_terms, status: editing.status,
+      total: Number(editing.total) || 0, notes: editing.notes,
+    };
+    fetch(`${apiBase}/api/sales-order/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    }).then(r => r.json()).then(j => {
+      if (j.ok) { setMsg("✓ Sales Order diupdate"); setEditing(null); load(); }
+      else setMsg(j.error || "gagal");
+    }).catch(e => setMsg(String(e)));
+  };
+
+  const remove = async (o) => {
+    const ok = await confirm({
+      title: "Hapus Sales Order?", danger: true,
+      message: `Hapus ${o.so_number} (${o.customer_name}, ${fmtRp(o.total)})? Tindakan ini tidak bisa dibatalkan.`,
+      okLabel: "Hapus",
+    });
+    if (!ok) return;
+    fetch(`${apiBase}/api/sales-order/${o.id}`, { method: "DELETE" })
+      .then(r => r.json()).then(j => {
+        if (j.ok) { setMsg("✓ Sales Order dihapus"); load(); }
+        else setMsg(j.error || "gagal");
+      }).catch(e => setMsg(String(e)));
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Sales Order…</div>;
@@ -100,6 +132,8 @@ export default function AdminSalesOrder({ apiBase = "" }) {
                   <span style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}55`, borderRadius: 5, padding: "2px 8px", fontFamily: "'Geist Mono',monospace" }}>{st.l}</span>
                   {NEXT[o.status] && <button onClick={() => advance(o)} style={S.act}>{NEXT[o.status]}</button>}
                   <button onClick={() => setOpen(open === o.id ? null : o.id)} style={S.btnGhost}>{open === o.id ? "▲" : "▼ COA"}</button>
+                  <button onClick={() => setEditing({ ...o })} title="Edit" style={S.iconBtn("#f59e0b")}>✏️</button>
+                  <button onClick={() => remove(o)} title="Hapus" style={S.iconBtn("#ef4444")}>🗑️</button>
                 </div>
                 {open === o.id && (
                   <div style={{ marginTop: 9, background: "#0d1117", border: "1px solid #161b22", borderRadius: 7, padding: "9px 11px" }}>
@@ -119,9 +153,53 @@ export default function AdminSalesOrder({ apiBase = "" }) {
           })}
         </div>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.so_number || '#' + editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <label style={lbl}>Customer
+                <input value={editing.customer_name || ""} onChange={e => setEditing({ ...editing, customer_name: e.target.value })} style={modalInp} />
+              </label>
+              <label style={lbl}>Tipe Customer
+                <select value={editing.customer_type || "Korporat"} onChange={e => setEditing({ ...editing, customer_type: e.target.value })} style={modalInp}>
+                  {(d.customer_types || []).map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </label>
+              <label style={lbl}>Termin Pembayaran
+                <select value={editing.payment_terms || "NET 14"} onChange={e => setEditing({ ...editing, payment_terms: e.target.value })} style={modalInp}>
+                  {(d.terms || []).map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </label>
+              <label style={lbl}>Status
+                <select value={editing.status || "draft"} onChange={e => setEditing({ ...editing, status: e.target.value })} style={modalInp}>
+                  <option value="draft">draft</option>
+                  <option value="confirmed">confirmed</option>
+                  <option value="fulfilled">fulfilled</option>
+                  <option value="invoiced">invoiced</option>
+                </select>
+              </label>
+              <label style={lbl}>Total
+                <input type="number" value={editing.total || ""} onChange={e => setEditing({ ...editing, total: e.target.value })} style={modalInp} />
+              </label>
+              <label style={lbl}>Catatan
+                <input value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} style={modalInp} />
+              </label>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const lbl = { display: "grid", gap: 4, fontSize: 11, color: "#9ca3af", fontWeight: 600 };
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 function Kpi({ label, v, c }) {
   return (
@@ -141,4 +219,5 @@ const S = {
   btn: { background: "#6d28d9", color: "#fff", border: "none", borderRadius: 7, padding: "8px 16px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
   btnGhost: { background: "#161b22", color: "#9da7b3", border: "1px solid #21262d", borderRadius: 7, padding: "6px 11px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
   act: { background: "#6d28d9", color: "#fff", border: "none", borderRadius: 6, padding: "5px 11px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
+  iconBtn: (c) => ({ background: c + "1f", border: `1px solid ${c}55`, color: c, fontSize: 12, padding: "4px 8px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit" }),
 };

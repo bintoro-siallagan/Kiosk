@@ -2,6 +2,7 @@
 // Item Pricing — multi-price, channel rule & tax/finance per item.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#22c55e";
@@ -11,9 +12,11 @@ const PRICE_KEYS = [
 ];
 
 export default function AdminItemPricing({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [sel, setSel] = useState(null);
   const [edit, setEdit] = useState(null);
+  const [editing, setEditing] = useState(null);
   const [msg, setMsg] = useState("");
 
   const load = useCallback(() => {
@@ -35,6 +38,29 @@ export default function AdminItemPricing({ apiBase = "" }) {
     }).then(r => r.json()).then(j => {
       if (j.ok) { setMsg("✓ Pricing tersimpan"); load(); } else setMsg(j.error || "gagal");
     }).catch(e => setMsg(String(e)));
+  };
+
+  const saveEdit = async () => {
+    const payload = {
+      prices: editing.prices,
+      channels: editing.channels,
+      tax_type: editing.tax_type,
+    };
+    const r = await fetch(`${apiBase}/api/item-pricing/${editing.item_code}`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+
+  const remove = async (item) => {
+    const ok = await confirm({ title: `Hapus pricing "${item.name || item.item_code}"?`, message: "Pricing item akan dihapus. Item master tidak terpengaruh, tapi item kehilangan harga channel.", danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/item-pricing/${item.item_code}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Item Pricing…</div>;
@@ -64,11 +90,15 @@ export default function AdminItemPricing({ apiBase = "" }) {
               return (
                 <div key={it.item_code} onClick={() => setSel(it.item_code)}
                   style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 7, cursor: "pointer", marginBottom: 3, background: on ? AC + "22" : "transparent", border: `1px solid ${on ? AC : "transparent"}` }}>
-                  <div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 12, fontWeight: 600, color: "#e6edf3" }}>{it.name}</div>
                     <div style={{ fontSize: 10, color: "#5b6470" }}>{it.category} · {it.channels.length} channel</div>
                   </div>
-                  <span style={{ fontSize: 12, fontFamily: "'Geist Mono',monospace", color: "#9da7b3" }}>{fmtRp(it.prices.dinein)}</span>
+                  <span style={{ fontSize: 12, fontFamily: "'Geist Mono',monospace", color: "#9da7b3", marginRight: 6 }}>{fmtRp(it.prices.dinein)}</span>
+                  <div style={{ display: "flex", gap: 4 }} onClick={e => e.stopPropagation()}>
+                    <button onClick={() => setEditing({ ...it, prices: { ...it.prices }, channels: [...it.channels] })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                    <button onClick={() => remove(it)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+                  </div>
                 </div>
               );
             })}
@@ -123,9 +153,49 @@ export default function AdminItemPricing({ apiBase = "" }) {
           )}
         </div>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit Pricing — {editing.name || editing.item_code}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              {PRICE_KEYS.map(([k, lbl]) => (
+                <label key={k} style={{ fontSize: 11, color: "#9ca3af" }}>{lbl}
+                  <input type="number" value={editing.prices[k] || 0} onChange={e => setEditing({ ...editing, prices: { ...editing.prices, [k]: Number(e.target.value) || 0 } })} style={modalInp} />
+                </label>
+              ))}
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Tax Type
+                <select value={editing.tax_type || ""} onChange={e => setEditing({ ...editing, tax_type: e.target.value })} style={modalInp}>
+                  {(d.tax_types || []).map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </label>
+              <div>
+                <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 6 }}>Sales Channels</div>
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {(d.channel_catalog || []).map(ch => {
+                    const on = (editing.channels || []).includes(ch);
+                    return (
+                      <button key={ch} onClick={() => setEditing({ ...editing, channels: on ? editing.channels.filter(c => c !== ch) : [...(editing.channels || []), ch] })}
+                        style={{ background: on ? AC : "#0a0e16", border: `1px solid ${on ? AC : "#30363d"}`, color: on ? "#04140c" : "#9da7b3", fontSize: 11, fontWeight: 600, padding: "5px 10px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit" }}>
+                        {on ? "✓ " : ""}{ch}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 function Kpi({ label, v, c, sub }) {
   return (

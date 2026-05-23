@@ -83,6 +83,26 @@ function setupStockTransfer(app, opts = {}) {
   router.post('/:id/send', step('requested', 'in_transit', 'sent_at'));
   router.post('/:id/receive', step('in_transit', 'received', 'received_at'));
 
+  router.patch('/:id', (req, res) => {
+    const row = db.prepare(`SELECT * FROM stock_transfers WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    const b = req.body || {};
+    const fields = [], args = [];
+    for (const k of ['transfer_no', 'from_location', 'to_location', 'items', 'status', 'requested_by', 'notes', 'sent_at', 'received_at']) {
+      if (b[k] !== undefined) { fields.push(`${k} = ?`); args.push(b[k]); }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE stock_transfers SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  router.delete('/:id', (req, res) => {
+    const info = db.prepare(`DELETE FROM stock_transfers WHERE id = ?`).run(req.params.id);
+    if (!info.changes) return res.status(404).json({ error: 'tidak ditemukan' });
+    res.json({ ok: true });
+  });
+
   const mountPath = opts.mountPath || '/api/stock-transfer';
   app.use(mountPath, router);
   console.log(`[stock-transfer] mounted at ${mountPath} — inter-location stock transfer`);

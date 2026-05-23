@@ -2,15 +2,18 @@
 // B2B Customer — master pelanggan korporat untuk Sales Order.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#5b21b6";
 const TYPE_C = { "Antar PT": "#3b82f6", "Lintas Brand": "#a855f7", Korporat: "#0d9488", Franchise: "#fbbf24" };
 
 export default function AdminB2bCustomer({ apiBase = "" }) {
+  const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
   const [form, setForm] = useState({ name: "", customer_type: "Korporat", contact_person: "", phone: "", credit_limit: "", payment_terms: "NET 14" });
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/b2b-customer`).then(r => r.json()).then(setD).catch(() => {});
@@ -30,6 +33,33 @@ export default function AdminB2bCustomer({ apiBase = "" }) {
   const toggle = (c) => {
     fetch(`${apiBase}/api/b2b-customer/${c.id}/toggle`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
       .then(r => r.json()).then(j => { if (j.ok) load(); }).catch(() => {});
+  };
+
+  const saveEdit = async () => {
+    const payload = {
+      name: editing.name,
+      customer_type: editing.customer_type,
+      contact_person: editing.contact_person,
+      phone: editing.phone,
+      npwp: editing.npwp,
+      credit_limit: Number(editing.credit_limit) || 0,
+      payment_terms: editing.payment_terms,
+    };
+    const r = await fetch(`${apiBase}/api/b2b-customer/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+    });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Disimpan"); setEditing(null); load(); }
+    else setMsg(j.error || "gagal");
+  };
+
+  const remove = async (item) => {
+    const ok = await confirm({ title: `Hapus "${item.name || item.code || '#' + item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/b2b-customer/${item.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg("✓ Dihapus"); load(); }
+    else setMsg(j.error || "gagal");
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat B2B Customer…</div>;
@@ -77,7 +107,7 @@ export default function AdminB2bCustomer({ apiBase = "" }) {
         <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
           <thead>
             <tr style={{ color: "#5b6470", fontSize: 10, textAlign: "left" }}>
-              {["KODE", "CUSTOMER", "TIPE", "KONTAK", "NPWP", "CREDIT LIMIT", "TERMIN", "STATUS"].map(h => <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>)}
+              {["KODE", "CUSTOMER", "TIPE", "KONTAK", "NPWP", "CREDIT LIMIT", "TERMIN", "STATUS", ""].map(h => <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -95,14 +125,61 @@ export default function AdminB2bCustomer({ apiBase = "" }) {
                     {c.status === "active" ? "● AKTIF" : "○ OFF"}
                   </button>
                 </td>
+                <td style={S.td}>
+                  <div style={{ display: "flex", gap: 5 }}>
+                    <button onClick={() => setEditing({ ...c })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+                    <button onClick={() => remove(c)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.name || editing.code || '#' + editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Nama
+                <input value={editing.name || ""} onChange={e => setEditing({ ...editing, name: e.target.value })} style={modalInp} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Tipe Customer
+                <select value={editing.customer_type || "Korporat"} onChange={e => setEditing({ ...editing, customer_type: e.target.value })} style={modalInp}>
+                  {(d.customer_types || []).map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Kontak
+                <input value={editing.contact_person || ""} onChange={e => setEditing({ ...editing, contact_person: e.target.value })} style={modalInp} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Telepon
+                <input value={editing.phone || ""} onChange={e => setEditing({ ...editing, phone: e.target.value })} style={modalInp} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>NPWP
+                <input value={editing.npwp || ""} onChange={e => setEditing({ ...editing, npwp: e.target.value })} style={modalInp} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Credit Limit
+                <input type="number" value={editing.credit_limit || 0} onChange={e => setEditing({ ...editing, credit_limit: e.target.value })} style={modalInp} />
+              </label>
+              <label style={{ fontSize: 11, color: "#9ca3af" }}>Termin
+                <select value={editing.payment_terms || "NET 14"} onChange={e => setEditing({ ...editing, payment_terms: e.target.value })} style={modalInp}>
+                  {(d.terms || []).map(t => <option key={t} value={t}>{t}</option>)}
+                </select>
+              </label>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 function Kpi({ label, v, c }) {
   return (

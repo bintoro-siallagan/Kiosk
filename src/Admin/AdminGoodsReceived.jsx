@@ -2,6 +2,7 @@
 // Good Received — outlet konfirmasi terima barang → stok nambah.
 
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit } from "../components/uiKit.jsx";
 
 const AC = "#0e7490";
 const ago = (ts) => {
@@ -13,9 +14,11 @@ const ago = (ts) => {
 };
 
 export default function AdminGoodsReceived({ apiBase = "" }) {
+  const { confirm: confirmDlg } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(null);
+  const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/goods-received`).then(r => r.json()).then(setD).catch(() => {});
@@ -31,6 +34,35 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
       if (j.ok) { setMsg(`✓ ${gr.gr_number} diterima — ${j.items_posted} item, stok ter-update`); load(); }
       else setMsg(j.error || "gagal");
     }).catch(e => setMsg(String(e))).finally(() => setBusy(null));
+  };
+
+  const saveEdit = () => {
+    if (!editing) return;
+    const body = {
+      gr_number: editing.gr_number,
+      gd_ref: editing.gd_ref || "",
+      po_ref: editing.po_ref || "",
+      outlet: editing.outlet,
+      status: editing.status,
+      has_discrepancy: editing.has_discrepancy ? 1 : 0,
+      received_by: editing.received_by || "",
+    };
+    fetch(`${apiBase}/api/goods-received/${editing.id}`, {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    }).then(r => r.json()).then(j => {
+      if (j.ok) { setMsg("✓ " + editing.gr_number + " diperbarui"); setEditing(null); load(); }
+      else setMsg(j.error || "gagal");
+    }).catch(e => setMsg(String(e)));
+  };
+
+  const remove = async (gr) => {
+    const ok = await confirmDlg({ title: "Hapus GR?", message: `Hapus ${gr.gr_number}? Tindakan ini tidak dapat dibatalkan.`, danger: true, okLabel: "Hapus" });
+    if (!ok) return;
+    fetch(`${apiBase}/api/goods-received/${gr.id}`, { method: "DELETE" })
+      .then(r => r.json()).then(j => {
+        if (j.ok) { setMsg("✓ " + gr.gr_number + " dihapus"); load(); }
+        else setMsg(j.error || "gagal");
+      }).catch(e => setMsg(String(e)));
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Good Received…</div>;
@@ -81,6 +113,8 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
                   <button onClick={() => confirm(gr)} disabled={busy === gr.id} style={S.btn}>
                     {busy === gr.id ? "Memproses…" : "✓ Konfirmasi Terima"}
                   </button>
+                  <button onClick={() => setEditing({ ...gr })} title="Edit" style={S.btnEdit}>✏️</button>
+                  <button onClick={() => remove(gr)} title="Hapus" style={S.btnDel}>🗑️</button>
                 </div>
                 <div style={{ display: "grid", gap: 3 }}>
                   {gr.items.map((it, i) => (
@@ -102,7 +136,7 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
         <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
           <thead>
             <tr style={{ color: "#5b6470", fontSize: 10, textAlign: "left" }}>
-              {["GR NUMBER", "OUTLET", "ITEM", "DITERIMA OLEH", "WAKTU", "STATUS"].map(h => <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>)}
+              {["GR NUMBER", "OUTLET", "ITEM", "DITERIMA OLEH", "WAKTU", "STATUS", "AKSI"].map(h => <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -118,14 +152,61 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
                     ? <span style={{ color: "#ef4444", fontWeight: 700, fontSize: 11 }}>⚠ ADA SELISIH</span>
                     : <span style={{ color: "#10b981", fontWeight: 700, fontSize: 11 }}>✓ SESUAI</span>}
                 </td>
+                <td style={S.td}>
+                  <span style={{ display: "inline-flex", gap: 4 }}>
+                    <button onClick={() => setEditing({ ...gr })} title="Edit" style={S.btnEdit}>✏️</button>
+                    <button onClick={() => remove(gr)} title="Hapus" style={S.btnDel}>🗑️</button>
+                  </span>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {editing && (
+        <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit — {editing.gr_number || '#' + editing.id}</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <label style={S.lab}>GR Number
+                <input value={editing.gr_number || ""} onChange={e => setEditing({ ...editing, gr_number: e.target.value })} style={modalInp} />
+              </label>
+              <label style={S.lab}>GD Ref
+                <input value={editing.gd_ref || ""} onChange={e => setEditing({ ...editing, gd_ref: e.target.value })} style={modalInp} />
+              </label>
+              <label style={S.lab}>PO Ref
+                <input value={editing.po_ref || ""} onChange={e => setEditing({ ...editing, po_ref: e.target.value })} style={modalInp} />
+              </label>
+              <label style={S.lab}>Outlet
+                <input value={editing.outlet || ""} onChange={e => setEditing({ ...editing, outlet: e.target.value })} style={modalInp} />
+              </label>
+              <label style={S.lab}>Status
+                <select value={editing.status || ""} onChange={e => setEditing({ ...editing, status: e.target.value })} style={modalInp}>
+                  <option value="pending">pending</option>
+                  <option value="received">received</option>
+                </select>
+              </label>
+              <label style={S.lab}>Diterima Oleh
+                <input value={editing.received_by || ""} onChange={e => setEditing({ ...editing, received_by: e.target.value })} style={modalInp} />
+              </label>
+              <label style={{ ...S.lab, flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <input type="checkbox" checked={!!editing.has_discrepancy} onChange={e => setEditing({ ...editing, has_discrepancy: e.target.checked })} />
+                <span>Ada selisih (discrepancy)</span>
+              </label>
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
+const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 
 function Kpi({ label, v, c, sub }) {
   return (
@@ -144,4 +225,7 @@ const S = {
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
   td: { padding: "8px 8px" },
   btn: { background: "#22d3ee", color: "#04141a", border: "none", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
+  btnEdit: { background: "#f59e0b22", color: "#f59e0b", border: "1px solid #f59e0b55", borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" },
+  btnDel: { background: "#ef444422", color: "#ef4444", border: "1px solid #ef444455", borderRadius: 6, padding: "3px 8px", fontSize: 11, cursor: "pointer", fontFamily: "inherit" },
+  lab: { display: "grid", gap: 4, fontSize: 11, color: "#9ca3af", fontWeight: 600 },
 };
