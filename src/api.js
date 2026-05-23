@@ -161,7 +161,9 @@ export const api = {
 
 // ─── WEBSOCKET HOOK ───────────────────────────────────────────────────────
 export function createSocket(onMessage) {
-  const wsUrl = BASE.replace("http", "ws");
+  // Pakai path /ws yang sudah di-proxy nginx dengan WS upgrade headers.
+  // Fallback ke root path (no /ws) untuk local dev tanpa nginx.
+  const wsUrl = BASE.replace("http", "ws") + (BASE.includes("localhost") || BASE.includes("127.0.0.1") ? "" : "/ws");
   let ws;
   let reconnectTimer;
   let pingInterval;

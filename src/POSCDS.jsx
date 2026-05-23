@@ -3,7 +3,9 @@ import { useMenu } from "./MenuContext.jsx";
 import PromoBroadcastBanner from "./PromoBroadcastBanner.jsx";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
-const WS_URL = API_BASE.replace(/^http/, "ws");
+// Pakai path /ws yang sudah di-proxy nginx dengan WS upgrade headers.
+// Fallback ke root path (no /ws) untuk local dev tanpa nginx.
+const WS_URL = API_BASE.replace(/^http/, "ws") + (API_BASE.includes("localhost") || API_BASE.includes("127.0.0.1") ? "" : "/ws");
 
 const STAGES = [
   { key: "waiting",   label: "Diterima",     emoji: "📝", color: "#94A3B8" },
