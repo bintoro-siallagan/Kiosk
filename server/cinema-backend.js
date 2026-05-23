@@ -1053,19 +1053,41 @@ function setupCinema(app, opts = {}) {
     const st = db.prepare(`SELECT * FROM cinema_showtimes WHERE id = ?`).get(b.showtime_id);
     if (!st) return res.status(404).json({ error: 'showtime tidak ditemukan' });
 
-    // Lock: refuse sale when showtime not in 'scheduled' state
+    // Lock: refuse sale only when showtime fully closed / sold_out / cancelled.
+    // Allow 'running' — walk-in / late-entry customer masih bisa beli tiket
+    // (kasir judgement: kalau film terlalu jauh boleh refuse manual).
+    // Configurable grace: pos_config WALK_IN_GRACE_MIN (default 60 menit setelah start).
     const film = db.prepare(`SELECT duration_min FROM cinema_films WHERE id = ?`).get(st.film_id);
     const capacity = db.prepare(`SELECT (rows*cols) c FROM cinema_studios WHERE id = ?`).get(st.studio_id)?.c || 0;
     const soldCount = soldCountFor(st.id);
-    const derived = computeStatus({ ...st, duration_min: film?.duration_min }, capacity, soldCount, Math.floor(Date.now()/1000));
-    if (derived !== 'scheduled') {
+    const nowSec = Math.floor(Date.now() / 1000);
+    const derived = computeStatus({ ...st, duration_min: film?.duration_min }, capacity, soldCount, nowSec);
+
+    // Hard blocks — gak bisa dijual under any circumstances
+    if (derived === 'closed' || derived === 'cancelled' || derived === 'sold_out') {
       const msgMap = {
-        running:   'Showtime sudah dimulai — penjualan ditutup.',
         closed:    'Showtime sudah selesai / ditutup manual.',
         sold_out:  'Showtime sudah sold out.',
         cancelled: 'Showtime dibatalkan.',
       };
-      return res.status(409).json({ ok: false, error: msgMap[derived] || 'Showtime tidak menerima penjualan', derived_status: derived });
+      return res.status(409).json({ ok: false, error: msgMap[derived], derived_status: derived });
+    }
+
+    // Walk-in grace period — running showtime tetap menjual kecuali sudah lewat batas
+    // Configurable via pos_config WALK_IN_GRACE_MIN (best-effort lookup, fallback 60 menit)
+    if (derived === 'running') {
+      let graceMin = 60;
+      try {
+        const row = db.prepare(`SELECT value FROM pos_config WHERE key='WALK_IN_GRACE_MIN'`).get();
+        if (row && row.value) graceMin = Number(JSON.parse(row.value)) || graceMin;
+      } catch {}
+      const [Y, M, D] = String(st.show_date).split('-').map(Number);
+      const [hh, mm]  = String(st.start_time).split(':').map(Number);
+      const startSec  = Math.floor(new Date(Y, M - 1, D, hh, mm, 0).getTime() / 1000);
+      const elapsedMin = Math.floor((nowSec - startSec) / 60);
+      if (elapsedMin > graceMin) {
+        return res.status(409).json({ ok: false, error: `Film sudah jalan ${elapsedMin} menit (lewat batas walk-in ${graceMin} menit). Penjualan ditutup.`, derived_status: 'running' });
+      }
     }
 
     // Normalise & validate bundles (one purchase shares its F&B bundles across all tickets)
