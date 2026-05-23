@@ -3,31 +3,82 @@
 // Works with any USB QR/barcode scanner that acts as a keyboard.
 import { useState, useEffect, useRef } from "react";
 
+// LocalStorage keys for offline mode
+const LS_CACHE = "cinema_offline_codes";
+const LS_QUEUE = "cinema_offline_queue";
+
 export default function CinemaValidate({ apiBase = "" }) {
   const base = (apiBase || "") + "/api/cinema";
   const [code, setCode] = useState("");
   const [last, setLast] = useState(null);
   const [history, setHistory] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [offlineMode, setOfflineMode] = useState(false);
+  const [offlineCache, setOfflineCache] = useState(() => { try { return JSON.parse(localStorage.getItem(LS_CACHE) || "{}"); } catch { return {}; } });
+  const [pendingQueue, setPendingQueue] = useState(() => { try { return JSON.parse(localStorage.getItem(LS_QUEUE) || "[]"); } catch { return []; } });
+  const [precachingDate, setPrecachingDate] = useState(new Date().toISOString().slice(0, 10));
   const inputRef = useRef(null);
 
   useEffect(() => { inputRef.current?.focus(); }, []);
 
+  async function preCache() {
+    try {
+      const r = await fetch(`${base}/tickets/offline-codes?date=${precachingDate}`);
+      const d = await r.json();
+      const map = {};
+      for (const c of (d.codes || [])) map[c.code] = c;
+      localStorage.setItem(LS_CACHE, JSON.stringify(map));
+      setOfflineCache(map);
+      alert(`✓ ${d.count} kode tiket di-cache untuk ${precachingDate}`);
+    } catch (e) { alert("⚠ Gagal cache: " + e.message); }
+  }
+
+  async function syncQueue() {
+    if (!pendingQueue.length) return;
+    try {
+      const r = await fetch(`${base}/tickets/sync-offline`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ entries: pendingQueue }),
+      });
+      const d = await r.json();
+      alert(`✓ ${d.synced || 0} scan tersinkron ke server. Sisa: ${pendingQueue.length - (d.synced || 0)}.`);
+      localStorage.setItem(LS_QUEUE, "[]"); setPendingQueue([]);
+    } catch (e) { alert("⚠ Gagal sync: " + e.message); }
+  }
+
   async function validate(theCode) {
-    const c = (theCode || "").trim();
+    const c = (theCode || "").trim().toUpperCase();
     if (!c || busy) return;
     setBusy(true);
     let entry;
-    try {
-      const r = await fetch(`${base}/tickets/validate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: c }),
-      });
-      const d = await r.json();
-      entry = { ...d, code: c, t: Date.now() };
-    } catch (e) {
-      entry = { ok: false, status: "error", error: e.message, code: c, t: Date.now() };
+    if (offlineMode) {
+      // Offline: validate against local cache
+      const cached = offlineCache[c];
+      if (!cached) {
+        entry = { ok: false, status: "invalid", error: "Kode tidak ada di cache offline", code: c, t: Date.now(), offline: true };
+      } else if (cached.checked_in_at) {
+        entry = { ok: false, status: "used", error: "Sudah pernah di-check-in", code: c, t: Date.now(), offline: true, ticket: cached };
+      } else {
+        const now = Math.floor(Date.now() / 1000);
+        cached.checked_in_at = now;
+        offlineCache[c] = cached;
+        localStorage.setItem(LS_CACHE, JSON.stringify(offlineCache));
+        const q = [...pendingQueue, { code: c, scanned_at: now }];
+        localStorage.setItem(LS_QUEUE, JSON.stringify(q));
+        setPendingQueue(q);
+        entry = { ok: true, status: "valid", code: c, t: Date.now(), offline: true, ticket: { ...cached, checked_in_at: now } };
+      }
+    } else {
+      try {
+        const r = await fetch(`${base}/tickets/validate`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: c }),
+        });
+        const d = await r.json();
+        entry = { ...d, code: c, t: Date.now() };
+      } catch (e) {
+        entry = { ok: false, status: "error", error: e.message, code: c, t: Date.now() };
+      }
     }
     setLast(entry);
     setHistory(prev => [entry, ...prev].slice(0, 10));
@@ -54,6 +105,21 @@ export default function CinemaValidate({ apiBase = "" }) {
     <div style={S.root}>
       <h2 style={S.title}>🎟️ Validasi Tiket Cinema</h2>
       <p style={S.sub}>Scan QR atau ketik kode tiket, lalu tekan Enter. Cocok untuk scanner USB tipe keyboard-wedge.</p>
+
+      {/* Offline mode panel */}
+      <div style={{ background: offlineMode ? "#f59e0b15" : "#0d1117", border: `1px solid ${offlineMode ? "#f59e0b66" : "#1b212c"}`, borderRadius: 12, padding: 12, marginBottom: 14, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, cursor: "pointer", fontWeight: offlineMode ? 700 : 500, color: offlineMode ? "#fbbf24" : "#9ca3af" }}>
+          <input type="checkbox" checked={offlineMode} onChange={e => setOfflineMode(e.target.checked)} />
+          📡 Mode Offline {offlineMode && `(${Object.keys(offlineCache).length} kode cached)`}
+        </label>
+        <div style={{ flex: 1 }} />
+        <input type="date" value={precachingDate} onChange={e => setPrecachingDate(e.target.value)}
+          style={{ background: "#0a0e16", border: "1px solid #2a2b30", borderRadius: 7, padding: "6px 10px", color: "#fff", fontSize: 12, fontFamily: "inherit" }} />
+        <button onClick={preCache} style={{ background: "#22d3ee18", border: "1px solid #22d3ee55", color: "#22d3ee", padding: "6px 12px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>↓ Pre-cache</button>
+        {pendingQueue.length > 0 && (
+          <button onClick={syncQueue} style={{ background: "#10b981", border: "none", color: "#04130c", padding: "6px 12px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>↑ Sync {pendingQueue.length}</button>
+        )}
+      </div>
 
       <input
         ref={inputRef}

@@ -329,6 +329,35 @@ CREATE TABLE IF NOT EXISTS cinema_campaigns (
 );
 CREATE INDEX IF NOT EXISTS idx_ccamp_active ON cinema_campaigns(is_active);
 CREATE INDEX IF NOT EXISTS idx_ccamp_dates ON cinema_campaigns(start_date, end_date);
+-- Cinema inventory (popcorn, syrup, cup, etc) + recipe per combo (auto-deduct on sale)
+CREATE TABLE IF NOT EXISTS cinema_inventory_items (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  unit TEXT,
+  current_stock REAL DEFAULT 0,
+  low_stock_threshold REAL DEFAULT 0,
+  cost_per_unit INTEGER DEFAULT 0,
+  is_active INTEGER DEFAULT 1,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE TABLE IF NOT EXISTS cinema_bundle_recipes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  bundle_id INTEGER NOT NULL,
+  inventory_item_id INTEGER NOT NULL,
+  qty REAL NOT NULL,
+  UNIQUE(bundle_id, inventory_item_id)
+);
+CREATE INDEX IF NOT EXISTS idx_cbr_bundle ON cinema_bundle_recipes(bundle_id);
+CREATE TABLE IF NOT EXISTS cinema_inventory_movements (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  inventory_item_id INTEGER NOT NULL,
+  qty_change REAL NOT NULL,
+  source TEXT,
+  source_id INTEGER,
+  notes TEXT,
+  created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_cim_item ON cinema_inventory_movements(inventory_item_id);
 `;
 
 const SEED_FILMS = [
@@ -388,6 +417,54 @@ function setupCinema(app, opts = {}) {
   try { db.exec("ALTER TABLE cinema_studios ADD COLUMN maintenance_status TEXT DEFAULT 'operational'"); } catch {}
   try { db.exec("ALTER TABLE cinema_studios ADD COLUMN last_cleaned_at INTEGER"); } catch {}
   try { db.exec("ALTER TABLE cinema_studios ADD COLUMN last_cleaned_by TEXT"); } catch {}
+
+  // Seed cinema inventory + recipes on first run
+  if (db.prepare(`SELECT COUNT(*) c FROM cinema_inventory_items`).get().c === 0) {
+    const si = db.prepare(`INSERT INTO cinema_inventory_items (name, unit, current_stock, low_stock_threshold, cost_per_unit) VALUES (?,?,?,?,?)`);
+    const items = {
+      popcorn_kernel: si.run('Popcorn Kernel',    'kg',    50, 10,  35000).lastInsertRowid,
+      butter:         si.run('Butter Topping',    'liter', 20, 5,   45000).lastInsertRowid,
+      cup_medium:     si.run('Cup Medium',        'pcs',   500, 100, 1500).lastInsertRowid,
+      cup_large:      si.run('Cup Large',         'pcs',   300, 80,  2000).lastInsertRowid,
+      cola_syrup:     si.run('Coca-Cola Syrup',   'liter', 25, 5,   65000).lastInsertRowid,
+      ice:            si.run('Ice',               'kg',    100, 20,  2000).lastInsertRowid,
+      nacho_chips:    si.run('Nacho Chips',       'kg',    15, 3,   55000).lastInsertRowid,
+      cheese_dip:     si.run('Cheese Dip',        'liter', 8,  2,   75000).lastInsertRowid,
+      hotdog_bun:     si.run('Hot Dog Bun',       'pcs',   200, 40,  3500).lastInsertRowid,
+      sausage:        si.run('Sausage',           'pcs',   200, 40,  5500).lastInsertRowid,
+      mineral_water:  si.run('Air Mineral 600ml', 'pcs',   400, 80,  2500).lastInsertRowid,
+    };
+    // Link to existing bundles via name match (best-effort seed)
+    const bundles = db.prepare(`SELECT id, name FROM cinema_bundles`).all();
+    const sr = db.prepare(`INSERT OR IGNORE INTO cinema_bundle_recipes (bundle_id, inventory_item_id, qty) VALUES (?,?,?)`);
+    for (const b of bundles) {
+      const n = (b.name || '').toLowerCase();
+      if (n.includes('popcorn') && n.includes('medium')) {
+        sr.run(b.id, items.popcorn_kernel, 0.08);
+        sr.run(b.id, items.butter, 0.02);
+        sr.run(b.id, items.cup_medium, 1);
+        sr.run(b.id, items.cola_syrup, 0.15);
+        sr.run(b.id, items.ice, 0.1);
+      } else if (n.includes('popcorn') && n.includes('large')) {
+        sr.run(b.id, items.popcorn_kernel, 0.15);
+        sr.run(b.id, items.butter, 0.04);
+        sr.run(b.id, items.cup_large, 2);
+        sr.run(b.id, items.cola_syrup, 0.4);
+        sr.run(b.id, items.ice, 0.2);
+      } else if (n.includes('nacho')) {
+        sr.run(b.id, items.nacho_chips, 0.1);
+        sr.run(b.id, items.cheese_dip, 0.08);
+      } else if (n.includes('hot dog')) {
+        sr.run(b.id, items.hotdog_bun, 1);
+        sr.run(b.id, items.sausage, 1);
+        sr.run(b.id, items.cup_medium, 1);
+        sr.run(b.id, items.cola_syrup, 0.15);
+        sr.run(b.id, items.ice, 0.1);
+      } else if (n.includes('air mineral')) {
+        sr.run(b.id, items.mineral_water, 1);
+      }
+    }
+  }
 
   // Seed Indonesian public holidays 2026 on first run
   if (db.prepare(`SELECT COUNT(*) c FROM cinema_holidays`).get().c === 0) {
@@ -816,6 +893,8 @@ function setupCinema(app, opts = {}) {
         for (const r of bundleRows) {
           const info = insB.run(purchaseId, r.bundle_id, r.bundle_name, r.qty, r.price);
           newBundles.push({ id: info.lastInsertRowid, ...r });
+          // Auto-deduct inventory items per recipe (idempotent if no recipe set)
+          try { deductInventoryForBundle(r.bundle_id, r.qty, 'bundle_sale', info.lastInsertRowid); } catch {}
         }
       })();
     } catch (e) {
@@ -1909,6 +1988,169 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: true, id: info.lastInsertRowid, campaign: merged });
   });
 
+  // ── CINEMA INVENTORY (popcorn/syrup/cup/etc + auto-deduct on combo sale) ─
+  function deductInventoryForBundle(bundleId, qtySold, source, sourceId) {
+    const recipes = db.prepare(`SELECT * FROM cinema_bundle_recipes WHERE bundle_id = ?`).all(bundleId);
+    for (const r of recipes) {
+      const deduction = r.qty * qtySold;
+      db.prepare(`UPDATE cinema_inventory_items SET current_stock = current_stock - ? WHERE id = ?`)
+        .run(deduction, r.inventory_item_id);
+      db.prepare(`INSERT INTO cinema_inventory_movements (inventory_item_id, qty_change, source, source_id) VALUES (?,?,?,?)`)
+        .run(r.inventory_item_id, -deduction, source, sourceId);
+    }
+  }
+  router.get('/inventory/items', (req, res) => {
+    const all = String(req.query.all || '') === '1';
+    const sql = all
+      ? `SELECT * FROM cinema_inventory_items ORDER BY is_active DESC, name`
+      : `SELECT * FROM cinema_inventory_items WHERE is_active = 1 ORDER BY name`;
+    res.json({ items: db.prepare(sql).all() });
+  });
+  router.post('/inventory/items', (req, res) => {
+    const b = req.body || {};
+    if (!b.name) return res.status(400).json({ ok: false, error: 'name wajib' });
+    const info = db.prepare(`INSERT INTO cinema_inventory_items
+      (name, unit, current_stock, low_stock_threshold, cost_per_unit, is_active) VALUES (?,?,?,?,?,?)`)
+      .run(b.name, b.unit || '', parseFloat(b.current_stock) || 0,
+           parseFloat(b.low_stock_threshold) || 0, parseInt(b.cost_per_unit, 10) || 0,
+           b.is_active === false ? 0 : 1);
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+  router.patch('/inventory/items/:id', (req, res) => {
+    const b = req.body || {};
+    const fields = []; const args = [];
+    for (const k of ['name', 'unit', 'current_stock', 'low_stock_threshold', 'cost_per_unit', 'is_active']) {
+      if (k in b) {
+        fields.push(`${k} = ?`);
+        if (k === 'is_active') args.push(b[k] ? 1 : 0);
+        else if (['current_stock', 'low_stock_threshold'].includes(k)) args.push(parseFloat(b[k]) || 0);
+        else if (k === 'cost_per_unit') args.push(parseInt(b[k], 10) || 0);
+        else args.push(b[k]);
+      }
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE cinema_inventory_items SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/inventory/items/:id', (req, res) => {
+    db.prepare(`DELETE FROM cinema_inventory_items WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+  router.post('/inventory/items/:id/restock', (req, res) => {
+    const b = req.body || {};
+    const qty = parseFloat(b.qty);
+    if (!qty || qty <= 0) return res.status(400).json({ ok: false, error: 'qty harus positif' });
+    db.prepare(`UPDATE cinema_inventory_items SET current_stock = current_stock + ? WHERE id = ?`).run(qty, req.params.id);
+    db.prepare(`INSERT INTO cinema_inventory_movements (inventory_item_id, qty_change, source, notes) VALUES (?,?,?,?)`)
+      .run(req.params.id, qty, 'restock', b.notes || '');
+    res.json({ ok: true });
+  });
+  router.get('/inventory/movements', (req, res) => {
+    const where = []; const params = {};
+    if (req.query.item_id) { where.push('m.inventory_item_id = @item_id'); params.item_id = parseInt(req.query.item_id, 10); }
+    if (req.query.from)    { where.push("date(m.created_at,'unixepoch','localtime') >= @from"); params.from = req.query.from; }
+    const W = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const rows = db.prepare(`
+      SELECT m.*, i.name AS item_name, i.unit
+      FROM cinema_inventory_movements m
+      LEFT JOIN cinema_inventory_items i ON i.id = m.inventory_item_id
+      ${W} ORDER BY m.created_at DESC LIMIT 200
+    `).all(params);
+    res.json({ movements: rows });
+  });
+  router.get('/bundles/:id/recipe', (req, res) => {
+    const rows = db.prepare(`
+      SELECT r.*, i.name AS item_name, i.unit, i.current_stock
+      FROM cinema_bundle_recipes r
+      LEFT JOIN cinema_inventory_items i ON i.id = r.inventory_item_id
+      WHERE r.bundle_id = ?
+    `).all(req.params.id);
+    res.json({ recipe: rows });
+  });
+  router.post('/bundles/:id/recipe', (req, res) => {
+    const b = req.body || {};
+    const items = Array.isArray(b.items) ? b.items : [];
+    db.transaction(() => {
+      db.prepare(`DELETE FROM cinema_bundle_recipes WHERE bundle_id = ?`).run(req.params.id);
+      const ins = db.prepare(`INSERT INTO cinema_bundle_recipes (bundle_id, inventory_item_id, qty) VALUES (?,?,?)`);
+      for (const it of items) {
+        if (it.inventory_item_id && it.qty > 0) ins.run(req.params.id, parseInt(it.inventory_item_id, 10), parseFloat(it.qty));
+      }
+    })();
+    res.json({ ok: true, count: items.length });
+  });
+
+  // ── SIGNAGE BOARD (lobby TV display aggregator) ───────────────────────
+  router.get('/signage/board', (req, res) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const nowShowing = db.prepare(`
+      SELECT f.*, ROUND((SELECT AVG(rating) FROM cinema_film_ratings WHERE film_id = f.id), 2) AS avg_rating
+      FROM cinema_films f WHERE f.status = 'now_showing' ORDER BY f.title
+    `).all();
+    const comingSoon = db.prepare(`SELECT * FROM cinema_films WHERE status = 'coming_soon' ORDER BY license_start, title`).all();
+    const showtimesToday = db.prepare(`
+      SELECT s.id, s.show_date, s.start_time, s.format,
+             f.title AS film_title, f.rating AS film_rating, f.duration_min,
+             st.name AS studio_name, st.studio_type, (st.rows * st.cols) AS capacity,
+             (SELECT COUNT(*) FROM cinema_tickets WHERE showtime_id = s.id) AS sold
+      FROM cinema_showtimes s
+      LEFT JOIN cinema_films    f  ON f.id  = s.film_id
+      LEFT JOIN cinema_studios  st ON st.id = s.studio_id
+      WHERE s.show_date = ?
+      ORDER BY s.start_time
+    `).all(today);
+    const campaigns = db.prepare(`
+      SELECT c.*, f.title AS film_title FROM cinema_campaigns c
+      LEFT JOIN cinema_films f ON f.id = c.film_id
+      WHERE c.is_active = 1 ORDER BY c.created_at DESC LIMIT 6
+    `).all();
+    const queue = db.prepare(`
+      SELECT status, COUNT(*) c FROM cinema_in_studio_orders
+      WHERE date(created_at,'unixepoch','localtime') = date('now','localtime')
+      GROUP BY status
+    `).all().reduce((a, r) => (a[r.status] = r.c, a), {});
+    res.json({ today, now_showing: nowShowing, coming_soon: comingSoon, showtimes_today: showtimesToday, campaigns, queue });
+  });
+
+  // ── OFFLINE VALIDATION SUPPORT ────────────────────────────────────────
+  // Pre-fetch endpoint: door scanner pulls all valid (uncheckedin) ticket codes
+  // for a showtime, caches lokal. Saat offline, validate cek cache + queue
+  // result lokal → sync ke server saat online.
+  router.get('/tickets/offline-codes', (req, res) => {
+    let sql = `SELECT t.id, t.code, t.seat, t.checked_in_at,
+                      f.title AS film_title, s.show_date, s.start_time, st.name AS studio_name
+               FROM cinema_tickets t
+               LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+               LEFT JOIN cinema_films    f ON f.id = s.film_id
+               LEFT JOIN cinema_studios  st ON st.id = s.studio_id
+               WHERE t.code IS NOT NULL`;
+    const params = [];
+    if (req.query.showtime_id) { sql += ` AND t.showtime_id = ?`; params.push(req.query.showtime_id); }
+    if (req.query.date)        { sql += ` AND s.show_date = ?`; params.push(req.query.date); }
+    sql += ` ORDER BY t.code LIMIT 2000`;
+    const codes = db.prepare(sql).all(...params);
+    res.json({ codes, generated_at: Math.floor(Date.now() / 1000), count: codes.length });
+  });
+
+  // Sync offline-collected validations. Body: { entries: [{code, scanned_at}] }
+  router.post('/tickets/sync-offline', (req, res) => {
+    const b = req.body || {};
+    const entries = Array.isArray(b.entries) ? b.entries : [];
+    const results = [];
+    for (const e of entries) {
+      const code = String(e.code || '').toUpperCase().trim();
+      if (!code) { results.push({ code, status: 'invalid' }); continue; }
+      const t = db.prepare(`SELECT * FROM cinema_tickets WHERE code = ?`).get(code);
+      if (!t) { results.push({ code, status: 'invalid' }); continue; }
+      if (t.checked_in_at) { results.push({ code, status: 'already_used', checked_in_at: t.checked_in_at }); continue; }
+      const ts = parseInt(e.scanned_at, 10) || Math.floor(Date.now() / 1000);
+      db.prepare(`UPDATE cinema_tickets SET checked_in_at = ? WHERE id = ?`).run(ts, t.id);
+      results.push({ code, status: 'synced', checked_in_at: ts });
+    }
+    res.json({ ok: true, synced: results.filter(r => r.status === 'synced').length, results });
+  });
+
   // ── CINEMA COMMAND CENTER (realtime aggregator) ──────────────────────
   router.get('/command-center', (req, res) => {
     const today = new Date().toISOString().slice(0, 10);
@@ -2202,7 +2444,10 @@ function setupCinema(app, opts = {}) {
              b.notes || '', total);
       orderId = info.lastInsertRowid;
       const insIt = db.prepare(`INSERT INTO cinema_in_studio_order_items (order_id, bundle_id, bundle_name, qty, price) VALUES (?,?,?,?,?)`);
-      for (const r of valid) insIt.run(orderId, r.bundle_id, r.bundle_name, r.qty, r.price);
+      for (const r of valid) {
+        const info = insIt.run(orderId, r.bundle_id, r.bundle_name, r.qty, r.price);
+        try { deductInventoryForBundle(r.bundle_id, r.qty, 'in_studio_order', info.lastInsertRowid); } catch {}
+      }
     })();
     res.json({ ok: true, id: orderId, order_code: code, total, items: valid });
   });
