@@ -1,5 +1,6 @@
 // karyaOS — F&B Dietary / Allergen Tags per menu item
 import { useState, useEffect, useCallback } from "react";
+import { useUiKit, EmptyState, TooltipButton, Help } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 const STANDARD_TAGS = [
   { id: "halal",         label: "Halal",         icon: "🕌", color: "#10b981" },

@@ -19,6 +19,40 @@ const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 // ════════════════════════════════════════════════════════════════════
 const UiKitContext = createContext(null);
 
+// ════════════════════════════════════════════════════════════════════
+// GLOBAL CSS — Responsive + a11y + touch-friendly + focus-visible
+// ════════════════════════════════════════════════════════════════════
+const GLOBAL_CSS = `
+  /* Focus visible for keyboard navigation */
+  *:focus-visible { outline: 2px solid #3b82f6 !important; outline-offset: 2px !important; border-radius: 4px; }
+
+  /* Touch-friendly buttons & inputs on mobile */
+  @media (max-width: 768px) {
+    .uikit-grid-2, .uikit-grid-3, .uikit-grid-4 { grid-template-columns: 1fr !important; }
+    .uikit-touch button, .uikit-touch input[type="checkbox"] { min-height: 36px; }
+    .uikit-modal-card { width: 95vw !important; max-width: 95vw !important; padding: 16px !important; }
+    .uikit-form-row { flex-direction: column !important; gap: 8px !important; }
+    .uikit-hide-mobile { display: none !important; }
+  }
+  @media (max-width: 480px) {
+    .uikit-grid-auto-fill { grid-template-columns: 1fr !important; }
+    .uikit-toolbar { flex-direction: column !important; align-items: stretch !important; }
+  }
+
+  /* Skeleton pulse */
+  @keyframes uiKitSkeleton { 0%,100% { opacity: 0.4; } 50% { opacity: 0.8; } }
+  @keyframes uiKitToastIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes uiKitFadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes uiKitShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+
+  /* Form validation states */
+  .uikit-input-error { border-color: #ef4444 !important; animation: uiKitShake 0.3s ease-out; }
+  .uikit-input-success { border-color: #10b981 !important; }
+
+  /* Sr-only — screen-reader only text */
+  .uikit-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0; }
+`;
+
 export function UiKitProvider({ children }) {
   const [confirmReq, setConfirmReq] = useState(null);     // { title, message, danger, onResolve }
   const [promptReq, setPromptReq]   = useState(null);     // { title, label, defaultValue, onResolve }
@@ -66,8 +100,25 @@ export function UiKitProvider({ children }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [confirmReq, promptReq]);
 
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [registeredShortcuts, setRegisteredShortcuts] = useState({});
+  const registerShortcut = useCallback((key, desc) => {
+    setRegisteredShortcuts(p => ({ ...p, [key]: desc }));
+  }, []);
+  // Global ? to open shortcut help
+  useEffect(() => {
+    const onKey = (e) => {
+      const tag = (e.target.tagName || "").toUpperCase();
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "?" || (e.shiftKey && e.key === "/")) { e.preventDefault(); setShortcutsOpen(o => !o); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
   return (
-    <UiKitContext.Provider value={{ confirm, prompt, toast, undoToast, dismissToast }}>
+    <UiKitContext.Provider value={{ confirm, prompt, toast, undoToast, dismissToast, registerShortcut }}>
+      <style>{GLOBAL_CSS}</style>
       {children}
       {/* Confirm Dialog */}
       {confirmReq && (
@@ -113,10 +164,39 @@ export function UiKitProvider({ children }) {
           </div>
         ))}
       </div>
-      <style>{`@keyframes uiKitToastIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      {/* Keyboard shortcuts overlay (press ? to toggle) */}
+      {shortcutsOpen && (
+        <div onClick={() => setShortcutsOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 99997, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, animation: "uiKitFadeIn 0.2s ease-out" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "2px solid #3b82f6", borderRadius: 14, padding: 24, maxWidth: 540, width: "100%", fontFamily: "'Inter',sans-serif", color: "#fff" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+              <div style={{ fontSize: 18, fontWeight: 800 }}>⌨️ Keyboard Shortcuts</div>
+              <button onClick={() => setShortcutsOpen(false)} aria-label="Tutup"
+                style={{ background: "transparent", border: "1px solid #2a2b30", color: "#9ca3af", padding: "3px 9px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit" }}>×</button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "8px 16px", fontSize: 13 }}>
+              <kbd style={kbdStyle}>?</kbd><span style={{ color: "#9ca3af" }}>Toggle keyboard shortcuts overlay</span>
+              <kbd style={kbdStyle}>/</kbd><span style={{ color: "#9ca3af" }}>Focus search bar</span>
+              <kbd style={kbdStyle}>Ctrl+N</kbd><span style={{ color: "#9ca3af" }}>New item (di modul yang support)</span>
+              <kbd style={kbdStyle}>Ctrl+S</kbd><span style={{ color: "#9ca3af" }}>Save form</span>
+              <kbd style={kbdStyle}>Esc</kbd><span style={{ color: "#9ca3af" }}>Close modal / cancel</span>
+              <kbd style={kbdStyle}>Enter</kbd><span style={{ color: "#9ca3af" }}>Submit form / confirm prompt</span>
+              {Object.entries(registeredShortcuts).map(([k, d]) => (
+                <span key={k} style={{ display: "contents" }}>
+                  <kbd style={kbdStyle}>{k}</kbd><span style={{ color: "#9ca3af" }}>{d}</span>
+                </span>
+              ))}
+            </div>
+            <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #2a2b30", fontSize: 11, color: "#6b7280", textAlign: "center" }}>
+              Tip: tekan <kbd style={kbdStyle}>?</kbd> kapanpun untuk membuka panel ini
+            </div>
+          </div>
+        </div>
+      )}
     </UiKitContext.Provider>
   );
 }
+
+const kbdStyle = { background: "#0a0e16", border: "1px solid #2a2b30", borderBottom: "2px solid #2a2b30", padding: "3px 8px", borderRadius: 5, fontFamily: "'Geist Mono',monospace", fontSize: 11.5, color: "#fbbf24", minWidth: 32, textAlign: "center" };
 
 function PromptDialog({ req, onClose }) {
   const [val, setVal] = useState(req.defaultValue || "");
@@ -154,6 +234,45 @@ export function useUiKit() {
     };
   }
   return ctx;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// COMPONENT: FormField — input wrapper dengan label, error, help
+// ════════════════════════════════════════════════════════════════════
+export function FormField({ label, error, help, required, wide, children }) {
+  return (
+    <div style={{ gridColumn: wide ? "span 2" : "auto" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+        <label style={{ fontSize: 10, color: error ? "#ef4444" : "#5b6470", letterSpacing: 1, fontFamily: "'Geist Mono',monospace", fontWeight: error ? 700 : 400 }}>
+          {label}{required && <span style={{ color: "#ef4444", marginLeft: 3 }}>*</span>}
+        </label>
+        {help && <Help text={help} />}
+      </div>
+      {children}
+      {error && <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>⚠ {error}</div>}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
+// COMPONENT: Help — ⓘ icon dengan tooltip
+// ════════════════════════════════════════════════════════════════════
+export function Help({ text }) {
+  const [show, setShow] = useState(false);
+  return (
+    <span style={{ position: "relative", display: "inline-flex" }}>
+      <span onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}
+        onFocus={() => setShow(true)} onBlur={() => setShow(false)} tabIndex={0}
+        role="button" aria-label="Help"
+        style={{ width: 14, height: 14, borderRadius: "50%", background: "#3b82f622", border: "1px solid #3b82f666", color: "#3b82f6", fontSize: 9, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", cursor: "help", fontFamily: "'Geist Mono',monospace" }}>?</span>
+      {show && (
+        <span style={{ position: "absolute", left: "calc(100% + 6px)", top: "50%", transform: "translateY(-50%)",
+          background: "#000", color: "#fff", fontSize: 11, padding: "5px 9px", borderRadius: 5,
+          maxWidth: 240, whiteSpace: "normal", zIndex: 1000, pointerEvents: "none", lineHeight: 1.4,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>{text}</span>
+      )}
+    </span>
+  );
 }
 
 // ════════════════════════════════════════════════════════════════════
