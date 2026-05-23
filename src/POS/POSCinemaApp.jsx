@@ -894,7 +894,7 @@ function Pay({ picked, saleData, paymentMethod, buyer, cashier, onBack, onPaid }
 
   return (
     <div style={S.content}>
-      <div style={{ maxWidth: 720, margin: "10px auto 60px" }}>
+      <div style={{ maxWidth: 720, margin: "10px auto 100px", paddingBottom: 90 }}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
           <button onClick={onBack} className="ghost-btn" style={S.ghostBtn} disabled={busy}>← Batal / Ubah</button>
@@ -1029,11 +1029,25 @@ function Pay({ picked, saleData, paymentMethod, buyer, cashier, onBack, onPaid }
           <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#fca5a5", marginBottom: 12 }}>{msg}</div>
         )}
 
-        {/* Confirm */}
-        <button onClick={confirm} disabled={!canConfirm} className="primary-btn"
-          style={{ ...S.primaryBtn, width: "100%", padding: "16px", fontSize: 15, opacity: canConfirm ? 1 : 0.5, cursor: canConfirm ? "pointer" : "not-allowed" }}>
-          {busy ? "⏳ Memproses…" : `✓ KONFIRMASI ${meta.label?.toUpperCase()} · ${rp(total)}`}
-        </button>
+      </div>
+      {/* Fixed bottom action bar — confirm selalu visible */}
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
+        background: "rgba(8,9,15,0.92)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+        borderTop: "1px solid rgba(255,255,255,0.08)",
+        padding: "14px 30px",
+        boxShadow: "0 -12px 32px rgba(0,0,0,0.4)",
+      }}>
+        <div style={{ maxWidth: 720, margin: "0 auto", display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ flex: 1, textAlign: "left" }}>
+            <div style={{ fontSize: 10, color: TH.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.4, fontWeight: 700 }}>TOTAL TAGIHAN</div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: "#fbbf24", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5, lineHeight: 1 }}>{rp(total)}</div>
+          </div>
+          <button onClick={confirm} disabled={!canConfirm} className="primary-btn"
+            style={{ ...S.primaryBtn, padding: "14px 28px", fontSize: 14, opacity: canConfirm ? 1 : 0.5, cursor: canConfirm ? "pointer" : "not-allowed", whiteSpace: "nowrap" }}>
+            {busy ? "⏳ Memproses…" : `✓ KONFIRMASI ${meta.label?.toUpperCase()}`}
+          </button>
+        </div>
       </div>
     </div>
   );
