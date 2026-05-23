@@ -65,6 +65,9 @@ const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 function getScene() {
   const q = window.location.search;
   if (new URLSearchParams(q).has("command")) return "command";
+  // POS scenes — MUST be checked BEFORE generic "cinema" / "pos" suffixes
+  // ("pos-cinema" contains "cinema" so cinema check would steal it otherwise)
+  if (q.includes("pos-cinema") || q.includes("poscinema")) return "pos-cinema";
   if (q.includes("cinema-snack")) return "cinema-snack";
   if (q.includes("cinema-board")) return "cinema-board";
   if (q.includes("cinema")) return "cinema";
@@ -82,7 +85,6 @@ function getScene() {
   if (q.includes("shift"))     return "shift";
   if (q.includes("cds"))      return "cds";
   if (q.includes("kds"))      return "kds";
-  if (q.includes("pos-cinema") || q.includes("poscinema")) return "pos-cinema";
   if (q.includes("pos"))       return "pos";
   // Check if table QR scan
   if (new URLSearchParams(q).get("table")) return "table-select";
