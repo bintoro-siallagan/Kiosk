@@ -37,6 +37,10 @@ export default function CinemaInStudioOrder({ apiBase }) {
   const [paid, setPaid] = useState(false);
   const pollRef = useRef(null);
 
+  // ORDER TRACK state — live status di stage 'done' (pending → preparing → delivered)
+  const [trackStatus, setTrackStatus] = useState(null); // { status, paid_at, delivered_at }
+  const trackRef = useRef(null);
+
   useEffect(() => {
     fetch(`${base}/in-studio/menu`).then(r => r.json()).then(d => setMenu(d.items || [])).catch(() => {});
   }, [base]);
@@ -151,9 +155,25 @@ export default function CinemaInStudioOrder({ apiBase }) {
 
   const reset = () => {
     clearInterval(pollRef.current);
-    setCart({}); setNotes(""); setDone(null); setMsg("");
+    clearInterval(trackRef.current);
+    setCart({}); setNotes(""); setDone(null); setMsg(""); setTrackStatus(null);
     setStage("menu"); setPayOrderId(null); setQrData(null); setPaid(false);
   };
+
+  // STAGE 'done' — poll track status setiap 5 detik
+  useEffect(() => {
+    if (stage !== "done" || !done?.order_code) return;
+    const fetchTrack = async () => {
+      try {
+        const r = await fetch(`${base}/in-studio/orders/track/${done.order_code}`);
+        const d = await r.json();
+        if (d.ok) setTrackStatus(d);
+      } catch {}
+    };
+    fetchTrack();
+    trackRef.current = setInterval(fetchTrack, 5000);
+    return () => clearInterval(trackRef.current);
+  }, [stage, done?.order_code, base]);
 
   // ═══════════════════════════════════════════════
   // STAGE: DONE
@@ -184,8 +204,15 @@ export default function CinemaInStudioOrder({ apiBase }) {
               </div>
             </div>
           </div>
+          {/* LIVE STATUS TIMELINE */}
+          <OrderStatusTimeline status={trackStatus?.status || "pending"} paidAt={trackStatus?.paid_at} deliveredAt={trackStatus?.delivered_at} />
+
           <div style={{ fontSize: 12.5, color: "#10b981", maxWidth: 380, lineHeight: 1.5, margin: 0 }}>
-            ✓ Sudah dibayar via QRIS — staff sedang menyiapkan pesanan. Antar ke kursi <b>{done.seat}</b>.
+            {trackStatus?.status === "delivered"
+              ? `✓ Pesanan sudah diantar ke kursi ${done.seat}. Selamat menikmati! 🍿`
+              : trackStatus?.status === "preparing"
+              ? `🍳 Staff sedang menyiapkan pesanan. Akan diantar ke kursi ${done.seat}.`
+              : `✓ Sudah dibayar via QRIS — antrian staff. Antar ke kursi ${done.seat}.`}
           </div>
           <button onClick={reset} style={{ marginTop: 6, background: "linear-gradient(135deg,#a855f7,#c084fc)", border: "none", borderRadius: 12, padding: "14px 32px", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(168,85,247,0.35), inset 0 1px 0 rgba(255,255,255,0.2)", letterSpacing: 0.3, transition: "transform 0.15s ease, filter 0.15s ease" }}
             onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.filter = "brightness(1.08)"; }}
@@ -346,6 +373,58 @@ export default function CinemaInStudioOrder({ apiBase }) {
           {busy ? "Loading…" : "📱 Bayar QRIS →"}
         </button>
       </div>
+    </div>
+  );
+}
+
+// Status timeline — visual progress 3 steps: Dibayar → Disiapkan → Diantar
+function OrderStatusTimeline({ status, paidAt, deliveredAt }) {
+  // Step states: 'done' (green), 'active' (amber pulse), 'pending' (gray)
+  const steps = [
+    { key: "paid",      label: "Dibayar",   emoji: "💳", time: paidAt },
+    { key: "preparing", label: "Disiapkan", emoji: "🍳", time: null   },
+    { key: "delivered", label: "Diantar",   emoji: "🚶", time: deliveredAt },
+  ];
+  const order = ["paid", "preparing", "delivered"];
+  // 'pending' = baru masuk; 'preparing' = lagi disiapkan; 'delivered' = done; 'cancelled' = ditolak
+  const stateFor = (key) => {
+    const idx = order.indexOf(key);
+    if (status === "delivered") return "done";
+    if (status === "preparing") return idx <= 1 ? (idx < 1 ? "done" : "active") : "pending";
+    if (status === "pending"   || !status) return idx === 0 ? "done" : idx === 1 ? "active" : "pending";
+    if (status === "cancelled" && idx === 0) return "done";
+    return "pending";
+  };
+  const fmtTime = (sec) => sec ? new Date(sec * 1000).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "";
+  return (
+    <div style={{ width: "100%", padding: "16px 18px", background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, boxSizing: "border-box" }}>
+      <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", fontFamily: "'Geist Mono',monospace", letterSpacing: 1.5, fontWeight: 700, marginBottom: 12, textAlign: "left" }}>STATUS PESANAN</div>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 4, position: "relative" }}>
+        {steps.map((step, i) => {
+          const st = stateFor(step.key);
+          const color = st === "done" ? "#10b981" : st === "active" ? "#fbbf24" : "#5b6470";
+          const bg = st === "done" ? "rgba(16,185,129,0.18)" : st === "active" ? "rgba(245,158,11,0.18)" : "rgba(255,255,255,0.03)";
+          const border = st === "done" ? "1.5px solid #10b981" : st === "active" ? "1.5px solid #fbbf24" : "1.5px solid rgba(255,255,255,0.08)";
+          return (
+            <div key={step.key} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, position: "relative" }}>
+              {/* Connector line to next step */}
+              {i < steps.length - 1 && (
+                <div style={{ position: "absolute", top: 15, left: "calc(50% + 18px)", right: "calc(-50% + 18px)", height: 2, background: stateFor(order[i + 1]) !== "pending" || st === "done" ? "#10b981" : "rgba(255,255,255,0.1)", zIndex: 0 }} />
+              )}
+              <div style={{
+                width: 32, height: 32, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 14, background: bg, border, color, zIndex: 1,
+                animation: st === "active" ? "karyaStepPulse 1.4s ease-in-out infinite" : "none",
+              }}>
+                {st === "done" ? "✓" : step.emoji}
+              </div>
+              <div style={{ fontSize: 10.5, fontWeight: 700, color, letterSpacing: 0.4, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase" }}>{step.label}</div>
+              {step.time && <div style={{ fontSize: 9, color: "rgba(255,255,255,0.4)", fontFamily: "'Geist Mono',monospace" }}>{fmtTime(step.time)}</div>}
+            </div>
+          );
+        })}
+      </div>
+      <style>{`@keyframes karyaStepPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.4) } 50% { box-shadow: 0 0 0 6px rgba(245,158,11,0) } }`}</style>
     </div>
   );
 }

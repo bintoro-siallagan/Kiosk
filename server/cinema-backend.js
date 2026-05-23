@@ -2732,6 +2732,32 @@ function setupCinema(app, opts = {}) {
     }
     res.json({ orders });
   });
+
+  // PUBLIC track endpoint — customer pakai order_code buat liat status pesanan
+  // GET /api/cinema/in-studio/orders/track/:code
+  router.get('/in-studio/orders/track/:code', (req, res) => {
+    const code = String(req.params.code || '').trim().toUpperCase();
+    if (!code) return res.status(400).json({ ok: false, error: 'order_code wajib' });
+    const order = db.prepare(`SELECT * FROM cinema_in_studio_orders WHERE order_code = ?`).get(code);
+    if (!order) return res.status(404).json({ ok: false, error: 'Pesanan tidak ditemukan' });
+    const items = db.prepare(`SELECT * FROM cinema_in_studio_order_items WHERE order_id = ?`).all(order.id);
+    // Don't leak sensitive admin fields — only return what customer needs
+    res.json({
+      ok: true,
+      order_code: order.order_code,
+      status: order.status,
+      payment_status: order.payment_status,
+      seat: order.seat,
+      studio_name: order.studio_name,
+      total: order.total,
+      created_at: order.created_at,
+      paid_at: order.paid_at,
+      delivered_at: order.delivered_at,
+      notes: order.notes,
+      items: items.map(i => ({ bundle_name: i.bundle_name, qty: i.qty, price: i.price })),
+    });
+  });
+
   // Manual add (admin/staff): mirrors customer POST but allows setting status + buyer details freely.
   router.post('/in-studio/orders/manual', (req, res) => {
     const b = req.body || {};
