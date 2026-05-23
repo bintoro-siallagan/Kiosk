@@ -3783,6 +3783,8 @@ const { setupCinema } = require('./cinema-backend');
 setupCinema(app, { dbPath: DB_PATH });
 const { setupFnbFeatures } = require('./fnb-features-backend');
 setupFnbFeatures(app, { dbPath: DB_PATH });
+const { setupOwnerDashboardExtras } = require('./owner-dashboard-extras');
+setupOwnerDashboardExtras(app, { dbPath: DB_PATH });
 const bridge          = setupBridge(app,          { dbPath: DB_PATH, mountPath: '/api/bridge' });
 const notifications   = setupNotifications(app, {
   dbPath: DB_PATH,
