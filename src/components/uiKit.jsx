@@ -6,8 +6,22 @@
 //
 // Components: <EmptyState> · <TooltipButton> · <LoadingSkeleton>
 //             · <BulkActionBar> · <StatHeader> · <SearchBar>
+//             · <CrudButtons> · <EditModal>
 //
-// Hook: useKeyboardShortcut(key, handler, deps)
+// Hooks: useKeyboardShortcut(key, handler, deps)
+//        useCrud({ apiBase, path, onChange, labelKey, idKey })
+//
+// CRUD pattern (DRY — < 100 LOC per module):
+//   const crud = useCrud({ apiBase, path: "/api/foo", onChange: load });
+//   // In list: <CrudButtons onEdit={() => crud.openEdit(row)} onDelete={() => crud.remove(row)} />
+//   // At end: <EditModal open={!!crud.editing} data={crud.editing} onChange={crud.setEditing}
+//   //           onClose={crud.cancel} onSave={crud.save} title={`Edit — ${crud.editing?.name}`}
+//   //           fields={[
+//   //             { key: "name", label: "Nama", required: true, span: 2 },
+//   //             { key: "qty", label: "Qty", type: "number" },
+//   //             { key: "status", label: "Status", type: "select", options: [["a","A"],["b","B"]] },
+//   //           ]} />
+//   // Add button: <button onClick={() => crud.openNew({ status: "draft" })}>+ Tambah</button>
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 
@@ -459,6 +473,166 @@ export function useKeyboardShortcut(key, handler, opts = {}) {
 // ════════════════════════════════════════════════════════════════════
 // CONST: shared theme
 // ════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════
+// CRUD HELPERS — <CrudButtons>, <EditModal>, useCrud hook
+// Bikin CRUD module jadi <100 LOC instead of ~300.
+// ════════════════════════════════════════════════════════════════════
+
+// Drop-in row action buttons: Edit (amber) + Delete (red).
+// Usage:  <CrudButtons onEdit={() => setEditing(row)} onDelete={() => remove(row)} />
+export function CrudButtons({ onEdit, onDelete, editTitle = "Edit", deleteTitle = "Hapus", size = "sm", style = {} }) {
+  const padding = size === "sm" ? "3px 7px" : "5px 10px";
+  const fontSize = size === "sm" ? 11 : 12;
+  return (
+    <span style={{ display: "inline-flex", gap: 4, ...style }}>
+      {onEdit && (
+        <button onClick={onEdit} title={editTitle}
+          style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding, borderRadius: 5, fontSize, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
+      )}
+      {onDelete && (
+        <button onClick={onDelete} title={deleteTitle}
+          style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding, borderRadius: 5, fontSize, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+      )}
+    </span>
+  );
+}
+
+// Generic edit modal. Fields config:
+//   [{ key, label, type?: "text|number|select|date|textarea|checkbox", options?, placeholder?, required?, span?: 1|2, readOnly? }]
+// Type "select" uses options as [[value, label], ...].
+// `span: 2` makes the field full-width (default 1 = half-width on 2-col grid).
+export function EditModal({ open, title, data, fields = [], onChange, onClose, onSave, saveLabel = "💾 Simpan", cancelLabel = "Batal", maxWidth = 540, banner = null }) {
+  if (!open || !data) return null;
+  const set = (k, v) => onChange({ ...data, [k]: v });
+  const inp = {
+    background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7,
+    padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit",
+    outline: "none", boxSizing: "border-box", width: "100%",
+  };
+  const lbl = { fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4, fontFamily: "'Geist Mono',monospace", fontWeight: 700 };
+
+  const renderField = (f) => {
+    const v = data[f.key] ?? "";
+    if (f.type === "select") {
+      return (
+        <select value={v} onChange={e => set(f.key, e.target.value)} style={inp} disabled={f.readOnly}>
+          {(f.options || []).map(([val, lab]) => <option key={val} value={val}>{lab}</option>)}
+        </select>
+      );
+    }
+    if (f.type === "textarea") {
+      return <textarea value={v} onChange={e => set(f.key, e.target.value)} placeholder={f.placeholder || ""} rows={f.rows || 3} readOnly={f.readOnly} style={{ ...inp, resize: "vertical" }} />;
+    }
+    if (f.type === "checkbox") {
+      return (
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "#9ca3af", cursor: f.readOnly ? "not-allowed" : "pointer", paddingTop: 6 }}>
+          <input type="checkbox" checked={!!v} disabled={f.readOnly} onChange={e => set(f.key, e.target.checked ? 1 : 0)} /> {f.checkboxLabel || ""}
+        </label>
+      );
+    }
+    if (f.type === "date") {
+      // accept either YYYY-MM-DD string or unix seconds
+      const dateStr = typeof v === "number"
+        ? new Date(v * 1000).toISOString().slice(0, 10)
+        : (typeof v === "string" && v.length >= 10 ? v.slice(0, 10) : "");
+      return <input type="date" value={dateStr} onChange={e => set(f.key, e.target.value)} readOnly={f.readOnly} style={inp} />;
+    }
+    return (
+      <input
+        type={f.type || "text"}
+        value={v}
+        onChange={e => set(f.key, f.type === "number" ? Number(e.target.value) : e.target.value)}
+        placeholder={f.placeholder || ""}
+        readOnly={f.readOnly}
+        style={inp}
+      />
+    );
+  };
+
+  return (
+    <div onClick={onClose} className="uikit-modal" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20, animation: "uiKitFadeIn .15s ease-out" }}>
+      <div onClick={e => e.stopPropagation()} className="uikit-modal-card" style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth, width: "100%", maxHeight: "90vh", overflowY: "auto" }}>
+        <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ {title}</div>
+        {banner && (
+          <div style={{ background: "#fef3c715", border: "1px solid #fbbf2444", color: "#fbbf24", padding: "8px 12px", borderRadius: 7, fontSize: 11.5, marginBottom: 12 }}>
+            {banner}
+          </div>
+        )}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }} className="uikit-grid-2">
+          {fields.map(f => (
+            <div key={f.key} style={{ gridColumn: f.span === 2 ? "1 / -1" : undefined }}>
+              <div style={lbl}>{f.label}{f.required ? " *" : ""}</div>
+              {renderField(f)}
+              {f.help && <div style={{ fontSize: 10.5, color: "#5b6470", marginTop: 3 }}>{f.help}</div>}
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+          <button onClick={onClose} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>{cancelLabel}</button>
+          <button onClick={onSave} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>{saveLabel}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// useCrud — boilerplate-free CRUD wiring. Pulls in confirm/toast from uiKit.
+// Usage:
+//   const crud = useCrud({ apiBase, path: "/api/supplier-master", onChange: load, labelKey: "name" });
+//   ...
+//   <CrudButtons onEdit={() => crud.openEdit(row)} onDelete={() => crud.remove(row)} />
+//   <EditModal open={!!crud.editing} ... onChange={crud.setEditing} onSave={crud.save} onClose={crud.cancel} fields={[...]} />
+export function useCrud({ apiBase = "", path, onChange, labelKey = "name", idKey = "id" }) {
+  const { confirm, toast } = useUiKit();
+  const [editing, setEditing] = useState(null);
+
+  const openEdit = (row) => setEditing({ ...row });
+  const cancel = () => setEditing(null);
+
+  const save = async () => {
+    if (!editing) return;
+    const isNew = !editing[idKey];
+    const url = isNew ? `${apiBase}${path}` : `${apiBase}${path}/${editing[idKey]}`;
+    const res = await fetch(url, {
+      method: isNew ? "POST" : "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editing),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (j.ok || j.id || res.ok) {
+      toast(isNew ? "Ditambah" : "Disimpan", "success");
+      setEditing(null);
+      if (onChange) await onChange();
+    } else {
+      toast(j.error || "Gagal", "error");
+    }
+  };
+
+  const remove = async (row, opts = {}) => {
+    const label = row[labelKey] || row.title || row.code || `#${row[idKey]}`;
+    const ok = await confirm({
+      title: opts.title || `Hapus "${label}"?`,
+      message: opts.message || "Akan dihapus permanen. Tidak bisa dibatalkan.",
+      danger: true,
+      okLabel: opts.okLabel || "Hapus",
+    });
+    if (!ok) return false;
+    const res = await fetch(`${apiBase}${path}/${row[idKey]}`, { method: "DELETE" });
+    const j = await res.json().catch(() => ({}));
+    if (j.ok || res.ok) {
+      toast("Dihapus", "success");
+      if (onChange) await onChange();
+      return true;
+    }
+    toast(j.error || "Gagal hapus", "error");
+    return false;
+  };
+
+  const openNew = (defaults = {}) => setEditing({ ...defaults });
+
+  return { editing, setEditing, openEdit, openNew, cancel, save, remove };
+}
+
 export const theme = {
   card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470", text: "#e6edf3",
   // Button style helpers
