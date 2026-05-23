@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import POSSplitPayment from "./POSSplitPayment.jsx";
+import { calcServiceCharge, loadServiceChargeConfig } from "./pricing.js";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
 const fmt = (n) => (n || 0).toLocaleString("id-ID");
@@ -58,10 +59,18 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
   // ─── Cash state (Step 4A — kembalian transparency) ───
   const [cashReceived, setCashReceived] = useState(0);
 
+  // ─── Service charge config (5% dine-in default) ───
+  const [serviceConfig, setServiceConfig] = useState({ pct: 5, enabled: true, label: "Service Charge" });
+  useEffect(() => { loadServiceChargeConfig().then(setServiceConfig); }, []);
+
   // ─── Computed totals ───
   const promoDiscount = appliedPromo?.discount || 0;
   const pointsValue = pointsOn ? pointsUsed * getPointValue() : 0;
-  const finalTotal = Math.max(0, subtotal - promoDiscount - pointsValue);
+  const afterDeductions = Math.max(0, subtotal - promoDiscount - pointsValue);
+  // Service charge — auto 5% dine-in (config dari /api/pos/config)
+  const orderType = order.type === "dine-in" || order.type === "dine" || order.type === "dinein" ? "dine" : order.type;
+  const serviceCharge = calcServiceCharge(afterDeductions, orderType, serviceConfig);
+  const finalTotal = afterDeductions + serviceCharge;
   const cashChange = Math.max(0, cashReceived - finalTotal);
   const cashSufficient = payMethod === "CASH" ? cashReceived >= finalTotal : true;
   const maxPointsCanUse = Math.min(
@@ -544,8 +553,8 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
               </div>
             )}
 
-            {/* Final breakdown (kalau ada deduction) */}
-            {hasDeduction && (
+            {/* Final breakdown (kalau ada deduction atau service charge) */}
+            {(hasDeduction || serviceCharge > 0) && (
               <div style={S.breakdownCard}>
                 <div style={S.breakdownRow}>
                   <span style={S.breakdownLabel}>Subtotal</span>
@@ -561,6 +570,12 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
                   <div style={{...S.breakdownRow, color: "#10B981"}}>
                     <span>Bayar dgn {fmt(pointsUsed)} poin</span>
                     <span>-Rp {fmt(pointsValue)}</span>
+                  </div>
+                )}
+                {serviceCharge > 0 && (
+                  <div style={{...S.breakdownRow, color: "#FBBF24"}}>
+                    <span>🍽️ {serviceConfig.label} {serviceConfig.pct}%</span>
+                    <span>+Rp {fmt(serviceCharge)}</span>
                   </div>
                 )}
                 <div style={S.breakdownDivider} />

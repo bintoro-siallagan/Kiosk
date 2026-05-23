@@ -154,6 +154,12 @@ export default function DigitalReceipt({ orderId, onDone }) {
               <span>+{fIDR(receipt.convenienceFee)}</span>
             </div>
           )}
+          {receipt.serviceCharge > 0 && (
+            <div style={{...R.totalRow,color:"#FBBF24"}}>
+              <span>🍽️ Service Charge</span>
+              <span>+{fIDR(receipt.serviceCharge)}</span>
+            </div>
+          )}
           <div style={{...R.totalRow,fontSize:10,color:"#888"}}><span>PPN 11% (sudah termasuk)</span><span>{fIDR(receipt.tax)}</span></div>
           <div style={{...R.totalRow,...R.grandTotal}}>
             <span>TOTAL</span><span>{fIDR(receipt.total)}</span>
