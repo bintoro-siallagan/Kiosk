@@ -112,8 +112,20 @@ function calcPL(db, fromTs, toTs) {
     FROM pos_payments
     WHERE status IN ('completed','refunded') AND created_at BETWEEN ? AND ?
   `).get(fromTs, toTs);
-  const grossRevenue = revRow.gross_revenue;
-  const refunds = revRow.refunds;
+  // 1b. Cinema revenue — add tickets + F&B bundles + in-studio + event booking
+  let cinemaGross = 0, cinemaRefunds = 0, cinemaOrders = 0;
+  try {
+    const tk = db.prepare(`SELECT COALESCE(SUM(price),0) g, COUNT(*) c FROM cinema_tickets WHERE sold_at BETWEEN ? AND ?`).get(fromTs, toTs);
+    const vd = db.prepare(`SELECT COALESCE(SUM(price),0) g FROM cinema_ticket_voids WHERE voided_at BETWEEN ? AND ?`).get(fromTs, toTs);
+    const bd = db.prepare(`SELECT COALESCE(SUM(qty*price),0) g FROM cinema_purchase_bundles WHERE created_at BETWEEN ? AND ?`).get(fromTs, toTs);
+    const isq = db.prepare(`SELECT COALESCE(SUM(total),0) g, COUNT(*) c FROM cinema_in_studio_orders WHERE status='delivered' AND created_at BETWEEN ? AND ?`).get(fromTs, toTs);
+    const ev = db.prepare(`SELECT COALESCE(SUM(total_price),0) g, COUNT(*) c FROM cinema_studio_bookings WHERE status IN ('confirmed','completed') AND (completed_at BETWEEN ? AND ? OR (status='confirmed' AND created_at BETWEEN ? AND ?))`).get(fromTs, toTs, fromTs, toTs);
+    cinemaGross   = (tk.g || 0) + (bd.g || 0) + (isq.g || 0) + (ev.g || 0);
+    cinemaRefunds = (vd.g || 0);
+    cinemaOrders  = (tk.c || 0) + (isq.c || 0) + (ev.c || 0);
+  } catch (e) { /* cinema tables not exist */ }
+  const grossRevenue = (revRow.gross_revenue || 0) + cinemaGross;
+  const refunds = (revRow.refunds || 0) + cinemaRefunds;
   const netRevenue = grossRevenue - refunds;
 
   // 2. COGS from pos_events 'stock_consumption' × audit_warehouse.last_cost

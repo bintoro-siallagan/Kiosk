@@ -29,6 +29,12 @@ function setupFinanceAlerts(app, opts = {}) {
     const agg = one(`SELECT COALESCE(SUM(gross_amount),0) g, COALESCE(SUM(commission_amount),0) k
       FROM aggregator_orders WHERE status!='rejected' AND received_at BETWEEN ? AND ?`, from, to) || { g: 0, k: 0 };
     gross += Math.round(agg.g); fee += Math.round(agg.k);
+    // Cinema revenue (tickets + bundle + in-studio + event)
+    const cinemaT  = one(`SELECT COALESCE(SUM(price),0) g FROM cinema_tickets WHERE sold_at BETWEEN ? AND ?`, from, to) || { g: 0 };
+    const cinemaB  = one(`SELECT COALESCE(SUM(qty*price),0) g FROM cinema_purchase_bundles WHERE created_at BETWEEN ? AND ?`, from, to) || { g: 0 };
+    const cinemaIs = one(`SELECT COALESCE(SUM(total),0) g FROM cinema_in_studio_orders WHERE status='delivered' AND created_at BETWEEN ? AND ?`, from, to) || { g: 0 };
+    const cinemaEv = one(`SELECT COALESCE(SUM(total_price),0) g FROM cinema_studio_bookings WHERE status IN ('confirmed','completed') AND ((completed_at BETWEEN ? AND ?) OR (status='confirmed' AND created_at BETWEEN ? AND ?))`, from, to, from, to) || { g: 0 };
+    gross += Math.round((cinemaT.g || 0) + (cinemaB.g || 0) + (cinemaIs.g || 0) + (cinemaEv.g || 0));
     const opex = Math.round((one(`SELECT COALESCE(SUM(amount),0) v FROM finance_expenses
       WHERE voided_at IS NULL AND expense_date BETWEEN ? AND ?`, from, to) || { v: 0 }).v);
     const laba = gross - Math.round(gross * 0.35) - fee - opex;
