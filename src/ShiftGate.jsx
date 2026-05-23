@@ -74,46 +74,55 @@ export default function ShiftGate({ children, cashier }) {
   }
   // Day open but no active shift → show Start Day / Open Shift
   if (shift === null) {
+    // Idle state — big icon + title + CTA
+    if (step !== "shift") {
+      return (
+        <div style={S.overlay}>
+          <div style={S.icon}>☕</div>
+          <h1 style={S.title}>BELUM SIAP MELAYANI</h1>
+          <p style={S.subtitle}>
+            Kasir <b style={{ color: "#fff" }}>{cashier?.name || "—"}</b> belum membuka shift hari ini.<br/>
+            Klik tombol di bawah untuk mulai operasional outlet.
+          </p>
+          {err && <div style={S.err}>⚠ {err}</div>}
+          <button onClick={() => setStep("shift")} style={S.btnPrimary}>🚀 START DAY · BUKA SHIFT</button>
+          <div style={S.hint}>Auto-check setiap 20 detik · <span style={{ color: "#aaa", cursor: "pointer" }} onClick={check}>refresh manual</span></div>
+        </div>
+      );
+    }
+    // Form state — compact header + form card (no giant icon stacking)
     return (
       <div style={S.overlay}>
-        <div style={S.icon}>☕</div>
-        <h1 style={S.title}>{step === "shift" ? "MULAI SHIFT" : "BELUM SIAP MELAYANI"}</h1>
-
-        {step !== "shift" ? (
-          <>
-            <p style={S.subtitle}>
-              Kasir <b style={{ color: "#fff" }}>{cashier?.name || "—"}</b> belum membuka shift hari ini.<br/>
-              Klik tombol di bawah untuk mulai operasional outlet.
-            </p>
-            {err && <div style={S.err}>⚠ {err}</div>}
-            <button onClick={() => setStep("shift")} style={S.btnPrimary}>🚀 START DAY · BUKA SHIFT</button>
-            <div style={S.hint}>Auto-check setiap 20 detik · <span style={{ color: "#aaa", cursor: "pointer" }} onClick={check}>refresh manual</span></div>
-          </>
-        ) : (
-          <div style={S.formCard}>
-            <div style={S.formRow}>
-              <label style={S.label}>KASIR</label>
-              <div style={S.value}>{cashier?.name || "—"}</div>
-            </div>
-            <div style={S.formRow}>
-              <label style={S.label}>OPENING CASH (KAS AWAL)</label>
-              <input
-                type="number"
-                value={openingCash}
-                onChange={e => setOpeningCash(e.target.value)}
-                placeholder="Misal: 200000"
-                autoFocus
-                style={S.input}
-              />
-              <div style={S.hintSm}>Modal awal kas laci untuk kembalian. Contoh: Rp 200.000</div>
-            </div>
-            {err && <div style={S.err}>⚠ {err}</div>}
-            <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 16 }}>
-              <button onClick={() => { setStep(null); setErr(""); }} disabled={busy} style={S.btnGhost}>← Batal</button>
-              <button onClick={openShift} disabled={busy} style={S.btnPrimary}>{busy ? "⏳ Membuka…" : "✓ MULAI SHIFT"}</button>
+        <div style={S.formCard}>
+          <div style={S.formCompactHeader}>
+            <span style={{ fontSize: 38, lineHeight: 1, filter: "drop-shadow(0 0 16px rgba(245,158,11,0.35))" }}>☕</span>
+            <div style={{ textAlign: "left" }}>
+              <div style={S.formTitle}>MULAI SHIFT</div>
+              <div style={S.formSubtitle}>Buka kas laci untuk awal operasional</div>
             </div>
           </div>
-        )}
+          <div style={S.formRow}>
+            <label style={S.label}>KASIR</label>
+            <div style={S.value}>{cashier?.name || "—"}</div>
+          </div>
+          <div style={S.formRow}>
+            <label style={S.label}>OPENING CASH (KAS AWAL)</label>
+            <input
+              type="number"
+              value={openingCash}
+              onChange={e => setOpeningCash(e.target.value)}
+              placeholder="Misal: 200000"
+              autoFocus
+              style={S.input}
+            />
+            <div style={S.hintSm}>Modal awal kas laci untuk kembalian. Contoh: Rp 200.000</div>
+          </div>
+          {err && <div style={S.err}>⚠ {err}</div>}
+          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 18 }}>
+            <button onClick={() => { setStep(null); setErr(""); }} disabled={busy} style={S.btnGhost}>← Batal</button>
+            <button onClick={openShift} disabled={busy} style={S.btnPrimary}>{busy ? "⏳ Membuka…" : "✓ MULAI SHIFT"}</button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -128,7 +137,10 @@ const S = {
   subtitle: { fontSize: 18, color: "#aaa", marginTop: 12, maxWidth: 540, lineHeight: 1.5 },
   btnPrimary: { marginTop: 28, background: "linear-gradient(135deg,#F59E0B,#fbbf24)", color: "#1a1205", border: "none", borderRadius: 14, padding: "18px 38px", fontFamily: "'Inter',sans-serif", fontSize: 17, fontWeight: 800, cursor: "pointer", boxShadow: "0 8px 32px rgba(245,158,11,0.45)", letterSpacing: 1 },
   btnGhost: { background: "#1a1b1e", color: "#aaa", border: "1px solid #30363d", borderRadius: 12, padding: "14px 26px", fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer" },
-  formCard: { background: "#161b22", border: "1px solid #30363d", borderRadius: 16, padding: 28, marginTop: 24, minWidth: 380, maxWidth: 440, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,0.5)" },
+  formCard: { background: "#0d1117", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 28, minWidth: 380, maxWidth: 460, width: "100%", boxShadow: "0 24px 64px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)" },
+  formCompactHeader: { display: "flex", alignItems: "center", gap: 14, paddingBottom: 18, marginBottom: 20, borderBottom: "1px solid rgba(255,255,255,0.06)" },
+  formTitle: { fontSize: 22, fontWeight: 800, color: "#F59E0B", letterSpacing: -0.4, lineHeight: 1.1 },
+  formSubtitle: { fontSize: 12.5, color: "#9ca3af", marginTop: 4, fontWeight: 500 },
   formRow: { display: "flex", flexDirection: "column", gap: 6, marginBottom: 14, textAlign: "left" },
   label: { fontSize: 11, color: "#7d8590", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700 },
   value: { fontSize: 18, fontWeight: 700, color: "#fff" },
