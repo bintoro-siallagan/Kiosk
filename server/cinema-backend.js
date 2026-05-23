@@ -409,6 +409,13 @@ function setupCinema(app, opts = {}) {
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN buyer_email TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN buyer_phone TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN email_sent_at INTEGER"); } catch {}
+  // In-studio QR-order — payment audit trail (QRIS Midtrans/Xendit ref + paid_at)
+  try { db.exec("ALTER TABLE cinema_in_studio_orders ADD COLUMN payment_ref TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_in_studio_orders ADD COLUMN payment_method TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_in_studio_orders ADD COLUMN payment_status TEXT DEFAULT 'unpaid'"); } catch {}
+  try { db.exec("ALTER TABLE cinema_in_studio_orders ADD COLUMN paid_at INTEGER"); } catch {}
+  try { db.exec("ALTER TABLE cinema_in_studio_orders ADD COLUMN payment_amount INTEGER DEFAULT 0"); } catch {}
+  try { db.exec("CREATE INDEX IF NOT EXISTS idx_ciso_paystatus ON cinema_in_studio_orders(payment_status)"); } catch {}
   // Distributor / license fields on films (links film → distributor + license terms)
   try { db.exec("ALTER TABLE cinema_films ADD COLUMN distributor_id INTEGER"); } catch {}
   try { db.exec("ALTER TABLE cinema_films ADD COLUMN license_start TEXT"); } catch {}
@@ -848,13 +855,16 @@ function setupCinema(app, opts = {}) {
 
   // ── SHOWTIMES ──
   router.get('/showtimes', (req, res) => {
-    let sql = `SELECT s.*, f.title AS film_title, f.rating AS film_rating, f.duration_min,
-                      st.name AS studio_name, st.studio_type, (st.rows * st.cols) AS capacity
+    let sql = `SELECT s.*, f.title AS film_title, f.rating AS film_rating, f.duration_min, f.poster_url, f.genre, f.language, f.subtitle,
+                      st.name AS studio_name, st.studio_type, st.outlet AS outlet, (st.rows * st.cols) AS capacity
                FROM cinema_showtimes s
                LEFT JOIN cinema_films f ON f.id = s.film_id
                LEFT JOIN cinema_studios st ON st.id = s.studio_id`;
     const p = [];
-    if (req.query.date) { sql += ` WHERE s.show_date = ?`; p.push(req.query.date); }
+    const wh = [];
+    if (req.query.date) { wh.push(`s.show_date = ?`); p.push(req.query.date); }
+    if (req.query.outlet) { wh.push(`st.outlet = ?`); p.push(String(req.query.outlet).trim()); }
+    if (wh.length) sql += ` WHERE ` + wh.join(' AND ');
     sql += ` ORDER BY s.show_date, s.start_time`;
     const rows = db.prepare(sql).all(...p).map(decorateShowtime);
     res.json({ showtimes: rows });
@@ -2639,17 +2649,34 @@ function setupCinema(app, opts = {}) {
     if (!valid.length) return res.status(400).json({ ok: false, error: 'Pesanan kosong' });
     const total = valid.reduce((a, r) => a + r.qty * r.price, 0);
     const code = 'CO-' + require('crypto').randomBytes(3).toString('hex').toUpperCase();
+
+    // Payment audit — in-studio order WAJIB lunas (paid=true + payment_ref) sebelum diterima.
+    // Frontend (CinemaInStudioOrder) generate QRIS via /api/payment/qris, poll, lalu post sini.
+    const paid           = b.paid === true || b.paid === 'true';
+    const paymentRef     = String(b.payment_ref || '').trim();
+    const paymentMethod  = String(b.payment_method || 'qris').trim();
+    const paymentAmount  = parseInt(b.payment_amount, 10) || total;
+    if (!paid || !paymentRef) {
+      return res.status(402).json({ ok: false, error: 'Pesanan in-studio wajib dibayar dulu. payment_ref + paid=true diperlukan.' });
+    }
+    if (paymentAmount < total) {
+      return res.status(400).json({ ok: false, error: `Pembayaran kurang: bayar Rp ${paymentAmount} < total Rp ${total}` });
+    }
+
     let orderId;
     db.transaction(() => {
       const info = db.prepare(`INSERT INTO cinema_in_studio_orders
-        (order_code, showtime_id, studio_id, studio_name, seat, buyer_name, buyer_phone, notes, total)
-        VALUES (?,?,?,?,?,?,?,?,?)`)
+        (order_code, showtime_id, studio_id, studio_name, seat, buyer_name, buyer_phone, notes, total,
+         payment_ref, payment_method, payment_status, payment_amount, paid_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
         .run(code,
              b.showtime_id ? parseInt(b.showtime_id, 10) : null,
              b.studio_id   ? parseInt(b.studio_id, 10)   : null,
              b.studio_name || '', seat,
              b.buyer_name || '', b.buyer_phone || '',
-             b.notes || '', total);
+             b.notes || '', total,
+             paymentRef, paymentMethod, 'paid', paymentAmount,
+             Math.floor(Date.now() / 1000));
       orderId = info.lastInsertRowid;
       const insIt = db.prepare(`INSERT INTO cinema_in_studio_order_items (order_id, bundle_id, bundle_name, qty, price) VALUES (?,?,?,?,?)`);
       for (const r of valid) {
@@ -2657,7 +2684,7 @@ function setupCinema(app, opts = {}) {
         try { deductInventoryForBundle(r.bundle_id, r.qty, 'in_studio_order', info.lastInsertRowid); } catch {}
       }
     })();
-    res.json({ ok: true, id: orderId, order_code: code, total, items: valid });
+    res.json({ ok: true, id: orderId, order_code: code, total, items: valid, payment_ref: paymentRef, payment_status: 'paid' });
   });
   router.get('/in-studio/orders', (req, res) => {
     const where = []; const params = {};

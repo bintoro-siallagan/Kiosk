@@ -1,7 +1,8 @@
-// karyaOS — Customer in-studio QR-order (scan QR di kursi → pesan F&B)
+// karyaOS — Customer in-studio QR-order (scan QR di kursi → pesan F&B → BAYAR LANGSUNG → diantar)
 // Route: ?cinema-snack[&studio_id=X&studio_name=...&seat=A1&showtime_id=N]
-// Customer pesan combo F&B mid-movie → masuk antrian admin → diantar ke kursi.
-import { useState, useEffect } from "react";
+// Flow: menu → pay (QRIS) → submit order → done
+//       Customer wajib bayar dulu (QRIS) sebelum order masuk antrian staff.
+import { useState, useEffect, useRef } from "react";
 import DelightPopup from "./components/DelightPopup.jsx";
 
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
@@ -11,11 +12,15 @@ const BG_MESH = "radial-gradient(800px 600px at 20% 10%, rgba(168,85,247,0.06), 
 
 export default function CinemaInStudioOrder({ apiBase }) {
   const base = `${apiBase || ""}/api/cinema`;
+  const root = apiBase || "";
   const params = new URLSearchParams(window.location.search);
   const initialSeat   = params.get("seat") || "";
   const studioId      = params.get("studio_id") || params.get("studio") || "";
   const studioName    = params.get("studio_name") || "";
   const showtimeId    = params.get("showtime_id") || params.get("showtime") || "";
+
+  // STAGE — menu | pay | done
+  const [stage, setStage] = useState("menu");
 
   const [menu, setMenu] = useState([]);
   const [cart, setCart] = useState({});  // { id: qty }
@@ -27,6 +32,12 @@ export default function CinemaInStudioOrder({ apiBase }) {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [showDelight, setShowDelight] = useState(false);
+
+  // PAYMENT state
+  const [payOrderId, setPayOrderId] = useState(null);   // internal order id used as payment ref
+  const [qrData, setQrData] = useState(null);            // { qrString, qrUrl, deeplinkUrl, midtransOrderId, expiryTime }
+  const [paid, setPaid] = useState(false);
+  const pollRef = useRef(null);
 
   useEffect(() => {
     fetch(`${base}/in-studio/menu`).then(r => r.json()).then(d => setMenu(d.items || [])).catch(() => {});
@@ -44,9 +55,52 @@ export default function CinemaInStudioOrder({ apiBase }) {
   }).filter(Boolean);
   const total = items.reduce((a, it) => a + it.qty * it.price, 0);
 
-  async function submit() {
+  // STAGE 1 — Proceed to payment
+  async function proceedPay() {
     if (!items.length) { setMsg("Pilih minimal 1 item."); return; }
     if (!seat.trim())  { setMsg("Nomor kursi wajib diisi."); return; }
+    setBusy(true); setMsg(""); setPaid(false); setQrData(null);
+    try {
+      const orderId = `ISO-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
+      setPayOrderId(orderId);
+      const r = await fetch(`${root}/api/payment/qris`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId,
+          amount: total,
+          items: items.map(it => ({ n: it.name, p: it.price, q: it.qty, id: `bundle-${it.bundle_id}` })),
+          customerName: name.trim() || `Seat ${seat}`,
+        }),
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || "Gagal generate QRIS");
+      setQrData(d);
+      setStage("pay");
+    } catch (e) { setMsg("⚠ " + e.message); }
+    setBusy(false);
+  }
+
+  // STAGE 2 — Poll payment status while in pay stage
+  useEffect(() => {
+    if (stage !== "pay" || !payOrderId) return;
+    pollRef.current = setInterval(async () => {
+      try {
+        const r = await fetch(`${root}/api/payment/check/${payOrderId}`);
+        const d = await r.json();
+        if (d.paid) {
+          setPaid(true);
+          clearInterval(pollRef.current);
+          // Auto-submit order to kitchen now that payment is confirmed
+          submitPaidOrder();
+        }
+      } catch {}
+    }, 3000);
+    return () => clearInterval(pollRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage, payOrderId]);
+
+  // STAGE 3 — Submit paid order to kitchen
+  async function submitPaidOrder() {
     setBusy(true); setMsg("");
     try {
       const r = await fetch(`${base}/in-studio/orders`, {
@@ -59,20 +113,55 @@ export default function CinemaInStudioOrder({ apiBase }) {
           buyer_name: name.trim() || undefined,
           buyer_phone: phone.trim() || undefined,
           notes: notes.trim() || undefined,
+          payment_ref: payOrderId,
+          payment_method: "qris",
+          payment_amount: total,
+          paid: true,
           items: items.map(it => ({ bundle_id: it.bundle_id, qty: it.qty })),
         }),
       });
       const d = await r.json();
-      if (!d.ok) throw new Error(d.error || "Gagal kirim");
-      setDone({ ...d, seat: seat.trim(), studioName });
+      if (!d.ok) throw new Error(d.error || "Gagal kirim ke dapur");
+      setDone({ ...d, seat: seat.trim(), studioName, total, payment_ref: payOrderId });
       setShowDelight(true);
+      setStage("done");
+    } catch (e) { setMsg("⚠ Bayar sukses, tapi gagal kirim ke staff: " + e.message); }
+    setBusy(false);
+  }
+
+  // Manual confirm — kalau backend webhook lagi delay, customer bisa "Saya sudah bayar"
+  async function manualConfirm() {
+    if (!payOrderId) return;
+    setBusy(true);
+    try {
+      const r = await fetch(`${root}/api/payment/check/${payOrderId}`);
+      const d = await r.json();
+      if (d.paid) {
+        setPaid(true);
+        clearInterval(pollRef.current);
+        submitPaidOrder();
+      } else {
+        setMsg("Status pembayaran belum confirmed. Coba lagi beberapa detik.");
+      }
     } catch (e) { setMsg("⚠ " + e.message); }
     setBusy(false);
   }
 
-  const reset = () => { setCart({}); setNotes(""); setDone(null); setMsg(""); };
+  const cancelPay = () => {
+    clearInterval(pollRef.current);
+    setStage("menu"); setPayOrderId(null); setQrData(null); setPaid(false); setMsg("");
+  };
 
-  if (done) {
+  const reset = () => {
+    clearInterval(pollRef.current);
+    setCart({}); setNotes(""); setDone(null); setMsg("");
+    setStage("menu"); setPayOrderId(null); setQrData(null); setPaid(false);
+  };
+
+  // ═══════════════════════════════════════════════
+  // STAGE: DONE
+  // ═══════════════════════════════════════════════
+  if (stage === "done" && done) {
     return (
       <div style={{ position: "fixed", inset: 0, background: BG_GRADIENT, color: "#e6edf3", fontFamily: "'Inter',sans-serif", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, textAlign: "center" }}>
         <div aria-hidden style={{ position: "fixed", inset: 0, background: BG_MESH, pointerEvents: "none" }} />
@@ -81,31 +170,33 @@ export default function CinemaInStudioOrder({ apiBase }) {
           show={showDelight}
           emoji="🍿"
           title="Pesanan diterima!"
-          sub={`Snack akan diantar ke kursi ${done.seat} dalam 5-10 menit. Order ${done.order_code}.`}
-          accent="#f59e0b"
+          sub={`Snack akan diantar ke kursi ${done.seat} dalam 5-10 menit.`}
+          accent="#10b981"
           onClose={() => setShowDelight(false)}
         />
         <div style={{ position: "relative", zIndex: 1, animation: "karyaIsoBounce 0.6s cubic-bezier(.2,.7,.3,1)" }}>
-          <div style={{ fontSize: 64 }}>🎬🍿</div>
-          <div style={{ fontSize: 28, fontWeight: 900, marginTop: 10, letterSpacing: -0.6 }}>Pesanan masuk!</div>
+          <div style={{ fontSize: 64 }}>✅🍿</div>
+          <div style={{ fontSize: 28, fontWeight: 900, marginTop: 10, letterSpacing: -0.6, color: "#10b981" }}>Pembayaran sukses!</div>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 6 }}>Order <b style={{ color: "#fbbf24", fontFamily: "'Geist Mono',monospace", letterSpacing: 1.5 }}>{done.order_code}</b></div>
           <div style={{ position: "relative", background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 20, marginTop: 18, minWidth: 280, textAlign: "left", maxWidth: 380, overflow: "hidden", boxShadow: "0 16px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
-            <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(400px 200px at 50% 0%, rgba(245,158,11,0.08), transparent 70%)", pointerEvents: "none" }} />
+            <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(400px 200px at 50% 0%, rgba(16,185,129,0.08), transparent 70%)", pointerEvents: "none" }} />
             <div style={{ position: "relative" }}>
               <Line k="Kursi" v={<b style={{ fontSize: 18, letterSpacing: -0.3 }}>{done.seat}</b>} />
               {studioName && <Line k="Studio" v={studioName} />}
+              <Line k="Bayar via" v={<span style={{ color: "#10b981", fontWeight: 800 }}>QRIS ✓</span>} />
               <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: 10, paddingTop: 10 }}>
-                {done.items.map((it, i) => (
+                {(done.items || []).map((it, i) => (
                   <Line key={i} k={`${it.qty}× ${it.bundle_name}`} v={rp(it.qty * it.price)} />
                 ))}
               </div>
               <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: 10, paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <b style={{ fontSize: 14, letterSpacing: -0.3 }}>Total</b><b style={{ color: "#10b981", fontFamily: "'Geist Mono',monospace", fontSize: 22, fontWeight: 800, letterSpacing: -0.5 }}>{rp(done.total)}</b>
+                <b style={{ fontSize: 14, letterSpacing: -0.3 }}>Total Dibayar</b>
+                <b style={{ color: "#10b981", fontFamily: "'Geist Mono',monospace", fontSize: 22, fontWeight: 800, letterSpacing: -0.5 }}>{rp(done.total)}</b>
               </div>
             </div>
           </div>
-          <div style={{ fontSize: 12.5, color: "#fbbf24", marginTop: 14, maxWidth: 380, lineHeight: 1.5 }}>
-            🍿 Staff akan antar ke kursi <b>{done.seat}</b>. Bayar saat barang sampai.
+          <div style={{ fontSize: 12.5, color: "#10b981", marginTop: 14, maxWidth: 380, lineHeight: 1.5 }}>
+            ✓ Sudah dibayar via QRIS — staff sedang menyiapkan pesanan. Antar ke kursi <b>{done.seat}</b>.
           </div>
           <button onClick={reset} style={{ marginTop: 22, background: "linear-gradient(135deg,#a855f7,#c084fc)", border: "none", borderRadius: 12, padding: "14px 32px", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(168,85,247,0.35), inset 0 1px 0 rgba(255,255,255,0.2)", letterSpacing: 0.3, transition: "transform 0.15s ease, filter 0.15s ease" }}
             onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.filter = "brightness(1.08)"; }}
@@ -117,6 +208,82 @@ export default function CinemaInStudioOrder({ apiBase }) {
     );
   }
 
+  // ═══════════════════════════════════════════════
+  // STAGE: PAY (QRIS)
+  // ═══════════════════════════════════════════════
+  if (stage === "pay") {
+    const qrSrc = qrData?.qrUrl || (qrData?.qrString && qrData.qrString.startsWith("http") ? qrData.qrString : null);
+    return (
+      <div style={{ position: "fixed", inset: 0, background: BG_GRADIENT, color: "#e6edf3", fontFamily: "'Inter',sans-serif", overflowY: "auto", display: "flex", flexDirection: "column" }}>
+        <div aria-hidden style={{ position: "fixed", inset: 0, background: BG_MESH, pointerEvents: "none", zIndex: 0 }} />
+        {/* Header */}
+        <div style={{ position: "relative", zIndex: 1, padding: "18px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(8,9,15,0.72)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", flexShrink: 0 }}>
+          <button onClick={cancelPay} disabled={busy || paid} style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 13, cursor: "pointer", fontFamily: "inherit", marginBottom: 6 }}>← Batal</button>
+          <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 800, letterSpacing: -0.4 }}>📱 Bayar dengan QRIS</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 3 }}>
+            Scan QR pakai e-wallet (GoPay/OVO/DANA/ShopeePay) atau mobile banking
+          </div>
+        </div>
+
+        <div style={{ position: "relative", zIndex: 1, flex: 1, padding: "20px", maxWidth: 480, width: "100%", margin: "0 auto", boxSizing: "border-box", textAlign: "center" }}>
+          {msg && <div style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, padding: "10px 14px", color: "#fca5a5", fontSize: 13, marginBottom: 14, textAlign: "left" }}>{msg}</div>}
+
+          {/* Amount banner */}
+          <div style={{ background: "linear-gradient(180deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02))", border: "1px solid rgba(245,158,11,0.25)", borderRadius: 14, padding: 18, marginBottom: 16 }}>
+            <div style={{ fontSize: 10, color: "#fbbf24", letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 6 }}>JUMLAH BAYAR</div>
+            <div style={{ fontSize: 38, fontWeight: 900, color: "#fbbf24", fontFamily: "'Geist Mono',monospace", letterSpacing: -1 }}>{rp(total)}</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>Ref: {payOrderId}</div>
+          </div>
+
+          {/* QR Code */}
+          {paid ? (
+            <div style={{ background: "rgba(16,185,129,0.08)", border: "2px solid #10b981", borderRadius: 18, padding: 32, marginBottom: 16 }}>
+              <div style={{ fontSize: 72 }}>✅</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#10b981", marginTop: 10, letterSpacing: -0.5 }}>PEMBAYARAN SUKSES</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 6 }}>{busy ? "Mengirim pesanan ke staff…" : "Menyiapkan order…"}</div>
+            </div>
+          ) : qrSrc ? (
+            <div style={{ background: "#fff", borderRadius: 18, padding: 20, marginBottom: 16, display: "inline-block" }}>
+              <img src={qrSrc} alt="QR Code" style={{ width: 240, height: 240, display: "block" }} />
+            </div>
+          ) : qrData?.qrString ? (
+            <div style={{ background: "#fff", borderRadius: 18, padding: 20, marginBottom: 16, display: "inline-block" }}>
+              <div style={{ width: 240, height: 240, display: "flex", alignItems: "center", justifyContent: "center", color: "#000", fontSize: 11, padding: 10, fontFamily: "'Geist Mono',monospace", wordBreak: "break-all", textAlign: "center" }}>{qrData.qrString.slice(0, 200)}…</div>
+            </div>
+          ) : (
+            <div style={{ padding: 80, color: "rgba(255,255,255,0.4)" }}>⏳ Generating QR…</div>
+          )}
+
+          {!paid && (
+            <>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginBottom: 16, lineHeight: 1.5 }}>
+                1. Buka e-wallet / mobile banking<br />
+                2. Scan QR code di atas<br />
+                3. Konfirmasi pembayaran <b style={{ color: "#fbbf24" }}>{rp(total)}</b>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 11, color: "#fbbf24", marginBottom: 12 }}>
+                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: 999, background: "#fbbf24", animation: "karyaPulse 1.2s ease-in-out infinite" }} />
+                Menunggu pembayaran…
+              </div>
+              <style>{`@keyframes karyaPulse { 0%,100% { opacity:0.4 } 50% { opacity:1 } }`}</style>
+              {qrData?.deeplinkUrl && (
+                <a href={qrData.deeplinkUrl} target="_blank" rel="noreferrer" style={{ display: "inline-block", marginBottom: 10, padding: "10px 18px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fbbf24", textDecoration: "none", fontSize: 12, fontWeight: 700 }}>📱 Buka di e-wallet ↗</a>
+              )}
+              <div>
+                <button onClick={manualConfirm} disabled={busy} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "11px 22px", color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: 700, cursor: busy ? "wait" : "pointer", fontFamily: "inherit" }}>
+                  {busy ? "Mengecek…" : "Saya sudah bayar — cek status"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ═══════════════════════════════════════════════
+  // STAGE: MENU (default)
+  // ═══════════════════════════════════════════════
   return (
     <div style={{ position: "fixed", inset: 0, background: BG_GRADIENT, color: "#e6edf3", fontFamily: "'Inter',sans-serif", overflowY: "auto", display: "flex", flexDirection: "column" }}>
       <div aria-hidden style={{ position: "fixed", inset: 0, background: BG_MESH, pointerEvents: "none", zIndex: 0 }} />
@@ -131,7 +298,7 @@ export default function CinemaInStudioOrder({ apiBase }) {
       <div style={{ position: "relative", zIndex: 1, padding: "18px 20px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(8,9,15,0.72)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", flexShrink: 0 }}>
         <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 800, letterSpacing: -0.4 }}>🍿 karya<span style={{ color: "#f59e0b" }}>OS</span> Cinema — In-Studio Snack</div>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 3 }}>
-          {studioName ? `${studioName} · ` : ""}Pesan combo langsung dari kursi · diantar staff
+          {studioName ? `${studioName} · ` : ""}Pesan combo · <b style={{ color: "#fbbf24" }}>bayar QRIS</b> · diantar staff
         </div>
       </div>
 
@@ -178,7 +345,7 @@ export default function CinemaInStudioOrder({ apiBase }) {
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
           {items.length} item · <b style={{ fontFamily: "'Geist Mono',monospace", color: "#10b981", fontSize: 18, fontWeight: 800, letterSpacing: -0.4 }}>{rp(total)}</b>
         </div>
-        <button onClick={submit} disabled={busy || !items.length || !seat.trim()} className="karya-iso-submit"
+        <button onClick={proceedPay} disabled={busy || !items.length || !seat.trim()} className="karya-iso-submit"
           style={{
             background: (busy || !items.length || !seat.trim()) ? "rgba(255,255,255,0.05)" : "linear-gradient(135deg,#f59e0b,#fbbf24)",
             border: "none", borderRadius: 12, padding: "13px 28px",
@@ -187,7 +354,7 @@ export default function CinemaInStudioOrder({ apiBase }) {
             cursor: (busy || !items.length || !seat.trim()) ? "not-allowed" : "pointer",
             boxShadow: (busy || !items.length || !seat.trim()) ? "none" : "0 4px 12px rgba(245,158,11,0.3), inset 0 1px 0 rgba(255,255,255,0.2)",
           }}>
-          {busy ? "Mengirim…" : "🍿 Kirim Pesanan"}
+          {busy ? "Loading…" : "📱 Bayar QRIS →"}
         </button>
       </div>
     </div>
