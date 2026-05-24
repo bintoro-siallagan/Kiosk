@@ -143,6 +143,7 @@ export default function POSCinemaApp() {
   const [bundles, setBundles] = useState([]); // selected bundles [{id, qty, ...}]
   const [seatData, setSeatData] = useState(null); // {rows, cols, seat_map, sold, held_by_others}
   const [liveTotals, setLiveTotals] = useState(null); // {ticketSubtotal, bundleSubtotal, total} dari Sell stage
+  const [liveDiscount, setLiveDiscount] = useState(null); // {amount, type, code} dari Pay stage — broadcast ke CDS
   const [checklist, setChecklist] = useState(null);   // null=loading, {opening,closing}=loaded
   const [closingChecklist, setClosingChecklist] = useState(false);
 
@@ -214,7 +215,10 @@ export default function POSCinemaApp() {
         // Saat sell stage pakai liveTotals (running total), saat pay+success pakai saleData
         seats_total: saleData?.ticketSubtotal ?? liveTotals?.ticketSubtotal ?? 0,
         bundles_total: saleData?.bundleSubtotal ?? liveTotals?.bundleSubtotal ?? 0,
-        total: saleData?.total ?? liveTotals?.total ?? 0,
+        gross_total: saleData?.total ?? liveTotals?.total ?? 0,
+        discount: liveDiscount,
+        // Final total = gross - discount.amount
+        total: Math.max(0, (saleData?.total ?? liveTotals?.total ?? 0) - (liveDiscount?.amount || 0)),
         // Seat map info — biar CDS bisa render seat grid yang sama
         seat_data: seatData ? {
           rows: seatData.rows,
@@ -230,7 +234,7 @@ export default function POSCinemaApp() {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     }).catch(() => {});
-  }, [picked, stage, seats, bundles, saleData, seatData, liveTotals, paymentMethod, lastSale]);
+  }, [picked, stage, seats, bundles, saleData, seatData, liveTotals, liveDiscount, paymentMethod, lastSale]);
 
   // Broadcast saat stage / picked / seats / bundles berubah
   useEffect(() => { broadcastCds(); }, [broadcastCds]);
@@ -304,9 +308,11 @@ export default function POSCinemaApp() {
             saleData={saleData}
             paymentMethod={paymentMethod}
             buyer={buyer}
+            setBuyer={setBuyer}
             cashier={cashier}
             onBack={() => setStage("sell")}
             onPaid={onSold}
+            onDiscountChange={setLiveDiscount}
           />
         )}
         {stage === "success" && lastSale && (
@@ -844,7 +850,7 @@ function Row({ label, value }) {
 // PAY — payment processing per method (cash/qris/debit/voucher)
 // Submit tickets ke backend SETELAH payment confirmed.
 // ═══════════════════════════════════════════════════════════════════
-function Pay({ picked, saleData, paymentMethod, buyer, cashier, onBack, onPaid }) {
+function Pay({ picked, saleData, paymentMethod, buyer, setBuyer, cashier, onBack, onPaid, onDiscountChange }) {
   const baseTotal = saleData.total;
   const [received, setReceived] = useState(0);
   const [refNo, setRefNo] = useState("");
@@ -895,6 +901,11 @@ function Pay({ picked, saleData, paymentMethod, buyer, cashier, onBack, onPaid }
     setDiscBusy(false);
   };
   const clearDiscount = () => { setDiscount({ amount: 0, type: null, code: null, info: null }); setDiscInput(""); setMsg(""); };
+
+  // Push discount changes to CDS (transparency)
+  useEffect(() => {
+    if (onDiscountChange) onDiscountChange(discount.amount > 0 ? { amount: discount.amount, type: discount.type, code: discount.code, name: discount.info?.name } : null);
+  }, [discount, onDiscountChange]);
 
   // Active promos — quick-apply chips di Pay panel
   const [activePromos, setActivePromos] = useState([]);
@@ -1163,10 +1174,10 @@ function Pay({ picked, saleData, paymentMethod, buyer, cashier, onBack, onPaid }
             {/* Auto-member */}
             <div>
               <div style={{ fontSize: 10, color: TH.dim, letterSpacing: 1.2, fontFamily: "'Geist Mono',monospace", marginBottom: 5 }}>📱 NOMOR WA (auto-member + earn points)</div>
-              <input value={buyer.phone || ""} readOnly placeholder="Isi di step Concession atau Sell"
-                style={{ ...S.input, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700, opacity: buyer.phone ? 1 : 0.6 }} />
+              <input value={buyer.phone || ""} onChange={e => setBuyer && setBuyer({ ...buyer, phone: e.target.value })} placeholder="0812..."
+                style={{ ...S.input, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }} />
               <div style={{ fontSize: 10, color: buyer.phone ? TH.green : TH.dim, marginTop: 4, fontWeight: 700 }}>
-                {buyer.phone ? `✓ Customer auto-register member + earn points` : "Tanpa phone: tetap bisa bayar, gak earn points"}
+                {buyer.phone ? `✓ Customer auto-register member + earn points` : "Opsional — kalau diisi, customer dapet points"}
               </div>
             </div>
           </div>

@@ -293,6 +293,29 @@ export default function CinemaCDS() {
                   ))}
                 </>
               )}
+              {/* Subtotal sebelum diskon (kalau ada) */}
+              {state.discount && state.discount.amount > 0 && (
+                <>
+                  <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px dashed rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between", fontSize: 13, color: "#9ca3af" }}>
+                    <span>Subtotal</span>
+                    <span style={{ fontFamily: "'Geist Mono',monospace" }}>{rp(state.gross_total || 0)}</span>
+                  </div>
+                  {/* Discount line — highlighted untuk transparency */}
+                  <div style={{
+                    marginTop: 6, padding: "8px 12px",
+                    background: "linear-gradient(90deg, rgba(245,158,11,0.15), rgba(251,191,36,0.05))",
+                    border: "1px solid rgba(245,158,11,0.4)", borderRadius: 8,
+                    display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10,
+                  }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: "#fbbf24", fontWeight: 800, letterSpacing: 1, fontFamily: "'Geist Mono',monospace" }}>🎁 {state.discount.type === "voucher" ? "VOUCHER" : "PROMO"}</div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: "#fff", marginTop: 1 }}>{state.discount.name || state.discount.code}</div>
+                      {state.discount.code && state.discount.code !== state.discount.name && <div style={{ fontSize: 10, color: "#fbbf24", fontFamily: "'Geist Mono',monospace", marginTop: 1 }}>KODE: {state.discount.code}</div>}
+                    </div>
+                    <div style={{ fontSize: 16, fontWeight: 900, color: "#fbbf24", fontFamily: "'Geist Mono',monospace" }}>−{rp(state.discount.amount)}</div>
+                  </div>
+                </>
+              )}
               {/* Payment method indicator */}
               {state.paymentMethod && (
                 <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px dashed rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between", fontSize: 13, color: "#9ca3af" }}>
@@ -301,7 +324,7 @@ export default function CinemaCDS() {
                 </div>
               )}
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 26, fontWeight: 900, color: "#10b981", marginTop: 12, borderTop: "1px solid rgba(16,185,129,0.2)", paddingTop: 12 }}>
-                <span>TOTAL</span>
+                <span>TOTAL DIBAYAR</span>
                 <span style={{ fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5 }}>{rp(state.total || 0)}</span>
               </div>
             </div>
