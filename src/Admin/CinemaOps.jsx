@@ -1,6 +1,7 @@
 import { useState, useEffect, Component } from "react";
 import { useUiKit } from "../components/uiKit.jsx";
 import CinemaStudioLayoutEditor from "./CinemaStudioLayoutEditor.jsx";
+import CinemaOutletWizard from "./CinemaOutletWizard.jsx";
 
 // Error boundary — biar crash di Cinema Ops gak bikin admin blank total
 class CinemaOpsErrorBoundary extends Component {
@@ -62,6 +63,7 @@ function CinemaOpsInner({ apiBase }) {
   const [selectedOutlets, setSelectedOutlets] = useState(new Set());
   const [bulkResult, setBulkResult] = useState(null);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
   useEffect(() => {
     fetch(`${apiBase}/api/outlet-master`).then(r => r.json()).then(d => {
       setBulkOutlets((d.outlets || d.data || []).filter(o => o.status === "active"));
@@ -151,10 +153,16 @@ function CinemaOpsInner({ apiBase }) {
           <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🎬 Cinema Operations</div>
           <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>karyaOS — vertikal cinema · film, studio &amp; jadwal tayang</div>
         </div>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <Stat label="Film tayang" value={summary ? summary.films_now_showing : "—"} color="#10b981" />
           <Stat label="Studio" value={summary ? summary.studios : "—"} color="#a855f7" />
           <Stat label="Jadwal hari ini" value={summary ? summary.showtimes_today : "—"} color="#22d3ee" />
+          <button onClick={() => setWizardOpen(true)} style={{
+            background: "linear-gradient(135deg,#a855f7,#c084fc)", border: "none", borderRadius: 10,
+            padding: "10px 18px", color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer",
+            fontFamily: "inherit", boxShadow: "0 4px 16px rgba(168,85,247,0.3), inset 0 1px 0 rgba(255,255,255,0.15)",
+            letterSpacing: 0.3, whiteSpace: "nowrap",
+          }}>🚀 Onboard Outlet Baru</button>
         </div>
       </div>
 
@@ -510,6 +518,14 @@ function CinemaOpsInner({ apiBase }) {
             setMsg("✓ Layout studio tersimpan");
             setTimeout(() => setMsg(""), 2000);
           }}
+        />
+      )}
+
+      {wizardOpen && (
+        <CinemaOutletWizard
+          apiBase={apiBase}
+          onClose={() => setWizardOpen(false)}
+          onDone={() => { reload(); fetch(`${apiBase}/api/outlet-master`).then(r => r.json()).then(d => setBulkOutlets((d.outlets || d.data || []).filter(o => o.status === "active"))); }}
         />
       )}
 
