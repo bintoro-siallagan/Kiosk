@@ -44,11 +44,24 @@ const DEFAULT_ITEMS = [
   ['opening', 'Kas awal dihitung & dicatat', 3],
   ['opening', 'Area kasir & meja bersih', 4],
   ['opening', 'Stok display & topping cukup', 5],
+  // Cinema-specific opening checklist
+  ['opening', '🎬 Studio: kursi bersih & rapi', 10],
+  ['opening', '🎬 Proyektor test (gambar + fokus tajam)', 11],
+  ['opening', '🎬 Sound system test (Dolby/surround OK)', 12],
+  ['opening', '🎬 AC studio nyala & suhu nyaman', 13],
+  ['opening', '🎬 Pintu darurat tidak terhalang', 14],
+  ['opening', '🎬 Layar bersih (no debu/noda)', 15],
+  ['opening', '🍿 Stok F&B (popcorn, drink, nachos) cukup', 16],
   ['closing', 'Kas dihitung & cocok dengan sistem', 1],
   ['closing', 'Mesin froyo OFF / mode malam', 2],
   ['closing', 'Sampah dibuang', 3],
   ['closing', 'Area & lantai bersih', 4],
   ['closing', 'Pintu & gembok terkunci', 5],
+  ['closing', '🎬 Proyektor OFF', 10],
+  ['closing', '🎬 Sound system OFF', 11],
+  ['closing', '🎬 AC studio OFF', 12],
+  ['closing', '🎬 Sampah studio dibersihkan', 13],
+  ['closing', '🍿 F&B counter dibereskan', 14],
 ];
 
 function dayStart() {
@@ -67,6 +80,17 @@ function setupChecklist(app, opts = {}) {
   if (db.prepare(`SELECT COUNT(*) c FROM checklist_items`).get().c === 0) {
     const s = db.prepare(`INSERT INTO checklist_items (type, label, sort_order) VALUES (?,?,?)`);
     for (const [t, l, o] of DEFAULT_ITEMS) s.run(t, l, o);
+  } else {
+    // Backfill cinema-specific items kalau belum ada (idempotent)
+    const has = (label) => db.prepare(`SELECT id FROM checklist_items WHERE label = ?`).get(label);
+    const ins = db.prepare(`INSERT INTO checklist_items (type, label, sort_order) VALUES (?,?,?)`);
+    let added = 0;
+    for (const [t, l, o] of DEFAULT_ITEMS) {
+      if (l.startsWith('🎬') || l.startsWith('🍿')) {
+        if (!has(l)) { ins.run(t, l, o); added++; }
+      }
+    }
+    if (added > 0) console.log(`[checklist] seeded ${added} cinema-specific items`);
   }
 
   const router = express.Router();

@@ -12,6 +12,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from "react";
 import POSKasirLogin from "./POSKasirLogin.jsx";
 import ShiftGate from "../ShiftGate.jsx";
+import POSChecklist from "./POSChecklist.jsx";
 import QRCode from "qrcode";
 import { HelpButton } from "../components/HelpModal.jsx";
 
@@ -142,6 +143,14 @@ export default function POSCinemaApp() {
   const [bundles, setBundles] = useState([]); // selected bundles [{id, qty, ...}]
   const [seatData, setSeatData] = useState(null); // {rows, cols, seat_map, sold, held_by_others}
   const [liveTotals, setLiveTotals] = useState(null); // {ticketSubtotal, bundleSubtotal, total} dari Sell stage
+  const [checklist, setChecklist] = useState(null);   // null=loading, {opening,closing}=loaded
+  const [closingChecklist, setClosingChecklist] = useState(false);
+
+  // Reload checklist status whenever cashier logged in
+  const reloadChecklist = useCallback(() => {
+    fetch(`${API_HOST}/api/checklist/status`).then(r => r.json()).then(setChecklist).catch(() => setChecklist({ opening: { done: true }, closing: { done: true } }));
+  }, []);
+  useEffect(() => { if (cashier) reloadChecklist(); }, [cashier, reloadChecklist]);
   const [buyer, setBuyer] = useState({ name: "", phone: "", email: "" });
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [saleData, setSaleData] = useState(null); // intermediate buat payment stage
@@ -159,7 +168,15 @@ export default function POSCinemaApp() {
     sessionStorage.setItem("posCashier", JSON.stringify(kasir));
     setCashier(kasir);
   };
-  const handleLogout = () => { sessionStorage.removeItem("posCashier"); setCashier(null); setStage("home"); };
+  const handleLogout = () => {
+    // Closing checklist wajib kalau opening sudah done tapi closing belum
+    if (checklist && checklist.opening?.done && !checklist.closing?.done) {
+      setClosingChecklist(true);
+      return;
+    }
+    sessionStorage.removeItem("posCashier"); setCashier(null); setStage("home");
+  };
+  const forceLogout = () => { sessionStorage.removeItem("posCashier"); setCashier(null); setStage("home"); };
 
   const resetSale = () => {
     setPicked(null); setSeats([]); setBundles([]);
@@ -230,6 +247,11 @@ export default function POSCinemaApp() {
 
   if (!cashier) return <POSKasirLogin apiBase={API_HOST} onSelectKasir={handleLogin} />;
 
+  // GATE: opening checklist WAJIB kelar sebelum kasir bisa transaksi
+  if (checklist && !checklist.opening?.done) {
+    return <POSChecklist type="opening" apiBase={API_HOST} cashier={cashier} onDone={reloadChecklist} />;
+  }
+
   return (
     <ShiftGate cashier={cashier} onSwitchCashier={handleLogout}>
       <div style={S.root}>
@@ -291,6 +313,14 @@ export default function POSCinemaApp() {
           <Success sale={lastSale} onAnother={resetSale} />
         )}
       </div>
+      {closingChecklist && (
+        <POSChecklist
+          type="closing"
+          apiBase={API_HOST}
+          cashier={cashier}
+          onDone={() => { setClosingChecklist(false); reloadChecklist(); forceLogout(); }}
+        />
+      )}
     </ShiftGate>
   );
 }
