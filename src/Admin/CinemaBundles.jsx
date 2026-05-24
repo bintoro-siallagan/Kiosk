@@ -4,14 +4,21 @@ import { useState, useEffect, useCallback } from "react";
 
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
-const empty = { name: "", description: "", price: 0, is_active: 1, sort_order: 0 };
+const empty = { name: "", description: "", price: 0, is_active: 1, sort_order: 0, outlet_codes: "", image_url: "" };
 
 export default function CinemaBundles({ apiBase = "" }) {
   const base = (apiBase || "") + "/api/cinema";
   const [rows, setRows] = useState([]);
   const [editing, setEditing] = useState(null);   // bundle row being edited or null
   const [form, setForm] = useState(empty);
+  const [outlets, setOutlets] = useState([]);
   const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    fetch(`${apiBase}/api/outlet-master`).then(r => r.json())
+      .then(d => setOutlets((d.outlets || d.data || []).filter(o => o.status === "active")))
+      .catch(() => {});
+  }, [apiBase]);
   const showToast = (m, kind = "ok") => { setToast({ m, kind }); setTimeout(() => setToast(null), 2500); };
 
   const load = useCallback(async () => {
@@ -91,6 +98,47 @@ export default function CinemaBundles({ apiBase = "" }) {
                 <span>Aktif (tampil di kiosk)</span>
               </label>
             </Field>
+            <Field label="🌐 Outlet (kosong = semua outlet)" wide>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "6px 8px", background: "#0a0e16", border: `1px solid ${C.border}`, borderRadius: 8, minHeight: 38 }}>
+                {outlets.length === 0 && <span style={{ fontSize: 11, color: C.dim }}>Loading outlets...</span>}
+                {outlets.map(o => {
+                  const codes = String(form.outlet_codes || "").split(",").map(s => s.trim()).filter(Boolean);
+                  const sel = codes.includes(o.code);
+                  return (
+                    <label key={o.code} style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 10px", background: sel ? "#f59e0b22" : "rgba(255,255,255,0.04)", border: `1px solid ${sel ? "#f59e0b66" : "transparent"}`, borderRadius: 999, fontSize: 11, cursor: "pointer", color: sel ? "#fbbf24" : "#cbd5e1" }}>
+                      <input type="checkbox" checked={sel} style={{ margin: 0 }} onChange={(e) => {
+                        const next = new Set(codes);
+                        if (e.target.checked) next.add(o.code); else next.delete(o.code);
+                        setForm({ ...form, outlet_codes: [...next].join(",") });
+                      }} />
+                      {o.code}
+                    </label>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: 10, color: C.dim, marginTop: 4 }}>Centang outlet yang menjual bundle ini. Kosongkan untuk global (semua outlet).</div>
+            </Field>
+            <Field label="🖼️ Image URL (opsional)" wide>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {form.image_url && <img src={form.image_url.startsWith("/") ? apiBase + form.image_url : form.image_url} alt="" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 6, border: `1px solid ${C.border}` }} />}
+                <input value={form.image_url || ""} onChange={e => setForm({ ...form, image_url: e.target.value })} placeholder="atau upload via tombol →" style={{ ...inp, flex: 1 }} />
+                <label style={{ background: "#22d3ee22", border: "1px solid #22d3ee66", color: "#22d3ee", borderRadius: 8, padding: "8px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
+                  📤 Upload
+                  <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
+                    const file = e.target.files?.[0]; if (!file) return;
+                    showToast(`Uploading ${(file.size / 1024 / 1024).toFixed(1)}MB...`);
+                    try {
+                      const fd = new FormData(); fd.append("file", file);
+                      const r = await fetch(`${apiBase}/api/upload`, { method: "POST", body: fd });
+                      const d = await r.json();
+                      if (!d.ok) throw new Error(d.error);
+                      setForm(f => ({ ...f, image_url: d.url }));
+                      showToast("Image uploaded");
+                    } catch (err) { showToast(err.message, "err"); }
+                  }} />
+                </label>
+              </div>
+            </Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
             <button onClick={save} style={B.save}>{editing === "new" ? "Buat bundle" : "Simpan perubahan"}</button>
@@ -114,8 +162,14 @@ export default function CinemaBundles({ apiBase = "" }) {
         ) : rows.map(b => (
           <div key={b.id} style={{ ...row, padding: "12px 14px", borderBottom: `1px solid ${C.border}` }}>
             <span style={{ width: 50, fontFamily: "'Geist Mono',monospace", fontSize: 12, color: C.dim }}>{b.id}</span>
-            <span style={{ flex: 1.4, fontWeight: 700, fontSize: 13 }}>{b.name}</span>
-            <span style={{ flex: 1.6, fontSize: 12.5, color: C.sub }}>{b.description || "—"}</span>
+            <span style={{ flex: 1.4, fontWeight: 700, fontSize: 13 }}>
+              {b.image_url && <img src={b.image_url.startsWith("/") ? apiBase + b.image_url : b.image_url} alt="" style={{ width: 24, height: 24, objectFit: "cover", borderRadius: 4, marginRight: 8, verticalAlign: "middle" }} />}
+              {b.name}
+            </span>
+            <span style={{ flex: 1.6, fontSize: 12.5, color: C.sub }}>
+              {b.description || "—"}
+              {b.outlet_codes && <span style={{ display: "inline-block", marginLeft: 8, padding: "2px 7px", background: "#a855f722", border: "1px solid #a855f766", color: "#c084fc", borderRadius: 6, fontSize: 10, fontWeight: 700, fontFamily: "'Geist Mono',monospace" }}>📍 {b.outlet_codes}</span>}
+            </span>
             <span style={{ width: 110, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "#10b981" }}>{rp(b.price)}</span>
             <span style={{ width: 70 }}>
               {b.is_active

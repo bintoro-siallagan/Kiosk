@@ -409,6 +409,10 @@ function setupCinema(app, opts = {}) {
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN buyer_email TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN buyer_phone TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN email_sent_at INTEGER"); } catch {}
+  // Per-outlet bundle availability: CSV outlet codes (e.g. 'JKT01,BDG01') atau NULL=global
+  try { db.exec("ALTER TABLE cinema_bundles ADD COLUMN outlet_codes TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_bundles ADD COLUMN image_url TEXT"); } catch {}
+
   // Payment audit — kiosk QRIS / POS cash / debit
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN payment_ref TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN payment_method TEXT"); } catch {}
@@ -1416,28 +1420,55 @@ function setupCinema(app, opts = {}) {
   // ── BUNDLES (F&B combo catalog) ──
   router.get('/bundles', (req, res) => {
     const all = String(req.query.all || '') === '1';
+    const outletFilter = String(req.query.outlet || '').trim();
     const sql = all
       ? `SELECT * FROM cinema_bundles ORDER BY sort_order, name`
       : `SELECT * FROM cinema_bundles WHERE is_active = 1 ORDER BY sort_order, name`;
-    res.json({ bundles: db.prepare(sql).all() });
+    let bundles = db.prepare(sql).all();
+    // Filter per outlet — bundle dengan outlet_codes NULL = global (all outlets),
+    // dengan CSV = only outlets listed
+    if (outletFilter) {
+      bundles = bundles.filter(b => {
+        if (!b.outlet_codes) return true; // global
+        const codes = String(b.outlet_codes).split(',').map(s => s.trim()).filter(Boolean);
+        return codes.includes(outletFilter);
+      });
+    }
+    res.json({ bundles });
   });
   router.post('/bundles', (req, res) => {
     const b = req.body || {};
     if (!b.name) return res.status(400).json({ error: 'name wajib diisi' });
-    const info = db.prepare(`INSERT INTO cinema_bundles (name, description, price, is_active, sort_order)
-                             VALUES (?,?,?,?,?)`)
+    // outlet_codes: accept array atau CSV string, normalize ke CSV (null = global)
+    let outletCodes = null;
+    if (b.outlet_codes !== undefined && b.outlet_codes !== null && b.outlet_codes !== '') {
+      const arr = Array.isArray(b.outlet_codes) ? b.outlet_codes : String(b.outlet_codes).split(',');
+      outletCodes = arr.map(s => String(s).trim().toUpperCase()).filter(Boolean).join(',') || null;
+    }
+    const info = db.prepare(`INSERT INTO cinema_bundles (name, description, price, is_active, sort_order, outlet_codes, image_url)
+                             VALUES (?,?,?,?,?,?,?)`)
       .run(b.name, b.description || '', parseInt(b.price, 10) || 0,
-           b.is_active === false ? 0 : 1, parseInt(b.sort_order, 10) || 0);
+           b.is_active === false ? 0 : 1, parseInt(b.sort_order, 10) || 0,
+           outletCodes, b.image_url || null);
     res.json({ ok: true, id: info.lastInsertRowid });
   });
   router.patch('/bundles/:id', (req, res) => {
     const b = req.body || {};
     const fields = []; const args = [];
-    for (const k of ['name', 'description', 'price', 'is_active', 'sort_order']) {
+    for (const k of ['name', 'description', 'price', 'is_active', 'sort_order', 'image_url']) {
       if (k in b) {
         fields.push(`${k} = ?`);
         args.push(k === 'is_active' ? (b[k] ? 1 : 0) : (k === 'price' || k === 'sort_order') ? parseInt(b[k], 10) || 0 : b[k]);
       }
+    }
+    // outlet_codes special handling — accept array atau CSV
+    if (b.outlet_codes !== undefined) {
+      let val = null;
+      if (b.outlet_codes !== null && b.outlet_codes !== '') {
+        const arr = Array.isArray(b.outlet_codes) ? b.outlet_codes : String(b.outlet_codes).split(',');
+        val = arr.map(s => String(s).trim().toUpperCase()).filter(Boolean).join(',') || null;
+      }
+      fields.push('outlet_codes = ?'); args.push(val);
     }
     if (!fields.length) return res.json({ ok: true, noop: true });
     args.push(req.params.id);

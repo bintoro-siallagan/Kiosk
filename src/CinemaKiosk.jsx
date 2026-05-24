@@ -69,7 +69,7 @@ export default function CinemaKiosk({ apiBase }) {
     // Filter showtime by outlet kalau ada outlet code di URL/storage
     const stUrl = outletCode ? `${base}/showtimes?outlet=${encodeURIComponent(outletCode)}` : `${base}/showtimes`;
     fetch(stUrl).then(r => r.json()).then(d => setShowtimes(d.showtimes || [])).catch(() => {});
-    fetch(`${base}/bundles`).then(r => r.json()).then(d => setBundleCatalog(d.bundles || [])).catch(() => {});
+    fetch(`${base}/bundles${outletCode ? `?outlet=${encodeURIComponent(outletCode)}` : ""}`).then(r => r.json()).then(d => setBundleCatalog(d.bundles || [])).catch(() => {});
     // Resolve outlet display name dari outlet_master
     if (outletCode) {
       fetch(`${apiBase || ""}/api/outlet-master`)

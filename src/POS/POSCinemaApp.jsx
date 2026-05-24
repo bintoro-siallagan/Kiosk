@@ -502,7 +502,8 @@ function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, p
   useEffect(() => { loadSeats(); const iv = setInterval(loadSeats, 10000); return () => clearInterval(iv); }, [loadSeats]);
 
   useEffect(() => {
-    fetch(`${API_HOST}/api/cinema/bundles`).then(r => r.json()).then(d => setBundleList(d.bundles || [])).catch(() => {});
+    const outlet = new URLSearchParams(window.location.search).get("outlet") || "";
+    fetch(`${API_HOST}/api/cinema/bundles${outlet ? `?outlet=${encodeURIComponent(outlet)}` : ""}`).then(r => r.json()).then(d => setBundleList(d.bundles || [])).catch(() => {});
   }, []);
 
   const toggle = (seat) => {
