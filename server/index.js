@@ -4034,7 +4034,7 @@ const procurementGaps = setupProcurementGaps(app, { dbPath: DB_PATH, mountPath: 
 const finance         = setupFinance(app,         { dbPath: DB_PATH, mountPath: '/api/finance' });
 setupFinanceDashboard(app, { dbPath: DB_PATH });
 const { setupCinema } = require('./cinema-backend');
-setupCinema(app, { dbPath: DB_PATH });
+setupCinema(app, { dbPath: DB_PATH, broadcast });
 const { setupFnbFeatures } = require('./fnb-features-backend');
 setupFnbFeatures(app, { dbPath: DB_PATH });
 const { setupOwnerDashboardExtras } = require('./owner-dashboard-extras');

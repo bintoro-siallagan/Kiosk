@@ -1101,6 +1101,219 @@ function setupCinema(app, opts = {}) {
       .run(req.params.id);
     res.json({ ok: true });
   });
+
+  // ── EMERGENCY CLOSE — listrik mati, gangguan teknis, force majeure ──
+  // POST /showtimes/:id/emergency-close { reason, manager_name, refund_all=true, notify=true }
+  // Atomic: close showtime + mark all tickets refunded + audit trail
+  router.post('/showtimes/:id/emergency-close', (req, res) => {
+    const b = req.body || {};
+    const by = String(b.manager_name || 'manager');
+    const reason = String(b.reason || 'Emergency closure (force majeure)').trim();
+    const refundAll = b.refund_all !== false; // default true
+    const s = db.prepare(`SELECT * FROM cinema_showtimes WHERE id = ?`).get(req.params.id);
+    if (!s) return res.status(404).json({ ok: false, error: 'Showtime tidak ditemukan' });
+    const now = Math.floor(Date.now() / 1000);
+
+    // Pre-fetch affected tickets untuk audit
+    const tickets = db.prepare(`
+      SELECT t.id, t.seat, t.price, t.code, t.buyer, t.buyer_phone, t.buyer_email, t.purchase_id, t.payment_method, t.payment_ref
+      FROM cinema_tickets t WHERE t.showtime_id = ?
+    `).all(req.params.id);
+
+    let refundedCount = 0;
+    let refundedAmount = 0;
+    db.transaction(() => {
+      // 1) Mark showtime closed
+      db.prepare(`UPDATE cinema_showtimes
+        SET manual_closed_at = ?, manual_closed_by = ?, manual_close_reason = ?, status = 'cancelled'
+        WHERE id = ?`).run(now, by, `[EMERGENCY] ${reason}`, req.params.id);
+
+      // 2) Auto-refund all tickets (kalau diminta)
+      if (refundAll && tickets.length > 0) {
+        // Pakai cinema_ticket_voids kalau ada (manager refund table)
+        try {
+          db.exec(`CREATE TABLE IF NOT EXISTS cinema_ticket_voids (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticket_id INTEGER NOT NULL,
+            ticket_code TEXT,
+            reason TEXT,
+            voided_by TEXT,
+            voided_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+            amount INTEGER,
+            UNIQUE(ticket_id)
+          )`);
+          const insVoid = db.prepare(`INSERT OR IGNORE INTO cinema_ticket_voids
+            (ticket_id, ticket_code, reason, voided_by, voided_at, amount)
+            VALUES (?,?,?,?,?,?)`);
+          for (const t of tickets) {
+            const r = insVoid.run(t.id, t.code, `[EMERGENCY] ${reason}`, by, now, t.price || 0);
+            if (r.changes > 0) { refundedCount++; refundedAmount += (t.price || 0); }
+          }
+          // Mark tickets sebagai voided
+          db.prepare(`UPDATE cinema_tickets SET payment_status = 'refunded' WHERE showtime_id = ? AND COALESCE(payment_status, '') != 'refunded'`)
+            .run(req.params.id);
+        } catch (e) { /* table missing, skip */ }
+      }
+    })();
+
+    // 3) Broadcast WS untuk refresh CDS/Kiosk/POS terminal di outlet
+    try {
+      if (typeof opts.broadcast === 'function') {
+        opts.broadcast('cinema:emergency_close', {
+          showtime_id: parseInt(req.params.id, 10),
+          reason, by, refunded_count: refundedCount, refunded_amount: refundedAmount,
+        });
+      }
+    } catch {}
+
+    res.json({
+      ok: true,
+      showtime_id: parseInt(req.params.id, 10),
+      closed_at: now, closed_by: by, reason,
+      tickets_affected: tickets.length,
+      refunded_count: refundedCount,
+      refunded_amount: refundedAmount,
+      contacts: tickets.filter(t => t.buyer_phone || t.buyer_email).map(t => ({
+        seat: t.seat, code: t.code, buyer: t.buyer, phone: t.buyer_phone, email: t.buyer_email,
+      })),
+    });
+  });
+
+  // GET /showtimes/:id/manifest — print-friendly ticket list (offline reference saat sistem down)
+  router.get('/showtimes/:id/manifest', (req, res) => {
+    const st = db.prepare(`
+      SELECT s.*, f.title AS film_title, f.duration_min, f.rating,
+             st.name AS studio_name, st.outlet, (st.rows * st.cols) AS capacity
+      FROM cinema_showtimes s
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE s.id = ?
+    `).get(req.params.id);
+    if (!st) return res.status(404).json({ error: 'Showtime tidak ditemukan' });
+    const tickets = db.prepare(`
+      SELECT id, code, seat, price, buyer, buyer_phone, buyer_email, sold_at, payment_method, payment_status
+      FROM cinema_tickets WHERE showtime_id = ?
+      ORDER BY seat
+    `).all(req.params.id);
+    res.json({
+      showtime: st,
+      tickets,
+      summary: {
+        total_sold: tickets.length,
+        total_revenue: tickets.reduce((s, t) => s + (t.price || 0), 0),
+        with_contact: tickets.filter(t => t.buyer_phone || t.buyer_email).length,
+        printed_at: Math.floor(Date.now() / 1000),
+      },
+    });
+  });
+
+  // POST /tickets/:id/swap-seat — relokasi kursi (conflict resolution, customer dispute)
+  // Body: { new_seat, reason, manager_name }
+  router.post('/tickets/:id/swap-seat', (req, res) => {
+    const newSeat = String(req.body?.new_seat || '').trim().toUpperCase();
+    const reason = String(req.body?.reason || '').trim();
+    const by = String(req.body?.manager_name || 'manager').trim();
+    if (!newSeat) return res.status(400).json({ error: 'new_seat wajib' });
+
+    const t = db.prepare(`SELECT * FROM cinema_tickets WHERE id = ?`).get(req.params.id);
+    if (!t) return res.status(404).json({ error: 'Tiket tidak ditemukan' });
+    if (t.seat === newSeat) return res.status(400).json({ error: 'Sama dengan seat existing' });
+
+    // Cek seat baru sudah dipakai?
+    const conflict = db.prepare(`SELECT id, code, seat FROM cinema_tickets WHERE showtime_id = ? AND seat = ?`).get(t.showtime_id, newSeat);
+    if (conflict) return res.status(409).json({ error: `Seat ${newSeat} sudah ada tiket lain (${conflict.code})`, conflict });
+
+    const now = Math.floor(Date.now() / 1000);
+    db.transaction(() => {
+      // Audit log dulu
+      try {
+        db.exec(`CREATE TABLE IF NOT EXISTS cinema_seat_swaps (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          ticket_id INTEGER NOT NULL,
+          ticket_code TEXT,
+          from_seat TEXT,
+          to_seat TEXT,
+          reason TEXT,
+          swapped_by TEXT,
+          swapped_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+        )`);
+        db.prepare(`INSERT INTO cinema_seat_swaps (ticket_id, ticket_code, from_seat, to_seat, reason, swapped_by, swapped_at)
+          VALUES (?,?,?,?,?,?,?)`).run(t.id, t.code, t.seat, newSeat, reason, by, now);
+      } catch {}
+      // Apply swap
+      db.prepare(`UPDATE cinema_tickets SET seat = ? WHERE id = ?`).run(newSeat, t.id);
+    })();
+
+    res.json({ ok: true, ticket_id: t.id, ticket_code: t.code, from_seat: t.seat, to_seat: newSeat, by, reason });
+  });
+
+  // GET /tickets/conflicts?showtime_id=X — list potential issues per showtime
+  router.get('/tickets/conflicts', (req, res) => {
+    const showtimeId = req.query.showtime_id ? parseInt(req.query.showtime_id, 10) : null;
+
+    // 1) Multiple check-in attempts (same ticket scanned >1× saat valid)
+    // Approximation: tickets dengan checked_in_at gak null + ada swap history
+    // 2) Refunded tapi belum checked-in (refunded tickets list)
+    // 3) Tickets without code (data integrity)
+
+    const where = showtimeId ? `WHERE t.showtime_id = ${showtimeId}` : '';
+    const refunded = db.prepare(`
+      SELECT t.id, t.code, t.seat, t.payment_status, t.checked_in_at, s.show_date, s.start_time, f.title AS film_title
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      ${where ? where + ' AND' : 'WHERE'} t.payment_status = 'refunded'
+      ORDER BY t.id DESC LIMIT 50
+    `).all();
+
+    let swaps = [];
+    try {
+      swaps = db.prepare(`
+        SELECT sw.*, t.code AS current_code, s.show_date, s.start_time, f.title AS film_title
+        FROM cinema_seat_swaps sw
+        LEFT JOIN cinema_tickets t ON t.id = sw.ticket_id
+        LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+        LEFT JOIN cinema_films f ON f.id = s.film_id
+        ${where ? where.replace('t.showtime_id', 's.id') : ''}
+        ORDER BY sw.swapped_at DESC LIMIT 50
+      `).all();
+    } catch {}
+
+    let voids = [];
+    try {
+      voids = db.prepare(`
+        SELECT v.*, t.seat, t.showtime_id, s.show_date, s.start_time, f.title AS film_title
+        FROM cinema_ticket_voids v
+        LEFT JOIN cinema_tickets t ON t.id = v.ticket_id
+        LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+        LEFT JOIN cinema_films f ON f.id = s.film_id
+        ${where ? where : ''}
+        ORDER BY v.voided_at DESC LIMIT 50
+      `).all();
+    } catch {}
+
+    res.json({ ok: true, refunded, swaps, voids });
+  });
+
+  // POST /tickets/manual-checkin — offline mode: usher input ticket code manual
+  router.post('/tickets/manual-checkin', (req, res) => {
+    const code = String(req.body?.code || '').trim().toUpperCase();
+    const by = String(req.body?.checked_by || 'usher').trim();
+    if (!code) return res.status(400).json({ error: 'code wajib' });
+    const t = db.prepare(`
+      SELECT t.*, s.show_date, s.start_time, f.title AS film_title, st.name AS studio_name
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE t.code = ?
+    `).get(code);
+    if (!t) return res.status(404).json({ ok: false, error: 'Tiket tidak ditemukan' });
+    if (t.checked_in_at) return res.status(409).json({ ok: false, error: 'Tiket sudah di-check-in', checked_in_at: t.checked_in_at });
+    const now = Math.floor(Date.now() / 1000);
+    db.prepare(`UPDATE cinema_tickets SET checked_in_at = ? WHERE id = ?`).run(now, t.id);
+    res.json({ ok: true, ticket: { ...t, checked_in_at: now, checked_in_by: by } });
+  });
   router.post('/showtimes', (req, res) => {
     const b = req.body || {};
     if (!b.film_id || !b.studio_id || !b.show_date || !b.start_time) {
