@@ -16,6 +16,7 @@ import POSChecklist from "./POSChecklist.jsx";
 import QRCode from "qrcode";
 import { HelpButton } from "../components/HelpModal.jsx";
 import TouchNumpad, { showNumpad } from "../components/TouchNumpad.jsx";
+import UpsellTicker from "../components/UpsellTicker.jsx";
 
 const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -264,6 +265,7 @@ export default function POSCinemaApp() {
         <style>{CSS}</style>
         <div style={S.mesh} aria-hidden />
         <TopBar cashier={cashier} stage={stage} onLogout={handleLogout} onHome={resetSale} />
+        <UpsellTicker />
 
         {stage === "home" && (
           <>

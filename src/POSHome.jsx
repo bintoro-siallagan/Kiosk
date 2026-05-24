@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 
 import POSOrderHistory from "./POSOrderHistory.jsx";
 import POSMergeTabsModal from "./POSMergeTabsModal.jsx";
+import UpsellTicker from "./components/UpsellTicker.jsx";
+import TouchNumpad from "./components/TouchNumpad.jsx";
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
 
 // Track CDS window reference across re-renders
@@ -223,6 +225,9 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
       >
         <span style={{ fontSize: 18 }}>🎬</span> Switch ke POS Cinema
       </button>
+
+      <TouchNumpad />
+      <UpsellTicker />
 
       <header style={S.header}>
         <div style={S.brand}><img src="/logo.png" alt="" style={{ height: 26, verticalAlign: "middle", marginRight: 7 }} />KaryaOS POS</div>

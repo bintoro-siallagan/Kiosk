@@ -54,6 +54,34 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
   const [loyaltyDiscount, setLoyaltyDiscount] = useState(0);
   const [loyaltyReward, setLoyaltyReward] = useState(null);
 
+  // F&B Active Promos — quick-apply chips (auto-fetch on mount)
+  const [activePromos, setActivePromos] = useState([]);
+  const [promoApplied, setPromoApplied] = useState(null); // { code, name, amount, type }
+  useEffect(() => {
+    const api = import.meta.env.VITE_API_URL || "http://localhost:3001";
+    fetch(`${api}/api/promos`).then(r => r.json())
+      .then(d => setActivePromos((Array.isArray(d) ? d : []).filter(p => p.active && (p.usedCount || 0) < (p.usageLimit || 999))))
+      .catch(() => {});
+  }, []);
+  const applyPromoChip = async (p) => {
+    if (p.minOrder && order.total < p.minOrder) {
+      alert(`⚠ "${p.code}" butuh min order Rp ${(p.minOrder || 0).toLocaleString("id-ID")}`);
+      return;
+    }
+    let disc = 0;
+    if (p.type === "percentage" || p.type === "percent") disc = Math.round(order.total * (p.value || 0) / 100);
+    else disc = Math.round(p.value || 0);
+    if (p.maxDiscount && disc > p.maxDiscount) disc = p.maxDiscount;
+    disc = Math.min(disc, order.total);
+    setPromoApplied({ code: p.code, name: p.desc || p.code, amount: disc, type: p.type });
+    setLoyaltyDiscount(d => d + disc); // tambahin ke discount existing (reuse field)
+  };
+  const clearPromoChip = () => {
+    if (!promoApplied) return;
+    setLoyaltyDiscount(d => Math.max(0, d - promoApplied.amount));
+    setPromoApplied(null);
+  };
+
   // POSPaymentGateway + loyalty endpoints prepend their own "/api/..." — jadi ini cukup HOST aja.
   const GW_BASE = gatewayBase || import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
@@ -202,6 +230,51 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
             </div>
           )}
         </div>
+
+        {/* PROMO CHIPS — quick apply */}
+        {activePromos.length > 0 && (
+          <div style={{ marginTop: 12, padding: 12, background: "linear-gradient(180deg, rgba(245,158,11,0.06), rgba(245,158,11,0.02))", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ fontSize: 10, color: "#fbbf24", letterSpacing: 2, fontFamily: "monospace", fontWeight: 800 }}>🎁 PROMO AKTIF — KLIK APPLY</div>
+              <div style={{ fontSize: 10, color: "#9ca3af", fontFamily: "monospace" }}>{activePromos.length}</div>
+            </div>
+            {promoApplied ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.5)", borderRadius: 8 }}>
+                <span style={{ fontSize: 16 }}>🎟️</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: "#c084fc", fontFamily: "monospace" }}>{promoApplied.code}</div>
+                  <div style={{ fontSize: 11, color: "#10b981", fontWeight: 700 }}>−{(promoApplied.amount).toLocaleString("id-ID")}</div>
+                </div>
+                <button onClick={clearPromoChip} style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5", borderRadius: 6, padding: "5px 10px", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>✕</button>
+              </div>
+            ) : (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 6 }}>
+                {activePromos.slice(0, 6).map(p => {
+                  const minOk = !p.minOrder || order.total >= p.minOrder;
+                  const isPercent = p.type === "percentage" || p.type === "percent";
+                  return (
+                    <button key={p.id} onClick={() => applyPromoChip(p)} disabled={!minOk}
+                      style={{
+                        padding: "8px 10px", borderRadius: 8,
+                        background: minOk ? "rgba(245,158,11,0.1)" : "rgba(255,255,255,0.02)",
+                        border: minOk ? "1px solid rgba(245,158,11,0.4)" : "1px solid rgba(255,255,255,0.05)",
+                        color: minOk ? "#fff" : "#5b6470",
+                        cursor: minOk ? "pointer" : "not-allowed",
+                        textAlign: "left", fontFamily: "inherit",
+                      }}>
+                      <div style={{ display: "flex", justifyContent: "space-between" }}>
+                        <span style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24", fontFamily: "monospace" }}>{p.code}</span>
+                        <span style={{ fontSize: 12, fontWeight: 900, color: minOk ? "#fbbf24" : "#5b6470", fontFamily: "monospace" }}>−{isPercent ? `${p.value}%` : `${Math.round(p.value/1000)}rb`}</span>
+                      </div>
+                      {p.desc && <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.desc}</div>}
+                      {p.minOrder > 0 && <div style={{ fontSize: 9, color: minOk ? "#10b981" : "#ef4444", marginTop: 2 }}>{minOk ? "✓" : "⚠"} min {Math.round(p.minOrder/1000)}rb</div>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* LOYALTY MEMBER */}
         <div style={styles.loyaltyCard}>
