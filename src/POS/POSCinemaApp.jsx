@@ -15,6 +15,7 @@ import ShiftGate from "../ShiftGate.jsx";
 import POSChecklist from "./POSChecklist.jsx";
 import QRCode from "qrcode";
 import { HelpButton } from "../components/HelpModal.jsx";
+import TouchNumpad, { showNumpad } from "../components/TouchNumpad.jsx";
 
 const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -258,6 +259,7 @@ export default function POSCinemaApp() {
 
   return (
     <ShiftGate cashier={cashier} onSwitchCashier={handleLogout}>
+      <TouchNumpad />
       <div style={S.root}>
         <style>{CSS}</style>
         <div style={S.mesh} aria-hidden />
@@ -1174,8 +1176,16 @@ function Pay({ picked, saleData, paymentMethod, buyer, setBuyer, cashier, onBack
             {/* Auto-member */}
             <div>
               <div style={{ fontSize: 10, color: TH.dim, letterSpacing: 1.2, fontFamily: "'Geist Mono',monospace", marginBottom: 5 }}>📱 NOMOR WA (auto-member + earn points)</div>
-              <input value={buyer.phone || ""} onChange={e => setBuyer && setBuyer({ ...buyer, phone: e.target.value })} placeholder="0812..."
-                style={{ ...S.input, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }} />
+              <input value={buyer.phone || ""}
+                onChange={e => setBuyer && setBuyer({ ...buyer, phone: e.target.value })}
+                onFocus={() => showNumpad({
+                  value: buyer.phone || "",
+                  onChange: (v) => setBuyer && setBuyer({ ...buyer, phone: v }),
+                  label: "📱 NOMOR WA CUSTOMER",
+                })}
+                placeholder="Tap untuk input nomor"
+                inputMode="tel"
+                style={{ ...S.input, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700, cursor: "pointer" }} />
               <div style={{ fontSize: 10, color: buyer.phone ? TH.green : TH.dim, marginTop: 4, fontWeight: 700 }}>
                 {buyer.phone ? `✓ Customer auto-register member + earn points` : "Opsional — kalau diisi, customer dapet points"}
               </div>
@@ -1187,11 +1197,16 @@ function Pay({ picked, saleData, paymentMethod, buyer, setBuyer, cashier, onBack
         {paymentMethod === "cash" && (
           <div style={{ ...S.cardLarge, padding: 22, marginBottom: 14 }}>
             <div style={S.subSectionTitle}>💵 INPUT TUNAI DITERIMA</div>
-            <div style={{
+            <button onClick={() => showNumpad({
+              value: String(received || ""),
+              onChange: (v) => setReceived(parseInt(v) || 0),
+              label: "💵 TUNAI DITERIMA (Rp)",
+            })} style={{
+              width: "100%", border: "2px dashed rgba(245,158,11,0.4)", background: "rgba(245,158,11,0.04)",
+              borderRadius: 12, padding: "14px 0", margin: "14px 0", cursor: "pointer", fontFamily: "inherit",
               fontSize: 42, fontWeight: 800, color: cashEnough ? TH.green : "#fff",
-              fontFamily: "'Geist Mono',monospace", letterSpacing: -0.6,
-              textAlign: "center", margin: "14px 0",
-            }}>{rp(received)}</div>
+              fontFamily: "'Geist Mono',monospace", letterSpacing: -0.6, textAlign: "center",
+            }}>{rp(received) || "TAP UNTUK INPUT"}</button>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 10 }}>
               {[50000, 100000, 200000, 500000].map(n => (
                 <button key={n} onClick={() => setReceived(r => r + n)} className="ghost-btn"
