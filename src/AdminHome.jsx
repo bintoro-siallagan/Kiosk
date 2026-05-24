@@ -472,6 +472,12 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
             .map(t => ({ _k: "m:" + t.id, label: t.label, on: () => openRight("tools", t.id) }));
         } },
     ] },
+    // 🛰️ KROC — cross-vertical remote outlet command
+    { title: "🛰️ Remote Outlet Command (KROC)", accent: "#a855f7", items: [
+      { label: "🛰️ Command Center",        icon: "🛰️", c: "#a855f7", on: () => openRight("tools", "remote_ops_command") },
+      { label: "📋 Submit Daily Audit",    icon: "📋", c: "#10b981", on: () => openTab("?audit") },
+      { label: "📍 Visit Check-in (Mobile)", icon: "📍", c: "#22d3ee", on: () => openTab("?visit") },
+    ] },
     { title: "💼 Manajemen & Data", accent: "#3b82f6", items: [
       { label: "Member & Customer", icon: "👥", c: "#3b82f6", on: () => openRight("members") },
       { label: "Promo Code", icon: "🏷️", c: "#ec4899", on: () => openRight("promo") },
