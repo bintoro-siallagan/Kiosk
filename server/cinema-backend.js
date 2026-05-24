@@ -2200,15 +2200,84 @@ function setupCinema(app, opts = {}) {
         .run(st.id, ...seats, holdToken);
     }
     const seatsTotal = newTickets.reduce((a, t) => a + (t.price || 0), 0);
+    let grossTotal = seatsTotal + bundlesTotal;
+
+    // ── Apply discount (voucher / promo) ──
+    let discountApplied = 0;
+    if (b.discount_code && b.discount_type) {
+      const code = String(b.discount_code).trim().toUpperCase();
+      if (b.discount_type === 'voucher') {
+        try {
+          const v = db.prepare(`SELECT * FROM cinema_vouchers WHERE UPPER(code) = ? AND used_at IS NULL AND is_void = 0`).get(code);
+          if (v && (!v.expires_at || v.expires_at > Math.floor(Date.now()/1000))) {
+            discountApplied = Math.min(v.value, grossTotal);
+            db.prepare(`UPDATE cinema_vouchers SET used_at = ?, used_purchase_id = ?, applied_amount = ? WHERE id = ?`)
+              .run(Math.floor(Date.now()/1000), purchaseId, discountApplied, v.id);
+          }
+        } catch {}
+      } else if (b.discount_type === 'promo') {
+        try {
+          const p = db.prepare(`SELECT * FROM cinema_promotions WHERE UPPER(code) = ? AND is_active = 1`).get(code);
+          if (p) {
+            let disc = p.discount_type === 'percentage' ? Math.round(grossTotal * p.discount_value / 100) : Math.round(p.discount_value);
+            if (p.max_discount && disc > p.max_discount) disc = p.max_discount;
+            discountApplied = Math.min(disc, grossTotal);
+            db.prepare(`UPDATE cinema_promotions SET redemption_count = COALESCE(redemption_count,0) + 1 WHERE id = ?`).run(p.id);
+            try {
+              db.prepare(`INSERT INTO cinema_promo_redemptions (promo_id, purchase_id, discount_amount, applied_at)
+                VALUES (?, ?, ?, strftime('%s','now'))`).run(p.id, purchaseId, discountApplied);
+            } catch {}
+          }
+        } catch {}
+      }
+    }
+    const finalTotal = Math.max(0, grossTotal - discountApplied);
+
+    // ── Auto-member (loyalty) — kalau buyer_phone ada ──
+    let loyalty = null;
+    if (b.buyer_phone) {
+      try {
+        const phone = String(b.buyer_phone).trim();
+        // Cek customer existing by phone
+        let customer = db.prepare(`SELECT * FROM loyalty_customers WHERE phone = ?`).get(phone);
+        if (!customer) {
+          // Auto-create
+          const info = db.prepare(`INSERT INTO loyalty_customers (phone, name, email, current_points, lifetime_points, lifetime_spend, total_visits, current_tier_code, created_at)
+            VALUES (?, ?, ?, 0, 0, 0, 0, 'BRONZE', strftime('%s','now'))`)
+            .run(phone, b.buyer || '', b.buyer_email || '');
+          customer = { id: info.lastInsertRowid, phone, current_points: 0, lifetime_points: 0, lifetime_spend: 0, total_visits: 0, current_tier_code: 'BRONZE' };
+        }
+        // Earn points — default 1 point per Rp 10.000 (configurable di pos_config POINT_PER_AMOUNT)
+        let pointPerAmount = 10000;
+        try { const row = db.prepare(`SELECT value FROM pos_config WHERE key='POINT_PER_AMOUNT'`).get(); if (row?.value) pointPerAmount = Number(JSON.parse(row.value)) || 10000; } catch {}
+        const earned = Math.floor(finalTotal / pointPerAmount);
+        const newBalance = (customer.current_points || 0) + earned;
+        const newLifetime = (customer.lifetime_points || 0) + earned;
+        const newSpend = (customer.lifetime_spend || 0) + finalTotal;
+        const newVisits = (customer.total_visits || 0) + 1;
+        db.prepare(`UPDATE loyalty_customers SET current_points = ?, lifetime_points = ?, lifetime_spend = ?, total_visits = ?, updated_at = strftime('%s','now') WHERE id = ?`)
+          .run(newBalance, newLifetime, newSpend, newVisits, customer.id);
+        try {
+          db.prepare(`INSERT INTO loyalty_transactions (customer_id, type, points, balance_after, ref_order_id, description, created_by)
+            VALUES (?, 'earn', ?, ?, ?, ?, ?)`)
+            .run(customer.id, earned, newBalance, purchaseId, `Cinema ${(picked || st).start_time || ''} ${seats.length} tiket`, b.cashier_name || 'system');
+        } catch {}
+        loyalty = { customer_id: customer.id, earned, balance: newBalance, tier: customer.current_tier_code, new_member: !customer.lifetime_points };
+      } catch (e) { console.error('[cinema loyalty] err:', e.message); }
+    }
+
     res.json({
       ok: true,
       count: seats.length,
       purchase_id: purchaseId,
-      total: seatsTotal + bundlesTotal,
+      total: finalTotal,
+      gross_total: grossTotal,
       seats_total: seatsTotal,
       bundles_total: bundlesTotal,
+      discount_applied: discountApplied,
       tickets: newTickets,
       bundles: newBundles,
+      loyalty,
     });
   });
 

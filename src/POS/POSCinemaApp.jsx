@@ -845,12 +845,56 @@ function Row({ label, value }) {
 // Submit tickets ke backend SETELAH payment confirmed.
 // ═══════════════════════════════════════════════════════════════════
 function Pay({ picked, saleData, paymentMethod, buyer, cashier, onBack, onPaid }) {
-  const total = saleData.total;
+  const baseTotal = saleData.total;
   const [received, setReceived] = useState(0);
   const [refNo, setRefNo] = useState("");
   const [voucherCode, setVoucherCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+
+  // Apply discount — promo OR voucher dari backend
+  const [discount, setDiscount] = useState({ amount: 0, type: null, code: null, info: null });
+  const [discInput, setDiscInput] = useState("");
+  const [discBusy, setDiscBusy] = useState(false);
+  const total = Math.max(0, baseTotal - (discount.amount || 0));
+
+  const applyCode = async () => {
+    const code = String(discInput || "").trim().toUpperCase();
+    if (!code) { setMsg("⚠ Masukkan kode promo / voucher"); return; }
+    setDiscBusy(true); setMsg("");
+    try {
+      // 1) Coba voucher dulu
+      const vRes = await fetch(`${API_HOST}/api/cinema/vouchers/lookup/${encodeURIComponent(code)}`);
+      const vData = await vRes.json();
+      if (vRes.ok && vData.ok) {
+        const apply = Math.min(vData.value, baseTotal);
+        setDiscount({ amount: apply, type: "voucher", code, info: vData.voucher });
+        setMsg(`✓ Voucher applied · −Rp ${apply.toLocaleString("id-ID")}`);
+        setDiscBusy(false); return;
+      }
+      // 2) Coba promo
+      const pRes = await fetch(`${API_HOST}/api/cinema/promotions/active`);
+      const pData = await pRes.json();
+      const promo = (pData.promotions || []).find(p => (p.code || "").toUpperCase() === code);
+      if (promo) {
+        if (promo.min_purchase > 0 && baseTotal < promo.min_purchase) {
+          setMsg(`⚠ Min purchase Rp ${promo.min_purchase.toLocaleString("id-ID")} belum tercapai`);
+          setDiscBusy(false); return;
+        }
+        let disc = 0;
+        if (promo.discount_type === "percentage") disc = Math.round(baseTotal * promo.discount_value / 100);
+        else disc = Math.round(promo.discount_value);
+        if (promo.max_discount && disc > promo.max_discount) disc = promo.max_discount;
+        disc = Math.min(disc, baseTotal);
+        setDiscount({ amount: disc, type: "promo", code, info: promo });
+        setMsg(`✓ Promo "${promo.name}" applied · −Rp ${disc.toLocaleString("id-ID")}`);
+        setDiscBusy(false); return;
+      }
+      setMsg(`⚠ Kode "${code}" tidak ditemukan (cek voucher/promo aktif)`);
+    } catch (e) { setMsg("⚠ " + e.message); }
+    setDiscBusy(false);
+  };
+  const clearDiscount = () => { setDiscount({ amount: 0, type: null, code: null, info: null }); setDiscInput(""); setMsg(""); };
   const [qrisStarted, setQrisStarted] = useState(false);
   const [qrisData, setQrisData] = useState(null); // { qrUrl, qrString, midtransOrderId, deeplinkUrl }
   const [qrisLoading, setQrisLoading] = useState(false);
@@ -949,12 +993,20 @@ function Pay({ picked, saleData, paymentMethod, buyer, cashier, onBack, onPaid }
           seats: saleData.seats || [],
           bundles: (saleData.bundles || []).map(b => ({ id: b.id, qty: b.qty })),
           buyer: buyer.name ? `${buyer.name}${buyer.phone ? " · " + buyer.phone : ""}` : `Counter sale (${cashier?.name})`,
+          buyer_phone: buyer.phone || null,
+          buyer_email: buyer.email || null,
           email: buyer.email || null,
           payment_method: paymentMethod,
           payment_ref: paymentRef.ref || null,
           cash_received: paymentRef.cashReceived || null,
           cash_change: paymentRef.cashChange || null,
           cashier_name: cashier?.name,
+          // Discount apply — voucher OR promo
+          discount_code: discount?.code || null,
+          discount_amount: discount?.amount || 0,
+          discount_type: discount?.type || null,
+          // Auto-member: kalau ada phone → backend create loyalty customer + earn points
+          auto_member: !!buyer.phone,
         }),
       });
       const d = await res.json();
@@ -1006,12 +1058,55 @@ function Pay({ picked, saleData, paymentMethod, buyer, cashier, onBack, onPaid }
           background: "linear-gradient(135deg, #F59E0B 0%, #fbbf24 50%, #F59E0B 100%)",
           color: "#1a1205",
           boxShadow: "0 8px 32px rgba(245,158,11,0.4), inset 0 1px 0 rgba(255,255,255,0.25)",
-          marginBottom: 20,
+          marginBottom: 14,
         }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase" }}>TOTAL TAGIHAN</div>
-          <div style={{ fontSize: 48, fontWeight: 800, marginTop: 4, letterSpacing: -1, fontFamily: "'Geist Mono',monospace" }}>{rp(total)}</div>
+          {discount.amount > 0 && (
+            <div style={{ fontSize: 12, fontWeight: 700, marginTop: 4, opacity: 0.85, textDecoration: "line-through" }}>{rp(baseTotal)}</div>
+          )}
+          <div style={{ fontSize: 48, fontWeight: 800, marginTop: 2, letterSpacing: -1, fontFamily: "'Geist Mono',monospace" }}>{rp(total)}</div>
+          {discount.amount > 0 && (
+            <div style={{ fontSize: 13, fontWeight: 800, marginTop: 4 }}>🎟️ {discount.type === "voucher" ? "VOUCHER" : "PROMO"} {discount.code} · −{rp(discount.amount)}</div>
+          )}
           <div style={{ fontSize: 13, marginTop: 8, fontWeight: 600 }}>
             🎬 {picked.film_title} · {picked.show_date} {picked.start_time} · {saleData.seats?.length || 0} kursi
+          </div>
+        </div>
+
+        {/* Apply Promo / Voucher + Auto-member Phone */}
+        <div style={{ ...S.cardLarge, padding: 16, marginBottom: 14 }}>
+          <div style={S.subSectionTitle}>🎁 PROMO / VOUCHER + 📱 AUTO-MEMBER</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
+            {/* Promo/Voucher apply */}
+            <div>
+              <div style={{ fontSize: 10, color: TH.dim, letterSpacing: 1.2, fontFamily: "'Geist Mono',monospace", marginBottom: 5 }}>KODE PROMO / VOUCHER</div>
+              {!discount.code ? (
+                <div style={{ display: "flex", gap: 6 }}>
+                  <input value={discInput} onChange={e => setDiscInput(e.target.value.toUpperCase())} placeholder="VCH-XXX atau MOVIE10"
+                    onKeyDown={e => e.key === "Enter" && applyCode()}
+                    style={{ ...S.input, flex: 1, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }} />
+                  <button onClick={applyCode} disabled={discBusy || !discInput} style={{ background: "linear-gradient(135deg,#a855f7,#c084fc)", border: "none", color: "#fff", borderRadius: 8, padding: "9px 14px", fontSize: 12, fontWeight: 800, cursor: discBusy ? "wait" : "pointer", fontFamily: "inherit" }}>{discBusy ? "..." : "Apply"}</button>
+                </div>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 12px", background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.4)", borderRadius: 8 }}>
+                  <span style={{ fontSize: 18 }}>🎟️</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: "#c084fc", fontFamily: "'Geist Mono',monospace" }}>{discount.code}</div>
+                    <div style={{ fontSize: 11, color: TH.green, fontWeight: 700 }}>−{rp(discount.amount)}</div>
+                  </div>
+                  <button onClick={clearDiscount} style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5", borderRadius: 6, padding: "5px 9px", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+                </div>
+              )}
+            </div>
+            {/* Auto-member */}
+            <div>
+              <div style={{ fontSize: 10, color: TH.dim, letterSpacing: 1.2, fontFamily: "'Geist Mono',monospace", marginBottom: 5 }}>📱 NOMOR WA (auto-member + earn points)</div>
+              <input value={buyer.phone || ""} readOnly placeholder="Isi di step Concession atau Sell"
+                style={{ ...S.input, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700, opacity: buyer.phone ? 1 : 0.6 }} />
+              <div style={{ fontSize: 10, color: buyer.phone ? TH.green : TH.dim, marginTop: 4, fontWeight: 700 }}>
+                {buyer.phone ? `✓ Customer auto-register member + earn points` : "Tanpa phone: tetap bisa bayar, gak earn points"}
+              </div>
+            </div>
           </div>
         </div>
 
