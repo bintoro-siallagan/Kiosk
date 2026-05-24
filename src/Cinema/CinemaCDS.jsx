@@ -24,6 +24,8 @@ const PAYMENT_COLOR = { cash: "#10b981", qris: "#22d3ee", debit: "#a855f7", vouc
 export default function CinemaCDS() {
   const [state, setState] = useState({ stage: "idle" });
   const [showtimes, setShowtimes] = useState([]); // today rotating
+  const [promos, setPromos] = useState([]); // active promotions untuk display
+  const [promoIdx, setPromoIdx] = useState(0); // carousel index untuk multi-promo
   const [now, setNow] = useState(new Date());
   const [branding, setBranding] = useState({ bgUrl: "", idleText: "" }); // custom CDS branding
   const wsRef = useRef(null);
@@ -85,6 +87,21 @@ export default function CinemaCDS() {
   useEffect(() => {
     fetch(`${API_HOST}/api/cinema/cds/state`).then(r => r.json()).then(setState).catch(() => {});
   }, []);
+
+  // Fetch active promotions + carousel (rotate tiap 8 detik kalau multi)
+  useEffect(() => {
+    const load = () => fetch(`${API_HOST}/api/cinema/promotions/active`).then(r => r.json())
+      .then(d => setPromos(d.promotions || [])).catch(() => {});
+    load();
+    const refresh = setInterval(load, 5 * 60 * 1000); // 5 menit refresh
+    return () => clearInterval(refresh);
+  }, []);
+
+  useEffect(() => {
+    if (promos.length <= 1) return;
+    const id = setInterval(() => setPromoIdx(i => (i + 1) % promos.length), 8000);
+    return () => clearInterval(id);
+  }, [promos.length]);
 
   // Auto-refresh showtimes tiap 30 detik (untuk update sold/availability di idle stage)
   useEffect(() => {
@@ -324,6 +341,9 @@ export default function CinemaCDS() {
           <div style={{ fontSize: 14, color: branding.bgUrl ? "#e6edf3" : "#9ca3af", maxWidth: 640, lineHeight: 1.5, margin: 0, textShadow: branding.bgUrl ? "0 1px 6px rgba(0,0,0,0.8)" : "none" }}>{branding.idleText || "Silakan pilih film & jadwal di counter — kasir akan bantu pesanan Anda"}</div>
         </div>
 
+        {/* PROMO BANNER — carousel kalau ada beberapa promo */}
+        {promos.length > 0 && <PromoBanner promo={promos[promoIdx]} count={promos.length} idx={promoIdx} />}
+
         {/* TODAY'S SCHEDULE GRID */}
         <div style={{ background: "linear-gradient(180deg, rgba(168,85,247,0.06), rgba(168,85,247,0.02))", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 16, padding: 20, boxShadow: "0 16px 48px rgba(0,0,0,0.3)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
@@ -429,6 +449,46 @@ function Shell({ children, now, outlet, bgUrl }) {
         </div>
       </div>
       <div style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>{children}</div>
+    </div>
+  );
+}
+
+// PromoBanner — display active promo di CDS idle stage (carousel kalau multi)
+function PromoBanner({ promo, count, idx }) {
+  if (!promo) return null;
+  const isPercent = promo.discount_type === "percentage";
+  return (
+    <div style={{
+      background: "linear-gradient(135deg, rgba(245,158,11,0.18), rgba(251,191,36,0.05))",
+      border: "1px solid rgba(245,158,11,0.45)",
+      borderRadius: 16, padding: "16px 22px",
+      boxShadow: "0 8px 32px rgba(245,158,11,0.15)",
+      display: "flex", gap: 16, alignItems: "center", flexWrap: "wrap",
+    }}>
+      <div style={{ fontSize: 44, lineHeight: 1, filter: "drop-shadow(0 0 16px rgba(245,158,11,0.5))" }}>🎁</div>
+      <div style={{ flex: 1, minWidth: 240 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ fontSize: 11, color: "#fbbf24", letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>PROMO BERLAKU HARI INI</div>
+          {count > 1 && <span style={{ fontSize: 10, color: "#9ca3af", fontFamily: "'Geist Mono',monospace" }}>{idx + 1}/{count}</span>}
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginTop: 4, letterSpacing: -0.5, lineHeight: 1.2 }}>{promo.name}</div>
+        {promo.description && <div style={{ fontSize: 13, color: "#cbd5e1", marginTop: 4, lineHeight: 1.4 }}>{promo.description}</div>}
+        {promo.code && <div style={{ display: "inline-block", marginTop: 8, padding: "4px 12px", background: "rgba(0,0,0,0.4)", border: "1px solid rgba(245,158,11,0.4)", borderRadius: 6, color: "#fbbf24", fontFamily: "'Geist Mono',monospace", fontSize: 13, fontWeight: 800, letterSpacing: 1.5 }}>KODE: {promo.code}</div>}
+      </div>
+      <div style={{ textAlign: "center", padding: "10px 18px", background: "linear-gradient(135deg,#f59e0b,#fbbf24)", borderRadius: 12, color: "#1a1205", minWidth: 120, boxShadow: "0 4px 16px rgba(245,158,11,0.3)" }}>
+        <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace" }}>DISCOUNT</div>
+        <div style={{ fontSize: 28, fontWeight: 900, fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5, lineHeight: 1, marginTop: 2 }}>
+          {isPercent ? `${promo.discount_value}%` : `Rp ${Math.round(promo.discount_value / 1000)}rb`}
+        </div>
+        {promo.min_purchase > 0 && <div style={{ fontSize: 9, marginTop: 2, opacity: 0.8 }}>min Rp {Math.round(promo.min_purchase / 1000)}rb</div>}
+      </div>
+      {count > 1 && (
+        <div style={{ width: "100%", display: "flex", gap: 4, justifyContent: "center", marginTop: 4 }}>
+          {Array.from({ length: count }).map((_, i) => (
+            <span key={i} style={{ width: 6, height: 6, borderRadius: 999, background: i === idx ? "#fbbf24" : "rgba(255,255,255,0.2)" }} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1464,6 +1464,29 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: true, refunded, swaps, voids });
   });
 
+  // GET /tickets/lookup/:code — public read-only ticket info (untuk digital ticket page)
+  // Customer terima link /?ticket=CODE → page tampil QR + info
+  router.get('/tickets/lookup/:code', (req, res) => {
+    const code = String(req.params.code || '').trim().toUpperCase();
+    if (!code) return res.status(400).json({ error: 'code wajib' });
+    const t = db.prepare(`
+      SELECT t.id, t.code, t.seat, t.price, t.checked_in_at, t.sold_at, t.payment_status,
+             s.show_date, s.start_time, s.format,
+             f.title AS film_title, f.duration_min, f.rating, f.poster_url,
+             st.name AS studio_name, st.outlet
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE t.code = ?
+    `).get(code);
+    if (!t) return res.status(404).json({ ok: false, error: 'Tiket tidak ditemukan' });
+    if (t.payment_status === 'refunded') {
+      return res.json({ ok: false, refunded: true, ticket: t, message: 'Tiket sudah di-refund' });
+    }
+    res.json({ ok: true, ticket: t });
+  });
+
   // POST /tickets/manual-checkin — offline mode: usher input ticket code manual
   router.post('/tickets/manual-checkin', (req, res) => {
     const code = String(req.body?.code || '').trim().toUpperCase();
@@ -2765,6 +2788,25 @@ function setupCinema(app, opts = {}) {
   });
 
   // ── PROMOTIONS / PROMO CODES ──────────────────────────────────────────
+  // GET /promotions/active — promo lagi jalan untuk display di CDS/Kiosk (customer-facing)
+  // Filter is_active=1 AND valid_from <= today <= valid_to AND quota not exceeded
+  router.get('/promotions/active', (req, res) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const rows = db.prepare(`
+      SELECT id, code, name, description, promo_type, discount_type, discount_value,
+             min_purchase, max_discount, bank_name, valid_from, valid_to,
+             max_redemptions, redemption_count
+      FROM cinema_promotions
+      WHERE is_active = 1
+        AND (valid_from IS NULL OR valid_from <= ?)
+        AND (valid_to IS NULL OR valid_to >= ?)
+        AND (max_redemptions IS NULL OR redemption_count < max_redemptions)
+      ORDER BY id DESC
+      LIMIT 20
+    `).all(today, today);
+    res.json({ promotions: rows, today });
+  });
+
   router.get('/promotions', (req, res) => {
     const all = String(req.query.all || '') === '1';
     const sql = all

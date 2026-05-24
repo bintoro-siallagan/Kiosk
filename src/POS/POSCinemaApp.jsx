@@ -1251,8 +1251,26 @@ function Success({ sale, onAnother }) {
         </div>
 
         {/* Actions */}
-        <div className="no-print" style={{ display: "flex", gap: 10, marginTop: 26, justifyContent: "center" }}>
-          <button onClick={() => window.print()} className="ghost-btn" style={S.ghostBtn}>🖨️ Cetak Tiket</button>
+        <div className="no-print" style={{ display: "flex", gap: 10, marginTop: 26, justifyContent: "center", flexWrap: "wrap" }}>
+          <button onClick={() => window.print()} className="ghost-btn" style={S.ghostBtn} title="Print A4 standard (preview muncul kecuali Chrome --kiosk-printing flag)">🖨️ Cetak A4</button>
+          <button onClick={() => {
+            // Auto-print thermal mode tiap tiket di window terpisah (silent kalau --kiosk-printing)
+            tickets.forEach((t, i) => {
+              setTimeout(() => {
+                window.open(`${window.location.origin}/?ticket=${encodeURIComponent(t.code)}&print=1&thermal=1`, `print_${t.code}`, "width=400,height=600");
+              }, i * 600);
+            });
+          }} style={{ ...S.ghostBtn, background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.4)", color: "#22d3ee" }} title="Auto-print untuk thermal printer 80mm (Epson TM-T82, dll)">🖨️ Print Thermal</button>
+          <button onClick={() => {
+            // Kirim digital ticket via WA (input phone customer)
+            const phone = prompt("Nomor WA customer (e.g. 081234567890):");
+            if (!phone) return;
+            const wa = phone.replace(/^0/, "62").replace(/\D/g, "");
+            // Build link per tiket + compose message
+            const ticketLinks = tickets.map(t => `${window.location.origin}/?ticket=${encodeURIComponent(t.code)}`);
+            const msg = `🎬 *Tiket ${sale.picked?.film_title}*\n\n📅 ${sale.picked?.show_date} ${sale.picked?.start_time}\n🏛️ ${sale.picked?.studio_name}\n\nLink tiket digital (klik untuk lihat QR):\n${ticketLinks.map((l, i) => `${i + 1}. ${l}`).join("\n")}\n\nTunjukkan QR ke usher di pintu studio. Terima kasih 🎬`;
+            window.open(`https://wa.me/${wa}?text=${encodeURIComponent(msg)}`, "_blank");
+          }} style={{ ...S.ghostBtn, background: "rgba(37,211,102,0.1)", border: "1px solid rgba(37,211,102,0.4)", color: "#25D366" }} title="Kirim tiket digital ke HP customer via WA — fallback kalau printer rusak">📱 Kirim WA</button>
           <button onClick={onAnother} className="primary-btn" style={S.primaryBtn}>✓ Transaksi Baru</button>
         </div>
       </div>
