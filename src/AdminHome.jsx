@@ -491,6 +491,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
               .map(t => ({ _k: "m:" + t.id, label: t.label, on: () => openRight("tools", t.id) }))
           : toolsSub },
       { label: "Management", icon: "📊", c: "#3b82f6", on: () => openRight("command") },
+      { label: "👥 Manajemen Pengguna", icon: "👥", c: "#a855f7", on: () => openRight("tools", "admin_users") },
     ] },
   ];
 

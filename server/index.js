@@ -2594,7 +2594,15 @@ app.get("/api/auth/me", (req, res) => {
 });
 
 app.get("/api/auth/users", (req, res) => {
-  res.json(adminUsers.map(u => ({ ...u, pin: "••••••" })));
+  adminUsers = db.loadAllAdminUsers();
+  const now = Date.now();
+  res.json(adminUsers.map(u => ({
+    ...u, pin: "••••••",
+    password_hash: undefined, password_salt: undefined,
+    is_locked: !!(u.locked_until && u.locked_until > now),
+    locked_until_ms: u.locked_until || null,
+    lock_remaining_min: u.locked_until && u.locked_until > now ? Math.ceil((u.locked_until - now) / 60000) : 0,
+  })));
 });
 
 app.post("/api/auth/users", (req, res) => {
@@ -2616,6 +2624,29 @@ app.patch("/api/auth/users/:id", (req, res) => {
   if (role) adminUsers[idx].role = role;
   if (active !== undefined) adminUsers[idx].active = Boolean(active);
   res.json({ ...adminUsers[idx], pin: "••••••" });
+});
+
+// Unlock a locked account — clears failed_login_count + locked_until.
+// Super-admin operation (anti-DoS recovery without SSH).
+app.post("/api/auth/users/:id/unlock", (req, res) => {
+  adminUsers = db.loadAllAdminUsers();
+  const user = adminUsers.find(u => u.id === req.params.id);
+  if (!user) return res.status(404).json({ error: "User not found" });
+  db.insertAdminUser({ ...user, failed_login_count: 0, locked_until: null });
+  adminUsers = db.loadAllAdminUsers();
+  db.logLoginAttempt({ user_id: user.id, username: user.username || user.name, method: "unlock", success: 1, error: "admin unlock" });
+  res.json({ ok: true, unlocked: user.id, name: user.name });
+});
+
+// Unlock ALL locked accounts at once — emergency button.
+app.post("/api/auth/users/unlock-all", (req, res) => {
+  adminUsers = db.loadAllAdminUsers();
+  const locked = adminUsers.filter(u => u.locked_until || u.failed_login_count > 0);
+  for (const u of locked) {
+    db.insertAdminUser({ ...u, failed_login_count: 0, locked_until: null });
+  }
+  adminUsers = db.loadAllAdminUsers();
+  res.json({ ok: true, unlocked_count: locked.length, unlocked: locked.map(u => u.name) });
 });
 
 // ─── TABLE / MEJA MANAGEMENT ─────────────────────────────────────────────────
