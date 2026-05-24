@@ -71,8 +71,9 @@ export default function CinemaFeedback() {
           <div style={{ fontSize: 80, marginBottom: 14, filter: "drop-shadow(0 0 24px rgba(251,191,36,0.4))" }}>✨</div>
           <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", marginBottom: 8 }}>Terima Kasih!</div>
           <div style={{ fontSize: 14, color: "#cbd5e1", marginBottom: 24, lineHeight: 1.5 }}>
-            Rating Anda <b style={{ color: "#fbbf24" }}>{rating}★</b> sudah kami terima.<br/>
-            Selamat menikmati filmnya 🍿
+            {rating > 0 && <>Film: <b style={{ color: "#fbbf24" }}>{rating}★</b><br/></>}
+            {cashierRating > 0 && <>Kasir {cashierName}: <b style={{ color: "#22d3ee" }}>{cashierRating}★</b><br/></>}
+            Sudah kami terima. Selamat menikmati filmnya 🍿
           </div>
           <div style={{ padding: 16, background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 12, fontSize: 12, color: "#c084fc", lineHeight: 1.5 }}>
             💡 Tunjukkan kepada staff untuk dapat 1× voucher F&B gratis untuk pembelian berikutnya
@@ -145,18 +146,27 @@ export default function CinemaFeedback() {
 
         {error && <div style={{ padding: "10px 14px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, color: "#fca5a5", fontSize: 13, marginBottom: 14 }}>⚠ {error}</div>}
 
-        <button onClick={submit} disabled={!rating || submitting}
-          style={{
-            width: "100%", padding: "16px 24px",
-            background: rating ? "linear-gradient(135deg,#fbbf24,#f59e0b)" : "rgba(255,255,255,0.06)",
-            border: "none", borderRadius: 14, color: rating ? "#1a1205" : "rgba(255,255,255,0.4)",
-            fontSize: 16, fontWeight: 900, fontFamily: "inherit", letterSpacing: 0.5,
-            cursor: rating && !submitting ? "pointer" : "not-allowed",
-            boxShadow: rating ? "0 8px 24px rgba(251,191,36,0.3), inset 0 1px 0 rgba(255,255,255,0.25)" : "none",
-            transition: "transform 0.15s ease, filter 0.15s ease",
-          }}>
-          {submitting ? "⏳ Mengirim..." : rating ? `Kirim Rating ${rating}★` : "Pilih bintang dulu"}
-        </button>
+        {(() => {
+          const hasAny = rating > 0 || cashierRating > 0;
+          const label = submitting
+            ? "⏳ Mengirim..."
+            : !hasAny ? "Pilih bintang dulu"
+            : rating && cashierRating ? `Kirim Rating Film ${rating}★ + Kasir ${cashierRating}★`
+            : rating ? `Kirim Rating Film ${rating}★`
+            : `Kirim Rating Kasir ${cashierRating}★`;
+          return (
+            <button onClick={submit} disabled={!hasAny || submitting}
+              style={{
+                width: "100%", padding: "16px 24px",
+                background: hasAny ? "linear-gradient(135deg,#fbbf24,#f59e0b)" : "rgba(255,255,255,0.06)",
+                border: "none", borderRadius: 14, color: hasAny ? "#1a1205" : "rgba(255,255,255,0.4)",
+                fontSize: 15, fontWeight: 900, fontFamily: "inherit", letterSpacing: 0.5,
+                cursor: hasAny && !submitting ? "pointer" : "not-allowed",
+                boxShadow: hasAny ? "0 8px 24px rgba(251,191,36,0.3), inset 0 1px 0 rgba(255,255,255,0.25)" : "none",
+                transition: "transform 0.15s ease, filter 0.15s ease",
+              }}>{label}</button>
+          );
+        })()}
 
         <div style={{ marginTop: 18, padding: 12, background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 10, fontSize: 11, color: "#9ca3af", lineHeight: 1.55, textAlign: "center" }}>
           🔒 Feedback Anda anonymous & disimpan untuk improvement kami
