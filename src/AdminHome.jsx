@@ -456,6 +456,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "Lobby Board (TV)",        icon: "📺", c: "#22d3ee", on: () => openTab("?cinema-board") },
       { label: "📊 Dashboard Reporting",  icon: "📊", c: "#a855f7", on: () => openRight("tools", "cinema_dashboard") },
       { label: "🚨 Emergency Ops",         icon: "🚨", c: "#ef4444", on: () => openRight("tools", "cinema_emergency") },
+      { label: "🧾 Daily Closing Report",  icon: "🧾", c: "#fbbf24", on: () => openRight("tools", "cinema_closing") },
       { label: "Command Center",          icon: "🎬", c: "#a855f7", on: () => openRight("tools", "cinema_command_center") },
       { label: "Box Office",              icon: "🎬", c: "#10b981", on: () => openRight("tools", "cinema_box_office") },
       { label: "Ticketing",               icon: "🎟️", c: "#10b981", on: () => openRight("tools", "cinema_ticketing") },

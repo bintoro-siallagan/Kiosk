@@ -895,6 +895,24 @@ function Pay({ picked, saleData, paymentMethod, buyer, cashier, onBack, onPaid }
     setDiscBusy(false);
   };
   const clearDiscount = () => { setDiscount({ amount: 0, type: null, code: null, info: null }); setDiscInput(""); setMsg(""); };
+
+  // Active promos — quick-apply chips di Pay panel
+  const [activePromos, setActivePromos] = useState([]);
+  useEffect(() => {
+    fetch(`${API_HOST}/api/cinema/promotions/active`).then(r => r.json())
+      .then(d => setActivePromos(d.promotions || [])).catch(() => {});
+  }, []);
+  const applyPromoChip = (p) => {
+    if (p.min_purchase > 0 && baseTotal < p.min_purchase) {
+      setMsg(`⚠ "${p.name}" butuh min Rp ${p.min_purchase.toLocaleString("id-ID")} (current ${rp(baseTotal)})`);
+      return;
+    }
+    let disc = p.discount_type === "percentage" ? Math.round(baseTotal * p.discount_value / 100) : Math.round(p.discount_value);
+    if (p.max_discount && disc > p.max_discount) disc = p.max_discount;
+    disc = Math.min(disc, baseTotal);
+    setDiscount({ amount: disc, type: "promo", code: p.code || p.name, info: p });
+    setMsg(`✓ Promo "${p.name}" applied · −${rp(disc)}`);
+  };
   const [qrisStarted, setQrisStarted] = useState(false);
   const [qrisData, setQrisData] = useState(null); // { qrUrl, qrString, midtransOrderId, deeplinkUrl }
   const [qrisLoading, setQrisLoading] = useState(false);
@@ -1073,9 +1091,53 @@ function Pay({ picked, saleData, paymentMethod, buyer, cashier, onBack, onPaid }
           </div>
         </div>
 
+        {/* Quick Promo Chips — list aktif yg langsung clickable */}
+        {activePromos.length > 0 && !discount.code && (
+          <div style={{ ...S.cardLarge, padding: 14, marginBottom: 10, background: "linear-gradient(180deg, rgba(245,158,11,0.06), rgba(245,158,11,0.02))", border: "1px solid rgba(245,158,11,0.3)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: "#fbbf24", letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>🎁 PROMO AKTIF — KLIK UNTUK APPLY</div>
+              <div style={{ fontSize: 10, color: TH.dim, fontFamily: "'Geist Mono',monospace" }}>{activePromos.length} promo</div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 8 }}>
+              {activePromos.map(p => {
+                const isPercent = p.discount_type === "percentage";
+                const minOk = !p.min_purchase || baseTotal >= p.min_purchase;
+                return (
+                  <button key={p.id} onClick={() => applyPromoChip(p)} disabled={!minOk}
+                    style={{
+                      padding: "10px 14px", borderRadius: 10,
+                      background: minOk ? "rgba(245,158,11,0.1)" : "rgba(255,255,255,0.03)",
+                      border: minOk ? "1px solid rgba(245,158,11,0.4)" : "1px solid rgba(255,255,255,0.05)",
+                      color: minOk ? "#fff" : TH.dim,
+                      cursor: minOk ? "pointer" : "not-allowed",
+                      textAlign: "left", fontFamily: "inherit",
+                      transition: "all 0.15s",
+                    }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12.5, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+                        {p.code && <div style={{ fontSize: 10, color: "#fbbf24", fontFamily: "'Geist Mono',monospace", letterSpacing: 0.8, fontWeight: 700 }}>{p.code}</div>}
+                      </div>
+                      <div style={{ fontSize: 13, fontWeight: 900, color: minOk ? "#fbbf24" : TH.dim, fontFamily: "'Geist Mono',monospace" }}>
+                        −{isPercent ? `${p.discount_value}%` : `${Math.round(p.discount_value / 1000)}rb`}
+                      </div>
+                    </div>
+                    {p.min_purchase > 0 && (
+                      <div style={{ fontSize: 10, color: minOk ? TH.green : "#ef4444", marginTop: 4 }}>
+                        {minOk ? "✓ " : "⚠ "} min Rp {Math.round(p.min_purchase / 1000)}rb
+                      </div>
+                    )}
+                    {p.description && <div style={{ fontSize: 10, color: TH.sub, marginTop: 4, lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{p.description}</div>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Apply Promo / Voucher + Auto-member Phone */}
         <div style={{ ...S.cardLarge, padding: 16, marginBottom: 14 }}>
-          <div style={S.subSectionTitle}>🎁 PROMO / VOUCHER + 📱 AUTO-MEMBER</div>
+          <div style={S.subSectionTitle}>🎁 INPUT KODE MANUAL (voucher) + 📱 AUTO-MEMBER</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }}>
             {/* Promo/Voucher apply */}
             <div>

@@ -1102,6 +1102,132 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // ── CLOSING REPORT — Z-report end of day per outlet ──
+  // GET /api/cinema/closing-report?date=YYYY-MM-DD&outlet=XXX
+  // Aggregate semua aktivitas hari itu, print-friendly + email HQ
+  router.get('/closing-report', (req, res) => {
+    const date = String(req.query.date || new Date().toISOString().slice(0, 10));
+    const outletFilter = String(req.query.outlet || '').trim();
+    const outletWhere = outletFilter ? `AND st.outlet = '${outletFilter.replace(/'/g, "''")}'` : '';
+
+    // Date range — start dan end seconds dari date
+    const startSec = Math.floor(new Date(date + 'T00:00:00').getTime() / 1000);
+    const endSec = startSec + 86400;
+
+    // 1. Revenue summary
+    const summary = db.prepare(`
+      SELECT
+        COUNT(t.id) AS tickets_sold,
+        COALESCE(SUM(t.price), 0) AS gross_revenue,
+        COUNT(DISTINCT t.purchase_id) AS transactions,
+        COUNT(CASE WHEN t.payment_status = 'refunded' THEN 1 END) AS refunded_tickets,
+        COALESCE(SUM(CASE WHEN t.payment_status = 'refunded' THEN t.price ELSE 0 END), 0) AS refunded_amount
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE t.sold_at BETWEEN ? AND ? ${outletWhere}
+    `).get(startSec, endSec);
+
+    // 2. Per payment method
+    const byMethod = db.prepare(`
+      SELECT COALESCE(t.payment_method, 'unknown') AS method,
+             COUNT(*) AS count, COALESCE(SUM(t.price), 0) AS amount
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE t.sold_at BETWEEN ? AND ? AND COALESCE(t.payment_status, '') != 'refunded' ${outletWhere}
+      GROUP BY method ORDER BY amount DESC
+    `).all(startSec, endSec);
+
+    // 3. Per showtime/film occupancy
+    const showtimes = db.prepare(`
+      SELECT s.id, s.show_date, s.start_time, s.price,
+             f.title AS film_title, st.name AS studio_name, st.outlet,
+             (st.rows * st.cols) AS capacity,
+             (SELECT COUNT(*) FROM cinema_tickets WHERE showtime_id = s.id AND COALESCE(payment_status,'') != 'refunded') AS sold,
+             (SELECT COALESCE(SUM(price),0) FROM cinema_tickets WHERE showtime_id = s.id AND COALESCE(payment_status,'') != 'refunded') AS revenue
+      FROM cinema_showtimes s
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE s.show_date = ? ${outletWhere}
+      ORDER BY s.start_time
+    `).all(date);
+
+    // 4. F&B bundles
+    const bundles = db.prepare(`
+      SELECT pb.bundle_name, COUNT(*) AS sold, COALESCE(SUM(pb.qty * pb.price), 0) AS revenue
+      FROM cinema_purchase_bundles pb
+      WHERE pb.created_at BETWEEN ? AND ?
+      GROUP BY pb.bundle_name ORDER BY revenue DESC
+    `).all(startSec, endSec);
+    const bundlesRevenue = bundles.reduce((s, b) => s + b.revenue, 0);
+
+    // 5. Voucher used + issued
+    let vouchersUsed = { count: 0, amount: 0 };
+    let vouchersIssued = { count: 0, amount: 0 };
+    try {
+      const u = db.prepare(`SELECT COUNT(*) c, COALESCE(SUM(applied_amount),0) a FROM cinema_vouchers WHERE used_at BETWEEN ? AND ?`).get(startSec, endSec);
+      vouchersUsed = { count: u.c || 0, amount: u.a || 0 };
+      const i = db.prepare(`SELECT COUNT(*) c, COALESCE(SUM(value),0) a FROM cinema_vouchers WHERE created_at BETWEEN ? AND ?`).get(startSec, endSec);
+      vouchersIssued = { count: i.c || 0, amount: i.a || 0 };
+    } catch {}
+
+    // 6. Promo redemptions
+    let promosUsed = { count: 0, amount: 0 };
+    try {
+      const p = db.prepare(`SELECT COUNT(*) c, COALESCE(SUM(discount_amount),0) a FROM cinema_promo_redemptions WHERE applied_at BETWEEN ? AND ?`).get(startSec, endSec);
+      promosUsed = { count: p.c || 0, amount: p.a || 0 };
+    } catch {}
+
+    // 7. Incidents hari itu
+    let incidents = [];
+    try {
+      incidents = db.prepare(`
+        SELECT * FROM cinema_incidents WHERE created_at BETWEEN ? AND ? ${outletFilter ? `AND outlet = '${outletFilter.replace(/'/g, "''")}'` : ''}
+        ORDER BY created_at DESC
+      `).all(startSec, endSec);
+    } catch {}
+
+    // 8. Cashier sessions (kalau ada)
+    let cashiers = [];
+    try {
+      cashiers = db.prepare(`
+        SELECT t.cashier_name AS name, COUNT(*) AS tickets, COALESCE(SUM(t.price), 0) AS revenue
+        FROM cinema_tickets t
+        LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+        LEFT JOIN cinema_studios st ON st.id = s.studio_id
+        WHERE t.sold_at BETWEEN ? AND ? AND t.cashier_name IS NOT NULL ${outletWhere}
+        GROUP BY t.cashier_name ORDER BY revenue DESC
+      `).all(startSec, endSec);
+    } catch {}
+
+    const totalOccupied = showtimes.reduce((s, x) => s + (x.sold || 0), 0);
+    const totalCapacity = showtimes.reduce((s, x) => s + (x.capacity || 0), 0);
+    const avgOccupancy = totalCapacity > 0 ? Math.round((totalOccupied / totalCapacity) * 100) : 0;
+    const netRevenue = (summary.gross_revenue || 0) - (summary.refunded_amount || 0) - (vouchersUsed.amount || 0) - (promosUsed.amount || 0);
+
+    res.json({
+      date, outlet: outletFilter || null,
+      generated_at: Math.floor(Date.now() / 1000),
+      summary: {
+        ...summary,
+        gross_revenue: summary.gross_revenue || 0,
+        fb_revenue: bundlesRevenue,
+        total_revenue: (summary.gross_revenue || 0) + bundlesRevenue,
+        net_revenue: netRevenue + bundlesRevenue,
+        avg_occupancy_pct: avgOccupancy,
+        showtimes_count: showtimes.length,
+      },
+      payment_methods: byMethod,
+      showtimes,
+      bundles,
+      vouchers: { used: vouchersUsed, issued: vouchersIssued },
+      promos: promosUsed,
+      incidents,
+      cashiers,
+    });
+  });
+
   // ── VOUCHERS — refund as voucher (preserve revenue, customer come back) ──
   try {
     db.exec(`CREATE TABLE IF NOT EXISTS cinema_vouchers (
