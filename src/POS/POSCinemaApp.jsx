@@ -281,38 +281,6 @@ export default function POSCinemaApp() {
             >
               <span style={{ fontSize: 18 }}>📺</span> Buka Layar Pelanggan
             </button>
-
-            {/* Switch ke POS F&B — single shared cashier session, bisa jual makanan/minuman */}
-            <button
-              onClick={() => {
-                const outlet = new URLSearchParams(window.location.search).get("outlet") || "";
-                window.location.href = `?pos=1${outlet ? `&outlet=${outlet}` : ""}`;
-              }}
-              title="Switch ke POS F&B (jual makanan/minuman) — session kasir tetap kebawa"
-              style={{
-                position: "fixed",
-                bottom: 28, right: 28,
-                zIndex: 1000,
-                padding: "14px 22px",
-                background: "rgba(249,115,22,0.1)",
-                color: "#fb923c",
-                border: "2px solid #f97316",
-                borderRadius: 100,
-                fontWeight: 800, fontSize: 14, letterSpacing: 0.5,
-                fontFamily: "inherit",
-                cursor: "pointer",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.4), 0 0 0 4px rgba(249,115,22,0.1)",
-                display: "flex", alignItems: "center", gap: 10,
-                backdropFilter: "blur(8px)",
-                transition: "all 0.2s ease",
-                whiteSpace: "nowrap",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "#f97316"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(249,115,22,0.1)"; e.currentTarget.style.color = "#fb923c"; e.currentTarget.style.transform = "translateY(0)"; }}
-            >
-              <span style={{ fontSize: 18 }}>🍽️</span> Switch ke POS F&B
-            </button>
-
             <HelpButton helpKey="pos-cinema" position="bottom-right" />
           </>
         )}
