@@ -1102,6 +1102,58 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // ── INCIDENTS — incident log untuk operational alerts (HQ visibility) ──
+  try {
+    db.exec(`CREATE TABLE IF NOT EXISTS cinema_incidents (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type TEXT NOT NULL,
+      severity TEXT DEFAULT 'medium',
+      outlet TEXT,
+      showtime_id INTEGER,
+      reason TEXT,
+      reported_by TEXT,
+      tickets_affected INTEGER DEFAULT 0,
+      refunded_amount INTEGER DEFAULT 0,
+      acknowledged_at INTEGER,
+      acknowledged_by TEXT,
+      resolved_at INTEGER,
+      resolved_by TEXT,
+      created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+    )`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_incidents_outlet ON cinema_incidents(outlet)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_incidents_unresolved ON cinema_incidents(resolved_at)`);
+  } catch {}
+
+  router.get('/incidents', (req, res) => {
+    const onlyOpen = String(req.query.open || '0') === '1';
+    const since = req.query.since ? parseInt(req.query.since, 10) : (Math.floor(Date.now()/1000) - 30 * 86400);
+    let sql = `
+      SELECT i.*, s.show_date, s.start_time, f.title AS film_title, st.name AS studio_name
+      FROM cinema_incidents i
+      LEFT JOIN cinema_showtimes s ON s.id = i.showtime_id
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE i.created_at > ?
+    `;
+    if (onlyOpen) sql += ` AND i.resolved_at IS NULL`;
+    sql += ` ORDER BY i.created_at DESC LIMIT 100`;
+    res.json({ incidents: db.prepare(sql).all(since) });
+  });
+
+  router.post('/incidents/:id/acknowledge', (req, res) => {
+    const by = String(req.body?.by || 'manager');
+    const now = Math.floor(Date.now() / 1000);
+    db.prepare(`UPDATE cinema_incidents SET acknowledged_at = ?, acknowledged_by = ? WHERE id = ?`).run(now, by, req.params.id);
+    res.json({ ok: true });
+  });
+
+  router.post('/incidents/:id/resolve', (req, res) => {
+    const by = String(req.body?.by || 'manager');
+    const now = Math.floor(Date.now() / 1000);
+    db.prepare(`UPDATE cinema_incidents SET resolved_at = ?, resolved_by = ? WHERE id = ?`).run(now, by, req.params.id);
+    res.json({ ok: true });
+  });
+
   // ── EMERGENCY CLOSE — listrik mati, gangguan teknis, force majeure ──
   // POST /showtimes/:id/emergency-close { reason, manager_name, refund_all=true, notify=true }
   // Atomic: close showtime + mark all tickets refunded + audit trail
@@ -1156,12 +1208,37 @@ function setupCinema(app, opts = {}) {
       }
     })();
 
-    // 3) Broadcast WS untuk refresh CDS/Kiosk/POS terminal di outlet
+    // 3) Buat incident record untuk HQ alert
+    let incidentId = null;
+    try {
+      const studio = db.prepare(`SELECT outlet FROM cinema_studios WHERE id = ?`).get(s.studio_id);
+      const info = db.prepare(`INSERT INTO cinema_incidents
+        (type, severity, outlet, showtime_id, reason, reported_by, tickets_affected, refunded_amount)
+        VALUES (?,?,?,?,?,?,?,?)`)
+        .run('emergency_close', tickets.length > 10 ? 'critical' : tickets.length > 0 ? 'high' : 'medium',
+             studio?.outlet || null, parseInt(req.params.id, 10),
+             reason, by, tickets.length, refundedAmount);
+      incidentId = info.lastInsertRowid;
+    } catch (e) { console.error('[cinema incident] err:', e.message); }
+
+    // 4) Broadcast WS untuk refresh + ALERT push ke HQ dashboard
     try {
       if (typeof opts.broadcast === 'function') {
         opts.broadcast('cinema:emergency_close', {
           showtime_id: parseInt(req.params.id, 10),
           reason, by, refunded_count: refundedCount, refunded_amount: refundedAmount,
+        });
+        // HQ alert — owner dashboard akan tampil notification badge
+        opts.broadcast('cinema:incident', {
+          id: incidentId,
+          type: 'emergency_close',
+          severity: tickets.length > 10 ? 'critical' : 'high',
+          outlet: (db.prepare(`SELECT outlet FROM cinema_studios WHERE id = ?`).get(s.studio_id) || {}).outlet,
+          showtime_id: parseInt(req.params.id, 10),
+          reason, reported_by: by,
+          tickets_affected: tickets.length,
+          refunded_amount: refundedAmount,
+          ts: now,
         });
       }
     } catch {}
@@ -1173,6 +1250,98 @@ function setupCinema(app, opts = {}) {
       tickets_affected: tickets.length,
       refunded_count: refundedCount,
       refunded_amount: refundedAmount,
+      contacts: tickets.filter(t => t.buyer_phone || t.buyer_email).map(t => ({
+        seat: t.seat, code: t.code, buyer: t.buyer, phone: t.buyer_phone, email: t.buyer_email,
+      })),
+    });
+  });
+
+  // ── RELOCATE STUDIO — AC mati, proyektor rusak, kerusakan studio mid-show ──
+  // POST /showtimes/:id/relocate { new_studio_id, reason, manager_name }
+  // Atomic: move showtime + all tickets ke studio baru. Cek capacity & conflict seat.
+  router.post('/showtimes/:id/relocate', (req, res) => {
+    const newStudioId = parseInt(req.body?.new_studio_id, 10);
+    const reason = String(req.body?.reason || '').trim();
+    const by = String(req.body?.manager_name || 'manager').trim();
+    if (!newStudioId) return res.status(400).json({ error: 'new_studio_id wajib' });
+    if (!reason) return res.status(400).json({ error: 'reason wajib (untuk audit log)' });
+
+    const s = db.prepare(`SELECT * FROM cinema_showtimes WHERE id = ?`).get(req.params.id);
+    if (!s) return res.status(404).json({ error: 'Showtime tidak ditemukan' });
+    if (s.studio_id === newStudioId) return res.status(400).json({ error: 'Sama dengan studio existing' });
+
+    const newStudio = db.prepare(`SELECT * FROM cinema_studios WHERE id = ?`).get(newStudioId);
+    if (!newStudio) return res.status(404).json({ error: 'Studio baru tidak ditemukan' });
+
+    const tickets = db.prepare(`SELECT * FROM cinema_tickets WHERE showtime_id = ?`).all(req.params.id);
+    const newCapacity = (newStudio.rows || 0) * (newStudio.cols || 0);
+    if (tickets.length > newCapacity) {
+      return res.status(409).json({ error: `Studio baru capacity ${newCapacity} < ${tickets.length} tiket. Pilih studio lebih besar atau partial refund dulu.` });
+    }
+
+    // Cek apakah ada showtime conflict di studio baru pada waktu yg sama
+    const conflict = db.prepare(`
+      SELECT id, start_time FROM cinema_showtimes
+      WHERE studio_id = ? AND show_date = ? AND id != ?
+        AND ABS((strftime('%s', show_date || ' ' || start_time) - strftime('%s', ? || ' ' || ?))) < 7200
+    `).get(newStudioId, s.show_date, req.params.id, s.show_date, s.start_time);
+    if (conflict) return res.status(409).json({ error: `Studio ${newStudio.name} ada jadwal lain ${conflict.start_time} (dalam 2 jam window)` });
+
+    const now = Math.floor(Date.now() / 1000);
+    const seatMappings = [];
+
+    db.transaction(() => {
+      // Audit log
+      try {
+        db.exec(`CREATE TABLE IF NOT EXISTS cinema_relocations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          showtime_id INTEGER NOT NULL,
+          from_studio_id INTEGER,
+          to_studio_id INTEGER,
+          tickets_count INTEGER,
+          reason TEXT,
+          relocated_by TEXT,
+          relocated_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+        )`);
+        db.prepare(`INSERT INTO cinema_relocations
+          (showtime_id, from_studio_id, to_studio_id, tickets_count, reason, relocated_by)
+          VALUES (?,?,?,?,?,?)`)
+          .run(req.params.id, s.studio_id, newStudioId, tickets.length, reason, by);
+      } catch {}
+
+      // Move showtime ke studio baru
+      db.prepare(`UPDATE cinema_showtimes SET studio_id = ? WHERE id = ?`).run(newStudioId, req.params.id);
+
+      // Note: tickets tetap valid dengan seat number existing, karena pindah studio.
+      // Customer perlu di-notify untuk cek seat assignment baru kalau studio layout beda.
+      // Untuk safety, kalau seat label customer (e.g. "A5") gak ada di studio baru (e.g. studio lebih kecil baris-nya),
+      // staff akan handle manual swap saat customer datang.
+    })();
+
+    // Broadcast alert + incident
+    try {
+      let incidentId = null;
+      try {
+        const info = db.prepare(`INSERT INTO cinema_incidents
+          (type, severity, outlet, showtime_id, reason, reported_by, tickets_affected)
+          VALUES (?,?,?,?,?,?,?)`)
+          .run('studio_relocate', 'high', newStudio.outlet || null, parseInt(req.params.id, 10),
+               `Relocate dari studio ${s.studio_id} → ${newStudioId}: ${reason}`, by, tickets.length);
+        incidentId = info.lastInsertRowid;
+      } catch {}
+      if (typeof opts.broadcast === 'function') {
+        opts.broadcast('cinema:relocate', { showtime_id: parseInt(req.params.id, 10), from: s.studio_id, to: newStudioId, tickets: tickets.length });
+        opts.broadcast('cinema:incident', { id: incidentId, type: 'studio_relocate', severity: 'high', outlet: newStudio.outlet, showtime_id: parseInt(req.params.id, 10), reason, reported_by: by, tickets_affected: tickets.length });
+      }
+    } catch {}
+
+    res.json({
+      ok: true,
+      showtime_id: parseInt(req.params.id, 10),
+      from_studio: { id: s.studio_id },
+      to_studio: { id: newStudioId, name: newStudio.name, capacity: newCapacity },
+      tickets_moved: tickets.length,
+      reason, by,
       contacts: tickets.filter(t => t.buyer_phone || t.buyer_email).map(t => ({
         seat: t.seat, code: t.code, buyer: t.buyer, phone: t.buyer_phone, email: t.buyer_email,
       })),

@@ -27,7 +27,9 @@ export default function CinemaEmergencyOps({ apiBase = "" }) {
   }, [base]);
 
   const TABS = [
-    { id: "close", label: "🚨 Emergency Close", desc: "Tutup showtime + auto-refund all tickets" },
+    { id: "incidents", label: "🚨 Incidents Alert", desc: "Live incidents dari outlet (HQ monitoring)" },
+    { id: "close", label: "❌ Emergency Close", desc: "Tutup showtime + auto-refund all tickets" },
+    { id: "relocate", label: "🏛️ Relocate Studio", desc: "AC mati / kerusakan → pindah studio" },
     { id: "swap", label: "🔄 Swap Seat", desc: "Pindahkan kursi customer (dispute)" },
     { id: "manifest", label: "📋 Print Manifest", desc: "Daftar tiket per showtime (backup offline)" },
     { id: "checkin", label: "✋ Manual Check-in", desc: "Validasi tiket offline (sistem down)" },
@@ -54,11 +56,115 @@ export default function CinemaEmergencyOps({ apiBase = "" }) {
 
       {msg && <div style={{ padding: "10px 14px", background: msg.startsWith("✓") ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", border: `1px solid ${msg.startsWith("✓") ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`, borderRadius: 8, fontSize: 12.5, color: msg.startsWith("✓") ? "#10b981" : "#fca5a5", marginBottom: 14 }}>{msg}</div>}
 
+      {tab === "incidents" && <IncidentsLog base={base} setMsg={setMsg} />}
       {tab === "close"     && <EmergencyClose base={base} showtimes={showtimes} setMsg={setMsg} />}
+      {tab === "relocate"  && <RelocateStudio base={base} showtimes={showtimes} setMsg={setMsg} />}
       {tab === "swap"      && <SwapSeat base={base} showtimes={showtimes} setMsg={setMsg} />}
       {tab === "manifest"  && <PrintManifest base={base} showtimes={showtimes} setMsg={setMsg} />}
       {tab === "checkin"   && <ManualCheckin base={base} setMsg={setMsg} />}
       {tab === "conflicts" && <ConflictsLog base={base} showtimes={showtimes} />}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+function IncidentsLog({ base, setMsg }) {
+  const [incidents, setIncidents] = useState([]);
+  const [onlyOpen, setOnlyOpen] = useState(true);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    fetch(`${base}/incidents${onlyOpen ? "?open=1" : ""}`).then(r => r.json())
+      .then(d => setIncidents(d.incidents || []))
+      .finally(() => setLoading(false));
+  }, [base, onlyOpen]);
+
+  useEffect(() => { load(); const id = setInterval(load, 10000); return () => clearInterval(id); }, [load]);
+
+  // WS listener untuk real-time alert
+  useEffect(() => {
+    const wsUrl = window.location.protocol === "https:" ? `wss://${window.location.host}/ws` : `ws://${window.location.hostname}:3011`;
+    let ws;
+    try {
+      ws = new WebSocket(wsUrl);
+      ws.onmessage = (e) => {
+        try {
+          const m = JSON.parse(e.data);
+          if (m.event === "cinema:incident") { load(); setMsg(`🚨 NEW INCIDENT: ${m.data?.type} @ ${m.data?.outlet || "—"}`); }
+        } catch {}
+      };
+    } catch {}
+    return () => { if (ws) ws.close(); };
+  }, [load, setMsg]);
+
+  const ack = async (id) => {
+    await fetch(`${base}/incidents/${id}/acknowledge`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ by: "Manager" }) });
+    load();
+  };
+  const resolve = async (id) => {
+    await fetch(`${base}/incidents/${id}/resolve`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ by: "Manager" }) });
+    load();
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 800 }}>🚨 Live Incident Alerts (HQ Monitoring)</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>Auto-refresh 10 detik + WebSocket push real-time</div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => setOnlyOpen(!onlyOpen)} style={{ background: onlyOpen ? "#ef444433" : "rgba(255,255,255,0.04)", border: onlyOpen ? "1px solid #ef4444" : `1px solid ${C.border}`, color: onlyOpen ? "#fca5a5" : "#9ca3af", borderRadius: 7, padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{onlyOpen ? "🔴 Only Open" : "📋 Show All"}</button>
+          <button onClick={load} style={{ background: "rgba(255,255,255,0.04)", border: `1px solid ${C.border}`, color: "#9ca3af", borderRadius: 7, padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>↻ Refresh</button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div style={{ padding: 40, textAlign: "center", color: C.dim }}>⏳ Loading...</div>
+      ) : incidents.length === 0 ? (
+        <div style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 10, padding: 30, textAlign: "center" }}>
+          <div style={{ fontSize: 48, marginBottom: 8 }}>✅</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: "#10b981" }}>All Clear</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 4 }}>Tidak ada incident {onlyOpen ? "open" : ""} saat ini</div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {incidents.map(i => {
+            const sevColor = i.severity === "critical" ? "#ef4444" : i.severity === "high" ? "#f97316" : i.severity === "low" ? "#10b981" : "#fbbf24";
+            const status = i.resolved_at ? "RESOLVED" : i.acknowledged_at ? "ACKNOWLEDGED" : "OPEN";
+            const stColor = i.resolved_at ? "#10b981" : i.acknowledged_at ? "#fbbf24" : "#ef4444";
+            return (
+              <div key={i.id} style={{ background: C.card, border: `1px solid ${sevColor}55`, borderLeft: `4px solid ${sevColor}`, borderRadius: 10, padding: 14 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 240 }}>
+                    <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 6 }}>
+                      <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 4, background: `${sevColor}22`, color: sevColor, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>{i.severity?.toUpperCase()}</span>
+                      <span style={{ fontSize: 10, fontWeight: 800, padding: "2px 8px", borderRadius: 4, background: `${stColor}22`, color: stColor, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>{status}</span>
+                      <span style={{ fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>#{i.id}</span>
+                    </div>
+                    <div style={{ fontSize: 13.5, fontWeight: 800 }}>
+                      {i.type === "emergency_close" ? "🚨 Emergency Close" : i.type}
+                      {i.outlet && <span style={{ color: "#c084fc", marginLeft: 8 }}>@ {i.outlet}</span>}
+                    </div>
+                    {i.film_title && <div style={{ fontSize: 12, color: C.sub, marginTop: 4 }}>🎬 {i.film_title} · {i.studio_name} · {i.show_date} {i.start_time}</div>}
+                    <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 6, lineHeight: 1.5, padding: 8, background: "rgba(255,255,255,0.02)", borderRadius: 6 }}>"{i.reason}"</div>
+                    <div style={{ fontSize: 11, color: C.dim, marginTop: 6, fontFamily: "'Geist Mono',monospace" }}>
+                      📊 {i.tickets_affected} tiket affected · {rp(i.refunded_amount)} refunded · by {i.reported_by} · {fmtTs(i.created_at)}
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
+                    {!i.acknowledged_at && <button onClick={() => ack(i.id)} style={{ background: "#fbbf2422", border: "1px solid #fbbf24", color: "#fbbf24", borderRadius: 7, padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>👁 Acknowledge</button>}
+                    {!i.resolved_at && <button onClick={() => resolve(i.id)} style={{ background: "#10b98122", border: "1px solid #10b981", color: "#10b981", borderRadius: 7, padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>✓ Resolve</button>}
+                    {i.acknowledged_at && <span style={{ fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>Ack: {fmtTs(i.acknowledged_at)} by {i.acknowledged_by}</span>}
+                    {i.resolved_at && <span style={{ fontSize: 10, color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>Resolved: {fmtTs(i.resolved_at)} by {i.resolved_by}</span>}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -132,6 +238,99 @@ function EmergencyClose({ base, showtimes, setMsg }) {
             ))}
           </div>
           <div style={{ fontSize: 10, color: C.sub, marginTop: 8 }}>💡 Klik nomor WA → buka chat langsung dengan customer. Kasih info refund timeline + apology.</div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+function RelocateStudio({ base, showtimes, setMsg }) {
+  const [showtimeId, setShowtimeId] = useState("");
+  const [studios, setStudios] = useState([]);
+  const [newStudioId, setNewStudioId] = useState("");
+  const [reason, setReason] = useState("");
+  const [manager, setManager] = useState("");
+  const [result, setResult] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    fetch(`${base}/studios`).then(r => r.json()).then(d => setStudios(d.studios || [])).catch(() => {});
+  }, [base]);
+
+  const picked = showtimes.find(s => String(s.id) === String(showtimeId));
+  const eligible = studios.filter(s => s.is_active && s.id !== picked?.studio_id);
+
+  const submit = async () => {
+    if (!showtimeId || !newStudioId || !reason.trim() || !manager.trim()) { setMsg("⚠ Semua field wajib"); return; }
+    if (!confirm(`Pindah showtime ke studio lain?\nSemua tiket akan auto-moved.`)) return;
+    setBusy(true); setMsg("");
+    try {
+      const r = await fetch(`${base}/showtimes/${showtimeId}/relocate`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ new_studio_id: parseInt(newStudioId), reason, manager_name: manager }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.ok) throw new Error(d.error);
+      setResult(d);
+      setMsg(`✓ Showtime dipindah ke ${d.to_studio.name} · ${d.tickets_moved} tiket otomatis ikut`);
+    } catch (e) { setMsg("⚠ " + e.message); }
+    setBusy(false);
+  };
+
+  return (
+    <div style={{ background: C.card, border: "1px solid #fbbf2444", borderRadius: 12, padding: 18 }}>
+      <div style={{ fontSize: 14, fontWeight: 800, color: "#fbbf24", marginBottom: 4 }}>🏛️ Relocate Studio</div>
+      <div style={{ fontSize: 12, color: C.sub, marginBottom: 14 }}>
+        Studio AC mati / proyektor rusak / kerusakan mid-show → pindah showtime + semua tiket ke studio lain. Capacity check otomatis.
+      </div>
+
+      <Field label="SHOWTIME YG TERDAMPAK">
+        <select value={showtimeId} onChange={e => setShowtimeId(e.target.value)} style={inp}>
+          <option value="">— Pilih showtime —</option>
+          {showtimes.filter(s => !s.manual_closed_at).map(s => (
+            <option key={s.id} value={s.id}>{s.film_title} · {s.start_time} · {s.studio_name} · {s.sold_count || 0} tiket</option>
+          ))}
+        </select>
+      </Field>
+
+      {picked && (
+        <Field label="STUDIO BARU (capacity ≥ tiket terjual)">
+          <select value={newStudioId} onChange={e => setNewStudioId(e.target.value)} style={inp}>
+            <option value="">— Pilih studio tujuan —</option>
+            {eligible.map(s => {
+              const cap = (s.rows || 0) * (s.cols || 0);
+              const ok = cap >= (picked.sold_count || 0);
+              return <option key={s.id} value={s.id} disabled={!ok}>{s.name} · {s.studio_type} · {cap} kursi {!ok && "(capacity kurang)"}</option>;
+            })}
+          </select>
+        </Field>
+      )}
+
+      <Field label="ALASAN (wajib, masuk audit + push HQ alert)">
+        <input value={reason} onChange={e => setReason(e.target.value)} placeholder="AC studio 1 mati jam 19:15, repair ETA 2 jam" style={inp} />
+      </Field>
+      <Field label="NAMA MANAGER">
+        <input value={manager} onChange={e => setManager(e.target.value)} placeholder="John Doe (Store Manager)" style={inp} />
+      </Field>
+
+      <button onClick={submit} disabled={busy} style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", border: "none", color: "#1a1205", borderRadius: 10, padding: "12px 22px", fontSize: 13, fontWeight: 900, cursor: busy ? "wait" : "pointer", fontFamily: "inherit", boxShadow: "0 4px 16px rgba(251,191,36,0.3)" }}>
+        {busy ? "⏳ Relocating..." : "🏛️ RELOCATE STUDIO"}
+      </button>
+
+      {result && result.contacts?.length > 0 && (
+        <div style={{ marginTop: 18, padding: 14, background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.3)", borderRadius: 10 }}>
+          <div style={{ fontSize: 12, color: "#22d3ee", fontWeight: 700, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>📞 NOTIFY {result.contacts.length} CUSTOMER (studio baru: {result.to_studio.name})</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 240, overflowY: "auto" }}>
+            {result.contacts.map((c, i) => (
+              <div key={i} style={{ display: "flex", gap: 10, fontSize: 11.5, padding: "5px 8px", background: "rgba(255,255,255,0.02)", borderRadius: 6 }}>
+                <span style={{ fontFamily: "'Geist Mono',monospace", color: "#fbbf24", minWidth: 50 }}>{c.seat}</span>
+                <span style={{ flex: 1, color: "#cbd5e1" }}>{c.buyer || "—"}</span>
+                {c.phone && <a href={`https://wa.me/${c.phone.replace(/^0/, "62").replace(/\D/g, "")}`} target="_blank" rel="noreferrer" style={{ color: "#25D366", textDecoration: "none" }}>📱 {c.phone}</a>}
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 10, color: C.sub, marginTop: 8 }}>💡 Tunjukkan studio baru saat customer datang. Atau notify via WA dulu sebelum mereka sampai.</div>
         </div>
       )}
     </div>

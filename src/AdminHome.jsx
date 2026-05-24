@@ -16,6 +16,7 @@ const PromoManager  = lazy(() => import("./PromoManager.jsx"));
 const ShiftManager  = lazy(() => import("./ShiftManager.jsx"));
 import { TABS, GROUPS } from "./adminModules.js";
 import { CommandPalette } from "./components/uiKit.jsx";
+import IncidentAlertBanner from "./components/IncidentAlertBanner.jsx";
 
 function PanelLoading() {
   return (
@@ -519,6 +520,9 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
   return (
     <div style={S.root}>
       <style>{CSS}</style>
+
+      {/* Global incident alert — listen WS + toast + persistent badge */}
+      <IncidentAlertBanner onOpenPanel={(toolId) => openRight("tools", toolId)} />
 
       {/* Topbar — polished with glow + brand pop */}
       <div style={S.topbar} className="no-print ah-topbar">
