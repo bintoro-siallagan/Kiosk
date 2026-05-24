@@ -35,7 +35,8 @@ const RATING_NAME  = { "SU": "Semua Umur", "13+": "Remaja 13+", "17+": "Remaja 1
 const STATUSES = [["now_showing", "Tayang"], ["coming_soon", "Segera"], ["archived", "Arsip"]];
 const STUDIO_TYPES = ["Regular", "IMAX", "Premiere", "4DX"];
 const FORMATS = ["2D", "3D", "IMAX", "4DX"];
-const TABS = [["film", "🎬 Film"], ["studio", "🏛️ Studio"], ["showtime", "🗓️ Jadwal Tayang"], ["branding", "🎨 Branding CDS"]];
+const TABS = [["film", "🎬 Film"], ["studio", "🏛️ Studio"], ["showtime", "🗓️ Jadwal Tayang"], ["templates", "🔁 Recurring Templates"], ["branding", "🎨 Branding CDS"]];
+const DAYS_OF_WEEK = [["0", "Min"], ["1", "Sen"], ["2", "Sel"], ["3", "Rab"], ["4", "Kam"], ["5", "Jum"], ["6", "Sab"]];
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const statusLabel = (s) => (STATUSES.find(x => x[0] === s) || [s, s])[1];
 const statusColor = (s) => s === "now_showing" ? "#10b981" : s === "coming_soon" ? "#eab308" : "#5b6470";
@@ -362,6 +363,10 @@ function CinemaOpsInner({ apiBase }) {
             })}
           </List>
         </>
+      )}
+
+      {tab === "templates" && (
+        <ShowtimeTemplatesPanel apiBase={apiBase} films={films} studios={studios} onChanged={reload} />
       )}
 
       {tab === "branding" && (
@@ -786,3 +791,172 @@ function CdsBrandingPanel({ apiBase, outlets }) {
   );
 }
 
+
+// ShowtimeTemplatesPanel — recurring schedule (Mon-Fri 19:00 dst)
+function ShowtimeTemplatesPanel({ apiBase, films, studios, onChanged }) {
+  const base = `${apiBase}/api/cinema`;
+  const [rows, setRows] = useState([]);
+  const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState({ name: "", film_id: "", studio_id: "", days_of_week: "1,2,3,4,5", start_time: "19:00", format: "2D", price: 0, active_from: "", active_until: "", is_active: 1 });
+  const [genDays, setGenDays] = useState(14);
+  const [genBusy, setGenBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+
+  const load = () => fetch(`${base}/showtime-templates`).then(r => r.json()).then(d => setRows(d.templates || [])).catch(() => {});
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  const start = () => { setEditing("new"); setForm({ name: "", film_id: "", studio_id: "", days_of_week: "1,2,3,4,5", start_time: "19:00", format: "2D", price: 0, active_from: "", active_until: "", is_active: 1 }); };
+  const startEdit = (t) => { setEditing(t.id); setForm({ ...t, is_active: t.is_active ? 1 : 0, active_from: t.active_from || "", active_until: t.active_until || "" }); };
+
+  const save = async () => {
+    if (!form.name || !form.film_id || !form.studio_id || !form.start_time) { setMsg("⚠ Nama, film, studio, jam wajib"); return; }
+    try {
+      const method = editing === "new" ? "POST" : "PATCH";
+      const url = editing === "new" ? `${base}/showtime-templates` : `${base}/showtime-templates/${editing}`;
+      const r = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error);
+      setMsg(editing === "new" ? "✓ Template baru tersimpan" : "✓ Template diupdate");
+      setEditing(null); load();
+    } catch (e) { setMsg("⚠ " + e.message); }
+  };
+
+  const remove = async (t) => {
+    if (!confirm(`Hapus template "${t.name}"?`)) return;
+    await fetch(`${base}/showtime-templates/${t.id}`, { method: "DELETE" });
+    load();
+  };
+
+  const generate = async (t) => {
+    setGenBusy(true); setMsg("");
+    try {
+      const r = await fetch(`${base}/showtime-templates/${t.id}/generate?days=${genDays}`, { method: "POST" });
+      const d = await r.json();
+      setMsg(`✓ Template ${t.name}: ${d.created} created, ${d.skipped} skipped`);
+      onChanged && onChanged();
+    } catch (e) { setMsg("⚠ " + e.message); }
+    setGenBusy(false);
+  };
+
+  const generateAll = async () => {
+    setGenBusy(true); setMsg("");
+    try {
+      const r = await fetch(`${base}/showtime-templates/generate-all?days=${genDays}`, { method: "POST" });
+      const d = await r.json();
+      const tot = d.results.reduce((s, r) => s + (r.created || 0), 0);
+      const skip = d.results.reduce((s, r) => s + (r.skipped || 0), 0);
+      setMsg(`✓ ${d.count} templates: ${tot} created, ${skip} skipped (window ${genDays} hari)`);
+      onChanged && onChanged();
+    } catch (e) { setMsg("⚠ " + e.message); }
+    setGenBusy(false);
+  };
+
+  const toggleDay = (d) => {
+    const set = new Set(String(form.days_of_week || "").split(",").filter(Boolean));
+    if (set.has(d)) set.delete(d); else set.add(d);
+    setForm({ ...form, days_of_week: [...set].sort().join(",") });
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800 }}>🔁 Recurring Showtime Templates</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>Buat template jadwal berulang (mis. Sen-Jum 19:00) → auto-generate showtime untuk N hari ke depan.</div>
+        </div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <label style={{ fontSize: 11, color: C.sub }}>Generate window:
+            <select value={genDays} onChange={e => setGenDays(parseInt(e.target.value))} style={{ ...inp, width: 90, marginLeft: 6 }}>
+              {[7, 14, 21, 30].map(d => <option key={d} value={d}>{d} hari</option>)}
+            </select>
+          </label>
+          <button onClick={generateAll} disabled={genBusy} style={{ background: "linear-gradient(135deg,#a855f7,#c084fc)", border: "none", color: "#fff", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+            {genBusy ? "⏳ Generating..." : "🚀 Generate All Aktif"}
+          </button>
+          {!editing && <button onClick={start} style={{ background: "#f59e0b22", border: "1px solid #f59e0b66", color: "#fbbf24", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>+ Template baru</button>}
+        </div>
+      </div>
+
+      {editing && (
+        <div style={{ background: C.card, border: "1px solid #f59e0b66", borderRadius: 12, padding: 16, marginBottom: 14 }}>
+          <div style={{ fontSize: 13, color: "#fbbf24", fontWeight: 700, marginBottom: 10 }}>{editing === "new" ? "Template baru" : `Edit template #${editing}`}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <Field label="Nama template"><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Weekday Prime Time" style={inp} /></Field>
+            <Field label="Film">
+              <select value={form.film_id} onChange={e => setForm({ ...form, film_id: e.target.value })} style={inp}>
+                <option value="">— Pilih film —</option>
+                {films.filter(f => f.status === "now_showing").map(f => <option key={f.id} value={f.id}>{f.title}</option>)}
+              </select>
+            </Field>
+            <Field label="Studio">
+              <select value={form.studio_id} onChange={e => setForm({ ...form, studio_id: e.target.value })} style={inp}>
+                <option value="">— Studio —</option>
+                {studios.map(s => <option key={s.id} value={s.id}>{s.name} ({s.outlet || "—"})</option>)}
+              </select>
+            </Field>
+            <Field label="Jam tayang"><input type="time" value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} style={inp} /></Field>
+          </div>
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: 11, color: C.dim, marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>HARI</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {DAYS_OF_WEEK.map(([d, label]) => {
+                const set = new Set(String(form.days_of_week || "").split(",").filter(Boolean));
+                const sel = set.has(d);
+                return (
+                  <button key={d} onClick={() => toggleDay(d)} style={{ padding: "8px 14px", borderRadius: 8, background: sel ? "#a855f733" : "rgba(255,255,255,0.04)", border: sel ? "1px solid #a855f7" : "1px solid rgba(255,255,255,0.1)", color: sel ? "#c084fc" : "#9ca3af", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>{label}</button>
+                );
+              })}
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 10, marginTop: 10 }}>
+            <Field label="Format">
+              <select value={form.format} onChange={e => setForm({ ...form, format: e.target.value })} style={inp}>
+                {["2D", "3D", "IMAX", "4DX"].map(f => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </Field>
+            <Field label="Harga (kosong=auto)"><input type="number" value={form.price || ""} onChange={e => setForm({ ...form, price: parseInt(e.target.value) || 0 })} placeholder="auto outlet pricing" style={inp} /></Field>
+            <Field label="Aktif dari (opsional)"><input type="date" value={form.active_from} onChange={e => setForm({ ...form, active_from: e.target.value })} style={inp} /></Field>
+            <Field label="Sampai (opsional)"><input type="date" value={form.active_until} onChange={e => setForm({ ...form, active_until: e.target.value })} style={inp} /></Field>
+          </div>
+          <div style={{ marginTop: 10 }}>
+            <label style={{ fontSize: 12, display: "inline-flex", gap: 6, alignItems: "center" }}>
+              <input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Aktif (ikut auto-generate)
+            </label>
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            <button onClick={save} style={{ background: "#10b981", border: "none", color: "#04130c", borderRadius: 8, padding: "9px 18px", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>💾 Simpan</button>
+            <button onClick={() => setEditing(null)} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#9ca3af", borderRadius: 8, padding: "9px 18px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+          </div>
+        </div>
+      )}
+
+      {msg && <div style={{ padding: "8px 12px", background: msg.startsWith("✓") ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", border: `1px solid ${msg.startsWith("✓") ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`, borderRadius: 8, fontSize: 12, color: msg.startsWith("✓") ? "#10b981" : "#fca5a5", marginBottom: 12 }}>{msg}</div>}
+
+      {rows.length === 0 ? (
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 30, textAlign: "center", color: C.sub }}>
+          Belum ada template. Klik "+ Template baru" untuk membuat jadwal recurring.
+        </div>
+      ) : (
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
+          {rows.map(t => {
+            const days = String(t.days_of_week).split(",").map(d => DAYS_OF_WEEK.find(x => x[0] === d)?.[1] || "?").join(" ");
+            return (
+              <div key={t.id} style={{ padding: "12px 16px", borderBottom: `1px solid ${C.border}`, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+                {t.poster_url && <img src={t.poster_url} style={{ width: 36, height: 54, objectFit: "cover", borderRadius: 4 }} />}
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800 }}>{t.name} {t.is_active ? <span style={{ color: "#10b981", fontSize: 10, fontFamily: "'Geist Mono',monospace", marginLeft: 6 }}>● aktif</span> : <span style={{ color: "#6b7280", fontSize: 10, marginLeft: 6 }}>off</span>}</div>
+                  <div style={{ fontSize: 11, color: C.sub, marginTop: 2 }}>🎬 {t.film_title} · {t.studio_name} ({t.outlet})</div>
+                  <div style={{ fontSize: 11, color: C.dim, marginTop: 2, fontFamily: "'Geist Mono',monospace" }}>📅 {days} · 🕐 {t.start_time} · {t.format} · {t.price ? rp(t.price) : "harga auto"}</div>
+                  {t.last_generated_at && <div style={{ fontSize: 10, color: C.dim, marginTop: 2 }}>Last generated: {new Date(t.last_generated_at * 1000).toLocaleString("id-ID")}</div>}
+                </div>
+                <button onClick={() => generate(t)} disabled={genBusy || !t.is_active} style={{ background: "#22d3ee22", border: "1px solid #22d3ee66", color: "#22d3ee", borderRadius: 7, padding: "6px 12px", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>🚀 Generate {genDays}d</button>
+                <button onClick={() => startEdit(t)} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#cbd5e1", borderRadius: 7, padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Edit</button>
+                <button onClick={() => remove(t)} style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5", borderRadius: 7, padding: "6px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>×</button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

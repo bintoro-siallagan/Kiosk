@@ -413,6 +413,26 @@ function setupCinema(app, opts = {}) {
   try { db.exec("ALTER TABLE cinema_bundles ADD COLUMN outlet_codes TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_bundles ADD COLUMN image_url TEXT"); } catch {}
 
+  // ── SHOWTIME TEMPLATES — recurring schedule generator ──
+  // Template: film + studio + days_of_week + start_time + active range
+  // Generator bulk-create showtime rows untuk N hari ke depan (idempotent).
+  try { db.exec(`CREATE TABLE IF NOT EXISTS cinema_showtime_templates (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    film_id INTEGER NOT NULL,
+    studio_id INTEGER NOT NULL,
+    days_of_week TEXT NOT NULL,
+    start_time TEXT NOT NULL,
+    format TEXT DEFAULT '2D',
+    price INTEGER DEFAULT 0,
+    active_from TEXT,
+    active_until TEXT,
+    is_active INTEGER DEFAULT 1,
+    last_generated_at INTEGER,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+  )`); } catch {}
+  try { db.exec("CREATE INDEX IF NOT EXISTS idx_cst_active ON cinema_showtime_templates(is_active)"); } catch {}
+
   // Payment audit — kiosk QRIS / POS cash / debit
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN payment_ref TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN payment_method TEXT"); } catch {}
@@ -1075,6 +1095,146 @@ function setupCinema(app, opts = {}) {
       .run(Number(b.film_id), Number(b.studio_id), String(b.show_date), String(b.start_time), price, b.format || '2D');
     res.json({ ok: true, id: info.lastInsertRowid, price, price_source: priceSource });
   });
+  // ── SHOWTIME TEMPLATES — recurring schedule (auto-generate harian/mingguan) ──
+  router.get('/showtime-templates', (req, res) => {
+    const rows = db.prepare(`
+      SELECT t.*, f.title AS film_title, f.poster_url, st.name AS studio_name, st.outlet
+      FROM cinema_showtime_templates t
+      LEFT JOIN cinema_films f ON f.id = t.film_id
+      LEFT JOIN cinema_studios st ON st.id = t.studio_id
+      ORDER BY t.is_active DESC, t.name
+    `).all();
+    res.json({ templates: rows });
+  });
+  router.post('/showtime-templates', (req, res) => {
+    const b = req.body || {};
+    if (!b.name || !b.film_id || !b.studio_id || !b.days_of_week || !b.start_time) {
+      return res.status(400).json({ error: 'name, film_id, studio_id, days_of_week, start_time wajib' });
+    }
+    // days_of_week: CSV '1,2,3,4,5' (Mon-Fri) atau array → normalize
+    const days = Array.isArray(b.days_of_week) ? b.days_of_week : String(b.days_of_week).split(',');
+    const dayCsv = days.map(d => parseInt(d, 10)).filter(d => d >= 0 && d <= 6).join(',');
+    const info = db.prepare(`INSERT INTO cinema_showtime_templates
+      (name, film_id, studio_id, days_of_week, start_time, format, price, active_from, active_until, is_active)
+      VALUES (?,?,?,?,?,?,?,?,?,?)`)
+      .run(b.name, parseInt(b.film_id, 10), parseInt(b.studio_id, 10),
+           dayCsv, b.start_time, b.format || '2D',
+           parseInt(b.price, 10) || 0,
+           b.active_from || null, b.active_until || null,
+           b.is_active === false ? 0 : 1);
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+  router.patch('/showtime-templates/:id', (req, res) => {
+    const b = req.body || {};
+    const fields = []; const args = [];
+    for (const k of ['name', 'film_id', 'studio_id', 'start_time', 'format', 'price', 'active_from', 'active_until', 'is_active']) {
+      if (k in b) {
+        fields.push(`${k} = ?`);
+        args.push(k === 'is_active' ? (b[k] ? 1 : 0) : (k === 'film_id' || k === 'studio_id' || k === 'price') ? (parseInt(b[k], 10) || 0) : b[k]);
+      }
+    }
+    if (b.days_of_week !== undefined) {
+      const days = Array.isArray(b.days_of_week) ? b.days_of_week : String(b.days_of_week).split(',');
+      fields.push('days_of_week = ?');
+      args.push(days.map(d => parseInt(d, 10)).filter(d => d >= 0 && d <= 6).join(','));
+    }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE cinema_showtime_templates SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+  router.delete('/showtime-templates/:id', (req, res) => {
+    db.prepare(`DELETE FROM cinema_showtime_templates WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
+  // POST /showtime-templates/:id/generate?days=14 → bulk-create showtime untuk N hari ke depan
+  // Idempotent: skip kalau showtime sudah ada di (date, studio_id, start_time)
+  router.post('/showtime-templates/:id/generate', (req, res) => {
+    const days = Math.min(60, Math.max(1, parseInt(req.query.days || req.body?.days, 10) || 14));
+    const t = db.prepare(`SELECT * FROM cinema_showtime_templates WHERE id = ?`).get(req.params.id);
+    if (!t) return res.status(404).json({ error: 'template tidak ditemukan' });
+    if (!t.is_active) return res.status(400).json({ error: 'template tidak aktif' });
+
+    const dowSet = new Set(String(t.days_of_week).split(',').map(d => parseInt(d, 10)));
+    const created = [];
+    const skipped = [];
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+
+    // Resolve price kalau 0 — pakai outlet pricing lookup
+    let basePrice = t.price;
+    if (!basePrice) {
+      try {
+        const studio = db.prepare(`SELECT outlet, studio_type FROM cinema_studios WHERE id = ?`).get(t.studio_id);
+        const r = studio?.outlet ? resolveOutletPrice(studio.outlet, studio.studio_type || 'Regular', today.toISOString().slice(0, 10)) : null;
+        basePrice = r?.price || 50000;
+      } catch { basePrice = 50000; }
+    }
+
+    const ins = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price, format) VALUES (?,?,?,?,?,?)`);
+    const exists = db.prepare(`SELECT id FROM cinema_showtimes WHERE studio_id = ? AND show_date = ? AND start_time = ?`);
+
+    for (let i = 0; i < days; i++) {
+      const d = new Date(today); d.setDate(d.getDate() + i);
+      const dow = d.getDay(); // 0=Sun, 6=Sat
+      if (!dowSet.has(dow)) continue;
+      const dateStr = d.toISOString().slice(0, 10);
+      // Cek active range
+      if (t.active_from && dateStr < t.active_from) continue;
+      if (t.active_until && dateStr > t.active_until) continue;
+      // Skip kalau sudah ada
+      if (exists.get(t.studio_id, dateStr, t.start_time)) {
+        skipped.push({ date: dateStr, reason: 'exists' });
+        continue;
+      }
+      const info = ins.run(t.film_id, t.studio_id, dateStr, t.start_time, basePrice, t.format || '2D');
+      created.push({ date: dateStr, id: info.lastInsertRowid });
+    }
+
+    db.prepare(`UPDATE cinema_showtime_templates SET last_generated_at = ? WHERE id = ?`)
+      .run(Math.floor(Date.now() / 1000), req.params.id);
+
+    res.json({ ok: true, template_id: parseInt(req.params.id, 10), days_window: days, created: created.length, skipped: skipped.length, details: { created, skipped } });
+  });
+
+  // POST /showtime-templates/generate-all?days=14 → run untuk SEMUA aktif sekaligus
+  router.post('/showtime-templates/generate-all', (req, res) => {
+    const days = Math.min(60, Math.max(1, parseInt(req.query.days || req.body?.days, 10) || 14));
+    const templates = db.prepare(`SELECT * FROM cinema_showtime_templates WHERE is_active = 1`).all();
+    const results = [];
+    const ins = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price, format) VALUES (?,?,?,?,?,?)`);
+    const exists = db.prepare(`SELECT id FROM cinema_showtimes WHERE studio_id = ? AND show_date = ? AND start_time = ?`);
+    const updLast = db.prepare(`UPDATE cinema_showtime_templates SET last_generated_at = ? WHERE id = ?`);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const nowSec = Math.floor(Date.now() / 1000);
+
+    for (const t of templates) {
+      const dowSet = new Set(String(t.days_of_week).split(',').map(d => parseInt(d, 10)));
+      let basePrice = t.price;
+      if (!basePrice) {
+        try {
+          const studio = db.prepare(`SELECT outlet, studio_type FROM cinema_studios WHERE id = ?`).get(t.studio_id);
+          const r = studio?.outlet ? resolveOutletPrice(studio.outlet, studio.studio_type || 'Regular', today.toISOString().slice(0, 10)) : null;
+          basePrice = r?.price || 50000;
+        } catch { basePrice = 50000; }
+      }
+      let created = 0, skipped = 0;
+      for (let i = 0; i < days; i++) {
+        const d = new Date(today); d.setDate(d.getDate() + i);
+        if (!dowSet.has(d.getDay())) continue;
+        const dateStr = d.toISOString().slice(0, 10);
+        if (t.active_from && dateStr < t.active_from) continue;
+        if (t.active_until && dateStr > t.active_until) continue;
+        if (exists.get(t.studio_id, dateStr, t.start_time)) { skipped++; continue; }
+        ins.run(t.film_id, t.studio_id, dateStr, t.start_time, basePrice, t.format || '2D');
+        created++;
+      }
+      updLast.run(nowSec, t.id);
+      results.push({ id: t.id, name: t.name, created, skipped });
+    }
+    res.json({ ok: true, count: results.length, days_window: days, results });
+  });
+
   // ── BULK SCHEDULE — push 1 film+jam ke N outlet sekaligus ──
   // POST /showtimes/bulk { film_id, outlets:['JKT01','BDG01',...], show_date, start_time, format, price?, studio_type? }
   // Logic: untuk tiap outlet → pilih studio (preference studio_type, fallback first active),
