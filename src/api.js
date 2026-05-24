@@ -1,5 +1,27 @@
 // ─── API CONFIG ───────────────────────────────────────────────────────────
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+// Production: same-origin (browser fetches /api/* via nginx proxy → backend).
+// Dev: VITE_API_URL = http://localhost:3011.
+// IMPORTANT: never hardcode internal LAN IPs in build — they break end users
+// because their browsers cannot reach 10.x.x.x / 192.168.x.x.
+const BASE = (() => {
+  const env = import.meta.env.VITE_API_URL;
+  if (env) {
+    try {
+      const u = new URL(env);
+      const isLanIp = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|127\.)/.test(u.hostname);
+      // If build embedded a LAN IP but the user is on a different host (e.g.
+      // public domain), fall back to same-origin so nginx proxy handles it.
+      if (isLanIp && typeof window !== "undefined" &&
+          window.location.hostname !== u.hostname &&
+          window.location.hostname !== "localhost") {
+        return "";
+      }
+    } catch {}
+    return env;
+  }
+  // No env: same-origin in browser, localhost:3011 in node tools.
+  return typeof window !== "undefined" ? "" : "http://localhost:3011";
+})();
 
 // ─── REST API HELPERS ─────────────────────────────────────────────────────
 async function req(method, path, body) {
