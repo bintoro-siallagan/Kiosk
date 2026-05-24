@@ -1253,14 +1253,29 @@ function Success({ sale, onAnother }) {
         {/* Actions */}
         <div className="no-print" style={{ display: "flex", gap: 10, marginTop: 26, justifyContent: "center", flexWrap: "wrap" }}>
           <button onClick={() => window.print()} className="ghost-btn" style={S.ghostBtn} title="Print A4 standard (preview muncul kecuali Chrome --kiosk-printing flag)">🖨️ Cetak A4</button>
-          <button onClick={() => {
-            // Auto-print thermal mode tiap tiket di window terpisah (silent kalau --kiosk-printing)
-            tickets.forEach((t, i) => {
-              setTimeout(() => {
-                window.open(`${window.location.origin}/?ticket=${encodeURIComponent(t.code)}&print=1&thermal=1`, `print_${t.code}`, "width=400,height=600");
-              }, i * 600);
-            });
-          }} style={{ ...S.ghostBtn, background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.4)", color: "#22d3ee" }} title="Auto-print untuk thermal printer 80mm (Epson TM-T82, dll)">🖨️ Print Thermal</button>
+          <button onClick={async () => {
+            // 1) Coba backend ESC/POS direct (silent print, no preview)
+            const outlet = new URLSearchParams(window.location.search).get("outlet") || "";
+            let escposOk = 0, escposFail = 0;
+            for (const t of (tickets || [])) {
+              try {
+                const r = await fetch(`${API_HOST}/api/cinema/tickets/${t.id}/print-thermal${outlet ? `?outlet=${outlet}` : ""}`, { method: "POST" });
+                const d = await r.json();
+                if (d.ok) escposOk++; else escposFail++;
+              } catch { escposFail++; }
+            }
+            // 2) Fallback: kalau ESC/POS semua gagal, pakai browser print thermal window
+            if (escposOk === 0 && escposFail > 0) {
+              alert("Direct printer offline. Pakai fallback browser print thermal (set Chrome --kiosk-printing biar silent)");
+              tickets.forEach((t, i) => {
+                setTimeout(() => {
+                  window.open(`${window.location.origin}/?ticket=${encodeURIComponent(t.code)}&print=1&thermal=1`, `print_${t.code}`, "width=400,height=600");
+                }, i * 600);
+              });
+            } else if (escposOk > 0) {
+              alert(`✓ Print silent: ${escposOk}/${tickets.length} tiket OK ke thermal printer`);
+            }
+          }} style={{ ...S.ghostBtn, background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.4)", color: "#22d3ee" }} title="Silent print via ESC/POS direct ke Epson TM-T82 (LAN). Fallback ke browser print kalau printer offline.">🖨️ Print Thermal</button>
           <button onClick={() => {
             // Kirim digital ticket via WA (input phone customer)
             const phone = prompt("Nomor WA customer (e.g. 081234567890):");

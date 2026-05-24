@@ -412,6 +412,60 @@ posLogout()
 
 ---
 
+## 🖨️ Printer Setup (Thermal Silent Print)
+
+karyaOS support **Epson TM-T82** + brand China compatible (ESC/POS protocol) — USB atau LAN.
+
+### Option A — LAN Printer (Recommended) + ESC/POS Direct
+
+Tiap outlet config printer URL via Admin → pos_config:
+
+```bash
+# Per outlet
+curl -X PUT https://kiosk.karys.tech/api/pos/config/CINEMA_PRINTER_URL:JKT01 \
+  -H "Content-Type: application/json" \
+  -d '{"value":"http://192.168.1.100:8008"}'
+
+# Default fallback
+curl -X PUT https://kiosk.karys.tech/api/pos/config/CINEMA_PRINTER_URL_DEFAULT \
+  -H "Content-Type: application/json" \
+  -d '{"value":"http://192.168.1.100:8008"}'
+```
+
+Kasir klik **🖨️ Print Thermal** → backend kirim ESC/POS commands langsung ke printer IP → **NO preview dialog**.
+
+### Option B — Browser Silent Print (Chrome `--kiosk-printing` flag)
+
+Setup Chrome shortcut di laptop kasir dengan flag:
+
+**Windows**: edit shortcut Chrome → Target field:
+```
+"C:\Program Files\Google\Chrome\Application\chrome.exe" --kiosk-printing --kiosk https://kiosk.karys.tech/?pos-cinema&outlet=JKT01&fresh=1
+```
+
+**Mac/Linux**:
+```
+google-chrome --kiosk-printing --kiosk "https://kiosk.karys.tech/?pos-cinema&outlet=JKT01&fresh=1"
+```
+
+Dengan flag ini, klik **🖨️ Print** → langsung print tanpa preview popup.
+
+### Option C — Fallback: Kirim WA
+
+Kalau printer benar-benar mati & ga ada tindakan recovery:
+1. Kasir klik **📱 Kirim WA** di Success page
+2. Input nomor WA customer
+3. Auto-build link `wa.me/...` dengan tiket digital
+4. Customer terima link → buka di HP → tunjukkan QR ke usher
+
+### Auto-fallback Behavior
+
+POS Cinema **🖨️ Print Thermal** button:
+1. Coba ESC/POS direct ke printer LAN (silent, no preview)
+2. Kalau gagal (printer offline / URL gak set) → fallback browser print thermal mode
+
+---
+
 ## 10. Deploy & Maintenance
 
 ### Deploy Update Code ke VPS

@@ -1464,6 +1464,94 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: true, refunded, swaps, voids });
   });
 
+  // ── ESC/POS DIRECT PRINT — silent print ke thermal printer (Epson TM-T82, dll) ──
+  // Bypass browser print dialog completely. Printer dengan LAN IP (Ethernet) atau USB-to-LAN.
+  // Config printer URL via pos_config: CINEMA_PRINTER_URL:OUTLET = 'http://192.168.1.100:8008'
+  // (Epson ePOS-Print URL atau Star MicroPOS API)
+  router.post('/tickets/:id/print-thermal', async (req, res) => {
+    const outlet = String(req.body?.outlet || req.query?.outlet || '').trim().toUpperCase();
+    const printerUrlKey = outlet ? `CINEMA_PRINTER_URL:${outlet}` : 'CINEMA_PRINTER_URL_DEFAULT';
+    let printerUrl = null;
+    try {
+      const row = db.prepare(`SELECT value FROM pos_config WHERE key = ?`).get(printerUrlKey);
+      if (row?.value) printerUrl = JSON.parse(row.value);
+    } catch {}
+    if (!printerUrl) {
+      // Fallback ke default
+      try {
+        const row = db.prepare(`SELECT value FROM pos_config WHERE key = 'CINEMA_PRINTER_URL_DEFAULT'`).get();
+        if (row?.value) printerUrl = JSON.parse(row.value);
+      } catch {}
+    }
+    if (!printerUrl) return res.status(503).json({ ok: false, error: `Printer URL belum di-set (pos_config ${printerUrlKey})` });
+
+    // Load ticket info
+    const t = db.prepare(`
+      SELECT t.*, s.show_date, s.start_time, s.format,
+             f.title AS film_title, st.name AS studio_name, st.outlet
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE t.id = ?
+    `).get(req.params.id);
+    if (!t) return res.status(404).json({ ok: false, error: 'Tiket tidak ditemukan' });
+
+    // Build ESC/POS commands — 80mm thermal Epson-compatible
+    const ESC = '\x1B', GS = '\x1D', LF = '\x0A';
+    const cmd = [];
+    cmd.push(ESC + '@');                    // init
+    cmd.push(ESC + 'a' + '\x01');           // center
+    cmd.push(ESC + 'E' + '\x01');           // bold on
+    cmd.push(GS + '!' + '\x11');            // 2× size
+    cmd.push('🎬 CINEMA' + LF);
+    cmd.push(GS + '!' + '\x00');            // normal size
+    cmd.push(ESC + 'E' + '\x00');           // bold off
+    cmd.push((t.outlet || '—') + LF + LF);
+    cmd.push('================================' + LF);
+    cmd.push(ESC + 'E' + '\x01');
+    cmd.push((t.film_title || '—').slice(0, 32) + LF);
+    cmd.push(ESC + 'E' + '\x00');
+    cmd.push((t.studio_name || '—') + ' · ' + (t.format || '2D') + LF);
+    cmd.push((t.show_date || '') + ' ' + (t.start_time || '') + LF);
+    cmd.push('================================' + LF + LF);
+    cmd.push(ESC + 'E' + '\x01');
+    cmd.push(GS + '!' + '\x22');            // 3× size for seat
+    cmd.push('KURSI: ' + t.seat + LF);
+    cmd.push(GS + '!' + '\x00');
+    cmd.push(ESC + 'E' + '\x00');
+    cmd.push(LF + 'KODE: ' + t.code + LF + LF);
+    // QR code (GS k command)
+    const codeBuf = Buffer.from(t.code, 'utf8');
+    cmd.push(GS + '(k' + String.fromCharCode(4, 0, 49, 65, 50, 0));      // model
+    cmd.push(GS + '(k' + String.fromCharCode(3, 0, 49, 67, 6));           // size 6
+    cmd.push(GS + '(k' + String.fromCharCode(3, 0, 49, 69, 48));          // error correction L
+    cmd.push(GS + '(k' + String.fromCharCode((codeBuf.length + 3) & 0xff, ((codeBuf.length + 3) >> 8) & 0xff, 49, 80, 48));
+    cmd.push(codeBuf.toString('binary'));
+    cmd.push(GS + '(k' + String.fromCharCode(3, 0, 49, 81, 48));          // print
+    cmd.push(LF + LF);
+    cmd.push(ESC + 'a' + '\x00');           // left
+    cmd.push('Scan QR di pintu studio' + LF);
+    cmd.push('Datang 15 menit sebelum tayang' + LF + LF);
+    cmd.push(GS + 'V' + '\x00');            // cut
+
+    const raw = cmd.join('');
+
+    // POST raw ESC/POS ke printer URL
+    try {
+      const r = await fetch(printerUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/octet-stream' },
+        body: raw,
+      });
+      if (!r.ok) throw new Error(`Printer responded ${r.status}`);
+      res.json({ ok: true, ticket_id: t.id, code: t.code, printer_url: printerUrl, bytes: raw.length });
+    } catch (e) {
+      console.error('[printer]', e.message);
+      res.status(502).json({ ok: false, error: `Printer error: ${e.message}`, printer_url: printerUrl });
+    }
+  });
+
   // GET /tickets/lookup/:code — public read-only ticket info (untuk digital ticket page)
   // Customer terima link /?ticket=CODE → page tampil QR + info
   router.get('/tickets/lookup/:code', (req, res) => {
