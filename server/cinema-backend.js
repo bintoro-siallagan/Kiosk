@@ -458,6 +458,10 @@ function setupCinema(app, opts = {}) {
   try { db.exec("ALTER TABLE cinema_distributors ADD COLUMN vat_pct REAL DEFAULT 11"); } catch {}
   // Format (2D/3D/IMAX/4DX) — showtime-level (1 film bisa multi-format jadwal)
   try { db.exec("ALTER TABLE cinema_showtimes ADD COLUMN format TEXT DEFAULT '2D'"); } catch {}
+  // Archive flag — hide showtime lama dari main list, tapi data dipertahankan untuk reporting
+  try { db.exec("ALTER TABLE cinema_showtimes ADD COLUMN is_archived INTEGER DEFAULT 0"); } catch {}
+  try { db.exec("ALTER TABLE cinema_showtimes ADD COLUMN archived_at INTEGER"); } catch {}
+  try { db.exec("CREATE INDEX IF NOT EXISTS idx_showtimes_archived ON cinema_showtimes(is_archived)"); } catch {}
   // Available formats per film (CSV) — metadata informasi
   try { db.exec("ALTER TABLE cinema_films ADD COLUMN available_formats TEXT DEFAULT '2D'"); } catch {}
   // Movie metadata expansion (subtitle, language, trailer, poster)
@@ -1049,10 +1053,34 @@ function setupCinema(app, opts = {}) {
     const wh = [];
     if (req.query.date) { wh.push(`s.show_date = ?`); p.push(req.query.date); }
     if (req.query.outlet) { wh.push(`st.outlet = ?`); p.push(String(req.query.outlet).trim()); }
+    // By default exclude archived; ?include_archived=1 to include them
+    if (String(req.query.include_archived || '') !== '1') {
+      wh.push(`COALESCE(s.is_archived, 0) = 0`);
+    }
     if (wh.length) sql += ` WHERE ` + wh.join(' AND ');
     sql += ` ORDER BY s.show_date, s.start_time`;
     const rows = db.prepare(sql).all(...p).map(decorateShowtime);
     res.json({ showtimes: rows });
+  });
+
+  // POST /showtimes/archive-old?days=7 → mark showtime show_date <= N hari lalu as archived
+  router.post('/showtimes/archive-old', (req, res) => {
+    const days = Math.min(365, Math.max(1, parseInt(req.query.days || req.body?.days, 10) || 7));
+    const cutoff = new Date(); cutoff.setHours(0, 0, 0, 0); cutoff.setDate(cutoff.getDate() - days);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    const nowSec = Math.floor(Date.now() / 1000);
+    const r = db.prepare(`
+      UPDATE cinema_showtimes
+      SET is_archived = 1, archived_at = ?
+      WHERE COALESCE(is_archived, 0) = 0 AND show_date < ?
+    `).run(nowSec, cutoffStr);
+    res.json({ ok: true, archived: r.changes, cutoff_date: cutoffStr, days });
+  });
+
+  // POST /showtimes/:id/unarchive → restore individual
+  router.post('/showtimes/:id/unarchive', (req, res) => {
+    db.prepare(`UPDATE cinema_showtimes SET is_archived = 0, archived_at = NULL WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
   });
   // Manager close / reopen — overrides time-derived status
   router.post('/showtimes/:id/close', (req, res) => {
@@ -3446,6 +3474,62 @@ function setupCinema(app, opts = {}) {
   const mountPath = opts.mountPath || '/api/cinema';
   app.use(mountPath, router);
   console.log(`[cinema] mounted at ${mountPath} — films, studios, showtimes`);
+
+  // ── BACKGROUND TASKS — daily cron ──
+  // Run every 6 hours (4× sehari) untuk archive old + auto-generate template
+  const dailyTasks = () => {
+    try {
+      // 1) Auto-archive showtime > 7 hari lewat
+      const cutoff = new Date(); cutoff.setHours(0, 0, 0, 0); cutoff.setDate(cutoff.getDate() - 7);
+      const cutoffStr = cutoff.toISOString().slice(0, 10);
+      const archiveR = db.prepare(`
+        UPDATE cinema_showtimes
+        SET is_archived = 1, archived_at = ?
+        WHERE COALESCE(is_archived, 0) = 0 AND show_date < ?
+      `).run(Math.floor(Date.now() / 1000), cutoffStr);
+      if (archiveR.changes > 0) console.log(`[cinema cron] archived ${archiveR.changes} old showtimes (cutoff: ${cutoffStr})`);
+
+      // 2) Auto-generate template aktif untuk 14 hari ke depan
+      const templates = db.prepare(`SELECT * FROM cinema_showtime_templates WHERE is_active = 1`).all();
+      let totalCreated = 0;
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const ins = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price, format) VALUES (?,?,?,?,?,?)`);
+      const exists = db.prepare(`SELECT id FROM cinema_showtimes WHERE studio_id = ? AND show_date = ? AND start_time = ?`);
+      const updLast = db.prepare(`UPDATE cinema_showtime_templates SET last_generated_at = ? WHERE id = ?`);
+      const nowSec = Math.floor(Date.now() / 1000);
+
+      for (const t of templates) {
+        const dowSet = new Set(String(t.days_of_week).split(',').map(d => parseInt(d, 10)));
+        let basePrice = t.price;
+        if (!basePrice) {
+          try {
+            const studio = db.prepare(`SELECT outlet, studio_type FROM cinema_studios WHERE id = ?`).get(t.studio_id);
+            const r = studio?.outlet ? resolveOutletPrice(studio.outlet, studio.studio_type || 'Regular', today.toISOString().slice(0, 10)) : null;
+            basePrice = r?.price || 50000;
+          } catch { basePrice = 50000; }
+        }
+        for (let i = 0; i < 14; i++) {
+          const d = new Date(today); d.setDate(d.getDate() + i);
+          if (!dowSet.has(d.getDay())) continue;
+          const dateStr = d.toISOString().slice(0, 10);
+          if (t.active_from && dateStr < t.active_from) continue;
+          if (t.active_until && dateStr > t.active_until) continue;
+          if (exists.get(t.studio_id, dateStr, t.start_time)) continue;
+          ins.run(t.film_id, t.studio_id, dateStr, t.start_time, basePrice, t.format || '2D');
+          totalCreated++;
+        }
+        updLast.run(nowSec, t.id);
+      }
+      if (totalCreated > 0) console.log(`[cinema cron] auto-generated ${totalCreated} showtimes from ${templates.length} active templates`);
+    } catch (e) {
+      console.error('[cinema cron] error:', e.message);
+    }
+  };
+
+  // Run sekali 30 detik setelah boot (let server stabilize), lalu tiap 6 jam
+  setTimeout(dailyTasks, 30 * 1000);
+  setInterval(dailyTasks, 6 * 60 * 60 * 1000);
+  console.log('[cinema cron] daily tasks scheduled — every 6h (archive old + auto-gen templates)');
 
   return { router, db };
 }

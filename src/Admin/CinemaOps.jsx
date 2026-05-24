@@ -65,6 +65,7 @@ function CinemaOpsInner({ apiBase }) {
   const [bulkResult, setBulkResult] = useState(null);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
   useEffect(() => {
     fetch(`${apiBase}/api/outlet-master`).then(r => r.json()).then(d => {
       setBulkOutlets((d.outlets || d.data || []).filter(o => o.status === "active"));
@@ -76,9 +77,19 @@ function CinemaOpsInner({ apiBase }) {
     fetch(`${base}/summary`).then(r => r.json()).then(setSummary).catch(() => {});
     fetch(`${base}/films`).then(r => r.json()).then(d => setFilms(d.films || [])).catch(() => {});
     fetch(`${base}/studios`).then(r => r.json()).then(d => setStudios(d.studios || [])).catch(() => {});
-    fetch(`${base}/showtimes`).then(r => r.json()).then(d => setShowtimes(d.showtimes || [])).catch(() => {});
+    fetch(`${base}/showtimes${showArchived ? "?include_archived=1" : ""}`).then(r => r.json()).then(d => setShowtimes(d.showtimes || [])).catch(() => {});
   };
-  useEffect(() => { reload(); /* eslint-disable-next-line */ }, [apiBase]);
+  useEffect(() => { reload(); /* eslint-disable-next-line */ }, [apiBase, showArchived]);
+
+  const archiveOld = async (days) => {
+    if (!confirm(`Archive semua showtime > ${days} hari lewat?`)) return;
+    try {
+      const r = await fetch(`${base}/showtimes/archive-old?days=${days}`, { method: "POST" });
+      const d = await r.json();
+      setMsg(`✓ ${d.archived} showtime di-archive (cutoff: ${d.cutoff_date})`);
+      reload();
+    } catch (e) { setMsg("⚠ " + e.message); }
+  };
 
   const f = (k) => form[k] ?? "";
   const set = (k) => (e) => setForm(p => ({ ...p, [k]: e.target.value }));
@@ -241,6 +252,24 @@ function CinemaOpsInner({ apiBase }) {
       {/* ── SHOWTIME ── */}
       {tab === "showtime" && (
         <>
+          {/* Archive toolbar */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, padding: "8px 12px", background: "rgba(168,85,247,0.05)", border: "1px solid rgba(168,85,247,0.15)", borderRadius: 8, flexWrap: "wrap", gap: 10 }}>
+            <div style={{ fontSize: 11.5, color: C.sub }}>
+              📦 Showtime &gt; 7 hari otomatis di-archive setiap 6 jam (cron) · {showArchived ? <b style={{ color: "#c084fc" }}>Showing archived</b> : <span>Default hide archived</span>}
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={() => setShowArchived(!showArchived)} style={{ background: showArchived ? "#a855f733" : "rgba(255,255,255,0.04)", border: `1px solid ${showArchived ? "#a855f7" : "rgba(255,255,255,0.1)"}`, color: showArchived ? "#c084fc" : "#9ca3af", borderRadius: 7, padding: "5px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                {showArchived ? "📦 Hide Archived" : "📦 Show Archived"}
+              </button>
+              <button onClick={() => archiveOld(7)} style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)", color: "#fbbf24", borderRadius: 7, padding: "5px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                Archive &gt;7d Now
+              </button>
+              <button onClick={() => archiveOld(30)} style={{ background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)", color: "#fbbf24", borderRadius: 7, padding: "5px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                Archive &gt;30d Now
+              </button>
+            </div>
+          </div>
+
           <Form>
             <select style={{ ...inp, flex: 2, minWidth: 150 }} value={f("film_id")} onChange={set("film_id")}>
               <option value="">— Pilih film —</option>
