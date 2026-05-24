@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import DelightPopup from "./components/DelightPopup.jsx";
+import { HelpButton } from "./components/HelpModal.jsx";
 
 // CinemaKiosk — customer-facing cinema ticket flow.
 // films → showtimes → seats → F&B bundles → confirmation. Uses /api/cinema/*.
@@ -885,6 +886,7 @@ export default function CinemaKiosk({ apiBase }) {
           </div>
         </div>
       )}
+      <HelpButton helpKey="cinema" position="top-right" />
     </div>
   );
 }

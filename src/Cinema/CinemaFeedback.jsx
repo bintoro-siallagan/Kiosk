@@ -2,6 +2,7 @@
 // Route: /?cinema-feedback&film=ID&title=NAMA&p=PURCHASE_ID
 // Simple star rating + comment form, mobile-first design.
 import { useState, useEffect } from "react";
+import { HelpButton } from "../components/HelpModal.jsx";
 
 const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -118,6 +119,7 @@ export default function CinemaFeedback() {
           🔒 Feedback Anda anonymous & disimpan untuk improvement kami
         </div>
       </div>
+      <HelpButton helpKey="cinema-feedback" position="top-right" />
     </Shell>
   );
 }

@@ -4,6 +4,7 @@
 //   1. Concession (kiri): bundle yang dibeli sama tiket — diambil di counter
 //   2. In-Studio (kanan): order via QR di kursi — diantar oleh runner ke seat
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { HelpButton } from "../components/HelpModal.jsx";
 
 const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -162,6 +163,7 @@ export default function CinemaKDS() {
           </div>
         </div>
       </div>
+      <HelpButton helpKey="cinema-kds" position="bottom-right" />
     </div>
   );
 }

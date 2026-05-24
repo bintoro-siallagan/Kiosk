@@ -13,6 +13,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from "rea
 import POSKasirLogin from "./POSKasirLogin.jsx";
 import ShiftGate from "../ShiftGate.jsx";
 import QRCode from "qrcode";
+import { HelpButton } from "../components/HelpModal.jsx";
 
 const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -258,6 +259,7 @@ export default function POSCinemaApp() {
             >
               <span style={{ fontSize: 18 }}>📺</span> Buka Layar Pelanggan
             </button>
+            <HelpButton helpKey="pos-cinema" position="bottom-right" />
           </>
         )}
         {stage === "sell" && picked && (

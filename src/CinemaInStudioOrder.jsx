@@ -3,6 +3,7 @@
 // Flow: menu → pay (QRIS) → submit order → done
 //       Customer wajib bayar dulu (QRIS) sebelum order masuk antrian staff.
 import { useState, useEffect, useRef } from "react";
+import { HelpButton } from "./components/HelpModal.jsx";
 
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const BG = "#050810";
@@ -373,6 +374,7 @@ export default function CinemaInStudioOrder({ apiBase }) {
           {busy ? "Loading…" : "📱 Bayar QRIS →"}
         </button>
       </div>
+      <HelpButton helpKey="cinema-snack" position="top-right" />
     </div>
   );
 }
