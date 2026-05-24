@@ -39,29 +39,76 @@ CREATE INDEX IF NOT EXISTS idx_cl_sub_created ON checklist_submissions(created_a
 `;
 
 const DEFAULT_ITEMS = [
+  // ─── F&B BASE ───
   ['opening', 'Lampu & AC nyala', 1],
   ['opening', 'Mesin froyo ON & suhu normal', 2],
   ['opening', 'Kas awal dihitung & dicatat', 3],
   ['opening', 'Area kasir & meja bersih', 4],
   ['opening', 'Stok display & topping cukup', 5],
-  // Cinema-specific opening checklist
-  ['opening', '🎬 Studio: kursi bersih & rapi', 10],
-  ['opening', '🎬 Proyektor test (gambar + fokus tajam)', 11],
-  ['opening', '🎬 Sound system test (Dolby/surround OK)', 12],
-  ['opening', '🎬 AC studio nyala & suhu nyaman', 13],
-  ['opening', '🎬 Pintu darurat tidak terhalang', 14],
-  ['opening', '🎬 Layar bersih (no debu/noda)', 15],
-  ['opening', '🍿 Stok F&B (popcorn, drink, nachos) cukup', 16],
+
+  // ─── 🎬 CINEMA — START DAY ROUTINE ───
+  // Sistem & teknologi
+  ['opening', '💻 POS Cinema, CDS, KDS terbuka & online', 10],
+  ['opening', '🌐 Internet/WiFi stabil (cek ping)', 11],
+  ['opening', '🖨️ Printer thermal tiket test print OK', 12],
+  ['opening', '💳 EDC card reader test transaction OK', 13],
+  ['opening', '📲 Mesin QRIS test scan OK', 14],
+  // Studio fisik
+  ['opening', '🎬 Studio 1: kursi bersih, rapi, tidak rusak', 20],
+  ['opening', '🎬 Studio 2: kursi bersih, rapi, tidak rusak', 21],
+  ['opening', '🎬 Proyektor test (gambar tajam, fokus benar)', 22],
+  ['opening', '🎬 Sound system test (Dolby/surround OK)', 23],
+  ['opening', '🎬 AC studio nyala & suhu 22-24°C', 24],
+  ['opening', '🎬 Layar bersih (no debu/noda)', 25],
+  ['opening', '🚪 Pintu darurat tidak terhalang & berfungsi', 26],
+  ['opening', '🚨 Alat pemadam api ditempat & belum expired', 27],
+  // F&B counter
+  ['opening', '🍿 Mesin popcorn pre-heat & ready', 30],
+  ['opening', '🥤 Refrigerator F&B suhu normal (4-8°C)', 31],
+  ['opening', '🧊 Ice maker berfungsi & ada stok ice', 32],
+  ['opening', '🍿 Stok F&B (popcorn, drink, snack) cukup', 33],
+  ['opening', '📋 Bundle catalog up-to-date di POS', 34],
+  // Operasional
+  ['opening', '🚻 Toilet bersih + supplies (tissue, sabun, dispenser)', 40],
+  ['opening', '🌡️ AC lobby nyala & suhu nyaman', 41],
+  ['opening', '🎵 Background music lobby ON', 42],
+  ['opening', '👥 Briefing staff harian selesai', 43],
+  ['opening', '👔 Seragam & name tag staff lengkap', 44],
+  ['opening', '🪪 Cek jadwal shift staff hari ini', 45],
+
+  // ─── F&B BASE CLOSING ───
   ['closing', 'Kas dihitung & cocok dengan sistem', 1],
   ['closing', 'Mesin froyo OFF / mode malam', 2],
   ['closing', 'Sampah dibuang', 3],
   ['closing', 'Area & lantai bersih', 4],
-  ['closing', 'Pintu & gembok terkunci', 5],
-  ['closing', '🎬 Proyektor OFF', 10],
-  ['closing', '🎬 Sound system OFF', 11],
-  ['closing', '🎬 AC studio OFF', 12],
-  ['closing', '🎬 Sampah studio dibersihkan', 13],
-  ['closing', '🍿 F&B counter dibereskan', 14],
+
+  // ─── 🎬 CINEMA — CLOSE DAY ROUTINE ───
+  // Studio shutdown
+  ['closing', '🎬 Showtime terakhir selesai, semua penonton keluar', 10],
+  ['closing', '🎬 Proyektor OFF (lampu cooling dulu)', 11],
+  ['closing', '🎬 Sound system OFF', 12],
+  ['closing', '🎬 AC studio set ke night mode / OFF', 13],
+  ['closing', '🎬 Sampah studio dibersihkan (popcorn, gelas, dll)', 14],
+  ['closing', '🎬 Kursi rapi (lipat sandaran kalau perlu)', 15],
+  // F&B shutdown
+  ['closing', '🍿 Mesin popcorn OFF & bersihkan', 20],
+  ['closing', '🥤 Refrigerator F&B di-lock', 21],
+  ['closing', '🧊 Ice maker OFF (atau biarkan kalau auto)', 22],
+  ['closing', '🍿 F&B counter dibereskan & dilap', 23],
+  ['closing', '📦 Sisa stock dicatat untuk re-order besok', 24],
+  // Reporting & cash
+  ['closing', '💰 Print Z-report end of day', 30],
+  ['closing', '💰 Cash di-deposit ke brankas', 31],
+  ['closing', '📊 Submit daily report ke central (WA/email)', 32],
+  ['closing', '💾 Database backup auto OK (cek log)', 33],
+  // Operasional
+  ['closing', '🚻 Toilet di-clean ulang', 40],
+  ['closing', '🌡️ AC lobby OFF / night mode', 41],
+  ['closing', '🎵 Background music OFF', 42],
+  ['closing', '💡 Lampu utama OFF (tinggal lampu emergency)', 43],
+  ['closing', '🔐 Pintu masuk & emergency dilock', 44],
+  ['closing', '🚨 Setel alarm cinema', 45],
+  ['closing', '📅 Cek jadwal staff besok', 46],
 ];
 
 function dayStart() {
@@ -82,15 +129,16 @@ function setupChecklist(app, opts = {}) {
     for (const [t, l, o] of DEFAULT_ITEMS) s.run(t, l, o);
   } else {
     // Backfill cinema-specific items kalau belum ada (idempotent)
+    // Identify by emoji prefix yang khusus cinema operations (bukan base F&B)
     const has = (label) => db.prepare(`SELECT id FROM checklist_items WHERE label = ?`).get(label);
     const ins = db.prepare(`INSERT INTO checklist_items (type, label, sort_order) VALUES (?,?,?)`);
+    const cinemaEmojis = ['🎬', '🍿', '🥤', '🧊', '💻', '🌐', '🖨️', '💳', '📲', '🚪', '🚨', '🚻', '🌡️', '🎵', '👥', '👔', '🪪', '💰', '📊', '💾', '💡', '🔐', '📅', '📦', '📋'];
     let added = 0;
     for (const [t, l, o] of DEFAULT_ITEMS) {
-      if (l.startsWith('🎬') || l.startsWith('🍿')) {
-        if (!has(l)) { ins.run(t, l, o); added++; }
-      }
+      const isCinema = cinemaEmojis.some(e => l.startsWith(e));
+      if (isCinema && !has(l)) { ins.run(t, l, o); added++; }
     }
-    if (added > 0) console.log(`[checklist] seeded ${added} cinema-specific items`);
+    if (added > 0) console.log(`[checklist] seeded ${added} cinema-specific items (start/close day)`);
   }
 
   const router = express.Router();
