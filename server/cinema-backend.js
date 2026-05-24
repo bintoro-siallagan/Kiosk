@@ -1102,6 +1102,98 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // ── VOUCHERS — refund as voucher (preserve revenue, customer come back) ──
+  try {
+    db.exec(`CREATE TABLE IF NOT EXISTS cinema_vouchers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      code TEXT UNIQUE NOT NULL,
+      value INTEGER NOT NULL,
+      issued_to_phone TEXT,
+      issued_to_email TEXT,
+      issued_to_name TEXT,
+      issued_by TEXT,
+      issuer_type TEXT DEFAULT 'manual',
+      reason TEXT,
+      source_ticket_id INTEGER,
+      source_showtime_id INTEGER,
+      source_incident_id INTEGER,
+      expires_at INTEGER,
+      used_at INTEGER,
+      used_purchase_id TEXT,
+      applied_amount INTEGER,
+      is_void INTEGER DEFAULT 0,
+      created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+    )`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_vouchers_code ON cinema_vouchers(code)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_vouchers_phone ON cinema_vouchers(issued_to_phone)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_vouchers_unused ON cinema_vouchers(used_at)`);
+  } catch {}
+
+  // GET /vouchers — list (admin)
+  router.get('/vouchers', (req, res) => {
+    const onlyOpen = String(req.query.open || '0') === '1';
+    let sql = `SELECT * FROM cinema_vouchers WHERE 1=1`;
+    if (onlyOpen) sql += ` AND used_at IS NULL AND is_void = 0 AND (expires_at IS NULL OR expires_at > strftime('%s','now'))`;
+    sql += ` ORDER BY created_at DESC LIMIT 200`;
+    res.json({ vouchers: db.prepare(sql).all() });
+  });
+
+  // POST /vouchers — issue manual atau dari emergency close
+  router.post('/vouchers', (req, res) => {
+    const b = req.body || {};
+    const value = parseInt(b.value, 10);
+    if (!value || value <= 0) return res.status(400).json({ error: 'value (Rp) wajib > 0' });
+    const code = b.code || ('VCH-' + require('crypto').randomBytes(4).toString('hex').toUpperCase());
+    const expiresAt = b.expires_at ? parseInt(b.expires_at, 10) : Math.floor(Date.now()/1000) + 90*86400; // default 90 hari
+    try {
+      const info = db.prepare(`INSERT INTO cinema_vouchers
+        (code, value, issued_to_phone, issued_to_email, issued_to_name, issued_by,
+         issuer_type, reason, source_ticket_id, source_showtime_id, source_incident_id, expires_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
+        .run(code, value, b.issued_to_phone || null, b.issued_to_email || null, b.issued_to_name || null,
+             b.issued_by || 'manager', b.issuer_type || 'manual', b.reason || null,
+             b.source_ticket_id || null, b.source_showtime_id || null, b.source_incident_id || null,
+             expiresAt);
+      res.json({ ok: true, id: info.lastInsertRowid, code, value, expires_at: expiresAt });
+    } catch (e) {
+      if (e.message.includes('UNIQUE')) return res.status(409).json({ error: 'Code sudah ada' });
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // GET /vouchers/lookup/:code — validate kalau bisa dipakai (untuk POS Cinema Pay)
+  router.get('/vouchers/lookup/:code', (req, res) => {
+    const code = String(req.params.code || '').trim().toUpperCase();
+    const v = db.prepare(`SELECT * FROM cinema_vouchers WHERE UPPER(code) = ?`).get(code);
+    if (!v) return res.status(404).json({ ok: false, error: 'Voucher tidak ditemukan' });
+    const now = Math.floor(Date.now() / 1000);
+    if (v.is_void) return res.json({ ok: false, voucher: v, error: 'Voucher voided' });
+    if (v.used_at) return res.json({ ok: false, voucher: v, error: 'Voucher sudah dipakai', used_at: v.used_at });
+    if (v.expires_at && v.expires_at < now) return res.json({ ok: false, voucher: v, error: 'Voucher expired' });
+    res.json({ ok: true, voucher: v, value: v.value });
+  });
+
+  // POST /vouchers/:code/redeem — saat customer pakai voucher di POS
+  router.post('/vouchers/:code/redeem', (req, res) => {
+    const code = String(req.params.code || '').trim().toUpperCase();
+    const v = db.prepare(`SELECT * FROM cinema_vouchers WHERE UPPER(code) = ?`).get(code);
+    if (!v) return res.status(404).json({ error: 'Voucher tidak ditemukan' });
+    const now = Math.floor(Date.now() / 1000);
+    if (v.is_void || v.used_at || (v.expires_at && v.expires_at < now)) {
+      return res.status(409).json({ error: 'Voucher tidak valid (used/voided/expired)' });
+    }
+    const amount = Math.min(v.value, parseInt(req.body?.amount, 10) || v.value);
+    db.prepare(`UPDATE cinema_vouchers SET used_at = ?, used_purchase_id = ?, applied_amount = ? WHERE id = ?`)
+      .run(now, req.body?.purchase_id || null, amount, v.id);
+    res.json({ ok: true, applied: amount, voucher_id: v.id });
+  });
+
+  // POST /vouchers/:id/void — manager void
+  router.post('/vouchers/:id/void', (req, res) => {
+    db.prepare(`UPDATE cinema_vouchers SET is_void = 1 WHERE id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
   // ── INCIDENTS — incident log untuk operational alerts (HQ visibility) ──
   try {
     db.exec(`CREATE TABLE IF NOT EXISTS cinema_incidents (
@@ -1162,6 +1254,7 @@ function setupCinema(app, opts = {}) {
     const by = String(b.manager_name || 'manager');
     const reason = String(b.reason || 'Emergency closure (force majeure)').trim();
     const refundAll = b.refund_all !== false; // default true
+    const issueVouchers = b.issue_vouchers === true; // opsi alternatif refund cash
     const s = db.prepare(`SELECT * FROM cinema_showtimes WHERE id = ?`).get(req.params.id);
     if (!s) return res.status(404).json({ ok: false, error: 'Showtime tidak ditemukan' });
     const now = Math.floor(Date.now() / 1000);
@@ -1174,6 +1267,7 @@ function setupCinema(app, opts = {}) {
 
     let refundedCount = 0;
     let refundedAmount = 0;
+    let issuedVouchers = [];
     db.transaction(() => {
       // 1) Mark showtime closed
       db.prepare(`UPDATE cinema_showtimes
@@ -1205,6 +1299,25 @@ function setupCinema(app, opts = {}) {
           db.prepare(`UPDATE cinema_tickets SET payment_status = 'refunded' WHERE showtime_id = ? AND COALESCE(payment_status, '') != 'refunded'`)
             .run(req.params.id);
         } catch (e) { /* table missing, skip */ }
+      }
+
+      // 3) Issue voucher per tiket kalau diminta (alternatif refund cash)
+      if (issueVouchers && tickets.length > 0) {
+        const crypto = require('crypto');
+        const expiresAt = Math.floor(Date.now()/1000) + 90 * 86400; // 90 hari
+        const insV = db.prepare(`INSERT INTO cinema_vouchers
+          (code, value, issued_to_phone, issued_to_email, issued_to_name, issued_by,
+           issuer_type, reason, source_ticket_id, source_showtime_id, expires_at)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?)`);
+        for (const t of tickets) {
+          const code = 'VCH-' + crypto.randomBytes(4).toString('hex').toUpperCase();
+          try {
+            const info = insV.run(code, t.price || 0, t.buyer_phone || null, t.buyer_email || null, t.buyer || null,
+                                  by, 'emergency_refund', `[EMERGENCY] ${reason}`,
+                                  t.id, parseInt(req.params.id, 10), expiresAt);
+            issuedVouchers.push({ id: info.lastInsertRowid, code, value: t.price || 0, ticket_seat: t.seat, ticket_code: t.code, phone: t.buyer_phone, email: t.buyer_email });
+          } catch {}
+        }
       }
     })();
 
@@ -1250,6 +1363,7 @@ function setupCinema(app, opts = {}) {
       tickets_affected: tickets.length,
       refunded_count: refundedCount,
       refunded_amount: refundedAmount,
+      vouchers_issued: issuedVouchers,
       contacts: tickets.filter(t => t.buyer_phone || t.buyer_email).map(t => ({
         seat: t.seat, code: t.code, buyer: t.buyer, phone: t.buyer_phone, email: t.buyer_email,
       })),

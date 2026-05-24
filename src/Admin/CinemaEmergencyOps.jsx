@@ -175,6 +175,7 @@ function EmergencyClose({ base, showtimes, setMsg }) {
   const [reason, setReason] = useState("Listrik mati / gangguan teknis");
   const [manager, setManager] = useState("");
   const [refundAll, setRefundAll] = useState(true);
+  const [issueVouchers, setIssueVouchers] = useState(true);
   const [result, setResult] = useState(null);
   const [busy, setBusy] = useState(false);
 
@@ -182,17 +183,18 @@ function EmergencyClose({ base, showtimes, setMsg }) {
     if (!picked) { setMsg("⚠ Pilih showtime"); return; }
     if (!reason.trim()) { setMsg("⚠ Reason wajib"); return; }
     if (!manager.trim()) { setMsg("⚠ Manager name wajib"); return; }
-    if (!confirm(`EMERGENCY CLOSE showtime + ${refundAll ? "REFUND ALL tickets" : "TANPA refund"}?\nIni tidak bisa di-undo otomatis.`)) return;
+    if (!confirm(`EMERGENCY CLOSE showtime + ${refundAll ? "REFUND ALL tickets" : "TANPA refund"} + ${issueVouchers ? "ISSUE VOUCHER" : "TANPA voucher"}?\nIni tidak bisa di-undo otomatis.`)) return;
     setBusy(true); setMsg("");
     try {
       const r = await fetch(`${base}/showtimes/${picked}/emergency-close`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason, manager_name: manager, refund_all: refundAll }),
+        body: JSON.stringify({ reason, manager_name: manager, refund_all: refundAll, issue_vouchers: issueVouchers }),
       });
       const d = await r.json();
       if (!d.ok) throw new Error(d.error);
       setResult(d);
-      setMsg(`✓ Showtime closed. ${d.refunded_count}/${d.tickets_affected} tickets refunded · Rp ${(d.refunded_amount || 0).toLocaleString("id-ID")}`);
+      const voucherCount = d.vouchers_issued?.length || 0;
+      setMsg(`✓ Closed. ${d.refunded_count}/${d.tickets_affected} refunded · Rp ${(d.refunded_amount || 0).toLocaleString("id-ID")}${voucherCount ? ` · ${voucherCount} voucher issued` : ""}`);
     } catch (e) { setMsg("⚠ " + e.message); }
     setBusy(false);
   };
@@ -217,14 +219,43 @@ function EmergencyClose({ base, showtimes, setMsg }) {
       <Field label="NAMA MANAGER YANG MEMUTUSKAN (audit)">
         <input value={manager} onChange={e => setManager(e.target.value)} placeholder="John Doe (Store Manager)" style={inp} />
       </Field>
-      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, marginBottom: 14 }}>
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, marginBottom: 8 }}>
         <input type="checkbox" checked={refundAll} onChange={e => setRefundAll(e.target.checked)} />
-        <span>Auto-refund semua tiket terjual <span style={{ color: C.dim, fontSize: 11 }}>(uncheck kalau mau handle manual via WA)</span></span>
+        <span>Auto-refund semua tiket <span style={{ color: C.dim, fontSize: 11 }}>(mark as refunded di DB)</span></span>
+      </label>
+      <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, marginBottom: 14, padding: "10px 12px", background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 8 }}>
+        <input type="checkbox" checked={issueVouchers} onChange={e => setIssueVouchers(e.target.checked)} />
+        <span><b style={{ color: "#c084fc" }}>🎟️ Issue voucher per tiket</b> (90 hari expiry) <span style={{ color: C.dim, fontSize: 11 }}>— customer come back, revenue preserved daripada cash refund</span></span>
       </label>
       <button onClick={submit} disabled={busy} style={{ background: "linear-gradient(135deg,#ef4444,#dc2626)", border: "none", color: "#fff", borderRadius: 10, padding: "12px 22px", fontSize: 13, fontWeight: 900, cursor: busy ? "wait" : "pointer", fontFamily: "inherit", boxShadow: "0 4px 16px rgba(239,68,68,0.3)" }}>
         {busy ? "⏳ Processing..." : "🚨 EMERGENCY CLOSE & REFUND"}
       </button>
-      {result && result.contacts?.length > 0 && (
+      {result?.vouchers_issued?.length > 0 && (
+        <div style={{ marginTop: 18, padding: 14, background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 10 }}>
+          <div style={{ fontSize: 12, color: "#c084fc", fontWeight: 800, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>🎟️ VOUCHER YANG DI-ISSUE ({result.vouchers_issued.length}) — KIRIM VIA WA</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 320, overflowY: "auto" }}>
+            {result.vouchers_issued.map((v, i) => {
+              const waMsg = `🎬 Mohon maaf, jadwal Anda ${result.showtime_id ? `(showtime #${result.showtime_id})` : ""} terpaksa di-cancel karena ${reason}.\n\nSebagai gantinya, voucher tiket Rp ${(v.value || 0).toLocaleString("id-ID")} senilai 1 tiket sudah kami siapkan:\n\n*KODE: ${v.code}*\n\nBerlaku 90 hari. Tukar di counter atau /?cinema saat beli tiket berikutnya. Terima kasih atas pengertiannya 🙏`;
+              const waLink = v.phone ? `https://wa.me/${v.phone.replace(/^0/, "62").replace(/\D/g, "")}?text=${encodeURIComponent(waMsg)}` : null;
+              return (
+                <div key={i} style={{ display: "flex", gap: 10, fontSize: 11.5, padding: "8px 10px", background: "rgba(255,255,255,0.02)", borderRadius: 6, alignItems: "center" }}>
+                  <span style={{ fontFamily: "'Geist Mono',monospace", color: "#fbbf24", minWidth: 50 }}>{v.ticket_seat}</span>
+                  <span style={{ fontFamily: "'Geist Mono',monospace", color: "#c084fc", fontWeight: 800, letterSpacing: 0.5 }}>{v.code}</span>
+                  <span style={{ flex: 1, color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>Rp {(v.value || 0).toLocaleString("id-ID")}</span>
+                  {waLink ? (
+                    <a href={waLink} target="_blank" rel="noreferrer" style={{ color: "#fff", background: "#25D366", textDecoration: "none", padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700 }}>📱 Send WA</a>
+                  ) : (
+                    <span style={{ color: C.dim, fontSize: 10 }}>no contact</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ fontSize: 10, color: C.sub, marginTop: 8 }}>💡 Klik "Send WA" per voucher → WhatsApp buka chat dengan pre-filled message + kode voucher. Customer datang lagi → tukar di kasir / Cinema Kiosk.</div>
+        </div>
+      )}
+
+      {result && result.contacts?.length > 0 && !result.vouchers_issued?.length && (
         <div style={{ marginTop: 18, padding: 14, background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.3)", borderRadius: 10 }}>
           <div style={{ fontSize: 12, color: "#22d3ee", fontWeight: 700, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>📞 KONTAK CUSTOMER YANG PERLU DI-NOTIFY ({result.contacts.length})</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 240, overflowY: "auto" }}>
