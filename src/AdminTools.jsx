@@ -69,6 +69,7 @@ const CinemaOps                   = lazy(() => import("./Admin/CinemaOps.jsx"));
 const CinemaDashboard             = lazy(() => import("./Admin/CinemaDashboard.jsx"));
 const CinemaEmergencyOps          = lazy(() => import("./Admin/CinemaEmergencyOps.jsx"));
 const CinemaClosingReport         = lazy(() => import("./Admin/CinemaClosingReport.jsx"));
+const CinemaCashierKPI            = lazy(() => import("./Admin/CinemaCashierKPI.jsx"));
 const CinemaTicketing             = lazy(() => import("./Admin/CinemaTicketing.jsx"));
 const CinemaBoxOffice             = lazy(() => import("./Admin/CinemaBoxOffice.jsx"));
 const CinemaValidate              = lazy(() => import("./Admin/CinemaValidate.jsx"));
@@ -285,6 +286,7 @@ export default function AdminTools({ initialTab }) {
         {tab === "cinema_dashboard" && <CinemaDashboard apiBase={API} />}
         {tab === "cinema_emergency" && <CinemaEmergencyOps apiBase={API} />}
         {tab === "cinema_closing" && <CinemaClosingReport apiBase={API} />}
+        {tab === "cinema_cashier_kpi" && <CinemaCashierKPI apiBase={API} />}
         {tab === "cinema_promotion" && <CinemaPromotion apiBase={API} />}
         {tab === "cinema_holidays" && <CinemaHolidays apiBase={API} />}
         {tab === "cinema_seat_types" && <CinemaSeatTypes apiBase={API} />}
