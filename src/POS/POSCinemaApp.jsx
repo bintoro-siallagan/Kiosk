@@ -211,6 +211,7 @@ export default function POSCinemaApp() {
         start_time: picked.start_time,
         format: picked.format,
         paymentMethod: paymentMethod, // user-selected method (broadcast langsung)
+        cashier_name: cashier?.name || null, // untuk feedback QR rate kasir
         seats: [...(seats || [])],
         bundles: (bundles || []).map(b => ({ name: b.name, qty: b.qty, price: b.price })),
         purchase_id: lastSale?.purchase_id,

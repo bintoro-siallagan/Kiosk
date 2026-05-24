@@ -216,8 +216,8 @@ export default function CinemaCDS() {
           </div>
           <div style={{ fontSize: 32, fontWeight: 900, color: "#10b981", fontFamily: "'Geist Mono',monospace", letterSpacing: -1, lineHeight: 1, marginTop: 4 }}>{rp(state.total)} <span style={{ fontSize: 12, color: "#7d8590" }}>dibayar</span></div>
 
-          {/* CUSTOMER FEEDBACK QR — scan pakai HP → mobile feedback page */}
-          <CdsFeedbackQR filmId={state.film_id} filmTitle={state.film_title} purchaseId={state.purchase_id} />
+          {/* CUSTOMER FEEDBACK QR — rate film + kasir (KPI) */}
+          <CdsFeedbackQR filmId={state.film_id} filmTitle={state.film_title} purchaseId={state.purchase_id} cashierName={state.cashier_name} outlet={state.outlet} />
         </div>
       </Shell>
     );
@@ -518,16 +518,18 @@ function PromoBanner({ promo, count, idx }) {
 
 // CdsFeedbackQR — display QR code di CDS, customer scan pakai HP → rate di /?cinema-feedback
 // CDS = TV display non-touch, customer gak bisa interact langsung
-function CdsFeedbackQR({ filmId, filmTitle, purchaseId }) {
+function CdsFeedbackQR({ filmId, filmTitle, purchaseId, cashierName, outlet }) {
   const [qrSrc, setQrSrc] = useState(null);
   useEffect(() => {
-    if (!filmId) { setQrSrc(null); return; }
-    const params = new URLSearchParams({ film: String(filmId), title: filmTitle || "" });
+    const params = new URLSearchParams();
+    if (filmId) { params.set("film", String(filmId)); params.set("title", filmTitle || ""); }
     if (purchaseId) params.set("p", purchaseId);
+    if (cashierName) params.set("cashier", cashierName);
+    if (outlet) params.set("outlet", outlet);
+    if (params.toString() === "") { setQrSrc(null); return; }
     const url = `${window.location.origin}/?cinema-feedback&${params.toString()}`;
-    // Use external QR API biar gak butuh deps tambahan di CDS bundle
     setQrSrc(`https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=8&data=${encodeURIComponent(url)}`);
-  }, [filmId, filmTitle, purchaseId]);
+  }, [filmId, filmTitle, purchaseId, cashierName, outlet]);
 
   if (!qrSrc) return null;
   return (

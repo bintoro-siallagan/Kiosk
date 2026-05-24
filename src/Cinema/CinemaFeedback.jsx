@@ -10,8 +10,12 @@ export default function CinemaFeedback() {
   const filmId = params.get("film");
   const filmTitle = params.get("title") || "";
   const purchaseId = params.get("p") || "";
+  const cashierName = params.get("cashier") || "";
+  const outlet = params.get("outlet") || "";
 
   const [rating, setRating] = useState(0);
+  const [cashierRating, setCashierRating] = useState(0);
+  const [cashierComment, setCashierComment] = useState("");
   const [comment, setComment] = useState("");
   const [name, setName] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -26,20 +30,35 @@ export default function CinemaFeedback() {
   }, []);
 
   const submit = async () => {
-    if (!rating || sent) return;
+    if ((!rating && !cashierRating) || sent) { setError("Pilih rating film atau kasir dulu"); return; }
     setSubmitting(true); setError("");
     try {
-      const r = await fetch(`${API_HOST}/api/cinema/films/${filmId}/rate`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          rating, comment: comment.trim() || null,
-          customer_name: name.trim() || null,
-          ticket_code: purchaseId || null,
-          source: "mobile",
-        }),
-      });
-      const d = await r.json();
-      if (!r.ok || d.error) throw new Error(d.error || "Submit gagal");
+      // Rate film kalau ada rating
+      if (rating && filmId) {
+        await fetch(`${API_HOST}/api/cinema/films/${filmId}/rate`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            rating, comment: comment.trim() || null,
+            customer_name: name.trim() || null,
+            ticket_code: purchaseId || null,
+            source: "mobile",
+          }),
+        });
+      }
+      // Rate cashier kalau ada
+      if (cashierRating && cashierName) {
+        await fetch(`${API_HOST}/api/cinema/cashier-rating`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cashier_name: cashierName,
+            rating: cashierRating,
+            comment: cashierComment.trim() || null,
+            purchase_id: purchaseId || null,
+            outlet: outlet || null,
+            customer_name: name.trim() || null,
+          }),
+        });
+      }
       setSent(true);
     } catch (e) { setError(e.message); }
     setSubmitting(false);
@@ -73,21 +92,46 @@ export default function CinemaFeedback() {
           {filmTitle && <div style={{ fontSize: 16, color: "#fbbf24", marginTop: 6, fontWeight: 700 }}>{filmTitle}</div>}
         </div>
 
-        {/* Star rating — TAP-friendly */}
-        <div style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 20, marginBottom: 14 }}>
-          <div style={{ fontSize: 11, color: "#9ca3af", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700, marginBottom: 14, textAlign: "center" }}>SEBERAPA SUKA?</div>
-          <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
-            {[1, 2, 3, 4, 5].map(n => (
-              <button key={n} onClick={() => setRating(n)}
-                style={{ background: "transparent", border: "none", fontSize: 52, cursor: "pointer", padding: 4, lineHeight: 1, color: n <= rating ? "#fbbf24" : "rgba(255,255,255,0.18)", transition: "transform 0.18s ease, color 0.18s ease", transform: n <= rating ? "scale(1.08)" : "scale(1)", touchAction: "manipulation" }}>★</button>
-            ))}
-          </div>
-          {rating > 0 && (
-            <div style={{ textAlign: "center", marginTop: 12, fontSize: 14, color: "#fbbf24", fontWeight: 700 }}>
-              {["", "Sangat Buruk", "Buruk", "Cukup", "Bagus", "Sangat Bagus"][rating]}
+        {/* Film rating */}
+        {filmId && (
+          <div style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 20, marginBottom: 14 }}>
+            <div style={{ fontSize: 11, color: "#9ca3af", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700, marginBottom: 14, textAlign: "center" }}>🎬 RATE FILM</div>
+            <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
+              {[1, 2, 3, 4, 5].map(n => (
+                <button key={n} onClick={() => setRating(n)}
+                  style={{ background: "transparent", border: "none", fontSize: 52, cursor: "pointer", padding: 4, lineHeight: 1, color: n <= rating ? "#fbbf24" : "rgba(255,255,255,0.18)", transition: "transform 0.18s ease, color 0.18s ease", transform: n <= rating ? "scale(1.08)" : "scale(1)", touchAction: "manipulation" }}>★</button>
+              ))}
             </div>
-          )}
-        </div>
+            {rating > 0 && (
+              <div style={{ textAlign: "center", marginTop: 12, fontSize: 14, color: "#fbbf24", fontWeight: 700 }}>
+                {["", "Sangat Buruk", "Buruk", "Cukup", "Bagus", "Sangat Bagus"][rating]}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Cashier rating */}
+        {cashierName && (
+          <div style={{ background: "linear-gradient(180deg, rgba(34,211,238,0.06), rgba(34,211,238,0.02))", border: "1px solid rgba(34,211,238,0.25)", borderRadius: 16, padding: 20, marginBottom: 14 }}>
+            <div style={{ fontSize: 11, color: "#22d3ee", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700, marginBottom: 6, textAlign: "center" }}>👤 RATE KASIR</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 14 }}>{cashierName}</div>
+            <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
+              {[1, 2, 3, 4, 5].map(n => (
+                <button key={n} onClick={() => setCashierRating(n)}
+                  style={{ background: "transparent", border: "none", fontSize: 48, cursor: "pointer", padding: 4, lineHeight: 1, color: n <= cashierRating ? "#22d3ee" : "rgba(255,255,255,0.18)", transition: "transform 0.18s ease, color 0.18s ease", transform: n <= cashierRating ? "scale(1.08)" : "scale(1)", touchAction: "manipulation" }}>★</button>
+              ))}
+            </div>
+            {cashierRating > 0 && (
+              <div style={{ textAlign: "center", marginTop: 12, fontSize: 13, color: "#22d3ee", fontWeight: 700 }}>
+                {["", "Sangat Buruk", "Kurang Ramah", "Cukup", "Ramah", "Sangat Ramah & Sigap"][cashierRating]}
+              </div>
+            )}
+            <textarea value={cashierComment} onChange={e => setCashierComment(e.target.value)}
+              placeholder="Komentar untuk kasir (opsional)..."
+              rows={2}
+              style={{ ...inp, marginTop: 12, resize: "vertical", fontFamily: "inherit" }} />
+          </div>
+        )}
 
         {/* Optional fields */}
         <div style={{ marginBottom: 14 }}>

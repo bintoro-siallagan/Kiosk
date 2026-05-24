@@ -1228,6 +1228,70 @@ function setupCinema(app, opts = {}) {
     });
   });
 
+  // ── CASHIER RATINGS — customer kasih rating kasir, jadi KPI ──
+  try {
+    db.exec(`CREATE TABLE IF NOT EXISTS cinema_cashier_ratings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      cashier_name TEXT NOT NULL,
+      rating INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+      comment TEXT,
+      purchase_id TEXT,
+      outlet TEXT,
+      ticket_code TEXT,
+      customer_name TEXT,
+      customer_phone TEXT,
+      created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+    )`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_cashier_ratings_name ON cinema_cashier_ratings(cashier_name)`);
+    db.exec(`CREATE INDEX IF NOT EXISTS idx_cashier_ratings_created ON cinema_cashier_ratings(created_at)`);
+  } catch {}
+
+  // POST /cashier-rating — customer submit rating
+  router.post('/cashier-rating', (req, res) => {
+    const b = req.body || {};
+    if (!b.cashier_name || !b.rating) return res.status(400).json({ error: 'cashier_name + rating wajib' });
+    const rating = parseInt(b.rating, 10);
+    if (rating < 1 || rating > 5) return res.status(400).json({ error: 'rating 1-5' });
+    const info = db.prepare(`INSERT INTO cinema_cashier_ratings
+      (cashier_name, rating, comment, purchase_id, outlet, ticket_code, customer_name, customer_phone)
+      VALUES (?,?,?,?,?,?,?,?)`)
+      .run(b.cashier_name, rating, b.comment || null, b.purchase_id || null,
+           b.outlet || null, b.ticket_code || null, b.customer_name || null, b.customer_phone || null);
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+
+  // GET /cashier-rating/leaderboard?period=week — KPI ranking
+  router.get('/cashier-rating/leaderboard', (req, res) => {
+    const period = String(req.query.period || 'month');
+    const sec = period === 'today' ? 86400 : period === 'week' ? 7*86400 : period === 'month' ? 30*86400 : 365*86400;
+    const since = Math.floor(Date.now()/1000) - sec;
+    const outletFilter = String(req.query.outlet || '').trim();
+    const where = outletFilter ? `AND outlet = '${outletFilter.replace(/'/g, "''")}'` : '';
+    const rows = db.prepare(`
+      SELECT cashier_name,
+             COUNT(*) AS total_ratings,
+             ROUND(AVG(rating), 2) AS avg_rating,
+             SUM(CASE WHEN rating = 5 THEN 1 ELSE 0 END) AS five_star,
+             SUM(CASE WHEN rating <= 2 THEN 1 ELSE 0 END) AS low_star
+      FROM cinema_cashier_ratings
+      WHERE created_at > ? ${where}
+      GROUP BY cashier_name
+      ORDER BY avg_rating DESC, total_ratings DESC
+      LIMIT 50
+    `).all(since);
+    res.json({ period, since, leaderboard: rows });
+  });
+
+  // GET /cashier-rating?cashier=X — list ratings for single cashier
+  router.get('/cashier-rating', (req, res) => {
+    const cashier = String(req.query.cashier || '').trim();
+    const sql = cashier
+      ? `SELECT * FROM cinema_cashier_ratings WHERE cashier_name = ? ORDER BY created_at DESC LIMIT 100`
+      : `SELECT * FROM cinema_cashier_ratings ORDER BY created_at DESC LIMIT 100`;
+    const rows = cashier ? db.prepare(sql).all(cashier) : db.prepare(sql).all();
+    res.json({ ratings: rows });
+  });
+
   // ── VOUCHERS — refund as voucher (preserve revenue, customer come back) ──
   try {
     db.exec(`CREATE TABLE IF NOT EXISTS cinema_vouchers (
