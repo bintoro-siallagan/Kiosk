@@ -192,6 +192,38 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
       >
         <span style={{fontSize:18}}>🖥️</span> Buka Layar Pelanggan
       </button>
+
+      {/* Switch ke POS Cinema — single shared cashier session, bisa jual tiket */}
+      <button
+        onClick={() => {
+          const outlet = new URLSearchParams(window.location.search).get("outlet") || "";
+          window.location.href = `?pos-cinema${outlet ? `&outlet=${outlet}` : ""}`;
+        }}
+        title="Switch ke POS Cinema (jual tiket film) — session kasir tetap kebawa"
+        style={{
+          position: "fixed",
+          bottom: 28, right: 28,
+          zIndex: 1000,
+          padding: "14px 22px",
+          background: "rgba(168,85,247,0.1)",
+          color: "#c084fc",
+          border: "2px solid #a855f7",
+          borderRadius: 100,
+          fontWeight: 800, fontSize: 14, letterSpacing: 0.5,
+          fontFamily: "system-ui,-apple-system,sans-serif",
+          cursor: "pointer",
+          boxShadow: "0 8px 24px rgba(0,0,0,0.4), 0 0 0 4px rgba(168,85,247,0.1)",
+          display: "flex", alignItems: "center", gap: 10,
+          backdropFilter: "blur(8px)",
+          transition: "all 0.2s ease",
+          whiteSpace: "nowrap",
+        }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "#a855f7"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(168,85,247,0.1)"; e.currentTarget.style.color = "#c084fc"; e.currentTarget.style.transform = "translateY(0)"; }}
+      >
+        <span style={{ fontSize: 18 }}>🎬</span> Switch ke POS Cinema
+      </button>
+
       <header style={S.header}>
         <div style={S.brand}><img src="/logo.png" alt="" style={{ height: 26, verticalAlign: "middle", marginRight: 7 }} />KaryaOS POS</div>
         <div style={S.user}>
@@ -235,6 +267,16 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
             <div style={S.btnHint}>Pesanan cepat — menu master + bayar</div>
           </button>
         )}
+
+        {/* Cinema ticket sale dari POS F&B — concession counter bisa jual tiket */}
+        <button style={{ ...S.bigBtn, borderColor: "rgba(168,85,247,0.4)", background: "linear-gradient(135deg, rgba(168,85,247,0.05), rgba(168,85,247,0.02))" }} onClick={() => {
+          const outlet = new URLSearchParams(window.location.search).get("outlet") || "";
+          window.location.href = `?pos-cinema${outlet ? `&outlet=${outlet}` : ""}`;
+        }}>
+          <div style={{ fontSize: 44 }}>🎬</div>
+          <div style={{ color: "#c084fc" }}>JUAL TIKET CINEMA</div>
+          <div style={S.btnHint}>Pilih jadwal → kursi → bayar (kasir login tetap)</div>
+        </button>
 
         <div
 
