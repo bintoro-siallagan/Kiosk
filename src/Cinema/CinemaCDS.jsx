@@ -24,7 +24,6 @@ const PAYMENT_COLOR = { cash: "#10b981", qris: "#22d3ee", debit: "#a855f7", vouc
 export default function CinemaCDS() {
   const [state, setState] = useState({ stage: "idle" });
   const [showtimes, setShowtimes] = useState([]); // today rotating
-  const [carouselIdx, setCarouselIdx] = useState(0);
   const [now, setNow] = useState(new Date());
   const [branding, setBranding] = useState({ bgUrl: "", idleText: "" }); // custom CDS branding
   const wsRef = useRef(null);
@@ -82,11 +81,23 @@ export default function CinemaCDS() {
     return () => clearInterval(id);
   }, []);
 
-  // Initial fetch current state + showtimes (carousel idle)
+  // Initial fetch current state + showtimes
   useEffect(() => {
     fetch(`${API_HOST}/api/cinema/cds/state`).then(r => r.json()).then(setState).catch(() => {});
-    fetch(`${API_HOST}/api/cinema/showtimes`).then(r => r.json()).then(d => setShowtimes(d.showtimes || [])).catch(() => {});
   }, []);
+
+  // Auto-refresh showtimes tiap 30 detik (untuk update sold/availability di idle stage)
+  useEffect(() => {
+    const fetchST = () => {
+      const stUrl = outletCode
+        ? `${API_HOST}/api/cinema/showtimes?date=${new Date().toISOString().slice(0, 10)}&outlet=${encodeURIComponent(outletCode)}`
+        : `${API_HOST}/api/cinema/showtimes?date=${new Date().toISOString().slice(0, 10)}`;
+      fetch(stUrl).then(r => r.json()).then(d => setShowtimes(d.showtimes || [])).catch(() => {});
+    };
+    fetchST();
+    const id = setInterval(fetchST, 30000);
+    return () => clearInterval(id);
+  }, [outletCode]);
 
   // WebSocket connection — receive cinema_cds:state events
   useEffect(() => {
@@ -110,12 +121,6 @@ export default function CinemaCDS() {
     return () => { if (wsRef.current) wsRef.current.close(); if (reconnectRef.current) clearTimeout(reconnectRef.current); };
   }, []);
 
-  // Carousel rotating showtimes when idle
-  useEffect(() => {
-    if (state.stage !== "idle") return;
-    const id = setInterval(() => setCarouselIdx(i => i + 1), 7000);
-    return () => clearInterval(id);
-  }, [state.stage]);
 
   const stage = state.stage || "idle";
 
@@ -290,43 +295,107 @@ export default function CinemaCDS() {
   }
 
   // ═══════════════════════════════════════════════
-  // STAGE: IDLE (default — branding + today's showtimes carousel)
+  // STAGE: IDLE (default — branding + today's schedule grid + seat availability)
   // ═══════════════════════════════════════════════
   const today = new Date().toISOString().slice(0, 10);
-  const todayShows = showtimes.filter(s => s.show_date === today).slice(0, 12);
-  const currentShow = todayShows[carouselIdx % Math.max(1, todayShows.length)];
+  const nowDate = new Date();
+  // Filter showtimes: today + outlet match (kalau outlet di URL) + belum lewat dari sekarang
+  const todayShows = showtimes
+    .filter(s => s.show_date === today)
+    .filter(s => !outletCode || s.outlet === outletCode || !s.outlet)
+    .filter(s => {
+      // Show only upcoming + currently running
+      const [h, m] = String(s.start_time).split(":").map(Number);
+      const startSec = new Date(today + "T" + s.start_time).getTime() / 1000;
+      const dur = (s.duration_min || 120) * 60;
+      const nowSec = nowDate.getTime() / 1000;
+      return nowSec < startSec + dur;
+    })
+    .slice(0, 16);
+
   return (
     <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl}>
-      <div style={{ display: "flex", flexDirection: "column", flex: 1, alignItems: "center", justifyContent: "center", padding: 30, textAlign: "center", gap: 14 }}>
-        <div style={{ fontSize: 96, lineHeight: 1, filter: "drop-shadow(0 0 32px rgba(168,85,247,0.4))" }}>🎬</div>
-        <div style={{ fontSize: 14, color: "#a855f7", letterSpacing: 4, fontFamily: "'Geist Mono',monospace", fontWeight: 800, lineHeight: 1, margin: 0 }}>karyaOS CINEMA</div>
-        <div style={{ fontSize: 56, fontWeight: 900, letterSpacing: -1.2, color: "#fff", lineHeight: 1.1, margin: 0, textShadow: branding.bgUrl ? "0 2px 16px rgba(0,0,0,0.8)" : "none" }}>Selamat Datang</div>
-        <div style={{ fontSize: 16, color: branding.bgUrl ? "#e6edf3" : "#9ca3af", maxWidth: 600, lineHeight: 1.5, margin: 0, textShadow: branding.bgUrl ? "0 1px 6px rgba(0,0,0,0.8)" : "none" }}>{branding.idleText || "Silakan pilih film & jadwal di counter — kasir akan bantu pesanan Anda"}</div>
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "20px 30px 24px", overflowY: "auto", gap: 16 }}>
+        {/* Welcome hero — compact */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 8, paddingTop: 6 }}>
+          <div style={{ fontSize: 48, lineHeight: 1, filter: "drop-shadow(0 0 24px rgba(168,85,247,0.4))" }}>🎬</div>
+          <div style={{ fontSize: 12, color: "#a855f7", letterSpacing: 4, fontFamily: "'Geist Mono',monospace", fontWeight: 800, lineHeight: 1 }}>karyaOS CINEMA</div>
+          <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: -1, color: "#fff", lineHeight: 1.1, margin: 0, textShadow: branding.bgUrl ? "0 2px 16px rgba(0,0,0,0.8)" : "none" }}>Selamat Datang</div>
+          <div style={{ fontSize: 14, color: branding.bgUrl ? "#e6edf3" : "#9ca3af", maxWidth: 640, lineHeight: 1.5, margin: 0, textShadow: branding.bgUrl ? "0 1px 6px rgba(0,0,0,0.8)" : "none" }}>{branding.idleText || "Silakan pilih film & jadwal di counter — kasir akan bantu pesanan Anda"}</div>
+        </div>
 
-        {/* Rotating showtime carousel — extra spacing from welcome text */}
-        {currentShow && (
-          <div style={{ marginTop: 28, maxWidth: 700, width: "100%", padding: 22, background: "linear-gradient(180deg, rgba(168,85,247,0.08), rgba(168,85,247,0.02))", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 18, boxShadow: "0 16px 48px rgba(0,0,0,0.4)" }}>
-            <div style={{ fontSize: 11, color: "#c084fc", letterSpacing: 3, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>TAYANG HARI INI</div>
-            <div style={{ display: "flex", gap: 18, marginTop: 14, alignItems: "center" }}>
-              {currentShow.poster_url ? (
-                <img src={currentShow.poster_url} alt="" style={{ width: 100, height: 150, objectFit: "cover", borderRadius: 10 }} />
-              ) : (
-                <div style={{ width: 100, height: 150, background: "#1a1b1e", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40 }}>🎞️</div>
-              )}
-              <div style={{ flex: 1, textAlign: "left" }}>
-                <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5 }}>{currentShow.film_title}</div>
-                <div style={{ fontSize: 13, color: "#9ca3af", marginTop: 4 }}>{currentShow.genre || ""} · {currentShow.duration_min} mnt · {currentShow.film_rating}</div>
-                <div style={{ fontSize: 18, color: "#fbbf24", marginTop: 8, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>{currentShow.start_time} · {currentShow.studio_name}</div>
-                <div style={{ fontSize: 14, color: "#10b981", marginTop: 4, fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>{rp(currentShow.price)}</div>
-              </div>
+        {/* TODAY'S SCHEDULE GRID */}
+        <div style={{ background: "linear-gradient(180deg, rgba(168,85,247,0.06), rgba(168,85,247,0.02))", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 16, padding: 20, boxShadow: "0 16px 48px rgba(0,0,0,0.3)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 8 }}>
+            <div>
+              <div style={{ fontSize: 11, color: "#c084fc", letterSpacing: 3, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>📅 JADWAL TAYANG HARI INI</div>
+              <div style={{ fontSize: 13, color: "#9ca3af", marginTop: 2 }}>Cek film + sisa kursi sebelum pesan ke kasir</div>
             </div>
-            <div style={{ marginTop: 14, display: "flex", justifyContent: "center", gap: 4 }}>
-              {todayShows.map((_, i) => (
-                <span key={i} style={{ width: 6, height: 6, borderRadius: 999, background: i === (carouselIdx % todayShows.length) ? "#c084fc" : "rgba(255,255,255,0.2)" }} />
-              ))}
-            </div>
+            <div style={{ fontSize: 11, color: "#7d8590", fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>{todayShows.length} JADWAL</div>
           </div>
-        )}
+
+          {todayShows.length === 0 ? (
+            <div style={{ padding: 40, textAlign: "center", color: "#7d8590", fontSize: 14 }}>
+              🎞️ Belum ada jadwal tersisa hari ini.
+              <br /><span style={{ fontSize: 12, marginTop: 8, display: "inline-block" }}>Cek jadwal besok di counter atau tanya kasir.</span>
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
+              {todayShows.map(s => {
+                const cap = s.capacity || (s.rows && s.cols ? s.rows * s.cols : 0);
+                const sold = s.sold_count || 0;
+                const remaining = Math.max(0, cap - sold);
+                const remainPct = cap > 0 ? Math.round((remaining / cap) * 100) : 0;
+                const status = s.derived_status || "scheduled";
+                // Color by availability + status
+                const isSoldOut = status === "sold_out" || remaining === 0;
+                const isClosed = status === "closed" || status === "cancelled";
+                const isRunning = status === "running";
+                const c = isClosed ? "#6b7280"
+                        : isSoldOut ? "#ef4444"
+                        : remainPct >= 50 ? "#10b981"
+                        : remainPct >= 20 ? "#fbbf24"
+                        : "#f97316";
+                const statusLabel = isSoldOut ? "SOLD OUT"
+                                  : isClosed ? "TUTUP"
+                                  : isRunning ? "TAYANG"
+                                  : "TERSEDIA";
+                return (
+                  <div key={s.id} style={{ display: "flex", gap: 10, padding: 12, background: "rgba(255,255,255,0.025)", border: `1px solid ${c}33`, borderRadius: 12, opacity: isClosed ? 0.55 : 1 }}>
+                    {s.poster_url ? (
+                      <img src={s.poster_url} alt="" style={{ width: 64, height: 96, objectFit: "cover", borderRadius: 6, flexShrink: 0 }} />
+                    ) : (
+                      <div style={{ width: 64, height: 96, background: "#1a1b1e", borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, flexShrink: 0 }}>🎞️</div>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 800, color: "#fff", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.film_title}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                        <span style={{ fontSize: 18, fontWeight: 900, color: "#fbbf24", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5, lineHeight: 1 }}>{s.start_time}</span>
+                        <span style={{ fontSize: 10, color: "#9ca3af", fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>{s.studio_name}</span>
+                        {s.format && <span style={{ fontSize: 9, color: "#c084fc", background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 4, padding: "1px 6px", fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>{s.format}</span>}
+                      </div>
+                      <div style={{ fontSize: 11.5, color: "#10b981", fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>{rp(s.price)}</div>
+                      {/* Seat availability bar */}
+                      <div style={{ marginTop: "auto" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, fontFamily: "'Geist Mono',monospace", marginBottom: 2 }}>
+                          <span style={{ color: c, fontWeight: 800, letterSpacing: 0.5 }}>{statusLabel}</span>
+                          <span style={{ color: "#9ca3af" }}>{isSoldOut ? `${cap}/${cap}` : `${remaining} dari ${cap}`}</span>
+                        </div>
+                        <div style={{ height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden" }}>
+                          <div style={{ background: c, height: "100%", width: `${isSoldOut ? 100 : 100 - remainPct}%`, transition: "width 0.3s" }} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div style={{ marginTop: 14, padding: "8px 12px", background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 8, fontSize: 11, color: "#9ca3af", textAlign: "center", lineHeight: 1.5 }}>
+            🟢 Tersedia · 🟡 Hampir habis · 🟠 Sisa sedikit · 🔴 Sold out · ⚪ Tutup
+          </div>
+        </div>
       </div>
       <HelpButton helpKey="cinema-cds" position="bottom-right" />
     </Shell>
