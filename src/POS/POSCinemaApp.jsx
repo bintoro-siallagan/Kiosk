@@ -579,6 +579,9 @@ function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, p
     fetch(`${API_HOST}/api/cinema/bundles${outlet ? `?outlet=${encodeURIComponent(outlet)}` : ""}`).then(r => r.json()).then(d => setBundleList(d.bundles || [])).catch(() => {});
   }, []);
 
+  // Sub-step within Sell: seats → concession → (proceed to pay)
+  const [subStep, setSubStep] = useState("seats"); // 'seats' | 'concession'
+
   const toggle = (seat) => {
     if (!seatData) return;
     if (seatData.sold.includes(seat)) return;
@@ -631,9 +634,9 @@ function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, p
 
   return (
     <div style={S.sellLayout}>
-      {/* LEFT — seat map + bundles */}
+      {/* LEFT — staged content */}
       <div style={S.sellLeft}>
-        {/* Header */}
+        {/* Header + stepper */}
         <div style={S.sellHeader}>
           <div>
             <div style={{ fontSize: 11, color: TH.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase" }}>FILM</div>
@@ -648,7 +651,28 @@ function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, p
           </div>
         </div>
 
-        {/* Seat map */}
+        {/* Sub-step indicator */}
+        <div style={{ display: "flex", gap: 8, padding: "12px 4px", marginBottom: 4 }}>
+          <button onClick={() => setSubStep("seats")} style={{
+            flex: 1, padding: "10px 14px", borderRadius: 10,
+            background: subStep === "seats" ? "linear-gradient(135deg,#f59e0b,#fbbf24)" : "rgba(255,255,255,0.03)",
+            border: subStep === "seats" ? "none" : "1px solid rgba(255,255,255,0.08)",
+            color: subStep === "seats" ? "#1a1205" : TH.sub,
+            fontSize: 12.5, fontWeight: 800, letterSpacing: 0.3, fontFamily: "inherit", cursor: "pointer",
+          }}>1. 🪑 PILIH KURSI {seats.length > 0 && <span style={{ opacity: 0.7 }}>· {seats.length}</span>}</button>
+          <button onClick={() => seats.length > 0 && setSubStep("concession")} disabled={seats.length === 0} style={{
+            flex: 1, padding: "10px 14px", borderRadius: 10,
+            background: subStep === "concession" ? "linear-gradient(135deg,#f59e0b,#fbbf24)" : "rgba(255,255,255,0.03)",
+            border: subStep === "concession" ? "none" : "1px solid rgba(255,255,255,0.08)",
+            color: subStep === "concession" ? "#1a1205" : seats.length === 0 ? TH.dim : TH.sub,
+            fontSize: 12.5, fontWeight: 800, letterSpacing: 0.3, fontFamily: "inherit",
+            cursor: seats.length === 0 ? "not-allowed" : "pointer",
+            opacity: seats.length === 0 ? 0.5 : 1,
+          }}>2. 🍿 CONCESSION (OPSIONAL) {bundles.length > 0 && <span style={{ opacity: 0.7 }}>· {bundles.length}</span>}</button>
+        </div>
+
+        {/* Seat map — sub-step seats */}
+        {subStep === "seats" && (
         <div style={S.seatPanel}>
           <div style={{ textAlign: "center", marginBottom: 18 }}>
             <div style={{ height: 4, background: "linear-gradient(90deg,transparent 10%,#a855f7,transparent 90%)", borderRadius: 4 }} />
@@ -688,12 +712,32 @@ function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, p
             <Legend color="linear-gradient(135deg,#f59e0b,#fbbf24)" border="rgba(245,158,11,0.6)" label="Dipilih" />
             <Legend color="rgba(239,68,68,0.15)" border="rgba(239,68,68,0.3)" label="Terjual" />
           </div>
+          {/* CTA Lanjut */}
+          {seats.length > 0 && bundleList.length > 0 && (
+            <button onClick={() => setSubStep("concession")} style={{
+              marginTop: 18, width: "100%", padding: "14px 22px",
+              background: "linear-gradient(135deg,#a855f7,#c084fc)",
+              border: "none", borderRadius: 12,
+              color: "#fff", fontSize: 14, fontWeight: 900, letterSpacing: 0.5, cursor: "pointer", fontFamily: "inherit",
+              boxShadow: "0 4px 16px rgba(168,85,247,0.3)",
+            }}>🍿 LANJUT KE CONCESSION MENU →</button>
+          )}
+          {seats.length > 0 && bundleList.length === 0 && (
+            <div style={{ marginTop: 12, padding: 12, background: "rgba(255,255,255,0.02)", borderRadius: 8, fontSize: 12, color: TH.dim, textAlign: "center" }}>F&B menu kosong — lanjut langsung ke bayar via panel kanan.</div>
+          )}
         </div>
+        )}
 
-        {/* Bundles */}
-        {bundleList.length > 0 && (
+        {/* Concession menu — sub-step concession */}
+        {subStep === "concession" && bundleList.length > 0 && (
           <div style={S.bundlePanel}>
-            <div style={S.subSectionTitle}>🍿 F&B BUNDLES (OPSIONAL)</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <div style={S.subSectionTitle}>🍿 PILIH F&B CONCESSION</div>
+              <button onClick={() => setSubStep("seats")} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: TH.sub, borderRadius: 7, padding: "6px 12px", fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>← Edit Kursi</button>
+            </div>
+            <div style={{ fontSize: 12, color: TH.sub, marginBottom: 14, padding: "8px 12px", background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.15)", borderRadius: 8 }}>
+              💡 Tambahkan popcorn/drink/snack ke pesanan customer. 1 bill mencakup tiket + F&B.
+            </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 10, marginTop: 12 }}>
               {bundleList.map(b => {
                 const sel = bundles.find(x => x.id === b.id);
