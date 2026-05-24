@@ -469,19 +469,30 @@ function ShowtimeCard({ st, onPick }) {
       {/* Accent gradient strip */}
       <div style={{ height: 3, background: `linear-gradient(90deg, ${statusMeta.c}, transparent)`, opacity: 0.7 }} />
       <div style={{ padding: 18 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-          <div>
-            <div style={{ fontSize: 11, color: statusMeta.c, fontWeight: 700, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase" }}>{statusMeta.l}</div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginTop: 6, letterSpacing: -0.4, lineHeight: 1.2 }}>{st.film_title || "—"}</div>
-            <div style={{ fontSize: 12, color: TH.sub, marginTop: 6 }}>{st.studio_name || "—"} · {st.show_date} · {st.start_time}</div>
-          </div>
-          {st.rating && (
-            <span style={{
-              fontSize: 10, fontWeight: 800, color: ratingColor(st.rating), padding: "4px 9px",
-              background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)",
-              border: `1px solid ${ratingColor(st.rating)}66`, borderRadius: 6, flexShrink: 0,
-            }}>{st.rating}</span>
+        <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
+          {/* Poster thumbnail — biar kasir gak salah klik */}
+          {st.poster_url ? (
+            <img src={st.poster_url} alt="" style={{ width: 70, height: 105, objectFit: "cover", borderRadius: 8, flexShrink: 0, border: `1px solid ${statusMeta.c}33`, boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }} />
+          ) : (
+            <div style={{ width: 70, height: 105, background: "linear-gradient(135deg,#1e1b4b,#0a0e16)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30, flexShrink: 0 }}>🎞️</div>
           )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, color: statusMeta.c, fontWeight: 700, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase" }}>{statusMeta.l}</div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginTop: 6, letterSpacing: -0.4, lineHeight: 1.2 }}>{st.film_title || "—"}</div>
+                <div style={{ fontSize: 12, color: TH.sub, marginTop: 6 }}>{st.studio_name || "—"} · {st.show_date}</div>
+                <div style={{ fontSize: 18, color: TH.amber, marginTop: 4, fontFamily: "'Geist Mono',monospace", fontWeight: 800, letterSpacing: -0.4 }}>🕐 {st.start_time}</div>
+              </div>
+              {st.rating && (
+                <span style={{
+                  fontSize: 10, fontWeight: 800, color: ratingColor(st.rating), padding: "4px 9px",
+                  background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)",
+                  border: `1px solid ${ratingColor(st.rating)}66`, borderRadius: 6, flexShrink: 0,
+                }}>{st.rating}</span>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Capacity bar */}

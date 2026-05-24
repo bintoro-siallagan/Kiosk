@@ -10,7 +10,7 @@
 // Auto-reconnect kalau WS drop.
 
 import { useState, useEffect, useRef } from "react";
-import { HelpButton } from "../components/HelpModal.jsx";
+// HelpButton tidak di-import — CDS adalah TV display non-interactive (customer gak butuh help button)
 
 const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
@@ -397,7 +397,6 @@ export default function CinemaCDS() {
           </div>
         </div>
       </div>
-      <HelpButton helpKey="cinema-cds" position="bottom-right" />
     </Shell>
   );
 }
