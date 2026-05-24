@@ -453,6 +453,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "Cinema CDS (Second Display)", icon: "📺", c: "#22d3ee", on: () => openTab("?cinema-cds") },
       { label: "In-Studio QR Order",      icon: "🍿", c: "#f59e0b", on: () => openTab("?cinema-snack") },
       { label: "Lobby Board (TV)",        icon: "📺", c: "#22d3ee", on: () => openTab("?cinema-board") },
+      { label: "📊 Dashboard Reporting",  icon: "📊", c: "#a855f7", on: () => openRight("tools", "cinema_dashboard") },
       { label: "Command Center",          icon: "🎬", c: "#a855f7", on: () => openRight("tools", "cinema_command_center") },
       { label: "Box Office",              icon: "🎬", c: "#10b981", on: () => openRight("tools", "cinema_box_office") },
       { label: "Ticketing",               icon: "🎟️", c: "#10b981", on: () => openRight("tools", "cinema_ticketing") },

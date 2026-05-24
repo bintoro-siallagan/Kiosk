@@ -44,6 +44,7 @@ export const TABS = [
   { id: "cinema_event_booking", label: "🎉 Studio Event Booking", color: "#a855f7" },
   { id: "cinema_price_list", label: "💲 Cinema Price List", color: "#10b981" },
   { id: "cinema_command_center", label: "🎬 Cinema Command Center", color: "#a855f7" },
+  { id: "cinema_dashboard", label: "📊 Cinema Dashboard Reporting", color: "#a855f7" },
   { id: "cinema_promotion", label: "🎁 Cinema Promotion", color: "#f59e0b" },
   { id: "cinema_holidays", label: "📅 Cinema Holiday Calendar", color: "#fbbf24" },
   { id: "cinema_seat_types", label: "💺 Cinema Seat Types", color: "#ec4899" },

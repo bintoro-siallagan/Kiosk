@@ -666,6 +666,124 @@ function setupCinema(app, opts = {}) {
   }
 
   // ── SUMMARY ──
+  // ── DASHBOARD — analytics/reporting aggregated ──
+  // GET /api/cinema/dashboard?period=today|week|month&outlet=XXX
+  // Return: KPI cards + per-outlet revenue + top films + occupancy + recent sales
+  router.get('/dashboard', (req, res) => {
+    const period = String(req.query.period || 'today');
+    const outletFilter = String(req.query.outlet || '').trim();
+    const now = Math.floor(Date.now() / 1000);
+    const periodSec = period === 'week' ? 7 * 86400 : period === 'month' ? 30 * 86400 : 86400;
+    const since = now - periodSec;
+
+    const outletWhere = outletFilter ? `AND st.outlet = '${outletFilter.replace(/'/g, "''")}'` : '';
+
+    // KPI: tickets sold + revenue total
+    const kpi = db.prepare(`
+      SELECT
+        COUNT(t.id) AS tickets,
+        COALESCE(SUM(t.price), 0) AS revenue,
+        COUNT(DISTINCT t.purchase_id) AS purchases,
+        COUNT(DISTINCT t.showtime_id) AS active_showtimes
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE t.sold_at > ? ${outletWhere}
+    `).get(since);
+
+    // Revenue per outlet (top 10)
+    const byOutlet = db.prepare(`
+      SELECT st.outlet AS outlet, COUNT(t.id) AS tickets, COALESCE(SUM(t.price), 0) AS revenue
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE t.sold_at > ? AND st.outlet IS NOT NULL ${outletWhere}
+      GROUP BY st.outlet
+      ORDER BY revenue DESC
+      LIMIT 10
+    `).all(since);
+
+    // Top films (by tickets sold)
+    const topFilms = db.prepare(`
+      SELECT f.id, f.title, f.poster_url, f.avg_rating, COUNT(t.id) AS tickets, COALESCE(SUM(t.price), 0) AS revenue
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      WHERE t.sold_at > ? AND f.id IS NOT NULL ${outletWhere}
+      GROUP BY f.id
+      ORDER BY tickets DESC
+      LIMIT 10
+    `).all(since);
+
+    // Occupancy per showtime today (capacity vs sold)
+    const today = new Date().toISOString().slice(0, 10);
+    const occupancy = db.prepare(`
+      SELECT s.id, s.show_date, s.start_time, f.title AS film_title, st.name AS studio_name, st.outlet,
+             (st.rows * st.cols) AS capacity,
+             (SELECT COUNT(*) FROM cinema_tickets WHERE showtime_id = s.id) AS sold
+      FROM cinema_showtimes s
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE s.show_date >= ? ${outletWhere}
+      ORDER BY s.show_date, s.start_time
+      LIMIT 20
+    `).all(today);
+
+    // Recent sales (last 20)
+    const recent = db.prepare(`
+      SELECT t.id, t.code, t.seat, t.price, t.sold_at, t.payment_method,
+             f.title AS film_title, st.name AS studio_name, st.outlet
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      WHERE t.sold_at > ? ${outletWhere}
+      ORDER BY t.sold_at DESC
+      LIMIT 20
+    `).all(since);
+
+    // F&B bundle stats
+    const bundles = db.prepare(`
+      SELECT pb.bundle_name, COUNT(*) AS sold, COALESCE(SUM(pb.qty * pb.price), 0) AS revenue
+      FROM cinema_purchase_bundles pb
+      WHERE pb.created_at > ?
+      GROUP BY pb.bundle_name
+      ORDER BY sold DESC
+      LIMIT 10
+    `).all(since);
+
+    // Payment method breakdown
+    const byMethod = db.prepare(`
+      SELECT COALESCE(t.payment_method, 'unknown') AS method, COUNT(*) AS count, COALESCE(SUM(t.price), 0) AS revenue
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE t.sold_at > ? ${outletWhere}
+      GROUP BY method
+    `).all(since);
+
+    res.json({
+      period, outlet: outletFilter || null, since,
+      kpi: {
+        tickets: kpi?.tickets || 0,
+        revenue: kpi?.revenue || 0,
+        purchases: kpi?.purchases || 0,
+        active_showtimes: kpi?.active_showtimes || 0,
+        avg_ticket_price: kpi?.tickets > 0 ? Math.round(kpi.revenue / kpi.tickets) : 0,
+      },
+      by_outlet: byOutlet,
+      top_films: topFilms,
+      occupancy: occupancy.map(o => ({
+        ...o,
+        occupancy_pct: o.capacity > 0 ? Math.round((o.sold / o.capacity) * 100) : 0,
+      })),
+      recent_sales: recent,
+      bundles,
+      by_payment_method: byMethod,
+    });
+  });
+
   router.get('/summary', (req, res) => {
     res.json({
       films_now_showing: db.prepare(`SELECT COUNT(*) c FROM cinema_films WHERE status = 'now_showing'`).get().c,
