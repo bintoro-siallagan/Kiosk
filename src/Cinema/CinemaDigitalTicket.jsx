@@ -44,7 +44,7 @@ export default function CinemaDigitalTicket() {
         if (!d.ok) { setError(d.message || d.error || "Tiket tidak ditemukan"); setTicket(d.ticket || null); }
         else setTicket(d.ticket);
       })
-      .catch(() => setError("Gagal memuat tiket"))
+      .catch(() => setError("Tiket sedang dipersiapkan, mohon menunggu sebentar."))
       .finally(() => setLoading(false));
   }, [code]);
 

@@ -39,7 +39,7 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
     fetch(`${apiBase}/api/checklist/items?type=${type}`)
       .then(r => r.json())
       .then(rows => { setItems(Array.isArray(rows) ? rows : []); setLoading(false); })
-      .catch(() => { setError('Gagal memuat checklist'); setLoading(false); });
+      .catch(() => { setError('Checklist sedang dipersiapkan, mohon menunggu sebentar.'); setLoading(false); });
   }, [apiBase, type]);
 
   const doneCount = items.filter(i => checked[i.id]).length;

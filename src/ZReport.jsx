@@ -65,7 +65,7 @@ export default function ZReport({ onClose }) {
       const r = await api.getZReport(d);
       setReport(r);
     } catch (e) {
-      setError(e.message || "Gagal memuat laporan");
+      setError(e.message || "Laporan belum tersedia. Mohon coba lagi sebentar.");
       setReport(null);
     }
     setLoading(false);

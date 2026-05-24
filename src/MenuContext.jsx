@@ -22,12 +22,12 @@ export function MenuProvider({ children }) {
     <ConnectionError
       error={error}
       onRetry={() => setTick(t => t + 1)}
-      title="Tidak dapat menghubungi server menu"
-      subtitle="Sistem akan otomatis mencoba kembali. Pastikan perangkat ini terhubung ke jaringan outlet."
+      title="Sebentar lagi kami siap melayani Anda"
+      subtitle="Kami sedang menyiapkan pengalaman terbaik untuk Anda. Mohon menunggu sebentar."
     />
   );
 
-  if (!config) return <LoadingScreen label="Menyiapkan menu" sub="Menghubungkan ke server outlet…" />;
+  if (!config) return <LoadingScreen label="Menyiapkan pengalaman Anda" sub="Mohon menunggu sebentar…" />;
 
   return <MenuContext.Provider value={config}>{children}</MenuContext.Provider>;
 }

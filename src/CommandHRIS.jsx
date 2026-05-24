@@ -3,6 +3,7 @@
 // Attendance, late check-in, staffing level, overtime, productivity, payroll.
 
 import { useState, useEffect, useCallback } from "react";
+import { ErrorInline } from "./components/ConnectionError.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const MONO = "var(--m)";
@@ -26,7 +27,7 @@ export default function CommandHRIS() {
   }, []);
   useEffect(() => { load(); const t = setInterval(load, 20000); return () => clearInterval(t); }, [load]);
 
-  if (err) return <div style={S.msg}>Gagal memuat HRIS: {err}</div>;
+  if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} onRetry={load} /></div>;
   if (!d) return <div style={S.msg}>Memuat HRIS & Workforce…</div>;
 
   const staffCol = d.staffing.level >= 100 ? "#10b981" : d.staffing.level >= 80 ? "#f59e0b" : "#ef4444";

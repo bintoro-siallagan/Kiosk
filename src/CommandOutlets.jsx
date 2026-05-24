@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import CommandOutletDetail from "./CommandOutletDetail.jsx";
+import { ErrorInline } from "./components/ConnectionError.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const MONO = "var(--m)";
@@ -27,8 +28,8 @@ export default function CommandOutlets() {
   useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
   if (selectedId) return <CommandOutletDetail outletId={selectedId} onBack={() => setSelectedId(null)} />;
-  if (err) return <div style={S.msg}>Gagal memuat Multi-Outlet Overview: {err}</div>;
-  if (!d) return <div style={S.msg}>Memuat Multi-Outlet Overview…</div>;
+  if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} onRetry={load} /></div>;
+  if (!d) return <div style={S.msg}>Memuat overview cabang…</div>;
   const s = d.summary;
 
   return (

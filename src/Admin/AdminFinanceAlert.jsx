@@ -3,6 +3,7 @@
 // invoice overdue, expense spike, margin drop, refund abnormal.
 
 import { useState, useEffect, useCallback } from "react";
+import { ErrorInline } from "../components/ConnectionError.jsx";
 
 const SEV = {
   critical: { c: "#ef4444", bg: "#2a1416", label: "CRITICAL" },
@@ -21,7 +22,7 @@ export default function AdminFinanceAlert({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
-  if (err) return <div style={{ padding: 30, color: "#f87171" }}>Gagal memuat: {err}</div>;
+  if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} /></div>;
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat finance alert…</div>;
   const s = d.summary;
 

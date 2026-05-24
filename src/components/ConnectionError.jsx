@@ -24,55 +24,55 @@ export function classifyError(rawMsg) {
   if (msg.includes("failed to fetch") || msg.includes("network") || msg.includes("err_internet") || msg.includes("err_network")) {
     return {
       kind: "network",
-      title: "Tidak dapat terhubung ke server",
-      hint: "Periksa koneksi internet Anda. Sistem akan otomatis mencoba ulang.",
+      title: "Sambungan sedang dipulihkan",
+      hint: "Mohon tunggu sebentar — kami akan terhubung kembali secara otomatis.",
       retryable: true,
     };
   }
   if (msg.includes("timeout") || msg.includes("etimedout") || msg.includes("aborted")) {
     return {
       kind: "timeout",
-      title: "Server merespons terlalu lambat",
-      hint: "Sambungan lambat. Kami sedang mencoba kembali otomatis.",
+      title: "Sedang memproses permintaan Anda",
+      hint: "Proses memerlukan waktu lebih lama dari biasanya. Mohon menunggu sebentar.",
       retryable: true,
     };
   }
   if (msg.match(/\b5\d{2}\b/) || msg.includes("internal server")) {
     return {
       kind: "server",
-      title: "Server sedang bermasalah",
-      hint: "Tim teknis sudah menerima notifikasi. Mohon tunggu sebentar.",
+      title: "Layanan sedang dipersiapkan",
+      hint: "Mohon menunggu sebentar — kami akan kembali melayani Anda segera.",
       retryable: true,
     };
   }
   if (msg.match(/\b401\b/) || msg.includes("unauthorized")) {
     return {
       kind: "auth",
-      title: "Sesi Anda sudah berakhir",
-      hint: "Silakan login kembali untuk melanjutkan.",
+      title: "Sesi Anda telah berakhir",
+      hint: "Silakan masuk kembali untuk melanjutkan.",
       retryable: false,
     };
   }
   if (msg.match(/\b403\b/) || msg.includes("forbidden")) {
     return {
       kind: "forbidden",
-      title: "Akses tidak diizinkan",
-      hint: "Anda tidak memiliki izin untuk membuka modul ini.",
+      title: "Akses tidak tersedia",
+      hint: "Modul ini tidak termasuk dalam paket akses Anda.",
       retryable: false,
     };
   }
   if (msg.match(/\b404\b/) || msg.includes("not found")) {
     return {
       kind: "notfound",
-      title: "Data tidak ditemukan",
-      hint: "Resource yang diminta tidak tersedia.",
+      title: "Data belum tersedia",
+      hint: "Konten yang Anda minta sedang dipersiapkan.",
       retryable: false,
     };
   }
   return {
     kind: "generic",
-    title: "Terjadi gangguan sementara",
-    hint: "Mohon coba beberapa saat lagi.",
+    title: "Mohon menunggu sebentar",
+    hint: "Kami sedang menyempurnakan pengalaman Anda.",
     retryable: true,
   };
 }
@@ -221,11 +221,11 @@ export default function ConnectionError({ error, onRetry, autoRetryMs = 8000, ti
           }}>Muat Ulang Halaman</button>
         </div>
 
-        {/* Technical detail collapsible */}
+        {/* Technical detail collapsible — opt-in for staff/admin */}
         {(error?.message || (typeof error === "string" && error)) && (
           <details style={{ marginTop: 22, textAlign: "left" }}>
             <summary style={{ fontSize: 11, color: COLORS.textDim, cursor: "pointer", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace", textAlign: "center" }}>
-              DETAIL TEKNIS
+              Untuk Petugas Outlet
             </summary>
             <pre style={{
               marginTop: 10, padding: 12,

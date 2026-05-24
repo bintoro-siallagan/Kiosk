@@ -3,6 +3,7 @@
 // Channel mix, self-service adoption, promo & loyalty engagement.
 
 import { useState, useEffect, useCallback } from "react";
+import { ErrorInline } from "./components/ConnectionError.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const MONO = "var(--m)";
@@ -18,7 +19,7 @@ export default function CommandEngagement() {
   }, []);
   useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
-  if (err) return <div style={S.msg}>Gagal memuat Sales & Engagement: {err}</div>;
+  if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} onRetry={load} /></div>;
   if (!d) return <div style={S.msg}>Memuat Sales & Engagement…</div>;
   const s = d.summary;
   const maxOrders = Math.max(1, ...d.channels.map(c => c.orders));

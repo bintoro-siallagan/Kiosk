@@ -4,6 +4,7 @@
 // stock, issue.
 
 import { useState, useEffect, useCallback } from "react";
+import { ErrorInline } from "./components/ConnectionError.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const MONO = "var(--m)";
@@ -60,7 +61,7 @@ export default function CommandOutletDetail({ outletId, onBack }) {
       .then(() => load()).catch(() => {});
   };
 
-  if (err) return <div style={S.msg}>Gagal memuat detail: {err} <button onClick={onBack} style={S.back}>← Kembali</button></div>;
+  if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} onRetry={() => { setErr(""); load && load(); }} /><button onClick={onBack} style={S.back}>← Kembali</button></div>;
   if (!d) return <div style={S.msg}>Memuat detail outlet…</div>;
   const o = d.outlet;
   const st = STATUS[o.status] || STATUS.attention;

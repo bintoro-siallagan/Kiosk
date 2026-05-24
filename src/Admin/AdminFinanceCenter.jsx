@@ -3,6 +3,7 @@
 // revenue, laba, cashflow, AP/AR, settlement, invoice, outlet.
 
 import { useState, useEffect, useCallback } from "react";
+import { ErrorInline } from "../components/ConnectionError.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtK = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1) + "jt" : n >= 1e3 ? Math.round(n / 1e3) + "rb" : String(n || 0));
@@ -19,7 +20,7 @@ export default function AdminFinanceCenter({ apiBase = "" }) {
   }, [apiBase, days]);
   useEffect(() => { setD(null); setErr(""); load(); }, [load]);
 
-  if (err) return <div style={{ padding: 30, color: "#f87171" }}>Gagal memuat: {err}</div>;
+  if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} /></div>;
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Finance Center…</div>;
   const k = d.kpi;
   const maxRev = Math.max(1, ...d.outlets.map(o => o.revenue_today));

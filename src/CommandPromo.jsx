@@ -3,6 +3,7 @@
 // Promo mana yang efektif vs idle (gak kepake) + biaya diskon.
 
 import { useState, useEffect, useCallback } from "react";
+import { ErrorInline } from "./components/ConnectionError.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const MONO = "var(--m)";
@@ -24,7 +25,7 @@ export default function CommandPromo() {
   }, []);
   useEffect(() => { load(); const t = setInterval(load, 20000); return () => clearInterval(t); }, [load]);
 
-  if (err) return <div style={S.msg}>Gagal memuat Promotion Effectiveness: {err}</div>;
+  if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} onRetry={load} /></div>;
   if (!d) return <div style={S.msg}>Memuat Promotion Effectiveness…</div>;
   const s = d.summary;
 

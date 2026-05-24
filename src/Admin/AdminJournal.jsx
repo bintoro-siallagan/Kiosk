@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 import ReportActions from "./ReportActions.jsx";
 import PeriodPicker from "./PeriodPicker.jsx";
+import { ErrorInline } from "../components/ConnectionError.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 
@@ -25,7 +26,7 @@ export default function AdminJournal({ apiBase = "" }) {
   }, [apiBase, range]);
   useEffect(() => { load(); }, [load]);
 
-  if (err) return <div style={{ padding: 30, color: "#f87171" }}>Gagal memuat: {err}</div>;
+  if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} /></div>;
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat jurnal…</div>;
   const t = d.totals;
 

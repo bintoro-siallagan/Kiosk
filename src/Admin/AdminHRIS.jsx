@@ -5,6 +5,7 @@
  * Props: apiBase — HOST backend.
  */
 import { useState, useEffect, useCallback } from "react";
+import { ErrorInline } from "../components/ConnectionError.jsx";
 
 const MONO = "'Geist Mono',monospace";
 const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -59,7 +60,7 @@ export default function AdminHRIS({ apiBase = "" }) {
     document.body.appendChild(a); a.click(); a.remove();
   };
 
-  if (err) return <div style={{ padding: 30, color: "#888" }}>Gagal memuat HRIS: {err}</div>;
+  if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} /></div>;
   if (!recap) return <div style={{ padding: 30, color: "#888" }}>Memuat HRIS…</div>;
 
   const t = recap.totals;

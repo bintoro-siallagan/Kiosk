@@ -4,6 +4,7 @@
 // "Owner buka 10 detik langsung ngerti."
 
 import { useState, useEffect, useCallback } from "react";
+import { ErrorInline } from "./components/ConnectionError.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const MONO = "var(--m)";
@@ -45,7 +46,7 @@ export default function CommandExecutive() {
     return () => clearInterval(t);
   }, [load]);
 
-  if (err) return <div style={S.msg}>Gagal memuat executive dashboard: {err}</div>;
+  if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} onRetry={load} /></div>;
   if (!d) return <div style={S.msg}>Memuat executive dashboard…</div>;
 
   const { health, summary, timeline } = d;

@@ -38,7 +38,7 @@ export default function POSOrderHistory({ onClose, kasir = "Manager" }) {
       setOrders(arr);
     } catch (e) {
       console.error("Load orders failed:", e);
-      showToast("❌ Gagal memuat riwayat", "error");
+      showToast("Riwayat belum tersedia, mohon coba lagi", "error");
     } finally {
       setLoading(false);
     }

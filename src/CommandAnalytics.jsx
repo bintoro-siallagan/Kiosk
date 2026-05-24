@@ -3,6 +3,7 @@
 // Tren 14 hari, pola hari & jam, insight otomatis (rule-based).
 
 import { useState, useEffect, useCallback } from "react";
+import { ErrorInline } from "./components/ConnectionError.jsx";
 
 const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const MONO = "var(--m)";
@@ -18,7 +19,7 @@ export default function CommandAnalytics() {
   }, []);
   useEffect(() => { load(); const t = setInterval(load, 60000); return () => clearInterval(t); }, [load]);
 
-  if (err) return <div style={S.msg}>Gagal memuat Analytics: {err}</div>;
+  if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} onRetry={load} /></div>;
   if (!d) return <div style={S.msg}>Memuat Analytics…</div>;
   const s = d.summary;
   const maxRev = Math.max(1, ...d.series.map(x => x.revenue));

@@ -32,7 +32,7 @@ export default function POSLogin({ onLogin }) {
         {loading && <div style={S.loading}>☕ Memuat...</div>}
 
         {error && (
-          <div style={S.error}>⚠ Gagal memuat user: {error}</div>
+          <div style={S.error}>⚠ Data petugas belum tersedia. Mohon coba lagi sebentar.</div>
         )}
 
         {!loading && !error && users.length === 0 && (
