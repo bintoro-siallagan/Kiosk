@@ -464,31 +464,27 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
       <div className="aurora-blob aurora-3"/>
       <div style={K.welcomeInner}>
         <div style={K.logoWrap}>
-          <div style={{position:"relative",display:"inline-block",width:160,height:160}} className="logo-float">
+          <div style={{position:"relative",display:"inline-block",width:172,height:172}} className="logo-float">
             <div className="logo-halo"/>
-            <div style={{
-              position:"relative",zIndex:1,width:160,height:160,borderRadius:"50%",
-              background:"radial-gradient(circle at 30% 25%,rgba(255,255,255,0.10),rgba(255,255,255,0.02) 60%,transparent)",
-              border:"1px solid rgba(255,255,255,0.08)",
-              backdropFilter:"blur(20px) saturate(180%)",WebkitBackdropFilter:"blur(20px) saturate(180%)",
-              boxShadow:"inset 0 1px 0 rgba(255,255,255,0.12),inset 0 -1px 0 rgba(0,0,0,0.3),0 20px 50px rgba(0,0,0,0.45)",
-              display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",overflow:"hidden"
+            <div className="lg lg-orb" style={{
+              width:172,height:172,borderRadius:"50%",
+              display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",
             }} onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}}>
-              <img src="/logo.png" alt={tenantBrand.name || "KaryaOS"} style={{width:96,height:96,objectFit:"contain",filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.5))"}}/>
+              <img src="/logo.png" alt="KaryaOS" style={{width:100,height:100,objectFit:"contain",filter:"drop-shadow(0 6px 14px rgba(0,0,0,0.55))"}}/>
             </div>
           </div>
-          <h1 style={K.brand}>{tenantBrand.name || "KaryaOS"}</h1>
+          <h1 style={K.brand}>{isCustomBrand ? tenantBrand.name : "KaryaOS"}</h1>
           <p style={K.tagline}>Crafted with love · Ordered with ease</p>
         </div>
         <div style={K.clockDisp}>{time.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</div>
         <p style={K.welcomeQ}>How would you like to order?</p>
         <div style={K.orderRow}>
-          <button className="order-pill" style={K.orderBtn} onClick={()=>setOrderType("dine")}>
+          <button className="lg order-pill" style={K.orderBtn} onClick={()=>setOrderType("dine")}>
             <span style={K.orderBtnIcon}>🪑</span>
             <span style={K.orderBtnLabel}>Dine In</span>
             <span style={K.orderBtnSub}>Enjoy at your table</span>
           </button>
-          <button className="order-pill" style={{...K.orderBtn,...K.orderBtnAlt}} onClick={()=>setOrderType("takeaway")}>
+          <button className="lg lg-brand order-pill" style={{...K.orderBtn,...K.orderBtnAlt}} onClick={()=>setOrderType("takeaway")}>
             <span style={K.orderBtnIcon}>🛍️</span>
             <span style={K.orderBtnLabel}>Takeaway</span>
             <span style={K.orderBtnSub}>To go</span>
@@ -900,9 +896,23 @@ const KIOSK_CSS = `
   .aurora-1{top:-15%;left:-15%;width:65%;height:65%;background:radial-gradient(circle,var(--brand-primary,#FF6B35) 0%,transparent 70%);opacity:.22;animation:aurora 22s ease-in-out infinite}
   .aurora-2{bottom:-20%;right:-15%;width:70%;height:70%;background:radial-gradient(circle,var(--brand-secondary,#E55A2B) 0%,transparent 70%);opacity:.18;animation:aurora 28s ease-in-out infinite reverse}
   .aurora-3{top:35%;left:25%;width:45%;height:45%;background:radial-gradient(circle,#a78bfa 0%,transparent 70%);opacity:.10;animation:aurora 32s ease-in-out infinite}
-  .welcome-glass{background:linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.015));backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(255,255,255,0.07);box-shadow:0 1px 0 rgba(255,255,255,0.04) inset,0 30px 80px rgba(0,0,0,0.35),0 8px 24px rgba(0,0,0,0.2)}
-  .order-pill{transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s ease,background .25s ease,border-color .25s ease}
-  .order-pill:hover{transform:translateY(-3px) scale(1.012)}
+  /* ─── LIQUID GLASS SYSTEM (iOS 26 style) ────────────────────────── */
+  .lg{position:relative;background:linear-gradient(180deg,rgba(255,255,255,0.07) 0%,rgba(255,255,255,0.025) 60%,rgba(255,255,255,0.01) 100%);backdrop-filter:blur(40px) saturate(200%) brightness(1.08);-webkit-backdrop-filter:blur(40px) saturate(200%) brightness(1.08);box-shadow:inset 0 1px 0 rgba(255,255,255,0.25),inset 0 -1px 0 rgba(0,0,0,0.18),inset 0 12px 24px rgba(255,255,255,0.04),inset 0 -16px 24px rgba(0,0,0,0.15),0 10px 24px rgba(0,0,0,0.28),0 30px 70px rgba(0,0,0,0.32);overflow:hidden;isolation:isolate}
+  /* Gradient border via masked layer */
+  .lg::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(180deg,rgba(255,255,255,0.55) 0%,rgba(255,255,255,0.08) 35%,rgba(255,255,255,0.02) 60%,rgba(255,255,255,0.12) 100%);-webkit-mask:linear-gradient(#000,#000) content-box,linear-gradient(#000,#000);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;z-index:2}
+  /* Specular sheen — top half gloss */
+  .lg::after{content:"";position:absolute;top:0;left:0;right:0;height:55%;border-radius:inherit;background:radial-gradient(ellipse 75% 90% at 30% 0%,rgba(255,255,255,0.18) 0%,rgba(255,255,255,0.04) 45%,transparent 80%);pointer-events:none;z-index:1;mix-blend-mode:screen;opacity:.85}
+  /* Variant: orb (circular) — tighter sheen */
+  .lg-orb::after{height:60%;background:radial-gradient(ellipse 70% 60% at 30% 18%,rgba(255,255,255,0.32) 0%,rgba(255,255,255,0.06) 50%,transparent 80%)}
+  /* Variant: brand-tinted pill (CTA) */
+  .lg-brand{background:linear-gradient(180deg,var(--brand-primary,#FF6B35) 0%,var(--brand-secondary,#E55A2B) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,0.35),inset 0 -1px 0 rgba(0,0,0,0.22),inset 0 12px 28px rgba(255,255,255,0.12),inset 0 -16px 28px rgba(0,0,0,0.18),0 10px 28px rgba(0,0,0,0.28),0 24px 60px color-mix(in srgb,var(--brand-primary,#FF6B35) 28%,transparent)}
+  .lg-brand::before{background:linear-gradient(180deg,rgba(255,255,255,0.65) 0%,rgba(255,255,255,0.18) 35%,rgba(0,0,0,0.06) 60%,rgba(255,255,255,0.18) 100%)}
+  /* Content must sit above sheen/border layers */
+  .lg > *{position:relative;z-index:3}
+  .order-pill{transition:transform .4s cubic-bezier(.2,.8,.2,1),box-shadow .4s ease}
+  .order-pill:hover{transform:translateY(-4px) scale(1.015)}
+  .order-pill:hover.lg{box-shadow:inset 0 1px 0 rgba(255,255,255,0.32),inset 0 -1px 0 rgba(0,0,0,0.18),inset 0 12px 24px rgba(255,255,255,0.06),inset 0 -16px 24px rgba(0,0,0,0.15),0 14px 34px rgba(0,0,0,0.34),0 40px 90px rgba(0,0,0,0.4)}
+  .order-pill:hover.lg-brand{box-shadow:inset 0 1px 0 rgba(255,255,255,0.4),inset 0 -1px 0 rgba(0,0,0,0.22),inset 0 12px 28px rgba(255,255,255,0.18),inset 0 -16px 28px rgba(0,0,0,0.2),0 14px 34px rgba(0,0,0,0.32),0 32px 72px color-mix(in srgb,var(--brand-primary,#FF6B35) 38%,transparent)}
   .order-pill:active{transform:translateY(-1px) scale(0.99)}
   .menu-card{animation:fadeIn 0.3s cubic-bezier(0.4,0,0.2,1) forwards;transition:transform 0.25s cubic-bezier(0.4,0,0.2,1),border-color 0.25s ease,box-shadow 0.25s ease}
   .menu-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,0.12)!important;box-shadow:0 1px 2px rgba(0,0,0,0.3),0 12px 40px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)}
@@ -970,8 +980,9 @@ const K = {
   clockDisp:  {fontSize:13,color:"rgba(255,255,255,0.32)",marginBottom:36,letterSpacing:6,fontFamily:"'Inter',sans-serif",fontVariantNumeric:"tabular-nums",fontWeight:500},
   welcomeQ:   {fontSize:15,letterSpacing:"-0.2px",color:"rgba(255,255,255,0.78)",marginBottom:28,fontFamily:"'Inter',sans-serif",fontWeight:500},
   orderRow:   {display:"flex",gap:18,justifyContent:"center",marginBottom:36},
-  orderBtn:   {background:"linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))",border:"1px solid rgba(255,255,255,0.08)",backdropFilter:"blur(20px) saturate(160%)",WebkitBackdropFilter:"blur(20px) saturate(160%)",borderRadius:28,padding:"36px 32px",display:"flex",flexDirection:"column",alignItems:"center",gap:10,flex:1,maxWidth:240,color:"#fff",cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.07),0 10px 32px rgba(0,0,0,0.32),0 2px 6px rgba(0,0,0,0.18)"},
-  orderBtnAlt:{background:"linear-gradient(180deg,rgba(255,107,53,0.92),rgba(229,90,43,0.88))",border:"1px solid rgba(255,255,255,0.16)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.22),0 14px 40px rgba(255,107,53,0.28),0 2px 6px rgba(0,0,0,0.2)"},
+  // background/shadow/border handled by .lg / .lg-brand classes — keep here only layout
+  orderBtn:   {border:"none",borderRadius:32,padding:"38px 32px",display:"flex",flexDirection:"column",alignItems:"center",gap:10,flex:1,maxWidth:240,color:"#fff",cursor:"pointer"},
+  orderBtnAlt:{},
   orderBtnIcon:{fontSize:46,filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.25))"},
   orderBtnLabel:{fontFamily:"'Inter',sans-serif",fontSize:21,fontWeight:600,letterSpacing:"-0.4px"},
   orderBtnSub:{fontSize:12,color:"rgba(255,255,255,0.6)",fontFamily:"'Inter',sans-serif",letterSpacing:0.1,marginTop:2,fontWeight:400},
