@@ -212,6 +212,41 @@ function setupRemoteOps(app, opts = {}) {
   // Run idempotent migrations (ignore duplicate-column errors)
   for (const m of MIGRATIONS) { try { db.exec(m); } catch {} }
 
+  // Auto-seed outlet_pins kalau belum ada — pakai outlets table sebagai source
+  function autoSeedOutletPins() {
+    try {
+      const pinCount = db.prepare(`SELECT COUNT(*) c FROM outlet_pins`).get().c;
+      if (pinCount > 0) return;
+      // Default GPS coords per area (Jakarta-centric, adjustable per outlet later)
+      const AREA_COORDS = {
+        'Jakarta':   { lat: -6.2088, lon: 106.8456 },
+        'Bandung':   { lat: -6.9175, lon: 107.6191 },
+        'Tangerang': { lat: -6.1783, lon: 106.6319 },
+        'Surabaya':  { lat: -7.2575, lon: 112.7521 },
+        'Kalimantan':{ lat: -1.2379, lon: 116.8529 },
+      };
+      const fallback = { lat: -6.2088, lon: 106.8456 };
+      let outletRows = [];
+      try { outletRows = db.prepare(`SELECT name, area, manager FROM outlets`).all(); } catch {}
+      if (outletRows.length === 0) return;
+      const insPin = db.prepare(`INSERT OR IGNORE INTO outlet_pins (outlet_code, outlet_name, vertical, manager_name, gps_lat, gps_lon, gps_radius_m, geofence_enforce, address, manager_pin_hash) VALUES (?,?,?,?,?,?,?,?,?,?)`);
+      const defaultPinHash = sha256('1234');
+      for (const o of outletRows) {
+        const coords = AREA_COORDS[o.area] || fallback;
+        // Add small random offset (-0.005 to +0.005 ~ 500m) so outlets don't stack
+        const jitter = () => (Math.random() - 0.5) * 0.01;
+        const code = o.name.replace(/\s+/g, '_').toUpperCase();
+        insPin.run(code, o.name, 'fnb', o.manager || null,
+                   coords.lat + jitter(), coords.lon + jitter(),
+                   200, 0,  // geofence default warn-only (gak enforce) untuk demo
+                   `${o.name}, ${o.area}`, defaultPinHash);
+      }
+      console.log(`[remote-ops] 🌱 auto-seeded ${outletRows.length} outlet pins (PIN: 1234, geofence: warn-only)`);
+    } catch (e) { console.error('[remote-ops] outlet pin auto-seed error', e.message); }
+  }
+  // Run after small delay to ensure outlets table populated first
+  setTimeout(autoSeedOutletPins, 5000);
+
   // Seed templates if empty
   const tplCount = db.prepare(`SELECT COUNT(*) c FROM outlet_audit_templates`).get().c;
   if (tplCount === 0) {

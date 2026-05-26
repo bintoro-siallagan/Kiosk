@@ -270,6 +270,38 @@ function setupOutletLaunch(app, opts = {}) {
   db.exec(SCHEMA);
   for (const m of MIGRATIONS) { try { db.exec(m); } catch {} }
 
+  // Auto-seed demo data ONLY kalau DB kosong (first install / fresh boot)
+  function autoSeedDemo() {
+    try {
+      const cnt = db.prepare(`SELECT COUNT(*) c FROM outlet_launches`).get().c;
+      if (cnt > 0) return;
+      const now = Math.floor(Date.now() / 1000);
+      const insLaunch = db.prepare(`INSERT INTO outlet_launches (outlet_code, outlet_name, vertical, area, target_open_date, project_manager, gm_name, notes, created_by) VALUES (?,?,?,?,?,?,?,?,?)`);
+      const r = insLaunch.run('DEMO_KEMANG_02', 'Kemang Plaza 2 (DEMO)', 'fnb', 'Jakarta Selatan',
+        now + 45 * 86400, 'Rina Pratama', 'Budi Hartono',
+        'Auto-seeded demo project — bisa di-archive setelah Anda buat project asli.', 'system-seed');
+      const launchId = r.lastInsertRowid;
+      const insTask = db.prepare(`INSERT INTO launch_tasks (launch_id, department, stage, item_label, requires_photo, deadline, status) VALUES (?,?,?,?,?,?,?)`);
+      const stageDays = Object.fromEntries(STAGES.map(s => [s.code, s.days]));
+      const tx = db.transaction(() => {
+        for (const [dept, stage, label, photo] of DEFAULT_TASKS) {
+          const deadline = now + 45 * 86400 - (stageDays[stage] || 0) * 86400;
+          insTask.run(launchId, dept, stage, label, photo, deadline, 'pending');
+        }
+      });
+      tx();
+      // Sprinkle some done states biar tracker tidak kosong total
+      try {
+        const someConstruction = db.prepare(`SELECT id FROM launch_tasks WHERE launch_id=? AND department='construction' LIMIT 4`).all(launchId);
+        someConstruction.forEach(t => db.prepare(`UPDATE launch_tasks SET status='done', updated_at=? WHERE id=?`).run(now, t.id));
+        const someIt = db.prepare(`SELECT id FROM launch_tasks WHERE launch_id=? AND department='it' LIMIT 2`).all(launchId);
+        someIt.forEach(t => db.prepare(`UPDATE launch_tasks SET status='done', updated_at=? WHERE id=?`).run(now, t.id));
+      } catch {}
+      console.log(`[launch] 🌱 auto-seeded demo project DEMO_KEMANG_02 (${DEFAULT_TASKS.length} tasks)`);
+    } catch (e) { console.error('[launch] auto-seed error', e.message); }
+  }
+  autoSeedDemo();
+
   const UPLOAD_DIR = opts.uploadDir || path.join(__dirname, 'uploads', 'launch');
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 

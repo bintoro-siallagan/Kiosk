@@ -232,6 +232,39 @@ function setupServiceVisit(app, opts = {}) {
     console.log(`[service-visit] seeded ${DEFAULT_TEMPLATES.length} default service templates`);
   }
 
+  // Auto-seed 1 demo ticket kalau belum ada apa-apa
+  function autoSeedDemo() {
+    try {
+      const ticketCount = db.prepare(`SELECT COUNT(*) c FROM service_tickets`).get().c;
+      if (ticketCount > 0) return;
+      // Cari outlet pertama
+      let outletCode = 'DEMO_OUTLET', outletName = 'Demo Outlet';
+      try {
+        const o = db.prepare(`SELECT name FROM outlets LIMIT 1`).get();
+        if (o) { outletCode = o.name.replace(/\s+/g, '_').toUpperCase(); outletName = o.name; }
+      } catch {}
+      const year = new Date().getFullYear();
+      const ticketNo = `SV-${year}-0001`;
+      const due = Math.floor(Date.now() / 1000) + 86400;
+      const r = db.prepare(`INSERT INTO service_tickets (ticket_no, outlet_code, outlet_name, department, ticket_type, title, description, priority, assigned_to_name, created_by, due_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
+        .run(ticketNo, outletCode, outletName, 'it', 'PC Repair',
+             '[DEMO] PC kasir #2 sering hang',
+             'Tiket demo otomatis — kasir laporan PC kasir #2 freeze saat input order.',
+             'high', 'Manager', 'system-seed', due);
+      const ticketId = r.lastInsertRowid;
+      // Seed checklist dari template PC Repair
+      const tpl = db.prepare(`SELECT items_json FROM service_templates WHERE template_name LIKE '%PC%' LIMIT 1`).get();
+      if (tpl) {
+        const items = JSON.parse(tpl.items_json);
+        const insItem = db.prepare(`INSERT INTO service_ticket_items (ticket_id, item_label, requires_photo, display_order) VALUES (?,?,?,?)`);
+        const tx = db.transaction(() => items.forEach((it, i) => insItem.run(ticketId, it.label, it.requires_photo ? 1 : 0, it.order || (i + 1) * 10)));
+        tx();
+      }
+      console.log(`[service-visit] 🌱 auto-seeded demo ticket ${ticketNo}`);
+    } catch (e) { console.error('[service-visit] auto-seed error', e.message); }
+  }
+  autoSeedDemo();
+
   const UPLOAD_DIR = opts.uploadDir || path.join(__dirname, 'uploads', 'service');
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 

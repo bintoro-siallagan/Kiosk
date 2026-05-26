@@ -371,7 +371,7 @@ function DoneStep({ ticket, onAgain }) {
 
 function Shell({ children }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: "linear-gradient(160deg,#050810 0%,#0c0f1a 50%,#08090f 100%)", color: "#e6edf3", fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif", overflowY: "auto", overflowX: "hidden" }}>
+    <div style={{ position: "fixed", inset: 0, background: "linear-gradient(160deg,#0a1428 0%,#152348 50%,#1e3a8a 100%)", color: "#e6edf3", fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif", overflowY: "auto", overflowX: "hidden" }}>
       <div aria-hidden style={{ position: "fixed", inset: 0, background: "radial-gradient(700px 500px at 50% 0%, rgba(168,85,247,0.1), transparent 60%)", pointerEvents: "none" }} />
       <div style={{ position: "relative", width: "min(100%, 560px)", margin: "0 auto", boxSizing: "border-box" }}>{children}</div>
     </div>
