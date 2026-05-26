@@ -50,6 +50,7 @@ export const TABS = [
   { id: "cinema_promotion", label: "🎁 Cinema Promotion", color: "#f59e0b" },
   { id: "cinema_loyalty", label: "🎫 Cinema Loyalty", color: "#fbbf24" },
   { id: "cinema_party", label: "🎂 Cinema Party Packages", color: "#ec4899" },
+  { id: "cinema_subscriptions", label: "🎟️ Cinema Subscription Pass", color: "#a855f7" },
   { id: "cinema_holidays", label: "📅 Cinema Holiday Calendar", color: "#fbbf24" },
   { id: "cinema_seat_types", label: "💺 Cinema Seat Types", color: "#ec4899" },
   { id: "cinema_crm", label: "👥 Cinema CRM", color: "#22d3ee" },
@@ -199,13 +200,13 @@ export const GROUPS = [
     ids: [
       "cinema_command_center", "cinema_ops", "cinema_ticketing", "cinema_box_office", "cinema_validate", "cinema_refund", "cinema_in_studio_queue", "cinema_event_booking",
       "cinema_bundles", "cinema_bundle_redeem", "cinema_inventory",
-      "cinema_distribution", "cinema_price_list", "cinema_holidays", "cinema_seat_types", "cinema_promotion", "cinema_loyalty", "cinema_party", "cinema_campaign",
+      "cinema_distribution", "cinema_price_list", "cinema_holidays", "cinema_seat_types", "cinema_promotion", "cinema_loyalty", "cinema_party", "cinema_subscriptions", "cinema_campaign",
       "cinema_crm", "cinema_analytics",
     ],
     categories: [
       { name: "🛰️ Operations",        ids: ["cinema_command_center", "cinema_ops", "cinema_ticketing", "cinema_box_office", "cinema_validate", "cinema_refund", "cinema_in_studio_queue", "cinema_event_booking"] },
       { name: "🍿 F&B",                ids: ["cinema_bundles", "cinema_bundle_redeem", "cinema_inventory"] },
-      { name: "💲 Catalog & Pricing",  ids: ["cinema_distribution", "cinema_price_list", "cinema_holidays", "cinema_seat_types", "cinema_promotion", "cinema_loyalty", "cinema_party", "cinema_campaign"] },
+      { name: "💲 Catalog & Pricing",  ids: ["cinema_distribution", "cinema_price_list", "cinema_holidays", "cinema_seat_types", "cinema_promotion", "cinema_loyalty", "cinema_party", "cinema_subscriptions", "cinema_campaign"] },
       { name: "📊 Intelligence",       ids: ["cinema_crm", "cinema_analytics"] },
     ],
   },

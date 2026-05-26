@@ -2327,6 +2327,206 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: true, count: results.length, days_window: days, results });
   });
 
+  // ── SUBSCRIPTION PASS (CULTPASS-style) ──
+  // Monthly unlimited atau N-ticket bundle per period. Auto-deduct saat checkout.
+  // Auto-renew via cron kalau plan.auto_renew=1.
+  try { db.exec(`CREATE TABLE IF NOT EXISTS cinema_subscription_plans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT UNIQUE NOT NULL,         -- 'CULT_MONTHLY', 'CULT_5TIX', etc.
+    name TEXT NOT NULL,
+    description TEXT,
+    plan_type TEXT CHECK (plan_type IN ('unlimited','n_ticket')) DEFAULT 'unlimited',
+    duration_days INTEGER DEFAULT 30,  -- masa berlaku per periode
+    ticket_quota INTEGER DEFAULT 0,    -- 0 = unlimited, atau N untuk bundle
+    price INTEGER NOT NULL,
+    studio_types_json TEXT,            -- JSON array ['Regular','Deluxe'] — yang bisa di-claim. null = semua
+    blackout_days_json TEXT,           -- e.g. ['saturday','sunday'] — hari yg gak bisa pakai pass
+    max_per_day INTEGER DEFAULT 1,     -- max tiket per hari
+    image_url TEXT,
+    auto_renew INTEGER DEFAULT 0,
+    is_active INTEGER DEFAULT 1,
+    company_id INTEGER,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+  )`); } catch {}
+  try { db.exec(`CREATE TABLE IF NOT EXISTS cinema_subscriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_phone TEXT NOT NULL,
+    customer_name TEXT,
+    plan_id INTEGER NOT NULL,
+    plan_code TEXT,
+    plan_snapshot_json TEXT,           -- snapshot config saat subscribe (anti-tamper)
+    started_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL,
+    tickets_remaining INTEGER DEFAULT 0,
+    tickets_used INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'active' CHECK (status IN ('active','expired','cancelled','paused')),
+    auto_renew INTEGER DEFAULT 0,
+    last_used_at INTEGER,
+    payment_ref TEXT,
+    next_renew_at INTEGER,
+    cancelled_at INTEGER,
+    cancel_reason TEXT,
+    company_id INTEGER,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+  )`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_sub_phone ON cinema_subscriptions(customer_phone)`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_sub_status ON cinema_subscriptions(status)`); } catch {}
+  try { db.exec(`CREATE TABLE IF NOT EXISTS cinema_subscription_uses (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    subscription_id INTEGER NOT NULL,
+    showtime_id INTEGER,
+    ticket_id INTEGER,
+    used_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+  )`); } catch {}
+
+  // GET plans available
+  router.get('/subscription-plans', (req, res) => {
+    const scope = req.companyScope || { is_super_admin: true };
+    const where = scope.is_super_admin ? `WHERE is_active = 1` : `WHERE is_active = 1 AND company_id = ${parseInt(scope.company_id, 10)}`;
+    const rows = db.prepare(`SELECT * FROM cinema_subscription_plans ${where} ORDER BY price`).all().map(p => ({
+      ...p,
+      studio_types: p.studio_types_json ? (() => { try { return JSON.parse(p.studio_types_json); } catch { return null; } })() : null,
+      blackout_days: p.blackout_days_json ? (() => { try { return JSON.parse(p.blackout_days_json); } catch { return []; } })() : [],
+    }));
+    res.json({ plans: rows });
+  });
+
+  // POST create plan (admin)
+  router.post('/subscription-plans', (req, res) => {
+    const b = req.body || {};
+    if (!b.code || !b.name || !b.price) return res.status(400).json({ error: 'code, name, price wajib' });
+    const scope = req.companyScope || { is_super_admin: true };
+    const companyId = scope.is_super_admin ? (parseInt(b.company_id, 10) || 2) : scope.company_id;
+    try {
+      const info = db.prepare(`INSERT INTO cinema_subscription_plans
+        (code, name, description, plan_type, duration_days, ticket_quota, price,
+         studio_types_json, blackout_days_json, max_per_day, image_url, auto_renew, is_active, company_id)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+        .run(String(b.code).toUpperCase(), b.name, b.description || '',
+             b.plan_type || 'unlimited', parseInt(b.duration_days, 10) || 30,
+             parseInt(b.ticket_quota, 10) || 0, parseInt(b.price, 10),
+             Array.isArray(b.studio_types) ? JSON.stringify(b.studio_types) : null,
+             Array.isArray(b.blackout_days) ? JSON.stringify(b.blackout_days) : null,
+             parseInt(b.max_per_day, 10) || 1, b.image_url || null,
+             b.auto_renew ? 1 : 0, 1, companyId);
+      res.json({ ok: true, id: info.lastInsertRowid });
+    } catch (e) {
+      if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({ error: 'code already exists' });
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // POST subscribe (customer beli pass)
+  router.post('/subscriptions', (req, res) => {
+    const b = req.body || {};
+    const phone = String(b.customer_phone || '').replace(/[^0-9]/g, '');
+    const planId = parseInt(b.plan_id, 10);
+    if (!phone || !planId) return res.status(400).json({ error: 'customer_phone & plan_id wajib' });
+    const plan = db.prepare(`SELECT * FROM cinema_subscription_plans WHERE id = ? AND is_active = 1`).get(planId);
+    if (!plan) return res.status(404).json({ error: 'Plan tidak ditemukan' });
+
+    // Cek subscription aktif sudah ada (no double-sub)
+    const existing = db.prepare(`SELECT * FROM cinema_subscriptions WHERE customer_phone = ? AND status = 'active' AND expires_at > strftime('%s','now')`).get(phone);
+    if (existing) return res.status(409).json({ error: `Sudah aktif subscription ${existing.plan_code} sampai ${new Date(existing.expires_at * 1000).toLocaleDateString('id-ID')}` });
+
+    const now = Math.floor(Date.now() / 1000);
+    const expiresAt = now + plan.duration_days * 86400;
+    const scope = req.companyScope || { is_super_admin: true };
+    const companyId = scope.is_super_admin ? (parseInt(b.company_id, 10) || 2) : scope.company_id;
+
+    const info = db.prepare(`INSERT INTO cinema_subscriptions
+      (customer_phone, customer_name, plan_id, plan_code, plan_snapshot_json,
+       started_at, expires_at, tickets_remaining, tickets_used, status,
+       auto_renew, payment_ref, next_renew_at, company_id)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+      .run(phone, b.customer_name || null, planId, plan.code, JSON.stringify(plan),
+           now, expiresAt, plan.plan_type === 'n_ticket' ? plan.ticket_quota : 999999,
+           0, 'active',
+           b.auto_renew && plan.auto_renew ? 1 : 0, b.payment_ref || null,
+           b.auto_renew && plan.auto_renew ? expiresAt : null, companyId);
+    res.json({ ok: true, id: info.lastInsertRowid, expires_at: expiresAt, expires_date: new Date(expiresAt * 1000).toISOString().slice(0, 10) });
+  });
+
+  // GET active subscription by phone
+  router.get('/subscriptions/:phone', (req, res) => {
+    const phone = String(req.params.phone).replace(/[^0-9]/g, '');
+    const sub = db.prepare(`SELECT s.*, p.name AS plan_name, p.plan_type, p.studio_types_json, p.blackout_days_json, p.max_per_day
+      FROM cinema_subscriptions s LEFT JOIN cinema_subscription_plans p ON p.id = s.plan_id
+      WHERE s.customer_phone = ? AND s.status = 'active' AND s.expires_at > strftime('%s','now')
+      ORDER BY s.expires_at DESC LIMIT 1`).get(phone);
+    if (!sub) return res.status(404).json({ error: 'Tidak ada subscription aktif' });
+    const usedToday = db.prepare(`SELECT COUNT(*) c FROM cinema_subscription_uses
+      WHERE subscription_id = ? AND date(used_at,'unixepoch','localtime') = date('now','localtime')`).get(sub.id).c;
+    res.json({
+      subscription: sub,
+      tickets_used_today: usedToday,
+      can_use_today: usedToday < (sub.max_per_day || 1),
+      days_remaining: Math.ceil((sub.expires_at - Date.now() / 1000) / 86400),
+    });
+  });
+
+  // POST use subscription (claim 1 tiket via pass)
+  router.post('/subscriptions/:phone/use', (req, res) => {
+    const phone = String(req.params.phone).replace(/[^0-9]/g, '');
+    const b = req.body || {};
+    const sub = db.prepare(`SELECT s.*, p.studio_types_json, p.blackout_days_json, p.max_per_day, p.plan_type
+      FROM cinema_subscriptions s LEFT JOIN cinema_subscription_plans p ON p.id = s.plan_id
+      WHERE s.customer_phone = ? AND s.status = 'active' AND s.expires_at > strftime('%s','now')
+      LIMIT 1`).get(phone);
+    if (!sub) return res.status(404).json({ error: 'Tidak ada subscription aktif' });
+    if (sub.plan_type === 'n_ticket' && sub.tickets_remaining <= 0) {
+      return res.status(400).json({ error: 'Tickets quota habis untuk plan ini' });
+    }
+    // Cek max per day
+    const usedToday = db.prepare(`SELECT COUNT(*) c FROM cinema_subscription_uses
+      WHERE subscription_id = ? AND date(used_at,'unixepoch','localtime') = date('now','localtime')`).get(sub.id).c;
+    if (usedToday >= (sub.max_per_day || 1)) {
+      return res.status(400).json({ error: `Max ${sub.max_per_day} tiket/hari sudah tercapai` });
+    }
+    // Cek blackout day
+    const blackouts = sub.blackout_days_json ? (() => { try { return JSON.parse(sub.blackout_days_json); } catch { return []; } })() : [];
+    if (blackouts.length > 0) {
+      const dow = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'][new Date().getDay()];
+      if (blackouts.includes(dow)) return res.status(400).json({ error: `Subscription tidak berlaku hari ${dow}` });
+    }
+    // Cek studio type (kalau showtime_id provided)
+    if (b.showtime_id && sub.studio_types_json) {
+      const allowedTypes = JSON.parse(sub.studio_types_json);
+      const studio = db.prepare(`SELECT st.studio_type FROM cinema_showtimes s LEFT JOIN cinema_studios st ON st.id = s.studio_id WHERE s.id = ?`).get(parseInt(b.showtime_id, 10));
+      if (studio && !allowedTypes.includes(studio.studio_type)) {
+        return res.status(400).json({ error: `Subscription tidak berlaku untuk studio ${studio.studio_type}. Boleh: ${allowedTypes.join(', ')}` });
+      }
+    }
+
+    // Use it
+    db.prepare(`INSERT INTO cinema_subscription_uses (subscription_id, showtime_id, ticket_id) VALUES (?,?,?)`)
+      .run(sub.id, b.showtime_id ? parseInt(b.showtime_id, 10) : null, b.ticket_id ? parseInt(b.ticket_id, 10) : null);
+    if (sub.plan_type === 'n_ticket') {
+      db.prepare(`UPDATE cinema_subscriptions SET tickets_remaining = tickets_remaining - 1, tickets_used = tickets_used + 1, last_used_at = strftime('%s','now') WHERE id = ?`).run(sub.id);
+    } else {
+      db.prepare(`UPDATE cinema_subscriptions SET tickets_used = tickets_used + 1, last_used_at = strftime('%s','now') WHERE id = ?`).run(sub.id);
+    }
+    res.json({ ok: true, subscription_id: sub.id, ticket_used_count: sub.tickets_used + 1 });
+  });
+
+  // POST cancel subscription
+  router.post('/subscriptions/:id/cancel', (req, res) => {
+    const b = req.body || {};
+    db.prepare(`UPDATE cinema_subscriptions SET status='cancelled', cancelled_at=strftime('%s','now'), cancel_reason=?, auto_renew=0 WHERE id = ?`)
+      .run(b.reason || '', parseInt(req.params.id, 10));
+    res.json({ ok: true });
+  });
+
+  // GET list all subscriptions (admin)
+  router.get('/subscriptions', (req, res) => {
+    const scope = req.companyScope || { is_super_admin: true };
+    const where = scope.is_super_admin ? '' : `WHERE company_id = ${parseInt(scope.company_id, 10)}`;
+    const rows = db.prepare(`SELECT s.*, p.name AS plan_name FROM cinema_subscriptions s
+      LEFT JOIN cinema_subscription_plans p ON p.id = s.plan_id ${where}
+      ORDER BY s.created_at DESC LIMIT 200`).all();
+    res.json({ subscriptions: rows, count: rows.length });
+  });
+
   // ── BIRTHDAY PARTY PACKAGE ──
   // Package bundle (studio + F&B + decoration + photographer) untuk private event birthday/anniversary.
   // Conflict-check via existing cinema_studio_bookings.
