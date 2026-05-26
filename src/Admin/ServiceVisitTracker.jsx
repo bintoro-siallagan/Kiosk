@@ -298,7 +298,8 @@ function TicketDetailDrawer({ ticket, departments, templates, onClose, onRefresh
     setBusyItem(false);
   };
 
-  const deptTemplates = (templates || []).filter(t => t.department === ticket.department);
+  // Show all templates — admin bisa pilih template dari dept manapun
+  const deptTemplates = templates || [];
 
   const dept = departments.find(d => d.code === ticket.department);
 
@@ -341,12 +342,35 @@ function TicketDetailDrawer({ ticket, departments, templates, onClose, onRefresh
               </div>
             </div>
 
+            {/* LIVE EDIT — moved on top biar admin langsung lihat */}
+            {ticket.status !== "completed" && ticket.status !== "cancelled" && (
+              <div style={{ marginBottom: 14, padding: 12, background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.35)", borderRadius: 10 }}>
+                <div style={{ fontSize: 11, color: CYAN, fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>✏️ EDIT CHECKLIST (LIVE)</div>
+
+                <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+                  <input value={newItem} onChange={e => setNewItem(e.target.value)} onKeyDown={e => e.key === "Enter" && addItem()}
+                    placeholder="Tambah item ke ticket ini…" style={inp} />
+                  <button onClick={() => setNewItemPhoto(p => !p)} title="Wajib foto?" style={{ padding: "8px 10px", background: newItemPhoto ? AMBER + "33" : "transparent", border: `1px solid ${newItemPhoto ? AMBER : "rgba(255,255,255,0.15)"}`, borderRadius: 8, color: newItemPhoto ? AMBER : "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>📸 {newItemPhoto ? "ON" : "off"}</button>
+                  <button onClick={addItem} disabled={busyItem || !newItem.trim()} style={{ padding: "8px 14px", background: CYAN, border: "none", borderRadius: 8, color: "#001620", fontSize: 12, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", opacity: busyItem || !newItem.trim() ? 0.5 : 1 }}>+ Add</button>
+                </div>
+
+                {/* Sync template — selalu tampil, list semua template */}
+                <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
+                  <select value={syncTplId} onChange={e => setSyncTplId(e.target.value)} style={inp}>
+                    <option value="">— Pilih template untuk sync —</option>
+                    {deptTemplates.length === 0 && <option disabled>(Belum ada template — buat di tab Templates)</option>}
+                    {deptTemplates.map(t => <option key={t.id} value={t.id}>[{t.department}] {t.template_name} ({t.items?.length || 0} items)</option>)}
+                  </select>
+                  <button onClick={syncTemplate} disabled={busyItem || !syncTplId} style={{ padding: "8px 14px", background: PURPLE, border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", opacity: busyItem || !syncTplId ? 0.5 : 1 }}>🔄 Sync</button>
+                </div>
+                <div style={{ fontSize: 10, color: "#64748b", marginTop: 4 }}>Sync menambah item dari template yang belum ada (match by label). Item langsung muncul di mobile staff (auto-poll 20s).</div>
+                {msg && <div style={{ marginTop: 8, fontSize: 11, color: msg.startsWith("✓") ? GREEN : RED, fontWeight: 700 }}>{msg}</div>}
+              </div>
+            )}
+
             {/* Items */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Geist Mono',monospace" }}>📋 CHECKLIST ({detail.items?.length || 0})</div>
-              {ticket.status !== "completed" && ticket.status !== "cancelled" && (
-                <div style={{ fontSize: 10, color: CYAN, fontFamily: "'Geist Mono',monospace" }}>LIVE EDIT</div>
-              )}
             </div>
             {detail.items?.map(it => (
               <div key={it.id} style={{ padding: 10, background: CARD_BG, border: BORDER, borderRadius: 8, marginBottom: 6 }}>
@@ -368,34 +392,6 @@ function TicketDetailDrawer({ ticket, departments, templates, onClose, onRefresh
               </div>
             ))}
 
-            {/* Live edit: tambah item / sync template */}
-            {ticket.status !== "completed" && ticket.status !== "cancelled" && (
-              <div style={{ marginTop: 12, padding: 12, background: "rgba(34,211,238,0.05)", border: "1px dashed rgba(34,211,238,0.3)", borderRadius: 10 }}>
-                <div style={{ fontSize: 11, color: CYAN, fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>+ TAMBAH ITEM (LIVE)</div>
-                <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
-                  <input value={newItem} onChange={e => setNewItem(e.target.value)} onKeyDown={e => e.key === "Enter" && addItem()}
-                    placeholder="Item baru ke ticket ini…" style={inp} />
-                  <button onClick={() => setNewItemPhoto(p => !p)} title="Wajib foto?" style={{ padding: "8px 10px", background: newItemPhoto ? AMBER + "33" : "transparent", border: `1px solid ${newItemPhoto ? AMBER : "rgba(255,255,255,0.15)"}`, borderRadius: 8, color: newItemPhoto ? AMBER : "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>📸 {newItemPhoto ? "ON" : "off"}</button>
-                  <button onClick={addItem} disabled={busyItem || !newItem.trim()} style={{ padding: "8px 14px", background: CYAN, border: "none", borderRadius: 8, color: "#001620", fontSize: 12, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", opacity: busyItem || !newItem.trim() ? 0.5 : 1 }}>+ Add</button>
-                </div>
-                <div style={{ fontSize: 10, color: "#64748b", marginBottom: 10 }}>Item baru langsung muncul di mobile staff (?service). Hanya yang belum done yang bisa dihapus.</div>
-
-                {deptTemplates.length > 0 && (
-                  <>
-                    <div style={{ fontSize: 11, color: PURPLE, fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginTop: 8, marginBottom: 6 }}>🔄 SYNC DARI TEMPLATE</div>
-                    <div style={{ display: "flex", gap: 6 }}>
-                      <select value={syncTplId} onChange={e => setSyncTplId(e.target.value)} style={inp}>
-                        <option value="">— Pilih template dept {ticket.department} —</option>
-                        {deptTemplates.map(t => <option key={t.id} value={t.id}>{t.template_name} ({t.items?.length || 0} items)</option>)}
-                      </select>
-                      <button onClick={syncTemplate} disabled={busyItem || !syncTplId} style={{ padding: "8px 14px", background: PURPLE, border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", opacity: busyItem || !syncTplId ? 0.5 : 1 }}>🔄 Sync</button>
-                    </div>
-                    <div style={{ fontSize: 10, color: "#64748b", marginTop: 4 }}>Hanya item yang belum ada (match by label) yang ditambah — duplikat di-skip otomatis.</div>
-                  </>
-                )}
-                {msg && <div style={{ marginTop: 8, fontSize: 11, color: msg.startsWith("✓") ? GREEN : RED, fontWeight: 700 }}>{msg}</div>}
-              </div>
-            )}
           </>
         )}
       </div>
@@ -470,8 +466,34 @@ function CreateTicketModal({ onClose, onCreated, API, departments, outlets, user
               <option value="urgent">Urgent</option>
             </select>
           </Field>
-          <Field label="📅 SLA / DUE">
-            <input type="datetime-local" value={form.due_at_str} onChange={e => setForm({...form, due_at_str: e.target.value})} style={inp} />
+          <Field label="📅 SLA / DUE (klik untuk buka kalender)">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+              <input type="date" readOnly={false}
+                value={(form.due_at_str || "").split("T")[0] || ""}
+                onChange={e => {
+                  const time = (form.due_at_str || "").split("T")[1] || "17:00";
+                  setForm({ ...form, due_at_str: e.target.value ? `${e.target.value}T${time}` : "" });
+                }}
+                onClick={e => { try { e.currentTarget.showPicker?.(); } catch {} }}
+                onKeyDown={e => { if (e.key !== "Tab" && e.key !== "Escape") e.preventDefault(); }}
+                style={{ ...inp, colorScheme: "dark", cursor: "pointer" }} />
+              <input type="time" readOnly={false}
+                value={(form.due_at_str || "").split("T")[1] || ""}
+                onChange={e => {
+                  const date = (form.due_at_str || "").split("T")[0] || new Date().toISOString().slice(0, 10);
+                  setForm({ ...form, due_at_str: `${date}T${e.target.value}` });
+                }}
+                onClick={e => { try { e.currentTarget.showPicker?.(); } catch {} }}
+                onKeyDown={e => { if (e.key !== "Tab" && e.key !== "Escape") e.preventDefault(); }}
+                disabled={!form.due_at_str}
+                style={{ ...inp, colorScheme: "dark", cursor: "pointer", opacity: form.due_at_str ? 1 : 0.5 }} />
+            </div>
+            {form.due_at_str && (
+              <div style={{ fontSize: 10, color: "#64748b", marginTop: 4, fontFamily: "'Geist Mono',monospace" }}>
+                → {new Date(form.due_at_str).toLocaleString("id-ID", { weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                <button onClick={() => setForm({ ...form, due_at_str: "" })} style={{ marginLeft: 8, padding: "1px 6px", background: "transparent", border: "none", color: RED, fontSize: 10, cursor: "pointer" }}>× clear</button>
+              </div>
+            )}
           </Field>
         </div>
         <Field label="👤 ASSIGNED TO">
