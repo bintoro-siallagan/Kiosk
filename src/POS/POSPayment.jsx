@@ -339,7 +339,7 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
 
         <div style={styles.tenderList}>
           <div style={styles.sectionTitle}>Tender Lines ({tenders.length})</div>
-          {tenders.length === 0 && <div style={styles.empty}>Belum ada tender. Choose method di sebelah →</div>}
+          {tenders.length === 0 && <div style={styles.empty}>No tender yet. Choose a method on the right →</div>}
           {tenders.map((t, i) => {
             const meta = TENDER_META[t.tender_type] || {};
             return (
@@ -361,7 +361,7 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
 
         {validation && !validation.valid && (
           <div style={styles.errorBox}>
-            <b>Belum valid:</b>
+            <b>Not valid yet:</b>
             <ul style={{ margin: '4px 0 0 16px', padding: 0 }}>
               {validation.errors.map((e, i) => <li key={i}>{e}</li>)}
             </ul>
@@ -378,7 +378,7 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
 
       {/* RIGHT — tender selector + amount input */}
       <div style={styles.rightPane}>
-        <div style={styles.sectionTitle}>Pilih Metode Pembayaran</div>
+        <div style={styles.sectionTitle}>Choose Payment Method</div>
         <div style={styles.tenderGrid}>
           {enabledTenders.map(t => {
             const meta = TENDER_META[t]; if (!meta) return null;

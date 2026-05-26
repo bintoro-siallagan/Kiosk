@@ -274,7 +274,7 @@ export default function POSCinemaApp() {
             {/* Floating button: buka Customer Display di layar kedua */}
             <button
               onClick={openCinemaCDSOnSecondScreen}
-              title="Buka Customer Display di layar kedua (TV second screen)"
+              title="Open Customer Display on second screen (TV)"
               onMouseEnter={(e) => { e.currentTarget.style.background = "#a855f7"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.transform = "translateX(-50%) translateY(-2px)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(168,85,247,0.1)"; e.currentTarget.style.color = "#c084fc"; e.currentTarget.style.transform = "translateX(-50%) translateY(0)"; }}
               style={{
@@ -431,7 +431,7 @@ function Home({ onPick }) {
     <div style={S.content}>
       <div style={S.section}>
         <div style={S.sectionTitle}>JADWAL TAYANG</div>
-        <div style={S.sectionSub}>Pilih jadwal untuk mulai jual tiket</div>
+        <div style={S.sectionSub}>Pick a showtime to start selling tickets</div>
         <div style={{ display: "flex", gap: 8, marginTop: 16, flexWrap: "wrap", alignItems: "center" }}>
           {[["today", "Hari Ini"], ["upcoming", "Mendatang"], ["all", "Semua"]].map(([k, l]) => (
             <button key={k} onClick={() => setFilter(k)} className="pill-btn"
@@ -453,8 +453,8 @@ function Home({ onPick }) {
       ) : list.length === 0 ? (
         <div style={{ ...S.emptyCard }}>
           <div style={{ fontSize: 38, marginBottom: 8 }}>🎬</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: TH.text }}>Tidak ada jadwal</div>
-          <div style={{ fontSize: 12, color: TH.sub, marginTop: 4 }}>Belum ada jadwal tayang untuk filter ini.</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: TH.text }}>No showtimes</div>
+          <div style={{ fontSize: 12, color: TH.sub, marginTop: 4 }}>No showtimes available for this filter.</div>
         </div>
       ) : (
         <div style={S.grid}>
@@ -528,7 +528,7 @@ function ShowtimeCard({ st, onPick }) {
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: TH.sub, marginBottom: 5 }}>
             <span>Okupansi <b style={{ color: "#fff" }}>{pct}%</b></span>
             <span style={{ color: isFull ? TH.red : sellable ? TH.green : TH.dim, fontWeight: 700 }}>
-              {isFull ? "Sold out" : `${remaining} kursi`}
+              {isFull ? "Sold out" : `${remaining} seats`}
             </span>
           </div>
           <div style={{ height: 5, background: "rgba(255,255,255,0.06)", borderRadius: 3, overflow: "hidden" }}>
@@ -705,7 +705,7 @@ function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, p
           </div>
           <div style={{ display: "flex", justifyContent: "center", gap: 18, marginTop: 18, fontSize: 11, color: TH.sub, flexWrap: "wrap" }}>
             <Legend color="rgba(255,255,255,0.04)" border="rgba(255,255,255,0.08)" label="Tersedia" />
-            <Legend color="linear-gradient(135deg,#f59e0b,#fbbf24)" border="rgba(245,158,11,0.6)" label="Dipilih" />
+            <Legend color="linear-gradient(135deg,#f59e0b,#fbbf24)" border="rgba(245,158,11,0.6)" label="Selected" />
             <Legend color="rgba(239,68,68,0.15)" border="rgba(239,68,68,0.3)" label="Terjual" />
           </div>
           {/* CTA Lanjut */}
@@ -809,7 +809,7 @@ function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, p
 
         {/* Payment method */}
         <div style={{ marginTop: 18 }}>
-          <div style={S.itemLabel}>Metode Pembayaran</div>
+          <div style={S.itemLabel}>Payment Method</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
             {[
               ["cash", "💵 Tunai"], ["debit", "💳 Debit"],
@@ -1081,7 +1081,7 @@ function Pay({ picked, saleData, paymentMethod, buyer, setBuyer, cashier, onBack
   };
 
   const meta = {
-    cash:    { emoji: "💵", label: "Tunai",       color: "#10b981" },
+    cash:    { emoji: "💵", label: "Cash",       color: "#10b981" },
     debit:   { emoji: "💳", label: "Debit/Kredit", color: "#3b82f6" },
     qris:    { emoji: "📲", label: "QRIS",        color: "#22d3ee" },
     voucher: { emoji: "🎟️", label: "Voucher",     color: "#fbbf24" },
@@ -1094,7 +1094,7 @@ function Pay({ picked, saleData, paymentMethod, buyer, setBuyer, cashier, onBack
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
           <button onClick={onBack} className="ghost-btn" style={S.ghostBtn} disabled={busy}>← Batal / Ubah</button>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 12, color: TH.dim, letterSpacing: 1.4, fontFamily: "'Geist Mono',monospace", fontWeight: 700, textTransform: "uppercase" }}>Pembayaran</span>
+            <span style={{ fontSize: 12, color: TH.dim, letterSpacing: 1.4, fontFamily: "'Geist Mono',monospace", fontWeight: 700, textTransform: "uppercase" }}>Payment</span>
             <span style={{
               padding: "5px 14px", borderRadius: 999,
               background: `${meta.color}1a`, border: `1px solid ${meta.color}55`, color: meta.color,
@@ -1259,7 +1259,7 @@ function Pay({ picked, saleData, paymentMethod, buyer, setBuyer, cashier, onBack
               <>
                 <div style={{ fontSize: 56, margin: "16px 0", filter: "drop-shadow(0 0 24px rgba(34,211,238,0.4))", lineHeight: 1 }}>📲</div>
                 <div style={{ fontSize: 14, color: TH.sub, marginBottom: 18 }}>
-                  Klik "Generate QR" untuk mulai pembayaran QRIS.<br/>
+                  Click "Generate QR" to start QRIS payment.<br/>
                   QR akan tampil di layar ini + Customer Display (CDS).
                 </div>
                 <button onClick={generateQris} disabled={qrisLoading} className="primary-btn"

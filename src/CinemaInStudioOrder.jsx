@@ -59,8 +59,8 @@ export default function CinemaInStudioOrder({ apiBase }) {
 
   // STAGE 1 — Proceed to payment
   async function proceedPay() {
-    if (!items.length) { setMsg("Pilih minimal 1 item."); return; }
-    if (!seat.trim())  { setMsg("Nomor kursi wajib diisi."); return; }
+    if (!items.length) { setMsg("Select at least 1 item."); return; }
+    if (!seat.trim())  { setMsg("Seat number is required."); return; }
     setBusy(true); setMsg(""); setPaid(false); setQrData(null);
     try {
       const orderId = `ISO-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
@@ -142,7 +142,7 @@ export default function CinemaInStudioOrder({ apiBase }) {
         clearInterval(pollRef.current);
         submitPaidOrder();
       } else {
-        setMsg("Status pembayaran belum confirmed. Coba lagi beberapa detik.");
+        setMsg("Payment not yet confirmed. Try again in a few seconds.");
       }
     } catch (e) { setMsg("⚠ " + e.message); }
     setBusy(false);
@@ -185,7 +185,7 @@ export default function CinemaInStudioOrder({ apiBase }) {
         <style>{`@keyframes karyaIsoBounce { 0% { opacity: 0; transform: translateY(20px) scale(0.92); } 60% { opacity: 1; transform: translateY(-4px) scale(1.02); } 100% { opacity: 1; transform: translateY(0) scale(1); } }`}</style>
         <div style={{ position: "relative", zIndex: 1, animation: "karyaIsoBounce 0.6s cubic-bezier(.2,.7,.3,1)", display: "flex", flexDirection: "column", alignItems: "center", gap: 14, width: "100%", maxWidth: 420 }}>
           <div style={{ fontSize: 56, lineHeight: 1, filter: "drop-shadow(0 0 24px rgba(16,185,129,0.35))" }}>✅</div>
-          <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.2, letterSpacing: -0.6, color: "#10b981", margin: 0 }}>Pembayaran sukses!</div>
+          <div style={{ fontSize: 28, fontWeight: 900, lineHeight: 1.2, letterSpacing: -0.6, color: "#10b981", margin: 0 }}>Payment Successful!</div>
           <div style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", lineHeight: 1.4, margin: 0 }}>Order <b style={{ color: "#fbbf24", fontFamily: "'Geist Mono',monospace", letterSpacing: 1.5 }}>{done.order_code}</b></div>
           <div style={{ position: "relative", background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 20, minWidth: 280, textAlign: "left", width: "100%", boxSizing: "border-box", overflow: "hidden", boxShadow: "0 16px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
             <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(400px 200px at 50% 0%, rgba(16,185,129,0.08), transparent 70%)", pointerEvents: "none" }} />
@@ -256,7 +256,7 @@ export default function CinemaInStudioOrder({ apiBase }) {
             <div style={{ background: "rgba(16,185,129,0.08)", border: "2px solid #10b981", borderRadius: 18, padding: 32, marginBottom: 16 }}>
               <div style={{ fontSize: 72 }}>✅</div>
               <div style={{ fontSize: 22, fontWeight: 900, color: "#10b981", marginTop: 10, letterSpacing: -0.5 }}>PEMBAYARAN SUKSES</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 6 }}>{busy ? "Mengirim pesanan ke staff…" : "Menyiapkan order…"}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 6 }}>{busy ? "Sending order to staff…" : "Preparing order…"}</div>
             </div>
           ) : qrSrc ? (
             <div style={{ background: "#fff", borderRadius: 18, padding: 20, marginBottom: 16, display: "inline-block" }}>
@@ -287,7 +287,7 @@ export default function CinemaInStudioOrder({ apiBase }) {
               )}
               <div>
                 <button onClick={manualConfirm} disabled={busy} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, padding: "11px 22px", color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: 700, cursor: busy ? "wait" : "pointer", fontFamily: "inherit" }}>
-                  {busy ? "Mengecek…" : "Saya sudah bayar — cek status"}
+                  {busy ? "Checking…" : "I already paid — check status"}
                 </button>
               </div>
             </>
@@ -324,10 +324,10 @@ export default function CinemaInStudioOrder({ apiBase }) {
         <div style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.005))", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 16, marginBottom: 16, boxShadow: "0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)" }}>
           <div style={{ fontSize: 10, color: "#a78bfa", letterSpacing: 2, textTransform: "uppercase", fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 10 }}>📍 KIRIM KE</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <input value={seat} onChange={e => setSeat(e.target.value.toUpperCase())} placeholder="Kursi (mis: B5)" className="karya-iso-input" style={inp} />
+            <input value={seat} onChange={e => setSeat(e.target.value.toUpperCase())} placeholder="Seat (e.g., B5)" className="karya-iso-input" style={inp} />
             <input value={name} onChange={e => setName(e.target.value)} placeholder="Nama (opsional)" className="karya-iso-input" style={inp} />
             <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="WA (opsional)" className="karya-iso-input" style={inp} />
-            <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Catatan (mis: tanpa garam)" className="karya-iso-input" style={inp} />
+            <input value={notes} onChange={e => setNotes(e.target.value)} placeholder="Notes (e.g., no salt)" className="karya-iso-input" style={inp} />
           </div>
         </div>
 
@@ -353,7 +353,7 @@ export default function CinemaInStudioOrder({ apiBase }) {
               </div>
             );
           })}
-          {menu.length === 0 && <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>Menu belum tersedia.</div>}
+          {menu.length === 0 && <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 13 }}>Menu not available yet.</div>}
         </div>
       </div>
 
@@ -370,7 +370,7 @@ export default function CinemaInStudioOrder({ apiBase }) {
             cursor: (busy || !items.length || !seat.trim()) ? "not-allowed" : "pointer",
             boxShadow: (busy || !items.length || !seat.trim()) ? "none" : "0 4px 12px rgba(245,158,11,0.3), inset 0 1px 0 rgba(255,255,255,0.2)",
           }}>
-          {busy ? "Loading…" : "📱 Bayar QRIS →"}
+          {busy ? "Loading…" : "📱 Pay QRIS →"}
         </button>
       </div>
     </div>

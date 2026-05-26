@@ -5,9 +5,9 @@ const fIDR  = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
 const fTime = (d) => new Date(d).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});
 
 const STEPS = [
-  {key:"waiting",   icon:"⏳", label:"Pesanan Diterima",  desc:"Pesanan Anda sudah masuk ke dapur"},
-  {key:"preparing", icon:"👨‍🍳", label:"Sedang Dibuat",     desc:"Chef sedang menyiapkan pesanan Anda"},
-  {key:"ready",     icon:"✅", label:"Siap Diambil!",     desc:"Pesanan Anda sudah siap! Segera ambil"},
+  {key:"waiting",   icon:"⏳", label:"Order Received",  desc:"Your order is now in the kitchen"},
+  {key:"preparing", icon:"👨‍🍳", label:"Being Prepared",     desc:"Chef is preparing your order"},
+  {key:"ready",     icon:"✅", label:"Ready to Pick Up!",     desc:"Your order is ready! Please collect it"},
   {key:"completed", icon:"🏁", label:"Done",           desc:"Terima kasih telah memesan di KaryaOS"},
 ];
 
@@ -57,7 +57,7 @@ export default function OrderTracking({ onHome }) {
         }, 4000);
       }
     } catch {
-      setError("Pesanan tidak ditemukan. Cek kembali nomor pesanan Anda.");
+      setError("Order not found. Please double-check your order number.");
       setOrder(null);
     } finally { setLoading(false); }
   }
@@ -105,8 +105,8 @@ export default function OrderTracking({ onHome }) {
         {!urlOrderId && (
           <div style={{...T.card,marginBottom:20,textAlign:"center"}}>
             <div style={{fontSize:40,marginBottom:12}}>🔍</div>
-            <div style={{fontFamily:"'Geist Mono',monospace",fontSize:16,fontWeight:700,marginBottom:6}}>Cek Status Pesanan</div>
-            <div style={{fontSize:13,color:"#666",marginBottom:20}}>Masukkan nomor pesanan Anda</div>
+            <div style={{fontFamily:"'Geist Mono',monospace",fontSize:16,fontWeight:700,marginBottom:6}}>Check Order Status</div>
+            <div style={{fontSize:13,color:"#666",marginBottom:20}}>Enter your order number</div>
             <div style={{display:"flex",gap:10}}>
               <input style={T.searchInput} value={orderId} onChange={e=>setOrderId(e.target.value.toUpperCase())}
                 onKeyDown={e=>e.key==="Enter"&&handleSearch()}
@@ -129,7 +129,7 @@ export default function OrderTracking({ onHome }) {
         {!loading && error && urlOrderId && (
           <div style={{...T.card,textAlign:"center"}}>
             <div style={{fontSize:48,marginBottom:12}}>😕</div>
-            <div style={{fontFamily:"'Geist Mono',monospace",fontSize:16,fontWeight:700,marginBottom:6}}>Pesanan Tidak Ditemukan</div>
+            <div style={{fontFamily:"'Geist Mono',monospace",fontSize:16,fontWeight:700,marginBottom:6}}>Order Not Found</div>
             <div style={{fontSize:13,color:"#666",marginBottom:20}}>{error}</div>
             <button style={T.searchBtn} onClick={onHome}>← Kembali ke Kiosk</button>
           </div>
@@ -174,7 +174,7 @@ export default function OrderTracking({ onHome }) {
               <div style={{...T.card,textAlign:"center",borderColor:"#F8717133"}}>
                 <div style={{fontSize:48,marginBottom:12}}>❌</div>
                 <div style={{fontFamily:"'Geist Mono',monospace",fontSize:18,fontWeight:700,color:"#F87171",marginBottom:6}}>PESANAN DIBATALKAN</div>
-                <div style={{fontSize:13,color:"#666"}}>Pesanan ini telah dibatalkan. Silakan hubungi kasir.</div>
+                <div style={{fontSize:13,color:"#666"}}>This order has been cancelled. Please contact the cashier.</div>
               </div>
             ) : (
               <div style={{...T.card,marginBottom:16}}>

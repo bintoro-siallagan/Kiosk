@@ -343,8 +343,8 @@ function SlideWelcome() {
     <div style={S.ssCenter}>
       <div style={S.ssLogo}><img src="/logo.png" alt="KaryaOS" style={{ height: 88, objectFit: "contain" }} /></div>
       <div style={S.ssBrand}>KaryaOS</div>
-      <div style={S.ssTagline}>Selamat datang!</div>
-      <div style={S.ssHint}>Tap kasir untuk mulai order</div>
+      <div style={S.ssTagline}>Welcome!</div>
+      <div style={S.ssHint}>Tap cashier to start order</div>
     </div>
   );
 }
@@ -774,7 +774,7 @@ function CDSCart({ state }) {
         <div style={S.verifyNotice}>
           <div style={S.verifyIcon}>ℹ️</div>
           <div style={S.verifyText}>
-            Pastikan <strong style={S.verifyEmphasis}>Menu</strong> dan <strong style={S.verifyEmphasis}>Pembayaran</strong> sama dengan
+            Verify <strong style={S.verifyEmphasis}>Menu</strong> and <strong style={S.verifyEmphasis}>Payment</strong> match
             {customerName ? <span style={S.verifyName}> {customerName} </span> : " "}
             yang Anda terima, dan <strong style={S.verifyEmphasis}>struk</strong> diberikan oleh kasir kami.
           </div>
@@ -804,7 +804,7 @@ function CDSQR({ state }) {
       </header>
 
       <main style={S.qrMain}>
-        <div style={S.qrTitle}>Scan QR untuk Bayar</div>
+        <div style={S.qrTitle}>Scan QR to Pay</div>
 
         <div style={S.qrFrame}>
           {qrUrl ? (
