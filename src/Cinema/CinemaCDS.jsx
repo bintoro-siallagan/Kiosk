@@ -449,7 +449,7 @@ function Shell({ children, now, outlet, bgUrl }) {
   return (
     <div style={{
       position: "fixed", inset: 0,
-      background: bgUrl ? `url(${bgUrl}) center/cover fixed` : "linear-gradient(160deg,#050810 0%,#0c0f1a 50%,#08090f 100%)",
+      background: bgUrl ? `url(${bgUrl}) center/cover fixed` : "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)",
       color: "#e6edf3", fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif",
       display: "flex", flexDirection: "column",
     }}>

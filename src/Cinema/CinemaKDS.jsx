@@ -264,7 +264,7 @@ function InStudioCard({ order, onUpdate }) {
   );
 }
 
-const BG = "linear-gradient(160deg,#050810 0%,#0c0f1a 50%,#08090f 100%)";
+const BG = "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)";
 const btnRedeem = {
   padding: "6px 14px", background: "linear-gradient(135deg,#10b981,#34d399)", border: "none", borderRadius: 7,
   color: "#062418", fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", letterSpacing: 0.5,

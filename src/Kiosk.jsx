@@ -852,7 +852,7 @@ const KIOSK_CSS = `
 `;
 
 // ─── PREMIUM AESTHETIC TOKENS ─────────────────────────────────────────────────
-const PREMIUM_BG = "linear-gradient(160deg,#08090a 0%,#14151c 50%,#0a0b0e 100%)";
+const PREMIUM_BG = "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)";
 const PREMIUM_OVERLAY = "radial-gradient(800px 600px at 30% 10%,rgba(245,158,11,0.04),transparent),radial-gradient(600px 400px at 80% 70%,rgba(59,130,246,0.03),transparent)";
 const GLASS_BG = "rgba(13,17,23,0.7)";
 // Opaque dark card — fallback ke #0d1117 walaupun body putih (light-mode browser).

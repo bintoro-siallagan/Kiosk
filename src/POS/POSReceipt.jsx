@@ -314,7 +314,7 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
 // ============================================================
 const fullScreenRoot = {
   minHeight: '100vh',
-  background: 'linear-gradient(160deg,#08090a 0%,#14151c 50%,#0a0b0e 100%)',
+  background: 'linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)',
   color: '#fff',
   fontFamily: "'Inter','SF Pro Display',system-ui,-apple-system,sans-serif",
   display: 'flex', alignItems: 'center', justifyContent: 'center',

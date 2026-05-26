@@ -902,7 +902,7 @@ function CDSTrackQR({ state, pubConfig }) {
 const S = {
   root: {
     height:"100vh", width:"100vw",
-    background:"linear-gradient(160deg,#08090a 0%,#14151c 50%,#0a0b0e 100%)",
+    background:"linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)",
     color:"#fff",
     fontFamily:"'Inter','SF Pro Display','-apple-system',system-ui,sans-serif",
     position:"fixed", top:0, left:0,

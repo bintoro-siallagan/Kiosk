@@ -6,7 +6,7 @@ import DelightPopup from "./components/DelightPopup.jsx";
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const BG = "#050810";
 // Cinematic gradient + radial mesh (amber + purple over deep black)
-const BG_GRADIENT = "linear-gradient(160deg, #050810 0%, #0c0f1a 50%, #08090f 100%)";
+const BG_GRADIENT = "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)";
 const BG_MESH = "radial-gradient(800px 600px at 20% 10%, rgba(168,85,247,0.06), transparent 70%), radial-gradient(600px 400px at 80% 80%, rgba(245,158,11,0.05), transparent 70%)";
 const STATUS_LABEL = { scheduled: "", running: "Berlangsung", closed: "Tutup", sold_out: "Sold Out", cancelled: "Batal" };
 const STATUS_COLOR = { running: "#f59e0b", closed: "#6b7280", sold_out: "#ef4444", cancelled: "#dc2626" };
@@ -948,7 +948,7 @@ function FilmPreviewModal({ film, onClose, onPick }) {
       animation: "karyaKioskFadeUp 0.3s ease-out",
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: "linear-gradient(160deg,#0a0e16,#050810)",
+        background: "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)",
         border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20,
         maxWidth: 920, width: "100%", maxHeight: "92vh", overflowY: "auto",
         color: "#e6edf3", boxShadow: "0 32px 96px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05)",

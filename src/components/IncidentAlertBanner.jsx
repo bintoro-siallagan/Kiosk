@@ -118,7 +118,7 @@ export default function IncidentAlertBanner({ onOpenPanel }) {
         <div style={{
           position: "fixed", top: 60, right: 16, zIndex: 9997,
           width: 400, maxHeight: "70vh", overflowY: "auto",
-          background: "linear-gradient(160deg,#0a0e16,#050810)",
+          background: "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)",
           border: "1px solid rgba(239,68,68,0.4)", borderRadius: 14,
           boxShadow: "0 16px 48px rgba(0,0,0,0.7), 0 0 32px rgba(239,68,68,0.2)",
           color: "#e6edf3", fontFamily: "'Inter',sans-serif",
@@ -162,7 +162,7 @@ export default function IncidentAlertBanner({ onOpenPanel }) {
           const sev = SEVERITY[t.severity] || SEVERITY.medium;
           return (
             <div key={t._toastId} style={{
-              background: "linear-gradient(160deg,#0a0e16,#050810)",
+              background: "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)",
               border: `1px solid ${sev.color}`, borderLeft: `4px solid ${sev.color}`,
               borderRadius: 12, padding: "14px 18px",
               minWidth: 320, maxWidth: 380,

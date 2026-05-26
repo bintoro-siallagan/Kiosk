@@ -565,7 +565,7 @@ function CinemaOpsInner({ apiBase }) {
 
       {tmdbModal && (
         <div onClick={() => setTmdbModal(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.78)", backdropFilter: "blur(8px)", zIndex: 20000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "linear-gradient(160deg,#050810 0%,#0c0f1a 50%,#08090f 100%)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 22, width: "100%", maxWidth: 720, maxHeight: "90vh", overflowY: "auto", color: "#e6edf3" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 22, width: "100%", maxWidth: 720, maxHeight: "90vh", overflowY: "auto", color: "#e6edf3" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
               <div>
                 <div style={{ fontSize: 17, fontWeight: 800 }}>🎥 Hasil TMDB</div>
@@ -748,7 +748,7 @@ function CdsBrandingPanel({ apiBase, outlets }) {
         <div style={{ fontSize: 11, color: C.sub, marginBottom: 6, fontFamily: "Geist Mono,monospace", letterSpacing: 1.5, fontWeight: 700 }}>PREVIEW {selectedOutlet === "DEFAULT" ? "DEFAULT" : selectedOutlet}</div>
         <div style={{
           width: "100%", aspectRatio: "16/9", maxHeight: 320,
-          background: bgUrl ? `url(${bgUrl}) center/cover` : "linear-gradient(160deg,#050810,#0c0f1a)",
+          background: bgUrl ? `url(${bgUrl}) center/cover` : "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)",
           borderRadius: 12, border: "1px solid rgba(255,255,255,0.08)",
           position: "relative", overflow: "hidden",
         }}>

@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from "react";
 
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const BG = "#050810";
-const BG_GRADIENT = "linear-gradient(160deg, #050810 0%, #0c0f1a 50%, #08090f 100%)";
+const BG_GRADIENT = "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)";
 const BG_MESH = "radial-gradient(800px 600px at 20% 10%, rgba(168,85,247,0.06), transparent 70%), radial-gradient(600px 400px at 80% 80%, rgba(245,158,11,0.05), transparent 70%)";
 
 export default function CinemaInStudioOrder({ apiBase }) {
