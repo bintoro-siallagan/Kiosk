@@ -14,8 +14,8 @@ import POSChecklist from "./POS/POSChecklist.jsx";
 import POSCelebration from "./POS/POSCelebration.jsx";
 import PromoBroadcastBanner from "./PromoBroadcastBanner.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
+import API_HOST from "./apiBase.js";
 
-const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 // Quick Order — Wave 1-3 linear flow: master-menu pick → split payment → receipt.
 // Parallel to the existing POSOrder/settle/resume flow; does not replace it.

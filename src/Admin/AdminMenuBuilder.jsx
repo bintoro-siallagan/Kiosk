@@ -2,8 +2,8 @@
 // Menu Builder admin — Size Variants + Packages/Bundles.
 // Pasangkan ke AdminMasterItem.jsx existing sebagai tab tambahan, atau standalone.
 import React, { useState, useEffect, useCallback } from 'react';
+import API_HOST from "../apiBase.js";
 
-const API_HOST = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const API = API_HOST + '/api/master';
 const fmtIDR = (n) => new Intl.NumberFormat('id-ID', { style:'currency', currency:'IDR', maximumFractionDigits:0 }).format(Math.round(n||0));
 

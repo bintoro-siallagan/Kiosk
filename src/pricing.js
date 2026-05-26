@@ -1,8 +1,9 @@
+import API_HOST from "./apiBase.js";
 // src/pricing.js
 // Shared pricing helpers — service charge dine-in, etc.
 // Used by Kiosk, POSConfirm, POSPayment, DigitalReceipt, POSReceipt.
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API = API_HOST;
 
 // Cached config (refresh on demand)
 let _cache = { pct: 5, enabled: true, label: "Service Charge", lastFetch: 0 };

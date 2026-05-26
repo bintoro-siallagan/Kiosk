@@ -34,9 +34,9 @@
 //   - Optional reason input untuk audit trail
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import API_HOST from "../apiBase.js";
 
 // Project deploys to gh-pages with a separate backend — needs an absolute API base
-const API_HOST = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 let globalRequestFn = null;
 const LOCKOUT_KEY = 'manager_pin_lockout_until';
 const FAILED_ATTEMPTS_KEY = 'manager_pin_failed_attempts';

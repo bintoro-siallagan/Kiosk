@@ -5,8 +5,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { ErrorInline } from "./components/ConnectionError.jsx";
+import API_HOST from "./apiBase.js";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API = API_HOST;
 const MONO = "var(--m)";
 const fmtK = (n) => (n >= 1e6 ? (n / 1e6).toFixed(2).replace(/\.?0+$/, "") + "jt"
   : n >= 1e3 ? Math.round(n / 1e3) + "rb" : String(n || 0));

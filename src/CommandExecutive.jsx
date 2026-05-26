@@ -5,8 +5,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { ErrorInline } from "./components/ConnectionError.jsx";
+import API_HOST from "./apiBase.js";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API = API_HOST;
 const MONO = "var(--m)";
 
 const COL = { good: "#10b981", warn: "#f59e0b", bad: "#ef4444", info: "#3b82f6" };

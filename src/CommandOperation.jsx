@@ -4,8 +4,9 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { ErrorInline } from "./components/ConnectionError.jsx";
+import API_HOST from "./apiBase.js";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API = API_HOST;
 const MONO = "var(--m)";
 
 const MOOD = { 1: "😟 Lelah", 2: "😐 Biasa", 3: "🙂 Oke", 4: "😄 Senang", 5: "🤩 Semangat" };

@@ -7,8 +7,8 @@
 
 import { useState, useEffect, useMemo } from "react";
 import CinemaStudioLayoutEditor from "./CinemaStudioLayoutEditor.jsx";
+import API_HOST from "../apiBase.js";
 
-const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const STEPS = [
   { key: "outlet", label: "Outlet", icon: "🏢", desc: "Daftar cabang baru" },

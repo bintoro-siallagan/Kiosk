@@ -2,8 +2,8 @@
 // Tulisan berjalan reminder buat kasir agar selalu upsell concession / promo.
 // Fetch active promos + bundle hits + custom reminders.
 import { useState, useEffect } from "react";
+import API_HOST from "../apiBase.js";
 
-const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 // Default upsell scripts — kasir reminder yg gak butuh data
 const STATIC_SCRIPTS = [

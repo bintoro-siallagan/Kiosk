@@ -4,8 +4,8 @@
 // buka di HP → tunjukkan QR di pintu studio untuk validasi.
 import { useState, useEffect } from "react";
 import QRCode from "qrcode";
+import API_HOST from "../apiBase.js";
 
-const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 
 export default function CinemaDigitalTicket() {

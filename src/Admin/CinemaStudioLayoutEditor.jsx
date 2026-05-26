@@ -17,8 +17,8 @@
 // (semua regular, label A1..Z99). Editor save → backend PATCH /studios/:id.
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import API_HOST from "../apiBase.js";
 
-const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const ROW_LETTER = (i) => {
   // 0=A, 1=B, ..., 25=Z, 26=AA, 27=AB

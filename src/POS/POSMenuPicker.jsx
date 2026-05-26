@@ -11,9 +11,9 @@
 //   onCheckout({ items, subtotal })  — items shape: [{menu_id, qty, size_id?, extras:[{extra_id, qty}], display_name, display_price, line_total}]
 //   apiBase (default '/api/master')
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import API_HOST from "../apiBase.js";
 
 const fmtIDR = (n) => new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', maximumFractionDigits:0}).format(Math.round(n||0));
-const API_HOST = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export default function POSMenuPicker({ onCheckout, onExit, apiBase = '/api/master', cashier, behaviorBase = '' }) {
   const [data, setData] = useState({ menus: [], packages: [] });

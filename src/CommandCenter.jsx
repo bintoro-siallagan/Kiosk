@@ -14,8 +14,9 @@ import CommandPromo from "./CommandPromo.jsx";
 import CommandEngagement from "./CommandEngagement.jsx";
 import CommandAnalytics from "./CommandAnalytics.jsx";
 import CommandReorderModal from "./CommandReorderModal.jsx";
+import API_HOST from "./apiBase.js";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API_BASE = API_HOST;
 
 const RULES = {
   VOID_BOM:{l:"Void/Bom",i:"💣",cl:"#EF4444"},

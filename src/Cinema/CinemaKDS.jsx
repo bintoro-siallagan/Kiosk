@@ -5,8 +5,8 @@
 //   2. In-Studio (kanan): order via QR di kursi — diantar oleh runner ke seat
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { HelpButton } from "../components/HelpModal.jsx";
+import API_HOST from "../apiBase.js";
 
-const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtTime = (sec) => sec ? new Date(sec * 1000).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "-";

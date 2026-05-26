@@ -17,6 +17,7 @@ const ShiftManager  = lazy(() => import("./ShiftManager.jsx"));
 import { TABS, GROUPS } from "./adminModules.js";
 import { CommandPalette } from "./components/uiKit.jsx";
 import IncidentAlertBanner from "./components/IncidentAlertBanner.jsx";
+import API_HOST from "./apiBase.js";
 
 function PanelLoading() {
   return (
@@ -31,7 +32,7 @@ function PanelLoading() {
   );
 }
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API = API_HOST;
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtK = (n) => n >= 1e6 ? (n / 1e6).toFixed(1) + "jt" : n >= 1e3 ? Math.round(n / 1e3) + "rb" : String(Math.round(n) || 0);
 const ago = (t) => { const s = Math.floor((Date.now() - t) / 60000); return s < 1 ? "baru" : s < 60 ? s + "m" : Math.floor(s / 60) + "j"; };

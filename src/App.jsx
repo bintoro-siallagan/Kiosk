@@ -25,6 +25,7 @@ import OfflineBanner from "./OfflineBanner.jsx";
 import AdminLogin, { ResetPasswordPage } from "./AdminLogin.jsx";
 import Kiosk from "./Kiosk.jsx";
 import ShiftGate from "./ShiftGate.jsx";
+import API_HOST from "./apiBase.js";
 
 // Lazy-loaded scenes — each becomes its own chunk via Vite dynamic import.
 const CustomerTrackingPage   = lazy(() => import("./CustomerTrackingPage.jsx"));
@@ -69,7 +70,6 @@ function SceneLoading() {
   );
 }
 
-const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 function getScene() {
   const q = window.location.search;
   if (new URLSearchParams(q).has("command")) return "command";

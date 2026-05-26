@@ -12,11 +12,11 @@
 //   onClose
 //   onPrintDone(method) — callback after print attempt
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import API_HOST from "../apiBase.js";
 
 const fmtIDR = (n) => new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', maximumFractionDigits:0}).format(Math.round(n||0));
 const fmtDateTime = (sec) => sec ? new Date(sec*1000).toLocaleString('id-ID', {dateStyle:'medium', timeStyle:'short'}) : '';
 
-const API_HOST = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export default function POSReceipt({ order, onClose, onPrintDone }) {
   const [taxConfig, setTaxConfig] = useState([]);

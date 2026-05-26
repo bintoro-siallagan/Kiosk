@@ -3,8 +3,8 @@ import { api } from "./api.js";
 import POSSatisfaction from "./POS/POSSatisfaction.jsx";
 import POSCelebration from "./POS/POSCelebration.jsx";
 import LeaderboardModal from "./LeaderboardModal.jsx";
+import API_HOST from "./apiBase.js";
 
-const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const STAGES = [
   { key: "waiting",   label: "Diterima",     emoji: "📝", color: "#94A3B8" },

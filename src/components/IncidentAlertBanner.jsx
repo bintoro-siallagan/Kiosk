@@ -2,8 +2,8 @@
 // Listen WS event 'cinema:incident' → toast notification + persistent badge.
 // Owner / HQ admin tau setiap operational issue realtime, gak nunggu refresh manual.
 import { useState, useEffect, useRef } from "react";
+import API_HOST from "../apiBase.js";
 
-const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const SEVERITY = {
   critical: { color: "#ef4444", label: "CRITICAL", emoji: "🔴" },

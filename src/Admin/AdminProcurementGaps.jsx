@@ -3,8 +3,8 @@
 // Pasangkan ke AdminProcurement.jsx existing sebagai tab tambahan, atau standalone.
 import React, { useState, useEffect, useCallback } from 'react';
 import { useUiKit } from "../components/uiKit.jsx";
+import API_HOST from "../apiBase.js";
 
-const API_HOST = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 const API = API_HOST + '/api/procurement';
 const fmtIDR = (n) => new Intl.NumberFormat('id-ID', { style:'currency', currency:'IDR', maximumFractionDigits:0 }).format(Math.round(n||0));
 const fmtDate = (sec) => sec ? new Date(sec*1000).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}) : '-';

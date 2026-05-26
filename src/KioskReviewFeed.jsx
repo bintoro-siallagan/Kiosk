@@ -2,8 +2,8 @@
 // Feed review customer di layar kiosk — social proof.
 // Nampilin rating bagus (≥4★) + komentar terbaru, rotasi otomatis.
 import { useState, useEffect } from "react";
+import API_HOST from "./apiBase.js";
 
-const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 const CHANNEL = { pos: "Kasir", kiosk: "Kiosk", qr: "QR Order" };
 
 export default function KioskReviewFeed() {

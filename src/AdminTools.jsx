@@ -161,7 +161,11 @@ const FnbPaymentMethods           = lazy(() => import("./Admin/FnbPaymentMethods
 
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+// Same-origin di production (HTTPS public), localhost di dev — anti-Mixed Content.
+// (Sebelumnya hardcode 'http://localhost:3001' yang ke-bake di bundle production
+// → browser user fetch ke localhost-nya sendiri → fail. [[api-base-source]])
+import API_HOST from "./apiBase.js";
+const API = API_HOST;
 const TOKEN = () => localStorage.getItem("adminToken") || "";
 const hdr = () => ({ "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN()}` });
 const fR = n => "Rp " + Math.round(n || 0).toLocaleString("id-ID");

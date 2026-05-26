@@ -10,9 +10,9 @@
 // Auto-reconnect kalau WS drop.
 
 import { useState, useEffect, useRef } from "react";
+import API_HOST from "../apiBase.js";
 // HelpButton tidak di-import — CDS adalah TV display non-interactive (customer gak butuh help button)
 
-const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtTime = (t) => t ? new Date(t).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "";

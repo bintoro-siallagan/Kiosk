@@ -3,8 +3,9 @@
 // Polling /api/broadcast/active tiap 20 detik; muncul kalau admin lagi push promo.
 
 import { useState, useEffect } from "react";
+import API_HOST from "./apiBase.js";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API = API_HOST;
 
 export default function PromoBroadcastBanner() {
   const [promo, setPromo] = useState(null);

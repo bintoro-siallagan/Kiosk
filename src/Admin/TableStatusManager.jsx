@@ -4,8 +4,9 @@
 // tapi UI ini buat kasir/manager kalau perlu force release atau cek status.
 
 import { useState, useEffect, useCallback } from "react";
+import API_HOST from "../apiBase.js";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API = API_HOST;
 
 const ST = {
   available: { c: "#10b981", label: "TERSEDIA", emoji: "🟢" },

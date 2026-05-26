@@ -4,8 +4,9 @@
 // bisa lihat leaderboard kapan aja di HP-nya, gak cuma sekali abis review.
 
 import { useState, useEffect } from "react";
+import API_HOST from "./apiBase.js";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3001";
+const API = API_HOST;
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const MEDAL = ["🥇", "🥈", "🥉"];
 

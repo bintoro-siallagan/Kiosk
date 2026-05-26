@@ -17,8 +17,8 @@ import QRCode from "qrcode";
 import { HelpButton } from "../components/HelpModal.jsx";
 import TouchNumpad, { showNumpad } from "../components/TouchNumpad.jsx";
 import UpsellTicker from "../components/UpsellTicker.jsx";
+import API_HOST from "../apiBase.js";
 
-const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
 
 // Track CDS window reference across re-renders
 let cinemaCdsWindowRef = null;
