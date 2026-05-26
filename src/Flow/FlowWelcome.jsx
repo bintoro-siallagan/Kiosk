@@ -18,14 +18,14 @@ function normalize(p) {
 // Validate: must be 08xxxx, 10-13 digits total
 function validatePhone(p) {
   const n = normalize(p);
-  if (!n) return "Nomor belum diisi";
-  if (!n.startsWith("08")) return "Nomor HP harus mulai dengan 08 atau +62";
-  if (n.length < 10) return `Nomor terlalu pendek (${n.length} digit, min 10)`;
-  if (n.length > 13) return `Nomor terlalu panjang (${n.length} digit, max 13)`;
+  if (!n) return "Phone number is required";
+  if (!n.startsWith("08")) return "Phone must start with 08 or +62";
+  if (n.length < 10) return `Phone too short (${n.length} digits, min 10)`;
+  if (n.length > 13) return `Phone too long (${n.length} digits, max 13)`;
   // Indonesian mobile prefixes: 0811-0819, 0821-0823, 0851-0853, 0858, 0859, 0877-0878, 0881-0889
   // Simpler check: digit 3 should be 1, 2, 3, 5, 7, or 8
   const d3 = n[2];
-  if (!"1235678".includes(d3)) return "Nomor HP tidak valid (cek prefix)";
+  if (!"1235678".includes(d3)) return "Invalid phone prefix";
   return null;
 }
 
@@ -88,7 +88,7 @@ export default function FlowWelcome({ onAuth, tableContext }) {
         setStep("register");
       }
     } catch (e) {
-      setError("Gagal terhubung: " + e.message);
+      setError("Failed to connect: " + e.message);
     }
     setLoading(false);
   }
@@ -96,17 +96,17 @@ export default function FlowWelcome({ onAuth, tableContext }) {
   async function handleRegister() {
     setError("");
     if (!name.trim()) {
-      setError("Nama belum diisi");
+      setError("Name is required");
       return;
     }
     if (name.trim().length < 2) {
-      setError("Nama terlalu pendek");
+      setError("Name too short");
       return;
     }
     // Re-validate phone (paranoia, in case state got weird)
     const verr = validatePhone(phone);
     if (verr) {
-      setError("Nomor tidak valid: " + verr);
+      setError("Invalid phone: " + verr);
       setStep("phone");
       return;
     }
@@ -125,7 +125,7 @@ export default function FlowWelcome({ onAuth, tableContext }) {
         onAuth({ ...customer, _phoneLocal: normalized });
       } else {
         const txt = await r.text();
-        setError("Gagal daftar: " + txt.substring(0, 100));
+        setError("Registration failed: " + txt.substring(0, 100));
       }
     } catch (e) {
       setError("Server error: " + e.message);
@@ -137,7 +137,7 @@ export default function FlowWelcome({ onAuth, tableContext }) {
     <div style={S.container}>
       <div style={S.hero}>
         <img src="/logo.png" alt="KaryaOS" style={{ width: 132, height: 132, objectFit: "contain", marginBottom: 6 }} />
-        <div style={S.tagline}>Order Langsung dari HP-mu</div>
+        <div style={S.tagline}>Order Directly from Your Phone</div>
         {tableContext && (
           <div style={S.tableBadge}>📍 {t("flow.table_no")} {tableContext}</div>
         )}
@@ -147,7 +147,7 @@ export default function FlowWelcome({ onAuth, tableContext }) {
         {step === "phone" && (
           <>
             <div style={S.cardTitle}>{t("kiosk.welcome")} ☕</div>
-            <div style={S.cardSub}>Masukin nomor WhatsApp kamu</div>
+            <div style={S.cardSub}>Enter your WhatsApp number</div>
 
             <div style={S.inputGroup}>
               <span style={S.inputPrefix}>+62</span>
@@ -195,17 +195,17 @@ export default function FlowWelcome({ onAuth, tableContext }) {
             </button>
 
             <div style={S.hint}>
-              💡 Belum pernah order? Tenang, nanti tinggal isi nama sekali aja.
+              💡 First time? No problem — just enter your name once.
             </div>
           </>
         )}
 
         {step === "register" && (
           <>
-            <div style={S.cardTitle}>Halo! 👋</div>
-            <div style={S.cardSub}>Sekali aja isi nama, biar order berikutnya lebih cepet.</div>
+            <div style={S.cardTitle}>Hi! 👋</div>
+            <div style={S.cardSub}>Enter your name once for faster future orders.</div>
 
-            <div style={S.fieldLabel}>Nama Kamu</div>
+            <div style={S.fieldLabel}>Your Name</div>
             <input
               type="text"
               value={name}
@@ -214,7 +214,7 @@ export default function FlowWelcome({ onAuth, tableContext }) {
                 setError("");
               }}
               style={{ ...S.input, ...S.inputFull, marginBottom: 16 }}
-              placeholder="Nama panggilan"
+              placeholder="Nickname"
               autoFocus
               maxLength={40}
               onKeyDown={e => e.key === "Enter" && name.trim().length >= 2 && handleRegister()}
