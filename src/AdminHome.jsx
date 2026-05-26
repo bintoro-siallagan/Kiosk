@@ -199,7 +199,33 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-  const [viewRole, setViewRole] = useState("super-admin");
+  // Map app role → RBAC role id (untuk match dengan rbac_permissions)
+  const _mapToRbacRole = (appRole) => {
+    if (!appRole) return "super-admin";
+    const m = {
+      "super-admin": "super-admin", "superadmin": "super-admin",
+      "owner": "owner", "director": "owner",
+      "area_manager": "area-manager", "area-manager": "area-manager",
+      "manager": "outlet-manager", "outlet-manager": "outlet-manager",
+      "supervisor": "supervisor",
+      "kasir": "cashier", "cashier": "cashier", "crew": "cashier",
+      "kitchen": "kitchen", "dapur": "kitchen",
+      "warehouse": "warehouse", "gudang": "warehouse",
+      "procurement": "procurement",
+      "finance": "finance", "keuangan": "finance",
+      "hr": "hr", "hrd": "hr",
+      "marketing": "marketing",
+      "auditor": "auditor",
+      "franchise": "franchise",
+    };
+    return m[String(appRole).toLowerCase()] || appRole.toLowerCase();
+  };
+  // Default viewRole = role user yang login (super-admin kalau is_super_admin true)
+  const _adminCtxInit = _readCompanyCtx();
+  const _initialViewRole = (_adminCtxInit?.is_super_admin || _adminCtxInit?.company_id == null)
+    ? "super-admin"
+    : _mapToRbacRole(_adminCtxInit?.user?.role || adminSession?.role);
+  const [viewRole, setViewRole] = useState(_initialViewRole);
   const [rbacMap, setRbacMap] = useState(null);
   const openRight = (kind, arg) => { setRightView(kind); setRightArg(arg || null); setRailOpen(false); window.scrollTo(0, 0); };
   const closeRight = () => { setRightView("home"); setRightArg(null); };
@@ -720,10 +746,19 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
         {/* KIRI: panel modul */}
         <div className="ah-backdrop no-print" data-open={railOpen} onClick={() => setRailOpen(false)} />
         <aside style={{ ...S.left, display: navHidden ? "none" : undefined }} className={`ah-rail no-print${railOpen ? " ah-rail-open" : ""}`}>
-          <select value={viewRole} onChange={e => setViewRole(e.target.value)} title="Tampilkan modul sesuai role"
-            style={{ width: "100%", background: "#0e0e11", border: "1px solid #2a2b30", borderRadius: 8, padding: "8px 10px", color: "#c9a8ff", fontSize: 12, fontWeight: 700, fontFamily: "inherit", boxSizing: "border-box", marginBottom: 10, outline: "none", cursor: "pointer" }}>
-            {ADMIN_ROLES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
-          </select>
+          {/* Role preview selector — hanya untuk super-admin (audit / debug).
+              Untuk tenant owner/staff: viewRole sudah locked ke role mereka. */}
+          {_isSuperAdmin ? (
+            <select value={viewRole} onChange={e => setViewRole(e.target.value)} title="Preview modul sesuai role lain (super-admin only)"
+              style={{ width: "100%", background: "#0e0e11", border: "1px solid #2a2b30", borderRadius: 8, padding: "8px 10px", color: "#c9a8ff", fontSize: 12, fontWeight: 700, fontFamily: "inherit", boxSizing: "border-box", marginBottom: 10, outline: "none", cursor: "pointer" }}>
+              {ADMIN_ROLES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
+            </select>
+          ) : (
+            <div style={{ marginBottom: 10, padding: "6px 10px", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 8, fontSize: 11, color: "#c9a8ff", fontFamily: "'Geist Mono',monospace", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+              <span>👤</span>
+              <span style={{ flex: 1 }}>{(ADMIN_ROLES.find(r => r.id === viewRole)?.label || viewRole).toUpperCase()}</span>
+            </div>
+          )}
           {filteredColumns.map((col, ci) => (
             <div key={col.title}>
               <Section pill label={col.title.toUpperCase()} accent={col.accent} mt={ci === 0 ? 0 : 14} />
