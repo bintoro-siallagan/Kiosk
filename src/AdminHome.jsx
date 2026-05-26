@@ -429,13 +429,13 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     { title: "📊 Dashboard", accent: "#f59e0b", items: [
       { label: "Owner Dashboard", icon: "📊", c: "#f59e0b", on: () => openRight("tools", "dashboard") },
     ] },
-    { title: "🏪 Outlet", accent: "#22d3ee", items: [
+    { title: "🏪 Outlet F&B", accent: "#22d3ee", vertical: "fnb", items: [
       { label: "Pesanan / Transaksi", icon: "🧾", c: "#10b981", on: () => openRight("admin", "orders") },
       { label: "Menu & Stok", icon: "🍔", c: "#f59e0b", on: () => openRight("admin", "menu") },
       { label: "QR Meja", icon: "🪑", c: "#a855f7", on: () => openRight("admin", "qrgen") },
       { label: "Pengaturan", icon: "⚙️", c: "#7d8590", on: () => openRight("admin", "settings") },
     ] },
-    { title: "🛰️ Surface Operasional F&B", accent: "#10b981", items: [
+    { title: "🛰️ Surface Operasional F&B", accent: "#10b981", vertical: "fnb", items: [
       { label: "POS Kasir", icon: "🧾", c: "#10b981", on: () => openTab("?pos=1&fresh=1") },
       { label: "KDS Dapur", icon: "👨‍🍳", c: "#f97316", on: () => openTab("?kds=1") },
       { label: "CDS Display", icon: "📺", c: "#a855f7", on: () => openTab("?cds=1") },
@@ -443,7 +443,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "Tracking", icon: "📍", c: "#f59e0b", on: () => openTab("?track=1") },
     ] },
     // 🍽️ F&B Enhanced — dedicated column (mirror Cinema struktur)
-    { title: "🍽️ F&B Enhanced", accent: "#ec4899", items: [
+    { title: "🍽️ F&B Enhanced", accent: "#ec4899", vertical: "fnb", items: [
       { label: "Reservation",       icon: "📅", c: "#22d3ee", on: () => openRight("tools", "fnb_reservation") },
       { label: "Bill Split",        icon: "🧾", c: "#10b981", on: () => openRight("tools", "fnb_bill_split") },
       { label: "Order Transfer",    icon: "🔄", c: "#3b82f6", on: () => openRight("tools", "fnb_order_transfer") },
@@ -465,7 +465,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
         } },
     ] },
     // 🎬 Cinema — dedicated column terpisah dari F&B
-    { title: "🎬 Cinema Vertical", accent: "#a855f7", items: [
+    { title: "🎬 Cinema Vertical", accent: "#a855f7", vertical: "cinema", items: [
       { label: "POS Cinema (Kasir)",      icon: "🎟️", c: "#fbbf24", on: () => openTab("?pos-cinema&fresh=1") },
       { label: "Cinema Kiosk (Customer)", icon: "🎬", c: "#a855f7", on: () => openTab("?cinema") },
       { label: "Cinema KDS (F&B Staff)",  icon: "👨‍🍳", c: "#10b981", on: () => openTab("?cinema-kds") },
@@ -530,23 +530,18 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     ] },
   ];
 
-  // Multi-tenant: filter columns by vertical
-  // F&B owner: hide columns dengan "Cinema" di title
-  // Cinema owner: hide columns dengan "F&B" di title
-  // Hybrid / super-admin: tampilin semua
+  // Multi-tenant: filter columns by explicit `vertical` tag per kolom
+  // Kolom tanpa `vertical` field = shared (semua role lihat).
+  // - vertical='fnb'    → cuma F&B + hybrid + super-admin
+  // - vertical='cinema' → cuma cinema + hybrid + super-admin
   const _vertical = _adminCtx?.company?.primary_vertical || null;
   const _isSuperAdmin = !!(_adminCtx?.is_super_admin || _adminCtx?.company_id == null);
-  const filteredColumns = (() => {
-    if (_isSuperAdmin || _vertical === "hybrid" || !_vertical) return columns;
-    return columns.filter(col => {
-      const title = String(col.title || "").toLowerCase();
-      // Sembunyikan F&B-specific dari cinema owner
-      if (_vertical === "cinema" && (title.includes("f&b") || title.includes("fnb") || title.includes("operasional f&b"))) return false;
-      // Sembunyikan cinema-specific dari F&B owner
-      if (_vertical === "fnb" && title.includes("cinema")) return false;
-      return true;
-    });
-  })();
+  const filteredColumns = columns.filter(col => {
+    if (!col.vertical) return true;                          // shared
+    if (_isSuperAdmin) return true;                          // super-admin lihat semua
+    if (_vertical === "hybrid") return true;                 // hybrid lihat semua
+    return col.vertical === _vertical;                       // match
+  });
 
   const Section = ({ label, accent = "#f59e0b", right, mt, pill = false }) => (
     <div style={{ ...S.sectionHead, marginTop: mt == null ? 16 : mt }}>
