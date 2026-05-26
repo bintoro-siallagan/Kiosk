@@ -276,15 +276,19 @@ function setupBillingEngine(app, opts = {}) {
     const amount = cycle === 'annual' ? plan.annual_price_idr : plan.monthly_price_idr;
     const cycleSec = cycle === 'annual' ? YEAR : MONTH;
     const existing = db.prepare(`SELECT id FROM tenant_billing WHERE company_id=?`).get(b.company_id);
+    let result;
     if (existing) {
       db.prepare(`UPDATE tenant_billing SET plan_code=?, billing_cycle=?, amount_idr=?, next_due_at=?, status=?, updated_at=? WHERE id=?`)
         .run(b.plan_code, cycle, amount, nowSec() + cycleSec, b.status || 'active', nowSec(), existing.id);
-      res.json({ ok: true, id: existing.id, action: 'updated' });
+      result = { ok: true, id: existing.id, action: 'updated' };
     } else {
       const r = db.prepare(`INSERT INTO tenant_billing (company_id, plan_code, billing_cycle, amount_idr, next_due_at, status) VALUES (?,?,?,?,?,?)`)
         .run(b.company_id, b.plan_code, cycle, amount, nowSec() + cycleSec, 'active');
-      res.json({ ok: true, id: r.lastInsertRowid, action: 'created' });
+      result = { ok: true, id: r.lastInsertRowid, action: 'created' };
     }
+    // Invalidate feature cache supaya plan change langsung apply (gak nunggu 60s TTL)
+    try { global.featureEnforcement?.clearCache?.(b.company_id); } catch {}
+    res.json(result);
   });
 
   // ─── INVOICES ───

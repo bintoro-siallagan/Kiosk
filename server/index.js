@@ -210,6 +210,12 @@ try {
   console.log('[multi-tenant] scope filter middleware armed (defense-in-depth for list endpoints)');
 } catch (e) { console.warn('[multi-tenant] filter middleware skipped:', e.message); }
 
+// Feature entitlement enforcement — 402 untuk endpoint yang feature-nya gak di-cover plan
+try {
+  const { setupFeatureEnforcement } = require('./feature-enforcement');
+  global.featureEnforcement = setupFeatureEnforcement(app, { dbPath: DB_PATH });
+} catch (e) { console.warn('[feature-enforcement] skipped:', e.message); }
+
 // ─── CDS Cinema — second display state (NOW receives parsed body) ───
 // POS Cinema POST current sale state → backend broadcast via WS ke semua CDS terminal.
 app.post("/api/cinema/cds/state", (req, res) => {
