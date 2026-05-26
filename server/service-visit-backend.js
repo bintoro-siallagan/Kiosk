@@ -476,6 +476,58 @@ function setupServiceVisit(app, opts = {}) {
     } catch (e) { console.error('[service] start error', e); res.status(500).json({ error: e.message }); }
   });
 
+  // ─── ITEM ADD/REMOVE (admin only — staff lihat live) ───
+  // Append item baru ke existing ticket (untuk admin)
+  router.post('/tickets/:id/items', (req, res) => {
+    try {
+      const b = req.body || {};
+      if (!b.label || !String(b.label).trim()) return res.status(400).json({ error: 'label wajib' });
+      const ticket = db.prepare(`SELECT id FROM service_tickets WHERE id=?`).get(req.params.id);
+      if (!ticket) return res.status(404).json({ error: 'Ticket tidak ditemukan' });
+      const maxOrder = db.prepare(`SELECT COALESCE(MAX(display_order),0) m FROM service_ticket_items WHERE ticket_id=?`).get(req.params.id).m;
+      const r = db.prepare(`INSERT INTO service_ticket_items (ticket_id, item_label, requires_photo, display_order) VALUES (?,?,?,?)`)
+        .run(req.params.id, String(b.label).trim(), b.requires_photo ? 1 : 0, maxOrder + 10);
+      res.json({ ok: true, id: r.lastInsertRowid });
+    } catch (e) { console.error('[service] add item error', e); res.status(500).json({ error: e.message }); }
+  });
+
+  // Sync template — add items dari template yang belum ada di ticket (match by label)
+  router.post('/tickets/:id/sync-template', (req, res) => {
+    try {
+      const b = req.body || {};
+      const ticket = db.prepare(`SELECT id FROM service_tickets WHERE id=?`).get(req.params.id);
+      if (!ticket) return res.status(404).json({ error: 'Ticket tidak ditemukan' });
+      const tplId = b.template_id;
+      if (!tplId) return res.status(400).json({ error: 'template_id wajib' });
+      const tpl = db.prepare(`SELECT items_json FROM service_templates WHERE id=?`).get(tplId);
+      if (!tpl) return res.status(404).json({ error: 'Template tidak ditemukan' });
+      let tplItems = []; try { tplItems = JSON.parse(tpl.items_json) || []; } catch {}
+      const existing = db.prepare(`SELECT item_label FROM service_ticket_items WHERE ticket_id=?`).all(req.params.id);
+      const existingLabels = new Set(existing.map(e => (e.item_label || '').trim().toLowerCase()));
+      const toAdd = tplItems.filter(it => !existingLabels.has((it.label || '').trim().toLowerCase()));
+      const maxOrder = db.prepare(`SELECT COALESCE(MAX(display_order),0) m FROM service_ticket_items WHERE ticket_id=?`).get(req.params.id).m;
+      const ins = db.prepare(`INSERT INTO service_ticket_items (ticket_id, item_label, requires_photo, display_order) VALUES (?,?,?,?)`);
+      const tx = db.transaction(() => {
+        toAdd.forEach((it, i) => ins.run(req.params.id, it.label, it.requires_photo ? 1 : 0, maxOrder + (i + 1) * 10));
+      });
+      tx();
+      res.json({ ok: true, added: toAdd.length, skipped: tplItems.length - toAdd.length });
+    } catch (e) { console.error('[service] sync template error', e); res.status(500).json({ error: e.message }); }
+  });
+
+  // Remove item — only pending items (gak bisa hapus yang udah done/punya foto)
+  router.delete('/tickets/:tid/items/:iid', (req, res) => {
+    try {
+      const it = db.prepare(`SELECT status FROM service_ticket_items WHERE id=? AND ticket_id=?`).get(req.params.iid, req.params.tid);
+      if (!it) return res.status(404).json({ error: 'Item tidak ditemukan' });
+      if (it.status === 'done') return res.status(400).json({ error: 'Item sudah done — tidak bisa dihapus' });
+      // Cascade delete photos
+      db.prepare(`DELETE FROM service_item_photos WHERE ticket_item_id=?`).run(req.params.iid);
+      db.prepare(`DELETE FROM service_ticket_items WHERE id=? AND ticket_id=?`).run(req.params.iid, req.params.tid);
+      res.json({ ok: true });
+    } catch (e) { console.error('[service] remove item error', e); res.status(500).json({ error: e.message }); }
+  });
+
   // ─── ITEM UPDATE ───
   router.patch('/tickets/:tid/items/:iid', (req, res) => {
     const b = req.body || {};

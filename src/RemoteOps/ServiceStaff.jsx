@@ -334,6 +334,12 @@ function StartStep({ ticket, detail, gps, gpsErr, grabGps, selfie, setSelfie, bu
 
 function WorkStep({ ticket, detail, gps, onUpdate, onUpload, onRefresh, onFinish, onBack }) {
   const allDone = detail.items?.every(i => i.status !== "pending");
+  // Auto-poll setiap 20s biar item baru dari admin muncul live tanpa staff harus refresh manual
+  useEffect(() => {
+    if (!onRefresh) return;
+    const t = setInterval(() => { onRefresh(); }, 20000);
+    return () => clearInterval(t);
+  }, [onRefresh]);
   return (
     <div style={{ padding: "max(16px, env(safe-area-inset-top)) clamp(12px, 4vw, 22px) calc(100px + env(safe-area-inset-bottom))" }}>
       <button onClick={onBack} style={{ background: "transparent", border: "none", color: "#94a3b8", fontSize: 13, cursor: "pointer", marginBottom: 10 }}>← Tiket lain</button>
@@ -343,7 +349,10 @@ function WorkStep({ ticket, detail, gps, onUpdate, onUpload, onRefresh, onFinish
         <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginTop: 2 }}>{ticket.title}</div>
       </div>
 
-      <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>📋 CHECKLIST ({detail.items?.filter(i => i.status !== "pending").length}/{detail.items?.length})</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+        <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Geist Mono',monospace" }}>📋 CHECKLIST ({detail.items?.filter(i => i.status !== "pending").length}/{detail.items?.length})</div>
+        <button onClick={onRefresh} title="Refresh checklist (admin bisa tambah item live)" style={{ padding: "4px 10px", background: "transparent", border: "1px solid rgba(34,211,238,0.4)", borderRadius: 6, color: CYAN, fontSize: 10, fontWeight: 700, fontFamily: "'Geist Mono',monospace", cursor: "pointer" }}>↻ Sync</button>
+      </div>
 
       {detail.items?.map(it => (
         <div key={it.id} style={{ padding: 12, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, marginBottom: 8 }}>

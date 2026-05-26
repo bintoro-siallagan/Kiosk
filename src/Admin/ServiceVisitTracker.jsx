@@ -155,7 +155,7 @@ export default function ServiceVisitTracker({ apiBase = "" }) {
         <DeptKpiPanel kpi={kpi.data} departments={departments} />
       )}
 
-      {selected && <TicketDetailDrawer ticket={selected} departments={departments} onClose={() => setSelected(null)} onRefresh={load} API={API} />}
+      {selected && <TicketDetailDrawer ticket={selected} departments={departments} templates={templates} onClose={() => setSelected(null)} onRefresh={load} API={API} />}
       {creating && <CreateTicketModal onClose={() => setCreating(false)} onCreated={() => { setCreating(false); load(); }} API={API} departments={departments} outlets={outlets} users={users} templates={templates} />}
       {editingTemplate && <TemplateEditModal template={editingTemplate} departments={departments} onClose={() => setEditingTemplate(null)} onSaved={() => { setEditingTemplate(null); load(); }} API={API} />}
     </div>
@@ -239,12 +239,66 @@ function DeptKpiPanel({ kpi, departments }) {
   );
 }
 
-function TicketDetailDrawer({ ticket, departments, onClose, onRefresh, API }) {
+function TicketDetailDrawer({ ticket, departments, templates, onClose, onRefresh, API }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
-  useEffect(() => {
+  const [newItem, setNewItem] = useState("");
+  const [newItemPhoto, setNewItemPhoto] = useState(true);
+  const [busyItem, setBusyItem] = useState(false);
+  const [syncTplId, setSyncTplId] = useState("");
+  const [msg, setMsg] = useState("");
+
+  const reload = useCallback(() => {
+    setLoading(true);
     fetch(`${API}/api/service/tickets/${ticket.id}`).then(r => r.json()).then(setDetail).finally(() => setLoading(false));
   }, [ticket.id, API]);
+
+  useEffect(() => { reload(); }, [reload]);
+
+  const addItem = async () => {
+    if (!newItem.trim()) return;
+    setBusyItem(true); setMsg("");
+    try {
+      const r = await fetch(`${API}/api/service/tickets/${ticket.id}/items`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label: newItem.trim(), requires_photo: newItemPhoto ? 1 : 0 }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j?.error || "Gagal");
+      setNewItem(""); setMsg("✓ Item ditambahkan"); reload(); onRefresh?.();
+    } catch (e) { setMsg("⚠ " + e.message); }
+    setBusyItem(false);
+  };
+
+  const removeItem = async (iid) => {
+    if (!confirm("Hapus item ini?")) return;
+    setBusyItem(true); setMsg("");
+    try {
+      const r = await fetch(`${API}/api/service/tickets/${ticket.id}/items/${iid}`, { method: "DELETE" });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j?.error || "Gagal");
+      setMsg("✓ Item dihapus"); reload(); onRefresh?.();
+    } catch (e) { setMsg("⚠ " + e.message); }
+    setBusyItem(false);
+  };
+
+  const syncTemplate = async () => {
+    if (!syncTplId) return;
+    setBusyItem(true); setMsg("");
+    try {
+      const r = await fetch(`${API}/api/service/tickets/${ticket.id}/sync-template`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ template_id: parseInt(syncTplId, 10) }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j?.error || "Gagal");
+      setMsg(`✓ ${j.added} item ditambah${j.skipped ? `, ${j.skipped} dilewati (sudah ada)` : ""}`);
+      reload(); onRefresh?.();
+    } catch (e) { setMsg("⚠ " + e.message); }
+    setBusyItem(false);
+  };
+
+  const deptTemplates = (templates || []).filter(t => t.department === ticket.department);
 
   const dept = departments.find(d => d.code === ticket.department);
 
@@ -288,15 +342,23 @@ function TicketDetailDrawer({ ticket, departments, onClose, onRefresh, API }) {
             </div>
 
             {/* Items */}
-            <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>📋 CHECKLIST ({detail.items?.length || 0})</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+              <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Geist Mono',monospace" }}>📋 CHECKLIST ({detail.items?.length || 0})</div>
+              {ticket.status !== "completed" && ticket.status !== "cancelled" && (
+                <div style={{ fontSize: 10, color: CYAN, fontFamily: "'Geist Mono',monospace" }}>LIVE EDIT</div>
+              )}
+            </div>
             {detail.items?.map(it => (
               <div key={it.id} style={{ padding: 10, background: CARD_BG, border: BORDER, borderRadius: 8, marginBottom: 6 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: "#fff" }}>{it.item_label}{it.requires_photo === 1 && <span style={{ color: AMBER, marginLeft: 4 }}>📸</span>}</div>
                     {it.note && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2, fontStyle: "italic" }}>"{it.note}"</div>}
                   </div>
                   <span style={chip(it.status === "done" ? GREEN : it.status === "skipped" ? "#64748b" : AMBER)}>{it.status.toUpperCase()}</span>
+                  {it.status !== "done" && ticket.status !== "completed" && ticket.status !== "cancelled" && (
+                    <button onClick={() => removeItem(it.id)} disabled={busyItem} title="Hapus item" style={{ padding: "2px 8px", background: "transparent", border: "none", color: RED, fontSize: 16, cursor: "pointer", lineHeight: 1 }}>×</button>
+                  )}
                 </div>
                 {it.photos?.length > 0 && (
                   <div style={{ display: "flex", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
@@ -305,6 +367,35 @@ function TicketDetailDrawer({ ticket, departments, onClose, onRefresh, API }) {
                 )}
               </div>
             ))}
+
+            {/* Live edit: tambah item / sync template */}
+            {ticket.status !== "completed" && ticket.status !== "cancelled" && (
+              <div style={{ marginTop: 12, padding: 12, background: "rgba(34,211,238,0.05)", border: "1px dashed rgba(34,211,238,0.3)", borderRadius: 10 }}>
+                <div style={{ fontSize: 11, color: CYAN, fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>+ TAMBAH ITEM (LIVE)</div>
+                <div style={{ display: "flex", gap: 6, marginBottom: 6 }}>
+                  <input value={newItem} onChange={e => setNewItem(e.target.value)} onKeyDown={e => e.key === "Enter" && addItem()}
+                    placeholder="Item baru ke ticket ini…" style={inp} />
+                  <button onClick={() => setNewItemPhoto(p => !p)} title="Wajib foto?" style={{ padding: "8px 10px", background: newItemPhoto ? AMBER + "33" : "transparent", border: `1px solid ${newItemPhoto ? AMBER : "rgba(255,255,255,0.15)"}`, borderRadius: 8, color: newItemPhoto ? AMBER : "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>📸 {newItemPhoto ? "ON" : "off"}</button>
+                  <button onClick={addItem} disabled={busyItem || !newItem.trim()} style={{ padding: "8px 14px", background: CYAN, border: "none", borderRadius: 8, color: "#001620", fontSize: 12, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", opacity: busyItem || !newItem.trim() ? 0.5 : 1 }}>+ Add</button>
+                </div>
+                <div style={{ fontSize: 10, color: "#64748b", marginBottom: 10 }}>Item baru langsung muncul di mobile staff (?service). Hanya yang belum done yang bisa dihapus.</div>
+
+                {deptTemplates.length > 0 && (
+                  <>
+                    <div style={{ fontSize: 11, color: PURPLE, fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginTop: 8, marginBottom: 6 }}>🔄 SYNC DARI TEMPLATE</div>
+                    <div style={{ display: "flex", gap: 6 }}>
+                      <select value={syncTplId} onChange={e => setSyncTplId(e.target.value)} style={inp}>
+                        <option value="">— Pilih template dept {ticket.department} —</option>
+                        {deptTemplates.map(t => <option key={t.id} value={t.id}>{t.template_name} ({t.items?.length || 0} items)</option>)}
+                      </select>
+                      <button onClick={syncTemplate} disabled={busyItem || !syncTplId} style={{ padding: "8px 14px", background: PURPLE, border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", opacity: busyItem || !syncTplId ? 0.5 : 1 }}>🔄 Sync</button>
+                    </div>
+                    <div style={{ fontSize: 10, color: "#64748b", marginTop: 4 }}>Hanya item yang belum ada (match by label) yang ditambah — duplikat di-skip otomatis.</div>
+                  </>
+                )}
+                {msg && <div style={{ marginTop: 8, fontSize: 11, color: msg.startsWith("✓") ? GREEN : RED, fontWeight: 700 }}>{msg}</div>}
+              </div>
+            )}
           </>
         )}
       </div>
