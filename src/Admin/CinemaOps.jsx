@@ -294,7 +294,11 @@ function CinemaOpsInner({ apiBase }) {
             pickedTime={f("start_time")}
             onPick={(time) => { setForm(p => ({ ...p, start_time: time })); setMsg(`🕐 Jam ${time} terpilih — klik "+ Jadwalkan" untuk konfirmasi`); }}
             onBulkCreate={async (times) => {
-              if (!f("film_id") || !f("studio_id") || !f("show_date") || times.length === 0) return;
+              // Guard dengan setMsg explicit (jangan silent return)
+              if (!f("film_id")) { setMsg("⚠ Film belum dipilih"); return; }
+              if (!f("studio_id")) { setMsg("⚠ Studio belum dipilih"); return; }
+              if (!f("show_date")) { setMsg("⚠ Tanggal belum dipilih"); return; }
+              if (!times || times.length === 0) { setMsg("⚠ Belum ada jam dipilih"); return; }
               setMsg(`🚀 Membuat ${times.length} jam tayang…`);
               const results = { ok: [], fail: [] };
               for (const t of times) {
@@ -302,16 +306,21 @@ function CinemaOpsInner({ apiBase }) {
                   const r = await fetch(`${base}/showtimes`, {
                     method: "POST", headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                      film_id: f("film_id"), studio_id: f("studio_id"),
-                      show_date: f("show_date"), start_time: t,
-                      format: f("format") || "2D", price: f("price") || 0,
+                      film_id: parseInt(f("film_id"), 10),
+                      studio_id: parseInt(f("studio_id"), 10),
+                      show_date: f("show_date"),
+                      start_time: t,
+                      format: f("format") || "2D",
+                      price: parseInt(f("price"), 10) || 0,
                     }),
                   });
                   const d = await r.json();
-                  if (d.ok) results.ok.push(t); else results.fail.push({ time: t, error: d.error });
+                  if (d.ok) results.ok.push(t); else results.fail.push({ time: t, error: d.error || `HTTP ${r.status}` });
                 } catch (e) { results.fail.push({ time: t, error: e.message }); }
               }
-              setMsg(`✅ ${results.ok.length} dibuat${results.fail.length > 0 ? `, ❌ ${results.fail.length} gagal: ${results.fail.map(f => f.time).join(", ")}` : ""}`);
+              const okMsg = `✅ ${results.ok.length} dibuat${results.ok.length > 0 ? ` (${results.ok.join(", ")})` : ""}`;
+              const failMsg = results.fail.length > 0 ? ` · ⚠ ${results.fail.length} gagal: ${results.fail.map(x => `${x.time} (${x.error})`).join("; ")}` : "";
+              setMsg(okMsg + failMsg);
               reload();
             }}
           />
