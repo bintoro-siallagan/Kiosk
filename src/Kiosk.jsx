@@ -667,51 +667,50 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           </div>
         </div>
 
-        {/* Editorial rows — per category horizontal scroll */}
+        {/* Category tabs — sticky at top, pill style */}
+        <div style={K.catBar} className="cat-scroll">
+          {CATEGORIES.map(c=>(
+            <button key={c} className="cat-btn-premium"
+              style={{...K.catBtn,...(cat===c?K.catActive:{})}}
+              onClick={()=>{audio.playClick();setCat(c);}}>
+              {c}
+            </button>
+          ))}
+        </div>
+
+        {/* Menu grid — 5 columns, vertical scroll */}
         <div style={K.splitMenuScroll}>
-          {CATEGORIES.filter(c=>c!=="All").map(c=>{
-            const rowItems = menuWithStock.filter(i=>i.category===c);
-            if (rowItems.length===0) return null;
-            return (
-              <section key={c} style={K.editorialSection}>
-                <header style={K.editorialHeader}>
-                  <h2 style={K.editorialTitle}>{c}</h2>
-                  <span style={K.editorialSub}>{rowItems.length} {rowItems.length===1?"item":"items"}</span>
-                </header>
-                <div style={K.editorialGrid}>
-                  {rowItems.map((item,i)=>{
-                    const inCart=cart.filter(e=>e.item.id===item.id).reduce((a,e)=>a+e.qty,0);
-                    return (
-                      <div key={item.id} className="menu-card lg" style={{...K.editorialCard,animationDelay:`${i*0.04}s`,opacity:item.avail===false?0.5:1,pointerEvents:item.avail===false?"none":"auto"}}>
-                        {item.tag && (
-                          <div style={{...K.tag,background:TAG_CLR[item.tag]?.bg,color:TAG_CLR[item.tag]?.tx}}>{item.tag}</div>
-                        )}
-                        {inCart>0 && <div style={K.inCartBadge}>{inCart}</div>}
-                        <div style={K.editorialCardImg}>
-                          <FoodImage item={item} size={200}/>
-                        </div>
-                        <div style={K.editorialCardInfo}>
-                          <div style={K.editorialCardName}>{item.name}</div>
-                          <div style={K.editorialCardBottom}>
-                            <span style={K.editorialCardPrice}>{fIDR(item.price)}</span>
-                            {item.avail === false ? (
-                              <span style={K.soldOutBadge}>SOLD OUT</span>
-                            ) : (
-                              <button className="add-btn" style={K.editorialAddBtn}
-                                onClick={()=>{audio.playTap();(item.freeToppings>0?setToppingItem(item):setAddonItem(item));}}
-                                aria-label={inCart>0?"Add more":"Add"}>
-                                {inCart>0?"+1":"+"}
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+          <div style={K.menuGrid5}>
+            {filtered.map((item,i)=>{
+              const inCart=cart.filter(e=>e.item.id===item.id).reduce((a,e)=>a+e.qty,0);
+              return (
+                <div key={item.id} className="menu-card lg" style={{...K.editorialCard,animationDelay:`${i*0.025}s`,opacity:item.avail===false?0.5:1,pointerEvents:item.avail===false?"none":"auto"}}>
+                  {item.tag && (
+                    <div style={{...K.tag,background:TAG_CLR[item.tag]?.bg,color:TAG_CLR[item.tag]?.tx}}>{item.tag}</div>
+                  )}
+                  {inCart>0 && <div style={K.inCartBadge}>{inCart}</div>}
+                  <div style={K.editorialCardImg}>
+                    <FoodImage item={item} size={200}/>
+                  </div>
+                  <div style={K.editorialCardInfo}>
+                    <div style={K.editorialCardName}>{item.name}</div>
+                    <div style={K.editorialCardBottom}>
+                      <span style={K.editorialCardPrice}>{fIDR(item.price)}</span>
+                      {item.avail === false ? (
+                        <span style={K.soldOutBadge}>SOLD OUT</span>
+                      ) : (
+                        <button className="add-btn" style={K.editorialAddBtn}
+                          onClick={()=>{audio.playTap();(item.freeToppings>0?setToppingItem(item):setAddonItem(item));}}
+                          aria-label={inCart>0?"Add more":"Add"}>
+                          {inCart>0?"+1":"+"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </section>
-            );
-          })}
+              );
+            })}
+          </div>
           <div style={{height:24}}/>
         </div>
       </div>
@@ -993,12 +992,12 @@ const K = {
   editorialTitle:   {fontFamily:"'Inter',sans-serif",fontSize:19,fontWeight:600,letterSpacing:"-0.4px",color:"rgba(255,255,255,0.92)",margin:0,lineHeight:1.1,display:"inline-flex",alignItems:"center",gap:6},
   editorialSub:     {fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:400,letterSpacing:0.3,fontFamily:"'Inter',sans-serif",display:"inline-flex",alignItems:"center",gap:4},
   editorialGrid:    {display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:14,padding:"6px 20px 16px"},
-  editorialCard:    {borderRadius:20,display:"flex",flexDirection:"column",position:"relative",cursor:"pointer"},
-  editorialCardImg: {height:160,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",borderTopLeftRadius:20,borderTopRightRadius:20,background:"radial-gradient(ellipse 80% 60% at 50% 30%,rgba(255,255,255,0.04),transparent 70%)"},
-  editorialCardInfo:{padding:"12px 14px 14px",display:"flex",flexDirection:"column",gap:9},
-  editorialCardName:{fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:600,letterSpacing:"-0.3px",color:"rgba(255,255,255,0.95)",lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",minHeight:36},
+  editorialCard:    {borderRadius:16,display:"flex",flexDirection:"column",position:"relative",cursor:"pointer"},
+  editorialCardImg: {height:130,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",borderTopLeftRadius:16,borderTopRightRadius:16,background:"radial-gradient(ellipse 80% 60% at 50% 30%,rgba(255,255,255,0.04),transparent 70%)"},
+  editorialCardInfo:{padding:"10px 12px 12px",display:"flex",flexDirection:"column",gap:8},
+  editorialCardName:{fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,letterSpacing:"-0.2px",color:"rgba(255,255,255,0.95)",lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",minHeight:32},
   editorialCardBottom:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8},
-  editorialCardPrice:{fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:600,color:"#fff",letterSpacing:"-0.2px",fontVariantNumeric:"tabular-nums"},
+  editorialCardPrice:{fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,color:"#fff",letterSpacing:"-0.2px",fontVariantNumeric:"tabular-nums"},
   editorialAddBtn:  {width:30,height:30,minWidth:30,borderRadius:"50%",border:"none",background:"linear-gradient(180deg,var(--brand-primary,#FF6B35) 0%,var(--brand-secondary,#E55A2B) 100%)",color:"#fff",fontSize:16,fontWeight:700,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.3),0 4px 12px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent)",fontFamily:"'Inter',sans-serif"},
 
   // ── CART PANEL ──
@@ -1067,9 +1066,11 @@ const K = {
   resetBtn:   {background:"transparent",border:BORDER_DEFAULT,borderRadius:8,padding:"6px 12px",color:"rgba(255,255,255,0.5)",fontSize:11,cursor:"pointer",transition:"all 0.2s ease",fontFamily:"'Geist Mono',monospace",letterSpacing:0.5},
 
   // ── CATEGORY ──
-  catBar:     {display:"flex",gap:6,padding:"12px",overflowX:"auto",background:"rgba(13,17,23,0.4)",borderBottom:BORDER_DEFAULT,flexShrink:0},
-  catBtn:     {background:"transparent",border:BORDER_DEFAULT,borderRadius:30,padding:"8px 16px",color:"rgba(255,255,255,0.55)",fontSize:13,whiteSpace:"nowrap",minHeight:40,flexShrink:0,fontWeight:500,letterSpacing:"-0.2px"},
-  catActive:  {background:"rgba(255,107,53,0.15)",border:"1px solid rgba(255,107,53,0.4)",color:"#FF6B35",fontWeight:700,boxShadow:"inset 0 1px 0 rgba(255,255,255,0.08),0 0 16px rgba(255,107,53,0.15)"},
+  catBar:     {display:"flex",gap:8,padding:"14px 20px",overflowX:"auto",background:"rgba(13,17,23,0.5)",backdropFilter:"blur(20px) saturate(180%)",WebkitBackdropFilter:"blur(20px) saturate(180%)",borderBottom:BORDER_DEFAULT,flexShrink:0,position:"sticky",top:0,zIndex:5},
+  catBtn:     {background:"rgba(255,255,255,0.025)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:999,padding:"9px 18px",color:"rgba(255,255,255,0.6)",fontSize:13,whiteSpace:"nowrap",minHeight:38,flexShrink:0,fontWeight:500,letterSpacing:"-0.2px",fontFamily:"'Inter',sans-serif",cursor:"pointer",transition:"all 0.18s cubic-bezier(.2,.8,.2,1)"},
+  catActive:  {background:"linear-gradient(180deg,var(--brand-primary,#FF6B35),var(--brand-secondary,#E55A2B))",border:"1px solid rgba(255,255,255,0.16)",color:"#fff",fontWeight:600,boxShadow:"inset 0 1px 0 rgba(255,255,255,0.22),0 4px 14px color-mix(in srgb,var(--brand-primary,#FF6B35) 32%,transparent)"},
+  // 5-column grid for menu items
+  menuGrid5:  {display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,padding:"16px 20px"},
 
   // ── MENU GRID ──
   grid:       {display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:12},
