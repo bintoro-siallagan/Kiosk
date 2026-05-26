@@ -450,7 +450,7 @@ function Shell({ children }) {
   return (
     <div style={{
       position: "fixed", inset: 0,
-      background: "linear-gradient(160deg,#070b16 0%,#0d1424 50%,#121b35 100%)",
+      background: "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)",
       color: "#e6edf3", fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif",
       overflowY: "auto", overflowX: "hidden",
       WebkitOverflowScrolling: "touch",
