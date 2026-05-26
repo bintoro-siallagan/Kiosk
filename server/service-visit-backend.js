@@ -345,7 +345,8 @@ function setupServiceVisit(app, opts = {}) {
     if (q.status) { where.push('status=?'); args.push(q.status); }
     if (q.department) { where.push('department=?'); args.push(q.department); }
     if (q.outlet_code) { where.push('outlet_code=?'); args.push(q.outlet_code); }
-    if (q.assigned_to_name) { where.push('assigned_to_name=?'); args.push(q.assigned_to_name); }
+    // Partial match (case-insensitive) — biar field worker bisa ketik "Andi" buat match "Andi (Field)"
+    if (q.assigned_to_name) { where.push('LOWER(COALESCE(assigned_to_name,\'\')) LIKE LOWER(?)'); args.push('%' + q.assigned_to_name + '%'); }
     const sql = `SELECT * FROM service_tickets ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY priority DESC, created_at DESC LIMIT 500`;
     const rows = db.prepare(sql).all(...args);
     res.json({ data: rows, total: rows.length });
