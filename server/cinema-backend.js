@@ -2294,6 +2294,77 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: true, count: results.length, days_window: days, results });
   });
 
+  // Preview pricing untuk bulk push — simulate tanpa INSERT
+  // POST /showtimes/bulk-preview { film_id, outlets[], show_date, start_time, studio_type? }
+  // Return: per-outlet { outlet, studio, price, source } untuk preview sebelum push
+  router.post('/showtimes/bulk-preview', (req, res) => {
+    const b = req.body || {};
+    const filmId = parseInt(b.film_id, 10);
+    const outlets = Array.isArray(b.outlets) ? b.outlets.map(String).filter(Boolean) : [];
+    const showDate = String(b.show_date || '').trim();
+    const startTime = String(b.start_time || '').trim();
+    if (!filmId || !outlets.length || !showDate) {
+      return res.status(400).json({ error: 'film_id, outlets[], show_date wajib' });
+    }
+    const film = db.prepare(`SELECT title, duration_min FROM cinema_films WHERE id = ?`).get(filmId);
+    if (!film) return res.status(404).json({ error: 'Film tidak ditemukan' });
+    const studioType = String(b.studio_type || '').trim() || null;
+    const PRE_SHOW_MIN = 15, CLEANING_GAP_MIN = 10;
+    const occupancy = (film.duration_min || 0) + PRE_SHOW_MIN + CLEANING_GAP_MIN;
+    const _toMin = (hhmm) => { const [h, m] = String(hhmm).split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+    const newStart = startTime ? _toMin(startTime) : null;
+    const newEnd = newStart != null ? newStart + occupancy : null;
+
+    const previews = outlets.map(outlet => {
+      // Cari studio sesuai preference
+      let studios = [];
+      if (studioType) {
+        studios = db.prepare(`SELECT id, studio_type, name FROM cinema_studios WHERE outlet = ? AND studio_type = ? AND is_active = 1 ORDER BY id`).all(outlet, studioType);
+      }
+      const others = db.prepare(`SELECT id, studio_type, name FROM cinema_studios WHERE outlet = ? AND is_active = 1 ${studioType ? 'AND studio_type != ?' : ''} ORDER BY id`).all(outlet, ...(studioType ? [studioType] : []));
+      studios = [...studios, ...others];
+
+      if (!studios.length) return { outlet, status: 'no_studio', reason: 'No active studio' };
+
+      // Cari studio yg available pada jam tsb (kalau start_time provided)
+      let pickedStudio = studios[0]; // default first
+      if (newStart != null) {
+        for (const s of studios) {
+          const existing = db.prepare(`
+            SELECT s.start_time, f.duration_min FROM cinema_showtimes s
+            LEFT JOIN cinema_films f ON f.id = s.film_id
+            WHERE s.studio_id = ? AND s.show_date = ?
+              AND COALESCE(s.is_archived, 0) = 0
+              AND COALESCE(s.status, 'scheduled') = 'scheduled'
+          `).all(s.id, showDate);
+          const overlap = existing.find(c => {
+            const cStart = _toMin(c.start_time);
+            const cEnd = cStart + (c.duration_min || 0) + PRE_SHOW_MIN + CLEANING_GAP_MIN;
+            return newStart < cEnd && newEnd > cStart;
+          });
+          if (!overlap) { pickedStudio = s; break; }
+          pickedStudio = null;
+        }
+        if (!pickedStudio) return { outlet, status: 'all_busy', reason: 'All studios busy at this time' };
+      }
+
+      // Resolve price
+      const r = resolveOutletPrice(outlet, pickedStudio.studio_type || 'Regular', showDate);
+      return {
+        outlet, status: 'ok',
+        studio_name: pickedStudio.name, studio_type: pickedStudio.studio_type,
+        price: r.price, price_source: r.source,
+      };
+    });
+
+    res.json({
+      ok: true,
+      film: { id: filmId, title: film.title, duration_min: film.duration_min },
+      occupancy_min: occupancy,
+      previews,
+    });
+  });
+
   // ── BULK SCHEDULE — push 1 film+jam ke N outlet sekaligus ──
   // POST /showtimes/bulk { film_id, outlets:['JKT01','BDG01',...], show_date, start_time, format, price?, studio_type? }
   // Logic v2 (smart, anti-conflict):

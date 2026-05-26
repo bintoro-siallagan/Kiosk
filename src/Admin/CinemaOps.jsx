@@ -284,9 +284,13 @@ function CinemaOpsInner({ apiBase }) {
             <select style={{ ...inp, width: 78 }} value={f("format") || "2D"} onChange={set("format")} title="Format film">
               {FORMATS.map(fm => <option key={fm} value={fm}>{fm}</option>)}
             </select>
-            <input style={{ ...inp, width: 96 }} type="number" placeholder="Harga" value={f("price")} onChange={set("price")} />
+            <input style={{ ...inp, width: 96 }} type="number" placeholder="Harga (auto)" value={f("price")} onChange={set("price")}
+              title="Kosongkan → harga auto-resolve per outlet × studio_type × weekday/weekend/holiday dari Cinema Price List" />
             {btn("+ Jadwalkan", () => add("showtimes", { film_id: f("film_id"), studio_id: f("studio_id"), show_date: f("show_date"), start_time: f("start_time"), format: f("format") || "2D", price: f("price") || 0 }))}
           </Form>
+          <div style={{ fontSize: 11, color: "#5b6470", marginTop: -6, marginBottom: 10, padding: "0 4px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            💡 <b style={{ color: "#22d3ee" }}>Tip pricing:</b> <span>Kosongkan field <b>Harga</b> → backend auto-resolve per outlet × studio_type × weekday/weekend/holiday dari <b style={{ color: "#fbbf24" }}>Cinema Price List</b>. Cocok untuk multi-outlet push.</span>
+          </div>
 
           {/* Auto-suggest available slots — multi-select untuk bulk create */}
           <ShowtimeSlotSuggest
@@ -360,8 +364,41 @@ function CinemaOpsInner({ apiBase }) {
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
                 <div style={{ fontSize: 12, color: "#9ca3af" }}>
-                  <b style={{ color: "#c084fc", fontFamily: "'Geist Mono',monospace" }}>{selectedOutlets.size}</b> outlet dicentang · pakai film+tanggal+jam+format+harga dari form atas
+                  <b style={{ color: "#c084fc", fontFamily: "'Geist Mono',monospace" }}>{selectedOutlets.size}</b> outlet dicentang · pakai film+tanggal+jam dari form atas · 💡 kosongkan harga = auto per outlet
                 </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={async () => {
+                  if (selectedOutlets.size === 0) { setMsg("Centang minimal 1 outlet"); return; }
+                  if (!f("film_id") || !f("show_date")) { setMsg("Film & tanggal wajib diisi"); return; }
+                  setBulkBusy(true); setMsg(""); setBulkResult(null);
+                  try {
+                    const r = await fetch(`${base}/showtimes/bulk-preview`, {
+                      method: "POST", headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        film_id: parseInt(f("film_id"), 10),
+                        outlets: [...selectedOutlets],
+                        show_date: f("show_date"),
+                        start_time: f("start_time") || "",
+                      }),
+                    });
+                    const d = await r.json();
+                    if (!r.ok) throw new Error(d.error || "Preview gagal");
+                    // Convert preview ke format bulkResult.created supaya bisa pakai render yang sama
+                    setBulkResult({
+                      film: d.film, occupancy_min: d.occupancy_min,
+                      created: d.previews.filter(p => p.status === "ok").map(p => ({
+                        outlet: p.outlet, studio_name: p.studio_name, studio_type: p.studio_type,
+                        price: p.price, price_source: p.price_source + " (preview)",
+                      })),
+                      skipped: d.previews.filter(p => p.status !== "ok").map(p => ({ outlet: p.outlet, reason: p.reason })),
+                      _isPreview: true,
+                    });
+                  } catch (e) { setMsg("⚠ " + e.message); }
+                  setBulkBusy(false);
+                }} disabled={bulkBusy || selectedOutlets.size === 0}
+                  style={{ background: "rgba(34,211,238,0.12)", border: "1px solid rgba(34,211,238,0.4)", borderRadius: 8, padding: "9px 14px", color: "#22d3ee", fontSize: 12, fontWeight: 800, cursor: selectedOutlets.size > 0 ? "pointer" : "not-allowed", fontFamily: "inherit" }}>
+                  🔍 Preview Harga
+                </button>
                 <button onClick={async () => {
                   if (selectedOutlets.size === 0) { setMsg("Centang minimal 1 outlet"); return; }
                   if (!f("film_id") || !f("show_date") || !f("start_time")) { setMsg("Film, tanggal, dan jam wajib diisi di form atas"); return; }
@@ -392,12 +429,51 @@ function CinemaOpsInner({ apiBase }) {
                   fontSize: 12, fontWeight: 800, cursor: selectedOutlets.size > 0 ? "pointer" : "not-allowed", fontFamily: "inherit",
                   boxShadow: selectedOutlets.size > 0 ? "0 4px 12px rgba(168,85,247,0.3)" : "none",
                 }}>{bulkBusy ? "⏳ Push..." : `🚀 PUSH KE ${selectedOutlets.size} OUTLET`}</button>
+                </div>
               </div>
               {bulkResult && (
-                <div style={{ marginTop: 10, padding: "10px 12px", background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: 8, fontSize: 12 }}>
-                  <div style={{ color: "#10b981", fontWeight: 700 }}>✓ Sukses: {bulkResult.created.length} jadwal dibuat</div>
-                  {bulkResult.skipped.length > 0 && (
-                    <div style={{ color: "#eab308", marginTop: 4 }}>⚠ Skipped: {bulkResult.skipped.length} outlet ({bulkResult.skipped.map(s => s.outlet).join(", ")}) — {bulkResult.skipped[0]?.reason}</div>
+                <div style={{ marginTop: 10, padding: "12px 14px", background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.25)", borderRadius: 10, fontSize: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
+                    <div style={{ color: "#10b981", fontWeight: 800, fontSize: 13 }}>
+                      ✅ Sukses: {bulkResult.created.length} jadwal dibuat
+                      {bulkResult.skipped?.length > 0 && <span style={{ color: "#eab308", marginLeft: 10 }}>⚠ {bulkResult.skipped.length} skipped</span>}
+                    </div>
+                    {bulkResult.film && (
+                      <div style={{ fontSize: 11, color: "#9ca3af", fontFamily: "'Geist Mono',monospace" }}>
+                        🎬 {bulkResult.film.title} · {bulkResult.film.duration_min}min · occupancy {bulkResult.occupancy_min}min
+                      </div>
+                    )}
+                  </div>
+                  {bulkResult.created.length > 0 && (
+                    <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: 8, overflow: "hidden", marginBottom: bulkResult.skipped?.length > 0 ? 8 : 0 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 0.8fr 1fr 0.7fr", padding: "6px 10px", borderBottom: "1px solid rgba(255,255,255,0.06)", fontSize: 10, color: "#7d8590", letterSpacing: 1.2, fontFamily: "'Geist Mono',monospace", fontWeight: 700, textTransform: "uppercase" }}>
+                        <span>OUTLET</span><span>STUDIO</span><span>TYPE</span><span style={{ textAlign: "right" }}>PRICE</span><span>SOURCE</span>
+                      </div>
+                      {bulkResult.created.map(c => (
+                        <div key={c.outlet} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 0.8fr 1fr 0.7fr", padding: "7px 10px", borderBottom: "1px solid rgba(255,255,255,0.04)", fontSize: 11.5, alignItems: "center" }}>
+                          <span style={{ color: "#22d3ee", fontWeight: 700, fontFamily: "'Geist Mono',monospace" }}>{c.outlet}</span>
+                          <span>{c.studio_name}</span>
+                          <span style={{ color: c.studio_type === "IMAX" ? "#fbbf24" : c.studio_type === "Premiere" ? "#ec4899" : c.studio_type === "Deluxe" ? "#a855f7" : "#10b981", fontSize: 10.5, fontWeight: 700 }}>{c.studio_type}</span>
+                          <span style={{ textAlign: "right", fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "#10b981" }}>{rp(c.price)}</span>
+                          <span style={{ fontSize: 10, color: c.price_source === "weekend" ? "#fbbf24" : c.price_source === "holiday" ? "#ec4899" : c.price_source === "manual" ? "#22d3ee" : "#7d8590", fontFamily: "'Geist Mono',monospace", fontWeight: 700, textTransform: "uppercase" }}>{c.price_source}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {bulkResult.skipped?.length > 0 && (
+                    <div style={{ background: "rgba(234,179,8,0.06)", border: "1px solid rgba(234,179,8,0.25)", borderRadius: 8, padding: "8px 12px", fontSize: 11 }}>
+                      <div style={{ color: "#fbbf24", fontWeight: 700, marginBottom: 4 }}>⚠ Skipped {bulkResult.skipped.length} outlet:</div>
+                      {bulkResult.skipped.map(s => (
+                        <div key={s.outlet} style={{ color: "#eab308", marginTop: 3 }}>
+                          <b style={{ fontFamily: "'Geist Mono',monospace" }}>{s.outlet}</b> — {s.reason}
+                          {s.blocked && s.blocked.length > 0 && (
+                            <div style={{ paddingLeft: 14, fontSize: 10, color: "#9ca3af", marginTop: 2 }}>
+                              {s.blocked.map((b, i) => <div key={i}>· {b.studio}: blocked by <i>{b.blocked_by}</i> @ {b.time}</div>)}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
