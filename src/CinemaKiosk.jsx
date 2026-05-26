@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import DelightPopup from "./components/DelightPopup.jsx";
 
 // CinemaKiosk — customer-facing cinema ticket flow.
@@ -414,6 +414,24 @@ export default function CinemaKiosk({ apiBase }) {
   // - status 'scheduled' (bukan cancelled/ended/closed)
   // - belum lewat waktu mulai (start_time hari ini > now, atau future date)
   // - tidak sold-out (seats_remaining > 0, optional check)
+  // Set film_id yang punya minimal 1 showtime available (scheduled, future, ada seat)
+  // → dipake buat filter film list: kiosk hanya tampil film yang udah ada jadwalnya
+  const filmIdsWithShows = useMemo(() => {
+    const now = Date.now();
+    const set = new Set();
+    for (const sh of showtimes) {
+      const status = sh.derived_status || sh.status || "scheduled";
+      if (status !== "scheduled") continue;
+      try {
+        const dt = new Date(`${sh.show_date}T${sh.start_time}`);
+        if (dt.getTime() < now - 5 * 60 * 1000) continue;
+      } catch {}
+      if (sh.seats_remaining != null && sh.seats_remaining <= 0) continue;
+      set.add(sh.film_id);
+    }
+    return set;
+  }, [showtimes]);
+
   const filmShows = showtimes.filter(s => {
     if (!film || s.film_id !== film.id) return false;
     const status = s.derived_status || s.status || "scheduled";
@@ -482,12 +500,12 @@ export default function CinemaKiosk({ apiBase }) {
       <div style={{ position: "relative", zIndex: 1, flex: 1, padding: "24px", maxWidth: 1400, width: "100%", margin: "0 auto", boxSizing: "border-box" }}>
         {msg && <div style={{ background: "#ef444415", border: "1px solid #ef444444", borderRadius: 10, padding: "10px 14px", color: "#fca5a5", fontSize: 13, marginBottom: 16 }}>{msg}</div>}
 
-        {/* STEP: films */}
+        {/* STEP: films — hanya tampilkan film yang udah ada jadwal aktif */}
         {step === "films" && (
           <>
             <H>Pilih Film</H>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 14 }}>
-              {films.filter(f => f.status === "now_showing").map(f => (
+              {films.filter(f => f.status === "now_showing" && filmIdsWithShows.has(f.id)).map(f => (
                 <button key={f.id} onClick={() => setPreviewFilm(f)} className="karya-film-card" style={{ ...card(), padding: 0, overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.6), 0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
                   {f.poster_url ? (
                     <img src={f.poster_url} alt={f.title} loading="lazy"
@@ -516,7 +534,13 @@ export default function CinemaKiosk({ apiBase }) {
                   </div>
                 </button>
               ))}
-              {films.filter(f => f.status === "now_showing").length === 0 && <div style={{ color: "#5b6470", fontSize: 14 }}>Belum ada film tayang.</div>}
+              {films.filter(f => f.status === "now_showing" && filmIdsWithShows.has(f.id)).length === 0 && (
+                <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "40px 20px", color: "rgba(255,255,255,0.45)", fontSize: 14, background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(255,255,255,0.08)", borderRadius: 14 }}>
+                  <div style={{ fontSize: 38, marginBottom: 8 }}>🎬</div>
+                  <div style={{ fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>Belum ada jadwal tayang</div>
+                  <div style={{ fontSize: 12, marginTop: 4, color: "rgba(255,255,255,0.4)" }}>Cek lagi nanti — admin sedang menyusun jadwal.</div>
+                </div>
+              )}
             </div>
 
             {films.filter(f => f.status === "coming_soon").length > 0 && (
