@@ -1017,25 +1017,35 @@ function CinemaQRISPayment({ film, show, seats, cartItems, total, base, buy, msg
     return () => clearInterval(tickTimerRef.current);
   }, [qrData, paid]);
 
-  // Poll status every 3s
+  const [lastCheck, setLastCheck] = useState(null);
+  const [checkBusy, setCheckBusy] = useState(false);
+
+  const checkStatus = async () => {
+    if (!qrData?.midtransOrderId || paid) return;
+    setCheckBusy(true);
+    try {
+      const r = await fetch(`/api/payment/status/${encodeURIComponent(qrData.midtransOrderId)}`);
+      const d = await r.json();
+      setLastCheck({ at: Date.now(), status: d.status || "unknown", paid: !!d.paid });
+      if (d.paid || ["settlement", "capture"].includes(d.status)) {
+        setPaid(true);
+        setPolling(false);
+        clearInterval(pollTimerRef.current);
+        clearInterval(tickTimerRef.current);
+        setTimeout(() => buy(cartItems), 800);
+        return true;
+      }
+    } catch (e) { console.error("status check err:", e); }
+    setCheckBusy(false);
+    return false;
+  };
+
+  // Auto-poll every 2s (faster)
   useEffect(() => {
     if (!polling || !qrData?.midtransOrderId || paid) return;
-    pollTimerRef.current = setInterval(async () => {
-      try {
-        const r = await fetch(`/api/payment/status/${encodeURIComponent(qrData.midtransOrderId)}`);
-        const d = await r.json();
-        if (d.paid || ["settlement", "capture"].includes(d.status)) {
-          setPaid(true);
-          setPolling(false);
-          clearInterval(pollTimerRef.current);
-          clearInterval(tickTimerRef.current);
-          // Trigger ticket creation + done
-          setTimeout(() => buy(cartItems), 800);
-        }
-      } catch {}
-    }, 3000);
+    pollTimerRef.current = setInterval(checkStatus, 2000);
     return () => clearInterval(pollTimerRef.current);
-  }, [polling, qrData, paid, buy, cartItems]);
+  }, [polling, qrData, paid]);
 
   // Auto-expire when countdown reach 0
   useEffect(() => {
@@ -1118,11 +1128,27 @@ function CinemaQRISPayment({ film, show, seats, cartItems, total, base, buy, msg
         {cartItems.length > 0 && <><br/>F&B: {cartItems.map(it => `${it.name}×${it.qty}`).join(", ")}</>}
       </div>
 
-      {/* Polling indicator */}
+      {/* Polling indicator + manual check button */}
       {polling && !paid && (
-        <div style={{ padding: 10, background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.25)", borderRadius: 8, marginBottom: 14, fontSize: 11, color: "#67e8f9", textAlign: "center", fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5 }}>
-          <span style={{ animation: "karyaPulse 1.4s infinite" }}>●</span> Menunggu pembayaran… (auto-detect 3 detik)
-        </div>
+        <>
+          <div style={{ padding: 10, background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.25)", borderRadius: 8, marginBottom: 8, fontSize: 11, color: "#67e8f9", textAlign: "center", fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5 }}>
+            <span style={{ animation: "karyaPulse 1.4s infinite" }}>●</span> Menunggu pembayaran… (auto-cek 2 detik)
+            {lastCheck && (
+              <div style={{ fontSize: 9, color: "#94a3b8", marginTop: 4 }}>
+                Last check: {new Date(lastCheck.at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })} · status: {lastCheck.status}
+              </div>
+            )}
+          </div>
+          <button onClick={checkStatus} disabled={checkBusy} style={{
+            width: "100%", padding: "10px 16px", marginBottom: 14,
+            background: checkBusy ? "rgba(34,211,238,0.05)" : "rgba(34,211,238,0.12)",
+            border: "1px solid rgba(34,211,238,0.35)",
+            borderRadius: 10, color: "#67e8f9", fontSize: 12, fontWeight: 700,
+            fontFamily: "inherit", cursor: checkBusy ? "wait" : "pointer", letterSpacing: 0.3,
+          }}>
+            {checkBusy ? "⏳ Mengecek…" : "🔄 Sudah Bayar? Cek Manual Sekarang"}
+          </button>
+        </>
       )}
 
       {msg && <div style={{ padding: 10, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 14 }}>{msg}</div>}
