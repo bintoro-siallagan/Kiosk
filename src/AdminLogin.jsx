@@ -242,18 +242,18 @@ const CSS = `
 `;
 
 const L = {
-  root:    { fontFamily: "'Inter',sans-serif", background: "#050810", color: "#fff", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 },
-  wrap:    { textAlign: "center", padding: "40px 28px", maxWidth: 400, width: "100%", background: "#0d1117", border: "1px solid #1b212c", borderRadius: 18, boxShadow: "0 20px 60px rgba(0,0,0,0.4)" },
+  root:    { fontFamily: "'Inter',sans-serif", background: "linear-gradient(160deg,#0a1428 0%,#152348 50%,#1e3a8a 100%)", color: "#fff", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, position: "relative" },
+  wrap:    { position: "relative", zIndex: 1, textAlign: "center", padding: "40px 28px", maxWidth: 400, width: "100%", background: "rgba(10,20,40,0.55)", backdropFilter: "blur(20px) saturate(140%)", WebkitBackdropFilter: "blur(20px) saturate(140%)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18, boxShadow: "0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)" },
   logoImg: { width: 78, height: 78, objectFit: "contain", marginBottom: 8 },
   brand:   { fontFamily: "'Geist Mono',monospace", fontSize: 26, fontWeight: 800, color: "#F59E0B", letterSpacing: 4, marginBottom: 4 },
-  title:   { fontFamily: "'Geist Mono',monospace", fontSize: 11, letterSpacing: 4, color: "#9ca3af", marginBottom: 4 },
-  sub:     { fontSize: 12.5, color: "#5b6470", marginBottom: 22, lineHeight: 1.5 },
+  title:   { fontFamily: "'Geist Mono',monospace", fontSize: 11, letterSpacing: 4, color: "#cbd5e1", marginBottom: 4 },
+  sub:     { fontSize: 12.5, color: "#94a3b8", marginBottom: 22, lineHeight: 1.5 },
   form:    { textAlign: "left", marginTop: 6 },
-  label:   { display: "block", fontSize: 10, color: "#5b6470", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 4, fontWeight: 700 },
-  input:   { width: "100%", padding: "12px 14px", background: "#0a0e16", border: "1px solid #21262d", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" },
-  primaryBtn: { width: "100%", padding: "14px 18px", background: "linear-gradient(135deg, #F59E0B 0%, #f97316 100%)", border: "none", color: "#111", borderRadius: 10, fontSize: 14, fontWeight: 800, fontFamily: "inherit", letterSpacing: 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 },
-  modeToggle: { background: "transparent", border: "1px solid #21262d", color: "#9ca3af", padding: "8px 14px", borderRadius: 8, fontSize: 11.5, marginTop: 20, fontFamily: "inherit", width: "100%" },
-  footer:  { fontSize: 10, color: "#3a3a3a", marginTop: 18, lineHeight: 1.5 },
+  label:   { display: "block", fontSize: 10, color: "#94a3b8", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 4, fontWeight: 700 },
+  input:   { width: "100%", padding: "12px 14px", background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 10, color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" },
+  primaryBtn: { width: "100%", padding: "14px 18px", background: "linear-gradient(135deg, #F59E0B 0%, #f97316 100%)", border: "none", color: "#111", borderRadius: 10, fontSize: 14, fontWeight: 800, fontFamily: "inherit", letterSpacing: 0.5, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 8px 22px rgba(245,158,11,0.3)" },
+  modeToggle: { background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: "#cbd5e1", padding: "8px 14px", borderRadius: 8, fontSize: 11.5, marginTop: 20, fontFamily: "inherit", width: "100%" },
+  footer:  { fontSize: 10, color: "#64748b", marginTop: 18, lineHeight: 1.5 },
   error:   { fontSize: 13, color: "#F87171", marginBottom: 14, background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8, padding: "10px 14px", textAlign: "left" },
   // PIN mode
   dots:    { display: "flex", gap: 14, justifyContent: "center", marginTop: 8, marginBottom: 20 },
@@ -261,6 +261,6 @@ const L = {
   checking:{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontSize: 12, color: "#F59E0B", marginBottom: 12 },
   spinner: { width: 14, height: 14, border: "2px solid rgba(0,0,0,0.2)", borderTop: "2px solid currentColor", borderRadius: "50%", animation: "spin 0.8s linear infinite", display: "inline-block" },
   pad:     { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 },
-  key:     { height: 62, fontSize: 22, fontFamily: "'Geist Mono',monospace", fontWeight: 700, background: "#0a0e16", border: "1px solid #21262d", borderRadius: 12, color: "#fff" },
-  delKey:  { height: 62, fontSize: 20, background: "#0a0e16", border: "1px solid #21262d", borderRadius: 12, color: "#F87171", fontWeight: 700 },
+  key:     { height: 62, fontSize: 22, fontFamily: "'Geist Mono',monospace", fontWeight: 700, background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, color: "#fff" },
+  delKey:  { height: 62, fontSize: 20, background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 12, color: "#F87171", fontWeight: 700 },
 };
