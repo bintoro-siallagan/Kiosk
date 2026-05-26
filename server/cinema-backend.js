@@ -711,6 +711,11 @@ function setupCinema(app, opts = {}) {
     const since = now - periodSec;
 
     const outletWhere = outletFilter ? `AND st.outlet = '${outletFilter.replace(/'/g, "''")}'` : '';
+    // Multi-tenant filter: limit ke company saat ini
+    const scope = req.companyScope || { is_super_admin: true };
+    const cWhere = scope.is_super_admin ? '' : `AND t.company_id = ${parseInt(scope.company_id, 10)}`;
+    const sWhere = scope.is_super_admin ? '' : `AND s.company_id = ${parseInt(scope.company_id, 10)}`;
+    const fWhere = scope.is_super_admin ? '' : `AND f.company_id = ${parseInt(scope.company_id, 10)}`;
 
     // KPI: tickets sold + revenue total
     const kpi = db.prepare(`
@@ -722,7 +727,7 @@ function setupCinema(app, opts = {}) {
       FROM cinema_tickets t
       LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
       LEFT JOIN cinema_studios st ON st.id = s.studio_id
-      WHERE t.sold_at > ? ${outletWhere}
+      WHERE t.sold_at > ? ${outletWhere} ${cWhere}
     `).get(since);
 
     // Revenue per outlet (top 10)
@@ -731,7 +736,7 @@ function setupCinema(app, opts = {}) {
       FROM cinema_tickets t
       LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
       LEFT JOIN cinema_studios st ON st.id = s.studio_id
-      WHERE t.sold_at > ? AND st.outlet IS NOT NULL ${outletWhere}
+      WHERE t.sold_at > ? AND st.outlet IS NOT NULL ${outletWhere} ${cWhere}
       GROUP BY st.outlet
       ORDER BY revenue DESC
       LIMIT 10
@@ -744,7 +749,7 @@ function setupCinema(app, opts = {}) {
       LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
       LEFT JOIN cinema_studios st ON st.id = s.studio_id
       LEFT JOIN cinema_films f ON f.id = s.film_id
-      WHERE t.sold_at > ? AND f.id IS NOT NULL ${outletWhere}
+      WHERE t.sold_at > ? AND f.id IS NOT NULL ${outletWhere} ${cWhere}
       GROUP BY f.id
       ORDER BY tickets DESC
       LIMIT 10

@@ -140,6 +140,7 @@ const AdminReconciliation         = lazy(() => import("./Admin/AdminReconciliati
 const AdminReleasePayment         = lazy(() => import("./Admin/AdminReleasePayment.jsx"));
 const AdminPeriodClosing          = lazy(() => import("./Admin/AdminPeriodClosing.jsx"));
 const OwnerDashboard              = lazy(() => import("./Admin/OwnerDashboard.jsx"));
+const CinemaOwnerDashboard        = lazy(() => import("./Admin/CinemaOwnerDashboard.jsx"));
 const FnbRecipe                   = lazy(() => import("./Admin/FnbRecipe.jsx"));
 const FnbCombo                    = lazy(() => import("./Admin/FnbCombo.jsx"));
 const FnbMenuPeriods              = lazy(() => import("./Admin/FnbMenuPeriods.jsx"));
@@ -234,10 +235,21 @@ export default function AdminTools({ initialTab }) {
       <div style={S.main}>
         <div style={S.body}>
         <Suspense fallback={<ModuleLoading />}>
-        {tab === "dashboard" && <OwnerDashboard apiBase={API} onNavigate={(key) => {
-          const navMap = { finance: "finance", gl: "general_ledger", aggregator: "aggregator", payment_gateway: "payment", refund_cancel: "anti_fraud", hr: "hris", loyalty: "loyalty" };
-          setTab(navMap[key] || key);
-        }} />}
+        {tab === "dashboard" && (() => {
+          // Multi-tenant: route ke dashboard sesuai primary_vertical company
+          let vertical = "fnb";
+          try {
+            const ctx = JSON.parse(localStorage.getItem("karya_company_ctx") || "null");
+            vertical = ctx?.company?.primary_vertical || "fnb";
+          } catch {}
+          const onNav = (key) => {
+            const navMap = { finance: "finance", gl: "general_ledger", aggregator: "aggregator", payment_gateway: "payment", refund_cancel: "anti_fraud", hr: "hris", loyalty: "loyalty" };
+            setTab(navMap[key] || key);
+          };
+          if (vertical === "cinema") return <CinemaOwnerDashboard apiBase={API} onNavigate={onNav} />;
+          // 'fnb' atau 'hybrid' atau super-admin → OwnerDashboard existing (F&B-heavy)
+          return <OwnerDashboard apiBase={API} onNavigate={onNav} />;
+        })()}
         {tab === "staff" && <StaffTab showToast={showToast} />}
         {tab === "gudang" && <GudangTab showToast={showToast} />}
         {tab === "waste" && <WasteTab showToast={showToast} />}
