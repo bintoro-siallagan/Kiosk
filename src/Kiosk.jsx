@@ -644,18 +644,20 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
 
       {/* ══ LEFT: Menu 60% ══ */}
       <div style={K.splitLeft}>
-        {/* Header */}
+        {/* Header — brand language consistent with welcome */}
         <div style={K.header}>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <img src="/logo.png" alt="KaryaOS" style={{height:34,objectFit:"contain"}}/>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <img src="/logo.png" alt="" className="boot-logo" style={{height:32,width:32,objectFit:"contain",animation:"none",filter:"drop-shadow(0 0 8px rgba(255,255,255,0.4)) drop-shadow(0 0 18px var(--brand-primary,#FF6B35))"}}/>
             <div>
-              <div style={K.headerBrand}>KaryaOS</div>
-              <div style={K.headerSub}>{orderType==="dine"?"🪑 Makan di Sini":"🛍️ Bawa Pulang"}</div>
+              <div style={K.headerBrand}>
+                {isCustomBrand ? tenantBrand.name : (<>karya<span style={{fontWeight:300,opacity:.55}}>OS</span></>)}
+              </div>
+              <div style={K.headerSub}>{orderType==="dine"?"🪑 Dine In":"🛍️ Takeaway"}</div>
             </div>
           </div>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             <div style={K.headerTime}>{time.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</div>
-            <button style={K.resetBtn} onClick={()=>{clearCart();setOrderType(null);}}>✕ Ganti</button>
+            <button style={K.resetBtn} onClick={()=>{clearCart();setOrderType(null);}}>✕ Reset</button>
           </div>
         </div>
 
@@ -674,7 +676,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
             {filtered.map((item,i)=>{
               const inCart=cart.filter(e=>e.item.id===item.id).reduce((a,e)=>a+e.qty,0);
               return (
-                <div key={item.id} className="menu-card" style={{...K.card,animationDelay:`${i*0.03}s`,opacity:item.avail===false?0.5:1,pointerEvents:item.avail===false?"none":"auto"}}>
+                <div key={item.id} className="menu-card lg" style={{...K.card,animationDelay:`${i*0.03}s`,opacity:item.avail===false?0.5:1,pointerEvents:item.avail===false?"none":"auto"}}>
                   {item.tag && (
                     <div style={{...K.tag,background:TAG_CLR[item.tag]?.bg,color:TAG_CLR[item.tag]?.tx}}>{item.tag}</div>
                   )}
@@ -740,7 +742,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
               const lineTotal = (e.item.price + e.addonTotal) * q;
               const labels = getAddonLabels(e.addons, e.item.category);
               return (
-                <div key={e.uid} style={K.cartPanelRow}>
+                <div key={e.uid} className="lg" style={K.cartPanelRow}>
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:14,fontWeight:700,lineHeight:1.3}}>
@@ -791,9 +793,9 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
                 <span style={{fontFamily:"'Inter',sans-serif",fontSize:18,letterSpacing:1,color:"#aaa"}}>TOTAL</span>
                 <span style={{fontFamily:"'Inter',sans-serif",fontSize:30,color:"#FF6B35"}}>{fIDR(total)}</span>
               </div>
-              <button onClick={goToConfirm} className="pay-btn-premium"
-                style={{width:"100%",padding:"16px",borderRadius:14,background:"linear-gradient(135deg,#FF6B35,#E55A2B)",border:"1px solid rgba(255,107,53,0.4)",color:"#000",fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:800,letterSpacing:1.5,cursor:"pointer",boxShadow:SHADOW_CTA}}>
-                CHECKOUT →
+              <button onClick={goToConfirm} className="lg lg-brand order-pill"
+                style={{width:"100%",padding:"16px",borderRadius:16,border:"none",color:"#fff",fontFamily:"'Inter',sans-serif",fontSize:17,fontWeight:600,letterSpacing:"-0.3px",cursor:"pointer"}}>
+                Checkout →
               </button>
             </>
           ) : (
@@ -960,7 +962,8 @@ const K = {
   cartPanelHeader:{padding:"18px 22px",borderBottom:BORDER_DEFAULT,flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"center"},
   cartPanelTitle:{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:750,color:"#FF6B35",letterSpacing:"-0.5px"},
   cartPanelBody:{flex:1,overflowY:"auto",padding:"0 14px"},
-  cartPanelRow:{background:CARD_BG,border:BORDER_DEFAULT,borderRadius:14,padding:"13px",marginTop:8,boxShadow:"0 1px 2px rgba(0,0,0,0.25),inset 0 1px 0 rgba(255,255,255,0.03)",transition:"all 0.2s cubic-bezier(0.4,0,0.2,1)"},
+  // bg/border/shadow handled by .lg class on element
+  cartPanelRow:{borderRadius:16,padding:"13px",marginTop:8,transition:"all 0.2s cubic-bezier(0.4,0,0.2,1)"},
   cartPanelFooter:{padding:"18px 22px",borderTop:BORDER_DEFAULT,flexShrink:0,background:"linear-gradient(180deg,transparent,rgba(13,17,23,0.6))"},
   emptyCartPanel:{height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 24px",gap:0,userSelect:"none",paddingTop:60},
   removeBtn:{background:"transparent",border:"none",color:"#F87171",fontSize:16,cursor:"pointer",padding:"0 4px",flexShrink:0,transition:"all 0.2s ease",opacity:0.7},
@@ -996,8 +999,8 @@ const K = {
 
   // ── HEADER ──
   header:     {display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 18px",background:"rgba(13,17,23,0.6)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderBottom:BORDER_DEFAULT,flexShrink:0},
-  headerBrand:{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,letterSpacing:"-0.5px",color:"#FF6B35"},
-  headerSub:  {fontSize:10,color:"rgba(255,255,255,0.45)",fontFamily:"'Geist Mono',monospace",letterSpacing:1.5,textTransform:"uppercase",marginTop:2},
+  headerBrand:{fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:600,letterSpacing:"-0.4px",color:"rgba(255,255,255,0.92)"},
+  headerSub:  {fontSize:11,color:"rgba(255,255,255,0.42)",fontFamily:"'Inter',sans-serif",letterSpacing:0.2,marginTop:1,fontWeight:400},
   headerTime: {fontSize:13,color:"rgba(255,255,255,0.35)",fontVariantNumeric:"tabular-nums",fontFamily:"'Geist Mono',monospace"},
   resetBtn:   {background:"transparent",border:BORDER_DEFAULT,borderRadius:8,padding:"6px 12px",color:"rgba(255,255,255,0.5)",fontSize:11,cursor:"pointer",transition:"all 0.2s ease",fontFamily:"'Geist Mono',monospace",letterSpacing:0.5},
 
@@ -1008,7 +1011,8 @@ const K = {
 
   // ── MENU GRID ──
   grid:       {display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:12},
-  card:       {background:CARD_BG,borderRadius:18,overflow:"hidden",display:"flex",flexDirection:"column",border:BORDER_DEFAULT,position:"relative",boxShadow:SHADOW_CARD},
+  // bg/border/shadow handled by .lg class on element; keep layout only
+  card:       {borderRadius:22,display:"flex",flexDirection:"column",position:"relative"},
   tag:        {position:"absolute",top:8,left:8,zIndex:2,fontSize:9,fontWeight:700,letterSpacing:1,padding:"3px 8px",borderRadius:20,boxShadow:"0 4px 12px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.2)"},
   inCartBadge:{position:"absolute",top:8,right:8,zIndex:2,background:"linear-gradient(135deg,#FF6B35,#F59E0B)",color:"#fff",borderRadius:"50%",width:26,height:26,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,boxShadow:"0 4px 14px rgba(255,107,53,0.45),inset 0 1px 0 rgba(255,255,255,0.25)"},
   imgWrap:    {background:"linear-gradient(180deg,rgba(255,255,255,0.03) 0%,rgba(255,255,255,0.005) 100%)",padding:"12px",display:"flex",alignItems:"center",justifyContent:"center",minHeight:120},
