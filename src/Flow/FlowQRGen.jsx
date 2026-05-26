@@ -115,7 +115,7 @@ export default function FlowQRGen() {
           placeholder="https://kiosk.karys.tech/"
         />
         <div style={S.hint}>
-          💡 Pakai LAN IP atau domain production. Customer scan QR pakai HP — gak bisa pakai "localhost".
+          💡 Use LAN IP or production domain. Customers scan QR with their phone — cannot use "localhost".
         </div>
       </div>
 

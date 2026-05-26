@@ -123,7 +123,7 @@ export default function CinemaDigitalTicket() {
           </div>
 
           <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 12, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>{ticket.code}</div>
-          <div style={{ fontSize: 11, color: "#7d8590", marginTop: 4 }}>Tunjukkan QR ini ke usher di pintu studio</div>
+          <div style={{ fontSize: 11, color: "#7d8590", marginTop: 4 }}>Show this QR to the usher at the studio entrance</div>
         </div>
 
         {/* Ticket info */}
@@ -142,7 +142,7 @@ export default function CinemaDigitalTicket() {
           <div style={{ fontSize: 11, color: "#22d3ee", fontWeight: 800, marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.2 }}>💡 TIPS</div>
           <ul style={{ margin: 0, padding: "0 0 0 18px", fontSize: 12, color: "#cbd5e1", lineHeight: 1.7 }}>
             <li>Datang 15 menit sebelum jam tayang</li>
-            <li>Tunjukkan QR ke usher di pintu studio (boleh dari HP)</li>
+            <li>Show QR to the usher at studio entrance (phone screen is fine)</li>
             <li>QR cukup di-scan sekali — kalau gagal, kasih kode {ticket.code} ke usher</li>
             <li>Tiket berlaku hanya untuk jadwal & kursi di atas</li>
           </ul>

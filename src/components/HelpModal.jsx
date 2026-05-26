@@ -43,7 +43,7 @@ const HELP = {
       { num: "3", title: "Stage Idle", desc: "Background custom + 'Selamat Datang' + carousel showtime today auto-rotate 7 detik." },
       { num: "4", title: "Stage Selling", desc: "Saat kasir pilih film: poster gede + info + seat map (kursi blink amber) + breakdown harga real-time." },
       { num: "5", title: "Stage Pay", desc: "Saat kasir generate QRIS: QR code 360×360 + total Rp gede. Customer scan dengan e-wallet." },
-      { num: "6", title: "Stage Done", desc: "Tiket sukses + QR rating film (customer scan dengan HP → mobile feedback)." },
+      { num: "6", title: "Stage Done", desc: "Ticket issued + film rating QR (customer scans with phone → mobile feedback)." },
     ],
     tips: [
       "Buka full-screen dengan F11 untuk experience optimal.",
@@ -107,8 +107,8 @@ const HELP = {
     title: "⭐ Mobile Rating Feedback",
     accent: "#ec4899",
     steps: [
-      { num: "1", title: "Scan QR di CDS", desc: "Selesai beli tiket, di TV layar muncul QR code 'RATE FILM INI' — scan dengan HP." },
-      { num: "2", title: "Pilih Bintang", desc: "Tap 1-5 bintang sesuai pendapat. Label dynamic: 1=Sangat Buruk, 5=Sangat Bagus." },
+      { num: "1", title: "Scan QR on CDS", desc: 'After buying ticket, the CDS displays a "RATE THIS FILM" QR — scan with your phone.' },
+      { num: "2", title: "Pick Stars", desc: "Tap 1-5 stars based on your opinion. Dynamic label: 1=Very Bad, 5=Excellent." },
       { num: "3", title: "Komentar (Opsional)", desc: "Tulis kesan singkat untuk improvement kami." },
       { num: "4", title: "Submit", desc: "Klik Kirim Rating — dapet ✨ confirmation + tease voucher F&B gratis." },
     ],
