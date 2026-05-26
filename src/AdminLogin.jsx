@@ -91,7 +91,6 @@ export default function AdminLogin({ onLogin }) {
       <style>{CSS}</style>
       <div style={{ ...L.wrap, animation: shake ? "shake 0.4s ease" : "fadeUp 0.3s ease" }}>
         <img src="/logo.png" alt="KaryaOS" style={L.logoImg} />
-        <div style={L.brand}>karya<span style={{ color: "#fff" }}>OS</span></div>
         <div style={L.title}>{mode === "password" ? "ADMIN LOGIN" : "PIN QUICK-ACCESS"}</div>
         <div style={L.sub}>{mode === "password" ? "Enterprise authentication · username & password" : "Untuk kasir POS · 6-digit PIN"}</div>
 
@@ -196,8 +195,7 @@ function ForceChangePassword({ session, onDone }) {
     <div style={L.root}>
       <style>{CSS}</style>
       <div style={L.wrap}>
-        <div style={{ fontSize: 50, marginBottom: 6 }}>🔐</div>
-        <div style={L.brand}>karya<span style={{ color: "#fff" }}>OS</span></div>
+        <img src="/logo.png" alt="KaryaOS" style={L.logoImg} />
         <div style={L.title}>FORCE CHANGE PASSWORD</div>
         <div style={L.sub}>Hi <b style={{ color: "#fff" }}>{session.user.name}</b> — sistem merekomendasikan ganti password. Atau skip kalau Anda sudah yakin password aman.</div>
 
@@ -222,12 +220,16 @@ function ForceChangePassword({ session, onDone }) {
             • Mengandung angka (0-9)
           </div>
 
-          <button type="submit" disabled={busy} style={{ ...L.primaryBtn, marginTop: 18 }}>
-            {busy ? "Menyimpan…" : "💾 Simpan & Lanjut"}
-          </button>
-          <button type="button" onClick={skip} style={{ ...L.modeToggle, marginTop: 12, cursor: "pointer" }}>
-            Skip — Lanjut tanpa ganti password
-          </button>
+          <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
+            <button type="button" onClick={skip} style={{
+              flex: 1, padding: "14px 18px", background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10,
+              color: "#cbd5e1", fontSize: 13, fontWeight: 700, fontFamily: "inherit", cursor: "pointer",
+            }}>Skip / Nanti</button>
+            <button type="submit" disabled={busy} style={{ ...L.primaryBtn, flex: 2, marginTop: 0 }}>
+              {busy ? "Menyimpan…" : "💾 Simpan & Lanjut"}
+            </button>
+          </div>
         </form>
       </div>
     </div>
@@ -252,7 +254,7 @@ const CSS = `
 const L = {
   root:    { fontFamily: "'Inter',sans-serif", background: "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)", color: "#fff", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, position: "relative" },
   wrap:    { position: "relative", zIndex: 1, textAlign: "center", padding: "40px 28px", maxWidth: 400, width: "100%", background: "rgba(12,14,22,0.78)", backdropFilter: "blur(24px) saturate(140%)", WebkitBackdropFilter: "blur(24px) saturate(140%)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 18, boxShadow: "0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)" },
-  logoImg: { width: 78, height: 78, objectFit: "contain", marginBottom: 8 },
+  logoImg: { width: 84, height: 84, objectFit: "cover", marginBottom: 14, borderRadius: 22, boxShadow: "0 12px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06) inset" },
   brand:   { fontFamily: "'Geist Mono',monospace", fontSize: 26, fontWeight: 800, color: "#F59E0B", letterSpacing: 4, marginBottom: 4 },
   title:   { fontFamily: "'Geist Mono',monospace", fontSize: 11, letterSpacing: 4, color: "#cbd5e1", marginBottom: 4 },
   sub:     { fontSize: 12.5, color: "#94a3b8", marginBottom: 22, lineHeight: 1.5 },
