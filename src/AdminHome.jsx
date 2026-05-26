@@ -530,6 +530,24 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     ] },
   ];
 
+  // Multi-tenant: filter columns by vertical
+  // F&B owner: hide columns dengan "Cinema" di title
+  // Cinema owner: hide columns dengan "F&B" di title
+  // Hybrid / super-admin: tampilin semua
+  const _vertical = _adminCtx?.company?.primary_vertical || null;
+  const _isSuperAdmin = !!(_adminCtx?.is_super_admin || _adminCtx?.company_id == null);
+  const filteredColumns = (() => {
+    if (_isSuperAdmin || _vertical === "hybrid" || !_vertical) return columns;
+    return columns.filter(col => {
+      const title = String(col.title || "").toLowerCase();
+      // Sembunyikan F&B-specific dari cinema owner
+      if (_vertical === "cinema" && (title.includes("f&b") || title.includes("fnb") || title.includes("operasional f&b"))) return false;
+      // Sembunyikan cinema-specific dari F&B owner
+      if (_vertical === "fnb" && title.includes("cinema")) return false;
+      return true;
+    });
+  })();
+
   const Section = ({ label, accent = "#f59e0b", right, mt, pill = false }) => (
     <div style={{ ...S.sectionHead, marginTop: mt == null ? 16 : mt }}>
       {pill ? (
@@ -674,7 +692,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
             style={{ width: "100%", background: "#0e0e11", border: "1px solid #2a2b30", borderRadius: 8, padding: "8px 10px", color: "#c9a8ff", fontSize: 12, fontWeight: 700, fontFamily: "inherit", boxSizing: "border-box", marginBottom: 10, outline: "none", cursor: "pointer" }}>
             {ADMIN_ROLES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
           </select>
-          {columns.map((col, ci) => (
+          {filteredColumns.map((col, ci) => (
             <div key={col.title}>
               <Section pill label={col.title.toUpperCase()} accent={col.accent} mt={ci === 0 ? 0 : 14} />
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
