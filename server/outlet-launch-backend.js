@@ -203,6 +203,9 @@ CREATE TABLE IF NOT EXISTS launch_evidence (
   filename TEXT NOT NULL,
   uploaded_by TEXT,
   uploaded_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+  gps_lat REAL, gps_lon REAL,
+  gps_distance_m INTEGER,
+  device_id TEXT,
   FOREIGN KEY(task_id) REFERENCES launch_tasks(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_evidence_task ON launch_evidence(task_id);
@@ -219,6 +222,10 @@ CREATE TABLE IF NOT EXISTS launch_signoffs (
   blocked_tasks INTEGER,
   na_tasks INTEGER,
   comment TEXT,
+  selfie_filename TEXT,
+  gps_lat REAL, gps_lon REAL,
+  gps_distance_m INTEGER,
+  device_id TEXT,
   FOREIGN KEY(launch_id) REFERENCES outlet_launches(id) ON DELETE CASCADE
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_signoffs_unique ON launch_signoffs(launch_id, department);
@@ -235,10 +242,33 @@ CREATE TABLE IF NOT EXISTS launch_audit (
 CREATE INDEX IF NOT EXISTS idx_audit_launch ON launch_audit(launch_id, created_at);
 `;
 
+// Idempotent migrations untuk DB existing
+const MIGRATIONS = [
+  `ALTER TABLE launch_evidence ADD COLUMN gps_lat REAL`,
+  `ALTER TABLE launch_evidence ADD COLUMN gps_lon REAL`,
+  `ALTER TABLE launch_evidence ADD COLUMN gps_distance_m INTEGER`,
+  `ALTER TABLE launch_evidence ADD COLUMN device_id TEXT`,
+  `ALTER TABLE launch_signoffs ADD COLUMN selfie_filename TEXT`,
+  `ALTER TABLE launch_signoffs ADD COLUMN gps_lat REAL`,
+  `ALTER TABLE launch_signoffs ADD COLUMN gps_lon REAL`,
+  `ALTER TABLE launch_signoffs ADD COLUMN gps_distance_m INTEGER`,
+  `ALTER TABLE launch_signoffs ADD COLUMN device_id TEXT`,
+];
+
+function distMeters(lat1, lon1, lat2, lon2) {
+  if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) ** 2 + Math.cos(lat1 * Math.PI/180) * Math.cos(lat2 * Math.PI/180) * Math.sin(dLon/2) ** 2;
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+}
+
 function setupOutletLaunch(app, opts = {}) {
   const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
+  for (const m of MIGRATIONS) { try { db.exec(m); } catch {} }
 
   const UPLOAD_DIR = opts.uploadDir || path.join(__dirname, 'uploads', 'launch');
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -330,7 +360,7 @@ function setupOutletLaunch(app, opts = {}) {
     const launch = db.prepare(`SELECT * FROM outlet_launches WHERE id=?`).get(req.params.id);
     if (!launch) return res.status(404).json({ error: 'Launch tidak ditemukan' });
     const tasks = db.prepare(`SELECT t.*, GROUP_CONCAT(e.filename) as evidence_filenames FROM launch_tasks t LEFT JOIN launch_evidence e ON e.task_id=t.id WHERE t.launch_id=? GROUP BY t.id ORDER BY t.department, t.stage, t.id`).all(req.params.id);
-    const signoffs = db.prepare(`SELECT department, signed_by_name, signed_at, total_tasks, done_tasks, blocked_tasks, na_tasks, comment FROM launch_signoffs WHERE launch_id=?`).all(req.params.id);
+    const signoffs = db.prepare(`SELECT department, signed_by_name, signed_at, total_tasks, done_tasks, blocked_tasks, na_tasks, comment, selfie_filename, gps_distance_m FROM launch_signoffs WHERE launch_id=?`).all(req.params.id);
     res.json({
       launch,
       tasks: tasks.map(t => ({ ...t, evidence: t.evidence_filenames ? t.evidence_filenames.split(',') : [] })),
@@ -381,7 +411,7 @@ function setupOutletLaunch(app, opts = {}) {
     res.json({ ok: true });
   });
 
-  // Upload evidence photo
+  // Upload evidence photo — GPS check vs outlet pin (kalau ada)
   router.post('/tasks/:id/evidence', (req, res) => {
     try {
       const b = req.body || {};
@@ -390,13 +420,42 @@ function setupOutletLaunch(app, opts = {}) {
       if (!task) return res.status(404).json({ error: 'Task tidak ditemukan' });
       const so = db.prepare(`SELECT id FROM launch_signoffs WHERE launch_id=? AND department=?`).get(task.launch_id, task.department);
       if (so) return res.status(423).json({ error: 'Departemen sudah sign-off' });
+
+      // Super-admin bypass via bypass_pin
+      let isSuperAdmin = false;
+      if (b.bypass_pin) {
+        try {
+          const sa = db.prepare(`SELECT id FROM admin_users WHERE pin=? AND role IN ('super-admin','admin') AND active=1`).get(String(b.bypass_pin));
+          if (sa) isSuperAdmin = true;
+        } catch {}
+      }
+
+      // Geofence check — hanya untuk task fisik (requires_photo=1) yang umumnya
+      // di-site. Off-site dept (marketing creative, legal) skip check.
+      let distance = null;
+      const launch = db.prepare(`SELECT outlet_code, outlet_name FROM outlet_launches WHERE id=?`).get(task.launch_id);
+      if (launch) {
+        const pin = db.prepare(`SELECT gps_lat, gps_lon, gps_radius_m, geofence_enforce FROM outlet_pins WHERE outlet_code=?`).get(launch.outlet_code);
+        if (pin?.gps_lat && pin?.gps_lon && b.gps_lat && b.gps_lon) {
+          distance = distMeters(pin.gps_lat, pin.gps_lon, b.gps_lat, b.gps_lon);
+          const radius = pin.gps_radius_m || 200;
+          if (distance > radius && !isSuperAdmin && pin.geofence_enforce) {
+            return res.status(403).json({
+              error: `Lokasi Anda ${distance}m dari outlet (batas ${radius}m). Evidence wajib dari area outlet.`,
+              distance_m: distance, radius_m: radius,
+            });
+          }
+        }
+      }
+
       const mime = (b.photo_b64.match(/^data:image\/(\w+);base64,/) || [null, 'jpg'])[1];
       const data = b.photo_b64.replace(/^data:image\/\w+;base64,/, '');
       const filename = `launch_${task.launch_id}_${task.department}_${task.id}_${Date.now()}.${mime}`;
       fs.writeFileSync(path.join(UPLOAD_DIR, filename), Buffer.from(data, 'base64'));
-      db.prepare(`INSERT INTO launch_evidence (task_id, filename, uploaded_by) VALUES (?,?,?)`).run(task.id, filename, b.uploaded_by || 'admin');
-      logAudit(task.launch_id, 'evidence_uploaded', { actor: b.uploaded_by || 'admin', department: task.department, task_id: task.id, filename });
-      res.json({ ok: true, filename });
+      db.prepare(`INSERT INTO launch_evidence (task_id, filename, uploaded_by, gps_lat, gps_lon, gps_distance_m, device_id) VALUES (?,?,?,?,?,?,?)`)
+        .run(task.id, filename, b.uploaded_by || 'admin', b.gps_lat || null, b.gps_lon || null, distance, b.device_id || null);
+      logAudit(task.launch_id, 'evidence_uploaded', { actor: b.uploaded_by || 'admin', department: task.department, task_id: task.id, filename, distance_m: distance });
+      res.json({ ok: true, filename, distance_m: distance });
     } catch (e) {
       console.error('[launch] evidence upload error', e);
       res.status(500).json({ error: e.message });
@@ -441,18 +500,43 @@ function setupOutletLaunch(app, opts = {}) {
       return res.status(400).json({ error: `${evidenceCheck.length} task wajib foto belum ada evidence: ${evidenceCheck.map(x=>x.item_label.slice(0,40)).slice(0,3).join('; ')}…` });
     }
 
+    // Selfie kerja wajib (anti-nitip-PIN)
+    if (!b.selfie_b64 || b.selfie_b64.length < 100) {
+      return res.status(400).json({ error: 'Selfie kerja wajib disertakan untuk sign-off (anti-nitip-PIN).' });
+    }
+
+    // Save selfie
+    let selfieFn = null;
+    try {
+      const mime = (b.selfie_b64.match(/^data:image\/(\w+);base64,/) || [null, 'jpg'])[1];
+      const data = b.selfie_b64.replace(/^data:image\/\w+;base64,/, '');
+      selfieFn = `signoff_${req.params.id}_${b.department}_${Date.now()}.${mime}`;
+      fs.writeFileSync(path.join(UPLOAD_DIR, selfieFn), Buffer.from(data, 'base64'));
+    } catch (e) { console.error('[launch] signoff selfie save fail', e.message); }
+
+    // Distance to outlet (info only — many dept leads sign-off remote)
+    let signoffDistance = null;
+    try {
+      const launchRow = db.prepare(`SELECT outlet_code FROM outlet_launches WHERE id=?`).get(req.params.id);
+      if (launchRow) {
+        const pinRow = db.prepare(`SELECT gps_lat, gps_lon FROM outlet_pins WHERE outlet_code=?`).get(launchRow.outlet_code);
+        if (pinRow?.gps_lat && b.gps_lat) signoffDistance = distMeters(pinRow.gps_lat, pinRow.gps_lon, b.gps_lat, b.gps_lon);
+      }
+    } catch {}
+
     const done = tasks.filter(t => t.status === 'done').length;
     const na = tasks.filter(t => t.status === 'na').length;
     const pinHash = sha256(b.pin);
 
     try {
-      db.prepare(`INSERT INTO launch_signoffs (launch_id, department, signed_by_name, signed_by_pin_hash, total_tasks, done_tasks, blocked_tasks, na_tasks, comment) VALUES (?,?,?,?,?,?,?,?,?)`)
-        .run(req.params.id, b.department, b.signed_by_name, pinHash, tasks.length, done, blocked, na, b.comment || null);
+      db.prepare(`INSERT INTO launch_signoffs (launch_id, department, signed_by_name, signed_by_pin_hash, total_tasks, done_tasks, blocked_tasks, na_tasks, comment, selfie_filename, gps_lat, gps_lon, gps_distance_m, device_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+        .run(req.params.id, b.department, b.signed_by_name, pinHash, tasks.length, done, blocked, na, b.comment || null,
+             selfieFn, b.gps_lat || null, b.gps_lon || null, signoffDistance, b.device_id || null);
     } catch (e) {
       if (e.message.includes('UNIQUE')) return res.status(409).json({ error: `${b.department} sudah pernah sign-off. Revoke dulu kalau mau ulang.` });
       throw e;
     }
-    logAudit(req.params.id, 'signed_off', { actor: b.signed_by_name, department: b.department, comment: b.comment });
+    logAudit(req.params.id, 'signed_off', { actor: b.signed_by_name, department: b.department, comment: b.comment, distance_m: signoffDistance, selfie: selfieFn });
     res.json({ ok: true, readiness: calcReadiness(req.params.id) });
   });
 

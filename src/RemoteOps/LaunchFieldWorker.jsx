@@ -15,6 +15,24 @@ export default function LaunchFieldWorker() {
   const [activeDept, setActiveDept] = useState(localStorage.getItem("kolr_dept") || "");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [gps, setGps] = useState(null);
+  const [deviceId] = useState(() => {
+    let id = localStorage.getItem("ro_device_id");
+    if (!id) {
+      id = "dev_" + Math.random().toString(36).slice(2, 11) + Date.now().toString(36);
+      localStorage.setItem("ro_device_id", id);
+    }
+    return id;
+  });
+  const grabGps = useCallback(() => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      p => setGps({ lat: p.coords.latitude, lon: p.coords.longitude, acc: Math.round(p.coords.accuracy) }),
+      () => {},
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, []);
+  useEffect(() => { grabGps(); }, [grabGps]);
 
   useEffect(() => {
     const root = document.getElementById("root");
@@ -55,7 +73,13 @@ export default function LaunchFieldWorker() {
 
   const uploadEvidence = async (taskId, dataUrl) => {
     try {
-      const r = await fetch(`${API_HOST}/api/launch/tasks/${taskId}/evidence`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ photo_b64: dataUrl, uploaded_by: "field-worker" }) });
+      const r = await fetch(`${API_HOST}/api/launch/tasks/${taskId}/evidence`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          photo_b64: dataUrl, uploaded_by: "field-worker",
+          gps_lat: gps?.lat, gps_lon: gps?.lon, device_id: deviceId,
+        }),
+      });
       const j = await r.json();
       if (!r.ok) throw new Error(j?.error);
       loadDetail(selected.id);
@@ -84,6 +108,7 @@ export default function LaunchFieldWorker() {
       {step === "signoff" && detail && activeDept && (
         <SignoffStep
           launch={selected} detail={detail} activeDept={activeDept}
+          gps={gps} grabGps={grabGps} deviceId={deviceId}
           onBack={() => setStep("fill")}
           onDone={() => setStep("done")}
         />
@@ -315,22 +340,27 @@ function TaskItem({ task, onUpdate, onUpload, disabled }) {
   );
 }
 
-function SignoffStep({ launch, detail, activeDept, onBack, onDone }) {
+function SignoffStep({ launch, detail, activeDept, gps, grabGps, deviceId, onBack, onDone }) {
   const dept = detail.departments.find(d => d.code === activeDept);
   const [name, setName] = useState(localStorage.getItem("kolr_signer") || "");
   const [pin, setPin] = useState("");
   const [comment, setComment] = useState("");
+  const [selfie, setSelfie] = useState(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
   const submit = async () => {
     setErr("");
     if (!name || !pin) { setErr("Nama + PIN wajib"); return; }
+    if (!selfie) { setErr("Selfie kerja wajib (anti-nitip-PIN)"); return; }
     setBusy(true);
     try {
       const r = await fetch(`${API_HOST}/api/launch/launches/${launch.id}/signoff`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ department: activeDept, signed_by_name: name, pin, comment }),
+        body: JSON.stringify({
+          department: activeDept, signed_by_name: name, pin, comment,
+          selfie_b64: selfie, gps_lat: gps?.lat, gps_lon: gps?.lon, device_id: deviceId,
+        }),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j?.error);
@@ -360,6 +390,29 @@ function SignoffStep({ launch, detail, activeDept, onBack, onDone }) {
           type="password" inputMode="numeric" placeholder="••••"
           style={{...inp, letterSpacing: 8, fontSize: 22, textAlign: "center"}} />
       </Field>
+
+      {/* Selfie kerja wajib */}
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: 1.3, fontFamily: "'Geist Mono',monospace", fontWeight: 700, marginBottom: 6 }}>🤳 SELFIE KERJA (WAJIB)</div>
+        {selfie ? (
+          <div style={{ position: "relative" }}>
+            <img src={selfie} alt="" style={{ width: "100%", borderRadius: 10, display: "block", maxHeight: 280, objectFit: "cover" }} />
+            <button onClick={() => setSelfie(null)} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.7)", border: "none", color: "#fff", width: 32, height: 32, borderRadius: 16, fontSize: 18, cursor: "pointer" }}>×</button>
+            <div style={{ position: "absolute", bottom: 6, left: 6, padding: "3px 8px", background: "rgba(0,0,0,0.7)", borderRadius: 4, fontSize: 9, color: GREEN, fontWeight: 700, fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5 }}>✓ SELFIE LIVE</div>
+          </div>
+        ) : (
+          <CameraCapture facingMode="user" label="🤳 Ambil Selfie Sekarang" onCapture={setSelfie} />
+        )}
+      </div>
+
+      {gps ? (
+        <div style={{ marginBottom: 12, padding: 10, background: "rgba(16,185,129,0.06)", border: `1px solid ${GREEN}33`, borderRadius: 8, fontSize: 11, color: "#86efac", fontFamily: "'Geist Mono',monospace" }}>
+          📍 GPS terkunci ({gps.acc}m) — {gps.lat.toFixed(4)}, {gps.lon.toFixed(4)}
+        </div>
+      ) : (
+        <button onClick={grabGps} style={{ marginBottom: 12, padding: "8px 12px", background: AMBER, border: "none", borderRadius: 8, color: "#000", fontSize: 12, fontWeight: 700, cursor: "pointer", width: "100%" }}>📡 Aktifkan GPS (opsional)</button>
+      )}
+
       <Field label="💬 KOMENTAR (opsional)"><textarea value={comment} onChange={e => setComment(e.target.value)} rows={3} placeholder="Catatan untuk audit trail…" style={{...inp, fontFamily: "inherit", resize: "vertical"}} /></Field>
 
       {err && <div style={{ padding: 10, background: "rgba(239,68,68,0.1)", border: `1px solid ${RED}55`, borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 10 }}>⚠ {err}</div>}
