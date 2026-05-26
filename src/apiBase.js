@@ -11,20 +11,20 @@
 // Pakai: `import API_HOST from "./apiBase";` lalu `fetch(`${API_HOST}/api/...`)`.
 
 const API_HOST = (() => {
-  const env = import.meta.env.VITE_API_URL;
-  if (!env) return typeof window !== "undefined" ? window.location.origin : "";
-  try {
-    const u = new URL(env);
-    const isLan = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|127\.)/.test(u.hostname);
-    if (isLan && typeof window !== "undefined"
-        && window.location.hostname !== u.hostname
-        && window.location.hostname !== "localhost") {
-      // Build embedded a LAN IP but browser is on different host →
-      // same-origin fallback (nginx proxy)
-      return window.location.origin;
+  // BROWSER context: ALWAYS use same-origin in production (HTTPS public).
+  // Only fall back to VITE_API_URL kalau di localhost dev (Vite dev server).
+  if (typeof window !== "undefined") {
+    const h = window.location.hostname;
+    // Localhost / 127.x dev → respect VITE_API_URL (Vite proxy or LAN backend)
+    if (h === "localhost" || h === "127.0.0.1" || h.startsWith("10.") || h.startsWith("192.168.")) {
+      return import.meta.env.VITE_API_URL || window.location.origin;
     }
-  } catch {}
-  return env;
+    // Public domain → same-origin (nginx proxy). Ignore VITE_API_URL entirely
+    // to avoid Mixed Content kalau env keset ke LAN IP.
+    return window.location.origin;
+  }
+  // Node/SSR fallback
+  return import.meta.env.VITE_API_URL || "http://localhost:3011";
 })();
 
 export default API_HOST;
