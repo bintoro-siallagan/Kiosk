@@ -14,7 +14,7 @@ const ESBNotif      = lazy(() => import("./ESBNotif.jsx"));
 const MemberList    = lazy(() => import("./MemberList.jsx"));
 const PromoManager  = lazy(() => import("./PromoManager.jsx"));
 const ShiftManager  = lazy(() => import("./ShiftManager.jsx"));
-import { TABS, GROUPS as _RAW_GROUPS, filterGroupsForVertical, filterGroupsByFeatures, getModuleFeature } from "./adminModules.js";
+import { TABS, GROUPS as _RAW_GROUPS, filterGroupsForVertical, filterGroupsByFeatures, getModuleFeature, isModuleLocked, requiredPlanFor } from "./adminModules.js";
 
 // Multi-tenant: helper baca company ctx (dipakai oleh AdminHome di runtime, BUKAN module-load).
 // Kalau dihitung di module-load, ctx selalu null karena login terjadi setelah file di-import.
@@ -23,18 +23,20 @@ function _readCompanyCtx() {
 }
 function _computeGROUPS(features) {
   const ctx = _readCompanyCtx();
-  // Step 1: vertical filter (fnb tenant hide cinema modules, etc)
+  // Step 1: vertical filter (fnb tenant hide cinema modules, etc) — strict hide
   let groups = filterGroupsForVertical(_RAW_GROUPS,
     ctx?.company?.primary_vertical || null,
     { is_super_admin: !!(ctx?.is_super_admin || ctx?.company_id == null) }
   );
-  // Step 2: feature entitlement filter (Starter plan hide finance/hr/etc)
-  if (features != null) groups = filterGroupsByFeatures(groups, features);
+  // Step 2: feature entitlement → mode 'lock' biar masih tampil dengan badge UPGRADE
+  // (drive upsell instead of hide). Selected handler tetap allow open tapi nge-prompt upgrade.
+  if (features != null) groups = filterGroupsByFeatures(groups, features, "lock");
   return groups;
 }
 import { CommandPalette } from "./components/uiKit.jsx";
 import IncidentAlertBanner from "./components/IncidentAlertBanner.jsx";
 import TrialBanner from "./components/TrialBanner.jsx";
+import UpgradePrompt from "./components/UpgradePrompt.jsx";
 import API_HOST from "./apiBase.js";
 import { LocaleSwitcher as KaryaLocaleSwitcher } from "./i18n";
 
@@ -153,7 +155,14 @@ function RailNode({ node, depth, open, onToggle }) {
         {depth === 0 && node.icon ? (
           <div style={{ ...S.chip, width: 30, height: 30, fontSize: 14, background: `${node.c}1a`, color: node.c, border: `1px solid ${node.c}33` }}>{node.icon}</div>
         ) : null}
-        <span style={{ fontSize: depth === 0 ? 12.5 : 11.5, fontWeight: depth === 0 ? 700 : 600, color: depth === 0 ? "#e6edf3" : "#c3c4c9", flex: 1, textAlign: "left" }}>{node.label}</span>
+        <span style={{ fontSize: depth === 0 ? 12.5 : 11.5, fontWeight: depth === 0 ? 700 : 600, color: depth === 0 ? "#e6edf3" : "#c3c4c9", flex: 1, textAlign: "left", opacity: node.locked ? 0.55 : 1 }}>{node.label}</span>
+        {node.locked && (
+          <span title={`Upgrade ke ${node.locked} untuk unlock`} style={{
+            fontSize: 9, fontWeight: 800, fontFamily: "'Geist Mono',monospace",
+            padding: "2px 6px", borderRadius: 4, marginRight: 4,
+            background: "rgba(251,191,36,0.15)", color: "#fbbf24", border: "1px solid #fbbf2455",
+          }}>🔒 {node.locked}</span>
+        )}
         <span style={{ color: "#5b6470", fontSize: 12 }}>{hasSub ? (isOpen ? "▾" : "▸") : "→"}</span>
       </button>
       {hasSub && isOpen ? (
@@ -239,7 +248,16 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     : _mapToRbacRole(_adminCtxInit?.user?.role || adminSession?.role);
   const [viewRole, setViewRole] = useState(_initialViewRole);
   const [rbacMap, setRbacMap] = useState(null);
-  const openRight = (kind, arg) => { setRightView(kind); setRightArg(arg || null); setRailOpen(false); window.scrollTo(0, 0); };
+  const [upgradePrompt, setUpgradePrompt] = useState(null); // { id, label } saat klik modul ke-gate
+  // Intercept openRight: kalau buka tools yang ke-gate → tampilkan UpgradePrompt
+  const openRight = (kind, arg) => {
+    if (kind === "tools" && arg && tenantFeatures && isModuleLocked(arg, tenantFeatures)) {
+      const t = TABS.find(x => x.id === arg);
+      setUpgradePrompt({ id: arg, label: t?.label || arg });
+      return;
+    }
+    setRightView(kind); setRightArg(arg || null); setRailOpen(false); window.scrollTo(0, 0);
+  };
   const closeRight = () => { setRightView("home"); setRightArg(null); };
 
   useEffect(() => {
@@ -390,7 +408,8 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
   }, [curRev, revDelta, curOrders.length, ordDelta, targetPct, outlets, notifs.length, crit, health]);
   const moduleNode = (id) => {
     const t = TABS.find(x => x.id === id);
-    return { _k: "m:" + id, label: t ? t.label : id, on: () => openRight("tools", id) };
+    const locked = tenantFeatures && isModuleLocked(id, tenantFeatures) ? requiredPlanFor(id) : null;
+    return { _k: "m:" + id, label: t ? t.label : id, locked, on: () => openRight("tools", id) };
   };
 
   // ⌘K Command Palette — universal search across all modules + actions
@@ -1142,6 +1161,16 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
 
       {/* ⌘K Universal Command Palette */}
       <CommandPalette items={commandItems} placeholder="Cari modul, surface, atau action…" />
+
+      {/* Upgrade Prompt — saat klik modul yang ke-gate plan */}
+      {upgradePrompt && (
+        <UpgradePrompt
+          moduleId={upgradePrompt.id}
+          moduleLabel={upgradePrompt.label}
+          onClose={() => setUpgradePrompt(null)}
+          onUpgrade={() => { setUpgradePrompt(null); setRightView("tools"); setRightArg("billing"); }}
+        />
+      )}
     </div>
   );
 }

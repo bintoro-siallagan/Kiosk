@@ -323,22 +323,51 @@ export function getModuleFeature(moduleId) {
 
 // Filter modules berdasarkan tenant features (dari /api/billing/features)
 // features: array of strings, '*' = unlock all
-export function filterGroupsByFeatures(groups, features) {
-  if (!features || features.includes("*")) return groups; // unlock all (super-admin / trial / enterprise)
-  const hasFeature = (id) => {
-    const f = getModuleFeature(id);
-    return features.includes(f);
-  };
-  return groups
-    .map(g => ({
-      ...g,
-      ids: (g.ids || []).filter(hasFeature),
-      categories: (g.categories || []).map(c => ({
-        ...c,
-        ids: (c.ids || []).filter(hasFeature),
-      })).filter(c => c.ids.length > 0),
-    }))
-    .filter(g => g.ids.length > 0 || (g.categories && g.categories.length > 0));
+// MODE 'hide' = filter out yang ke-gate (default lama)
+// MODE 'lock' = tetap tampil tapi return list locked ids untuk badge UPGRADE
+export function filterGroupsByFeatures(groups, features, mode = "hide") {
+  if (!features || features.includes("*")) return groups;
+  const hasFeature = (id) => features.includes(getModuleFeature(id));
+  if (mode === "hide") {
+    return groups
+      .map(g => ({
+        ...g,
+        ids: (g.ids || []).filter(hasFeature),
+        categories: (g.categories || []).map(c => ({
+          ...c,
+          ids: (c.ids || []).filter(hasFeature),
+        })).filter(c => c.ids.length > 0),
+      }))
+      .filter(g => g.ids.length > 0 || (g.categories && g.categories.length > 0));
+  }
+  // mode === "lock": kembalikan groups apa adanya, plus expose isLocked(id)
+  return groups;
+}
+
+// Helper untuk frontend cek apakah module locked
+export function isModuleLocked(id, features) {
+  if (!features || features.includes("*")) return false;
+  return !features.includes(getModuleFeature(id));
+}
+
+// Suggest plan untuk unlock feature tertentu
+const FEATURE_TO_REQUIRED_PLAN = {
+  pos: "STARTER", kiosk: "STARTER", qr_order: "STARTER", dashboard: "STARTER", menu: "STARTER", settings: "STARTER", departments: "STARTER",
+  loyalty: "GROWTH", promo: "GROWTH", reward: "GROWTH", membership: "GROWTH", customer_intel: "GROWTH",
+  inventory: "GROWTH", item_master: "GROWTH", stock_opname: "GROWTH", goods_received: "GROWTH", goods_delivery: "GROWTH",
+  supplier: "GROWTH", procurement: "GROWTH", auto_reorder: "GROWTH", batch_tracking: "GROWTH", production: "GROWTH",
+  finance: "PRO", finance_center: "PRO", ar: "PRO", ap: "PRO", journal: "PRO", gl: "PRO", coa: "PRO",
+  budget: "PRO", tax: "PRO", cash_flow: "PRO", fin_statements: "PRO", period_closing: "PRO",
+  food_cost: "PRO", payroll_finance: "PRO", reconciliation: "PRO",
+  hris: "PRO", hr: "PRO", payroll: "PRO", shift_roster: "PRO", attendance: "PRO", talenta: "PRO", motivation: "PRO",
+  marketing: "PRO", campaign: "PRO", crm: "PRO", broadcast: "PRO", geo_engagement: "PRO", clv_churn: "PRO",
+  multi_outlet: "ENTERPRISE", remote_ops: "ENTERPRISE", launch: "ENTERPRISE", service_visit: "ENTERPRISE", incidents: "ENTERPRISE",
+  cinema_all: "ENTERPRISE",
+  quality: "ENTERPRISE", internal_audit: "ENTERPRISE", document_hub: "ENTERPRISE", helpdesk: "ENTERPRISE",
+  risk: "ENTERPRISE", contract: "ENTERPRISE", rfq: "ENTERPRISE", signage: "ENTERPRISE", compliance: "ENTERPRISE",
+};
+export function requiredPlanFor(moduleId) {
+  return FEATURE_TO_REQUIRED_PLAN[getModuleFeature(moduleId)] || "ENTERPRISE";
 }
 
 // Super-admin-only modules — sembunyikan dari semua user company-scoped
