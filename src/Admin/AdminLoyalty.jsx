@@ -58,7 +58,7 @@ export default function AdminLoyalty({ apiBase = '' }) {
 
   const saveTier = async () => {
     const f = tierForm;
-    if (!f.name.trim() || (!editTierCode && !f.code.trim())) { alert('Code & nama tier required'); return; }
+    if (!f.name.trim() || (!editTierCode && !f.code.trim())) { alert('Code & tier name required'); return; }
     const body = {
       name: f.name, emoji: f.emoji, color: f.color,
       min_lifetime_spend: Number(f.min_lifetime_spend) || 0,
@@ -73,7 +73,7 @@ export default function AdminLoyalty({ apiBase = '' }) {
       }
     );
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) { alert(d.error || 'Gagal simpan tier'); return; }
+    if (!r.ok) { alert(d.error || 'Failed to save tier'); return; }
     closeTierForm();
     loadTiers();
   };
@@ -82,16 +82,16 @@ export default function AdminLoyalty({ apiBase = '' }) {
     if (!window.confirm(`Hapus tier "${code}"?`)) return;
     const r = await fetch(`${apiBase}/api/loyalty/tiers/${code}`, { method: 'DELETE' });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) { alert(d.error || 'Gagal hapus tier'); return; }
+    if (!r.ok) { alert(d.error || 'Failed to delete tier'); return; }
     loadTiers();
   };
 
   const deleteReward = async (id) => {
-    if (!window.confirm('Hapus reward ini?')) return;
+    if (!window.confirm('Delete this reward?')) return;
     const r = await fetch(`${apiBase}/api/loyalty/rewards/${id}`, { method: 'DELETE' });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) { alert(d.error || 'Gagal hapus reward'); return; }
-    if (d.deactivated) alert(d.note || 'Reward dinonaktifkan (sudah pernah ditukar)');
+    if (!r.ok) { alert(d.error || 'Failed to delete reward'); return; }
+    if (d.deactivated) alert(d.note || 'Reward deactivated (already redeemed before)');
     loadRewards();
   };
 
@@ -121,7 +121,7 @@ export default function AdminLoyalty({ apiBase = '' }) {
           body: JSON.stringify({ customers }),
         });
         const d = await r.json().catch(() => ({}));
-        if (!r.ok) { alert(d.error || 'Import gagal'); return; }
+        if (!r.ok) { alert(d.error || 'Import failed'); return; }
         alert(`Import selesai:\n✓ ${d.created} member ditambah\n• ${d.skipped} dilewati (duplikat/kosong)`);
         loadCustomers();
       } catch (err) { alert('Error: ' + err.message); }
@@ -148,7 +148,7 @@ export default function AdminLoyalty({ apiBase = '' }) {
       body: JSON.stringify(configForm),
     });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) { alert(d.error || 'Gagal simpan config'); return; }
+    if (!r.ok) { alert(d.error || 'Failed to save config'); return; }
     alert('✓ Config loyalty disimpan');
     loadStats();
   };
@@ -221,8 +221,8 @@ export default function AdminLoyalty({ apiBase = '' }) {
         <div style={{padding: 16}}>
           <div style={styles.kpiRow}>
             <KpiCard label="Total Members" value={stats.total_customers} color="#f97316" />
-            <KpiCard label="Earn Today" value={`${stats.today.earn.total} pt`} sub={`${stats.today.earn.c} transaksi`} color="#4ade80" />
-            <KpiCard label="Redeem Today" value={`${stats.today.redeem.total} pt`} sub={`${stats.today.redeem.c} transaksi`} color="#fbbf24" />
+            <KpiCard label="Earn Today" value={`${stats.today.earn.total} pt`} sub={`${stats.today.earn.c} transactions`} color="#4ade80" />
+            <KpiCard label="Redeem Today" value={`${stats.today.redeem.total} pt`} sub={`${stats.today.redeem.c} transactions`} color="#fbbf24" />
             <KpiCard label="Outstanding Points" value={stats.outstanding_points.toLocaleString('id-ID')} sub={fmtIDR(stats.outstanding_liability_idr) + ' liability'} color="#ef4444" />
           </div>
 
@@ -244,11 +244,11 @@ export default function AdminLoyalty({ apiBase = '' }) {
           <div style={styles.configBox}>
             {configForm && [
               ['point_per_amount', '1 poin earned per belanja Rp'],
-              ['point_value_idr', 'Nilai 1 poin saat redeem (Rp)'],
+              ['point_value_idr', 'Value of 1 point on redeem (Rp)'],
               ['point_expiry_months', 'Point expiry (month)'],
-              ['signup_bonus', 'Signup bonus (poin)'],
-              ['referral_bonus_referrer', 'Referral bonus — pengajak (poin)'],
-              ['referral_bonus_referred', 'Referral bonus — yang diajak (poin)'],
+              ['signup_bonus', 'Signup bonus (points)'],
+              ['referral_bonus_referrer', 'Referral bonus — referrer (points)'],
+              ['referral_bonus_referred', 'Referral bonus — referred (points)'],
             ].map(([k, label]) => (
               <div key={k} style={styles.configRow}>
                 <span>{label}</span>
@@ -512,7 +512,7 @@ function CustomerDrill({ customer, transactions, onClose, apiBase }) {
               </div>
             </div>
           ))}
-          {transactions.length === 0 && <div style={styles.empty}>No transaksi</div>}
+          {transactions.length === 0 && <div style={styles.empty}>No transactions</div>}
         </div>
 
         {customer.referral_code && (

@@ -120,7 +120,7 @@ export default function CinemaKiosk({ apiBase }) {
     if (step !== "done" || !done?.purchase_id) return;
     if (printTriedRef.current === done.purchase_id) return;
     printTriedRef.current = done.purchase_id;
-    setPrintState("printing"); setPrintMsg("Mencetak tiket…");
+    setPrintState("printing"); setPrintMsg("Printing ticket…");
     fetch(`${base}/purchases/${encodeURIComponent(done.purchase_id)}/print`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ outlet: outletCode || undefined }),
@@ -132,7 +132,7 @@ export default function CinemaKiosk({ apiBase }) {
           setPrintMsg(`Tiket dicetak (${d.printed}/${d.total})`);
         } else if (status === 503) {
           setPrintState("unconfigured");
-          setPrintMsg(d?.error || "Printer belum di-konfigurasi");
+          setPrintMsg(d?.error || "Printer not configured");
         } else {
           setPrintState("error");
           setPrintMsg(d?.error || "Cetak gagal — minta bantuan staff");
@@ -260,7 +260,7 @@ export default function CinemaKiosk({ apiBase }) {
       });
       const d = await r.json();
       if (!d.ok) {
-        setMsg("⚠ " + (d.error || "Gagal menyimpan kursi"));
+        setMsg("⚠ " + (d.error || "Failed to save seats"));
         if (d.conflict_seats) {
           setSeats(p => { const n = new Set(p); d.conflict_seats.forEach(s => n.delete(s)); return n; });
         }
@@ -417,7 +417,7 @@ export default function CinemaKiosk({ apiBase }) {
     if (!done?.purchase_id) return;
     let to = done.email || "";
     if (!to) {
-      to = window.prompt("Kirim tiket ke email:", "") || "";
+      to = window.prompt("Send ticket to email:", "") || "";
       to = to.trim();
       if (!to) return;
     }
@@ -471,9 +471,9 @@ export default function CinemaKiosk({ apiBase }) {
         <div style="flex:1;font-size:13px;line-height:1.55">
           <div style="font-size:10px;color:#888;letter-spacing:3px;font-weight:800;margin-bottom:4px">🎬 KARYAOS CINEMA</div>
           <div style="font-size:17px;font-weight:800;margin:0 0 6px">${done.film.title}</div>
-          <div><span style="color:#666">Jadwal</span> &nbsp;${done.show.show_date} &middot; ${done.show.start_time}</div>
+          <div><span style="color:#666">Showtime</span> &nbsp;${done.show.show_date} &middot; ${done.show.start_time}</div>
           <div><span style="color:#666">Studio</span> &nbsp;${done.show.studio_name || ''}</div>
-          <div><span style="color:#666">Kursi</span> &nbsp;<b style="font-size:16px">${t.seat}</b></div>
+          <div><span style="color:#666">Seat</span> &nbsp;<b style="font-size:16px">${t.seat}</b></div>
           <div><span style="color:#666">Price</span> &nbsp;Rp ${(t.price || 0).toLocaleString('id-ID')}</div>
           <div style="margin-top:8px;font-size:10px;color:#888">Tunjukkan QR ini saat masuk studio</div>
         </div>
@@ -642,8 +642,8 @@ export default function CinemaKiosk({ apiBase }) {
               {films.filter(f => f.status === "now_showing" && filmIdsWithShows.has(f.id)).length === 0 && (
                 <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "40px 20px", color: "rgba(255,255,255,0.45)", fontSize: 14, background: "rgba(255,255,255,0.02)", border: "1px dashed rgba(255,255,255,0.08)", borderRadius: 14 }}>
                   <div style={{ fontSize: 38, marginBottom: 8 }}>🎬</div>
-                  <div style={{ fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>Belum ada jadwal tayang</div>
-                  <div style={{ fontSize: 12, marginTop: 4, color: "rgba(255,255,255,0.4)" }}>Cek lagi nanti — admin sedang menyusun jadwal.</div>
+                  <div style={{ fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>No showtimes yet</div>
+                  <div style={{ fontSize: 12, marginTop: 4, color: "rgba(255,255,255,0.4)" }}>Check back later — admin is preparing the schedule.</div>
                 </div>
               )}
             </div>
@@ -708,7 +708,7 @@ export default function CinemaKiosk({ apiBase }) {
                   </button>
                 );
               })}
-              {filmShows.length === 0 && <div style={{ color: "#5b6470", fontSize: 14 }}>Belum ada jadwal untuk film ini.</div>}
+              {filmShows.length === 0 && <div style={{ color: "#5b6470", fontSize: 14 }}>No showtimes for this film yet.</div>}
             </div>
           </>
         )}
@@ -850,7 +850,7 @@ export default function CinemaKiosk({ apiBase }) {
         {step === "done" && done && (
           <div style={{ textAlign: "center", paddingTop: 30, animation: "karyaKioskFadeUp 0.5s ease-out" }}>
             <div style={{ fontSize: 60 }}>🎟️</div>
-            <div style={{ fontSize: 26, fontWeight: 900, marginTop: 8, letterSpacing: -0.6 }}>Tiket Berhasil Dibeli!</div>
+            <div style={{ fontSize: 26, fontWeight: 900, marginTop: 8, letterSpacing: -0.6 }}>Ticket Purchased Successfully!</div>
             <div style={{ position: "relative", background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, padding: 24, margin: "20px auto 0", maxWidth: 460, textAlign: "left", overflow: "hidden", boxShadow: "0 16px 48px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
               <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(400px 200px at 50% 0%, rgba(245,158,11,0.08), transparent 70%)", pointerEvents: "none" }} />
               <div style={{ position: "relative" }}>

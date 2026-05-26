@@ -120,13 +120,13 @@ export default function ShiftManager({ onBack }) {
   async function resolveCall(id) {
     await api.resolveCall(id).catch(()=>{});
     setCalls(p=>p.filter(c=>c.id!==id));
-    notify("Staff call diselesaikan ✓");
+    notify("Staff call resolved ✓");
   }
 
   async function handleAddUser() {
     if (!newUser.name || newUser.pin.length!==6) { notify("Nama dan PIN 6 digit wajib","#F87171"); return; }
     const u = await api.createUser(newUser).catch(e=>{notify(e.message,"#F87171");return null;});
-    if (u) { setUsers(p=>[...p,u]); setAddUser(false); setNewUser({name:"",pin:"",role:"kasir"}); notify("User ditambahkan ✓"); }
+    if (u) { setUsers(p=>[...p,u]); setAddUser(false); setNewUser({name:"",pin:"",role:"kasir"}); notify("User added ✓"); }
   }
 
   const TABS = [
@@ -202,7 +202,7 @@ export default function ShiftManager({ onBack }) {
                   {[
                     {label:"Total Order",  val:shift.totalOrders,          color:"#F59E0B"},
                     {label:"Pendapatan",   val:fIDR(shift.totalRevenue),    color:"#34D399"},
-                    {label:"Modal Awal",   val:fIDR(shift.openingCash),     color:"#38BDF8"},
+                    {label:"Opening Cash",   val:fIDR(shift.openingCash),     color:"#38BDF8"},
                   ].map((s,i)=>(
                     <div key={i} style={{background:"#080c10",borderRadius:10,padding:"10px 12px",textAlign:"center"}}>
                       <div style={{fontFamily:"'Geist Mono',monospace",fontSize:16,fontWeight:700,color:s.color}}>{s.val}</div>
@@ -215,7 +215,7 @@ export default function ShiftManager({ onBack }) {
               <div style={{...S.card,textAlign:"center",marginBottom:16,borderColor:"#F8717133"}}>
                 <div style={{fontSize:40,marginBottom:10}}>⏸️</div>
                 <div style={{fontFamily:"'Geist Mono',monospace",fontSize:16,color:"#F87171",marginBottom:6}}>TIDAK ADA SHIFT AKTIF</div>
-                <div style={{fontSize:13,color:"#666",marginBottom:20}}>Buka shift baru untuk mulai menerima pesanan</div>
+                <div style={{fontSize:13,color:"#666",marginBottom:20}}>Open a new shift to start receiving orders</div>
                 <button style={S.openShiftBtn} onClick={()=>setOpenForm(true)}>🟢 BUKA SHIFT BARU</button>
               </div>
             )}
@@ -223,7 +223,7 @@ export default function ShiftManager({ onBack }) {
             {/* Shift history */}
             <div style={S.card}>
               <div style={S.cardLabel}>📋 RIWAYAT SHIFT</div>
-              {shifts.length===0 && <div style={{color:"#444",fontSize:13,textAlign:"center",padding:20}}>Belum ada shift</div>}
+              {shifts.length===0 && <div style={{color:"#444",fontSize:13,textAlign:"center",padding:20}}>No shifts yet</div>}
               {shifts.slice(0,10).map(sh=>(
                 <div key={sh.id} style={S.shiftRow}>
                   <div style={{flex:1}}>
@@ -331,11 +331,11 @@ export default function ShiftManager({ onBack }) {
             <div style={S.modalTitle}>🟢 Open Shift Baru</div>
             <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
               <div>
-                <label style={S.label}>Nama Kasir</label>
-                <input style={S.input} value={kasirName} onChange={e=>setKasirName(e.target.value)} placeholder="Nama kasir"/>
+                <label style={S.label}>Cashier Name</label>
+                <input style={S.input} value={kasirName} onChange={e=>setKasirName(e.target.value)} placeholder="Cashier name"/>
               </div>
               <div>
-                <label style={S.label}>Modal Awal (Rp)</label>
+                <label style={S.label}>Opening Cash (Rp)</label>
                 <input style={S.input} type="number" value={openCash} onChange={e=>setOpenCash(e.target.value)} placeholder="0"/>
               </div>
             </div>
@@ -374,7 +374,7 @@ export default function ShiftManager({ onBack }) {
                   </div>
                 ))}
                 <div style={S.shiftRow}>
-                  <span style={{color:"#888",fontSize:13}}>Modal Awal</span>
+                  <span style={{color:"#888",fontSize:13}}>Opening Cash</span>
                   <span style={{fontWeight:700,color:"#38BDF8"}}>{fIDR(shift.openingCash||0)}</span>
                 </div>
                 <div style={{borderTop:"1px dashed #1f2937",margin:"8px 0 6px"}}/>
@@ -386,7 +386,7 @@ export default function ShiftManager({ onBack }) {
             )}
             <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
               <div>
-                <label style={S.label}>Cash Tendered Akhir (Rp)</label>
+                <label style={S.label}>Final Cash Tendered (Rp)</label>
                 <div style={{display:"flex",gap:8}}>
                   <input style={{...S.input,flex:1}} type="number" value={closeCash} onChange={e=>setCloseCash(e.target.value)} placeholder="0"/>
                   <button type="button" onClick={()=>setCloseCash(String(shift?.expectedCash||0))}
@@ -408,8 +408,8 @@ export default function ShiftManager({ onBack }) {
                 })()}
               </div>
               <div>
-                <label style={S.label}>Catatan (opsional)</label>
-                <textarea style={{...S.input,resize:"none",height:70}} value={closeNote} onChange={e=>setCloseNote(e.target.value)} placeholder="Catatan handover..."/>
+                <label style={S.label}>Notes (optional)</label>
+                <textarea style={{...S.input,resize:"none",height:70}} value={closeNote} onChange={e=>setCloseNote(e.target.value)} placeholder="Handover notes..."/>
               </div>
             </div>
             <div style={{display:"flex",gap:10}}>
@@ -454,7 +454,7 @@ export default function ShiftManager({ onBack }) {
             <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
               <div>
                 <label style={S.label}>Nama</label>
-                <input style={S.input} value={newUser.name} onChange={e=>setNewUser(p=>({...p,name:e.target.value}))} placeholder="Nama kasir"/>
+                <input style={S.input} value={newUser.name} onChange={e=>setNewUser(p=>({...p,name:e.target.value}))} placeholder="Cashier name"/>
               </div>
               <div>
                 <label style={S.label}>PIN (6 digit)</label>

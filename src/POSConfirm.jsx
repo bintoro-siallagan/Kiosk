@@ -189,7 +189,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
 
       // Validation: member-only
       if (match.forMember && !order.customerId) {
-        setPromoError("Promo khusus member. Cek ulang HP customer di step sebelumnya.");
+        setPromoError("Member-only promo. Re-check customer phone in the previous step.");
         return;
       }
 
@@ -395,7 +395,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
     <div style={S.root}>
       <header style={S.header}>
         <button onClick={onBack} style={S.iconBtn}>← Back</button>
-        <h1 style={S.headTitle}>Konfirmasi Pembayaran</h1>
+        <h1 style={S.headTitle}>Payment Confirmation</h1>
         <button onClick={onCancel} style={S.iconBtn}>✕</button>
       </header>
 
@@ -405,7 +405,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
             <span style={{fontSize: 22}}>📋</span>
             <div>
               <div style={S.tabBannerTitle}>{isResuming ? "Tambah ke Tab #" + order.resumeTabId : "Mode Buka Tab"}</div>
-              <div style={S.tabBannerHint}>{isResuming ? "Item lama + baru di-update. Bayar nanti pas customer lunasin." : "Tab disimpan tanpa pembayaran. Bayar nanti."}</div>
+              <div style={S.tabBannerHint}>{isResuming ? "Old + new items updated. Pay later when customer settles." : "Tab saved without payment. Pay later."}</div>
             </div>
           </div>
         )}
@@ -517,7 +517,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
               <div style={S.payCard}>
                 <div style={S.pointsHeader}>
                   <div>
-                    <div style={S.payTitle}>Bayar pakai poin</div>
+                    <div style={S.payTitle}>Pay with points</div>
                     <div style={S.pointsHint}>{fmt(customerPoints)} poin · 1 poin = Rp {getPointValue()}</div>
                   </div>
                   <ToggleSwitch on={pointsOn} onChange={togglePoints} />
@@ -592,7 +592,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
         {/* Payment method (hidden if open tab OR if total is 0 from poin) */}
         {!isOpenTab && finalTotal > 0 && (
           <div style={S.payCard}>
-            <div style={S.payTitle}>Metode Pembayaran</div>
+            <div style={S.payTitle}>Payment Method</div>
             <div style={S.payOptions}>
               <button
                 onClick={() => setPayMethod("CASH")}
@@ -600,7 +600,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
               >
                 <span style={S.payIcon}>💵</span>
                 <span style={S.payName}>CASH</span>
-                <span style={S.payHint}>Bayar tunai ke kasir</span>
+                <span style={S.payHint}>Pay cash at the counter</span>
               </button>
               <button
                 onClick={() => setPayMethod("QRIS")}
@@ -616,7 +616,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
               >
                 <span style={S.payIcon}>💸</span>
                 <span style={S.payName}>SPLIT</span>
-                <span style={S.payHint}>Bayar pakai 2+ metode</span>
+                <span style={S.payHint}>Pay with 2+ methods</span>
               </button>
             </div>
           </div>

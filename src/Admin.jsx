@@ -12,9 +12,9 @@ const fTime = (d) => new Date(d).toLocaleTimeString("id-ID",{hour:"2-digit",minu
 const fAgo  = (d) => { const s=Math.floor((Date.now()-d)/1000); return s<60?`${s}d`:s<3600?`${Math.floor(s/60)}m`:`${Math.floor(s/3600)}j`; };
 
 const STATUS = {
-  waiting:   {label:"Menunggu",  short:"TUNGGU", color:"#F59E0B", bg:"rgba(245,158,11,0.1)",  ring:"rgba(245,158,11,0.3)",  icon:"⏳"},
-  preparing: {label:"Diproses",  short:"PROSES",  color:"#38BDF8", bg:"rgba(56,189,248,0.1)",  ring:"rgba(56,189,248,0.3)",  icon:"👨‍🍳"},
-  ready:     {label:"Siap",      short:"SIAP",    color:"#34D399", bg:"rgba(52,211,153,0.1)",  ring:"rgba(52,211,153,0.3)",  icon:"✅"},
+  waiting:   {label:"Waiting",  short:"WAIT", color:"#F59E0B", bg:"rgba(245,158,11,0.1)",  ring:"rgba(245,158,11,0.3)",  icon:"⏳"},
+  preparing: {label:"Preparing",  short:"PREP",  color:"#38BDF8", bg:"rgba(56,189,248,0.1)",  ring:"rgba(56,189,248,0.3)",  icon:"👨‍🍳"},
+  ready:     {label:"Ready",      short:"SIAP",    color:"#34D399", bg:"rgba(52,211,153,0.1)",  ring:"rgba(52,211,153,0.3)",  icon:"✅"},
   completed: {label:"Done",   short:"SELESAI", color:"#6B7280", bg:"rgba(107,114,128,0.08)",ring:"rgba(107,114,128,0.2)", icon:"🏁"},
   cancelled: {label:"Cancel",     short:"BATAL",   color:"#F87171", bg:"rgba(248,113,113,0.1)", ring:"rgba(248,113,113,0.3)", icon:"✕"},
   refunded:  {label:"Refund",    short:"REFUND",  color:"#8B5CF6", bg:"rgba(139,92,246,0.1)",  ring:"rgba(139,92,246,0.3)",  icon:"↩"},
@@ -579,7 +579,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
             </div>
 
             <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
-              {["Semua","Menunggu","Diproses","Siap","Done"].map((f,i)=>{
+              {["Semua","Waiting","Preparing","Ready","Done"].map((f,i)=>{
                 const keys=[null,"waiting","preparing","ready","completed"];
                 const cnt = keys[i] ? orders.filter(o=>o.status===keys[i]).length : orders.length;
                 return (
@@ -740,7 +740,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                       style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Inter',sans-serif"}}/>
                   </div>
                 </div>
-                <div style={{fontSize:10,color:"#666",marginTop:10,lineHeight:1.5}}>Port default 9100 (RAW). Kosongin IP buat skip print di printer itu. Debug mode = simpan .bin file daripada print real.</div>
+                <div style={{fontSize:10,color:"#666",marginTop:10,lineHeight:1.5}}>Default port 9100 (RAW). Leave IP empty to skip printing on that printer. Debug mode = save .bin file instead of actual printing.</div>
               </div>
 
               {/* 💵 Metode Pembayaran */}
