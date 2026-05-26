@@ -239,7 +239,7 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
               🌙 Close Day
             </button>
           )}
-          <button onClick={onLogout} style={S.logout}>Logout</button>
+          <button onClick={onLogout} style={S.logout}>Log Out</button>
         </div>
       </header>
 

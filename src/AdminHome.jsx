@@ -466,7 +466,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { id: "act:promo",     title: "Promo Codes",         subtitle: "Vouchers + discounts",              icon: "🏷️", onSelect: () => openRight("promo") },
       { id: "act:shift",     title: "Shift Management",    subtitle: "Open/close cashier shift",          icon: "📋", onSelect: () => openRight("shift") },
       { id: "act:report",    title: "Reports",             subtitle: "Z-report + sales analytics",        icon: "📊", onSelect: () => openRight("report") },
-      { id: "act:logout",    title: "Logout",              subtitle: "End admin session",                 icon: "🚪", onSelect: () => onLogout?.() },
+      { id: "act:logout",    title: "Log Out",              subtitle: "End admin session",                 icon: "🚪", onSelect: () => onLogout?.() },
     ];
     return [...surfaceItems, ...actionItems, ...tabItems];
   }, []);
@@ -1158,7 +1158,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       </div>
 
       <div style={S.footer} className="no-print">
-        {onLogout && <button className="tile" style={{ ...S.footBtn, color: "#f87171", borderColor: "#f8717133" }} onClick={onLogout}>Logout</button>}
+        {onLogout && <button className="tile" style={{ ...S.footBtn, color: "#f87171", borderColor: "#f8717133" }} onClick={onLogout}>Log Out</button>}
         <span style={{ flex: 1 }} />
         <KaryaLocaleSwitcher />
         <span style={S.footNote}>karyaOS · 145+ modules · 🎬 Cinema · 🍽️ F&B · 🛡️ Enterprise · v5 · <kbd style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 4, padding: "1px 5px", fontSize: 9.5, color: "rgba(255,255,255,0.6)", fontFamily: "'Geist Mono',monospace" }}>⌘K</kbd> to search</span>

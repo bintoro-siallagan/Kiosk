@@ -442,7 +442,7 @@ function SlideMember() {
         Dapat <strong style={{color:"#FF6B35"}}>1 poin tiap Rp 1.000</strong> belanja<br/>
         Tukar <strong style={{color:"#FF6B35"}}>100 poin = Rp 1.000</strong> diskon
       </div>
-      <div style={{...S.ssHint, fontSize:28, color:"#aaa", letterSpacing:2}}>Daftar gratis di kasir 👋</div>
+      <div style={{...S.ssHint, fontSize:28, color:"#aaa", letterSpacing:2}}>Sign up free di kasir 👋</div>
     </div>
   );
 }

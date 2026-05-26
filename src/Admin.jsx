@@ -494,7 +494,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
           const res = await api.notifyReady(id);
           if (res?.waUrl) {
             setTimeout(() => window.open(res.waUrl, "_blank"), 200);
-            notify("📱 WA 'Pesanan Siap' dikirim!", "#34D399");
+            notify("📱 WA 'Order Ready' sent!", "#34D399");
           }
         } catch {}
       }
@@ -573,7 +573,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
           <div style={{animation:"fadeUp 0.3s ease"}}>
             <div style={D.pageHeader}>
               <div>
-                <div style={D.pageTitle}>Manajemen Pesanan</div>
+                <div style={D.pageTitle}>Order Management</div>
                 <div style={D.pageSub}>{active.length} aktif · {orders.filter(o => ["completed","cancelled","refunded","partial_refund"].includes(o.status)).length} selesai</div>
               </div>
             </div>
@@ -672,7 +672,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                           </div>
                         ) : (
                           <button style={{background:"transparent",border:"none",color:"#F59E0B",cursor:"pointer",fontSize:14,fontWeight:700,fontFamily:"'Geist Mono',monospace",padding:0}}
-                            onClick={()=>{setEditPrice(item.id);setPriceVal(String(item.price));}} title="Edit harga">
+                            onClick={()=>{setEditPrice(item.id);setPriceVal(String(item.price));}} title="Edit price">
                             {fIDR(item.price)} ✎
                           </button>
                         )}
@@ -699,7 +699,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
               {[
                 {icon:"📊", title:"Laporan", desc:"Sales, menu, payment, kunjungan", action:"Buka Laporan", fn:() => setShowZReport(true)},
                 {icon:"🔗", title:"ESB Sync", desc:"Push/pull menu ke ESB Order QS", action:"Buka ESB Sync", fn:onESBSync},
-                {icon:"🔔", title:"Push Notifikasi ESB", desc:"Kirim order ke ESB POS real-time", action:"Konfigurasi", fn:onESBNotif},
+                {icon:"🔔", title:"ESB Push Notifications", desc:"Send orders to ESB POS in real-time", action:"Konfigurasi", fn:onESBNotif},
               ].map((s,i)=>(
                 <div key={i} style={{background:"#0d1117",border:"1px solid #161b22",borderRadius:14,padding:"20px"}}>
                   <div style={{fontSize:32,marginBottom:10}}>{s.icon}</div>
@@ -748,13 +748,13 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
                   <div>
                     <div style={{fontSize:32,marginBottom:6}}>💵</div>
-                    <div style={{fontSize:15,fontWeight:700,marginBottom:4}}>Metode Pembayaran Kiosk</div>
+                    <div style={{fontSize:15,fontWeight:700,marginBottom:4}}>Kiosk Payment Methods</div>
                     <div style={{fontSize:11,color:"#888"}}>Toggle Cash &amp; QRIS yang available di kiosk customer.</div>
                   </div>
                 </div>
                 <div style={{display:"flex",gap:12,marginTop:10}}>
                   {[
-                    {key:"cash", icon:"💵", label:"Tunai",       sub:"Bayar di kasir"},
+                    {key:"cash", icon:"💵", label:"Cash",       sub:"Pay at the counter"},
                     {key:"qris", icon:"📱", label:"QRIS / GoPay", sub:"Via Midtrans gateway"},
                   ].map(m => {
                     const on = paymentMethods[m.key];
@@ -762,7 +762,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                       <button key={m.key} onClick={() => {
                         if (paymentMethods[m.key]) {
                           const othersOn = Object.entries(paymentMethods).filter(([k]) => k !== m.key).some(([,v]) => v);
-                          if (!othersOn) { notify && notify("Minimal 1 metode pembayaran harus aktif", "#F87171"); return; }
+                          if (!othersOn) { notify && notify("At least one payment method must be active", "#F87171"); return; }
                         }
                         togglePaymentMethod(m.key);
                       }}
@@ -899,7 +899,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                     <input type="text" value={audioConfig.ttsPhrase || ""}
                       onChange={e => setAudioConfigState({...audioConfig, ttsPhrase: e.target.value})}
                       onBlur={e => updateAudioConfig({ttsPhrase: e.target.value})}
-                      placeholder="Frasa TTS, contoh: Terima kasih kakak"
+                      placeholder="Frasa TTS, contoh: Thank you"
                       style={{width:"100%",background:"#161b22",border:"1px solid #21262d",borderRadius:6,padding:"8px 10px",color:"#fff",fontSize:12,fontFamily:"'Inter',sans-serif"}}/>
                   </div>
                   <div>
@@ -907,7 +907,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                     <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",gap:8}}>
                       {[
                         {key:"newOrder", label:"🛎 Pesanan Baru", play:audio.playNewOrder},
-                        {key:"orderReady", label:"🔔 Pesanan Siap", play:audio.playOrderReady},
+                        {key:"orderReady", label:"🔔 Order Ready", play:audio.playOrderReady},
                         {key:"paymentSuccess", label:"✅ Bayar Sukses", play:audio.playPaymentSuccess},
                         {key:"addToCart", label:"🛒 Add Cart", play:audio.playAddToCart},
                         {key:"tap", label:"👆 Tap Menu", play:audio.playTap},
@@ -930,7 +930,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                               {customFile ? (
                                 <>
                                   <span style={{fontSize:9,color:"#34D399",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>📁 {customFile.name}</span>
-                                  <button onClick={()=>handleProfileAudioDelete(p.key)} title="Hapus, kembali ke default"
+                                  <button onClick={()=>handleProfileAudioDelete(p.key)} title="Delete, revert to default"
                                     style={{background:"transparent",border:"1px solid #F87171",borderRadius:4,padding:"2px 6px",color:"#F87171",cursor:"pointer",fontSize:9}}>✕</button>
                                 </>
                               ) : (
@@ -955,7 +955,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                   <div>
                     <div style={{fontSize:32,marginBottom:6}}>🔊</div>
                     <div style={{fontSize:15,fontWeight:700,marginBottom:4}}>Suara &amp; Voice Notification</div>
-                    <div style={{fontSize:12,color:"#666",lineHeight:1.5}}>Upload audio file untuk ucapan "Terima kasih". Otomatis fallback ke TTS jika tidak ada file.</div>
+                    <div style={{fontSize:12,color:"#666",lineHeight:1.5}}>Upload audio file for the prompt "Terima kasih". Auto-fallback to TTS if no file.</div>
                   </div>
                   <span style={{fontSize:11,color: audioFiles.length>0 ? "#34D399":"#A78BFA",letterSpacing:1,fontWeight:700}}>
                     {audioFiles.length>0 ? "📁 CUSTOM AUDIO" : "🗣 TTS FALLBACK"}
@@ -963,7 +963,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                 </div>
                 {audioFiles.length === 0 ? (
                   <div style={{padding:"16px",background:"#0a0e16",border:"1px dashed #21262d",borderRadius:10,fontSize:12,color:"#666",fontStyle:"italic",marginBottom:14}}>
-                    Belum ada file. Default pakai TTS "{audioConfig?.ttsPhrase || "Terima kasih kakak"}" (suara Damayanti macOS).
+                    No file yet. Default uses TTS "{audioConfig?.ttsPhrase || "Thank you"}" (Damayanti voice on macOS).
                   </div>
                 ) : (
                   <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:14}}>

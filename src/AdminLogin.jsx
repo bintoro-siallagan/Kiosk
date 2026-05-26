@@ -38,7 +38,7 @@ export default function AdminLogin({ onLogin }) {
   }, [pin, mode]);
 
   async function handlePasswordLogin() {
-    if (!username.trim() || !password) { setError("Username & password wajib diisi"); return; }
+    if (!username.trim() || !password) { setError("Username & password are required"); return; }
     setBusy(true); setError("");
     try {
       const res = await api.loginPassword(username.trim(), password);
@@ -89,7 +89,7 @@ export default function AdminLogin({ onLogin }) {
       // Force Change Password modal DISABLED (sama dengan password path)
       onLogin(res);
     } catch (e) {
-      setError("PIN salah");
+      setError("Incorrect PIN");
       setPin(""); setShake(true); setTimeout(() => setShake(false), 500);
     } finally { setBusy(false); }
   }
@@ -115,7 +115,7 @@ export default function AdminLogin({ onLogin }) {
       <div style={{ ...L.wrap, animation: shake ? "shake 0.4s ease" : "fadeUp 0.3s ease" }}>
         <img src="/logo.png" alt="KaryaOS" style={L.logoImg} />
         <div style={L.title}>{mode === "password" ? "ADMIN LOGIN" : "PIN QUICK-ACCESS"}</div>
-        <div style={L.sub}>{mode === "password" ? "Enterprise authentication · username & password" : "Untuk kasir POS · 6-digit PIN"}</div>
+        <div style={L.sub}>{mode === "password" ? "Enterprise authentication · username & password" : "For POS cashier · 6-digit PIN"}</div>
 
         {error && <div style={L.error} role="alert">⚠ {error}</div>}
 
@@ -145,7 +145,7 @@ export default function AdminLogin({ onLogin }) {
                 <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
                 Remember username
               </label>
-              <a href="#" onClick={(e) => { e.preventDefault(); setShowForgot(true); }} style={{ fontSize: 11, color: "#3b82f6", textDecoration: "none" }}>Lupa password?</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); setShowForgot(true); }} style={{ fontSize: 11, color: "#3b82f6", textDecoration: "none" }}>Forgot password?</a>
             </div>
 
             <button type="submit" disabled={busy} style={{ ...L.primaryBtn, marginTop: 18, opacity: busy ? 0.6 : 1, cursor: busy ? "not-allowed" : "pointer" }}>
@@ -184,7 +184,7 @@ export default function AdminLogin({ onLogin }) {
 
         {/* Signup CTA — disabled. Re-enable saat public launch.
         <div style={{ marginTop: 18, padding: 14, background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 10, textAlign: "center" }}>
-          <div style={{ fontSize: 12, color: "#cbd5e1", marginBottom: 8 }}>Belum punya akun karyaOS?</div>
+          <div style={{ fontSize: 12, color: "#cbd5e1", marginBottom: 8 }}>Don't have a karyaOS account?</div>
           <a href="/?signup" style={{
             display: "inline-block", padding: "10px 22px",
             background: "linear-gradient(135deg, #a855f7, #7c3aed)",
@@ -211,9 +211,9 @@ function ForceChangePassword({ session, onDone }) {
   const submit = async (e) => {
     e?.preventDefault();
     setError("");
-    if (pwd.length < 8) { setError("Password minimum 8 karakter"); return; }
+    if (pwd.length < 8) { setError("Password must be at least 8 characters"); return; }
     if (!/[A-Z]/.test(pwd) || !/[a-z]/.test(pwd) || !/[0-9]/.test(pwd)) { setError("Harus mengandung huruf besar, kecil, dan angka"); return; }
-    if (pwd !== conf) { setError("Konfirmasi password tidak cocok"); return; }
+    if (pwd !== conf) { setError("Password confirmation does not match"); return; }
     setBusy(true);
     try {
       await api.changePassword("", pwd);
@@ -223,7 +223,7 @@ function ForceChangePassword({ session, onDone }) {
   };
   // Escape route — kalau user yakin gak perlu ganti, skip ke dashboard
   const skip = () => {
-    if (!confirm("Skip ganti password? Sistem akan tetap menyimpan password lama. Anda bisa ganti nanti via Manajemen Pengguna.")) return;
+    if (!confirm("Skip password change? The old password remains. You can change it later via Users.")) return;
     onDone({ token: session.token, name: session.user.name, role: session.user.role });
   };
   return (
@@ -232,19 +232,19 @@ function ForceChangePassword({ session, onDone }) {
       <div style={L.wrap}>
         <img src="/logo.png" alt="KaryaOS" style={L.logoImg} />
         <div style={L.title}>FORCE CHANGE PASSWORD</div>
-        <div style={L.sub}>Hi <b style={{ color: "#fff" }}>{session.user.name}</b> — sistem merekomendasikan ganti password. Atau skip kalau Anda sudah yakin password aman.</div>
+        <div style={L.sub}>Hi <b style={{ color: "#fff" }}>{session.user.name}</b> — the system recommends changing your password. Or skip if you're confident the password is safe.</div>
 
         {error && <div style={L.error}>⚠ {error}</div>}
 
         <form onSubmit={submit} style={L.form}>
           <label style={L.label}>🔒 PASSWORD BARU</label>
           <input type="password" value={pwd} onChange={e => setPwd(e.target.value)}
-            placeholder="min 8 karakter" autoFocus autoComplete="new-password"
+            placeholder="min 8 characters" autoFocus autoComplete="new-password"
             style={L.input} disabled={busy} />
 
           <label style={{ ...L.label, marginTop: 12 }}>🔒 KONFIRMASI</label>
           <input type="password" value={conf} onChange={e => setConf(e.target.value)}
-            placeholder="ulangi password" autoComplete="new-password"
+            placeholder="confirm password" autoComplete="new-password"
             style={L.input} disabled={busy} />
 
           <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 8, lineHeight: 1.5 }}>
@@ -262,7 +262,7 @@ function ForceChangePassword({ session, onDone }) {
               color: "#cbd5e1", fontSize: 13, fontWeight: 700, fontFamily: "inherit", cursor: "pointer",
             }}>Skip / Nanti</button>
             <button type="submit" disabled={busy} style={{ ...L.primaryBtn, flex: 2, marginTop: 0 }}>
-              {busy ? "Menyimpan…" : "💾 Simpan & Lanjut"}
+              {busy ? "Saving…" : "💾 Simpan & Lanjut"}
             </button>
           </div>
         </form>
@@ -282,7 +282,7 @@ function ForgotPasswordModal({ onClose }) {
   const submit = async (e) => {
     e?.preventDefault();
     setErr("");
-    if (!usernameOrEmail.trim()) { setErr("Username atau email wajib"); return; }
+    if (!usernameOrEmail.trim()) { setErr("Username or email is required"); return; }
     setBusy(true);
     try {
       const isEmail = usernameOrEmail.includes("@");
@@ -291,9 +291,9 @@ function ForgotPasswordModal({ onClose }) {
         body: JSON.stringify(isEmail ? { email: usernameOrEmail.trim() } : { username: usernameOrEmail.trim() }),
       });
       const j = await r.json();
-      if (!r.ok) throw new Error(j?.error || "Gagal kirim reset");
+      if (!r.ok) throw new Error(j?.error || "Failed to send reset");
       setSent(true);
-      setMsg(j.message || "Link reset dikirim ke email.");
+      setMsg(j.message || "Reset link sent to your email.");
     } catch (e) { setErr(e.message); }
     setBusy(false);
   };
@@ -305,7 +305,7 @@ function ForgotPasswordModal({ onClose }) {
         <div style={L.wrap}>
           <div style={{ fontSize: 56, marginBottom: 10 }}>📧</div>
           <div style={L.title}>EMAIL TERKIRIM</div>
-          <div style={{ ...L.sub, lineHeight: 1.6 }}>{msg}<br/><br/>Cek inbox <b style={{ color: "#fff" }}>{usernameOrEmail}</b> dalam 1-2 menit.<br/>Link berlaku <b>30 menit</b>.</div>
+          <div style={{ ...L.sub, lineHeight: 1.6 }}>{msg}<br/><br/>Check inbox <b style={{ color: "#fff" }}>{usernameOrEmail}</b> within 1-2 minutes.<br/>Link valid for <b>30 menit</b>.</div>
           <button onClick={onClose} style={{ ...L.primaryBtn, marginTop: 18 }}>← Kembali ke Login</button>
         </div>
       </div>
@@ -318,7 +318,7 @@ function ForgotPasswordModal({ onClose }) {
       <div style={L.wrap}>
         <img src="/logo.png" alt="KaryaOS" style={L.logoImg} />
         <div style={L.title}>RESET PASSWORD</div>
-        <div style={L.sub}>Masukkan username atau email akun Anda. Link reset password akan dikirim ke email terdaftar.</div>
+        <div style={L.sub}>Enter your account username or email. A password reset link will be sent to your registered email.</div>
         {err && <div style={L.error}>⚠ {err}</div>}
         <form onSubmit={submit} style={L.form}>
           <label style={L.label}>👤 USERNAME / EMAIL</label>
@@ -331,11 +331,11 @@ function ForgotPasswordModal({ onClose }) {
               color: "#cbd5e1", fontSize: 13, fontWeight: 700, fontFamily: "inherit", cursor: "pointer",
             }}>← Batal</button>
             <button type="submit" disabled={busy || !usernameOrEmail.trim()} style={{ ...L.primaryBtn, flex: 2, marginTop: 0, opacity: busy ? 0.6 : 1 }}>
-              {busy ? "Mengirim…" : "📧 Kirim Link Reset"}
+              {busy ? "Sending…" : "📧 Send Reset Link"}
             </button>
           </div>
         </form>
-        <div style={L.footer}>Kalau tidak punya akses email → hubungi admin untuk reset manual.</div>
+        <div style={L.footer}>If you don't have email access → contact admin for manual reset.</div>
       </div>
     </div>
   );
@@ -365,9 +365,9 @@ export function ResetPasswordPage() {
   const submit = async (e) => {
     e?.preventDefault();
     setErr("");
-    if (pwd.length < 8) { setErr("Password minimum 8 karakter"); return; }
+    if (pwd.length < 8) { setErr("Password must be at least 8 characters"); return; }
     if (!/[A-Z]/.test(pwd) || !/[a-z]/.test(pwd) || !/[0-9]/.test(pwd)) { setErr("Harus mengandung huruf besar, kecil, dan angka"); return; }
-    if (pwd !== conf) { setErr("Konfirmasi password tidak cocok"); return; }
+    if (pwd !== conf) { setErr("Password confirmation does not match"); return; }
     setBusy(true);
     try {
       const r = await fetch("/api/auth/reset-password", {
@@ -417,16 +417,16 @@ export function ResetPasswordPage() {
         {err && <div style={L.error}>⚠ {err}</div>}
         <form onSubmit={submit} style={L.form}>
           <label style={L.label}>🔒 PASSWORD BARU</label>
-          <input type="password" value={pwd} onChange={e => setPwd(e.target.value)} placeholder="min 8 karakter" autoFocus autoComplete="new-password" required style={L.input} />
+          <input type="password" value={pwd} onChange={e => setPwd(e.target.value)} placeholder="min 8 characters" autoFocus autoComplete="new-password" required style={L.input} />
           <label style={{ ...L.label, marginTop: 12 }}>🔒 KONFIRMASI PASSWORD</label>
-          <input type="password" value={conf} onChange={e => setConf(e.target.value)} placeholder="ulang password baru" autoComplete="new-password" required style={L.input} />
+          <input type="password" value={conf} onChange={e => setConf(e.target.value)} placeholder="repeat new password" autoComplete="new-password" required style={L.input} />
           <div style={{ fontSize: 11, color: "#64748b", marginTop: 12, lineHeight: 1.55 }}>
             Persyaratan password:<br/>
             • Min 8 karakter<br/>
             • Huruf besar, kecil, dan angka
           </div>
           <button type="submit" disabled={busy} style={{ ...L.primaryBtn, marginTop: 18, opacity: busy ? 0.6 : 1 }}>
-            {busy ? "Menyimpan…" : "💾 Simpan Password Baru"}
+            {busy ? "Saving…" : "💾 Save New Password"}
           </button>
         </form>
       </div>
