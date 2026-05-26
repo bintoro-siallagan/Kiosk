@@ -227,6 +227,10 @@ function setupServiceVisit(app, opts = {}) {
   try { db.exec("ALTER TABLE service_tickets ADD COLUMN gps_bypass INTEGER DEFAULT 0"); } catch {}
   try { db.exec("ALTER TABLE service_tickets ADD COLUMN gps_bypass_reason TEXT"); } catch {}
   try { db.exec("ALTER TABLE service_tickets ADD COLUMN gps_bypass_approver TEXT"); } catch {}
+  // Per-item signature (digital sign canvas, base64 PNG)
+  try { db.exec("ALTER TABLE service_ticket_items ADD COLUMN signature_filename TEXT"); } catch {}
+  try { db.exec("ALTER TABLE service_ticket_items ADD COLUMN signature_by TEXT"); } catch {}
+  try { db.exec("ALTER TABLE service_ticket_items ADD COLUMN signature_at INTEGER"); } catch {}
   // Tag existing tickets based on outlet_code prefix (CMX = cinema 2, else F&B 1)
   try {
     db.prepare(`UPDATE service_tickets
@@ -501,6 +505,19 @@ function setupServiceVisit(app, opts = {}) {
         .run(req.params.iid, fn, b.gps_lat || null, b.gps_lon || null, geo.distance);
       res.json({ ok: true, filename: fn });
     } catch (e) { console.error('[service] photo error', e); res.status(500).json({ error: e.message }); }
+  });
+
+  // POST signature per item — staff digital sign (canvas drawing → base64 PNG)
+  router.post('/tickets/:tid/items/:iid/signature', (req, res) => {
+    try {
+      const b = req.body || {};
+      if (!b.signature_b64) return res.status(400).json({ error: 'signature_b64 required' });
+      const fn = saveB64Photo(b.signature_b64, `sig_${req.params.tid}_${req.params.iid}_${Date.now()}`);
+      if (!fn) return res.status(500).json({ error: 'Signature save failed' });
+      db.prepare(`UPDATE service_ticket_items SET signature_filename=?, signature_by=?, signature_at=? WHERE id=?`)
+        .run(fn, b.signature_by || 'staff', nowSec(), req.params.iid);
+      res.json({ ok: true, filename: fn });
+    } catch (e) { console.error('[service] signature error', e); res.status(500).json({ error: e.message }); }
   });
 
   // ─── FINISH ───

@@ -107,11 +107,14 @@ export default function ServiceStaff() {
     setBusy(false);
   };
 
-  const updateItemStatus = async (itemId, status) => {
+  const updateItemStatus = async (itemId, status, note) => {
     try {
+      const body = {};
+      if (status !== undefined) body.status = status;
+      if (note !== undefined) body.note = note;
       await fetch(`${API_HOST}/api/service/tickets/${selectedTicket.id}/items/${itemId}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(body),
       });
       const j = await fetch(`${API_HOST}/api/service/tickets/${selectedTicket.id}`).then(r => r.json());
       setDetail(j);
@@ -162,6 +165,10 @@ export default function ServiceStaff() {
       {step === "work" && detail && (
         <WorkStep ticket={selectedTicket} detail={detail} gps={gps}
           onUpdate={updateItemStatus} onUpload={uploadItemPhoto}
+          onRefresh={async () => {
+            const j = await fetch(`${API_HOST}/api/service/tickets/${selectedTicket.id}`).then(r => r.json());
+            setDetail(j);
+          }}
           onFinish={() => setStep("finish")} onBack={() => setStep("tickets")} />
       )}
       {step === "finish" && (
@@ -325,7 +332,7 @@ function StartStep({ ticket, detail, gps, gpsErr, grabGps, selfie, setSelfie, bu
   );
 }
 
-function WorkStep({ ticket, detail, gps, onUpdate, onUpload, onFinish, onBack }) {
+function WorkStep({ ticket, detail, gps, onUpdate, onUpload, onRefresh, onFinish, onBack }) {
   const allDone = detail.items?.every(i => i.status !== "pending");
   return (
     <div style={{ padding: "max(16px, env(safe-area-inset-top)) clamp(12px, 4vw, 22px) calc(100px + env(safe-area-inset-bottom))" }}>
@@ -366,6 +373,10 @@ function WorkStep({ ticket, detail, gps, onUpdate, onUpload, onFinish, onBack })
               <CameraCapture facingMode="environment" label={it.photos?.length > 0 ? "📸 Tambah Foto" : "📸 Ambil Foto Bukti"} onCapture={(d) => onUpload(it.id, d)} />
             </>
           )}
+          {/* Catatan staff per item — opsional, simpan via PATCH note */}
+          <NoteEditor itemId={it.id} initial={it.note} onSave={(note) => onUpdate(it.id, undefined, note)} />
+          {/* Signature staff per item — digital sign as proof of work */}
+          <SignaturePad ticketId={ticket.id} itemId={it.id} initial={it.signature_filename} onSaved={onRefresh} />
         </div>
       ))}
 
@@ -452,3 +463,147 @@ const primaryBtn = (enabled) => ({ width: "100%", padding: "16px 24px", backgrou
 function chip(color) { return { padding: "3px 8px", background: `${color}22`, border: `1px solid ${color}55`, borderRadius: 6, fontSize: 10, color, fontWeight: 700, fontFamily: "'Geist Mono',monospace", letterSpacing: 0.3 }; }
 function priColor(p) { return p === "urgent" ? RED : p === "high" ? AMBER : p === "low" ? "#64748b" : CYAN; }
 function statusColor(s) { return s === "done" ? GREEN : s === "skipped" ? "#64748b" : AMBER; }
+
+// SignaturePad — canvas drawing, save as base64 PNG via POST /signature endpoint.
+function SignaturePad({ ticketId, itemId, initial, onSaved }) {
+  const [open, setOpen] = useState(false);
+  const [hasSig, setHasSig] = useState(Boolean(initial));
+  const [saving, setSaving] = useState(false);
+  const canvasRef = useState(null);
+  const [drawing, setDrawing] = useState(false);
+  const [empty, setEmpty] = useState(true);
+
+  useEffect(() => { setHasSig(Boolean(initial)); }, [initial]);
+
+  if (hasSig && !open) {
+    return (
+      <div style={{ marginTop: 8, padding: 10, background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 8, display: "flex", alignItems: "center", gap: 10 }}>
+        <img src={`${API_HOST}/api/service/photo/${initial}`} alt="signature" style={{ height: 40, background: "#fff", borderRadius: 4, padding: 2 }} />
+        <div style={{ flex: 1, fontSize: 11, color: "#c084fc", fontFamily: "'Geist Mono',monospace" }}>✍️ SIGNED</div>
+        <button onClick={() => { setHasSig(false); setOpen(true); }} style={{ padding: "4px 10px", background: "transparent", border: "1px solid rgba(168,85,247,0.4)", borderRadius: 5, color: "#c084fc", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>↻ Sign ulang</button>
+      </div>
+    );
+  }
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)}
+        style={{ marginTop: 8, padding: "6px 10px", background: "transparent", border: "1px dashed rgba(168,85,247,0.3)", borderRadius: 6, color: "#a78bfa", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+        ✍️ Tambah signature
+      </button>
+    );
+  }
+
+  // Canvas drawing handlers
+  const setupCanvas = (ref) => {
+    if (!ref) return;
+    canvasRef[1](ref);
+    const ctx = ref.getContext("2d");
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+  };
+  const getCoords = (e, canvas) => {
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    return { x: x * (canvas.width / rect.width), y: y * (canvas.height / rect.height) };
+  };
+  const startDraw = (e) => {
+    e.preventDefault();
+    setDrawing(true); setEmpty(false);
+    const canvas = canvasRef[0]; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const { x, y } = getCoords(e, canvas);
+    ctx.beginPath(); ctx.moveTo(x, y);
+  };
+  const draw = (e) => {
+    if (!drawing) return;
+    e.preventDefault();
+    const canvas = canvasRef[0]; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const { x, y } = getCoords(e, canvas);
+    ctx.lineTo(x, y); ctx.stroke();
+  };
+  const endDraw = () => setDrawing(false);
+  const clearCanvas = () => {
+    const canvas = canvasRef[0]; if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setEmpty(true);
+  };
+  const saveSignature = async () => {
+    const canvas = canvasRef[0]; if (!canvas) return;
+    if (empty) { alert("Belum ada tanda tangan"); return; }
+    setSaving(true);
+    try {
+      const dataUrl = canvas.toDataURL("image/png");
+      const r = await fetch(`${API_HOST}/api/service/tickets/${ticketId}/items/${itemId}/signature`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ signature_b64: dataUrl, signature_by: localStorage.getItem("ro_staff_name") || "staff" }),
+      });
+      const j = await r.json();
+      if (!j.ok) throw new Error(j.error || "Gagal save");
+      setHasSig(true); setOpen(false);
+      if (typeof onSaved === "function") await onSaved();
+    } catch (e) { alert("Error: " + e.message); }
+    setSaving(false);
+  };
+
+  return (
+    <div style={{ marginTop: 8, padding: 10, background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+        <div style={{ fontSize: 10, color: "#a78bfa", letterSpacing: 1, fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>✍️ TANDA TANGAN STAFF</div>
+        <button onClick={clearCanvas} style={{ padding: "3px 8px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 5, color: "#94a3b8", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>🗑️ Clear</button>
+      </div>
+      <canvas
+        ref={setupCanvas}
+        width={600} height={150}
+        style={{ width: "100%", height: 150, background: "#0a0e16", border: "1px dashed rgba(168,85,247,0.4)", borderRadius: 6, touchAction: "none", cursor: "crosshair" }}
+        onMouseDown={startDraw} onMouseMove={draw} onMouseUp={endDraw} onMouseLeave={endDraw}
+        onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw}
+      />
+      <div style={{ display: "flex", gap: 6, marginTop: 6, justifyContent: "flex-end" }}>
+        <button onClick={() => setOpen(false)} style={{ padding: "5px 10px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#94a3b8", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+        <button onClick={saveSignature} disabled={saving || empty}
+          style={{ padding: "5px 14px", background: saving || empty ? "rgba(168,85,247,0.3)" : "linear-gradient(135deg,#a855f7,#c084fc)", border: "none", borderRadius: 6, color: "#fff", fontSize: 11, fontWeight: 800, cursor: saving || empty ? "not-allowed" : "pointer", fontFamily: "inherit" }}>{saving ? "⏳" : "💾 Simpan Tanda Tangan"}</button>
+      </div>
+    </div>
+  );
+}
+
+// NoteEditor — catatan per checklist item. Click '📝 Tambah catatan' → expand textarea + Save.
+function NoteEditor({ itemId, initial, onSave }) {
+  const [text, setText] = useState(initial || "");
+  const [open, setOpen] = useState(Boolean(initial));
+  const [saving, setSaving] = useState(false);
+  useEffect(() => { setText(initial || ""); setOpen(Boolean(initial)); }, [initial, itemId]);
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)}
+        style={{ marginTop: 8, padding: "6px 10px", background: "transparent", border: "1px dashed rgba(255,255,255,0.15)", borderRadius: 6, color: "#94a3b8", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>
+        📝 Tambah catatan
+      </button>
+    );
+  }
+  return (
+    <div style={{ marginTop: 8, padding: 10, background: "rgba(34,211,238,0.05)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 8 }}>
+      <div style={{ fontSize: 10, color: "#22d3ee", letterSpacing: 1, fontFamily: "'Geist Mono',monospace", fontWeight: 700, marginBottom: 6 }}>📝 CATATAN STAFF</div>
+      <textarea value={text} onChange={e => setText(e.target.value)}
+        placeholder="Catatan untuk admin (kondisi sebelum/sesudah, part diganti, dll)…"
+        style={{ width: "100%", boxSizing: "border-box", padding: 8, background: "#0a0e16", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 6, color: "#fff", fontSize: 12, fontFamily: "inherit", resize: "vertical", minHeight: 50, outline: "none" }} />
+      <div style={{ display: "flex", gap: 6, marginTop: 6, justifyContent: "flex-end" }}>
+        {initial && !text.trim() && (
+          <button onClick={async () => { setSaving(true); await onSave(""); setSaving(false); setOpen(false); }}
+            style={{ padding: "5px 10px", background: "transparent", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 6, color: "#fca5a5", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Hapus</button>
+        )}
+        <button onClick={() => { setText(initial || ""); if (!initial) setOpen(false); }}
+          style={{ padding: "5px 10px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#94a3b8", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+        <button onClick={async () => { setSaving(true); await onSave(text); setSaving(false); }} disabled={saving || text === (initial || "")}
+          style={{ padding: "5px 14px", background: saving || text === (initial || "") ? "rgba(34,211,238,0.3)" : "#22d3ee", border: "none", borderRadius: 6, color: "#04303a", fontSize: 11, fontWeight: 800, cursor: saving || text === (initial || "") ? "not-allowed" : "pointer", fontFamily: "inherit" }}>{saving ? "⏳" : "💾 Simpan"}</button>
+      </div>
+    </div>
+  );
+}
