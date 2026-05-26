@@ -17,8 +17,13 @@ CREATE TABLE IF NOT EXISTS outlet_master (
   seat_capacity INTEGER, opening_date INTEGER, created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
 `;
+// Migrations idempotent — kalau column sudah ada, ignore error
+const MIGRATIONS = [
+  `ALTER TABLE outlet_master ADD COLUMN vertical TEXT DEFAULT 'fnb'`,
+];
 const TYPES = ['Dine-in', 'Express', 'Kiosk'];
 const STATUSES = ['active', 'renovation', 'onboarding', 'closed'];
+const VERTICALS = ['fnb', 'cinema', 'hybrid'];
 const nowSec = () => Math.floor(Date.now() / 1000);
 const YEAR = 365 * 86400;
 
@@ -26,6 +31,7 @@ function setupOutletMaster(app, opts = {}) {
   const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
+  for (const m of MIGRATIONS) { try { db.exec(m); } catch {} }
 
   if (db.prepare(`SELECT COUNT(*) c FROM outlet_master`).get().c === 0) {
     const ins = db.prepare(`INSERT INTO outlet_master
@@ -57,7 +63,7 @@ function setupOutletMaster(app, opts = {}) {
     const byType = {};
     for (const o of outlets) byType[o.outlet_type] = (byType[o.outlet_type] || 0) + 1;
     res.json({
-      outlets, types: TYPES, statuses: STATUSES,
+      outlets, types: TYPES, statuses: STATUSES, verticals: VERTICALS,
       summary: {
         total: outlets.length,
         active: outlets.filter(o => o.status === 'active').length,
@@ -95,10 +101,11 @@ function setupOutletMaster(app, opts = {}) {
     const b = req.body || {};
     const fields = [], args = [];
     const num = new Set(['seat_capacity']);
-    for (const k of ['name', 'area', 'address', 'phone', 'manager', 'outlet_type', 'seat_capacity', 'status']) {
+    for (const k of ['name', 'area', 'address', 'phone', 'manager', 'outlet_type', 'seat_capacity', 'status', 'vertical']) {
       if (b[k] !== undefined) {
         if (k === 'outlet_type' && !TYPES.includes(b[k])) continue;
         if (k === 'status' && !STATUSES.includes(b[k])) continue;
+        if (k === 'vertical' && !VERTICALS.includes(b[k])) continue;
         fields.push(`${k} = ?`); args.push(num.has(k) ? Number(b[k]) : String(b[k]));
       }
     }

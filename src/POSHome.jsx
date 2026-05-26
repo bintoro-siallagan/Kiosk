@@ -74,6 +74,18 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
   const [mergeTab, setMergeTab] = useState(null);
   const [todayOrders, setTodayOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Detect outlet vertical (fnb | cinema | hybrid) — bisa load Jual Tiket button kalau hybrid
+  const [outletVertical, setOutletVertical] = useState("fnb");
+  useEffect(() => {
+    const outletCode = new URLSearchParams(window.location.search).get("outlet")
+      || localStorage.getItem("posOutlet") || "";
+    if (!outletCode) return;
+    fetch(`/api/outlet-master`).then(r => r.json()).then(d => {
+      const o = (d.outlets || []).find(x => x.code === outletCode || x.name === outletCode);
+      if (o?.vertical) setOutletVertical(o.vertical);
+    }).catch(() => {});
+  }, []);
+  const isHybrid = outletVertical === "hybrid";
 
   // POSHome mount → reset CDS to welcome screen
   useEffect(() => {
@@ -197,7 +209,7 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
       </button>
 
       <TouchNumpad />
-      <UpsellTicker vertical="fnb" />
+      <UpsellTicker vertical={isHybrid ? "hybrid" : "fnb"} />
 
       <header style={S.header}>
         <div style={S.brand}><img src="/logo.png" alt="" style={{ height: 26, verticalAlign: "middle", marginRight: 7 }} />KaryaOS POS</div>
@@ -229,7 +241,7 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
           <p style={S.welcomeSub}>Siap untuk shift hari ini.</p>
         </div>
 
-        {/* MAIN ACTION GRID — F&B only (Cinema dipisah ke ?pos-cinema) */}
+        {/* MAIN ACTION GRID — F&B default, plus Cinema button kalau outlet hybrid */}
         <div style={S.actionGrid}>
           <button style={S.bigBtn} onClick={onNewOrder}>
             <div style={S.bigBtnIcon}>🛒</div>
@@ -242,6 +254,18 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
               <div style={S.bigBtnIcon}>⚡</div>
               <div style={S.bigBtnTitle}>QUICK ORDER</div>
               <div style={S.btnHint}>Pesanan cepat — menu master</div>
+            </button>
+          )}
+
+          {/* HYBRID outlet only: F&B + Cinema concession boleh jual ticket */}
+          {isHybrid && (
+            <button style={{ ...S.bigBtn, ...S.bigBtnPurple }} onClick={() => {
+              const outlet = new URLSearchParams(window.location.search).get("outlet") || "";
+              window.location.href = `?pos-cinema${outlet ? `&outlet=${outlet}` : ""}`;
+            }}>
+              <div style={S.bigBtnIcon}>🎬</div>
+              <div style={{ ...S.bigBtnTitle, color: "#c084fc" }}>JUAL TIKET CINEMA</div>
+              <div style={S.btnHint}>Pilih jadwal → kursi → bayar</div>
             </button>
           )}
         </div>

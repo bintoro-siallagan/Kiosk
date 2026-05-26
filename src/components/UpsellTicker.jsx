@@ -29,7 +29,9 @@ const CINEMA_SCRIPTS = [
 ];
 
 export default function UpsellTicker({ vertical = "cinema" }) {
-  const STATIC = vertical === "fnb" ? FNB_SCRIPTS : CINEMA_SCRIPTS;
+  const STATIC = vertical === "fnb" ? FNB_SCRIPTS
+               : vertical === "hybrid" ? [...FNB_SCRIPTS, ...CINEMA_SCRIPTS]
+               : CINEMA_SCRIPTS;
   const [scripts, setScripts] = useState(STATIC);
 
   useEffect(() => {
