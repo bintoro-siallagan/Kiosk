@@ -85,7 +85,7 @@ export default function AdminAR({ apiBase = "" }) {
         <Kpi label="Total Piutang" v={fmtRp(s.total_outstanding)} c="#3b82f6" sub="outstanding" />
         <Kpi label="Overdue" v={fmtRp(s.overdue)} c={s.overdue > 0 ? "#ef4444" : "#10b981"} sub="lewat jatuh tempo" />
         <Kpi label="Jumlah Invoice" v={String(s.total)} c="#a78bfa" sub={`${s.paid_count} lunas`} />
-        <Kpi label="Belum Jatuh Tempo" v={fmtRp(s.aging.current)} c="#10b981" sub="masih aman" />
+        <Kpi label="Not Due Yet" v={fmtRp(s.aging.current)} c="#10b981" sub="masih aman" />
       </div>
 
       <div style={{ ...S.card, marginTop: 14 }}>

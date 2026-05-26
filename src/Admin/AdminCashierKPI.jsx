@@ -120,7 +120,7 @@ export default function AdminCashierKPI({ apiBase = "" }) {
   return (
     <div>
       <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center", flexWrap: "wrap" }}>
-        {[["today", "Hari Ini"], ["7d", "7 Hari"], ["30d", "30 Hari"]].map(([k, l]) => (
+        {[["today", "Today"], ["7d", "7 Days"], ["30d", "30 Days"]].map(([k, l]) => (
           <button key={k} onClick={() => applyPreset(k)} style={S.btn(preset === k)}>{l}</button>
         ))}
         <span style={{ color: "#666", fontSize: 12, marginLeft: 4 }}>Dari</span>
@@ -153,7 +153,7 @@ export default function AdminCashierKPI({ apiBase = "" }) {
         const col = !dt.target ? "#6b7280" : pct >= 100 ? "#34D399" : pct >= 70 ? "#FBBF24" : "#F87171";
         return (
           <div style={{ ...S.card, borderLeft: `4px solid ${col}` }}>
-            <div style={S.label}>🎯 Target Sales Hari Ini — KPI Tim</div>
+            <div style={S.label}>🎯 Target Sales Today — KPI Tim</div>
             {dt.target ? (
               <div style={{ display: "flex", alignItems: "center", gap: 28, flexWrap: "wrap" }}>
                 <div>

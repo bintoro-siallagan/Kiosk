@@ -1,10 +1,10 @@
 // src/Admin/AdminConsolidation.jsx
-// Konsolidasi — laporan keuangan gabungan multi-PT / multi-outlet.
+// Consolidation — laporan keuangan gabungan multi-PT / multi-outlet.
 
 import { useState, useEffect, useCallback } from "react";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
-const fmtJt = (n) => (n / 1e6).toFixed(1) + " jt";
+const fmtJt = (n) => (n / 1e6).toFixed(1) + "M";
 const AC = "#1e40af";
 
 export default function AdminConsolidation({ apiBase = "" }) {
@@ -15,7 +15,7 @@ export default function AdminConsolidation({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Konsolidasi…</div>;
+  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Consolidation…</div>;
   const s = d.summary, c = d.consolidated;
   const maxNP = Math.max(1, ...d.entities.map(e => e.net_profit));
 
@@ -35,8 +35,8 @@ export default function AdminConsolidation({ apiBase = "" }) {
 
       <div style={S.kpiRow}>
         <Kpi label="Entitas (PT)" v={String(s.entities)} c={AC} />
-        <Kpi label="Revenue Konsolidasi" v={fmtJt(s.consolidated_revenue)} c="#10b981" />
-        <Kpi label="Net Profit Konsolidasi" v={fmtJt(s.consolidated_net_profit)} c="#3b82f6" />
+        <Kpi label="Revenue Consolidation" v={fmtJt(s.consolidated_revenue)} c="#10b981" />
+        <Kpi label="Net Profit Consolidation" v={fmtJt(s.consolidated_net_profit)} c="#3b82f6" />
         <Kpi label="Eliminasi Intercompany" v={fmtJt(s.elimination)} c="#f59e0b" />
       </div>
 
@@ -84,14 +84,14 @@ export default function AdminConsolidation({ apiBase = "" }) {
           <div style={{ marginTop: 10 }}>
             <Line label="Revenue Bruto (semua entitas)" v={c.revenue_gross} />
             <Line label="(−) Eliminasi Intercompany" v={-c.intercompany_elimination} color="#f59e0b" indent />
-            <Line label="Revenue Konsolidasi" v={c.revenue_net} bold />
-            <Line label="(−) HPP Konsolidasi" v={-c.cogs} color="#f87171" />
+            <Line label="Revenue Consolidation" v={c.revenue_net} bold />
+            <Line label="(−) HPP Consolidation" v={-c.cogs} color="#f87171" />
             <Line label="Gross Profit" v={c.gross_profit} bold color="#10b981" />
-            <Line label="(−) Beban Operasional" v={-c.opex} color="#f87171" />
+            <Line label="(−) Beban Operations" v={-c.opex} color="#f87171" />
             <Line label="NET PROFIT KONSOLIDASI" v={c.net_profit} bold color="#10b981" />
           </div>
           <div style={{ marginTop: 10, textAlign: "center", background: "#0a0e16", border: "1px solid #161b22", borderRadius: 8, padding: "8px" }}>
-            <span style={{ fontSize: 11, color: "#5b6470" }}>Net Margin Konsolidasi </span>
+            <span style={{ fontSize: 11, color: "#5b6470" }}>Net Margin Consolidation </span>
             <span style={{ fontSize: 15, fontWeight: 800, color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>{c.margin_pct}%</span>
           </div>
         </div>

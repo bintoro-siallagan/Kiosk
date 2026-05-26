@@ -5,9 +5,9 @@ import { useState, useEffect, useCallback } from "react";
 import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
-const fmtJt = (n) => (n / 1e6).toFixed(1) + " jt";
+const fmtJt = (n) => (n / 1e6).toFixed(1) + "M";
 const AC = "#dc2626";
-const BUCKET_C = { "Belum Jatuh Tempo": "#10b981", "1-30 Hari": "#f59e0b", "31-60 Hari": "#fb7185", ">60 Hari": "#ef4444" };
+const BUCKET_C = { "Not Due Yet": "#10b981", "1-30 Days": "#f59e0b", "31-60 Days": "#fb7185", ">60 Days": "#ef4444" };
 
 export default function AdminApAging({ apiBase = "" }) {
   const { confirm } = useUiKit();

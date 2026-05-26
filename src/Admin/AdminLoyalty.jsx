@@ -221,8 +221,8 @@ export default function AdminLoyalty({ apiBase = '' }) {
         <div style={{padding: 16}}>
           <div style={styles.kpiRow}>
             <KpiCard label="Total Members" value={stats.total_customers} color="#f97316" />
-            <KpiCard label="Earn Hari Ini" value={`${stats.today.earn.total} pt`} sub={`${stats.today.earn.c} transaksi`} color="#4ade80" />
-            <KpiCard label="Redeem Hari Ini" value={`${stats.today.redeem.total} pt`} sub={`${stats.today.redeem.c} transaksi`} color="#fbbf24" />
+            <KpiCard label="Earn Today" value={`${stats.today.earn.total} pt`} sub={`${stats.today.earn.c} transaksi`} color="#4ade80" />
+            <KpiCard label="Redeem Today" value={`${stats.today.redeem.total} pt`} sub={`${stats.today.redeem.c} transaksi`} color="#fbbf24" />
             <KpiCard label="Outstanding Points" value={stats.outstanding_points.toLocaleString('id-ID')} sub={fmtIDR(stats.outstanding_liability_idr) + ' liability'} color="#ef4444" />
           </div>
 

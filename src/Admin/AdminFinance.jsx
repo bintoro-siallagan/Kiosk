@@ -67,7 +67,7 @@ function Dashboard() {
   if (!data) return <div>Loading...</div>;
 
   const periods = [
-    { k:'today', l:'Hari Ini' },
+    { k:'today', l:'Today' },
     { k:'yesterday', l:'Kemarin' },
     { k:'this_month', l:'Bulan Ini' },
   ];

@@ -75,7 +75,7 @@ export default function CinemaCashierKPI({ apiBase = "" }) {
       {/* Controls */}
       <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
         <div style={{ display: "flex", gap: 4, padding: 4, background: CARD_BG, border: BORDER, borderRadius: 10 }}>
-          {[["today", "Hari Ini"], ["week", "7 Hari"], ["month", "30 Hari"], ["all", "Semua"]].map(([k, lbl]) => (
+          {[["today", "Today"], ["week", "7 Days"], ["month", "30 Days"], ["all", "Semua"]].map(([k, lbl]) => (
             <button key={k} onClick={() => setPeriod(k)} style={pillBtn(period === k)}>{lbl}</button>
           ))}
         </div>

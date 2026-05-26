@@ -27,10 +27,10 @@ const fmtDelta = (n) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
 const num = (v) => (typeof v === 'number' && isFinite(v)) ? v : 0;
 
 const PERIODS = [
-  { key: 'today', label: 'Hari Ini', days: 0 },
+  { key: 'today', label: 'Today', days: 0 },
   { key: 'yesterday', label: 'Kemarin', days: -1, single: true },
-  { key: 'week', label: '7 Hari', days: 7 },
-  { key: 'month', label: '30 Hari', days: 30 },
+  { key: 'week', label: '7 Days', days: 7 },
+  { key: 'month', label: '30 Days', days: 30 },
   { key: 'mtd', label: 'MTD', mtd: true },
   { key: 'ytd', label: 'YTD', ytd: true },
 ];
@@ -39,7 +39,7 @@ function getDateRange(period) {
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const end = Math.floor(today.getTime()/1000) + 86399;
-  if (period.key === 'today') return { from: Math.floor(today.getTime()/1000), to: end, label: 'Hari Ini' };
+  if (period.key === 'today') return { from: Math.floor(today.getTime()/1000), to: end, label: 'Today' };
   if (period.key === 'yesterday') {
     const y = new Date(today); y.setDate(y.getDate()-1);
     return { from: Math.floor(y.getTime()/1000), to: Math.floor(y.getTime()/1000)+86399, label: 'Kemarin' };
@@ -336,7 +336,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
 
       {/* GRID 2-COL: REVENUE TREND + CHANNEL MIX */}
       <div className="grid-2" style={styles.gridTwoCol}>
-        <Panel title="Revenue Trend — 30 Hari Terakhir" onClick={() => onNavigate?.('finance')}>
+        <Panel title="Revenue Trend — 30 Days Terakhir" onClick={() => onNavigate?.('finance')}>
           <RevenueTrend data={data.financeTrend?.points || []} />
         </Panel>
 

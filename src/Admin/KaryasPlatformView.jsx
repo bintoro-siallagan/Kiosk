@@ -101,9 +101,9 @@ export default function KaryasPlatformView({ apiBase = "" }) {
           {/* Platform totals */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12, marginBottom: 20 }}>
             <KPI label="🏢 Total Companies" value={data.platform?.company_count || 0} color={PALETTE.amber} />
-            <KPI label="💰 Revenue Hari Ini" value={rp(data.platform?.revenue_today)} color={PALETTE.green} />
-            <KPI label="📈 Revenue 30 Hari" value={rp(data.platform?.revenue_month)} color={PALETTE.cyan} />
-            <KPI label="🛒 Tx Hari Ini" value={data.platform?.tx_today || 0} color={PALETTE.purple} sub="cross-company" />
+            <KPI label="💰 Revenue Today" value={rp(data.platform?.revenue_today)} color={PALETTE.green} />
+            <KPI label="📈 Revenue 30 Days" value={rp(data.platform?.revenue_month)} color={PALETTE.cyan} />
+            <KPI label="🛒 Tx Today" value={data.platform?.tx_today || 0} color={PALETTE.purple} sub="cross-company" />
           </div>
 
           {/* Per-company breakdown */}

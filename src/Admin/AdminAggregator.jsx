@@ -219,7 +219,7 @@ export default function AdminAggregator({ apiBase = '' }) {
       {/* RECONCILIATION */}
       {tab === 'reconcile' && reconcile && (
         <div style={{padding: 16}}>
-          <h3 style={styles.sectionTitle}>Hari Ini — Total</h3>
+          <h3 style={styles.sectionTitle}>Today — Total</h3>
           <div style={styles.kpiRow}>
             <KpiCard label="Total Order" value={reconcile.total.total_orders} sub={`${reconcile.total.completed} completed`} />
             <KpiCard label="Gross Revenue" value={fmtIDR(reconcile.total.gross_revenue)} color="#f97316" big />

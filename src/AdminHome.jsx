@@ -56,7 +56,7 @@ function PanelLoading() {
 
 const API = API_HOST;
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
-const fmtK = (n) => n >= 1e6 ? (n / 1e6).toFixed(1) + "jt" : n >= 1e3 ? Math.round(n / 1e3) + "rb" : String(Math.round(n) || 0);
+const fmtK = (n) => n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "K" : String(Math.round(n) || 0);
 const ago = (t) => { const s = Math.floor((Date.now() - t) / 60000); return s < 1 ? "baru" : s < 60 ? s + "m" : Math.floor(s / 60) + "j"; };
 const DAY = 864e5;
 
@@ -65,7 +65,7 @@ const QUEUE = [
   { key: "preparing", label: "Diproses", c: "#3b82f6" },
   { key: "ready", label: "Siap Ambil", c: "#10b981" },
 ];
-const PERIODS = [{ k: "today", l: "Hari Ini", d: 1 }, { k: "7d", l: "7 Hari", d: 7 }, { k: "30d", l: "30 Hari", d: 30 }];
+const PERIODS = [{ k: "today", l: "Today", d: 1 }, { k: "7d", l: "7 Days", d: 7 }, { k: "30d", l: "30 Days", d: 30 }];
 
 // Recursive rail menu node — supports nested groups (Tools → category → module).
 const ADMIN_ROLES = [
@@ -385,10 +385,10 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
   const sparkOrd = hourly.slice(0, intradayLast + 1).map(b => b.orders);
 
   const kpis = [
-    { label: `Penjualan ${periodLabel}`, val: fmtRp(curRev), valNum: curRev, c: "#10b981", icon: "💰", delta: revDelta, progress: targetPct, sub: `target ${fmtK(target)}`, spark: sparkRev },
-    { label: `Order ${periodLabel}`, val: String(curOrders.length), valNum: curOrders.length, c: "#3b82f6", icon: "🧾", delta: ordDelta, sub: `${orders.length} aktif sekarang`, spark: sparkOrd },
-    { label: "Alert Aktif", val: String(notifs.length), valNum: notifs.length, c: crit > 0 ? "#ef4444" : "#f59e0b", icon: "🔔", sub: crit ? `${crit} perlu tindakan` : "semua aman", spark: null },
-    { label: "System Health", val: health == null ? "…" : health + " / 100", valNum: health || 0, c: health >= 75 ? "#10b981" : health >= 50 ? "#f59e0b" : "#ef4444", icon: "🔎", sub: "self-audit score", spark: null },
+    { label: `Sales ${periodLabel}`,   val: fmtRp(curRev), valNum: curRev, c: "#10b981", icon: "💰", delta: revDelta, progress: targetPct, sub: `target ${fmtK(target)}`, spark: sparkRev },
+    { label: `Orders ${periodLabel}`,  val: String(curOrders.length), valNum: curOrders.length, c: "#3b82f6", icon: "🧾", delta: ordDelta, sub: `${orders.length} active now`, spark: sparkOrd },
+    { label: "Active Alerts",          val: String(notifs.length), valNum: notifs.length, c: crit > 0 ? "#ef4444" : "#f59e0b", icon: "🔔", sub: crit ? `${crit} need action` : "all clear", spark: null },
+    { label: "System Health",          val: health == null ? "…" : health + " / 100", valNum: health || 0, c: health >= 75 ? "#10b981" : health >= 50 ? "#f59e0b" : "#ef4444", icon: "🔎", sub: "self-audit score", spark: null },
   ];
 
   // ── Ticker tape items — NYSE-style scrolling marquee with per-outlet rev + delta ──
@@ -848,7 +848,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
                     )}
                   </div>
                   <div style={S.heroSubLine}>
-                    💰 Penjualan {periodLabel.toLowerCase()} · <b style={{ color: "#fbbf24" }}>{curOrders.length}</b> order · target <b style={{ color: targetPct >= 100 ? "#10b981" : "#fbbf24" }}>{fmtK(target)}</b>
+                    💰 Sales {periodLabel.toLowerCase()} · <b style={{ color: "#fbbf24" }}>{curOrders.length}</b> orders · target <b style={{ color: targetPct >= 100 ? "#10b981" : "#fbbf24" }}>{fmtK(target)}</b>
                   </div>
                   {/* Target progress bar */}
                   <div style={S.heroProgress}>
@@ -965,7 +965,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
               const w = 100, h = 100;
               const data = intradayWindow.map(b => b.rev);
               const maxV = Math.max(1, ...data);
-              if (data.length < 2) return <div style={{ fontSize: 11, color: "#5b6470" }}>Belum ada transaksi hari ini</div>;
+              if (data.length < 2) return <div style={{ fontSize: 11, color: "#5b6470" }}>No transactions today yet</div>;
               const stepX = w / (data.length - 1);
               const pts = data.map((v, i) => [i * stepX, h - 2 - (v / maxV) * (h - 8)]);
               const line = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(" ");

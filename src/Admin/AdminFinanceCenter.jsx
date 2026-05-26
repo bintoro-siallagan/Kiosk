@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import { ErrorInline } from "../components/ConnectionError.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
-const fmtK = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1) + "jt" : n >= 1e3 ? Math.round(n / 1e3) + "rb" : String(n || 0));
+const fmtK = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "K" : String(n || 0));
 
 export default function AdminFinanceCenter({ apiBase = "" }) {
   const [days, setDays] = useState(30);

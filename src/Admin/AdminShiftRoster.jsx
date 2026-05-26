@@ -63,7 +63,7 @@ export default function AdminShiftRoster({ apiBase = "" }) {
 
       <div style={S.kpiRow}>
         <Kpi label="Total Shift" v={String(s.total_shifts)} c={AC} />
-        <Kpi label="Shift Hari Ini" v={String(s.today_shifts)} c="#f59e0b" />
+        <Kpi label="Shift Today" v={String(s.today_shifts)} c="#f59e0b" />
         <Kpi label="Staff Terjadwal" v={String(s.staff_count)} c="#3b82f6" />
         <Kpi label="Hari Ter-roster" v={String(s.days)} c="#a855f7" />
       </div>

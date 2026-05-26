@@ -5,14 +5,14 @@ import { useState, useEffect } from "react";
 import { HelpButton } from "../components/HelpModal.jsx";
 
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
-const fmtK = (n) => n >= 1e9 ? (n / 1e9).toFixed(1) + "M" : n >= 1e6 ? (n / 1e6).toFixed(1) + "jt" : n >= 1e3 ? Math.round(n / 1e3) + "rb" : String(Math.round(n));
+const fmtK = (n) => n >= 1e9 ? (n / 1e9).toFixed(1) + "M" : n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "K" : String(Math.round(n));
 const fmtTime = (sec) => sec ? new Date(sec * 1000).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-";
 const fmtDateTime = (sec) => sec ? new Date(sec * 1000).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "-";
 
 const PERIODS = [
-  { key: "today", label: "Hari Ini", icon: "📅" },
-  { key: "week", label: "7 Hari", icon: "📆" },
-  { key: "month", label: "30 Hari", icon: "🗓️" },
+  { key: "today", label: "Today", icon: "📅" },
+  { key: "week", label: "7 Days", icon: "📆" },
+  { key: "month", label: "30 Days", icon: "🗓️" },
 ];
 
 export default function CinemaDashboard({ apiBase }) {

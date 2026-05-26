@@ -7,9 +7,9 @@ import { useState } from "react";
 const startToday = () => Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
 const nowSec = () => Math.floor(Date.now() / 1000);
 const PRESETS = [
-  { k: "today", label: "Hari Ini", from: () => startToday() },
-  { k: "7d", label: "7 Hari", from: () => startToday() - 7 * 86400 },
-  { k: "30d", label: "30 Hari", from: () => startToday() - 30 * 86400 },
+  { k: "today", label: "Today", from: () => startToday() },
+  { k: "7d", label: "7 Days", from: () => startToday() - 7 * 86400 },
+  { k: "30d", label: "30 Days", from: () => startToday() - 30 * 86400 },
   { k: "90d", label: "90 Hari", from: () => startToday() - 90 * 86400 },
 ];
 

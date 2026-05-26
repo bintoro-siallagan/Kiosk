@@ -14,9 +14,9 @@ const PALETTE = {
 };
 
 const PERIODS = [
-  { v: "today", l: "Hari Ini" },
-  { v: "week",  l: "7 Hari" },
-  { v: "month", l: "30 Hari" },
+  { v: "today", l: "Today" },
+  { v: "week",  l: "7 Days" },
+  { v: "month", l: "30 Days" },
 ];
 
 export default function CinemaOwnerDashboard({ apiBase = "", onNavigate }) {

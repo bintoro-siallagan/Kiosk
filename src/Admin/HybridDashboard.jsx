@@ -109,9 +109,9 @@ function CombinedView({ loading, data }) {
     <>
       {/* Top-line KPI */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12, marginBottom: 20 }}>
-        <KPI label="💰 Revenue Hari Ini" value={rp(totalRevToday)} color={PALETTE.green} sub="F&B + Cinema" />
-        <KPI label="📈 Revenue 30 Hari" value={rp(totalRevMonth)} color={PALETTE.cyan} sub="combined" />
-        <KPI label="🛒 Transaction Hari Ini" value={totalTxToday} color={PALETTE.purple} sub="F&B + Cinema" />
+        <KPI label="💰 Revenue Today" value={rp(totalRevToday)} color={PALETTE.green} sub="F&B + Cinema" />
+        <KPI label="📈 Revenue 30 Days" value={rp(totalRevMonth)} color={PALETTE.cyan} sub="combined" />
+        <KPI label="🛒 Transaction Today" value={totalTxToday} color={PALETTE.purple} sub="F&B + Cinema" />
         <KPI label="🍔 vs 🎬" value={`${fnbPct}% / ${cinemaPct}%`} color={PALETTE.amber} sub="F&B vs Cinema split" />
       </div>
 

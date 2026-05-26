@@ -290,10 +290,10 @@ export default function AdminPaymentGateway({ apiBase = "" }) {
         </div>
       </div>
 
-      {/* Rekonsiliasi */}
+      {/* Reconciliation */}
       {recon?.totals && (
         <div style={S.card}>
-          <div style={S.label}>📊 Rekonsiliasi Hari Ini</div>
+          <div style={S.label}>📊 Reconciliation Today</div>
           <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
             {[
               { k: "Intent", v: recon.totals.intents, c: "#fff" },

@@ -37,7 +37,7 @@ export default function AdminProductVersioning({ apiBase = "" }) {
         <Kpi label="Total Perubahan" v={String(s.total)} c="#a78bfa" />
         <Kpi label="Perubahan Harga" v={String(s.price_changes)} c="#10b981" />
         <Kpi label="Perubahan Recipe" v={String(s.recipe_changes)} c="#f97316" />
-        <Kpi label="Minggu Ini" v={String(s.this_week)} c="#3b82f6" />
+        <Kpi label="This Week" v={String(s.this_week)} c="#3b82f6" />
       </div>
 
       {/* Type filter */}

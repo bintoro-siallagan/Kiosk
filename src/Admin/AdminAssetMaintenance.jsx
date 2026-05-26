@@ -63,7 +63,7 @@ export default function AdminAssetMaintenance({ apiBase = "" }) {
 
       <div style={S.kpiRow}>
         <Kpi label="Total Aset" v={String(s.total)} c="#d6d3d1" />
-        <Kpi label="Operasional" v={String(s.operational)} c="#10b981" />
+        <Kpi label="Operations" v={String(s.operational)} c="#10b981" />
         <Kpi label="Perlu Perhatian" v={String(s.need_attention)} c={s.need_attention > 0 ? "#ef4444" : "#10b981"} />
         <Kpi label="Segera Service" v={String(s.due_soon)} c={s.due_soon > 0 ? "#f59e0b" : "#10b981"} />
       </div>

@@ -14,7 +14,7 @@ export default function AdminInternalAudit({ apiBase = "" }) {
   const [msg, setMsg] = useState("");
   const [exp, setExp] = useState(null);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ title: "", area: "Keuangan", auditor: "", period: "" });
+  const [form, setForm] = useState({ title: "", area: "Finance", auditor: "", period: "" });
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/internal-audit`).then(r => r.json()).then(setD).catch(() => {});

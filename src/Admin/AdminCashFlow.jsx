@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 const fmtRp = (n) => (n < 0 ? "−Rp " : "Rp ") + Math.abs(Math.round(n || 0)).toLocaleString("id-ID");
-const fmtJt = (n) => (n < 0 ? "−" : "") + (Math.abs(n) / 1e6).toFixed(1) + " jt";
+const fmtJt = (n) => (n < 0 ? "−" : "") + (Math.abs(n) / 1e6).toFixed(1) + "M";
 const AC = "#0d9488";
 const SEC_C = { Operasi: "#10b981", Investasi: "#3b82f6", Pendanaan: "#a855f7" };
 

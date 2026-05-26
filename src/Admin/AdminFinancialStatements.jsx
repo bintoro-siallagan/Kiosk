@@ -1,5 +1,5 @@
 // src/Admin/AdminFinancialStatements.jsx
-// Laporan Keuangan — Laba Rugi & Neraca, di-derive dari transaksi
+// Laporan Finance — Laba Rugi & Neraca, di-derive dari transaksi
 // (lanjutan Jurnal → Buku Besar).
 
 import { useState, useEffect, useCallback } from "react";

@@ -7,13 +7,13 @@ import { useUiKit } from "../components/uiKit.jsx";
 const AC = "#dc2626";
 const LVL = { Critical: "#ef4444", High: "#f97316", Medium: "#f59e0b", Low: "#10b981" };
 const STT = { open: "#ef4444", mitigating: "#f59e0b", closed: "#10b981" };
-const CATS = ['Operasional', 'Keuangan', 'Kepatuhan', 'Strategis', 'Reputasi', 'Teknologi'];
+const CATS = ['Operations', 'Finance', 'Compliance', 'Strategic', 'Reputation', 'Technology'];
 
 export default function AdminRisk({ apiBase = "" }) {
   const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
-  const [form, setForm] = useState({ title: "", category: "Operasional", likelihood: "3", impact: "3", mitigation: "", owner: "" });
+  const [form, setForm] = useState({ title: "", category: "Operations", likelihood: "3", impact: "3", mitigation: "", owner: "" });
   const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
@@ -151,7 +151,7 @@ export default function AdminRisk({ apiBase = "" }) {
                 <input value={editing.title || ""} onChange={e => setEditing({ ...editing, title: e.target.value })} style={modalInp} />
               </label>
               <label style={{ fontSize: 11, color: "#9ca3af" }}>Kategori
-                <select value={editing.category || "Operasional"} onChange={e => setEditing({ ...editing, category: e.target.value })} style={modalInp}>
+                <select value={editing.category || "Operations"} onChange={e => setEditing({ ...editing, category: e.target.value })} style={modalInp}>
                   {CATS.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </label>

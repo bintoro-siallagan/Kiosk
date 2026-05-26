@@ -74,7 +74,7 @@ export default function AdminHRIS({ apiBase = "" }) {
           Recap absensi, keterlambatan, lembur & produktivitas staff per periode. Kasir auto check-in saat login POS.
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-          {[["today", "Hari Ini"], ["7d", "7 Hari"], ["30d", "30 Hari"]].map(([k, l]) => (
+          {[["today", "Today"], ["7d", "7 Days"], ["30d", "30 Days"]].map(([k, l]) => (
             <button key={k} onClick={() => applyPreset(k)} style={S.btn(preset === k)}>{l}</button>
           ))}
           <span style={{ color: "#555", fontSize: 12, marginLeft: 4 }}>Dari</span>

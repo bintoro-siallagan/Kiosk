@@ -57,7 +57,7 @@ export default function AdminDemandForecast({ apiBase = "" }) {
       </div>
 
       <div style={S.kpiRow}>
-        <Kpi label="Forecast Demand 7 Hari" v={s.total_demand_7d.toLocaleString("id-ID") + " unit"} c={AC} />
+        <Kpi label="Forecast Demand 7 Days" v={s.total_demand_7d.toLocaleString("id-ID") + " unit"} c={AC} />
         <Kpi label="Produk Naik" v={String(s.growing)} c="#10b981" />
         <Kpi label="Produk Turun" v={String(s.declining)} c="#ef4444" />
         <Kpi label="Avg Confidence" v={s.avg_confidence + "%"} c="#a855f7" />
@@ -141,7 +141,7 @@ export default function AdminDemandForecast({ apiBase = "" }) {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <div>
-                  <label style={modalLbl}>Forecast 7 Hari</label>
+                  <label style={modalLbl}>Forecast 7 Days</label>
                   <input type="number" value={editing.forecast_7d ?? 0} onChange={e => setEditing({ ...editing, forecast_7d: Number(e.target.value) })} style={modalInp} />
                 </div>
                 <div>
