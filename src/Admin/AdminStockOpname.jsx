@@ -57,7 +57,7 @@ export default function AdminStockOpname({ apiBase = "" }) {
   };
 
   const remove = async (sess) => {
-    const ok = await confirm({ title: "Hapus sesi opname?", message: `Hapus ${sess.opname_no}? This action tidak dapat dibatalkan.`, danger: true, okLabel: "Delete" });
+    const ok = await confirm({ title: "Hapus sesi opname?", message: `Hapus ${sess.opname_no}? This action cannot be undone.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     fetch(`${apiBase}/api/stock-opname/${sess.id}`, { method: "DELETE" })
       .then(r => r.json()).then(j => {

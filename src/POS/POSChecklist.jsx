@@ -79,7 +79,7 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
             <div style={S.cheerText}>
               {cashier?.name ? `${cashier.name}, ` : ''}kamu udah kerja keras hari ini!
             </div>
-            <div style={S.cheerSub}>Makasih ya 🙌 Istirahat yang cukup, sampai ketemu besok!</div>
+            <div style={S.cheerSub}>Makasih ya 🙌 Istirahat yang cukup, sampai ketemu tomorrow!</div>
           </div>
         )}
 
@@ -102,7 +102,7 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
 
         {type === 'opening' && (
           <div style={S.moodBox}>
-            <div style={S.moodLabel}>😊 Moodmu hari ini gimana?</div>
+            <div style={S.moodLabel}>😊 Moodmu today gimana?</div>
             <div style={{ display: 'flex', gap: 8 }}>
               {MOODS.map(m => (
                 <button key={m.v} onClick={() => setMood(m.v)}
@@ -117,13 +117,13 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
 
         {type === 'opening' && (
           <div style={S.targetBox}>
-            <div style={S.targetLabel}>🎯 Target penjualan hari ini</div>
+            <div style={S.targetLabel}>🎯 Target penjualan today</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ color: '#9ca3af', fontSize: 17 }}>Rp</span>
               <input type="number" value={target} onChange={e => setTarget(e.target.value)}
                 placeholder="contoh: 3000000" style={S.targetInput} />
             </div>
-            <div style={S.targetHint}>Jadi KPI tim hari ini — actual vs target dipantau di dashboard.</div>
+            <div style={S.targetHint}>Jadi KPI tim today — actual vs target dipantau di dashboard.</div>
           </div>
         )}
 

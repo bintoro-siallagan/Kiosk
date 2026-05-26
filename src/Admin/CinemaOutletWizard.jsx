@@ -13,7 +13,7 @@ import API_HOST from "../apiBase.js";
 const STEPS = [
   { key: "outlet", label: "Outlet", icon: "🏢", desc: "List cabang baru" },
   { key: "studio", label: "Studio", icon: "🏛️", desc: "Tambah ruang teater" },
-  { key: "layout", label: "Layout & Harga", icon: "🪑", desc: "Custom kursi & kategori" },
+  { key: "layout", label: "Layout & Price", icon: "🪑", desc: "Custom kursi & kategori" },
   { key: "branding", label: "Branding CDS", icon: "🎨", desc: "Background TV + tiket header" },
   { key: "showtime", label: "Showtime Pertama", icon: "🗓️", desc: "Buat jadwal tayang" },
   { key: "done", label: "Launch!", icon: "🚀", desc: "Review URL setup" },
@@ -275,11 +275,11 @@ export default function CinemaOutletWizard({ apiBase, onClose, onDone }) {
                 <input value={data.branding.idleText} onChange={e => update("branding", "idleText", e.target.value)}
                   placeholder="Selamat datang di Cinema XXI Jakarta!" style={inp} />
               </Field>
-              <Field label="HEADER STRUK TIKET">
+              <Field label="HEADER RECEIPT TIKET">
                 <input value={data.branding.ticketBrand} onChange={e => update("branding", "ticketBrand", e.target.value)}
                   placeholder="🎬 CINEMA XXI · Plaza Indonesia" style={inp} />
               </Field>
-              <Field label="FOOTER STRUK TIKET">
+              <Field label="FOOTER RECEIPT TIKET">
                 <input value={data.branding.ticketFooter} onChange={e => update("branding", "ticketFooter", e.target.value)}
                   placeholder="Datang 15 min sebelum tayang · No refund" style={inp} />
               </Field>

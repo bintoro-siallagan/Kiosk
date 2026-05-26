@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import API_HOST from "./apiBase.js";
 
-const CHANNEL = { pos: "Kasir", kiosk: "Kiosk", qr: "QR Order" };
+const CHANNEL = { pos: "Cashier", kiosk: "Kiosk", qr: "QR Order" };
 
 export default function KioskReviewFeed() {
   const [reviews, setReviews] = useState([]);

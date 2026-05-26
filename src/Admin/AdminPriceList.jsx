@@ -28,7 +28,7 @@ export default function AdminPriceList({ apiBase = "" }) {
     fetch(url, { method: form.id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       .then(r => r.json())
       .then(j => {
-        if (j.ok || j.id) { setMsg(form.id ? "✓ Harga diperbarui" : "✓ Harga ditambah to price list"); setForm(EMPTY); load(); }
+        if (j.ok || j.id) { setMsg(form.id ? "✓ Price diperbarui" : "✓ Price ditambah to price list"); setForm(EMPTY); load(); }
         else setMsg(j.error || "gagal menyimpan");
       })
       .catch(e => setMsg(String(e)));
@@ -56,7 +56,7 @@ export default function AdminPriceList({ apiBase = "" }) {
           {I("sku", "SKU")}
           {I("supplier", "Supplier")}
           {I("unit", "Unit (kg/pcs)")}
-          {I("price", "Harga *", "number")}
+          {I("price", "Price *", "number")}
           {I("valid_until", "", "date")}
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center" }}>

@@ -96,7 +96,7 @@ export default function ESBSync({ onBack }) {
   // ── GET MENU FROM ESB ────────────────────────────────────────────────
   async function handleGetMenu() {
     if (!config.apiKey || !config.outletId) {
-      setGetMsg("⚠️ Isi API Key & Outlet ID di tab Konfigurasi dulu");
+      setGetMsg("⚠️ Isi API Key & Outlet ID di tab Configuration dulu");
       setGetStatus(ERROR); return;
     }
     applyConfig();
@@ -324,7 +324,7 @@ export default function ESBSync({ onBack }) {
                     <span style={{width:40}}>Icon</span>
                     <span style={{flex:2}}>Nama Menu (dari ESB)</span>
                     <span style={{width:110}}>Kategori</span>
-                    <span style={{width:110,textAlign:"right"}}>Harga</span>
+                    <span style={{width:110,textAlign:"right"}}>Price</span>
                     <span style={{width:90,textAlign:"center"}}>Ketersediaan</span>
                     <span style={{width:80,textAlign:"center"}}>Kode ESB</span>
                   </div>
@@ -424,7 +424,7 @@ export default function ESBSync({ onBack }) {
                 <span style={{width:40}}/>
                 <span style={{flex:2}}>Nama Menu (Lokal)</span>
                 <span style={{width:110}}>Kategori</span>
-                <span style={{width:110,textAlign:"right"}}>Harga</span>
+                <span style={{width:110,textAlign:"right"}}>Price</span>
                 <span style={{width:90,textAlign:"center"}}>Status</span>
                 <span style={{width:80,textAlign:"center"}}>ESB</span>
                 <span style={{width:70,textAlign:"center"}}>Aksi</span>

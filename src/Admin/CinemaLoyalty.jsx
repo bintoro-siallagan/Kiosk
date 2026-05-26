@@ -185,7 +185,7 @@ export default function CinemaLoyalty({ apiBase = "" }) {
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button onClick={earnPoints} style={B.earn}>💰 Manual Earn</button>
             <button onClick={redeemPoints} disabled={member.points_balance === 0} style={{ ...B.redeem, opacity: member.points_balance === 0 ? 0.4 : 1 }}>🎁 Redeem Points</button>
-            {member.birthday && <button onClick={claimBirthday} style={B.birthday}>🎂 Claim Birthday Bonus</button>}
+            {member.birthday && <button onClick={claimBirthday} style={B.birthday}>🎂 Claim Birthday Receiptus</button>}
           </div>
 
           {recent.length > 0 && (

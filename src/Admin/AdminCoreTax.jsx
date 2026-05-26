@@ -68,10 +68,10 @@ export default function AdminCoreTax({ apiBase = "" }) {
       </div>
 
       <div style={S.kpiRow}>
-        <Kpi label="Total Kewajiban Pajak" v={fmtRp(s.total_liability)} c={AC} />
+        <Kpi label="Total Kewajiban Tax" v={fmtRp(s.total_liability)} c={AC} />
         <Kpi label="PPN Kurang Pay" v={fmtRp(s.ppn_payable)} c="#f59e0b" />
         <Kpi label="Total PPh" v={fmtRp(s.pph_total)} c="#3b82f6" />
-        <Kpi label="Faktur Pajak Terbit" v={String(s.faktur_issued)} c="#10b981" />
+        <Kpi label="Invoice Tax Terbit" v={String(s.faktur_issued)} c="#10b981" />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 14, alignItems: "start" }}>

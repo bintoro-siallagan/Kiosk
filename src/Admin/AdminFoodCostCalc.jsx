@@ -109,7 +109,7 @@ export default function AdminFoodCostCalc({ apiBase = "" }) {
             <span style={{ fontSize: 14, fontWeight: 800, color: "#fb923c", fontFamily: "'Geist Mono',monospace" }}>{fmtRp(totalCost)}</span>
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center" }}>
-            <input value={price} onChange={e => setPrice(e.target.value)} placeholder="Harga jual (Rp)" type="number" style={{ ...S.input, flex: 1 }} />
+            <input value={price} onChange={e => setPrice(e.target.value)} placeholder="Price jual (Rp)" type="number" style={{ ...S.input, flex: 1 }} />
             <button onClick={save} style={S.btn}>💾 Simpan</button>
           </div>
           {msg ? <div style={{ fontSize: 12, marginTop: 8, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}

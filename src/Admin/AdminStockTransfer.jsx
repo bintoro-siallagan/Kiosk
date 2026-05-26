@@ -43,7 +43,7 @@ export default function AdminStockTransfer({ apiBase = "" }) {
   };
 
   const remove = async (t) => {
-    const ok = await confirm({ title: "Hapus transfer?", message: `Hapus ${t.transfer_no}? This action tidak dapat dibatalkan.`, danger: true, okLabel: "Delete" });
+    const ok = await confirm({ title: "Hapus transfer?", message: `Hapus ${t.transfer_no}? This action cannot be undone.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     fetch(`${apiBase}/api/stock-transfer/${t.id}`, { method: "DELETE" })
       .then(r => r.json()).then(j => {

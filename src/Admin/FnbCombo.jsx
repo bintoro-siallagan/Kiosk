@@ -51,7 +51,7 @@ export default function FnbCombo({ apiBase = "" }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
             <Field label="Nama combo"><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Paket Hemat Nasi Goreng" style={inp} /></Field>
             <Field label="Kategori"><input value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} placeholder="Lunch / Promo" style={inp} /></Field>
-            <Field label="Harga combo (Rp)"><input type="number" value={form.combo_price} onChange={e => setForm({ ...form, combo_price: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
+            <Field label="Price combo (Rp)"><input type="number" value={form.combo_price} onChange={e => setForm({ ...form, combo_price: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
             <Field label="Tersedia dari"><input type="time" value={form.available_from} onChange={e => setForm({ ...form, available_from: e.target.value })} style={inp} /></Field>
             <Field label="Sampai"><input type="time" value={form.available_to} onChange={e => setForm({ ...form, available_to: e.target.value })} style={inp} /></Field>
             <Field label="Hari berlaku"><input value={form.applicable_days} onChange={e => setForm({ ...form, applicable_days: e.target.value })} placeholder="kosong = semua" style={inp} /></Field>

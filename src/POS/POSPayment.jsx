@@ -331,7 +331,7 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
           </div>
           {totals.change > 0 && (
             <div style={{...styles.runningRow, ...styles.changeRow}}>
-              <span>💰 Kembalian</span>
+              <span>💰 Change</span>
               <b>{fmtIDR(totals.change)}</b>
             </div>
           )}
@@ -339,7 +339,7 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
 
         <div style={styles.tenderList}>
           <div style={styles.sectionTitle}>Tender Lines ({tenders.length})</div>
-          {tenders.length === 0 && <div style={styles.empty}>Belum ada tender. Pilih metode di sebelah →</div>}
+          {tenders.length === 0 && <div style={styles.empty}>Belum ada tender. Choose method di sebelah →</div>}
           {tenders.map((t, i) => {
             const meta = TENDER_META[t.tender_type] || {};
             return (
@@ -427,7 +427,7 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
                   Saldo customer: <b>{order.customer.points_balance} poin</b> (= {fmtIDR(order.customer.points_balance * pointValue)})
                 </div>
               )}
-              <label style={styles.inputLabel}>Jumlah Poin</label>
+              <label style={styles.inputLabel}>Quantity Poin</label>
               <input type="number" value={inputPoints} onChange={e => setInputPoints(e.target.value)}
                 placeholder="0" style={styles.input} autoFocus />
               {inputPoints && parseInt(inputPoints, 10) > 0 && (
@@ -438,7 +438,7 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
             </>
           ) : (
             <>
-              <label style={styles.inputLabel}>Jumlah</label>
+              <label style={styles.inputLabel}>Quantity</label>
               <input type="number" value={inputAmount} onChange={e => setInputAmount(e.target.value)}
                 placeholder="0" style={styles.input} autoFocus />
 

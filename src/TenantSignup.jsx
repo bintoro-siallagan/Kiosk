@@ -26,15 +26,15 @@ export default function TenantSignup() {
   const setField = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const validateStep1 = () => {
-    if (!form.company_name.trim()) return "Nama usaha wajib";
-    if (!form.vertical) return "Pilih jenis usaha";
+    if (!form.company_name.trim()) return "Business name is required";
+    if (!form.vertical) return "Please select a business type";
     return null;
   };
   const validateStep2 = () => {
-    if (!form.owner_name.trim()) return "Nama pemilik wajib";
-    if (!/^0\d{8,12}$/.test(form.owner_phone.replace(/[^0-9]/g, ""))) return "Nomor HP harus format 08xxx, 9–13 digit";
-    if (form.owner_pin && !/^\d{6}$/.test(form.owner_pin)) return "PIN harus 6 digit angka";
-    if (form.owner_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.owner_email)) return "Format email tidak valid";
+    if (!form.owner_name.trim()) return "Owner name is required";
+    if (!/^0\d{8,12}$/.test(form.owner_phone.replace(/[^0-9]/g, ""))) return "Phone must be 08xxx format, 9–13 digits";
+    if (form.owner_pin && !/^\d{6}$/.test(form.owner_pin)) return "PIN must be 6 digits";
+    if (form.owner_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.owner_email)) return "Invalid email format";
     return null;
   };
 
@@ -52,7 +52,7 @@ export default function TenantSignup() {
         }),
       });
       const j = await r.json();
-      if (!r.ok) throw new Error(j?.error || "Pendaftaran gagal");
+      if (!r.ok) throw new Error(j?.error || "Registration failed");
       setResult(j);
       setStep(3);
     } catch (e) { setErr(e.message); }
@@ -71,10 +71,10 @@ export default function TenantSignup() {
         <div style={{ textAlign: "center", marginBottom: 22 }}>
           <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 3, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>karyaOS · ONBOARDING</div>
           <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", marginTop: 6, letterSpacing: -0.6 }}>
-            {step === 3 ? "🎉 Selamat Bergabung!" : "🚀 Daftar Tenant Baru"}
+            {step === 3 ? "🎉 Welcome Aboard!" : "🚀 Register New Tenant"}
           </div>
           <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 6 }}>
-            {step === 3 ? "Akun kamu sudah aktif. Lanjut ke admin sekarang." : "Trial 14 hari, gratis, semua fitur terbuka."}
+            {step === 3 ? "Your account is now active. Continue to admin." : "14-day free trial, all features unlocked."}
           </div>
         </div>
 
@@ -95,16 +95,16 @@ export default function TenantSignup() {
         {/* Step 1: Company */}
         {step === 1 && (
           <div style={{ animation: "slideIn 0.3s" }}>
-            <Field label="🏢 NAMA USAHA *">
+            <Field label="🏢 BUSINESS NAME *">
               <input value={form.company_name} onChange={e => setField("company_name", e.target.value)}
-                placeholder="cth: Kopi Bandung Jaya" style={S.inp} autoFocus />
+                placeholder="e.g.: Kopi Bandung Jaya" style={S.inp} autoFocus />
             </Field>
 
-            <Field label="🎯 JENIS USAHA *">
+            <Field label="🎯 BUSINESS TYPE *">
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
                 {[
-                  { v: "fnb", emoji: "🍽️", title: "F&B", desc: "Kafe, restoran, kedai" },
-                  { v: "cinema", emoji: "🎬", title: "Cinema", desc: "Bioskop, layar" },
+                  { v: "fnb", emoji: "🍽️", title: "F&B", desc: "Cafe, restaurant, kiosk" },
+                  { v: "cinema", emoji: "🎬", title: "Cinema", desc: "Movie theater, screens" },
                   { v: "hybrid", emoji: "🎯", title: "Hybrid", desc: "F&B + Cinema" },
                 ].map(opt => (
                   <button key={opt.v} onClick={() => setField("vertical", opt.v)} style={{
@@ -127,11 +127,11 @@ export default function TenantSignup() {
                 const v = validateStep1();
                 if (v) { setErr(v); return; }
                 setErr(""); setStep(2);
-              }} style={S.btnPrimary}>Lanjut →</button>
+              }} style={S.btnPrimary}>Continue →</button>
             </div>
 
             <div style={{ marginTop: 14, padding: 12, background: "rgba(34,211,238,0.06)", border: `1px solid ${CYAN}33`, borderRadius: 10, fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>
-              ℹ️ <b style={{ color: CYAN }}>Trial 14 hari</b> tanpa kartu kredit. Semua fitur terbuka — POS, KDS, Loyalty, Multi-outlet, Reporting.
+              ℹ️ <b style={{ color: CYAN }}>14-day Trial</b>, no credit card needed. All features unlocked — POS, KDS, Loyalty, Multi-outlet, Reporting.
             </div>
           </div>
         )}
@@ -139,28 +139,28 @@ export default function TenantSignup() {
         {/* Step 2: Owner */}
         {step === 2 && (
           <div style={{ animation: "slideIn 0.3s" }}>
-            <Field label="👤 NAMA LENGKAP *">
+            <Field label="👤 FULL NAME *">
               <input value={form.owner_name} onChange={e => setField("owner_name", e.target.value)}
-                placeholder="cth: Bintoro Siallagan" style={S.inp} autoFocus />
+                placeholder="e.g.: Bintoro Siallagan" style={S.inp} autoFocus />
             </Field>
-            <Field label="📱 NOMOR HP *">
+            <Field label="📱 PHONE NUMBER *">
               <input value={form.owner_phone} onChange={e => setField("owner_phone", e.target.value)}
                 placeholder="08xxxxxxxxxx" inputMode="numeric" style={S.inp} />
             </Field>
-            <Field label="📧 EMAIL (opsional)">
+            <Field label="📧 EMAIL (optional)">
               <input value={form.owner_email} onChange={e => setField("owner_email", e.target.value)}
                 placeholder="owner@email.com" type="email" style={S.inp} />
             </Field>
-            <Field label="🔑 PIN ADMIN (6 digit, opsional)">
+            <Field label="🔑 ADMIN PIN (6 digits, optional)">
               <input value={form.owner_pin} onChange={e => setField("owner_pin", e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
-                placeholder="Kosongkan biar auto-generate" inputMode="numeric" maxLength={6} style={S.inp} />
-              <div style={{ fontSize: 10, color: "#64748b", marginTop: 4 }}>6 digit angka. Login admin pakai PIN ini di /?admin</div>
+                placeholder="Leave empty for auto-generated PIN" inputMode="numeric" maxLength={6} style={S.inp} />
+              <div style={{ fontSize: 10, color: "#64748b", marginTop: 4 }}>6 digit numeric. Use this PIN to log in at /?admin</div>
             </Field>
 
             <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
-              <button onClick={() => { setErr(""); setStep(1); }} style={S.btnGhost}>← Kembali</button>
+              <button onClick={() => { setErr(""); setStep(1); }} style={S.btnGhost}>← Back</button>
               <button onClick={submit} disabled={busy} style={{ ...S.btnPrimary, flex: 2 }}>
-                {busy ? "⏳ Memproses…" : "🚀 Daftar Sekarang"}
+                {busy ? "⏳ Processing…" : "🚀 Register Now"}
               </button>
             </div>
           </div>
@@ -180,37 +180,37 @@ export default function TenantSignup() {
             </div>
 
             <div style={{ padding: 16, background: `linear-gradient(135deg, ${PURPLE}22, ${PINK}11)`, border: `1px solid ${PURPLE}55`, borderRadius: 12, marginBottom: 16 }}>
-              <div style={{ fontSize: 10, color: PURPLE, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>TENANT AKTIF</div>
+              <div style={{ fontSize: 10, color: PURPLE, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>TENANT ACTIVE</div>
               <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", marginTop: 4 }}>{result.company_name}</div>
               <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>Code: <b style={{ color: "#fff", fontFamily: "'Geist Mono',monospace" }}>{result.company_code}</b> · {result.vertical.toUpperCase()}</div>
             </div>
 
             {/* PIN box */}
             <div style={{ padding: 18, background: "rgba(0,0,0,0.4)", border: `2px dashed ${AMBER}77`, borderRadius: 12, marginBottom: 16, textAlign: "center" }}>
-              <div style={{ fontSize: 10, color: AMBER, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>📌 PIN LOGIN ADMIN — SIMPAN BAIK-BAIK</div>
+              <div style={{ fontSize: 10, color: AMBER, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>📌 ADMIN LOGIN PIN — KEEP SAFE</div>
               <div style={{ fontSize: 38, fontWeight: 900, color: "#fff", marginTop: 8, fontFamily: "'Geist Mono',monospace", letterSpacing: 8 }}>{result.login_pin}</div>
               <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 10 }}>
-                <CopyButton text={result.login_pin} label="Salin PIN" />
-                <CopyButton text={`Login ke karyaOS:\nPIN: ${result.login_pin}\nURL: ${typeof window !== "undefined" ? window.location.origin : ""}/?admin`} label="Salin info login" />
+                <CopyButton text={result.login_pin} label="Copy PIN" />
+                <CopyButton text={`Log in to karyaOS:\nPIN: ${result.login_pin}\nURL: ${typeof window !== "undefined" ? window.location.origin : ""}/?admin`} label="Copy login info" />
               </div>
               <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 8 }}>Login di <span style={{ color: CYAN, fontFamily: "'Geist Mono',monospace" }}>/?admin</span> pakai PIN ini</div>
             </div>
 
             <div style={{ padding: 14, background: "rgba(245,158,11,0.06)", border: `1px solid ${AMBER}33`, borderRadius: 10, marginBottom: 16 }}>
               <div style={{ fontSize: 11, color: AMBER, fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 6 }}>⏰ TRIAL {result.trial_days} HARI</div>
-              <div style={{ fontSize: 12, color: "#cbd5e1" }}>Berakhir {new Date(result.trial_until * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })}. Upgrade kapan saja di Admin → Billing.</div>
+              <div style={{ fontSize: 12, color: "#cbd5e1" }}>Ends {new Date(result.trial_until * 1000).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}. Upgrade anytime in Admin → Billing.</div>
             </div>
 
-            <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>🧭 LANGKAH BERIKUTNYA</div>
+            <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>🧭 NEXT STEPS</div>
             <ol style={{ margin: 0, padding: "0 0 0 20px", fontSize: 13, color: "#cbd5e1", lineHeight: 1.8 }}>
               {result.next_steps.map((s, i) => <li key={i}>{s}</li>)}
             </ol>
 
             <button onClick={() => window.location.href = "/?admin"} style={{ ...S.btnPrimary, marginTop: 20 }}>
-              🚪 Login ke Admin Sekarang
+              🚪 Log In to Admin Now
             </button>
             <button onClick={() => { setResult(null); setForm({ company_name: "", vertical: "fnb", owner_name: "", owner_phone: "", owner_email: "", owner_pin: "" }); setStep(1); }} style={{ ...S.btnGhost, marginTop: 8, width: "100%" }}>
-              + Daftar Tenant Lain
+              + Register Another Tenant
             </button>
           </div>
         )}
@@ -218,7 +218,7 @@ export default function TenantSignup() {
 
       {/* Footer */}
       <div style={{ marginTop: 20, fontSize: 11, color: "#64748b", textAlign: "center" }}>
-        Sudah punya akun? <a href="/?admin" style={{ color: CYAN, textDecoration: "none" }}>Login di sini →</a>
+        Already have an account? <a href="/?admin" style={{ color: CYAN, textDecoration: "none" }}>Log in here →</a>
       </div>
     </div>
   );
@@ -249,7 +249,7 @@ function CopyButton({ text, label }) {
       fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
       transition: "all 0.15s",
     }}>
-      {copied ? "✓ Tersalin" : "📋 " + label}
+      {copied ? "✓ Copied" : "📋 " + label}
     </button>
   );
 }

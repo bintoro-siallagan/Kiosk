@@ -57,7 +57,7 @@ export default function AdminAR({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
   const pay = (inv) => {
-    const a = window.prompt(`Catat pembayaran — ${inv.customer}\nOutstanding: ${fmtRp(inv.outstanding)}\n\nJumlah bayar:`, String(inv.outstanding));
+    const a = window.prompt(`Catat pembayaran — ${inv.customer}\nOutstanding: ${fmtRp(inv.outstanding)}\n\nQuantity bayar:`, String(inv.outstanding));
     if (a == null) return;
     fetch(`${apiBase}/api/ar/${inv.id}/pay`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount: Number(a) }),
@@ -78,13 +78,13 @@ export default function AdminAR({ apiBase = "" }) {
       </div>
 
       <ReportActions title="Accounts Receivable" subtitle="List piutang customer + aging"
-        columns={["Invoice", "Customer", "Tipe", "Jumlah", "Paid", "Outstanding", "Jatuh Tempo", "Status"]}
+        columns={["Invoice", "Customer", "Tipe", "Quantity", "Paid", "Outstanding", "Jatuh Tempo", "Status"]}
         rows={d.invoices.map(v => [v.invoice_number, v.customer, v.customer_type, v.amount, v.paid_amount, v.outstanding, fmtDate(v.due_date), v.status])} />
 
       <div style={S.kpiRow}>
         <Kpi label="Total Piutang" v={fmtRp(s.total_outstanding)} c="#3b82f6" sub="outstanding" />
         <Kpi label="Overdue" v={fmtRp(s.overdue)} c={s.overdue > 0 ? "#ef4444" : "#10b981"} sub="lewat jatuh tempo" />
-        <Kpi label="Jumlah Invoice" v={String(s.total)} c="#a78bfa" sub={`${s.paid_count} lunas`} />
+        <Kpi label="Quantity Invoice" v={String(s.total)} c="#a78bfa" sub={`${s.paid_count} lunas`} />
         <Kpi label="Not Due Yet" v={fmtRp(s.aging.current)} c="#10b981" sub="masih aman" />
       </div>
 
@@ -109,7 +109,7 @@ export default function AdminAR({ apiBase = "" }) {
             {Object.entries(TYPE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
           <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Description" style={S.input} />
-          <input value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} placeholder="Jumlah *" type="number" style={S.input} />
+          <input value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} placeholder="Quantity *" type="number" style={S.input} />
           <input value={form.due_days} onChange={e => setForm({ ...form, due_days: e.target.value })} placeholder="Tempo (day)" type="number" style={S.input} />
           <button onClick={save} style={S.btnPrimary}>+ Buat</button>
         </div>

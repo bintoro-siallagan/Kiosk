@@ -85,7 +85,7 @@ function buildReceipt(orders, reportType, dateRange, printerWidth=32) {
 
   if (reportType === "sales") {
     p.bold(true).text("RINGKASAN PENJUALAN").newline().bold(false)
-     .text(`Total Transaksi : ${completed.length}`).newline()
+     .text(`Total Transactions : ${completed.length}`).newline()
      .text(`Dibatalkan      : ${orders.filter(o=>o.status==="cancelled").length}`).newline()
      .line("-",W)
      .bold(true).text("PENDAPATAN").newline().bold(false);
@@ -203,7 +203,7 @@ export default function Report({ onBack }) {
 
   // ── Sales data
   const salesRows = [
-    { label:"Total Transaksi",    val: completed.length + " pesanan",  color:"#5AC8FA" },
+    { label:"Total Transactions",    val: completed.length + " pesanan",  color:"#5AC8FA" },
     { label:"Pendapatan Kotor",   val: formatIDR(revenue),              color:"#FF6B35" },
     { label:"PPN 11%",            val: formatIDR(tax),                  color:"#FFB800" },
     { label:"Pendapatan Bersih",  val: formatIDR(net),                  color:"#00C896" },
@@ -388,7 +388,7 @@ export default function Report({ onBack }) {
 
           {/* Print button */}
           <button style={{ ...R.printBtn, opacity: printing ? 0.6 : 1 }} onClick={handlePrint} disabled={printing}>
-            {printing ? "⏳ Mencetak..." : "🖨️ CETAK STRUK"}
+            {printing ? "⏳ Mencetak..." : "🖨️ CETAK RECEIPT"}
           </button>
         </div>
       </div>
@@ -396,7 +396,7 @@ export default function Report({ onBack }) {
       {/* PRINTER CONFIG PANEL */}
       {showPrinter && (
         <div style={R.printerPanel}>
-          <div style={R.printerPanelTitle}>⚙️ Konfigurasi Printer Epson TM-T82</div>
+          <div style={R.printerPanelTitle}>⚙️ Configuration Printer Epson TM-T82</div>
           <div style={R.printerRow}>
             <div style={R.printerField}>
               <label style={R.printerLabel}>IP Address Printer</label>
@@ -475,7 +475,7 @@ export default function Report({ onBack }) {
                       fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:20,
                       background: o.status==="completed"?"rgba(0,200,150,0.12)":o.status==="cancelled"?"rgba(255,59,48,0.12)":"rgba(255,184,0,0.12)",
                       color:      o.status==="completed"?"#00C896":o.status==="cancelled"?"#FF3B30":"#FFB800",
-                    }}>{o.status==="completed"?"Selesai":o.status==="cancelled"?"Batal":"Proses"}</span>
+                    }}>{o.status==="completed"?"Done":o.status==="cancelled"?"Batal":"Proses"}</span>
                   </span>
                 </div>
               ))}
@@ -493,7 +493,7 @@ export default function Report({ onBack }) {
                 <span style={{flex:1}}>Nama Menu</span>
                 <span style={{width:80,textAlign:"center"}}>Terjual</span>
                 <span style={{width:120,textAlign:"right"}}>Pendapatan</span>
-                <span style={{width:160}}>Grafik</span>
+                <span style={{width:160}}>Chart</span>
               </div>
               {menuRows.map(([name, d], i) => {
                 const maxQty = menuRows[0]?.[1]?.qty || 1;
@@ -545,7 +545,7 @@ export default function Report({ onBack }) {
                 <span style={{width:60}}>No</span>
                 <span style={{width:70}}>Waktu</span>
                 <span style={{flex:1}}>Metode</span>
-                <span style={{width:100,textAlign:"right"}}>Jumlah</span>
+                <span style={{width:100,textAlign:"right"}}>Quantity</span>
               </div>
               {completed.map(o => (
                 <div key={o.id} style={R.tableRow}>

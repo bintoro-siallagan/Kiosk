@@ -15,7 +15,7 @@ const STATUS = {
   waiting:   {label:"Menunggu",  short:"TUNGGU", color:"#F59E0B", bg:"rgba(245,158,11,0.1)",  ring:"rgba(245,158,11,0.3)",  icon:"⏳"},
   preparing: {label:"Diproses",  short:"PROSES",  color:"#38BDF8", bg:"rgba(56,189,248,0.1)",  ring:"rgba(56,189,248,0.3)",  icon:"👨‍🍳"},
   ready:     {label:"Siap",      short:"SIAP",    color:"#34D399", bg:"rgba(52,211,153,0.1)",  ring:"rgba(52,211,153,0.3)",  icon:"✅"},
-  completed: {label:"Selesai",   short:"SELESAI", color:"#6B7280", bg:"rgba(107,114,128,0.08)",ring:"rgba(107,114,128,0.2)", icon:"🏁"},
+  completed: {label:"Done",   short:"SELESAI", color:"#6B7280", bg:"rgba(107,114,128,0.08)",ring:"rgba(107,114,128,0.2)", icon:"🏁"},
   cancelled: {label:"Batal",     short:"BATAL",   color:"#F87171", bg:"rgba(248,113,113,0.1)", ring:"rgba(248,113,113,0.3)", icon:"✕"},
   refunded:  {label:"Refund",    short:"REFUND",  color:"#8B5CF6", bg:"rgba(139,92,246,0.1)",  ring:"rgba(139,92,246,0.3)",  icon:"↩"},
   partial_refund: {label:"Refund Sebagian", short:"PARTIAL", color:"#A78BFA", bg:"rgba(167,139,250,0.1)", ring:"rgba(167,139,250,0.3)", icon:"½"},
@@ -520,7 +520,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
     if(p>0) {
       try { const u = await api.updateMenu(id,{price:p}); setMenu(p=>p.map(m=>m.id===id?u:m)); }
       catch { setMenu(p=>p.map(m=>m.id===id?{...m,price:p}:m)); }
-      notify("Harga diperbarui ✓","#34D399");
+      notify("Price diperbarui ✓","#34D399");
     }
     setEditPrice(null); setPriceVal("");
   }
@@ -579,7 +579,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
             </div>
 
             <div style={{display:"flex",gap:8,marginBottom:16,flexWrap:"wrap"}}>
-              {["Semua","Menunggu","Diproses","Siap","Selesai"].map((f,i)=>{
+              {["Semua","Menunggu","Diproses","Siap","Done"].map((f,i)=>{
                 const keys=[null,"waiting","preparing","ready","completed"];
                 const cnt = keys[i] ? orders.filter(o=>o.status===keys[i]).length : orders.length;
                 return (

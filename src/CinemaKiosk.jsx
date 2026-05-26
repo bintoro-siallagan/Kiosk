@@ -216,7 +216,7 @@ export default function CinemaKiosk({ apiBase }) {
     const discount = computeAutoDiscount(bestAutoPromo, subtotal);
     if (discount > 0) {
       setPromoApplied({ promo: bestAutoPromo, discount, _auto: true });
-      setPromoMsg(`🎉 Diskon otomatis aktif — Hemat ${rp(discount)}`);
+      setPromoMsg(`🎉 Discount otomatis aktif — Hemat ${rp(discount)}`);
     }
     // eslint-disable-next-line
   }, [step, bestAutoPromo]);
@@ -474,7 +474,7 @@ export default function CinemaKiosk({ apiBase }) {
           <div><span style="color:#666">Jadwal</span> &nbsp;${done.show.show_date} &middot; ${done.show.start_time}</div>
           <div><span style="color:#666">Studio</span> &nbsp;${done.show.studio_name || ''}</div>
           <div><span style="color:#666">Kursi</span> &nbsp;<b style="font-size:16px">${t.seat}</b></div>
-          <div><span style="color:#666">Harga</span> &nbsp;Rp ${(t.price || 0).toLocaleString('id-ID')}</div>
+          <div><span style="color:#666">Price</span> &nbsp;Rp ${(t.price || 0).toLocaleString('id-ID')}</div>
           <div style="margin-top:8px;font-size:10px;color:#888">Tunjukkan QR ini saat masuk studio</div>
         </div>
       </div>`).join('');
@@ -794,7 +794,7 @@ export default function CinemaKiosk({ apiBase }) {
                     </div>
                     {b.description && <div style={{ fontSize: 12.5, color: "#cbd5e1", lineHeight: 1.55, marginTop: 2 }}>{b.description}</div>}
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}>
-                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{qty > 0 ? `Subtotal · ${rp(qty * b.price)}` : "Belum dipilih"}</div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{qty > 0 ? `Subtotal · ${rp(qty * b.price)}` : "Not selected"}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <button onClick={() => decBundle(b.id)} disabled={!qty} style={stepBtn(qty > 0)}>−</button>
                         <span style={{ fontFamily: "'Geist Mono',monospace", minWidth: 22, textAlign: "center", fontWeight: 800 }}>{qty}</span>

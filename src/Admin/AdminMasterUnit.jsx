@@ -11,7 +11,7 @@ const CAT_C = { Berat: "#f59e0b", Volume: "#3b82f6", Jumlah: "#10b981" };
 export default function AdminMasterUnit({ apiBase = "" }) {
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
-  const [form, setForm] = useState({ code: "", name: "", symbol: "", category: "Jumlah", conversion: "1" });
+  const [form, setForm] = useState({ code: "", name: "", symbol: "", category: "Quantity", conversion: "1" });
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/master-unit`).then(r => r.json()).then(setD).catch(() => {});

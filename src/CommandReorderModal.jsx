@@ -99,7 +99,7 @@ export default function CommandReorderModal({ item, apiBase = "", onClose, onDon
             <div style={S.priceSrc}>
               {locked === null ? "memuat harga…"
                 : locked.found
-                  ? <>🔒 Harga <b style={{ color: "#10b981" }}>locked</b> dari Price List — {fmtRp(unitPrice)}/{item.unit} · {locked.supplier || "vendor"}</>
+                  ? <>🔒 Price <b style={{ color: "#10b981" }}>locked</b> dari Price List — {fmtRp(unitPrice)}/{item.unit} · {locked.supplier || "vendor"}</>
                   : <span style={{ color: "#fcd34d" }}>⚠ Item belum ada di Price List — pakai harga estimasi {fmtRp(unitPrice)}</span>}
             </div>
             <div style={S.estRow}>

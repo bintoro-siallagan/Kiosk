@@ -117,7 +117,7 @@ export default function PromoManager({ onBack }) {
     if (form.type === "bogo") {
       if ((form.bogoMode === "same" || form.bogoMode === "cross") && !form.bogoTriggerItemId) { notify("Pilih trigger item dulu","#F87171"); return; }
       if (form.bogoMode === "cross" && !form.bogoFreeItemId) { notify("Pilih free item dulu","#F87171"); return; }
-      if (form.bogoMode === "category" && !form.bogoCategoryId) { notify("Pilih kategori dulu","#F87171"); return; }
+      if (form.bogoMode === "category" && !form.bogoCategoryId) { notify("Select category dulu","#F87171"); return; }
     }
     setSaving(true);
     const payload = {
@@ -281,7 +281,7 @@ export default function PromoManager({ onBack }) {
                   {/* Details */}
                   <div style={M.detailGrid}>
                     <div style={M.detail}><span style={M.dk}>Min. Order</span><span style={M.dv}>{fIDR(p.minOrder)}</span></div>
-                    <div style={M.detail}><span style={M.dk}>Max Diskon</span><span style={M.dv}>{fIDR(p.maxDiscount)}</span></div>
+                    <div style={M.detail}><span style={M.dk}>Max Discount</span><span style={M.dv}>{fIDR(p.maxDiscount)}</span></div>
                     <div style={M.detail}><span style={M.dk}>Berlaku s/d</span><span style={M.dv}>{fDate(p.validUntil)}</span></div>
                     <div style={M.detail}><span style={M.dk}>Khusus Member</span><span style={{...M.dv,color:p.forMember?"#38BDF8":"#555"}}>{p.forMember?"Ya":"Tidak"}</span></div>
                   </div>
@@ -340,7 +340,7 @@ export default function PromoManager({ onBack }) {
               {/* Type + Value */}
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
                 <div style={M.fieldGroup}>
-                  <label style={M.label}>Tipe Diskon</label>
+                  <label style={M.label}>Tipe Discount</label>
                   <select style={M.input} value={form.type} onChange={e=>setFV(f=>({...f,type:e.target.value}))}>
                     <option value="percent">Persen (%)</option>
                     <option value="fixed">Nominal (Rp)</option>
@@ -431,7 +431,7 @@ export default function PromoManager({ onBack }) {
                 <label style={M.label}>Deskripsi</label>
                 <input style={M.input} value={form.desc}
                   onChange={e=>setFV(f=>({...f,desc:e.target.value}))}
-                  placeholder="Diskon 10% untuk semua menu" maxLength={80}/>
+                  placeholder="Discount 10% untuk semua menu" maxLength={80}/>
               </div>
 
               {/* Hint Pembayaran (bank partnership) */}
@@ -454,7 +454,7 @@ export default function PromoManager({ onBack }) {
                     placeholder="50000" min="0"/>
                 </div>
                 <div style={M.fieldGroup}>
-                  <label style={M.label}>Max Diskon (Rp)</label>
+                  <label style={M.label}>Max Discount (Rp)</label>
                   <input style={M.input} type="number" value={form.maxDiscount}
                     onChange={e=>setFV(f=>({...f,maxDiscount:e.target.value}))}
                     placeholder="50000" min="0"/>

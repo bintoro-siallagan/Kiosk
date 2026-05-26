@@ -785,7 +785,7 @@ function WasteTab({ showToast }) {
             <input style={S.input} value={form.itemName} onChange={e => setForm(f => ({ ...f, itemName: e.target.value }))} placeholder="Nama item..." />
           </div>
           <div style={{ flex: 1, minWidth: 80 }}>
-            <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Jumlah</div>
+            <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Quantity</div>
             <input style={S.input} type="number" value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} placeholder="0" />
           </div>
           <div style={{ flex: 1, minWidth: 80 }}>
@@ -877,7 +877,7 @@ function ConfigTab({ showToast }) {
       )}
 
       <div style={S.card}>
-        <div style={S.label}>Konfigurasi Sistem</div>
+        <div style={S.label}>Configuration Sistem</div>
         {loading ? <div style={{ color: "#555" }}>Loading...</div> :
           configs.map((c, i) => {
             const isEdited = edits[c.key] !== undefined;
@@ -1064,7 +1064,7 @@ function MasterItemTab({ showToast }) {
             <input style={S.input} value={form.desc} onChange={e=>setForm(f=>({...f,desc:e.target.value}))} placeholder="Deskripsi..."/>
           </div>
           <div>
-            <div style={{fontSize:11,color:"#666",marginBottom:4}}>Harga (Rp)</div>
+            <div style={{fontSize:11,color:"#666",marginBottom:4}}>Price (Rp)</div>
             <input style={S.input} type="number" value={form.price} onChange={e=>setForm(f=>({...f,price:e.target.value}))} placeholder="50000"/>
           </div>
           <div>

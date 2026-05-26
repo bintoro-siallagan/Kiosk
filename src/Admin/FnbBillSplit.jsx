@@ -70,7 +70,7 @@ export default function FnbBillSplit({ apiBase = "" }) {
               <div key={ii} style={{ display: "grid", gridTemplateColumns: "1fr 60px 100px auto", gap: 4, marginBottom: 4 }}>
                 <input value={it.name} onChange={e => updateItem(si, ii, "name", e.target.value)} placeholder="Item" style={{ ...inp, fontSize: 12 }} />
                 <input type="number" value={it.qty} onChange={e => updateItem(si, ii, "qty", parseInt(e.target.value, 10) || 0)} style={{ ...inp, fontSize: 12 }} />
-                <input type="number" value={it.price} onChange={e => updateItem(si, ii, "price", parseInt(e.target.value, 10) || 0)} placeholder="Harga" style={{ ...inp, fontSize: 12 }} />
+                <input type="number" value={it.price} onChange={e => updateItem(si, ii, "price", parseInt(e.target.value, 10) || 0)} placeholder="Price" style={{ ...inp, fontSize: 12 }} />
                 <button onClick={() => removeItem(si, ii)} style={Ba("#ef4444")}>×</button>
               </div>
             ))}

@@ -66,7 +66,7 @@ export default function ESBNotif({ onBack }) {
       await api.setESBConfig(payload);
       const fresh = await api.getESBConfig();
       setConfig(fresh);
-      setSaveMsg({ ok:true, text:"✅ Konfigurasi berhasil disimpan" });
+      setSaveMsg({ ok:true, text:"✅ Configuration berhasil disimpan" });
     } catch (e) {
       setSaveMsg({ ok:false, text:`❌ Gagal: ${e.message}` });
     } finally {
@@ -196,7 +196,7 @@ export default function ESBNotif({ onBack }) {
 
             {/* Config form */}
             <div style={N.card}>
-              <div style={N.cardTitle}>⚙️ Konfigurasi ESB POS</div>
+              <div style={N.cardTitle}>⚙️ Configuration ESB POS</div>
               <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
                 {[
                   { key:"baseUrl",  label:"Base URL",    ph:"https://api.esb.co.id/eso-qs/v1", type:"text" },

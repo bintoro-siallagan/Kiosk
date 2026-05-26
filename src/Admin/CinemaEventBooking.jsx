@@ -119,14 +119,14 @@ export default function CinemaEventBooking({ apiBase = "" }) {
               </select>
             </Field>
             <Field label="Nama event" wide><input value={form.event_name || ""} onChange={e => setForm({ ...form, event_name: e.target.value })} placeholder="Ultah Employee PT XYZ" style={inp} /></Field>
-            <Field label="Jumlah tamu"><input type="number" value={form.attendees || 0} onChange={e => setForm({ ...form, attendees: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
+            <Field label="Quantity tamu"><input type="number" value={form.attendees || 0} onChange={e => setForm({ ...form, attendees: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
             <Field label="Date"><input type="date" value={form.event_date || ""} onChange={e => setForm({ ...form, event_date: e.target.value })} style={inp} /></Field>
             <Field label="Start"><input type="time" value={form.start_time || ""} onChange={e => setForm({ ...form, start_time: e.target.value })} style={inp} /></Field>
             <Field label="Completed"><input type="time" value={form.end_time || ""} onChange={e => setForm({ ...form, end_time: e.target.value })} style={inp} /></Field>
             <Field label="Kontak person"><input value={form.contact_name || ""} onChange={e => setForm({ ...form, contact_name: e.target.value })} style={inp} /></Field>
             <Field label="Telepon"><input value={form.contact_phone || ""} onChange={e => setForm({ ...form, contact_phone: e.target.value })} style={inp} /></Field>
             <Field label="Email"><input value={form.contact_email || ""} onChange={e => setForm({ ...form, contact_email: e.target.value })} style={inp} /></Field>
-            <Field label="Total harga (Rp)"><input type="number" value={form.total_price || 0} onChange={e => setForm({ ...form, total_price: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
+            <Field label="Total price (Rp)"><input type="number" value={form.total_price || 0} onChange={e => setForm({ ...form, total_price: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
             <Field label="DP terbayar (Rp)"><input type="number" value={form.deposit_paid || 0} onChange={e => setForm({ ...form, deposit_paid: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
             <Field label="Notes"><input value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} style={inp} /></Field>
           </div>

@@ -668,7 +668,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
            payMethod === "QRIS" ? "📱 Tampilkan QR ke Customer" :
            payMethod === "CASH" && cashReceived === 0 ? "💵 Input uang diterima dulu" :
            payMethod === "CASH" && !cashSufficient ? `⚠ Kurang Rp ${fmt(finalTotal - cashReceived)}` :
-           payMethod === "CASH" ? `✓ Konfirmasi (Kembalian Rp ${fmt(cashChange)})` :
+           payMethod === "CASH" ? `✓ Konfirmasi (Change Rp ${fmt(cashChange)})` :
            "✓ Konfirmasi Bayar"}
         </button>
 
@@ -839,7 +839,7 @@ function POSQRISFlow({ cart, subtotal, order, onCancel, onPaid }) {
           <>
             <div style={{fontSize:64,marginBottom:16}}>⏳</div>
             <h2 style={{fontSize:24,marginBottom:8}}>Membuat QR Code...</h2>
-            <p style={{color:"#888"}}>Mohon tunggu sebentar</p>
+            <p style={{color:"#888"}}>Please wait sebentar</p>
           </>
         )}
 

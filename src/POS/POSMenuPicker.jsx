@@ -114,7 +114,7 @@ export default function POSMenuPicker({ onCheckout, onExit, apiBase = '/api/mast
           <span style={styles.dot}>·</span>
           <span style={styles.muted}>Order cepat tanpa pilih meja</span>
         </div>
-        <div style={styles.kasir}>👤 {cashier?.name || "Kasir"}</div>
+        <div style={styles.kasir}>👤 {cashier?.name || "Cashier"}</div>
       </header>
 
       <div style={styles.root}>

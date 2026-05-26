@@ -86,7 +86,7 @@ export default function AdminSalesReturn({ apiBase = "" }) {
         <div style={{ display: "grid", gridTemplateColumns: "2fr 0.8fr 1fr auto", gap: 8, marginTop: 8 }}>
           <input value={form.iname} onChange={e => setForm({ ...form, iname: e.target.value })} placeholder="Nama item" style={S.input} />
           <input value={form.iqty} onChange={e => setForm({ ...form, iqty: e.target.value })} placeholder="Qty" type="number" style={S.input} />
-          <input value={form.iprice} onChange={e => setForm({ ...form, iprice: e.target.value })} placeholder="Harga/unit" type="number" style={S.input} />
+          <input value={form.iprice} onChange={e => setForm({ ...form, iprice: e.target.value })} placeholder="Price/unit" type="number" style={S.input} />
           <button onClick={addItem} style={S.btnGhost}>+ Item</button>
         </div>
         {form.items.length > 0 && (

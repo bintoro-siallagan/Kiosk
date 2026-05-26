@@ -132,7 +132,7 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
   };
 
   async function handleCloseDay() {
-    if (!window.confirm("TUTUP HARI?\n\nShift aktif ikut ditutup, dan TIDAK ADA yang bisa order sampai Manager 'Buka Hari'. Ringkasan transaksi hari ini akan dicetak" + " (& dikirim email bila email aktif).")) return;
+    if (!window.confirm("TUTUP HARI?\n\nShift aktif ikut ditutup, dan TIDAK ADA yang bisa order sampai Manager 'Buka Hari'. Summary transaksi today akan dicetak" + " (& dikirim email bila email aktif).")) return;
     try {
       const r = await fetch(`${API_BASE}/api/day/close`, {
         method: "POST",
@@ -246,7 +246,7 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
       <main style={S.main}>
         <div style={S.welcome}>
           <h2 style={S.welcomeTitle}>Halo, {cashier.name}! 👋</h2>
-          <p style={S.welcomeSub}>Siap untuk shift hari ini.</p>
+          <p style={S.welcomeSub}>Siap untuk shift today.</p>
         </div>
 
         {/* MAIN ACTION GRID — F&B default, plus Cinema button kalau outlet hybrid */}

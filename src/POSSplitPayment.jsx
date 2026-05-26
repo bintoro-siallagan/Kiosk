@@ -278,7 +278,7 @@ export default function POSSplitPayment({ order, kasir, onClose, onSuccess }) {
             {qrisStep === "loading" && (
               <>
                 <div style={{fontSize: 56, marginBottom: 16}}>⏳</div>
-                <div style={{color: "#9CA3AF", fontSize: 14}}>Mohon tunggu...</div>
+                <div style={{color: "#9CA3AF", fontSize: 14}}>Please wait...</div>
               </>
             )}
 
@@ -389,7 +389,7 @@ export default function POSSplitPayment({ order, kasir, onClose, onSuccess }) {
               )}
 
               <div style={S.fieldGroup}>
-                <label style={S.fieldLabel}>Jumlah</label>
+                <label style={S.fieldLabel}>Quantity</label>
                 <div style={S.inputRow}>
                   <span style={S.inputPrefix}>Rp</span>
                   <input
@@ -421,7 +421,7 @@ export default function POSSplitPayment({ order, kasir, onClose, onSuccess }) {
                     />
                   </div>
                   {p.change > 0 && (
-                    <div style={S.changeRow}>Kembalian: <strong>{fIDR(p.change)}</strong></div>
+                    <div style={S.changeRow}>Change: <strong>{fIDR(p.change)}</strong></div>
                   )}
                 </div>
               )}

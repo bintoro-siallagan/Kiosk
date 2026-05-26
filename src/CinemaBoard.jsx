@@ -149,7 +149,7 @@ function TodaySchedule({ data }) {
         );
       })}
       {Object.keys(grouped).length === 0 && (
-        <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "60px 0", color: "rgba(255,255,255,0.4)", fontSize: 18 }}>Tidak ada jadwal hari ini.</div>
+        <div style={{ gridColumn: "1/-1", textAlign: "center", padding: "60px 0", color: "rgba(255,255,255,0.4)", fontSize: 18 }}>Tidak ada jadwal today.</div>
       )}
     </div>
   );
@@ -201,8 +201,8 @@ function Campaigns({ data }) {
               {c.film_title && <div style={{ fontSize: 14, color: "rgba(255,255,255,0.6)", marginBottom: 8 }}>🎬 {c.film_title}</div>}
               {c.description && <div style={{ fontSize: 13.5, color: "rgba(255,255,255,0.75)", lineHeight: 1.55, marginBottom: 10 }}>{c.description}</div>}
               <div style={{ display: "flex", gap: 18, marginTop: 12, fontFamily: "'Geist Mono',monospace", fontSize: 18, alignItems: "baseline" }}>
-                {c.special_price && <div><span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, letterSpacing: 1, textTransform: "uppercase", fontWeight: 700 }}>Harga </span><b style={{ color: "#10b981", letterSpacing: -0.5 }}>{rp(c.special_price)}</b></div>}
-                {c.discount_pct > 0 && <div><span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, letterSpacing: 1, textTransform: "uppercase", fontWeight: 700 }}>Diskon </span><b style={{ color: "#fbbf24", letterSpacing: -0.5 }}>{c.discount_pct}%</b></div>}
+                {c.special_price && <div><span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, letterSpacing: 1, textTransform: "uppercase", fontWeight: 700 }}>Price </span><b style={{ color: "#10b981", letterSpacing: -0.5 }}>{rp(c.special_price)}</b></div>}
+                {c.discount_pct > 0 && <div><span style={{ color: "rgba(255,255,255,0.4)", fontSize: 11, letterSpacing: 1, textTransform: "uppercase", fontWeight: 700 }}>Discount </span><b style={{ color: "#fbbf24", letterSpacing: -0.5 }}>{c.discount_pct}%</b></div>}
               </div>
             </div>
           </div>

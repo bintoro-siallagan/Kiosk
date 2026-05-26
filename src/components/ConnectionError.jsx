@@ -25,7 +25,7 @@ export function classifyError(rawMsg) {
     return {
       kind: "network",
       title: "Sambungan sedang dipulihkan",
-      hint: "Mohon tunggu sebentar — kami akan terhubung kembali secara otomatis.",
+      hint: "Please wait sebentar — kami akan terhubung kembali secara otomatis.",
       retryable: true,
     };
   }

@@ -284,12 +284,12 @@ function CinemaOpsInner({ apiBase }) {
             <select style={{ ...inp, width: 78 }} value={f("format") || "2D"} onChange={set("format")} title="Format film">
               {FORMATS.map(fm => <option key={fm} value={fm}>{fm}</option>)}
             </select>
-            <input style={{ ...inp, width: 96 }} type="number" placeholder="Harga (auto)" value={f("price")} onChange={set("price")}
+            <input style={{ ...inp, width: 96 }} type="number" placeholder="Price (auto)" value={f("price")} onChange={set("price")}
               title="Kosongkan → harga auto-resolve per outlet × studio_type × weekday/weekend/holiday from Cinema Price List" />
             {btn("+ Schedulekan", () => add("showtimes", { film_id: f("film_id"), studio_id: f("studio_id"), show_date: f("show_date"), start_time: f("start_time"), format: f("format") || "2D", price: f("price") || 0 }))}
           </Form>
           <div style={{ fontSize: 11, color: "#5b6470", marginTop: -6, marginBottom: 10, padding: "0 4px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            💡 <b style={{ color: "#22d3ee" }}>Tip pricing:</b> <span>Kosongkan field <b>Harga</b> → backend auto-resolve per outlet × studio_type × weekday/weekend/holiday from <b style={{ color: "#fbbf24" }}>Cinema Price List</b>. Cocok for multi-outlet push.</span>
+            💡 <b style={{ color: "#22d3ee" }}>Tip pricing:</b> <span>Kosongkan field <b>Price</b> → backend auto-resolve per outlet × studio_type × weekday/weekend/holiday from <b style={{ color: "#fbbf24" }}>Cinema Price List</b>. Cocok for multi-outlet push.</span>
           </div>
 
           {/* Auto-suggest available slots — multi-select untuk bulk create */}
@@ -644,7 +644,7 @@ function CinemaOpsInner({ apiBase }) {
                       {FORMATS.map(fm => <option key={fm} value={fm}>{fm}</option>)}
                     </select>
                   </Field>
-                  <Field label="Harga"><input type="number" style={modalInp} value={editing.data.price || 0} onChange={e => setEditing({ ...editing, data: { ...editing.data, price: e.target.value } })} /></Field>
+                  <Field label="Price"><input type="number" style={modalInp} value={editing.data.price || 0} onChange={e => setEditing({ ...editing, data: { ...editing.data, price: e.target.value } })} /></Field>
                 </div>
               </div>
             )}
@@ -1056,7 +1056,7 @@ function ShowtimeTemplatesPanel({ apiBase, films, studios, onChanged }) {
                 {["2D", "3D", "IMAX", "4DX"].map(f => <option key={f} value={f}>{f}</option>)}
               </select>
             </Field>
-            <Field label="Harga (kosong=auto)"><input type="number" value={form.price || ""} onChange={e => setForm({ ...form, price: parseInt(e.target.value) || 0 })} placeholder="auto outlet pricing" style={inp} /></Field>
+            <Field label="Price (kosong=auto)"><input type="number" value={form.price || ""} onChange={e => setForm({ ...form, price: parseInt(e.target.value) || 0 })} placeholder="auto outlet pricing" style={inp} /></Field>
             <Field label="Active from (opsional)"><input type="date" value={form.active_from} onChange={e => setForm({ ...form, active_from: e.target.value })} style={inp} /></Field>
             <Field label="Sampai (opsional)"><input type="date" value={form.active_until} onChange={e => setForm({ ...form, active_until: e.target.value })} style={inp} /></Field>
           </div>

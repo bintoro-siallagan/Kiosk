@@ -34,7 +34,7 @@ export default function AdminFranchise({ apiBase = "" }) {
         <Kpi label="Network Revenue" v={fmtRp(s.network_revenue)} c="#3b82f6" sub={`${s.total_outlet} outlet`} />
         <Kpi label="Royalty Income — HQ" v={fmtRp(s.royalty_income)} c="#10b981" sub={`${pct}% revenue franchise`} />
         <Kpi label="Nilai Franchise Fee" v={fmtRp(s.franchise_fee_value)} c="#fbbf24" sub={`${s.franchise_count} kontrak`} />
-        <Kpi label="Struktur Outlet" v={`${s.hq_owned} / ${s.franchise_count}`} c="#a78bfa" sub="HQ-owned / franchise" />
+        <Kpi label="Receipttur Outlet" v={`${s.hq_owned} / ${s.franchise_count}`} c="#a78bfa" sub="HQ-owned / franchise" />
       </div>
 
       <div style={{ ...S.card, marginTop: 14 }}>

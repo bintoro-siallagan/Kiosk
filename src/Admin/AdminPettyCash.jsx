@@ -32,12 +32,12 @@ export default function AdminPettyCash({ apiBase = "" }) {
     }).then(r => r.json()).then(j => { if (j.ok) { setMsg(okMsg); load(); } else setMsg(j.error || "gagal"); }).catch(e => setMsg(String(e)));
   };
   const topup = (o) => {
-    const a = window.prompt(`Top-up kas — ${o.outlet}\nBalance: ${fmtRp(o.balance)}\n\nJumlah top-up:`, "1000000");
+    const a = window.prompt(`Top-up kas — ${o.outlet}\nBalance: ${fmtRp(o.balance)}\n\nQuantity top-up:`, "1000000");
     if (a == null) return;
     act("topup", { outlet: o.outlet, amount: Number(a), by: "Finance" }, `✓ Top-up ${o.outlet} ${fmtRp(Number(a))}`);
   };
   const expense = (o) => {
-    const a = window.prompt(`Pengeluaran kas — ${o.outlet}\nBalance: ${fmtRp(o.balance)}\n\nJumlah:`, "");
+    const a = window.prompt(`Pengeluaran kas — ${o.outlet}\nBalance: ${fmtRp(o.balance)}\n\nQuantity:`, "");
     if (a == null || !(Number(a) > 0)) return;
     const desc = window.prompt("Description pengeluaran:", "") || "Pengeluaran";
     act("expense", { outlet: o.outlet, amount: Number(a), description: desc, by: "Outlet Manager" }, `✓ Pengeluaran ${o.outlet} dicatat`);

@@ -24,7 +24,7 @@ export default function TrialBanner({ onUpgrade }) {
   if (t.status === "paused" || t.status === "cancelled") {
     return (
       <Banner color={RED}>
-        🚫 <b>Akun dijeda — {t.notes || "Subscription expired"}</b>. Hubungi admin Karys atau lunasi invoice untuk re-aktifasi.
+        🚫 <b>Account suspended — {t.notes || "Subscription expired"}</b>. Contact Karys admin or settle invoice to reactivate.
       </Banner>
     );
   }
@@ -33,7 +33,7 @@ export default function TrialBanner({ onUpgrade }) {
   if (isTrial && daysLeft != null && daysLeft <= 5) {
     return (
       <Banner color={daysLeft <= 1 ? RED : AMBER}>
-        ⏰ Trial tersisa <b>{daysLeft} hari</b>. Upgrade sekarang biar gak putus akses.
+        ⏰ Trial expires in <b>{daysLeft} days</b>. Upgrade now to keep access uninterrupted.
         <button onClick={onUpgrade} style={btn(daysLeft <= 1 ? RED : AMBER)}>Lihat Plan →</button>
       </Banner>
     );

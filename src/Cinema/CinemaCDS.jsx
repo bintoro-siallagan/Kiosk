@@ -380,7 +380,7 @@ export default function CinemaCDS() {
           {todayShows.length === 0 ? (
             <div style={{ padding: 40, textAlign: "center", color: "#7d8590", fontSize: 14 }}>
               🎞️ Belum ada jadwal tersisa hari ini.
-              <br /><span style={{ fontSize: 12, marginTop: 8, display: "inline-block" }}>Cek jadwal besok di counter atau tanya kasir.</span>
+              <br /><span style={{ fontSize: 12, marginTop: 8, display: "inline-block" }}>Cek jadwal tomorrow di counter atau tanya kasir.</span>
             </div>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>

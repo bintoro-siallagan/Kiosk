@@ -30,7 +30,7 @@ const FEATURE_GROUPS = [
   { name: "👥 HR & Payroll",      codes: ["hr","hris","payroll","shift_roster","attendance","talenta","motivation"], desc: "Employee + Payroll + Shift + Talenta sync" },
   { name: "🎯 Marketing & CRM",   codes: ["marketing","campaign","crm","broadcast","geo_engagement","clv_churn"], desc: "Kampanye + Broadcast + Geo Engagement + Churn Analysis" },
   { name: "🏪 Multi-Outlet & Field Ops", codes: ["multi_outlet","remote_ops","launch","service_visit","incidents"], desc: "Multi-outlet + KROC + KOLR + Service Visit + Incidents" },
-  { name: "🎬 Cinema Suite",      codes: ["cinema_all"], desc: "Cinema POS + Showtime + Loyalty + Subscription + Party + Pajak Hiburan" },
+  { name: "🎬 Cinema Suite",      codes: ["cinema_all"], desc: "Cinema POS + Showtime + Loyalty + Subscription + Party + Tax Hiburan" },
   { name: "🛡️ Enterprise Compliance", codes: ["quality","internal_audit","document_hub","helpdesk","risk","contract","rfq","signage","compliance"], desc: "Quality + Audit + Doc Hub + Risk + Contract + Signage" },
 ];
 
@@ -319,7 +319,7 @@ function PlansCatalog({ plans, currentPlan, onUpgrade }) {
 
             <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", fontFamily: "'Geist Mono',monospace" }}>{fmtIDR(p.monthly_price_idr)}<span style={{ fontSize: 12, color: "#64748b", fontWeight: 400 }}> / month</span></div>
-              <div style={{ fontSize: 11, color: GREEN, marginTop: 2 }}>atau {fmtIDR(p.annual_price_idr)}/tahun (hemat 2 bulan)</div>
+              <div style={{ fontSize: 11, color: GREEN, marginTop: 2 }}>atau {fmtIDR(p.annual_price_idr)}/year (save 2 months)</div>
             </div>
 
             <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 6 }}>YANG KAMU DAPAT</div>
@@ -346,7 +346,7 @@ function PlansCatalog({ plans, currentPlan, onUpgrade }) {
                   <div style={{ padding: 10, textAlign: "center", fontSize: 12, color: planColor, fontWeight: 700, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, background: `${planColor}11`, borderRadius: 8 }}>✓ AKTIF</div>
                 ) : isDowngrade ? (
                   <button disabled style={{ width: "100%", padding: 12, background: "rgba(255,255,255,0.04)", border: "1px dashed rgba(255,255,255,0.15)", borderRadius: 8, color: "#64748b", fontWeight: 700, fontSize: 12, cursor: "not-allowed", fontFamily: "inherit" }}>
-                    Downgrade — hubungi support
+                    Downgrade — contact support
                   </button>
                 ) : (
                   <button onClick={() => onUpgrade(p)} style={{
@@ -367,7 +367,7 @@ function PlansCatalog({ plans, currentPlan, onUpgrade }) {
 
 // ─── TENANT VIEW ───
 function TenantView({ my, plans, API }) {
-  if (my?.no_billing) return <div style={{ padding: 40, textAlign: "center", color: "#94a3b8" }}>⚠ No subscription. Hubungi admin Karys.</div>;
+  if (my?.no_billing) return <div style={{ padding: 40, textAlign: "center", color: "#94a3b8" }}>⚠ No subscription. Contact Karys admin.</div>;
   const t = my.tenant;
   const isTrial = t?.plan_code === "TRIAL";
   const trialDaysLeft = isTrial && t?.trial_until ? Math.max(0, Math.ceil((t.trial_until - Date.now()/1000) / 86400)) : null;

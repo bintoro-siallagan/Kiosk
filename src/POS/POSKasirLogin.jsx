@@ -246,7 +246,7 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
 
       {/* KPI STATS */}
       <div style={styles.statsRow}>
-        <StatCard label="Revenue hari ini" value={fmtIDR(stats.revenue)} color="#f97316" />
+        <StatCard label="Revenue today" value={fmtIDR(stats.revenue)} color="#f97316" />
         <StatCard label="Orders" value={stats.orders} color="#fff" />
         <StatCard label="Anomali" value={stats.anomalies} color={stats.anomalies > 0 ? '#fbbf24' : '#4ade80'} />
       </div>
@@ -255,7 +255,7 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
         <div style={{textAlign:'center', padding:'48px 24px'}}>
           <div style={{fontSize:72, marginBottom:12}}>🌙</div>
           <div style={{fontSize:26, fontWeight:800, color:'#f59e0b', letterSpacing:1, marginBottom:10}}>HARI DITUTUP</div>
-          <div style={{fontSize:14, color:'#9ca3af', lineHeight:1.6, marginBottom:30}}>Operasional hari ini sudah ditutup Manager.<br/>Buka hari dulu untuk mulai melayani lagi.</div>
+          <div style={{fontSize:14, color:'#9ca3af', lineHeight:1.6, marginBottom:30}}>Operasional today sudah ditutup Manager.<br/>Open day dulu untuk mulai melayani lagi.</div>
           <button onClick={handleOpenDay} style={{background:'#f59e0b', color:'#111', border:'none', borderRadius:14, padding:'16px 40px', fontSize:16, fontWeight:800, cursor:'pointer'}}>☀️ Buka Hari</button>
         </div>
       ) : (

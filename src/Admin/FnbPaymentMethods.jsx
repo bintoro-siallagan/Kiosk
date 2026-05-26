@@ -18,7 +18,7 @@ export default function FnbPaymentMethods({ apiBase = "" }) {
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>💳 Payment Methods Master</div>
-        <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Edit payment buttons · push to outlet · kategori (Cash/Card/Comp/FOC/Diskon Employee/dst).</div>
+        <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Edit payment buttons · push to outlet · kategori (Cash/Card/Comp/FOC/Discount Employee/dst).</div>
       </div>
       <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
         {[["methods", "💳 Methods"], ["categories", "📂 Categories"]].map(([id, l]) => (
@@ -88,7 +88,7 @@ function MethodsTab({ base, showToast }) {
           <div style={{ fontSize: 13, fontWeight: 700, color: form.color, marginBottom: 10 }}>{editing === "new" ? "Method baru" : `Edit #${editing}`}</div>
           <div style={{ display: "grid", gridTemplateColumns: "120px 1fr 1fr 1fr 80px", gap: 8 }}>
             <Field label="Code (slug)"><input value={form.code} onChange={e => setForm({ ...form, code: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_") })} placeholder="staff_discount" style={{ ...inp, fontFamily: "'Geist Mono',monospace" }} /></Field>
-            <Field label="Nama tampilan"><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Diskon Employee" style={inp} /></Field>
+            <Field label="Nama tampilan"><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Discount Employee" style={inp} /></Field>
             <Field label="Kategori">
               <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} style={inp}>
                 {cats.map(c => <option key={c.code} value={c.code}>{c.icon} {c.name}</option>)}

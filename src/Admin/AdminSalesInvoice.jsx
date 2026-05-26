@@ -21,7 +21,7 @@ export default function AdminSalesInvoice({ apiBase = "" }) {
   useEffect(() => { load(); }, [load]);
 
   const pay = (inv) => {
-    const a = window.prompt(`Catat pembayaran — ${inv.invoice_no}\nTotal ${fmtRp(inv.total)} · sisa ${fmtRp(inv.outstanding)}\n\nJumlah bayar:`, String(inv.outstanding));
+    const a = window.prompt(`Catat pembayaran — ${inv.invoice_no}\nTotal ${fmtRp(inv.total)} · sisa ${fmtRp(inv.outstanding)}\n\nQuantity bayar:`, String(inv.outstanding));
     if (a == null || !(Number(a) > 0)) return;
     fetch(`${apiBase}/api/sales-invoice/${inv.id}/pay`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount: Number(a) }),

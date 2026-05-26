@@ -207,7 +207,7 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
         <div style={{display: 'flex', alignItems: 'center', gap: 16}}>
           {stats && (
             <div style={styles.statSmall}>
-              <span style={{color: '#9ca3af'}}>Selesai hari ini:</span> <b style={{color: '#fff'}}>{stats.completed_today?.total || 0}</b>
+              <span style={{color: '#9ca3af'}}>Selesai today:</span> <b style={{color: '#fff'}}>{stats.completed_today?.total || 0}</b>
               <span style={{color: '#9ca3af', marginLeft: 8}}>Avg prep:</span> <b style={{color: '#fff'}}>{stats.completed_today?.avg_prep ? `${Math.round(stats.completed_today.avg_prep)}d` : '-'}</b>
             </div>
           )}

@@ -53,7 +53,7 @@ function fullDate(epoch) {
 }
 
 const STATUS_META = {
-  completed: { label: "Selesai", color: "#10B981", bg: "rgba(16,185,129,0.12)", emoji: "✓" },
+  completed: { label: "Done", color: "#10B981", bg: "rgba(16,185,129,0.12)", emoji: "✓" },
   cancelled: { label: "Dibatalkan", color: "#EF4444", bg: "rgba(239,68,68,0.12)", emoji: "✕" },
   refunded: { label: "Refund Penuh", color: "#F97316", bg: "rgba(249,115,22,0.12)", emoji: "↻" },
   partial_refund: { label: "Refund Sebagian", color: "#F97316", bg: "rgba(249,115,22,0.12)", emoji: "↻" },
@@ -71,7 +71,7 @@ function statusOf(s) {
 const SOURCE_META = {
   customer_portal: { label: "KaryaOS", color: BRAND },
   kiosk: { label: "Kiosk", color: "#3B82F6" },
-  pos: { label: "Kasir", color: "#8B5CF6" },
+  pos: { label: "Cashier", color: "#8B5CF6" },
 };
 
 const ACTIVE_STATUSES = ["waiting", "received", "preparing", "in_progress", "ready"];
@@ -173,7 +173,7 @@ export default function FlowHistory({ session, addToCart, setScreen }) {
         {[
           { id: "all", label: `Semua (${orders.length})` },
           { id: "active", label: `Aktif (${stats.active})` },
-          { id: "completed", label: "Selesai" }
+          { id: "completed", label: "Done" }
         ].map(t => (
           <button key={t.id} onClick={() => setFilter(t.id)} style={{
             padding: "8px 14px", borderRadius: 999,
@@ -312,7 +312,7 @@ export default function FlowHistory({ session, addToCart, setScreen }) {
               {SOURCE_META[detail.source] && (
                 <Row label="Channel" value={SOURCE_META[detail.source].label} />
               )}
-              {detail.kasir && <Row label="Kasir" value={detail.kasir} />}
+              {detail.kasir && <Row label="Cashier" value={detail.kasir} />}
             </div>
 
             <div style={{ marginBottom: 14 }}>

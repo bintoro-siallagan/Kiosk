@@ -90,7 +90,7 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
 
     let out = initPrinter;
     out += center + bold + doubleSize + kioskName + '\n' + normalSize + boldOff;
-    out += center + 'Struk Pesanan\n';
+    out += center + 'Receipt Pesanan\n';
     out += '--------------------------------\n';
     out += left + `No: ${order.ref}\n`;
     out += `Tanggal: ${fmtDateTime(order.paid_at)}\n`;
@@ -110,11 +110,11 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
     out += '--------------------------------\n';
     out += `Subtotal: ${fmtIDR(calc.subtotal).padStart(20)}\n`;
     if (calc.loyaltyDiscount > 0) {
-      out += `Diskon Loyalty: ${('-' + fmtIDR(calc.loyaltyDiscount)).padStart(16)}\n`;
+      out += `Discount Loyalty: ${('-' + fmtIDR(calc.loyaltyDiscount)).padStart(16)}\n`;
     }
     out += bold + `TOTAL: ${fmtIDR(calc.grandTotal).padStart(20)}\n` + boldOff;
     if (calc.taxes.length > 0) {
-      out += 'Harga termasuk pajak:\n';
+      out += 'Price termasuk pajak:\n';
       for (const t of calc.taxes) {
         out += `  ${t.name} ${(t.rate*100).toFixed(0)}%: ${fmtIDR(t.amount).padStart(12)}\n`;
       }
@@ -227,13 +227,13 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
           ))}
           {calc.loyaltyDiscount > 0 && (
             <div style={detailRow}>
-              <span style={detailLabel}>🏅 Diskon Loyalty</span>
+              <span style={detailLabel}>🏅 Discount Loyalty</span>
               <span style={{...detailValue, color: '#34d399'}}>−{fmtIDR(calc.loyaltyDiscount)}</span>
             </div>
           )}
           {calc.change > 0 && (
             <div style={detailRow}>
-              <span style={detailLabel}>💰 Kembalian</span>
+              <span style={detailLabel}>💰 Change</span>
               <span style={{...detailValue, color: '#34d399', fontWeight: 800}}>{fmtIDR(calc.change)}</span>
             </div>
           )}
@@ -246,7 +246,7 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
         {/* Hidden printable receipt — for actual print/PDF (not shown) */}
         <div ref={printRef} style={{...receipt, position: 'absolute', left: '-9999px', top: 0}}>
           <h1 className="center" style={{textAlign:'center', fontSize:18, margin:'8px 0'}}>{kioskName}</h1>
-          <div className="center" style={{textAlign:'center', fontSize:11, color:'#666'}}>Struk Pesanan</div>
+          <div className="center" style={{textAlign:'center', fontSize:11, color:'#666'}}>Receipt Pesanan</div>
           <hr style={dashLine}/>
           <div className="row" style={row}><span>No:</span><b>{order.ref}</b></div>
           <div className="row" style={row}><span>Tanggal:</span><span>{fmtDateTime(order.paid_at || Math.floor(Date.now()/1000))}</span></div>
@@ -268,11 +268,11 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
           ))}
           <hr style={dashLine}/>
           <div className="row" style={row}><span>Subtotal</span><b>{fmtIDR(calc.subtotal)}</b></div>
-          {calc.loyaltyDiscount > 0 && <div className="row" style={row}><span>🏅 Diskon Loyalty</span><span>−{fmtIDR(calc.loyaltyDiscount)}</span></div>}
+          {calc.loyaltyDiscount > 0 && <div className="row" style={row}><span>🏅 Discount Loyalty</span><span>−{fmtIDR(calc.loyaltyDiscount)}</span></div>}
           <div className="row total" style={{...row, ...total}}><b>TOTAL</b><b>{fmtIDR(calc.grandTotal)}</b></div>
           {calc.taxes.length > 0 && (
             <div style={{fontSize:10, color:'#666', marginTop:4}}>
-              <div>Harga sudah termasuk pajak:</div>
+              <div>Price sudah termasuk pajak:</div>
               {calc.taxes.map(t => (
                 <div key={t.id} className="row" style={{...row, paddingLeft:12}}>
                   <span>{t.name} ({(t.rate*100).toFixed(0)}%)</span>

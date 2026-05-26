@@ -86,7 +86,7 @@ export default function CommandHRIS() {
           <div style={{ fontSize: 46, fontWeight: 800, color: prodCol(avgProd || 0), fontFamily: MONO, lineHeight: 1.1 }}>
             {avgProd ?? "—"}
           </div>
-          <div style={{ fontSize: 12, color: "#777" }}>rata-rata produktivitas staff hari ini</div>
+          <div style={{ fontSize: 12, color: "#777" }}>rata-rata produktivitas staff today</div>
         </div>
         <div style={S.card}>
           <div style={S.kicker}>💰 PAYROLL STATUS</div>

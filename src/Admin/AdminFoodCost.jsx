@@ -29,7 +29,7 @@ export default function AdminFoodCost({ apiBase = "" }) {
       </div>
 
       <ReportActions title="Food Cost" subtitle="Food cost & margin per menu"
-        columns={["Menu", "Kategori", "Harga Jual", "Food Cost", "Food Cost %", "Margin %"]}
+        columns={["Menu", "Kategori", "Price Jual", "Food Cost", "Food Cost %", "Margin %"]}
         rows={d.items.map(i => [i.name, i.category, i.price, i.food_cost, i.food_cost_pct + "%", i.margin_pct + "%"])} />
 
       <div style={S.kpiRow}>

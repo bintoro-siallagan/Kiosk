@@ -175,7 +175,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
     const cogs = num(b.cogs?.total);
     if (cogs > 0) expItems.unshift({ name: 'COGS / HPP', amount: cogs });
     const tax = num(b.tax?.total);
-    if (tax > 0) expItems.push({ name: 'Pajak', amount: tax });
+    if (tax > 0) expItems.push({ name: 'Tax', amount: tax });
     const expTotal = expItems.reduce((s, e) => s + e.amount, 0);
     return {
       revenue: { total: revTotal, items: [{ name: 'Sales (Net)', amount: revTotal }] },

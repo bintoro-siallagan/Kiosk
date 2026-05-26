@@ -35,7 +35,7 @@ export default function CommandPromo() {
       <div style={S.kpiRow}>
         <Kpi label="Promo Aktif" value={String(s.active)} accent="#10b981" sub={`dari ${s.total} total promo`} />
         <Kpi label="Total Redemption" value={fmtK(s.total_redemptions)} accent="#3b82f6" sub="kali promo dipakai" />
-        <Kpi label="Est. Diskon Diberikan" value={"Rp " + fmtK(s.est_discount)} accent="#a78bfa" sub="biaya promo (estimasi)" />
+        <Kpi label="Est. Discount Diberikan" value={"Rp " + fmtK(s.est_discount)} accent="#a78bfa" sub="biaya promo (estimasi)" />
         <Kpi label="Promo Idle" value={String(s.idle)} accent={s.idle > 0 ? "#ef4444" : "#10b981"}
           sub={s.idle > 0 ? "gak kepake — perlu dievaluasi" : "semua promo kepake"} />
       </div>

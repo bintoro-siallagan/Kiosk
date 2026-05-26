@@ -83,7 +83,7 @@ export default function CinemaBundles({ apiBase = "" }) {
             <Field label="Nama">
               <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Combo Popcorn + Coke" style={inp} />
             </Field>
-            <Field label="Harga (Rp)">
+            <Field label="Price (Rp)">
               <input type="number" value={form.price} onChange={e => setForm({ ...form, price: parseInt(e.target.value, 10) || 0 })} style={inp} />
             </Field>
             <Field label="Description" wide>

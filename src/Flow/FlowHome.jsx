@@ -86,7 +86,7 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
         <ActionCard icon="📦" title="Pesanan Aktif" subtitle="Track status pesanan" accent="#3B82F6" comingSoon />
         <ActionCard icon="🎁" title="Tukar Poin" subtitle={points >= 100 ? "Bisa redeem!" : "Min 100 poin"} accent="#8B5CF6" onClick={() => onNavigate("redeem")} />
         <ActionCard icon="🎉" title="Promo" subtitle="Promo aktif" accent="#EC4899" onClick={() => onNavigate("promos")} />
-        <ActionCard icon="📜" title="Riwayat" subtitle={`${visits} order sebelumnya`} accent="#6366F1" onClick={() => onNavigate("history")} />
+        <ActionCard icon="📜" title="History" subtitle={`${visits} order sebelumnya`} accent="#6366F1" onClick={() => onNavigate("history")} />
       </div>
 
       {cartCount > 0 && (

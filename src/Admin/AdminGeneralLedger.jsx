@@ -104,7 +104,7 @@ export default function AdminGeneralLedger({ apiBase = "" }) {
             <option value="">— Account Credit —</option>
             {allAccounts.map(a => <option key={a.code} value={a.code}>{a.code} {a.name}</option>)}
           </select>
-          <input value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} placeholder="Jumlah" type="number" style={S.input} />
+          <input value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} placeholder="Quantity" type="number" style={S.input} />
           <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Description" style={S.input} />
           <button onClick={post} style={S.btn}>Posting</button>
         </div>

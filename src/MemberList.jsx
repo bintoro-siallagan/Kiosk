@@ -258,7 +258,7 @@ export default function MemberList({ onBack }) {
               <div style={M.cardLabel}>TIMELINE</div>
               <div style={{display:"flex",flexDirection:"column",gap:8}}>
                 {[
-                  {label:"Daftar", val:fDate(selected.createdAt)},
+                  {label:"List", val:fDate(selected.createdAt)},
                   {label:"Kunjungan Terakhir", val:fAgo(selected.lastVisit)},
                   {label:"Status", val:selected.tags?.includes("vip")?"⭐ VIP":selected.tags?.includes("member")?"🎫 Member":"🆕 Baru"},
                 ].map((r,i)=>(

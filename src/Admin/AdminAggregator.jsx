@@ -469,7 +469,7 @@ function ManualEntry({ providers, apiBase, onSaved }) {
         <div key={i} style={{display: 'grid', gridTemplateColumns: '2fr 60px 1fr auto', gap: 8, marginBottom: 6}}>
           <input value={it.display_name} onChange={e => updateItem(i, 'display_name', e.target.value)} style={styles.input} placeholder="Nama item" />
           <input type="number" min="1" value={it.qty} onChange={e => updateItem(i, 'qty', e.target.value)} style={styles.input} />
-          <input type="number" min="0" value={it.display_price} onChange={e => updateItem(i, 'display_price', e.target.value)} style={styles.input} placeholder="Harga" />
+          <input type="number" min="0" value={it.display_price} onChange={e => updateItem(i, 'display_price', e.target.value)} style={styles.input} placeholder="Price" />
           <button onClick={() => removeItem(i)} style={{...styles.rejectBtn, padding: '6px 10px'}}>×</button>
         </div>
       ))}

@@ -316,7 +316,7 @@ export default function FlowCheckout({
           {qrStep === "loading" && (<>
             <div style={S.qrLoadingIcon}>⏳</div>
             <div style={S.qrLoadingTitle}>Membuat QR Code...</div>
-            <div style={S.qrLoadingSub}>Mohon tunggu sebentar</div>
+            <div style={S.qrLoadingSub}>Please wait sebentar</div>
           </>)}
 
           {qrStep === "waiting" && qrData && (<>

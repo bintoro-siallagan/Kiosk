@@ -67,7 +67,7 @@ export default function AdminConvenienceFee({ apiBase = "" }) {
         </label>
 
         <label style={S.row}>
-          <span style={S.lbl}>Jumlah fee (Rp)</span>
+          <span style={S.lbl}>Quantity fee (Rp)</span>
           <input type="number" value={cfg.amount} onChange={e => setCfg({ ...cfg, amount: Number(e.target.value) })} style={S.input} />
         </label>
 

@@ -369,7 +369,7 @@ function TopBar({ cashier, stage, onLogout, onHome }) {
           <div style={{ fontSize: 13.5, fontWeight: 700, color: "#fff" }}>{cashier?.name || "—"}</div>
         </div>
         <button onClick={async () => {
-          if (!window.confirm("TUTUP HARI?\n\nShift aktif ikut ditutup. Customer tidak bisa beli tiket sampai Manager 'Buka Hari' lagi. Pastikan semua transaksi cinema hari ini sudah ditutup.")) return;
+          if (!window.confirm("TUTUP HARI?\n\nShift aktif ikut ditutup. Customer tidak bisa beli tiket sampai Manager 'Buka Hari' lagi. Pastikan semua transaksi cinema today sudah ditutup.")) return;
           try {
             const r = await fetch('/api/day/close', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ by: cashier?.name || 'Manager Cinema' }) });
             const j = await r.json();
@@ -1203,7 +1203,7 @@ function Pay({ picked, saleData, paymentMethod, buyer, setBuyer, cashier, onBack
                   onChange: (v) => setBuyer && setBuyer({ ...buyer, phone: v }),
                   label: "📱 NOMOR WA CUSTOMER",
                 })}
-                placeholder="Tap untuk input nomor"
+                placeholder="Tap to input nomor"
                 inputMode="tel"
                 style={{ ...S.input, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700, cursor: "pointer" }} />
               <div style={{ fontSize: 10, color: buyer.phone ? TH.green : TH.dim, marginTop: 4, fontWeight: 700 }}>
@@ -1245,7 +1245,7 @@ function Pay({ picked, saleData, paymentMethod, buyer, setBuyer, cashier, onBack
                 background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.4)", borderRadius: 10,
                 display: "flex", justifyContent: "space-between", alignItems: "center",
               }}>
-                <span style={{ fontSize: 14, color: TH.green, fontWeight: 700 }}>💰 Kembalian</span>
+                <span style={{ fontSize: 14, color: TH.green, fontWeight: 700 }}>💰 Change</span>
                 <span style={{ fontSize: 22, color: TH.green, fontWeight: 800, fontFamily: "'Geist Mono',monospace" }}>{rp(change)}</span>
               </div>
             )}

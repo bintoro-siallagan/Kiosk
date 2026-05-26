@@ -106,7 +106,7 @@ export default function CommandOutletDetail({ outletId, onBack }) {
         <div style={S.card}>
           <div style={S.kicker}>💰 SALES HARI INI</div>
           <Big v={"Rp " + fmtK(d.sales.revenue)} c="#10b981" />
-          <Row k="Growth vs kemarin" v={(d.sales.growth_pct >= 0 ? "+" : "") + d.sales.growth_pct + "%"} c={d.sales.growth_pct >= 0 ? "#10b981" : "#ef4444"} />
+          <Row k="Growth vs yesterday" v={(d.sales.growth_pct >= 0 ? "+" : "") + d.sales.growth_pct + "%"} c={d.sales.growth_pct >= 0 ? "#10b981" : "#ef4444"} />
           <Row k="Capaian target" v={d.sales.target_pct + "%"} />
           <Row k="Transaksi" v={String(d.sales.transactions)} />
           <Row k="Avg bill" v={"Rp " + fmtK(d.sales.avg_bill)} />

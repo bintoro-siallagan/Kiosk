@@ -23,7 +23,7 @@ export default function ShiftManager({ onBack }) {
 
   // Open shift form
   const [openForm, setOpenForm]    = useState(false);
-  const [kasirName, setKasirName]  = useState(localStorage.getItem("adminName")||"Kasir");
+  const [kasirName, setKasirName]  = useState(localStorage.getItem("adminName")||"Cashier");
   const [openCash, setOpenCash]    = useState("");
 
   // Close shift form
@@ -359,7 +359,7 @@ export default function ShiftManager({ onBack }) {
                   <span style={{fontWeight:700,color:"#F59E0B"}}>{shift.totalOrders}</span>
                 </div>
                 <div style={S.shiftRow}>
-                  <span style={{color:"#888",fontSize:13}}>Total Pendapatan</span>
+                  <span style={{color:"#888",fontSize:13}}>Total Revenue</span>
                   <span style={{fontWeight:700,color:"#34D399"}}>{fIDR(shift.totalRevenue)}</span>
                 </div>
                 <div style={S.shiftRow}>

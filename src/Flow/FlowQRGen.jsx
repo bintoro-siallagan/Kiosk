@@ -157,7 +157,7 @@ export default function FlowQRGen() {
               />
             </div>
             <div style={{flex: 1}}>
-              <div style={S.fieldLabel}>Jumlah Meja</div>
+              <div style={S.fieldLabel}>Quantity Meja</div>
               <input
                 type="number"
                 min="1" max="100"

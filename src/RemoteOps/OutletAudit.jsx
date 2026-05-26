@@ -239,11 +239,11 @@ function FillStep({ outletName, managerName, templates, items, updateItem, onPho
               📍 {gpsErr || "GPS belum tersedia"} — Tap aktifkan
             </button>
           )}
-          {alreadySubmitted && <span style={{ color: AMBER }}>⚠ Sudah submit hari ini, submission akan replace</span>}
+          {alreadySubmitted && <span style={{ color: AMBER }}>⚠ Sudah submit today, submission akan replace</span>}
         </div>
         {gpsErr && !gps && (
           <div style={{ marginTop: 8, padding: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, fontSize: 11, color: "#fca5a5", lineHeight: 1.55 }}>
-            <b>iPhone:</b> Pengaturan → Safari → Lokasi → <b>Tanya</b><br/>
+            <b>iPhone:</b> Settings → Safari → Lokasi → <b>Tanya</b><br/>
             <b>Android:</b> Tap ikon 🔒 di address bar → Izinkan Lokasi<br/>
             Lalu refresh halaman atau tap tombol di atas.
           </div>
@@ -293,7 +293,7 @@ function FillStep({ outletName, managerName, templates, items, updateItem, onPho
                         <div style={{ position: "absolute", bottom: 6, left: 6, padding: "3px 8px", background: "rgba(0,0,0,0.7)", borderRadius: 4, fontSize: 9, color: GREEN, fontWeight: 700, fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5 }}>✓ LIVE</div>
                       </div>
                     ) : (
-                      <CameraCapture facingMode="environment" label="Tap untuk Ambil Foto" onCapture={(dataUrl) => onPhoto(t.code, dataUrl)} />
+                      <CameraCapture facingMode="environment" label="Tap to Ambil Foto" onCapture={(dataUrl) => onPhoto(t.code, dataUrl)} />
                     )}
                   </div>
                 )}
@@ -326,7 +326,7 @@ function FillStep({ outletName, managerName, templates, items, updateItem, onPho
       {/* Final notes */}
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 6 }}>CATATAN UMUM (opsional)</div>
-        <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Issue atau highlight hari ini…"
+        <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} placeholder="Issue atau highlight today…"
           style={{...inp, resize: "vertical", fontFamily: "inherit"}} />
       </div>
 

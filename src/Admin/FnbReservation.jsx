@@ -53,7 +53,7 @@ export default function FnbReservation({ apiBase = "" }) {
             <Field label="Email"><input value={form.customer_email} onChange={e => setForm({ ...form, customer_email: e.target.value })} style={inp} /></Field>
             <Field label="Date"><input type="date" value={form.reservation_date} onChange={e => setForm({ ...form, reservation_date: e.target.value })} style={inp} /></Field>
             <Field label="Jam"><input type="time" value={form.reservation_time} onChange={e => setForm({ ...form, reservation_time: e.target.value })} style={inp} /></Field>
-            <Field label="Jumlah tamu"><input type="number" min="1" value={form.party_size} onChange={e => setForm({ ...form, party_size: parseInt(e.target.value, 10) || 1 })} style={inp} /></Field>
+            <Field label="Quantity tamu"><input type="number" min="1" value={form.party_size} onChange={e => setForm({ ...form, party_size: parseInt(e.target.value, 10) || 1 })} style={inp} /></Field>
             <Field label="Nomor meja (preferensi)"><input value={form.table_number} onChange={e => setForm({ ...form, table_number: e.target.value })} style={inp} /></Field>
             <Field label="Occasion"><input value={form.occasion} onChange={e => setForm({ ...form, occasion: e.target.value })} placeholder="Ulang year / Anniversary" style={inp} /></Field>
             <Field label="Outlet"><input value={form.outlet} onChange={e => setForm({ ...form, outlet: e.target.value })} style={inp} /></Field>

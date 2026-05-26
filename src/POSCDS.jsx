@@ -13,7 +13,7 @@ const STAGES = [
   { key: "waiting",   label: "Diterima",     emoji: "📝", color: "#94A3B8" },
   { key: "preparing", label: "Disiapkan",    emoji: "👨‍🍳", color: "#FF6B35" },
   { key: "ready",     label: "Siap Diambil", emoji: "🔔", color: "#10B981" },
-  { key: "completed", label: "Selesai",      emoji: "✅", color: "#22C55E" },
+  { key: "completed", label: "Done",      emoji: "✅", color: "#22C55E" },
 ];
 
 const fmt = (n) => "Rp " + (n || 0).toLocaleString("id-ID");
@@ -759,7 +759,7 @@ function CDSCart({ state }) {
             </div>
             {state.cashChange > 0 && (
               <div style={S.cashTransparencyChange}>
-                <span style={S.cashTrChangeLabel}>Kembalian Anda</span>
+                <span style={S.cashTrChangeLabel}>Change Anda</span>
                 <span style={S.cashTrChangeValue}>{fmt(state.cashChange)}</span>
               </div>
             )}

@@ -56,7 +56,7 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
   };
 
   const remove = async (gr) => {
-    const ok = await confirmDlg({ title: "Hapus GR?", message: `Hapus ${gr.gr_number}? This action tidak dapat dibatalkan.`, danger: true, okLabel: "Delete" });
+    const ok = await confirmDlg({ title: "Hapus GR?", message: `Hapus ${gr.gr_number}? This action cannot be undone.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     fetch(`${apiBase}/api/goods-received/${gr.id}`, { method: "DELETE" })
       .then(r => r.json()).then(j => {

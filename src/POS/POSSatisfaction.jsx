@@ -1,5 +1,5 @@
 // src/POS/POSSatisfaction.jsx
-// Popup kepuasan customer — muncul setelah struk ditutup ("Selesai").
+// Popup kepuasan customer — muncul setelah struk ditutup ("Done").
 // Customer kasih bintang 1-5 + komentar opsional → POST /api/feedback.
 //
 // Props:

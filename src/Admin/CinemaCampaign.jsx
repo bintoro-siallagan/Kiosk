@@ -116,8 +116,8 @@ export default function CinemaCampaign({ apiBase = "" }) {
               </select>
             </Field>
             <Field label="Min tamu"><input type="number" value={form.min_attendees || 0} onChange={e => setForm({ ...form, min_attendees: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
-            <Field label="Harga khusus (Rp)"><input type="number" value={form.special_price || ""} onChange={e => setForm({ ...form, special_price: e.target.value })} placeholder="kosong = pakai diskon %" style={inp} /></Field>
-            <Field label="Diskon %"><input type="number" step="0.01" value={form.discount_pct || 0} onChange={e => setForm({ ...form, discount_pct: parseFloat(e.target.value) || 0 })} style={inp} /></Field>
+            <Field label="Price khusus (Rp)"><input type="number" value={form.special_price || ""} onChange={e => setForm({ ...form, special_price: e.target.value })} placeholder="kosong = pakai diskon %" style={inp} /></Field>
+            <Field label="Discount %"><input type="number" step="0.01" value={form.discount_pct || 0} onChange={e => setForm({ ...form, discount_pct: parseFloat(e.target.value) || 0 })} style={inp} /></Field>
             <Field label="Status">
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
                 <input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Aktif
@@ -158,8 +158,8 @@ export default function CinemaCampaign({ apiBase = "" }) {
                   {r.min_attendees > 0 && <div><span style={{ color: C.dim }}>Min tamu</span> {r.min_attendees}</div>}
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderTop: `1px solid ${C.border}`, fontSize: 13 }}>
-                  <span>{r.special_price ? <>Harga <b style={{ color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>{rp(r.special_price)}</b></> : null}</span>
-                  <span>{r.discount_pct > 0 ? <>Diskon <b style={{ color: "#fbbf24", fontFamily: "'Geist Mono',monospace" }}>{r.discount_pct}%</b></> : null}</span>
+                  <span>{r.special_price ? <>Price <b style={{ color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>{rp(r.special_price)}</b></> : null}</span>
+                  <span>{r.discount_pct > 0 ? <>Discount <b style={{ color: "#fbbf24", fontFamily: "'Geist Mono',monospace" }}>{r.discount_pct}%</b></> : null}</span>
                 </div>
                 <div style={{ display: "flex", gap: 5, marginTop: 8 }}>
                   <button onClick={() => toggleActive(r)} style={Ba(r.is_active ? "#6b7280" : "#10b981")}>{r.is_active ? "Off" : "On"}</button>

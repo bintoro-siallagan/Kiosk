@@ -550,7 +550,7 @@ function CreateLaunchModal({ onClose, onCreated, API }) {
       setErr("Outlet code, name, target open date wajib"); return;
     }
     const dateSec = Math.floor(new Date(form.target_open_date_str).getTime() / 1000);
-    if (!dateSec) { setErr("Format tanggal tidak valid"); return; }
+    if (!dateSec) { setErr("Invalid date format"); return; }
     setBusy(true);
     try {
       const r = await fetch(`${API}/api/launch/launches`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, target_open_date: dateSec, created_by: "admin" }) });

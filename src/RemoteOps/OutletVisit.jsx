@@ -128,7 +128,7 @@ export default function OutletVisit() {
                 {gpsErr && (
                   <div style={{ fontSize: 11, color: "#cbd5e1", lineHeight: 1.55, marginBottom: 8 }}>
                     GPS wajib untuk verifikasi visit. Mohon aktifkan:<br/>
-                    <b>iPhone:</b> Pengaturan → Safari → Lokasi → <b>Tanya</b><br/>
+                    <b>iPhone:</b> Settings → Safari → Lokasi → <b>Tanya</b><br/>
                     <b>Android:</b> Tap ikon 🔒 di address bar → Izinkan Lokasi<br/>
                     Setelah itu refresh halaman.
                   </div>
@@ -147,7 +147,7 @@ export default function OutletVisit() {
               <div style={{ position: "absolute", bottom: 8, left: 8, padding: "4px 10px", background: "rgba(0,0,0,0.7)", borderRadius: 6, fontSize: 10, color: GREEN, fontWeight: 700, fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5 }}>✓ KAMERA LIVE</div>
             </div>
           ) : (
-            <CameraCapture facingMode="user" label="Tap untuk Ambil Selfie" onCapture={onPhoto} />
+            <CameraCapture facingMode="user" label="Tap to Ambil Selfie" onCapture={onPhoto} />
           )}
         </Field>
 

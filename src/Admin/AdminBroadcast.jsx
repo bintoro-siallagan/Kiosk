@@ -11,9 +11,9 @@ const MONO = "'Geist Mono',monospace";
 const ACCENTS = ["#f97316", "#ef4444", "#10b981", "#3b82f6", "#a855f7", "#eab308"];
 const DURATIONS = [[30, "30 min"], [60, "1 hr"], [120, "2 hr"], [0, "Sampai distop"]];
 const TEMPLATES = [
-  { label: "⚡ Flash Sale", title: "FLASH SALE 30 MENIT!", message: "Diskon kilat semua menu — buruan sebelum kehabisan!", code: "FLASH30", accent: "#ef4444" },
+  { label: "⚡ Flash Sale", title: "FLASH SALE 30 MENIT!", message: "Discount kilat semua menu — buruan sebelum kehabisan!", code: "FLASH30", accent: "#ef4444" },
   { label: "🕐 Happy Hour", title: "HAPPY HOUR ⏰", message: "Beli 2 gratis 1 — khusus hr ini aja!", code: "HAPPY", accent: "#f97316" },
-  { label: "🌧️ Promo Sepi", title: "Lagi sepi? Rezeki kamu!", message: "Diskon 20% buat 20 pembeli berikutnya", code: "REZEKI20", accent: "#3b82f6" },
+  { label: "🌧️ Promo Sepi", title: "Lagi sepi? Rezeki kamu!", message: "Discount 20% buat 20 pembeli berikutnya", code: "REZEKI20", accent: "#3b82f6" },
   { label: "🍦 Menu Baru", title: "COBAIN MENU BARU 🍦", message: "Menu baru, harga perkenalan spesial day ini", code: "", accent: "#a855f7" },
 ];
 

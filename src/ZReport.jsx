@@ -65,7 +65,7 @@ export default function ZReport({ onClose }) {
       const r = await api.getZReport(d);
       setReport(r);
     } catch (e) {
-      setError(e.message || "Laporan belum tersedia. Mohon coba lagi sebentar.");
+      setError(e.message || "Laporan belum tersedia. Please try again sebentar.");
       setReport(null);
     }
     setLoading(false);
@@ -192,11 +192,11 @@ export default function ZReport({ onClose }) {
     ["Net Revenue", fIDR2(s2.netRevenue)],
     ["PPN 11% (extracted)", fIDR2(s2.taxExtracted)],
     ["Rata-rata Tiket", fIDR2(s2.avgTicket)],
-    ["Total Diskon Promo", fIDR2(s2.promoDiscount)],
+    ["Total Discount Promo", fIDR2(s2.promoDiscount)],
   ];
   const ws1 = XLSX.utils.aoa_to_sheet(ringkasan);
   ws1["!cols"] = [{wch:30},{wch:20}];
-  XLSX.utils.book_append_sheet(wb, ws1, "Ringkasan");
+  XLSX.utils.book_append_sheet(wb, ws1, "Summary");
 
   // Sheet 2: Breakdown Pembayaran
   const payRows = [["Metode","Transaksi","Total (Rp)"]];
@@ -226,7 +226,7 @@ export default function ZReport({ onClose }) {
   if ((report.promos||[]).length || (report.promoUsage)) {
     const promoData = report.promos || report.promoUsage || [];
     const promoArr = Array.isArray(promoData) ? promoData : Object.entries(promoData).map(([k,v])=>({code:k,...v}));
-    const promoRows = [["Kode Promo","Dipakai","Total Diskon (Rp)"]];
+    const promoRows = [["Kode Promo","Dipakai","Total Discount (Rp)"]];
     promoArr.forEach(p => promoRows.push([p.code||p.name||"-", p.count||p.uses||0, fIDR2(p.discount||p.totalDiscount)]));
     const ws5 = XLSX.utils.aoa_to_sheet(promoRows);
     ws5["!cols"] = [{wch:20},{wch:12},{wch:18}];
@@ -241,7 +241,7 @@ export default function ZReport({ onClose }) {
       ["Transaksi Cash", cr.cashTx||cr.count||0],
       ["Penjualan Cash (Rp)", fIDR2(cr.cashSales||cr.sales)],
       ["Kas Diterima (Rp)", fIDR2(cr.cashReceived||cr.received)],
-      ["Kembalian (Rp)", fIDR2(cr.cashChange||cr.change)],
+      ["Change (Rp)", fIDR2(cr.cashChange||cr.change)],
     ];
     const ws6 = XLSX.utils.aoa_to_sheet(cashRows);
     ws6["!cols"] = [{wch:25},{wch:18}];
@@ -338,14 +338,14 @@ export default function ZReport({ onClose }) {
     </div>
 
     <div class="section">
-      <div class="section-title">Ringkasan</div>
+      <div class="section-title">Summary</div>
       <div class="kv-grid">
         <div class="kv"><div class="kv-label">Transaksi</div><div class="kv-val">${s.transactionCount || 0}</div></div>
         <div class="kv"><div class="kv-label">Gross Revenue</div><div class="kv-val green">${fIDR2(s.grossRevenue)}</div></div>
         <div class="kv"><div class="kv-label">Net Revenue</div><div class="kv-val">${fIDR2(s.netRevenue)}</div></div>
         <div class="kv"><div class="kv-label">PPN 11% (extracted)</div><div class="kv-val purple">${fIDR2(s.taxExtracted)}</div></div>
         <div class="kv"><div class="kv-label">Rata-rata Tiket</div><div class="kv-val">${fIDR2(s.avgTicket)}</div></div>
-        <div class="kv"><div class="kv-label">Total Diskon Promo</div><div class="kv-val orange">−${fIDR2(s.promoDiscount)}</div></div>
+        <div class="kv"><div class="kv-label">Total Discount Promo</div><div class="kv-val orange">−${fIDR2(s.promoDiscount)}</div></div>
       </div>
     </div>
 
@@ -368,7 +368,7 @@ export default function ZReport({ onClose }) {
         <tr><td>Transaksi Cash</td><td class="r">${report.cashRecon.cashTx||report.cashRecon.count||0}</td></tr>
         <tr><td>Penjualan Cash</td><td class="r">${fIDR2(report.cashRecon.cashSales||report.cashRecon.sales)}</td></tr>
         <tr><td>Kas Diterima</td><td class="r">${fIDR2(report.cashRecon.cashReceived||report.cashRecon.received)}</td></tr>
-        <tr><td>Kembalian</td><td class="r orange">${fIDR2(report.cashRecon.cashChange||report.cashRecon.change)}</td></tr>
+        <tr><td>Change</td><td class="r orange">${fIDR2(report.cashRecon.cashChange||report.cashRecon.change)}</td></tr>
       </tbody></table>
     </div>` : ""}
 
@@ -380,7 +380,7 @@ export default function ZReport({ onClose }) {
 
     ${(report.promos||[]).length ? `<div class="section">
       <div class="section-title">Pemakaian Promo</div>
-      <table><thead><tr><th>Kode</th><th class="r">Dipakai</th><th class="r">Diskon</th></tr></thead>
+      <table><thead><tr><th>Kode</th><th class="r">Dipakai</th><th class="r">Discount</th></tr></thead>
       <tbody>${report.promos.map(p=>`<tr><td>${p.code||p.name}</td><td class="r">${p.count||p.uses||0}</td><td class="r orange">−${fIDR2(p.discount||p.totalDiscount)}</td></tr>`).join("")}</tbody></table>
     </div>` : ""}
 
@@ -432,7 +432,7 @@ export default function ZReport({ onClose }) {
         {report && !loading && (
           <>
             <section style={S.card}>
-              <div style={S.cardTitle}>📈 Ringkasan Hari</div>
+              <div style={S.cardTitle}>📈 Summary Hari</div>
               <div style={S.grid4}>
                 <div style={S.tile}><div style={S.tileLabel}>TRANSAKSI</div><div style={S.tileValue}>{report.summary.transactionCount}</div></div>
                 <div style={S.tile}><div style={S.tileLabel}>GROSS REVENUE</div><div style={{...S.tileValue, color:"#34D399"}}>{fmt(report.summary.grossRevenue)}</div></div>
@@ -481,7 +481,7 @@ export default function ZReport({ onClose }) {
                 <div style={S.rowBetween}><span style={{color:"#888"}}>Transaksi Cash</span><span>{report.cashReconciliation.transactionCount}</span></div>
                 <div style={S.rowBetween}><span style={{color:"#888"}}>Penjualan Cash</span><span style={{fontFamily:"'Geist Mono',monospace"}}>{fmt(report.cashReconciliation.cashSales)}</span></div>
                 <div style={S.rowBetween}><span style={{color:"#888"}}>Kas Diterima</span><span style={{fontFamily:"'Geist Mono',monospace"}}>{fmt(report.cashReconciliation.cashReceived)}</span></div>
-                <div style={{...S.rowBetween, borderBottom:"none", paddingTop:10}}><span style={{color:"#888"}}>Kembalian</span><span style={{color:"#FB923C", fontFamily:"'Geist Mono',monospace"}}>{fmt(report.cashReconciliation.cashChange)}</span></div>
+                <div style={{...S.rowBetween, borderBottom:"none", paddingTop:10}}><span style={{color:"#888"}}>Change</span><span style={{color:"#FB923C", fontFamily:"'Geist Mono',monospace"}}>{fmt(report.cashReconciliation.cashChange)}</span></div>
               </section>
             </div>
 
@@ -509,7 +509,7 @@ export default function ZReport({ onClose }) {
               <section style={S.card}>
                 <div style={S.cardTitle}>🎟️ Pemakaian Promo</div>
                 <table style={S.table}>
-                  <thead><tr><th style={S.th}>Kode</th><th style={{...S.th, textAlign:"right"}}>Dipakai</th><th style={{...S.th, textAlign:"right"}}>Diskon</th></tr></thead>
+                  <thead><tr><th style={S.th}>Kode</th><th style={{...S.th, textAlign:"right"}}>Dipakai</th><th style={{...S.th, textAlign:"right"}}>Discount</th></tr></thead>
                   <tbody>
                     {Object.entries(report.promoUsage).map(([code, info]) => (
                       <tr key={code}>
@@ -583,8 +583,8 @@ export default function ZReport({ onClose }) {
                   const wb = XLSX.utils.book_new();
                   const fI2 = (a) => Math.round(a||0);
                   const s2 = report.summary || {};
-                  const ringkasan = [["KaryaOS Z-REPORT"],["Periode", report?.period?.label||""],["Dicetak", new Date().toLocaleString("id-ID")],[],["Metrik","Nilai"],["Transaksi", s2.transactionCount||0],["Gross Revenue", fI2(s2.grossRevenue)],["Net Revenue", fI2(s2.netRevenue)],["PPN 11% extracted", fI2(s2.taxExtracted)],["Rata-rata Tiket", fI2(s2.avgTicket)],["Diskon Promo", fI2(s2.promoDiscount)]];
-                  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ringkasan), "Ringkasan");
+                  const ringkasan = [["KaryaOS Z-REPORT"],["Periode", report?.period?.label||""],["Dicetak", new Date().toLocaleString("id-ID")],[],["Metrik","Nilai"],["Transaksi", s2.transactionCount||0],["Gross Revenue", fI2(s2.grossRevenue)],["Net Revenue", fI2(s2.netRevenue)],["PPN 11% extracted", fI2(s2.taxExtracted)],["Rata-rata Tiket", fI2(s2.avgTicket)],["Discount Promo", fI2(s2.promoDiscount)]];
+                  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ringkasan), "Summary");
                   const payRows = [["Metode","Trx","Total"]];
                   Object.entries(report.payments||{}).forEach(([k,v])=>payRows.push([k,v.count||0,fI2(v.total)]));
                   XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(payRows), "Pembayaran");

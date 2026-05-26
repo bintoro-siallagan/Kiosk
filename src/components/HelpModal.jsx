@@ -21,7 +21,7 @@ const HELP = {
     steps: [
       { num: "1", title: "Buka Shift", desc: "Klik START DAY → input Opening Cash (modal kas laci) → MULAI SHIFT." },
       { num: "2", title: "Buka Layar Pelanggan (CDS)", desc: "Klik tombol 📺 Buka Layar Pelanggan di bawah → window CDS muncul di TV second screen. Allow popup kalau diminta." },
-      { num: "3", title: "Pilih Jadwal", desc: "Klik kartu showtime hari ini. Walk-in late entry ≤60 menit masih boleh." },
+      { num: "3", title: "Pilih Jadwal", desc: "Klik kartu showtime today. Walk-in late entry ≤60 menit masih boleh." },
       { num: "4", title: "Pilih Kursi", desc: "Click kursi (max 6). Customer di CDS lihat seat map real-time + harga per kategori." },
       { num: "5", title: "Bundle F&B (opsional)", desc: "Tambah combo popcorn/drink → masuk concession queue staff F&B." },
       { num: "6", title: "Lanjut Bayar", desc: "Pilih method: Cash / QRIS / Debit / Voucher. QRIS auto-detect bayar tiap 3 detik." },
@@ -40,7 +40,7 @@ const HELP = {
     steps: [
       { num: "1", title: "Display-Only", desc: "Layar TV non-touch. Customer tidak bisa interact langsung, hanya lihat info." },
       { num: "2", title: "Auto-Sync dengan POS", desc: "WebSocket terkoneksi otomatis. Tiap perubahan di POS Cinema langsung muncul di sini." },
-      { num: "3", title: "Stage Idle", desc: "Background custom + 'Selamat Datang' + carousel showtime hari ini auto-rotate 7 detik." },
+      { num: "3", title: "Stage Idle", desc: "Background custom + 'Selamat Datang' + carousel showtime today auto-rotate 7 detik." },
       { num: "4", title: "Stage Selling", desc: "Saat kasir pilih film: poster gede + info + seat map (kursi blink amber) + breakdown harga real-time." },
       { num: "5", title: "Stage Pay", desc: "Saat kasir generate QRIS: QR code 360×360 + total Rp gede. Customer scan dengan e-wallet." },
       { num: "6", title: "Stage Done", desc: "Tiket sukses + QR rating film (customer scan dengan HP → mobile feedback)." },

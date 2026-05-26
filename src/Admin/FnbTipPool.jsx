@@ -89,7 +89,7 @@ export default function FnbTipPool({ apiBase = "" }) {
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12, marginBottom: 14 }}>
         <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>+ CATAT TIP BARU</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr auto", gap: 6 }}>
-          <input type="number" value={newTip.amount} onChange={e => setNewTip({ ...newTip, amount: e.target.value })} placeholder="Jumlah" style={inp} />
+          <input type="number" value={newTip.amount} onChange={e => setNewTip({ ...newTip, amount: e.target.value })} placeholder="Quantity" style={inp} />
           <input value={newTip.staff_name} onChange={e => setNewTip({ ...newTip, staff_name: e.target.value })} placeholder="Staff (kalau individual)" style={inp} />
           <select value={newTip.tip_type} onChange={e => setNewTip({ ...newTip, tip_type: e.target.value })} style={inp}>
             <option value="individual">Individual</option><option value="pool">Pool</option>

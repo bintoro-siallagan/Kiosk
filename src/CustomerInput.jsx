@@ -215,7 +215,7 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
             return maxRedeem > 0 ? (
               <div style={C.redeemBox}>
                 <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                  <span style={{fontSize:14,fontWeight:800,color:"#FB923C",letterSpacing:0.5}}>🎁 Tukar Poin jadi Diskon</span>
+                  <span style={{fontSize:14,fontWeight:800,color:"#FB923C",letterSpacing:0.5}}>🎁 Tukar Poin jadi Discount</span>
                   <span style={{fontSize:12,fontWeight:700,color:"#FB923C",background:"rgba(251,146,60,0.15)",borderRadius:8,padding:"3px 9px"}}>{loyalty.points} poin</span>
                 </div>
                 <input type="range" min={0} max={maxRedeem} step={loyalty.redeemRate}
@@ -233,7 +233,7 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
                       <span style={{fontSize:14,color:"#34D399",fontWeight:600}}>Hemat Rp {redeemDisc.toLocaleString("id-ID")}</span>
                     </>
                   ) : (
-                    <span style={{fontSize:13,color:"#666"}}>Geser untuk tukar poin</span>
+                    <span style={{fontSize:13,color:"#666"}}>Slide to tukar poin</span>
                   )}
                 </div>
               </div>

@@ -24,11 +24,11 @@ const RULES = {
   PROMO_ABUSE:{l:"Promo Abuse",i:"🏷️",cl:"#EAB308"},
   POIN_DRAIN:{l:"Poin Drain",i:"⭐",cl:"#8B5CF6"},
   CASH_GAP:{l:"Selisih Kas",i:"💵",cl:"#DC2626"},
-  DISC_NOAUTH:{l:"Diskon No-Auth",i:"✂️",cl:"#EC4899"},
+  DISC_NOAUTH:{l:"Discount No-Auth",i:"✂️",cl:"#EC4899"},
   ODD_HOUR:{l:"Jam Tidak Wajar",i:"🌙",cl:"#6366F1"},
   REFUND_LOOP:{l:"Refund Loop",i:"🔄",cl:"#14B8A6"},
   CANCEL_PROD:{l:"Cancel Post-Prod",i:"🚫",cl:"#F43F5E"},
-  EMP_DISC:{l:"Diskon Karyawan",i:"👤",cl:"#D946EF"},
+  EMP_DISC:{l:"Discount Karyawan",i:"👤",cl:"#D946EF"},
   WASTE_SPIKE:{l:"Waste Spike",i:"🗑️",cl:"#78716C"},
   STOCK_GHOST:{l:"Stok Ghost",i:"👻",cl:"#84CC16"},
   // Refund/Cancel module (RC) anomaly types
@@ -345,7 +345,7 @@ export default function CommandCenter(){
           )}
         </div>
         {!(posBeh?.cashiers?.length)?(
-          <div style={{color:"#333",fontSize:14}}>Belum ada aktivitas hapus item hari ini</div>
+          <div style={{color:"#333",fontSize:14}}>Belum ada aktivitas hapus item today</div>
         ):posBeh.cashiers.map(c=>(
           <div key={c.cashier} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:"1px solid #161b22"}}>
             <div style={{flex:1,fontSize:15,fontWeight:600,color:c.flagged?"#f87171":"#e4e4e7"}}>{c.cashier}</div>
@@ -479,7 +479,7 @@ export default function CommandCenter(){
               const low=w.stock<=w.minStock;
               const dl=w.dailyUse>0?Math.floor(w.stock/w.dailyUse):999;
               return(
-                <div key={w.id||i} onClick={()=>setReorderItem(w)} title="Klik buat reorder" style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",background:low?"#1a0a0a":"#0a0a0f",borderRadius:8,border:`1px solid ${reorderedSet.has(w.id)?"#10b98155":low?"#dc262622":"#161b22"}`,cursor:"pointer"}}>
+                <div key={w.id||i} onClick={()=>setReorderItem(w)} title="Click to reorder" style={{display:"flex",alignItems:"center",gap:8,padding:"6px 8px",background:low?"#1a0a0a":"#0a0a0f",borderRadius:8,border:`1px solid ${reorderedSet.has(w.id)?"#10b98155":low?"#dc262622":"#161b22"}`,cursor:"pointer"}}>
                   <div style={{flex:1,minWidth:0}}>
                     <div style={{fontSize:13,fontWeight:500,color:low?"#fca5a5":"#ccc",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{w.name}</div>
                     <Bar pct={pct} color={low?"#ef4444":pct>60?"#10b981":"#eab308"} h={4}/>

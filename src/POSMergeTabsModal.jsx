@@ -27,7 +27,7 @@ export default function POSMergeTabsModal({ sourceTab, kasir, onClose, onSuccess
       otherTabs.sort((a, b) => (b.time || 0) - (a.time || 0));
       setTabs(otherTabs);
     } catch (e) {
-      setError("Tab tidak dapat dimuat saat ini. Mohon coba lagi.");
+      setError("Tab tidak dapat dimuat saat ini. Please try again.");
     } finally {
       setLoading(false);
     }

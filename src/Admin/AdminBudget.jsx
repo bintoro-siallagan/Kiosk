@@ -72,7 +72,7 @@ export default function AdminBudget({ apiBase = "" }) {
         <div style={S.kicker}>➕ SET BUDGET KATEGORI</div>
         <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
           <select value={cat} onChange={e => setCat(e.target.value)} style={{ ...S.input, flex: 2 }}>
-            <option value="">— Pilih kategori beban —</option>
+            <option value="">— Select category beban —</option>
             {d.categories.map(c => <option key={c.id} value={c.id}>{c.name} ({c.type})</option>)}
           </select>
           <input value={amt} onChange={e => setAmt(e.target.value)} placeholder="Budget (Rp)" type="number" style={{ ...S.input, flex: 1 }} />

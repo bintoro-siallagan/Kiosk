@@ -75,7 +75,7 @@ export default function AdminItemPricing({ apiBase = "" }) {
 
       <div style={S.kpiRow}>
         <Kpi label="Item Ber-harga" v={String(s.total)} c={AC} />
-        <Kpi label="Avg Harga Dine-in" v={fmtRp(s.avg_dinein)} c="#3b82f6" />
+        <Kpi label="Avg Price Dine-in" v={fmtRp(s.avg_dinein)} c="#3b82f6" />
         <Kpi label="Online Markup" v={"+" + fmtRp(s.online_markup)} c="#f59e0b" />
         <Kpi label="Full Channel" v={`${s.full_channel}/${s.total}`} c="#a855f7" sub="6 channel" />
       </div>

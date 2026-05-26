@@ -201,7 +201,7 @@ export default function POSPaymentGateway({ orderRef, amount, customerName, cust
             </div>
 
             <div style={styles.amountSmall}>
-              <span style={{color: '#9ca3af', fontSize: 13}}>Total bayar</span>
+              <span style={{color: '#9ca3af', fontSize: 13}}>Total payment</span>
               <span style={{fontSize: 22, fontWeight: 700, color: '#f97316'}}>{fmtIDR(amount)}</span>
             </div>
 

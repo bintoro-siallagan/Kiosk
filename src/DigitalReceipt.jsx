@@ -42,7 +42,7 @@ export default function DigitalReceipt({ orderId, onDone }) {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@700&family=DM+Sans:wght@400;700&display=swap');*{box-sizing:border-box;margin:0;padding:0}`}</style>
       <div style={{fontSize:72}}>✅</div>
       <div style={{fontFamily:"'Geist Mono',monospace",fontSize:24,color:"#34D399",letterSpacing:3}}>PEMBAYARAN BERHASIL!</div>
-      <div style={{fontSize:13,color:"#555"}}>Struk tidak tersedia saat ini</div>
+      <div style={{fontSize:13,color:"#555"}}>Receipt tidak tersedia saat ini</div>
       <button style={{...R.doneBtn,maxWidth:240,margin:"20px auto 0"}} onClick={onDone}>SELESAI →</button>
     </div>
   );
@@ -92,7 +92,7 @@ export default function DigitalReceipt({ orderId, onDone }) {
           </div>
 
           {/* Receipt info */}
-          <div style={R.infoRow}><span style={R.ik}>No. Struk</span><span style={R.iv}>{receipt.receiptNo}</span></div>
+          <div style={R.infoRow}><span style={R.ik}>No. Receipt</span><span style={R.iv}>{receipt.receiptNo}</span></div>
           <div style={R.infoRow}><span style={R.ik}>No. Order</span><span style={R.iv}>#{receipt.orderId}</span></div>
           <div style={R.infoRow}><span style={R.ik}>Waktu</span><span style={R.iv}>{receipt.timestamp}</span></div>
           <div style={R.infoRow}><span style={R.ik}>Kasir</span><span style={R.iv}>{receipt.kasir}</span></div>

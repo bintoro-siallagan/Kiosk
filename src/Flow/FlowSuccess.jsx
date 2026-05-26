@@ -115,7 +115,7 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
         <StepLine done={currentStep > 1} />
         <Step icon="🛎️" label="Siap" active={currentStep >= 2} done={currentStep > 2} />
         <StepLine done={currentStep > 2} />
-        <Step icon="🎉" label="Selesai" active={currentStep >= 3} done={currentStep >= 3} />
+        <Step icon="🎉" label="Done" active={currentStep >= 3} done={currentStep >= 3} />
       </div>
 
       <div style={S.statusBox}>

@@ -132,7 +132,7 @@ function Menus() {
       <table style={tableStyle}>
         <thead>
           <tr>
-            <th>ID</th><th>Item</th><th>Kategori</th><th>Harga</th>
+            <th>ID</th><th>Item</th><th>Kategori</th><th>Price</th>
             <th>Free Extras</th><th>Popular</th><th>Avail</th><th></th>
           </tr>
         </thead>
@@ -232,7 +232,7 @@ function MenuForm({ initial, categories, onSave, onCancel }) {
           </select></label>
           <label>Emoji <input value={f.emoji} onChange={update('emoji')} style={{width:60}} /></label>
           <label>Nama* <input value={f.name} onChange={update('name')} /></label>
-          <label>Harga* <input type="number" value={f.price} onChange={update('price')} /></label>
+          <label>Price* <input type="number" value={f.price} onChange={update('price')} /></label>
           <label>Free Extras <input type="number" value={f.free_extras} onChange={update('free_extras')} /></label>
           <label style={{gridColumn:'1/-1'}}>Description <textarea value={f.description} onChange={update('description')} rows={2} /></label>
           <label>Image URL <input value={f.image_url || ''} onChange={update('image_url')} /></label>
@@ -381,7 +381,7 @@ function Extras() {
       </div>
       {showForm && <ExtraForm initial={editing} groups={groups} onClose={() => { setShowForm(false); setEditing(null); load(); }} />}
       <table style={tableStyle}>
-        <thead><tr><th>ID</th><th>Nama</th><th>Grup</th><th>Harga</th><th>Avail</th><th></th></tr></thead>
+        <thead><tr><th>ID</th><th>Nama</th><th>Grup</th><th>Price</th><th>Avail</th><th></th></tr></thead>
         <tbody>
           {list.map(e => (
             <tr key={e.id}>
@@ -447,7 +447,7 @@ function ExtraForm({ initial, groups, onClose }) {
             <option value="">- tanpa group -</option>
             {groups.map(g => <option key={g.id} value={g.id}>{g.emoji} {g.name}</option>)}
           </select></label>
-          <label>Harga Extra <input type="number" value={f.extra_price} onChange={update('extra_price')} /></label>
+          <label>Price Extra <input type="number" value={f.extra_price} onChange={update('extra_price')} /></label>
           <label style={{display:'flex', alignItems:'center', gap:6}}>
             <input type="checkbox" checked={f.is_available} onChange={update('is_available')} /> Available
           </label>
@@ -572,7 +572,7 @@ function COGSReport() {
         </div>
       </div>
       <table style={tableStyle}>
-        <thead><tr><th>Menu</th><th>Harga</th><th>COGS</th><th>Margin</th><th>Margin %</th><th>BOM</th></tr></thead>
+        <thead><tr><th>Menu</th><th>Price</th><th>COGS</th><th>Margin</th><th>Margin %</th><th>BOM</th></tr></thead>
         <tbody>
           {[...rows].sort((a,b) => a.margin_pct - b.margin_pct).map(r => (
             <tr key={r.id} style={{background: r.margin_pct < 50 ? '#fef3c7' : 'transparent'}}>

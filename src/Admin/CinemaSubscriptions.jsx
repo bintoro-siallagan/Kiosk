@@ -131,7 +131,7 @@ export default function CinemaSubscriptions({ apiBase = "" }) {
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                   <div>
-                    <div style={{ fontSize: 10, color: C.dim }}>Harga</div>
+                    <div style={{ fontSize: 10, color: C.dim }}>Price</div>
                     <div style={{ fontSize: 24, fontWeight: 900, color: p.plan_type === "unlimited" ? "#c084fc" : "#22d3ee", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5 }}>{rp(p.price)}</div>
                     <div style={{ fontSize: 11, color: C.sub }}>/{p.duration_days === 30 ? "month" : `${p.duration_days}d`}</div>
                   </div>

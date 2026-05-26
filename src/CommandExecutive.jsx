@@ -116,7 +116,7 @@ export default function CommandExecutive() {
       <div style={S.card}>
         <div style={S.kicker}>🕐 REALTIME INCIDENT TIMELINE</div>
         {timeline.length === 0 ? (
-          <div style={{ color: "#555", fontSize: 13, padding: 10 }}>Belum ada incident hari ini</div>
+          <div style={{ color: "#555", fontSize: 13, padding: 10 }}>Belum ada incident today</div>
         ) : (
           <div style={{ marginTop: 6 }}>
             {timeline.map((e, i) => {

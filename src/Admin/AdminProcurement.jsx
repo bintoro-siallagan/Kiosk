@@ -341,7 +341,7 @@ function PRForm({ onClose }) {
 
       <h5 style={{ marginTop: 16 }}>Items</h5>
       <table style={tableStyle}>
-        <thead><tr><th>SKU</th><th>Nama</th><th>Qty</th><th>Unit</th><th>Est. Harga</th><th>Subtotal</th><th></th></tr></thead>
+        <thead><tr><th>SKU</th><th>Nama</th><th>Qty</th><th>Unit</th><th>Est. Price</th><th>Subtotal</th><th></th></tr></thead>
         <tbody>
           {f.items.map((it, idx) => (
             <tr key={idx}>
@@ -425,7 +425,7 @@ function PRDetail({ prId, onClose }) {
         {pr.notes && <p><b>Notes:</b> {pr.notes}</p>}
 
         <table style={tableStyle}>
-          <thead><tr><th>SKU</th><th>Item</th><th>Qty</th><th>Unit</th><th>Est. Harga</th><th>Subtotal</th></tr></thead>
+          <thead><tr><th>SKU</th><th>Item</th><th>Qty</th><th>Unit</th><th>Est. Price</th><th>Subtotal</th></tr></thead>
           <tbody>
             {pr.items.map(it => (
               <tr key={it.id}>
@@ -466,7 +466,7 @@ function PRDetail({ prId, onClose }) {
             </label>
             <p style={{ fontSize: 12, color: '#6b7280' }}>Sesuaikan harga supplier (override est. harga):</p>
             <table style={tableStyle}>
-              <thead><tr><th>SKU</th><th>Item</th><th>Qty</th><th>Est.</th><th>Harga Supplier</th></tr></thead>
+              <thead><tr><th>SKU</th><th>Item</th><th>Qty</th><th>Est.</th><th>Price Supplier</th></tr></thead>
               <tbody>
                 {pr.items.map(it => (
                   <tr key={it.id}>
@@ -575,7 +575,7 @@ function PODetail({ poId, onClose }) {
         </div>
 
         <table style={tableStyle}>
-          <thead><tr><th>SKU</th><th>Item</th><th>Ordered</th><th>Received</th><th>Sisa</th><th>Harga</th><th>Subtotal</th></tr></thead>
+          <thead><tr><th>SKU</th><th>Item</th><th>Ordered</th><th>Received</th><th>Sisa</th><th>Price</th><th>Subtotal</th></tr></thead>
           <tbody>
             {po.items.map(it => {
               const remaining = it.quantity_ordered - it.quantity_received;
@@ -913,7 +913,7 @@ function InvoiceDetail({ invId, onClose }) {
           <>
             <h4>Payment History</h4>
             <table style={tableStyle}>
-              <thead><tr><th>No. Payment</th><th>Date</th><th>Jumlah</th><th>Metode</th><th>Reference</th><th>Paid by</th></tr></thead>
+              <thead><tr><th>No. Payment</th><th>Date</th><th>Quantity</th><th>Metode</th><th>Reference</th><th>Paid by</th></tr></thead>
               <tbody>
                 {inv.payments.map(p => (
                   <tr key={p.id}>
@@ -990,7 +990,7 @@ function Payments() {
     <div>
       <h3 style={{ margin: 0, marginBottom: 12 }}>Riwayat Pembayaran ({list.length}) — Total {fmtIDR(total)}</h3>
       <table style={tableStyle}>
-        <thead><tr><th>No. Payment</th><th>Date</th><th>Supplier</th><th>Invoice</th><th>Jumlah</th><th>Metode</th><th>Reference</th><th>Paid by</th><th>Expense ID</th></tr></thead>
+        <thead><tr><th>No. Payment</th><th>Date</th><th>Supplier</th><th>Invoice</th><th>Quantity</th><th>Metode</th><th>Reference</th><th>Paid by</th><th>Expense ID</th></tr></thead>
         <tbody>
           {list.map(p => (
             <tr key={p.id}>

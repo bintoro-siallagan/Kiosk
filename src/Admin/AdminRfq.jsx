@@ -159,7 +159,7 @@ export default function AdminRfq({ apiBase = "" }) {
               {r.status === "open" && (
                 <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr auto", gap: 7, marginTop: 8 }}>
                   <input value={q.vendor || ""} onChange={e => setQuote({ ...quote, [r.id]: { ...q, vendor: e.target.value } })} placeholder="Vendor" style={S.input} />
-                  <input value={q.price || ""} onChange={e => setQuote({ ...quote, [r.id]: { ...q, price: e.target.value } })} placeholder="Harga satuan" type="number" style={S.input} />
+                  <input value={q.price || ""} onChange={e => setQuote({ ...quote, [r.id]: { ...q, price: e.target.value } })} placeholder="Price satuan" type="number" style={S.input} />
                   <input value={q.lead_days || ""} onChange={e => setQuote({ ...quote, [r.id]: { ...q, lead_days: e.target.value } })} placeholder="Lead (day)" type="number" style={S.input} />
                   <button onClick={() => addQuote(r)} style={S.btnGhost}>+ Penawaran</button>
                 </div>

@@ -77,7 +77,7 @@ export default function AdminSimplePurchase({ apiBase = "" }) {
           <input value={form.item_name} onChange={e => setForm({ ...form, item_name: e.target.value })} placeholder="Nama item *" style={S.input} />
           <input value={form.qty} onChange={e => setForm({ ...form, qty: e.target.value })} placeholder="Qty *" type="number" style={S.input} />
           <input value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} placeholder="Unit" style={S.input} />
-          <input value={form.unit_price} onChange={e => setForm({ ...form, unit_price: e.target.value })} placeholder="Harga *" type="number" style={S.input} />
+          <input value={form.unit_price} onChange={e => setForm({ ...form, unit_price: e.target.value })} placeholder="Price *" type="number" style={S.input} />
           <input value={form.vendor} onChange={e => setForm({ ...form, vendor: e.target.value })} placeholder="Vendor / toko" style={S.input} />
           <select value={form.payment_method} onChange={e => setForm({ ...form, payment_method: e.target.value })} style={S.input}>
             {d.payment_methods.map(p => <option key={p} value={p}>{p}</option>)}

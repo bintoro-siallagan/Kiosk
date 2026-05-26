@@ -8,7 +8,7 @@ const STEPS = [
   {key:"waiting",   icon:"⏳", label:"Pesanan Diterima",  desc:"Pesanan Anda sudah masuk ke dapur"},
   {key:"preparing", icon:"👨‍🍳", label:"Sedang Dibuat",     desc:"Chef sedang menyiapkan pesanan Anda"},
   {key:"ready",     icon:"✅", label:"Siap Diambil!",     desc:"Pesanan Anda sudah siap! Segera ambil"},
-  {key:"completed", icon:"🏁", label:"Selesai",           desc:"Terima kasih telah memesan di KaryaOS"},
+  {key:"completed", icon:"🏁", label:"Done",           desc:"Terima kasih telah memesan di KaryaOS"},
 ];
 
 const STATUS_IDX = {waiting:0, preparing:1, ready:2, completed:3, cancelled:-1};

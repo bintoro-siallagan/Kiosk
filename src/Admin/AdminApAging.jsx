@@ -57,7 +57,7 @@ export default function AdminApAging({ apiBase = "" }) {
         <Kpi label="Total Hutang" v={fmtRp(s.total_outstanding)} c={AC} />
         <Kpi label="Lewat Jatuh Tempo" v={fmtRp(s.overdue_total)} c={s.overdue_total > 0 ? "#ef4444" : "#10b981"} />
         <Kpi label="Invoice Telat" v={String(s.overdue_count)} c={s.overdue_count > 0 ? "#f59e0b" : "#10b981"} />
-        <Kpi label="Jumlah Vendor" v={String(s.vendor_count)} c="#3b82f6" />
+        <Kpi label="Quantity Vendor" v={String(s.vendor_count)} c="#3b82f6" />
       </div>
 
       <div style={{ ...S.card, marginTop: 14 }}>

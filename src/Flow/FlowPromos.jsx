@@ -275,7 +275,7 @@ export default function FlowPromos({ customer, setActivePromo, setScreen }) {
                   {expired ? "✕ Expired" :
                    usedUp ? "✕ Habis" :
                    !eligible ? "🔒 Member only" :
-                   dLeft != null ? (dLeft === 0 ? "⏰ Habis hari ini!" : dLeft <= 7 ? `⏰ ${dLeft} hari lagi` : `📅 ${dLeft} hari lagi`) :
+                   dLeft != null ? (dLeft === 0 ? "⏰ Habis today!" : dLeft <= 7 ? `⏰ ${dLeft} hari lagi` : `📅 ${dLeft} hari lagi`) :
                    "Aktif"}
                 </span>
                 {p.usageLimit && (

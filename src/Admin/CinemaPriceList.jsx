@@ -1,7 +1,7 @@
 // karyaOS — Cinema Price List Master
 // Tier harga per outlet × studio_type × format × day × time-band.
 // Resolution: NULL = wildcard; specificity score wins.
-// "Cek Harga" tool untuk admin test resolve rule yang akan dipakai.
+// "Cek Price" tool untuk admin test resolve rule yang akan dipakai.
 import { useState, useEffect, useCallback } from "react";
 
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
@@ -43,7 +43,7 @@ export default function CinemaPriceList({ apiBase = "" }) {
 
   async function save() {
     if (!form.outlet?.trim()) { showToast("Outlet wajib", "err"); return; }
-    if (!form.price)          { showToast("Harga wajib", "err"); return; }
+    if (!form.price)          { showToast("Price wajib", "err"); return; }
     const body = { ...form, studio_type: form.studio_type || null, format: form.format || null, day_type: form.day_type || null, time_band: form.time_band || null };
     const url = editing === "new" ? `${base}/price-list` : `${base}/price-list/${editing}`;
     const method = editing === "new" ? "POST" : "PATCH";
@@ -76,7 +76,7 @@ export default function CinemaPriceList({ apiBase = "" }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14, marginBottom: 14 }}>
         <div>
           <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>💲 Cinema Price List Master</div>
-          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Harga per outlet × studio × format × day × waktu · Resolution: specificity score (NULL = wildcard).</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Price per outlet × studio × format × day × waktu · Resolution: specificity score (NULL = wildcard).</div>
         </div>
         {!editing && <button onClick={startNew} style={B.add}>＋ Aturan harga</button>}
       </div>
@@ -118,7 +118,7 @@ export default function CinemaPriceList({ apiBase = "" }) {
                 {TIME_BANDS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </Field>
-            <Field label="Harga (Rp)"><input type="number" value={form.price} onChange={e => setForm({ ...form, price: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
+            <Field label="Price (Rp)"><input type="number" value={form.price} onChange={e => setForm({ ...form, price: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
             <Field label="Notes" wide><input value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} style={inp} /></Field>
             <Field label="Status">
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>

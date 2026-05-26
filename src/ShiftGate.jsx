@@ -45,7 +45,7 @@ export default function ShiftGate({ children, cashier, onSwitchCashier, customer
       const r = await fetch(`${API_BASE}/api/shifts/open`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          kasirName: cashier?.name || "Kasir",
+          kasirName: cashier?.name || "Cashier",
           openingCash: parseInt(openingCash, 10) || 0,
         }),
       });
@@ -107,7 +107,7 @@ export default function ShiftGate({ children, cashier, onSwitchCashier, customer
           <div style={S.icon}>☕</div>
           <h1 style={S.title}>BELUM SIAP MELAYANI</h1>
           <p style={S.subtitle}>
-            Kasir <b style={{ color: "#fff" }}>{cashier?.name || "—"}</b> belum membuka shift hari ini.<br/>
+            Kasir <b style={{ color: "#fff" }}>{cashier?.name || "—"}</b> belum membuka shift today.<br/>
             Klik tombol di bawah untuk mulai operasional outlet.
           </p>
           {err && <div style={S.err}>⚠ {err}</div>}
