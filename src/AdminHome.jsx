@@ -437,11 +437,14 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     ] },
     // 🎬 Cinema parallel "Outlet" column — mirror struktur dari F&B
     { title: "🏛️ Outlet Cinema", accent: "#a855f7", vertical: "cinema", items: [
-      { label: "Tiket Terjual",   icon: "🎟️", c: "#10b981", on: () => openRight("tools", "cinema_ticketing") },
-      { label: "Films Catalog",   icon: "🎬", c: "#f59e0b", on: () => openRight("tools", "cinema_ops") },
-      { label: "Showtimes",       icon: "📅", c: "#22d3ee", on: () => openRight("tools", "cinema_ops") },
-      { label: "Studios & Seat Editor", icon: "🪑", c: "#a855f7", on: () => openRight("tools", "cinema_seat_types") },
-      { label: "Outlet Master",   icon: "🏛️", c: "#7d8590", on: () => openRight("tools", "outlet_master") },
+      { label: "🎬 Films & Showtimes",   icon: "🎬", c: "#a855f7", on: () => openRight("tools", "cinema_ops") },
+      { label: "🎟️ Ticketing / Box Office", icon: "🎟️", c: "#10b981", on: () => openRight("tools", "cinema_ticketing") },
+      { label: "🍿 Menu F&B (Combo Bundles)", icon: "🍿", c: "#f59e0b", on: () => openRight("tools", "cinema_bundles") },
+      { label: "💲 Harga Tiket",          icon: "💲", c: "#10b981", on: () => openRight("tools", "cinema_price_list") },
+      { label: "💺 Studios & Seat Editor", icon: "💺", c: "#ec4899", on: () => openRight("tools", "cinema_seat_types") },
+      { label: "📅 Holiday Calendar",      icon: "📅", c: "#fbbf24", on: () => openRight("tools", "cinema_holidays") },
+      { label: "🏛️ Outlet Master",         icon: "🏛️", c: "#7d8590", on: () => openRight("tools", "outlet_master") },
+      { label: "⚙️ Pengaturan",             icon: "⚙️", c: "#7d8590", on: () => openRight("admin", "settings") },
     ] },
     { title: "🛰️ Surface Operasional F&B", accent: "#10b981", vertical: "fnb", items: [
       { label: "POS Kasir", icon: "🧾", c: "#10b981", on: () => openTab("?pos=1&fresh=1") },
