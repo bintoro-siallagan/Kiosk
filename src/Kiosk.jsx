@@ -434,7 +434,11 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
       <style>{FONT_CSS+KIOSK_CSS}</style>
       <div style={K.welcomeInner}>
         <div style={K.logoWrap}>
-          <img src="/logo.png" alt="KaryaOS" onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}} style={{width:150,height:150,objectFit:"contain",cursor:"pointer"}}/>
+          <div style={{background:"#fff",borderRadius:"50%",padding:18,boxShadow:"0 8px 32px rgba(219,222,77,0.25)"}}>
+            <img src="/soursally-logo.png" alt="Sour Sally"
+              onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}}
+              style={{width:170,height:170,objectFit:"contain",cursor:"pointer",display:"block"}}/>
+          </div>
           <h1 style={K.brand}>KaryaOS</h1>
           <p style={K.tagline}>Crafted with love. Ordered with ease.</p>
         </div>
@@ -614,7 +618,9 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
         {/* Header */}
         <div style={K.header}>
           <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <img src="/logo.png" alt="KaryaOS" style={{height:34,objectFit:"contain"}}/>
+            <div style={{background:"#fff",borderRadius:"50%",padding:5,display:"inline-flex",alignItems:"center",justifyContent:"center"}}>
+              <img src="/soursally-logo.png" alt="Sour Sally" style={{height:38,width:38,objectFit:"contain",display:"block"}}/>
+            </div>
             <div>
               <div style={K.headerBrand}>KaryaOS</div>
               <div style={K.headerSub}>{orderType==="dine"?"🪑 Makan di Sini":"🛍️ Bawa Pulang"}</div>
