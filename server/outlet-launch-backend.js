@@ -253,6 +253,12 @@ const MIGRATIONS = [
   `ALTER TABLE launch_signoffs ADD COLUMN gps_lon REAL`,
   `ALTER TABLE launch_signoffs ADD COLUMN gps_distance_m INTEGER`,
   `ALTER TABLE launch_signoffs ADD COLUMN device_id TEXT`,
+  // Multi-tenant
+  `ALTER TABLE outlet_launches ADD COLUMN company_id INTEGER`,
+  // Airplane mode bypass GPS — manager approved
+  `ALTER TABLE launch_signoffs ADD COLUMN gps_bypass INTEGER DEFAULT 0`,
+  `ALTER TABLE launch_signoffs ADD COLUMN gps_bypass_reason TEXT`,
+  `ALTER TABLE launch_signoffs ADD COLUMN gps_bypass_approver TEXT`,
 ];
 
 function distMeters(lat1, lon1, lat2, lon2) {
@@ -269,6 +275,11 @@ function setupOutletLaunch(app, opts = {}) {
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
   for (const m of MIGRATIONS) { try { db.exec(m); } catch {} }
+
+  // Multi-tenant: auto-tag existing launches by vertical (idempotent, hanya untuk NULL)
+  try {
+    db.prepare(`UPDATE outlet_launches SET company_id = CASE WHEN vertical = 'cinema' THEN 2 ELSE 1 END WHERE company_id IS NULL`).run();
+  } catch {}
 
   // Auto-seed demo data ONLY kalau DB kosong (first install / fresh boot)
   function autoSeedDemo() {
@@ -364,7 +375,10 @@ function setupOutletLaunch(app, opts = {}) {
   router.get('/launches', (req, res) => {
     const status = req.query.status || 'in_progress,live,waived_live';
     const arr = status.split(',').map(s => `'${s.replace(/'/g,'')}'`).join(',');
-    const rows = db.prepare(`SELECT * FROM outlet_launches WHERE status IN (${arr}) ORDER BY target_open_date ASC`).all();
+    // Multi-tenant: filter by company_id
+    const scope = req.companyScope || { is_super_admin: true };
+    const cFilter = scope.is_super_admin ? '' : ` AND company_id = ${parseInt(scope.company_id, 10)}`;
+    const rows = db.prepare(`SELECT * FROM outlet_launches WHERE status IN (${arr})${cFilter} ORDER BY target_open_date ASC`).all();
     const enriched = rows.map(r => ({ ...r, readiness: calcReadiness(r.id) }));
     res.json({ data: enriched, total: enriched.length });
   });
@@ -376,8 +390,14 @@ function setupOutletLaunch(app, opts = {}) {
       if (!b.outlet_code || !b.outlet_name || !b.target_open_date) {
         return res.status(400).json({ error: 'outlet_code, outlet_name, target_open_date wajib' });
       }
-      const r = db.prepare(`INSERT INTO outlet_launches (outlet_code, outlet_name, vertical, area, target_open_date, project_manager, gm_name, notes, created_by) VALUES (?,?,?,?,?,?,?,?,?)`)
-        .run(b.outlet_code, b.outlet_name, b.vertical || 'fnb', b.area || null, b.target_open_date, b.project_manager || null, b.gm_name || null, b.notes || null, b.created_by || 'admin');
+      // Multi-tenant: auto-tag company_id
+      const scope = req.companyScope || { is_super_admin: true };
+      const vertical = b.vertical || 'fnb';
+      const companyId = scope.is_super_admin
+        ? (parseInt(b.company_id, 10) || (vertical === 'cinema' ? 2 : 1))
+        : scope.company_id;
+      const r = db.prepare(`INSERT INTO outlet_launches (outlet_code, outlet_name, vertical, area, target_open_date, project_manager, gm_name, notes, created_by, company_id) VALUES (?,?,?,?,?,?,?,?,?,?)`)
+        .run(b.outlet_code, b.outlet_name, vertical, b.area || null, b.target_open_date, b.project_manager || null, b.gm_name || null, b.notes || null, b.created_by || 'admin', companyId);
       seedTasksForLaunch(r.lastInsertRowid, b.target_open_date);
       logAudit(r.lastInsertRowid, 'created', { actor: b.created_by || 'admin', outlet: b.outlet_code });
       res.json({ ok: true, id: r.lastInsertRowid });

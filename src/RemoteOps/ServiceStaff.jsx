@@ -288,7 +288,8 @@ function WorkStep({ ticket, detail, gps, onUpdate, onUpload, onFinish, onBack })
             {it.requires_photo === 1 && <span style={{ color: AMBER, marginLeft: 6, fontSize: 10 }}>📸 wajib</span>}
           </div>
           <div style={{ display: "flex", gap: 4, marginBottom: it.requires_photo === 1 ? 10 : 0, flexWrap: "wrap" }}>
-            {[["pending","Pending"],["done","Done"],["skipped","Skip"]].map(([k,lbl]) => (
+            {/* Tombol "Skip" dihapus — semua task WAJIB done (anti shortcut). Manager waiver via admin tracker untuk emergency. */}
+            {[["pending","Pending"],["done","Done"]].map(([k,lbl]) => (
               <button key={k} onClick={() => onUpdate(it.id, k)} style={{
                 padding: "6px 12px",
                 background: it.status === k ? statusColor(k) : "transparent",

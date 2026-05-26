@@ -222,6 +222,21 @@ function setupServiceVisit(app, opts = {}) {
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
 
+  // Multi-tenant: add company_id + airplane mode bypass GPS
+  try { db.exec("ALTER TABLE service_tickets ADD COLUMN company_id INTEGER"); } catch {}
+  try { db.exec("ALTER TABLE service_tickets ADD COLUMN gps_bypass INTEGER DEFAULT 0"); } catch {}
+  try { db.exec("ALTER TABLE service_tickets ADD COLUMN gps_bypass_reason TEXT"); } catch {}
+  try { db.exec("ALTER TABLE service_tickets ADD COLUMN gps_bypass_approver TEXT"); } catch {}
+  // Tag existing tickets based on outlet_code prefix (CMX = cinema 2, else F&B 1)
+  try {
+    db.prepare(`UPDATE service_tickets
+      SET company_id = CASE
+        WHEN outlet_code LIKE 'CMX%' THEN 2
+        ELSE 1
+      END
+      WHERE company_id IS NULL`).run();
+  } catch {}
+
   // Seed templates if empty
   const tplCount = db.prepare(`SELECT COUNT(*) c FROM service_templates`).get().c;
   if (tplCount === 0) {
@@ -345,8 +360,10 @@ function setupServiceVisit(app, opts = {}) {
     if (q.status) { where.push('status=?'); args.push(q.status); }
     if (q.department) { where.push('department=?'); args.push(q.department); }
     if (q.outlet_code) { where.push('outlet_code=?'); args.push(q.outlet_code); }
-    // Partial match (case-insensitive) — biar field worker bisa ketik "Andi" buat match "Andi (Field)"
     if (q.assigned_to_name) { where.push('LOWER(COALESCE(assigned_to_name,\'\')) LIKE LOWER(?)'); args.push('%' + q.assigned_to_name + '%'); }
+    // Multi-tenant: filter by company_id
+    const scope = req.companyScope || { is_super_admin: true };
+    if (!scope.is_super_admin) { where.push('company_id = ?'); args.push(scope.company_id); }
     const sql = `SELECT * FROM service_tickets ${where.length ? 'WHERE ' + where.join(' AND ') : ''} ORDER BY priority DESC, created_at DESC LIMIT 500`;
     const rows = db.prepare(sql).all(...args);
     res.json({ data: rows, total: rows.length });
@@ -356,11 +373,17 @@ function setupServiceVisit(app, opts = {}) {
     try {
       const b = req.body || {};
       if (!b.outlet_code || !b.department || !b.title) return res.status(400).json({ error: 'outlet_code, department, title wajib' });
+      // Multi-tenant: auto-tag company_id (derive from outlet_code prefix CMX = cinema 2)
+      const scope = req.companyScope || { is_super_admin: true };
+      const isCinemaOutlet = String(b.outlet_code).toUpperCase().startsWith('CMX');
+      const companyId = scope.is_super_admin
+        ? (parseInt(b.company_id, 10) || (isCinemaOutlet ? 2 : 1))
+        : scope.company_id;
       const ticketNo = genTicketNo();
-      const r = db.prepare(`INSERT INTO service_tickets (ticket_no, outlet_code, outlet_name, department, ticket_type, title, description, priority, assigned_to_name, created_by, due_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
+      const r = db.prepare(`INSERT INTO service_tickets (ticket_no, outlet_code, outlet_name, department, ticket_type, title, description, priority, assigned_to_name, created_by, due_at, company_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
         .run(ticketNo, b.outlet_code, b.outlet_name || null, b.department, b.ticket_type || null,
              b.title, b.description || null, b.priority || 'normal',
-             b.assigned_to_name || null, b.created_by || 'admin', b.due_at || null);
+             b.assigned_to_name || null, b.created_by || 'admin', b.due_at || null, companyId);
       const ticketId = r.lastInsertRowid;
       // Seed items from template or custom items
       let items = [];
