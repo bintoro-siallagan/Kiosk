@@ -456,28 +456,24 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
 
   // ── WELCOME SCREEN ────────────────────────────────────────────────
   if (!orderType) return (
-    <div style={K.welcome}>
+    <div style={{...K.welcome,background:"#000"}} className="boot-stage">
       <style>{FONT_CSS+KIOSK_CSS+BRAND_OVERRIDE_CSS}</style>
-      {/* Ambient aurora background — soft floating blobs, organic feel */}
-      <div className="aurora-blob aurora-1"/>
-      <div className="aurora-blob aurora-2"/>
-      <div className="aurora-blob aurora-3"/>
       <div style={K.welcomeInner}>
-        <div style={K.logoWrap}>
-          {/* Pure wordmark hero — no container, ambient brand glow at the back, 5x logo-tap to admin */}
-          <div style={{position:"relative",display:"inline-block",padding:"8px 16px"}}
-               onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}}>
-            <div className="wordmark-glow"/>
-            <h1 style={K.brand}>
-              {isCustomBrand
-                ? tenantBrand.name
-                : (<>karya<span style={{fontWeight:400,letterSpacing:"-2px",opacity:.5}}>OS</span></>)}
-            </h1>
-          </div>
-          <p style={K.tagline}>Crafted with love · Ordered with ease</p>
+        {/* Backlit boot logo — lit-from-within feel ala MacBook lid */}
+        <div style={{display:"flex",justifyContent:"center",marginBottom:48}}>
+          <img
+            src="/logo.png"
+            alt={isCustomBrand ? tenantBrand.name : "KaryaOS"}
+            className="boot-logo"
+            onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}}
+            style={{width:180,height:180,objectFit:"contain",cursor:"pointer"}}
+          />
         </div>
+        <h1 style={K.brand}>
+          {isCustomBrand ? tenantBrand.name : (<>karya<span style={{fontWeight:300,opacity:.55}}>OS</span></>)}
+        </h1>
+        <p style={K.tagline}>Crafted with love · Ordered with ease</p>
         <div style={K.clockDisp}>{time.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</div>
-        <p style={K.welcomeQ}>How would you like to order?</p>
         <div style={K.orderRow}>
           <button className="lg order-pill" style={K.orderBtn} onClick={()=>setOrderType("dine")}>
             <span style={K.orderBtnIcon}>🪑</span>
@@ -491,7 +487,6 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           </button>
         </div>
         <p style={K.tapHint}>Tap to begin</p>
-        <div style={{ marginTop: 22 }}><KioskReviewFeed/></div>
       </div>
     </div>
   );
@@ -893,6 +888,11 @@ const KIOSK_CSS = `
   .logo-float{animation:float 6s ease-in-out infinite}
   .logo-halo{position:absolute;inset:-80px;border-radius:50%;background:radial-gradient(circle,var(--brand-primary,#FF6B35) 0%,transparent 60%);opacity:.30;filter:blur(48px);animation:breathe 5s ease-in-out infinite;pointer-events:none}
   .wordmark-glow{position:absolute;inset:-60px -40px;background:radial-gradient(ellipse 80% 60% at 50% 50%,var(--brand-primary,#FF6B35) 0%,transparent 65%);opacity:.32;filter:blur(70px);animation:breathe 6s ease-in-out infinite;pointer-events:none;z-index:0}
+  /* ─── BACKLIT BOOT LOGO (MacBook lid / iPhone splash style) ───────── */
+  @keyframes bootGlow{0%{filter:brightness(0.9) drop-shadow(0 0 10px rgba(255,255,255,0.55)) drop-shadow(0 0 28px rgba(255,255,255,0.35)) drop-shadow(0 0 60px rgba(255,255,255,0.18))}50%{filter:brightness(1.05) drop-shadow(0 0 14px rgba(255,255,255,0.75)) drop-shadow(0 0 38px rgba(255,255,255,0.45)) drop-shadow(0 0 90px rgba(255,255,255,0.25))}100%{filter:brightness(0.9) drop-shadow(0 0 10px rgba(255,255,255,0.55)) drop-shadow(0 0 28px rgba(255,255,255,0.35)) drop-shadow(0 0 60px rgba(255,255,255,0.18))}}
+  @keyframes bootFadeIn{0%{opacity:0;filter:brightness(0) drop-shadow(0 0 0 #fff)}60%{opacity:1}100%{opacity:1}}
+  .boot-logo{animation:bootFadeIn 1.6s ease-out forwards,bootGlow 4s ease-in-out 1.6s infinite;will-change:filter,opacity}
+  .boot-stage{background:radial-gradient(ellipse 80% 60% at 50% 45%,#0a0b10 0%,#020205 70%,#000 100%)!important}
   .aurora-blob{position:absolute;border-radius:50%;filter:blur(100px);pointer-events:none;will-change:transform}
   .aurora-1{top:-15%;left:-15%;width:65%;height:65%;background:radial-gradient(circle,var(--brand-primary,#FF6B35) 0%,transparent 70%);opacity:.22;animation:aurora 22s ease-in-out infinite}
   .aurora-2{bottom:-20%;right:-15%;width:70%;height:70%;background:radial-gradient(circle,var(--brand-secondary,#E55A2B) 0%,transparent 70%);opacity:.18;animation:aurora 28s ease-in-out infinite reverse}
@@ -976,7 +976,7 @@ const K = {
   welcomeInner:{textAlign:"center",padding:"40px 24px",maxWidth:560,width:"100%",position:"relative",zIndex:1},
   logoWrap:   {marginBottom:32},
   logoIcon:   {fontSize:72,lineHeight:1,marginBottom:10,display:"block"},
-  brand:      {fontFamily:"'Inter',sans-serif",fontSize:"min(120px,17vw)",fontWeight:700,letterSpacing:"-5px",color:"#fff",lineHeight:1,background:"linear-gradient(180deg,#fff 0%,rgba(255,255,255,0.55) 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",position:"relative",zIndex:1,cursor:"pointer",userSelect:"none"},
+  brand:      {fontFamily:"'Inter',sans-serif",fontSize:"min(40px,6vw)",fontWeight:500,letterSpacing:"-1.2px",color:"rgba(255,255,255,0.92)",lineHeight:1,userSelect:"none"},
   tagline:    {fontSize:14,color:"rgba(255,255,255,0.5)",marginTop:12,letterSpacing:0.2,fontFamily:"'Inter',sans-serif",fontWeight:400},
   clockDisp:  {fontSize:13,color:"rgba(255,255,255,0.32)",marginBottom:36,letterSpacing:6,fontFamily:"'Inter',sans-serif",fontVariantNumeric:"tabular-nums",fontWeight:500},
   welcomeQ:   {fontSize:15,letterSpacing:"-0.2px",color:"rgba(255,255,255,0.78)",marginBottom:28,fontFamily:"'Inter',sans-serif",fontWeight:500},
