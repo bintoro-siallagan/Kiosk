@@ -1060,11 +1060,18 @@ function CinemaQRISPayment({ film, show, seats, cartItems, total, base, buy, msg
   const urgent = secondsLeft < 60;
 
   if (paid) {
+    // Full-screen takeover — no overlap dengan elemen kiosk lain
     return (
-      <div style={{ paddingTop: 30, textAlign: "center", animation: "karyaKioskFadeUp 0.4s ease-out", maxWidth: 520, margin: "0 auto" }}>
-        <div style={{ fontSize: 80, filter: "drop-shadow(0 0 32px rgba(16,185,129,0.5))" }}>✅</div>
-        <div style={{ fontSize: 28, fontWeight: 900, color: "#10b981", marginTop: 14, letterSpacing: -0.5 }}>Pembayaran Berhasil!</div>
-        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", marginTop: 8 }}>Memproses tiket Anda…</div>
+      <div style={{
+        position: "fixed", inset: 0, zIndex: 9999,
+        background: "rgba(8,9,15,0.96)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        gap: 14, padding: 24,
+      }}>
+        <div style={{ fontSize: 88, lineHeight: 1, filter: "drop-shadow(0 0 32px rgba(16,185,129,0.55))", animation: "karyaPaidPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)" }}>✅</div>
+        <div style={{ fontSize: 30, fontWeight: 900, color: "#10b981", letterSpacing: -0.5, textAlign: "center", lineHeight: 1.1 }}>Pembayaran Berhasil!</div>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", textAlign: "center", maxWidth: 340 }}>Memproses tiket Anda…</div>
+        <style>{`@keyframes karyaPaidPop { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }`}</style>
       </div>
     );
   }
