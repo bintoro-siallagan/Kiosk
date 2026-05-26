@@ -29,21 +29,21 @@ function TouchKeyboard({ value, onChange, onSubmit }) {
         </div>
       ))}
       <div style={KB.row}>
-        <button onPointerDown={e=>{e.preventDefault();onChange("");}} style={KB.clearKey}>HAPUS</button>
+        <button onPointerDown={e=>{e.preventDefault();onChange("");}} style={KB.clearKey}>Clear</button>
         <button onPointerDown={e=>{e.preventDefault();onChange(value+"-");}} style={{...KB.key,width:56}} disabled={value.endsWith("-")}>-</button>
-        <button onPointerDown={e=>{e.preventDefault();onSubmit();}} style={KB.enterKey}>GUNAKAN →</button>
+        <button onPointerDown={e=>{e.preventDefault();onSubmit();}} className="lg lg-brand" style={KB.enterKey}>Check →</button>
       </div>
     </div>
   );
 }
 
 const KB = {
-  wrap:     { width:"100%", maxWidth:500 },
+  wrap:     { width:"100%", maxWidth:500, margin:"0 auto" },
   row:      { display:"flex", justifyContent:"center", gap:6, marginBottom:6 },
-  key:      { minWidth:40, height:52, background:"#1a1a2e", border:"1px solid #252545", borderRadius:10, color:"#fff", fontSize:15, fontWeight:700, fontFamily:"'Inter',sans-serif", transition:"background 0.08s" },
-  delKey:   { minWidth:52, height:52, background:"#2a1a2e", border:"1px solid #3a2545", borderRadius:10, color:"#F87171", fontSize:18, fontWeight:700 },
-  clearKey: { height:52, flex:1, background:"#1a1a1a", border:"1px solid #252525", borderRadius:10, color:"#888", fontSize:13, fontWeight:600 },
-  enterKey: { height:52, flex:2, background:"linear-gradient(90deg,#F59E0B,#F97316)", border:"none", borderRadius:10, color:"#050810", fontSize:14, fontWeight:700, letterSpacing:1, fontFamily:"'Inter',sans-serif" },
+  key:      { minWidth:40, height:50, background:"rgba(255,255,255,0.035)", border:"1px solid rgba(255,255,255,0.07)", borderRadius:12, color:"rgba(255,255,255,0.92)", fontSize:15, fontWeight:600, fontFamily:"'Inter',sans-serif", transition:"all 0.12s ease", cursor:"pointer", letterSpacing:"-0.1px" },
+  delKey:   { minWidth:52, height:50, background:"rgba(248,113,113,0.08)", border:"1px solid rgba(248,113,113,0.18)", borderRadius:12, color:"rgba(248,113,113,0.85)", fontSize:17, fontWeight:600, cursor:"pointer", fontFamily:"'Inter',sans-serif" },
+  clearKey: { height:50, flex:1, background:"rgba(255,255,255,0.025)", border:"1px solid rgba(255,255,255,0.06)", borderRadius:12, color:"rgba(255,255,255,0.55)", fontSize:13, fontWeight:500, cursor:"pointer", fontFamily:"'Inter',sans-serif", letterSpacing:"-0.1px" },
+  enterKey: { height:50, flex:2, border:"none", borderRadius:12, color:"#fff", fontSize:14, fontWeight:600, letterSpacing:"-0.2px", fontFamily:"'Inter',sans-serif", cursor:"pointer" },
 };
 
 // ── PROMO INPUT MODAL ─────────────────────────────────────────────────────────
@@ -77,37 +77,37 @@ export default function PromoInput({ subtotal, customerId, customerTags, cart, o
 
   return (
     <div style={P.overlay} onClick={onClose}>
-      <div style={P.modal} onClick={e=>e.stopPropagation()}>
+      <div className="lg" style={P.modal} onClick={e=>e.stopPropagation()}>
         <style>{`
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&family=DM+Sans:wght@400;600;700&display=swap');
-          *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-          @keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
-          @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
-          @keyframes popIn{0%{transform:scale(0.8);opacity:0}70%{transform:scale(1.05)}100%{transform:scale(1);opacity:1}}
-          @keyframes spin{to{transform:rotate(360deg)}}
-          button{cursor:pointer;font-family:'Inter',sans-serif;}
+          @keyframes piSlideUp{from{transform:translateY(40px) scale(.97);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+          @keyframes piShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+          @keyframes piPop{0%{transform:scale(0.8);opacity:0}70%{transform:scale(1.04)}100%{transform:scale(1);opacity:1}}
+          @keyframes piSpin{to{transform:rotate(360deg)}}
         `}</style>
+
+        {/* Handle */}
+        <div style={P.handle}/>
 
         {/* Header */}
         <div style={P.header}>
           <div style={P.headerLeft}>
-            <span style={{fontSize:28}}>🏷️</span>
+            <span style={P.headerIcon}>🏷️</span>
             <div>
-              <div style={P.title}>KODE PROMO</div>
-              <div style={P.sub}>Masukkan kode untuk mendapatkan diskon</div>
+              <div style={P.title}>Promo code</div>
+              <div style={P.sub}>Enter a code to get a discount</div>
             </div>
           </div>
-          <button style={P.closeBtn} onClick={onClose}>✕</button>
+          <button style={P.closeBtn} onClick={onClose} aria-label="Close">✕</button>
         </div>
 
         <div style={P.body}>
           {/* Code display */}
           <div style={{
             ...P.codeDisplay,
-            borderColor: status==="ok"?"#34D399":status==="error"?"#F87171":"#21262d",
-            animation: status==="error"?"shake 0.4s ease":"none",
+            borderColor: status==="ok"?"rgba(52,211,153,0.5)":status==="error"?"rgba(248,113,113,0.5)":"rgba(255,255,255,0.08)",
+            animation: status==="error"?"piShake 0.4s ease":"none",
           }}>
-            <span style={P.codeText}>{code || <span style={{color:"#444",letterSpacing:4}}>XXXXX</span>}</span>
+            <span style={P.codeText}>{code || <span style={P.codePlaceholder}>XXXXX</span>}</span>
             {status==="checking" && <div style={P.spinner}/>}
             {status==="ok"       && <span style={{color:"#34D399",fontSize:22}}>✓</span>}
             {status==="error"    && <span style={{color:"#F87171",fontSize:20}}>✗</span>}
@@ -115,30 +115,30 @@ export default function PromoInput({ subtotal, customerId, customerTags, cart, o
 
           {/* Validation result */}
           {status==="ok" && result && (
-            <div style={{...P.resultBox, animation:"popIn 0.35s ease"}}>
+            <div style={{...P.resultBox, animation:"piPop 0.35s cubic-bezier(.2,.8,.2,1)"}}>
               <div style={P.resultIcon}>🎉</div>
-              <div>
+              <div style={{flex:1,minWidth:0}}>
                 <div style={P.resultTitle}>{result.desc}</div>
-                <div style={P.resultDiscount}>Hemat {fIDR(result.discount)}</div>
-                    {result.freeItems?.length > 0 && (
-                      <div style={{fontSize:11,color:"#34D399",marginTop:6,fontWeight:600}}>
-                        🎁 GRATIS: {result.freeItems.map(fi => `${fi.qty}× ${fi.name}`).join(", ")}
-                      </div>
-                    )}
-                    {result.paymentHint && (
-                      <div style={{fontSize:11,color:"#F59E0B",marginTop:6,fontWeight:600}}>
-                        🏦 Bayar pakai aplikasi {result.paymentHint} ya
-                      </div>
-                    )}
+                <div style={P.resultDiscount}>You save {fIDR(result.discount)}</div>
+                {result.freeItems?.length > 0 && (
+                  <div style={P.resultFree}>
+                    🎁 Free: {result.freeItems.map(fi => `${fi.qty}× ${fi.name}`).join(", ")}
+                  </div>
+                )}
+                {result.paymentHint && (
+                  <div style={P.resultPayHint}>
+                    🏦 Pay with {result.paymentHint}
+                  </div>
+                )}
               </div>
-              <div style={P.resultAmount}>-{fIDR(result.discount)}</div>
+              <div style={P.resultAmount}>−{fIDR(result.discount)}</div>
             </div>
           )}
 
           {status==="error" && (
             <div style={P.errorBox}>
-              <span style={{fontSize:18}}>⚠️</span>
-              <span style={{fontSize:13,color:"#F87171"}}>{errMsg}</span>
+              <span style={{fontSize:16}}>⚠️</span>
+              <span style={P.errorMsg}>{errMsg}</span>
             </div>
           )}
 
@@ -153,12 +153,13 @@ export default function PromoInput({ subtotal, customerId, customerTags, cart, o
 
           {/* Apply button after success */}
           {status==="ok" && result && (
-            <div style={{display:"flex",gap:10,width:"100%",marginTop:8}}>
+            <div style={{display:"flex",gap:10,width:"100%",marginTop:6}}>
               <button style={P.cancelBtn} onClick={()=>{setCode("");setStatus("idle");setResult(null);}}>
-                Ganti Kode
+                Change code
               </button>
               <button style={P.applyBtn} onClick={handleApply}>
-                PAKAI DISKON {fIDR(result.discount)} →
+                <span>Apply discount</span>
+                <span style={P.applyBtnAmount}>−{fIDR(result.discount)}</span>
               </button>
             </div>
           )}
@@ -168,24 +169,32 @@ export default function PromoInput({ subtotal, customerId, customerTags, cart, o
   );
 }
 
+const FONT = "'Inter',sans-serif";
 const P = {
-  overlay:    { position:"fixed", inset:0, background:"rgba(0,0,0,0.88)", zIndex:300, display:"flex", alignItems:"flex-end", justifyContent:"center" },
-  modal:      { background:"#0d1117", borderRadius:"24px 24px 0 0", width:"100%", maxWidth:560, animation:"slideUp 0.3s ease", border:"1px solid #1a1a2e", borderBottom:"none", maxHeight:"90vh", display:"flex", flexDirection:"column" },
-  header:     { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"20px 22px 16px", borderBottom:"1px solid #1a1a2e" },
-  headerLeft: { display:"flex", alignItems:"center", gap:12 },
-  title:      { fontFamily:"'Inter',sans-serif", fontSize:22, letterSpacing:3, color:"#F59E0B" },
-  sub:        { fontSize:11, color:"#555" },
-  closeBtn:   { background:"#1a1a2e", border:"none", borderRadius:"50%", width:34, height:34, color:"#888", fontSize:16, display:"flex", alignItems:"center", justifyContent:"center" },
-  body:       { padding:"16px 20px 24px", display:"flex", flexDirection:"column", alignItems:"center", gap:14, overflowY:"auto" },
-  codeDisplay:{ display:"flex", alignItems:"center", justifyContent:"center", gap:12, width:"100%", background:"#080c10", border:"2px solid", borderRadius:16, padding:"16px 20px", transition:"border-color 0.3s", minHeight:62 },
-  codeText:   { fontFamily:"'Inter',sans-serif", fontSize:28, letterSpacing:6, color:"#fff", flex:1, textAlign:"center" },
-  spinner:    { width:20, height:20, border:"2px solid #333", borderTop:"2px solid #F59E0B", borderRadius:"50%", animation:"spin 0.8s linear infinite", flexShrink:0 },
-  resultBox:  { display:"flex", alignItems:"center", gap:12, width:"100%", background:"rgba(52,211,153,0.08)", border:"1px solid rgba(52,211,153,0.25)", borderRadius:14, padding:"14px 16px" },
-  resultIcon: { fontSize:28, flexShrink:0 },
-  resultTitle:{ fontSize:14, fontWeight:600, color:"#34D399", marginBottom:3 },
-  resultDiscount:{ fontSize:12, color:"#888" },
-  resultAmount:{ fontFamily:"'Inter',sans-serif", fontSize:22, color:"#34D399", letterSpacing:1, marginLeft:"auto", flexShrink:0 },
-  errorBox:   { display:"flex", alignItems:"center", gap:10, width:"100%", background:"rgba(248,113,113,0.08)", border:"1px solid rgba(248,113,113,0.25)", borderRadius:12, padding:"12px 16px" },
-  applyBtn:   { flex:2, background:"linear-gradient(90deg,#34D399,#059669)", border:"none", borderRadius:12, padding:"16px", color:"#fff", fontSize:15, fontWeight:700, letterSpacing:1, fontFamily:"'Inter',sans-serif" },
-  cancelBtn:  { background:"#1a1a2e", border:"1px solid #21262d", borderRadius:12, padding:"14px 20px", color:"#888", fontSize:13, fontWeight:600 },
+  overlay:    { position:"fixed", inset:0, background:"rgba(0,0,0,0.6)", backdropFilter:"blur(20px) saturate(180%)", WebkitBackdropFilter:"blur(20px) saturate(180%)", zIndex:300, display:"flex", alignItems:"flex-end", justifyContent:"center", fontFamily:FONT },
+  modal:      { borderRadius:"32px 32px 0 0", width:"100%", maxWidth:560, animation:"piSlideUp 0.35s cubic-bezier(.2,.8,.2,1)", borderBottom:"none", maxHeight:"90vh", display:"flex", flexDirection:"column", overflow:"hidden" },
+  handle:     { width:40, height:4, borderRadius:2, background:"rgba(255,255,255,0.15)", margin:"10px auto 4px", flexShrink:0 },
+  header:     { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 22px 16px", borderBottom:"1px solid rgba(255,255,255,0.06)" },
+  headerLeft: { display:"flex", alignItems:"center", gap:12, minWidth:0, flex:1 },
+  headerIcon: { fontSize:26, filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.3))" },
+  title:      { fontFamily:FONT, fontSize:18, fontWeight:600, letterSpacing:"-0.4px", color:"rgba(255,255,255,0.95)", lineHeight:1.1 },
+  sub:        { fontSize:12, color:"rgba(255,255,255,0.45)", marginTop:3, fontFamily:FONT },
+  closeBtn:   { background:"rgba(255,255,255,0.06)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:"50%", width:32, height:32, color:"rgba(255,255,255,0.6)", fontSize:13, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 },
+  body:       { padding:"18px 20px 22px", display:"flex", flexDirection:"column", alignItems:"stretch", gap:12, overflowY:"auto" },
+  codeDisplay:{ display:"flex", alignItems:"center", justifyContent:"center", gap:12, width:"100%", background:"rgba(255,255,255,0.025)", border:"1.5px solid", borderRadius:18, padding:"16px 20px", transition:"border-color 0.3s", minHeight:62 },
+  codeText:   { fontFamily:FONT, fontSize:26, fontWeight:600, letterSpacing:5, color:"#fff", flex:1, textAlign:"center", fontVariantNumeric:"tabular-nums" },
+  codePlaceholder:{ color:"rgba(255,255,255,0.2)", letterSpacing:4 },
+  spinner:    { width:20, height:20, border:"2px solid rgba(255,255,255,0.1)", borderTop:"2px solid var(--brand-primary,#FF6B35)", borderRadius:"50%", animation:"piSpin 0.8s linear infinite", flexShrink:0 },
+  resultBox:  { display:"flex", alignItems:"center", gap:12, width:"100%", background:"rgba(52,211,153,0.08)", border:"1px solid rgba(52,211,153,0.22)", borderRadius:16, padding:"14px 16px" },
+  resultIcon: { fontSize:24, flexShrink:0, filter:"drop-shadow(0 4px 10px rgba(52,211,153,0.3))" },
+  resultTitle:{ fontSize:14, fontWeight:600, color:"#34D399", marginBottom:3, letterSpacing:"-0.2px", fontFamily:FONT },
+  resultDiscount:{ fontSize:11, color:"rgba(255,255,255,0.55)", fontFamily:FONT },
+  resultFree: { fontSize:11, color:"#34D399", marginTop:5, fontWeight:500, fontFamily:FONT },
+  resultPayHint:{ fontSize:11, color:"#F59E0B", marginTop:5, fontWeight:500, fontFamily:FONT },
+  resultAmount:{ fontFamily:FONT, fontSize:20, fontWeight:600, color:"#34D399", letterSpacing:"-0.4px", marginLeft:"auto", flexShrink:0, fontVariantNumeric:"tabular-nums" },
+  errorBox:   { display:"flex", alignItems:"center", gap:10, width:"100%", background:"rgba(248,113,113,0.08)", border:"1px solid rgba(248,113,113,0.22)", borderRadius:14, padding:"11px 16px" },
+  errorMsg:   { fontSize:13, color:"rgba(248,113,113,0.9)", fontFamily:FONT, letterSpacing:"-0.1px" },
+  applyBtn:   { flex:2, background:"linear-gradient(180deg,#34D399,#10b981)", border:"1px solid rgba(255,255,255,0.16)", borderRadius:14, padding:"14px 18px", color:"#fff", fontSize:14, fontWeight:600, letterSpacing:"-0.2px", fontFamily:FONT, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, boxShadow:"inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 24px rgba(52,211,153,0.25)" },
+  applyBtnAmount:{ fontSize:15, fontWeight:600, letterSpacing:"-0.3px", fontVariantNumeric:"tabular-nums" },
+  cancelBtn:  { background:"rgba(255,255,255,0.04)", border:"1px solid rgba(255,255,255,0.08)", borderRadius:14, padding:"13px 18px", color:"rgba(255,255,255,0.7)", fontSize:13, fontWeight:500, cursor:"pointer", fontFamily:FONT, letterSpacing:"-0.1px" },
 };
