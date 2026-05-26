@@ -201,14 +201,24 @@ export default function EmailConfig({ apiBase = "" }) {
 
       {/* Form */}
       <div style={{ background: CARD_BG, border: BORDER, borderRadius: 14, padding: 18, marginBottom: 14 }}>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 100px", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 120px", gap: 10 }}>
           <Field label="📡 SMTP HOST"><input value={form.smtpHost || ""} onChange={e => apply("smtpHost", e.target.value)} placeholder="smtp.gmail.com" style={inp} /></Field>
-          <Field label="🔌 PORT"><input type="number" value={form.smtpPort || 587} onChange={e => apply("smtpPort", parseInt(e.target.value, 10) || 587)} style={inp} /></Field>
-          <Field label="SSL/TLS">
-            <label style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px", background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, cursor: "pointer", fontSize: 12 }}>
-              <input type="checkbox" checked={!!form.smtpSecure} onChange={e => apply("smtpSecure", e.target.checked)} />
-              {form.smtpSecure ? "Secure" : "STARTTLS"}
-            </label>
+          <Field label="🔌 PORT">
+            <input type="number" value={form.smtpPort || 587} onChange={e => {
+              const port = parseInt(e.target.value, 10) || 587;
+              // Auto-pair: 465 = SSL, 587 = STARTTLS, lainnya = preserve
+              const next = { ...form, smtpPort: port };
+              if (port === 465) next.smtpSecure = true;
+              else if (port === 587) next.smtpSecure = false;
+              setForm(next);
+            }} style={inp} />
+            <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4 }}>587=STARTTLS, 465=SSL</div>
+          </Field>
+          <Field label="ENCRYPTION">
+            <div style={{ padding: "10px 12px", background: "rgba(0,0,0,0.35)", border: `1px solid ${form.smtpSecure ? "rgba(168,85,247,0.4)" : "rgba(34,211,238,0.4)"}`, borderRadius: 8, fontSize: 12, color: form.smtpSecure ? "#c084fc" : "#22d3ee", textAlign: "center", fontWeight: 700, fontFamily: "'Geist Mono',monospace" }}>
+              {form.smtpSecure ? "🔒 SSL/TLS" : "🔓 STARTTLS"}
+            </div>
+            <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4 }}>Auto dari port</div>
           </Field>
         </div>
 
