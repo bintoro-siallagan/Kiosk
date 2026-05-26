@@ -260,56 +260,45 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
           <p style={S.welcomeSub}>Siap untuk shift hari ini.</p>
         </div>
 
-        <button style={S.bigBtn} onClick={onNewOrder}>
-          <div style={{fontSize: 44}}>🛒</div>
-          <div>ORDER BARU</div>
-          <div style={S.btnHint}>Mulai pesanan untuk customer</div>
-        </button>
-
-        {onQuickOrder && (
-          <button style={S.bigBtn} onClick={onQuickOrder}>
-            <div style={{fontSize: 44}}>⚡</div>
-            <div>QUICK ORDER</div>
-            <div style={S.btnHint}>Pesanan cepat — menu master + bayar</div>
+        {/* MAIN ACTION GRID — auto-fit 3 col on wide, 1 col mobile */}
+        <div style={S.actionGrid}>
+          <button style={S.bigBtn} onClick={onNewOrder}>
+            <div style={S.bigBtnIcon}>🛒</div>
+            <div style={S.bigBtnTitle}>ORDER BARU</div>
+            <div style={S.btnHint}>Mulai pesanan untuk customer</div>
           </button>
-        )}
 
-        {/* Cinema ticket sale dari POS F&B — concession counter bisa jual tiket */}
-        <button style={{ ...S.bigBtn, borderColor: "rgba(168,85,247,0.4)", background: "linear-gradient(135deg, rgba(168,85,247,0.05), rgba(168,85,247,0.02))" }} onClick={() => {
-          const outlet = new URLSearchParams(window.location.search).get("outlet") || "";
-          window.location.href = `?pos-cinema${outlet ? `&outlet=${outlet}` : ""}`;
-        }}>
-          <div style={{ fontSize: 44 }}>🎬</div>
-          <div style={{ color: "#c084fc" }}>JUAL TIKET CINEMA</div>
-          <div style={S.btnHint}>Pilih jadwal → kursi → bayar (kasir login tetap)</div>
-        </button>
+          {onQuickOrder && (
+            <button style={S.bigBtn} onClick={onQuickOrder}>
+              <div style={S.bigBtnIcon}>⚡</div>
+              <div style={S.bigBtnTitle}>QUICK ORDER</div>
+              <div style={S.btnHint}>Pesanan cepat — menu master</div>
+            </button>
+          )}
+
+          <button style={{ ...S.bigBtn, ...S.bigBtnPurple }} onClick={() => {
+            const outlet = new URLSearchParams(window.location.search).get("outlet") || "";
+            window.location.href = `?pos-cinema${outlet ? `&outlet=${outlet}` : ""}`;
+          }}>
+            <div style={S.bigBtnIcon}>🎬</div>
+            <div style={{ ...S.bigBtnTitle, color: "#c084fc" }}>JUAL TIKET CINEMA</div>
+            <div style={S.btnHint}>Pilih jadwal → kursi → bayar</div>
+          </button>
+        </div>
 
         <div
-
           onClick={() => setShowHistory(true)}
-
           style={{
-
-            margin: "56px 0 40px",
-
-            padding: "18px 22px",
-
-            borderRadius: 14,
-
+            margin: "20px 0 8px",
+            padding: "14px 18px",
+            borderRadius: 12,
             background: "linear-gradient(135deg, rgba(249,115,22,0.10), rgba(249,115,22,0.04))",
-
             border: "1px solid rgba(249,115,22,0.30)",
-
             cursor: "pointer",
-
             display: "flex",
-
             alignItems: "center",
-
             justifyContent: "space-between",
-
           }}
-
         >
 
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -455,21 +444,35 @@ const S = {
     color: "rgba(255,255,255,0.45)", margin: 0, fontSize: 13,
     letterSpacing: 0.3,
   },
-  // Big CTA — gradient amber with multi-layer shadow + glow
+  actionGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
+    gap: 14, marginBottom: 8,
+  },
+  // CTA card — gradient amber with multi-layer shadow + glow, MIN-HEIGHT not padding
   bigBtn: {
-    width: "100%", display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
     background: "linear-gradient(135deg, #F59E0B 0%, #fbbf24 100%)",
     color: "#1a1205",
     border: "1px solid rgba(255,255,255,0.12)",
-    borderRadius: 16, padding: "32px 22px",
-    fontFamily: "inherit", fontSize: 22, fontWeight: 800, letterSpacing: -0.4,
-    cursor: "pointer", marginBottom: 14,
+    borderRadius: 16, padding: "22px 16px", minHeight: 160,
+    fontFamily: "inherit", fontWeight: 800, letterSpacing: -0.3,
+    cursor: "pointer",
     boxShadow: "0 1px 2px rgba(0,0,0,0.4),0 12px 32px rgba(245,158,11,0.35),inset 0 1px 0 rgba(255,255,255,0.25)",
     transition: "all 0.2s cubic-bezier(0.4,0,0.2,1)",
+    textAlign: "center",
+  },
+  bigBtnIcon: { fontSize: 36, lineHeight: 1, marginBottom: 4 },
+  bigBtnTitle: { fontSize: 17, fontWeight: 900, letterSpacing: -0.3 },
+  bigBtnPurple: {
+    background: "linear-gradient(135deg, rgba(168,85,247,0.12), rgba(168,85,247,0.04))",
+    borderColor: "rgba(168,85,247,0.4)",
+    color: "#c084fc",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.4),0 12px 32px rgba(168,85,247,0.15),inset 0 1px 0 rgba(255,255,255,0.06)",
   },
   btnHint: {
-    fontSize: 12, fontWeight: 600, color: "rgba(26,18,5,0.7)",
-    letterSpacing: 0.3,
+    fontSize: 11, fontWeight: 600, color: "currentColor",
+    opacity: 0.7, letterSpacing: 0.2, marginTop: 2,
   },
   section: { marginTop: 32 },
   sectionTitle: {
