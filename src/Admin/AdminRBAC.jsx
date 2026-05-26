@@ -57,21 +57,21 @@ export default function AdminRBAC({ apiBase = "" }) {
     try {
       const responses = await Promise.all(updates);
       const ok = responses.every(r => r.ok);
-      if (ok) { setMsg(`✓ Disimpan — ${role.name}`); setEditing(null); load(); }
-      else setMsg("gagal sebagian");
+      if (ok) { setMsg(`✓ Saved — ${role.name}`); setEditing(null); load(); }
+      else setMsg("Partial failure");
     } catch (e) { setMsg(String(e)); }
   };
 
   const resetRole = async (role) => {
     const ok = await confirm({
-      title: `Reset semua akses "${role.name}"?`,
-      message: "Semua permission role ini akan di-set ke 'none'. Tidak bisa dibatalkan.",
+      title: `Reset all access for "${role.name}"?`,
+      message: "All permissions for this role will be set to 'none'. Cannot be undone.",
       danger: true, okLabel: "Reset",
     });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/rbac/${role.id}`, { method: "DELETE" });
     const j = await r.json();
-    if (j.ok) { setMsg(`✓ Reset — ${role.name}`); load(); }
+    if (j.ok) { setMsg(`✓ Reset — ${role.name}`); load(); }  // English-friendly
     else setMsg(j.error || "gagal");
   };
 
@@ -81,7 +81,7 @@ export default function AdminRBAC({ apiBase = "" }) {
   const [busy, setBusy] = useState(false);
 
   const submitCreate = async () => {
-    if (!newRole.name.trim()) { setMsg("⚠ Nama role wajib diisi"); return; }
+    if (!newRole.name.trim()) { setMsg("⚠ Role name is required"); return; }
     setBusy(true);
     try {
       const r = await fetch(`${apiBase}/api/rbac/roles`, {
@@ -90,7 +90,7 @@ export default function AdminRBAC({ apiBase = "" }) {
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j?.error || "gagal");
-      setMsg(`✓ Role "${j.name}" ditambah · ID: ${j.id}`);
+      setMsg(`✓ Role "${j.name}" added · ID: ${j.id}`);
       setCreating(false);
       setNewRole({ name: "", icon: "⚙️", default_level: "view" });
       load();
@@ -99,46 +99,46 @@ export default function AdminRBAC({ apiBase = "" }) {
   };
 
   const deleteRole = async (role) => {
-    if (!role.custom) { setMsg("⚠ Role built-in tidak bisa dihapus, cuma di-reset"); return; }
+    if (!role.custom) { setMsg("⚠ Built-in roles cannot be deleted, only reset"); return; }
     const ok = await confirm({
-      title: `Hapus role "${role.name}"?`,
-      message: `Role ini akan dihapus permanent dan semua user dengan role ini perlu di-assign ulang.`,
-      danger: true, okLabel: "Hapus",
+      title: `Delete role "${role.name}"?`,
+      message: `This role will be permanently deleted. All users assigned to it need to be re-assigned.`,
+      danger: true, okLabel: "Delete",
     });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/rbac/roles/${role.id}`, { method: "DELETE" });
     const j = await r.json();
-    if (j.ok) { setMsg(`✓ Role "${role.name}" dihapus`); load(); }
-    else setMsg("⚠ " + (j.error || "gagal"));
+    if (j.ok) { setMsg(`✓ Role "${role.name}" deleted`); load(); }
+    else setMsg("⚠ " + (j.error || "failed"));
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat RBAC Matrix…</div>;
+  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Loading RBAC Matrix…</div>;
   const s = d.summary;
 
   return (
     <div>
       <div style={S.intro}>
-        🔐 <b style={{ color: "#a855f7" }}>RBAC — ROLE & PERMISSION MATRIX</b> — {s.roles} role × {s.modules} modul.
-        Klik cell buat ganti level akses: <b>none → view → edit → approve → full</b>. Dynamic RBAC, enterprise-ready.
+        🔐 <b style={{ color: "#a855f7" }}>RBAC — ROLE & PERMISSION MATRIX</b> — {s.roles} roles × {s.modules} modules.
+        Click any cell to change access level: <b>none → view → edit → approve → full</b>. Dynamic RBAC, enterprise-ready.
       </div>
 
       {/* Action bar */}
       <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
         <button onClick={() => setCreating(true)} style={{ padding: "9px 16px", background: "linear-gradient(135deg, #a855f7, #7c3aed)", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", letterSpacing: 0.3 }}>
-          ➕ Tambah Role Custom
+          ➕ Add Custom Role
         </button>
         {s.custom_roles > 0 && (
           <div style={{ padding: "9px 14px", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 8, color: "#c084fc", fontSize: 11, fontFamily: "'Geist Mono',monospace", fontWeight: 700, alignSelf: "center" }}>
-            {s.custom_roles} CUSTOM ROLE AKTIF
+            {s.custom_roles} CUSTOM ROLE{s.custom_roles > 1 ? "S" : ""} ACTIVE
           </div>
         )}
       </div>
 
       <div style={S.kpiRow}>
-        <Kpi label="Total Role" v={String(s.roles)} c="#a855f7" />
-        <Kpi label="Modul Sistem" v={String(s.modules)} c="#3b82f6" />
-        <Kpi label="Full Access" v={String(s.full_access_roles)} c="#ef4444" sub="super admin" />
-        <Kpi label="Read-only" v={String(s.readonly_roles)} c="#10b981" sub="auditor" />
+        <Kpi label="Total Roles"    v={String(s.roles)} c="#a855f7" />
+        <Kpi label="System Modules" v={String(s.modules)} c="#3b82f6" />
+        <Kpi label="Full Access"    v={String(s.full_access_roles)} c="#ef4444" sub="super admin" />
+        <Kpi label="Read-only"      v={String(s.readonly_roles)} c="#10b981" sub="auditor" />
       </div>
 
       {/* Legend */}
@@ -157,14 +157,14 @@ export default function AdminRBAC({ apiBase = "" }) {
         <table style={{ borderCollapse: "collapse", width: "100%" }}>
           <thead>
             <tr>
-              <th style={{ ...S.cornerTh }}>ROLE \ MODUL</th>
+              <th style={{ ...S.cornerTh }}>ROLE \ MODULE</th>
               {d.modules.map(m => (
                 <th key={m.id} style={S.modTh} title={m.name}>
                   <div style={{ fontSize: 15 }}>{m.icon}</div>
                   <div style={{ fontSize: 8, color: "#5b6470", marginTop: 2 }}>{m.name.split(" ")[0]}</div>
                 </th>
               ))}
-              <th style={{ ...S.modTh, minWidth: 80, fontSize: 9, color: "#5b6470" }}>AKSI</th>
+              <th style={{ ...S.modTh, minWidth: 80, fontSize: 9, color: "#5b6470" }}>ACTIONS</th>
             </tr>
           </thead>
           <tbody>
@@ -204,18 +204,18 @@ export default function AdminRBAC({ apiBase = "" }) {
         </table>
       </div>
       <div style={{ fontSize: 11, color: "#5b6470", marginTop: 8 }}>
-        💡 Tiap role punya dashboard &amp; akses berbeda. Perubahan tersimpan otomatis &amp; langsung berlaku.
+        💡 Each role has different dashboard &amp; access. Changes are saved automatically &amp; take effect immediately.
       </div>
 
       {creating && (
         <div onClick={() => setCreating(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20, backdropFilter: "blur(6px)" }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #a855f755", borderRadius: 14, padding: 24, maxWidth: 460, width: "100%" }}>
             <div style={{ fontSize: 11, color: "#a855f7", letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>NEW CUSTOM ROLE</div>
-            <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", marginTop: 6, marginBottom: 14 }}>➕ Tambah Role Baru</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", marginTop: 6, marginBottom: 14 }}>➕ Add New Role</div>
             <div style={{ marginBottom: 12 }}>
               <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>NAMA ROLE *</div>
               <input value={newRole.name} onChange={e => setNewRole({ ...newRole, name: e.target.value })} placeholder="cth: Floor Supervisor" autoFocus style={{ ...modalInp, width: "100%" }} />
-              <div style={{ fontSize: 10, color: "#5b6470", marginTop: 4 }}>ID auto-generate dari nama (slugified). Kalau "Floor Supervisor" → id "floor-supervisor"</div>
+              <div style={{ fontSize: 10, color: "#5b6470", marginTop: 4 }}>ID auto-generated from name (slugified). "Floor Supervisor" → id "floor-supervisor"</div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 10, marginBottom: 12 }}>
               <div>
@@ -234,12 +234,12 @@ export default function AdminRBAC({ apiBase = "" }) {
               </div>
             </div>
             <div style={{ padding: 10, background: "rgba(168,85,247,0.06)", border: "1px solid #a855f733", borderRadius: 8, fontSize: 11, color: "#cbd5e1", marginBottom: 14, lineHeight: 1.5 }}>
-              💡 Setelah role dibuat, kamu bisa atur akses per modul lewat matrix di bawah (klik cell). User bisa di-assign role ini di <b>Manajemen Pengguna</b>.
+              💡 After the role is created, configure module-level access by clicking cells in the matrix below. Users can be assigned this role in <b>Users</b>.
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
               <button onClick={() => setCreating(false)} disabled={busy} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
               <button onClick={submitCreate} disabled={busy || !newRole.name.trim()} style={{ background: "linear-gradient(135deg, #a855f7, #7c3aed)", color: "#fff", border: "none", padding: "8px 18px", borderRadius: 7, cursor: (busy || !newRole.name.trim()) ? "not-allowed" : "pointer", fontFamily: "inherit", fontWeight: 800, opacity: (busy || !newRole.name.trim()) ? 0.5 : 1 }}>
-                {busy ? "⏳ Memproses…" : "➕ Tambah Role"}
+                {busy ? "⏳ Processing…" : "➕ Add Role"}
               </button>
             </div>
           </div>

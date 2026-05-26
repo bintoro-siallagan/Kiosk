@@ -441,32 +441,32 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     });
     // Surface entries — tag by vertical, filter for tenant scope
     const allSurfaces = [
-      { id: "surf:pos",         title: "POS Kasir",            subtitle: "Buka POS terminal di tab baru",        icon: "🧾", kbd: "Open", vertical: "fnb",    onSelect: () => openTab("?pos=1&fresh=1") },
-      { id: "surf:pos-cinema",  title: "POS Cinema (Kasir)",   subtitle: "Jual tiket cinema di counter",         icon: "🎟️", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?pos-cinema&fresh=1") },
-      { id: "surf:kds",         title: "KDS Dapur",            subtitle: "Kitchen display untuk staff dapur",    icon: "👨‍🍳", kbd: "Open", vertical: "fnb",    onSelect: () => openTab("?kds=1") },
-      { id: "surf:cds",         title: "CDS Customer Display", subtitle: "Layar besar untuk customer",           icon: "📺", kbd: "Open", vertical: "fnb",    onSelect: () => openTab("?cds=1") },
-      { id: "surf:kiosk",       title: "Kiosk F&B (Customer)", subtitle: "Customer self-order",                  icon: "🖥️", kbd: "Open", vertical: "fnb",    onSelect: () => openTab("?kiosk=1") },
-      { id: "surf:flow",        title: "FlowApp QR-Order",     subtitle: "Customer order via QR meja",           icon: "📱", kbd: "Open", vertical: "fnb",    onSelect: () => openTab("?flow") },
-      { id: "surf:cinema",      title: "Cinema Kiosk",         subtitle: "Customer beli tiket cinema",           icon: "🎬", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?cinema") },
-      { id: "surf:cinema-kds",  title: "Cinema KDS (F&B)",     subtitle: "Kitchen display untuk concession + in-studio", icon: "👨‍🍳", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?cinema-kds") },
-      { id: "surf:cinema-cds",  title: "Cinema CDS (Second Display)", subtitle: "Customer-facing display POS Cinema",        icon: "📺", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?cinema-cds") },
-      { id: "surf:cinema-snack",title: "In-Studio Order",     subtitle: "QR snack order mid-movie",             icon: "🍿", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?cinema-snack") },
-      { id: "surf:cinema-board",title: "Cinema Lobby Board",  subtitle: "TV signage di lobby",                  icon: "📺", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?cinema-board") },
-      { id: "surf:track",       title: "Order Tracking",       subtitle: "Customer cek status pesanan",          icon: "📍", kbd: "Open", onSelect: () => openTab("?track=1") },
+      { id: "surf:pos",         title: "POS Terminal",         subtitle: "Open cashier POS in new tab",            icon: "🧾", kbd: "Open", vertical: "fnb",    onSelect: () => openTab("?pos=1&fresh=1") },
+      { id: "surf:pos-cinema",  title: "Cinema POS",           subtitle: "Sell cinema tickets at counter",         icon: "🎟️", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?pos-cinema&fresh=1") },
+      { id: "surf:kds",         title: "Kitchen Display (KDS)", subtitle: "Order display for kitchen staff",       icon: "👨‍🍳", kbd: "Open", vertical: "fnb",    onSelect: () => openTab("?kds=1") },
+      { id: "surf:cds",         title: "Customer Display (CDS)", subtitle: "Customer-facing screen",               icon: "📺", kbd: "Open", vertical: "fnb",    onSelect: () => openTab("?cds=1") },
+      { id: "surf:kiosk",       title: "Self-Order Kiosk",     subtitle: "Customer self-service ordering",         icon: "🖥️", kbd: "Open", vertical: "fnb",    onSelect: () => openTab("?kiosk=1") },
+      { id: "surf:flow",        title: "QR Order (FlowApp)",   subtitle: "Customer order via table QR",            icon: "📱", kbd: "Open", vertical: "fnb",    onSelect: () => openTab("?flow") },
+      { id: "surf:cinema",      title: "Cinema Self-Service Kiosk", subtitle: "Customer buys cinema tickets",      icon: "🎬", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?cinema") },
+      { id: "surf:cinema-kds",  title: "Cinema KDS",           subtitle: "Kitchen display for concession + in-studio", icon: "👨‍🍳", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?cinema-kds") },
+      { id: "surf:cinema-cds",  title: "Cinema CDS",           subtitle: "Second display for cinema POS",          icon: "📺", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?cinema-cds") },
+      { id: "surf:cinema-snack",title: "In-Studio QR Order",   subtitle: "Mid-movie snack ordering",               icon: "🍿", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?cinema-snack") },
+      { id: "surf:cinema-board",title: "Cinema Lobby Board",   subtitle: "TV signage in lobby",                    icon: "📺", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?cinema-board") },
+      { id: "surf:track",       title: "Order Tracking",       subtitle: "Customer order status",                  icon: "📍", kbd: "Open", onSelect: () => openTab("?track=1") },
     ];
     const surfaceItems = allSurfaces.filter(s => !s.vertical || _adminCtx?.is_super_admin || _vertOnly === "hybrid" || s.vertical === _vertOnly);
     const actionItems = [
-      { id: "act:owner",     title: "Owner Dashboard",   subtitle: "Real-time KPI + alerts",            icon: "📊", onSelect: () => openRight("tools", "dashboard") },
-      { id: "act:command",   title: "Command Center",    subtitle: "Real-time operations monitoring",  icon: "🛰️", onSelect: () => openRight("command") },
-      { id: "act:orders",    title: "Pesanan / Transaksi",subtitle:"Order list outlet",                 icon: "🧾", onSelect: () => openRight("admin", "orders") },
-      { id: "act:menu",      title: "Menu & Stok",       subtitle: "Master menu + availability",       icon: "🍔", onSelect: () => openRight("admin", "menu") },
-      { id: "act:qrgen",     title: "QR Meja",           subtitle: "Generate QR per meja",             icon: "🪑", onSelect: () => openRight("admin", "qrgen") },
-      { id: "act:settings",  title: "Pengaturan",        subtitle: "Outlet + payment config",          icon: "⚙️", onSelect: () => openRight("admin", "settings") },
-      { id: "act:members",   title: "Member & Customer", subtitle: "CRM + loyalty",                    icon: "👥", onSelect: () => openRight("members") },
-      { id: "act:promo",     title: "Promo Code",        subtitle: "Voucher + diskon",                 icon: "🏷️", onSelect: () => openRight("promo") },
-      { id: "act:shift",     title: "Operasional / Shift", subtitle: "Buka/tutup shift kasir",         icon: "📋", onSelect: () => openRight("shift") },
-      { id: "act:report",    title: "Laporan",           subtitle: "Z-report + sales analytics",       icon: "📊", onSelect: () => openRight("report") },
-      { id: "act:logout",    title: "Logout",            subtitle: "Keluar dari sesi admin",           icon: "🚪", onSelect: () => onLogout?.() },
+      { id: "act:owner",     title: "Owner Dashboard",     subtitle: "Real-time KPI + alerts",            icon: "📊", onSelect: () => openRight("tools", "dashboard") },
+      { id: "act:command",   title: "Command Center",      subtitle: "Real-time operations monitoring",   icon: "🛰️", onSelect: () => openRight("command") },
+      { id: "act:orders",    title: "Orders",              subtitle: "Outlet order list",                 icon: "🧾", onSelect: () => openRight("admin", "orders") },
+      { id: "act:menu",      title: "Menu",                subtitle: "Master menu + availability",        icon: "🍔", onSelect: () => openRight("admin", "menu") },
+      { id: "act:qrgen",     title: "Table QR Generator",  subtitle: "Generate QR per table",             icon: "🪑", onSelect: () => openRight("admin", "qrgen") },
+      { id: "act:settings",  title: "Settings",            subtitle: "Outlet + payment configuration",    icon: "⚙️", onSelect: () => openRight("admin", "settings") },
+      { id: "act:members",   title: "Customers",           subtitle: "CRM + loyalty members",             icon: "👥", onSelect: () => openRight("members") },
+      { id: "act:promo",     title: "Promo Codes",         subtitle: "Vouchers + discounts",              icon: "🏷️", onSelect: () => openRight("promo") },
+      { id: "act:shift",     title: "Shift Management",    subtitle: "Open/close cashier shift",          icon: "📋", onSelect: () => openRight("shift") },
+      { id: "act:report",    title: "Reports",             subtitle: "Z-report + sales analytics",        icon: "📊", onSelect: () => openRight("report") },
+      { id: "act:logout",    title: "Logout",              subtitle: "End admin session",                 icon: "🚪", onSelect: () => onLogout?.() },
     ];
     return [...surfaceItems, ...actionItems, ...tabItems];
   }, []);
@@ -504,26 +504,26 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     { title: "📊 Dashboard", accent: "#f59e0b", items: [
       { label: "Owner Dashboard", icon: "📊", c: "#f59e0b", on: () => openRight("tools", "dashboard") },
     ] },
-    { title: "🏪 Outlet F&B", accent: "#22d3ee", vertical: "fnb", items: [
-      { label: "Pesanan / Transaksi", icon: "🧾", c: "#10b981", on: () => openRight("admin", "orders") },
-      { label: "Menu & Stok", icon: "🍔", c: "#f59e0b", on: () => openRight("admin", "menu") },
-      { label: "QR Meja", icon: "🪑", c: "#a855f7", on: () => openRight("admin", "qrgen") },
-      { label: "Pengaturan", icon: "⚙️", c: "#7d8590", on: () => openRight("admin", "settings") },
+    { title: "🏪 F&B Outlet", accent: "#22d3ee", vertical: "fnb", items: [
+      { label: "Orders",           icon: "🧾", c: "#10b981", on: () => openRight("admin", "orders") },
+      { label: "Menu & Stock",     icon: "🍔", c: "#f59e0b", on: () => openRight("admin", "menu") },
+      { label: "Table QR",         icon: "🪑", c: "#a855f7", on: () => openRight("admin", "qrgen") },
+      { label: "Settings",         icon: "⚙️", c: "#7d8590", on: () => openRight("admin", "settings") },
     ] },
     // 🎬 Cinema parallel "Outlet" column — mirror struktur dari F&B
-    { title: "🏛️ Outlet Cinema", accent: "#a855f7", vertical: "cinema", items: [
-      { label: "🎬 Films & Showtimes",   icon: "🎬", c: "#a855f7", on: () => openRight("tools", "cinema_ops") },
+    { title: "🏛️ Cinema Outlet", accent: "#a855f7", vertical: "cinema", items: [
+      { label: "🎬 Films & Showtimes",      icon: "🎬", c: "#a855f7", on: () => openRight("tools", "cinema_ops") },
       { label: "🎟️ Ticketing / Box Office", icon: "🎟️", c: "#10b981", on: () => openRight("tools", "cinema_ticketing") },
-      { label: "🍿 Menu F&B (Combo Bundles)", icon: "🍿", c: "#f59e0b", on: () => openRight("tools", "cinema_bundles") },
-      { label: "💲 Harga Tiket",          icon: "💲", c: "#10b981", on: () => openRight("tools", "cinema_price_list") },
-      { label: "💺 Studios & Seat Editor", icon: "💺", c: "#ec4899", on: () => openRight("tools", "cinema_seat_types") },
-      { label: "📅 Holiday Calendar",      icon: "📅", c: "#fbbf24", on: () => openRight("tools", "cinema_holidays") },
-      { label: "🏛️ Outlet Master",         icon: "🏛️", c: "#7d8590", on: () => openRight("tools", "outlet_master") },
-      { label: "⚙️ Pengaturan",             icon: "⚙️", c: "#7d8590", on: () => openRight("admin", "settings") },
+      { label: "🍿 F&B Combo Bundles",     icon: "🍿", c: "#f59e0b", on: () => openRight("tools", "cinema_bundles") },
+      { label: "💲 Ticket Pricing",         icon: "💲", c: "#10b981", on: () => openRight("tools", "cinema_price_list") },
+      { label: "💺 Studios & Seat Editor",  icon: "💺", c: "#ec4899", on: () => openRight("tools", "cinema_seat_types") },
+      { label: "📅 Holiday Calendar",       icon: "📅", c: "#fbbf24", on: () => openRight("tools", "cinema_holidays") },
+      { label: "🏛️ Outlets",                icon: "🏛️", c: "#7d8590", on: () => openRight("tools", "outlet_master") },
+      { label: "⚙️ Settings",               icon: "⚙️", c: "#7d8590", on: () => openRight("admin", "settings") },
     ] },
-    { title: "🛰️ Surface Operasional F&B", accent: "#10b981", vertical: "fnb", items: [
-      { label: "POS Kasir", icon: "🧾", c: "#10b981", on: () => openTab("?pos=1&fresh=1") },
-      { label: "KDS Dapur", icon: "👨‍🍳", c: "#f97316", on: () => openTab("?kds=1") },
+    { title: "🛰️ F&B Operational Surfaces", accent: "#10b981", vertical: "fnb", items: [
+      { label: "POS Terminal",     icon: "🧾", c: "#10b981", on: () => openTab("?pos=1&fresh=1") },
+      { label: "Kitchen Display",  icon: "👨‍🍳", c: "#f97316", on: () => openTab("?kds=1") },
       { label: "CDS Display", icon: "📺", c: "#a855f7", on: () => openTab("?cds=1") },
       { label: "Kiosk", icon: "🖥️", c: "#06b6d4", on: () => openTab("?kiosk=1") },
       { label: "Tracking", icon: "📍", c: "#f59e0b", on: () => openTab("?track=1") },
@@ -595,29 +595,30 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     ] },
     // 📊 Master Data & KPI
     { title: "📊 Master & KPI", accent: "#ec4899", items: [
-      { label: "🏢 Departments Master",     icon: "🏢", c: "#ec4899", on: () => openRight("tools", "departments") },
+      { label: "🏢 Departments",            icon: "🏢", c: "#ec4899", on: () => openRight("tools", "departments") },
       { label: "📊 User KPI Dashboard",     icon: "📊", c: "#a855f7", on: () => openRight("tools", "user_kpi") },
     ] },
-    { title: "💼 Manajemen & Data", accent: "#3b82f6", items: [
-      { label: "Member & Customer", icon: "👥", c: "#3b82f6", on: () => openRight("members") },
+    { title: "💼 Management & Data", accent: "#3b82f6", items: [
+      { label: "Customers",          icon: "👥", c: "#3b82f6", on: () => openRight("members") },
       // F&B-specific items
-      { label: "Promo Code (F&B)", icon: "🏷️", c: "#ec4899", vertical: "fnb", on: () => openRight("promo") },
-      { label: "Operasional / Shift", icon: "📋", c: "#f59e0b", vertical: "fnb", on: () => openRight("shift") },
-      { label: "Laporan Z (F&B)", icon: "📊", c: "#10b981", vertical: "fnb", on: () => openRight("report") },
+      { label: "Promo Codes (F&B)",  icon: "🏷️", c: "#ec4899", vertical: "fnb", on: () => openRight("promo") },
+      { label: "Shift Management",   icon: "📋", c: "#f59e0b", vertical: "fnb", on: () => openRight("shift") },
+      { label: "Z Report (F&B)",     icon: "📊", c: "#10b981", vertical: "fnb", on: () => openRight("report") },
       // Cinema-specific items (parallel F&B)
-      { label: "Cinema Promotion", icon: "🎁", c: "#ec4899", vertical: "cinema", on: () => openRight("tools", "cinema_promotion") },
-      { label: "Daily Closing Cinema", icon: "🧾", c: "#fbbf24", vertical: "cinema", on: () => openRight("tools", "cinema_closing") },
-      { label: "Cinema Analytics", icon: "📊", c: "#10b981", vertical: "cinema", on: () => openRight("tools", "cinema_analytics") },
-      { label: "ESB Sync", icon: "🔗", c: "#22d3ee", on: () => openRight("esb-sync") },
-      { label: "Push Notif", icon: "🔔", c: "#a855f7", on: () => openRight("esb-notif") },
-      { label: "Tools", icon: "🛠️", c: "#f59e0b", searchable: true,
+      { label: "Cinema Promotion",   icon: "🎁", c: "#ec4899", vertical: "cinema", on: () => openRight("tools", "cinema_promotion") },
+      { label: "Cinema Daily Closing", icon: "🧾", c: "#fbbf24", vertical: "cinema", on: () => openRight("tools", "cinema_closing") },
+      { label: "Cinema Analytics",   icon: "📊", c: "#10b981", vertical: "cinema", on: () => openRight("tools", "cinema_analytics") },
+      { label: "ESB Sync",           icon: "🔗", c: "#22d3ee", on: () => openRight("esb-sync") },
+      { label: "Push Notifications", icon: "🔔", c: "#a855f7", on: () => openRight("esb-notif") },
+      { label: "Tools",              icon: "🛠️", c: "#f59e0b", searchable: true,
         getSub: (q) => q.trim()
           ? TABS.filter(t => _allowedTabIds.has(t.id) && t.label.toLowerCase().includes(q.trim().toLowerCase()) && canSee(moduleOf(t.id)))
               .map(t => ({ _k: "m:" + t.id, label: t.label, on: () => openRight("tools", t.id) }))
           : toolsSub },
-      { label: "Management", icon: "📊", c: "#3b82f6", on: () => openRight("command") },
-      { label: "👥 Manajemen Pengguna", icon: "👥", c: "#a855f7", on: () => openRight("tools", "admin_users") },
-      { label: "📧 Email / SMTP Config", icon: "📧", c: "#22d3ee", on: () => openRight("tools", "email_config") },
+      { label: "Command Center",     icon: "📊", c: "#3b82f6", on: () => openRight("command") },
+      { label: "👥 Users",            icon: "👥", c: "#a855f7", on: () => openRight("tools", "admin_users") },
+      { label: "🔐 Roles & Permissions", icon: "🔐", c: "#a855f7", on: () => openRight("tools", "rbac") },
+      { label: "📧 Email / SMTP",     icon: "📧", c: "#22d3ee", on: () => openRight("tools", "email_config") },
     ] },
   ];
 

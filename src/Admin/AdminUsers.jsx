@@ -62,28 +62,28 @@ export default function AdminUsers({ apiBase = "" }) {
   };
 
   const unlockOne = async (u) => {
-    if (!confirm(`Unlock akun "${u.name}"?\n\nFailed attempts akan di-reset ke 0.`)) return;
+    if (!confirm(`Unlock account "${u.name}"?\n\nFailed attempts will be reset to 0.`)) return;
     try {
       await callApi(`/api/auth/users/${u.id}/unlock`);
-      setInfo(`✓ Akun "${u.name}" sudah aktif kembali`);
+      setInfo(`✓ Account "${u.name}" reactivated`);
     } catch {}
   };
 
   const unlockAll = async () => {
-    if (!confirm(`Unlock SEMUA akun terkunci (${lockedCount} akun)?\n\nFailed attempts akan di-reset.`)) return;
+    if (!confirm(`Unlock ALL locked accounts (${lockedCount} accounts)?\n\nFailed attempts will be reset.`)) return;
     try {
       const j = await callApi(`/api/auth/users/unlock-all`);
-      setInfo(`✓ ${j.unlocked_count} akun sudah aktif kembali: ${(j.unlocked || []).join(", ")}`);
+      setInfo(`✓ ${j.unlocked_count} accounts reactivated: ${(j.unlocked || []).join(", ")}`);
     } catch {}
   };
 
   const setPassword = async (u) => {
-    const pwd = prompt(`Set password baru untuk "${u.name}":\n\n(min 6 karakter, kosongkan untuk batal)`);
+    const pwd = prompt(`Set new password for "${u.name}":\n\n(min 6 characters, leave empty to cancel)`);
     if (!pwd) return;
-    if (pwd.length < 6) { alert("Password minimal 6 karakter"); return; }
+    if (pwd.length < 6) { alert("Password must be at least 6 characters"); return; }
     try {
       await callApi(`/api/auth/users/${u.id}/set-password`, "POST", { password: pwd });
-      setInfo(`✓ Password "${u.name}" sudah diperbarui`);
+      setInfo(`✓ Password for "${u.name}" updated`);
     } catch {}
   };
 
@@ -92,10 +92,10 @@ export default function AdminUsers({ apiBase = "" }) {
   };
 
   const deleteUser = async (u) => {
-    if (!confirm(`Hapus user "${u.name}"?\n\nRole: ${u.role}\nID: ${u.id}\n\n⚠️ Tindakan ini tidak bisa di-undo. User gak bisa login lagi setelah dihapus.`)) return;
+    if (!confirm(`Delete user "${u.name}"?\n\nRole: ${u.role}\nID: ${u.id}\n\n⚠️ This cannot be undone. User won't be able to log in after deletion.`)) return;
     try {
       await callApi(`/api/auth/users/${u.id}`, "DELETE");
-      setInfo(`✓ User "${u.name}" sudah dihapus permanen`);
+      setInfo(`✓ User "${u.name}" deleted permanently`);
     } catch {}
   };
 
@@ -103,28 +103,28 @@ export default function AdminUsers({ apiBase = "" }) {
     <div style={{ padding: 20, color: "#e6edf3", fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif" }}>
       <header style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 2.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>karyaOS / AUTH / USERS</div>
-        <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", marginTop: 4, letterSpacing: -0.5 }}>👥 Manajemen Pengguna</div>
-        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>Reset akun terkunci, atur password, kelola peran.</div>
+        <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", marginTop: 4, letterSpacing: -0.5 }}>👥 Users</div>
+        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>Manage user accounts, reset locked accounts, set passwords, assign roles.</div>
       </header>
 
       {/* KPI summary */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 10, marginBottom: 16 }}>
-        <KpiCard icon="👥" label="TOTAL"          value={users.length} color={CYAN} />
-        <KpiCard icon="🔒" label="TERKUNCI"       value={lockedCount} color={lockedCount ? RED : "#475569"} />
-        <KpiCard icon="✅" label="AKTIF"          value={users.filter(u=>u.active).length} color={GREEN} />
-        <KpiCard icon="🔑" label="PUNYA PASSWORD" value={users.filter(u=>u.email).length} color={AMBER} />
+        <KpiCard icon="👥" label="TOTAL USERS"    value={users.length} color={CYAN} />
+        <KpiCard icon="🔒" label="LOCKED"         value={lockedCount} color={lockedCount ? RED : "#475569"} />
+        <KpiCard icon="✅" label="ACTIVE"         value={users.filter(u=>u.active).length} color={GREEN} />
+        <KpiCard icon="🔑" label="WITH PASSWORD"  value={users.filter(u=>u.email).length} color={AMBER} />
       </div>
 
       {/* Action bar */}
       <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "wrap" }}>
-        <Pills value={filter} onChange={setFilter} options={[["all","Semua"],["locked",`🔒 Terkunci (${lockedCount})`],["inactive","Nonaktif"]]} />
+        <Pills value={filter} onChange={setFilter} options={[["all","All"],["locked",`🔒 Locked (${lockedCount})`],["inactive","Inactive"]]} />
         <div style={{ flex: 1 }} />
         <button onClick={() => setCreating(true)} style={{ padding: "8px 16px", background: `linear-gradient(135deg, ${PURPLE}, #7c3aed)`, border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", letterSpacing: 0.3 }}>
-          ➕ Tambah User
+          ➕ Add User
         </button>
         {lockedCount > 0 && (
           <button onClick={unlockAll} disabled={busy} style={{ padding: "8px 14px", background: RED, border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", letterSpacing: 0.3 }}>
-            🔓 Buka Semua ({lockedCount})
+            🔓 Unlock All ({lockedCount})
           </button>
         )}
         <button onClick={load} style={ghostBtn}>{busy ? "⏳" : "↻"} Refresh</button>
@@ -167,7 +167,7 @@ export default function AdminUsers({ apiBase = "" }) {
               {u.is_locked ? (
                 <span style={chip(RED)}>🔒 {u.lock_remaining_min}m</span>
               ) : !u.active ? (
-                <span style={chip("#64748b")}>Nonaktif</span>
+                <span style={chip("#64748b")}>Inactive</span>
               ) : (
                 <span style={chip(GREEN)}>Aktif</span>
               )}
@@ -177,19 +177,19 @@ export default function AdminUsers({ apiBase = "" }) {
                 <button onClick={() => unlockOne(u)} disabled={busy} style={{...actionBtn, background: RED, color: "#fff", borderColor: RED}}>🔓 Unlock</button>
               )}
               <button onClick={() => setPassword(u)} disabled={busy} style={actionBtn}>🔑 Password</button>
-              <button onClick={() => toggleActive(u)} disabled={busy} style={actionBtn}>{u.active ? "✕ Nonaktif" : "✓ Aktif"}</button>
-              <button onClick={() => deleteUser(u)} disabled={busy} title="Hapus user permanen" style={{ ...actionBtn, background: "rgba(239,68,68,0.1)", borderColor: "rgba(239,68,68,0.4)", color: "#fca5a5" }}>🗑️ Hapus</button>
+              <button onClick={() => toggleActive(u)} disabled={busy} style={actionBtn}>{u.active ? "✕ Deactivate" : "✓ Activate"}</button>
+              <button onClick={() => deleteUser(u)} disabled={busy} title="Delete user permanently" style={{ ...actionBtn, background: "rgba(239,68,68,0.1)", borderColor: "rgba(239,68,68,0.4)", color: "#fca5a5" }}>🗑️ Delete</button>
             </div>
           </div>
         ))}
       </div>
 
       <div style={{ marginTop: 18, padding: 14, background: "rgba(168,85,247,0.05)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 10, fontSize: 12, color: "#cbd5e1", lineHeight: 1.6 }}>
-        <div style={{ fontWeight: 800, color: PURPLE, marginBottom: 6 }}>💡 Tips Keamanan</div>
-        • Akun terkunci otomatis dibuka setelah 15 menit tanpa intervensi.<br/>
-        • Tombol <b>🔓 Unlock</b> bisa mempercepat recovery untuk staf yang lupa password.<br/>
-        • Aktifkan PIN backup untuk semua akun — login PIN tidak terpengaruh lockout password.<br/>
-        • Audit login attempt tersedia via <code>/api/auth/audit</code>.
+        <div style={{ fontWeight: 800, color: PURPLE, marginBottom: 6 }}>💡 Security Tips</div>
+        • Locked accounts auto-unlock after 15 minutes without intervention.<br/>
+        • The <b>🔓 Unlock</b> button speeds up recovery for staff who forgot their password.<br/>
+        • Enable backup PIN for all accounts — PIN login is unaffected by password lockout.<br/>
+        • Login attempt audit available at <code>/api/auth/audit</code>.
       </div>
 
       {creating && (
@@ -213,9 +213,9 @@ function CreateUserModal({ API, token, roles, onClose, onCreated }) {
 
   const submit = async () => {
     setErr("");
-    if (!name.trim()) { setErr("Nama wajib diisi"); return; }
-    if (!/^\d{6}$/.test(pin)) { setErr("PIN harus 6 digit angka"); return; }
-    if (!role) { setErr("Pilih role"); return; }
+    if (!name.trim()) { setErr("Name is required"); return; }
+    if (!/^\d{6}$/.test(pin)) { setErr("PIN must be 6 digits"); return; }
+    if (!role) { setErr("Please select a role"); return; }
     setBusy(true);
     try {
       const r = await fetch(`${API}/api/auth/users`, {
@@ -237,15 +237,15 @@ function CreateUserModal({ API, token, roles, onClose, onCreated }) {
         <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginTop: 6, marginBottom: 16 }}>➕ Tambah Pengguna Baru</div>
 
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>NAMA LENGKAP *</div>
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="cth: Andre Wijaya" autoFocus
+          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>FULL NAME *</div>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="e.g.: Andre Wijaya" autoFocus
             style={{ width: "100%", padding: 10, background: "rgba(0,0,0,0.4)", border: BORDER, borderRadius: 8, color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box", outline: "none" }} />
         </div>
 
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>PIN 6 DIGIT *</div>
+          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>6-DIGIT PIN *</div>
           <div style={{ display: "flex", gap: 6 }}>
-            <input value={pin} onChange={e => setPin(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))} placeholder="cth: 123456" inputMode="numeric" maxLength={6}
+            <input value={pin} onChange={e => setPin(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))} placeholder="e.g.: 123456" inputMode="numeric" maxLength={6}
               style={{ flex: 1, padding: 10, background: "rgba(0,0,0,0.4)", border: BORDER, borderRadius: 8, color: "#fff", fontSize: 18, fontFamily: "'Geist Mono',monospace", letterSpacing: 4, textAlign: "center", boxSizing: "border-box", outline: "none" }} />
             <button onClick={genPin} title="Generate random PIN" style={{ padding: "10px 14px", background: `${PURPLE}22`, border: `1px solid ${PURPLE}55`, borderRadius: 8, color: PURPLE, fontSize: 16, cursor: "pointer", fontFamily: "inherit" }}>🎲</button>
           </div>
@@ -271,16 +271,16 @@ function CreateUserModal({ API, token, roles, onClose, onCreated }) {
             ))}
           </select>
           <div style={{ fontSize: 10, color: "#64748b", marginTop: 4 }}>
-            💡 Role-nya nentuin akses modul (atur permission di tab <b>RBAC Matrix</b>).
+            💡 Role determines module access (configure permissions in <b>Roles & Permissions</b>).
           </div>
         </div>
 
         {err && <div style={{ padding: "10px 12px", background: "rgba(239,68,68,0.1)", border: `1px solid ${RED}55`, borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 12 }}>⚠ {err}</div>}
 
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onClose} disabled={busy} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: BORDER, borderRadius: 10, color: "#fff", fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>Batal</button>
+          <button onClick={onClose} disabled={busy} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: BORDER, borderRadius: 10, color: "#fff", fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>Cancel</button>
           <button onClick={submit} disabled={busy} style={{ flex: 2, padding: 12, background: `linear-gradient(135deg, ${PURPLE}, #7c3aed)`, border: "none", borderRadius: 10, color: "#fff", fontWeight: 800, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
-            {busy ? "⏳ Memproses…" : "➕ Tambah User"}
+            {busy ? "⏳ Processing…" : "➕ Add User"}
           </button>
         </div>
       </div>
