@@ -98,7 +98,7 @@ export default function ServiceVisitTracker({ apiBase = "" }) {
         )}
         {view === "templates" && (
           <button onClick={() => setEditingTemplate({})} style={{ padding: "8px 14px", background: `linear-gradient(135deg,${PURPLE},#7c3aed)`, border: "none", borderRadius: 7, color: "#fff", fontSize: 12, fontWeight: 800, fontFamily: "inherit", cursor: "pointer" }}>
-            + Template Baru
+            + New Template
           </button>
         )}
       </div>
@@ -561,7 +561,7 @@ function TemplateEditModal({ template, departments, onClose, onSaved, API }) {
               {departments.map(d => <option key={d.code} value={d.code}>{d.icon} {d.label}</option>)}
             </select>
           </Field>
-          <Field label="📝 NAMA TEMPLATE *">
+          <Field label="📝 TEMPLATE NAME *">
             <input value={form.template_name} onChange={e => setForm({...form, template_name: e.target.value})} placeholder="cth: PC Repair Standard" style={inp} />
           </Field>
         </div>

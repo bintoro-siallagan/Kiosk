@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useUiKit } from "../components/uiKit.jsx";
 
 const AC = "#15803d";
-const ST = { active: { c: "#10b981", l: "AKTIF" }, renovation: { c: "#f59e0b", l: "RENOVASI" }, onboarding: { c: "#3b82f6", l: "ONBOARDING" }, closed: { c: "#ef4444", l: "TUTUP" } };
+const ST = { active: { c: "#10b981", l: "ACTIVE" }, renovation: { c: "#f59e0b", l: "RENOVATION" }, onboarding: { c: "#3b82f6", l: "ONBOARDING" }, closed: { c: "#ef4444", l: "CLOSED" } };
 const TYPE_ICON = { "Dine-in": "🍽️", Express: "⚡", Kiosk: "🖥️" };
 
 export default function AdminOutletMaster({ apiBase = "" }) {
@@ -46,7 +46,7 @@ export default function AdminOutletMaster({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
   const remove = async (o) => {
-    const ok = await confirm({ title: `Hapus outlet "${o.name}"?`, message: `Outlet ${o.code} akan dihapus permanen. Data transaksi terkait tetap ada di history tapi referensi outlet hilang.\n\nTidak bisa dibatalkan.`, danger: true, okLabel: "Delete" });
+    const ok = await confirm({ title: `Delete outlet "${o.name}"?`, message: `Outlet ${o.code} will be permanently deleted. Related transaction data remains in history but outlet reference is lost.\n\nCannot be undone.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/outlet-master/${o.id}`, { method: "DELETE" });
     const j = await r.json();
@@ -60,21 +60,21 @@ export default function AdminOutletMaster({ apiBase = "" }) {
   return (
     <div>
       <div style={S.intro}>
-        🏪 <b style={{ color: "#4ade80" }}>OUTLET MASTER</b> — registry &amp; lifecycle outlet: profil, tipe,
-        kapasitas &amp; status (aktif / renovasi / onboarding / tutup). Klik badge status buat ubah.
+        🏪 <b style={{ color: "#4ade80" }}>OUTLET MASTER</b> — outlet registry &amp; lifecycle: profile, type,
+        capacity &amp; status (active / renovation / onboarding / closed). Click the status badge to change.
       </div>
 
       <div style={S.kpiRow}>
-        <Kpi label="Total Outlet" v={String(s.total)} c={AC} />
-        <Kpi label="Aktif Operasi" v={String(s.active)} c="#10b981" />
-        <Kpi label="Non-Operasional" v={String(s.not_operational)} c={s.not_operational > 0 ? "#f59e0b" : "#10b981"} />
-        <Kpi label="Total Kapasitas" v={s.total_capacity + " kursi"} c="#3b82f6" />
+        <Kpi label="Total Outlets"    v={String(s.total)} c={AC} />
+        <Kpi label="Operational"      v={String(s.active)} c="#10b981" />
+        <Kpi label="Non-Operational"  v={String(s.not_operational)} c={s.not_operational > 0 ? "#f59e0b" : "#10b981"} />
+        <Kpi label="Total Capacity"   v={s.total_capacity + " seats"} c="#3b82f6" />
       </div>
       {msg ? <div style={{ fontSize: 12, margin: "8px 2px", color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
 
       <div style={{ ...S.card, marginTop: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={S.kicker}>🏪 REGISTRY OUTLET — {d.outlets.length}</span>
+          <span style={S.kicker}>🏪 OUTLET REGISTRY — {d.outlets.length}</span>
           <span style={{ display: "flex", gap: 10, alignItems: "center" }}>
             <span style={{ fontSize: 11, color: "#5b6470" }}>{s.by_type.map(t => `${TYPE_ICON[t.type]} ${t.type} ${t.count}`).join("  ·  ")}</span>
             <button onClick={() => setAdding({ name: "", area: "", address: "", phone: "", manager: "", outlet_type: "Dine-in", seat_capacity: 0 })} style={{ background: AC, color: "#fff", border: "none", borderRadius: 7, padding: "6px 12px", fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ Outlet</button>
@@ -96,7 +96,7 @@ export default function AdminOutletMaster({ apiBase = "" }) {
                 <div style={{ marginTop: 8, fontSize: 11, color: "#9da7b3", lineHeight: 1.7 }}>
                   <div>📍 {o.address}</div>
                   <div>👤 {o.manager} · ☎ {o.phone}</div>
-                  <div>🪑 {o.seat_capacity} kursi · <span style={{ color: "#5b6470" }}>{o.outlet_type}</span></div>
+                  <div>🪑 {o.seat_capacity} seats · <span style={{ color: "#5b6470" }}>{o.outlet_type}</span></div>
                 </div>
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: 4, marginTop: 8 }}>
                   <button onClick={() => setEditing({ ...o })} style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 9px", borderRadius: 5, fontSize: 10.5, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️ Edit</button>
@@ -129,9 +129,9 @@ function OutletForm({ data, isEdit, d, onChange, onClose, onSave }) {
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%" }}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>{isEdit ? `✏️ Edit Outlet — ${data.code}` : "+ Outlet Baru"}</div>
+        <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>{isEdit ? `✏️ Edit Outlet — ${data.code}` : "+ New Outlet"}</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <div><div style={lbl}>NAMA *</div><input value={data.name || ""} onChange={e => onChange({ name: e.target.value })} style={inp} /></div>
+          <div><div style={lbl}>NAME *</div><input value={data.name || ""} onChange={e => onChange({ name: e.target.value })} style={inp} /></div>
           <div><div style={lbl}>AREA</div><input value={data.area || ""} onChange={e => onChange({ area: e.target.value })} style={inp} /></div>
           <div style={{ gridColumn: "1/-1" }}><div style={lbl}>ALAMAT</div><input value={data.address || ""} onChange={e => onChange({ address: e.target.value })} style={inp} /></div>
           <div><div style={lbl}>MANAGER</div><input value={data.manager || ""} onChange={e => onChange({ manager: e.target.value })} style={inp} /></div>
