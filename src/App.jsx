@@ -40,6 +40,7 @@ const CinemaDigitalTicket    = lazy(() => import("./Cinema/CinemaDigitalTicket.j
 const OutletAudit            = lazy(() => import("./RemoteOps/OutletAudit.jsx"));
 const OutletVisit            = lazy(() => import("./RemoteOps/OutletVisit.jsx"));
 const LaunchFieldWorker      = lazy(() => import("./RemoteOps/LaunchFieldWorker.jsx"));
+const ServiceStaff           = lazy(() => import("./RemoteOps/ServiceStaff.jsx"));
 const TableSelector          = lazy(() => import("./TableSelector.jsx"));
 const CustomerInput          = lazy(() => import("./CustomerInput.jsx"));
 const Payment                = lazy(() => import("./Payment.jsx"));
@@ -81,6 +82,7 @@ function getScene() {
   if (new URLSearchParams(q).has("audit")) return "outlet-audit";
   if (new URLSearchParams(q).has("visit")) return "outlet-visit";
   if (new URLSearchParams(q).has("launch")) return "launch-field";
+  if (new URLSearchParams(q).has("service")) return "service-staff";
   if (new URLSearchParams(q).get("ticket")) return "cinema-digital-ticket";
   if (q.includes("cinema-snack")) return "cinema-snack";
   if (q.includes("cinema-board")) return "cinema-board";
@@ -215,6 +217,8 @@ export default function App() {
     node = <OutletVisit />;
   } else if (scene === "launch-field") {
     node = <LaunchFieldWorker />;
+  } else if (scene === "service-staff") {
+    node = <ServiceStaff />;
   } else if (scene === "customer-track") {
     node = <><PromoBroadcastBanner/><CustomerTrackingPage orderId={trackOrderId}/></>;
   } else if (scene === "track") {

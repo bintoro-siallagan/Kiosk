@@ -484,6 +484,16 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "🚀 Launch Tracker",         icon: "🚀", c: "#a855f7", on: () => openRight("tools", "outlet_launch") },
       { label: "🔏 Field Worker Sign-off",  icon: "🔏", c: "#10b981", on: () => openTab("?launch") },
     ] },
+    // 🔧 KFS — service visit / field service
+    { title: "🔧 Field Service (KFS)", accent: "#22d3ee", items: [
+      { label: "🔧 Service Visit Tracker",  icon: "🔧", c: "#22d3ee", on: () => openRight("tools", "service_visit") },
+      { label: "👷 Staff Mobile (?service)", icon: "👷", c: "#10b981", on: () => openTab("?service") },
+    ] },
+    // 📊 Master Data & KPI
+    { title: "📊 Master & KPI", accent: "#ec4899", items: [
+      { label: "🏢 Departments Master",     icon: "🏢", c: "#ec4899", on: () => openRight("tools", "departments") },
+      { label: "📊 User KPI Dashboard",     icon: "📊", c: "#a855f7", on: () => openRight("tools", "user_kpi") },
+    ] },
     { title: "💼 Manajemen & Data", accent: "#3b82f6", items: [
       { label: "Member & Customer", icon: "👥", c: "#3b82f6", on: () => openRight("members") },
       { label: "Promo Code", icon: "🏷️", c: "#ec4899", on: () => openRight("promo") },

@@ -74,6 +74,9 @@ const RemoteOpsCommand            = lazy(() => import("./Admin/RemoteOpsCommand.
 const AdminUsers                  = lazy(() => import("./Admin/AdminUsers.jsx"));
 const OutletLaunchTracker         = lazy(() => import("./Admin/OutletLaunchTracker.jsx"));
 const OutletPinConfig             = lazy(() => import("./Admin/OutletPinConfig.jsx"));
+const ServiceVisitTracker         = lazy(() => import("./Admin/ServiceVisitTracker.jsx"));
+const DepartmentsConfig           = lazy(() => import("./Admin/DepartmentsConfig.jsx"));
+const UserKpiDashboard            = lazy(() => import("./Admin/UserKpiDashboard.jsx"));
 const CinemaTicketing             = lazy(() => import("./Admin/CinemaTicketing.jsx"));
 const CinemaBoxOffice             = lazy(() => import("./Admin/CinemaBoxOffice.jsx"));
 const CinemaValidate              = lazy(() => import("./Admin/CinemaValidate.jsx"));
@@ -295,6 +298,9 @@ export default function AdminTools({ initialTab }) {
         {tab === "admin_users" && <AdminUsers apiBase={API} />}
         {tab === "outlet_launch" && <OutletLaunchTracker apiBase={API} />}
         {tab === "outlet_pin_config" && <OutletPinConfig apiBase={API} />}
+        {tab === "service_visit" && <ServiceVisitTracker apiBase={API} />}
+        {tab === "departments" && <DepartmentsConfig apiBase={API} />}
+        {tab === "user_kpi" && <UserKpiDashboard apiBase={API} />}
         {tab === "cinema_promotion" && <CinemaPromotion apiBase={API} />}
         {tab === "cinema_holidays" && <CinemaHolidays apiBase={API} />}
         {tab === "cinema_seat_types" && <CinemaSeatTypes apiBase={API} />}
