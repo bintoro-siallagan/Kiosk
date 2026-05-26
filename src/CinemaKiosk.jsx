@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import DelightPopup from "./components/DelightPopup.jsx";
 
 // CinemaKiosk — customer-facing cinema ticket flow.
@@ -410,7 +410,23 @@ export default function CinemaKiosk({ apiBase }) {
     }
   }
 
-  const filmShows = showtimes.filter(s => film && s.film_id === film.id);
+  // Kiosk customer view — hanya tampil showtime yang TERSEDIA:
+  // - status 'scheduled' (bukan cancelled/ended/closed)
+  // - belum lewat waktu mulai (start_time hari ini > now, atau future date)
+  // - tidak sold-out (seats_remaining > 0, optional check)
+  const filmShows = showtimes.filter(s => {
+    if (!film || s.film_id !== film.id) return false;
+    const status = s.derived_status || s.status || "scheduled";
+    if (status !== "scheduled") return false;
+    // Cek waktu tayang harus future
+    try {
+      const dt = new Date(`${s.show_date}T${s.start_time}`);
+      if (dt.getTime() < Date.now() - 5 * 60 * 1000) return false; // 5 menit grace
+    } catch {}
+    // Cek seat tersedia (kalau backend kirim)
+    if (s.seats_remaining != null && s.seats_remaining <= 0) return false;
+    return true;
+  });
   const price = show ? (show.price || 0) : 0;
 
   return (
@@ -680,69 +696,13 @@ export default function CinemaKiosk({ apiBase }) {
           </>
         )}
 
-        {/* STEP: payment — konfirmasi order + bayar di kasir */}
+        {/* STEP: payment — QRIS self-checkout (no more Bayar di Kasir loophole) */}
         {step === "payment" && (
-          <div style={{ paddingTop: 20, animation: "karyaKioskFadeUp 0.4s ease-out", maxWidth: 600, margin: "0 auto" }}>
-            <div style={{ textAlign: "center", marginBottom: 22 }}>
-              <div style={{ fontSize: 50 }}>🧾</div>
-              <div style={{ fontSize: 24, fontWeight: 900, marginTop: 8, letterSpacing: -0.5 }}>Konfirmasi Pesanan</div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginTop: 6 }}>
-                Cek pesanan Anda. Klik <b>Bayar di Kasir</b> untuk lanjut.
-              </div>
-            </div>
-
-            <div style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 22, marginBottom: 18 }}>
-              <div style={{ fontSize: 11, color: "#a855f7", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 12 }}>🎬 FILM</div>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{film?.title}</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>
-                {show && new Date(show.starts_at * 1000).toLocaleString("id-ID", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-              </div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>Kursi: <b style={{ color: "#fbbf24" }}>{[...seats].sort().join(", ")}</b> · {seats.size} tiket</div>
-
-              {cartItems.length > 0 && (
-                <>
-                  <div style={{ fontSize: 11, color: "#a855f7", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginTop: 18, marginBottom: 10 }}>🍿 F&B BUNDLE</div>
-                  {cartItems.map(it => (
-                    <div key={it.bundle_id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#cbd5e1", marginBottom: 4 }}>
-                      <span>{it.name} × {it.qty}</span>
-                      <span style={{ fontFamily: "'Geist Mono',monospace" }}>{rp((it.price || 0) * it.qty)}</span>
-                    </div>
-                  ))}
-                </>
-              )}
-
-              <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: 16, paddingTop: 14, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 700, letterSpacing: 0.5 }}>TOTAL</span>
-                <span style={{ fontSize: 28, fontWeight: 900, color: "#10b981", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5 }}>
-                  {rp(Math.max(0, grandTotal - (promoApplied?.discount || 0)))}
-                </span>
-              </div>
-            </div>
-
-            <div style={{ padding: 14, background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 12, marginBottom: 18, fontSize: 12.5, color: "#fde68a", lineHeight: 1.55 }}>
-              💳 <b>Cara Bayar:</b> Klik tombol di bawah → sistem cetak <b>Order ID</b>. Bawa Order ID ke kasir untuk menyelesaikan pembayaran (Tunai / QRIS / EDC). Kasir akan terbitkan tiket fisik setelah lunas.
-            </div>
-
-            {msg && <div style={{ padding: 10, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, color: "#fca5a5", fontSize: 13, marginBottom: 14 }}>{msg}</div>}
-
-            <button onClick={() => buy(cartItems)} style={{
-              width: "100%", padding: "18px 24px",
-              background: "linear-gradient(135deg,#10b981,#34d399)",
-              border: "none", borderRadius: 14, color: "#04130c",
-              fontSize: 17, fontWeight: 900, fontFamily: "inherit",
-              cursor: "pointer", letterSpacing: 0.5,
-              boxShadow: "0 8px 24px rgba(16,185,129,0.35), inset 0 1px 0 rgba(255,255,255,0.2)",
-            }}>
-              💳 Konfirmasi · Bayar di Kasir
-            </button>
-
-            <button onClick={() => setStep("bundles")} style={{
-              width: "100%", padding: "12px 20px", marginTop: 10,
-              background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
-              borderRadius: 12, color: "rgba(255,255,255,0.65)", fontSize: 13, fontWeight: 600,
-              fontFamily: "inherit", cursor: "pointer",
-            }}>← Kembali edit F&B</button>
-          </div>
+          <CinemaQRISPayment
+            film={film} show={show} seats={seats} cartItems={cartItems}
+            total={Math.max(0, grandTotal - (promoApplied?.discount || 0))}
+            base={base} buy={buy} msg={msg} setMsg={setMsg}
+            onBack={() => setStep("bundles")} />
         )}
 
         {/* STEP: done */}
@@ -1003,6 +963,166 @@ function extractYouTubeId(url) {
 }
 
 // FilmPreviewModal — modal preview film: poster + trailer + info + Pesan Tiket button
+// ─── QRIS Self-Checkout (Cinema Kiosk) ───────────────────────────
+// Create QRIS via Midtrans → show QR + countdown → poll status →
+// on settlement, call buy(cartItems) → done. NO 'Bayar di Kasir'
+// loophole — payment harus confirmed sebelum tiket di-print.
+function CinemaQRISPayment({ film, show, seats, cartItems, total, base, buy, msg, setMsg, onBack }) {
+  const [qrData, setQrData] = useState(null);    // { transactionId, qrUrl, midtransOrderId, expiryTime }
+  const [creating, setCreating] = useState(false);
+  const [polling, setPolling] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(900); // 15 min
+  const [paid, setPaid] = useState(false);
+  const pollTimerRef = useRef(null);
+  const tickTimerRef = useRef(null);
+
+  // Create QRIS transaction on mount
+  useEffect(() => {
+    let mounted = true;
+    setCreating(true);
+    setMsg("");
+    const items = [
+      { n: film?.title || "Tiket Cinema", p: Math.round(total / Math.max(1, seats.size)), q: seats.size },
+      ...cartItems.map(it => ({ n: it.name, p: it.price, q: it.qty })),
+    ];
+    const orderId = `CK-${Date.now().toString(36).slice(-7).toUpperCase()}`;
+    fetch(`/api/payment/qris`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ orderId, amount: total, items, customerName: "Cinema Customer" }),
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (!mounted) return;
+        if (d.error || !d.ok) { setMsg("⚠ " + (d.error || "Gagal generate QR")); return; }
+        setQrData(d);
+        // Calc expiry seconds
+        if (d.expiryTime) {
+          const exp = new Date(d.expiryTime).getTime();
+          const left = Math.max(0, Math.floor((exp - Date.now()) / 1000));
+          setSecondsLeft(Math.min(left, 900));
+        }
+        setPolling(true);
+      })
+      .catch(e => setMsg("⚠ " + e.message))
+      .finally(() => setCreating(false));
+    return () => { mounted = false; };
+  }, []);
+
+  // Countdown timer
+  useEffect(() => {
+    if (!qrData || paid) return;
+    tickTimerRef.current = setInterval(() => {
+      setSecondsLeft(s => Math.max(0, s - 1));
+    }, 1000);
+    return () => clearInterval(tickTimerRef.current);
+  }, [qrData, paid]);
+
+  // Poll status every 3s
+  useEffect(() => {
+    if (!polling || !qrData?.midtransOrderId || paid) return;
+    pollTimerRef.current = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/payment/status/${encodeURIComponent(qrData.midtransOrderId)}`);
+        const d = await r.json();
+        if (d.paid || ["settlement", "capture"].includes(d.status)) {
+          setPaid(true);
+          setPolling(false);
+          clearInterval(pollTimerRef.current);
+          clearInterval(tickTimerRef.current);
+          // Trigger ticket creation + done
+          setTimeout(() => buy(cartItems), 800);
+        }
+      } catch {}
+    }, 3000);
+    return () => clearInterval(pollTimerRef.current);
+  }, [polling, qrData, paid, buy, cartItems]);
+
+  // Auto-expire when countdown reach 0
+  useEffect(() => {
+    if (secondsLeft === 0 && !paid) {
+      setPolling(false);
+      setMsg("⏰ QR code expired. Klik 'Coba Lagi' untuk generate baru.");
+    }
+  }, [secondsLeft, paid]);
+
+  const mm = String(Math.floor(secondsLeft / 60)).padStart(2, "0");
+  const ss = String(secondsLeft % 60).padStart(2, "0");
+  const urgent = secondsLeft < 60;
+
+  if (paid) {
+    return (
+      <div style={{ paddingTop: 30, textAlign: "center", animation: "karyaKioskFadeUp 0.4s ease-out", maxWidth: 520, margin: "0 auto" }}>
+        <div style={{ fontSize: 80, filter: "drop-shadow(0 0 32px rgba(16,185,129,0.5))" }}>✅</div>
+        <div style={{ fontSize: 28, fontWeight: 900, color: "#10b981", marginTop: 14, letterSpacing: -0.5 }}>Pembayaran Berhasil!</div>
+        <div style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", marginTop: 8 }}>Memproses tiket Anda…</div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ paddingTop: 18, animation: "karyaKioskFadeUp 0.4s ease-out", maxWidth: 520, margin: "0 auto" }}>
+      <div style={{ textAlign: "center", marginBottom: 18 }}>
+        <div style={{ fontSize: 11, color: "#a855f7", letterSpacing: 2.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>QRIS PAYMENT</div>
+        <div style={{ fontSize: 22, fontWeight: 900, marginTop: 4, letterSpacing: -0.4 }}>Scan untuk Bayar</div>
+        <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>Buka e-wallet (GoPay/OVO/DANA/ShopeePay) → scan QR</div>
+      </div>
+
+      {/* QR Code box */}
+      <div style={{ background: "#fff", padding: 18, borderRadius: 16, marginBottom: 14, boxShadow: "0 16px 48px rgba(245,158,11,0.25), 0 0 0 4px rgba(245,158,11,0.15)" }}>
+        {creating ? (
+          <div style={{ aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", fontSize: 14 }}>
+            ⏳ Generating QR Code…
+          </div>
+        ) : qrData?.qrUrl ? (
+          <img src={qrData.qrUrl} alt="QRIS" style={{ width: "100%", aspectRatio: "1", objectFit: "contain", display: "block", borderRadius: 8 }} />
+        ) : (
+          <div style={{ aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444", fontSize: 13, padding: 20, textAlign: "center" }}>
+            {msg || "QR Code tidak tersedia"}
+          </div>
+        )}
+      </div>
+
+      {/* Total + countdown */}
+      <div style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: 16, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>TOTAL BAYAR</div>
+          <div style={{ fontSize: 26, fontWeight: 900, color: "#10b981", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5, marginTop: 2 }}>{rp(total)}</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 11, color: urgent ? "#ef4444" : "rgba(255,255,255,0.5)", letterSpacing: 1, fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>{urgent ? "⏰ HAMPIR HABIS" : "EXPIRES IN"}</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: urgent ? "#ef4444" : "#fbbf24", fontFamily: "'Geist Mono',monospace", letterSpacing: 1, marginTop: 2 }}>{mm}:{ss}</div>
+        </div>
+      </div>
+
+      {/* Order recap */}
+      <div style={{ padding: 12, background: "rgba(168,85,247,0.05)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 10, marginBottom: 14, fontSize: 12, color: "#cbd5e1", lineHeight: 1.55 }}>
+        🎬 <b>{film?.title}</b><br/>
+        {show && new Date(show.starts_at * 1000).toLocaleString("id-ID", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}<br/>
+        Kursi: <b style={{ color: "#fbbf24" }}>{[...seats].sort().join(", ")}</b> · {seats.size} tiket
+        {cartItems.length > 0 && <><br/>F&B: {cartItems.map(it => `${it.name}×${it.qty}`).join(", ")}</>}
+      </div>
+
+      {/* Polling indicator */}
+      {polling && !paid && (
+        <div style={{ padding: 10, background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.25)", borderRadius: 8, marginBottom: 14, fontSize: 11, color: "#67e8f9", textAlign: "center", fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5 }}>
+          <span style={{ animation: "karyaPulse 1.4s infinite" }}>●</span> Menunggu pembayaran… (auto-detect 3 detik)
+        </div>
+      )}
+
+      {msg && <div style={{ padding: 10, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 14 }}>{msg}</div>}
+
+      <button onClick={onBack} style={{
+        width: "100%", padding: "12px 20px",
+        background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: 12, color: "rgba(255,255,255,0.65)", fontSize: 13, fontWeight: 600,
+        fontFamily: "inherit", cursor: "pointer",
+      }}>← Kembali / Batal</button>
+
+      <style>{`@keyframes karyaPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }`}</style>
+    </div>
+  );
+}
+
 function FilmPreviewModal({ film, onClose, onPick }) {
   const ytId = extractYouTubeId(film.trailer_url);
   const isUploadedVideo = film.trailer_url && (film.trailer_url.startsWith("/uploads/") || /\.(mp4|webm|mov|m4v)$/i.test(film.trailer_url));
