@@ -2296,8 +2296,12 @@ function setupCinema(app, opts = {}) {
 
   // ── BULK SCHEDULE — push 1 film+jam ke N outlet sekaligus ──
   // POST /showtimes/bulk { film_id, outlets:['JKT01','BDG01',...], show_date, start_time, format, price?, studio_type? }
-  // Logic: untuk tiap outlet → pilih studio (preference studio_type, fallback first active),
-  // create showtime di studio itu. Skip outlet kalau gak ada studio active.
+  // Logic v2 (smart, anti-conflict):
+  //   - Untuk tiap outlet → iterate active studios (preference studio_type dulu)
+  //   - Untuk tiap studio → cek conflict (overlap dengan existing showtime di studio+date)
+  //   - Pilih studio pertama yang AVAILABLE (no conflict)
+  //   - Kalau semua studio outlet itu bentrok → skip with reason 'all studios busy'
+  //   - Auto-tag company_id (scope atau default cinema=2)
   router.post('/showtimes/bulk', (req, res) => {
     const b = req.body || {};
     const filmId = parseInt(b.film_id, 10);
@@ -2307,40 +2311,99 @@ function setupCinema(app, opts = {}) {
     if (!filmId || !outlets.length || !showDate || !startTime) {
       return res.status(400).json({ error: 'film_id, outlets[], show_date, start_time wajib' });
     }
+    // Load film duration untuk conflict check
+    const film = db.prepare(`SELECT title, duration_min FROM cinema_films WHERE id = ?`).get(filmId);
+    if (!film) return res.status(404).json({ error: 'Film tidak ditemukan' });
+    const PRE_SHOW_MIN = 15, CLEANING_GAP_MIN = 10;
+    const occupancy = (film.duration_min || 0) + PRE_SHOW_MIN + CLEANING_GAP_MIN;
+    const _toMin = (hhmm) => { const [h, m] = String(hhmm).split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+    const newStart = _toMin(startTime);
+    const newEnd = newStart + occupancy;
+
     const studioType = String(b.studio_type || '').trim() || null;
     const format = String(b.format || '2D').trim();
     const manualPrice = Number(b.price) || 0;
 
+    // Multi-tenant
+    const scope = req.companyScope || { is_super_admin: true };
+    const companyId = scope.is_super_admin ? (parseInt(b.company_id, 10) || 2) : scope.company_id;
+
     const created = [];
     const skipped = [];
-    const ins = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price, format) VALUES (?,?,?,?,?,?)`);
+    const ins = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price, format, company_id) VALUES (?,?,?,?,?,?,?)`);
+
     for (const outlet of outlets) {
-      // Pilih studio: preference studio_type → first active → skip
-      let studio = null;
+      // Get all active studios di outlet ini, urut by preference (studio_type match dulu)
+      let studios = [];
       if (studioType) {
-        studio = db.prepare(`SELECT id, studio_type FROM cinema_studios WHERE outlet = ? AND studio_type = ? AND is_active = 1 LIMIT 1`).get(outlet, studioType);
+        studios = db.prepare(`SELECT id, studio_type, name FROM cinema_studios WHERE outlet = ? AND studio_type = ? AND is_active = 1 ORDER BY id`).all(outlet, studioType);
       }
-      if (!studio) {
-        studio = db.prepare(`SELECT id, studio_type FROM cinema_studios WHERE outlet = ? AND is_active = 1 ORDER BY id LIMIT 1`).get(outlet);
-      }
-      if (!studio) {
+      const otherStudios = db.prepare(`
+        SELECT id, studio_type, name FROM cinema_studios
+        WHERE outlet = ? AND is_active = 1 ${studioType ? 'AND studio_type != ?' : ''}
+        ORDER BY id
+      `).all(outlet, ...(studioType ? [studioType] : []));
+      studios = [...studios, ...otherStudios];
+
+      if (!studios.length) {
         skipped.push({ outlet, reason: 'no active studio' });
         continue;
       }
+
+      // Cari studio yang AVAILABLE (no conflict at this time)
+      let pickedStudio = null;
+      const busyStudios = [];
+      for (const s of studios) {
+        const existing = db.prepare(`
+          SELECT s.start_time, f.title, f.duration_min
+          FROM cinema_showtimes s
+          LEFT JOIN cinema_films f ON f.id = s.film_id
+          WHERE s.studio_id = ? AND s.show_date = ?
+            AND COALESCE(s.is_archived, 0) = 0
+            AND COALESCE(s.status, 'scheduled') = 'scheduled'
+        `).all(s.id, showDate);
+        const overlap = existing.find(c => {
+          const cStart = _toMin(c.start_time);
+          const cEnd = cStart + (c.duration_min || 0) + PRE_SHOW_MIN + CLEANING_GAP_MIN;
+          return newStart < cEnd && newEnd > cStart;
+        });
+        if (!overlap) { pickedStudio = s; break; }
+        busyStudios.push({ studio: s.name, blocked_by: overlap.title, time: overlap.start_time });
+      }
+
+      if (!pickedStudio) {
+        skipped.push({
+          outlet, reason: 'all studios busy at this time',
+          blocked: busyStudios,
+        });
+        continue;
+      }
+
       // Resolve price
       let price = manualPrice;
       let source = price > 0 ? 'manual' : null;
       if (!price) {
         try {
-          const r = resolveOutletPrice(outlet, studio.studio_type || 'Regular', showDate);
+          const r = resolveOutletPrice(outlet, pickedStudio.studio_type || 'Regular', showDate);
           if (r?.price > 0) { price = r.price; source = r.source; }
         } catch {}
         if (!price) { price = 50000; source = source || 'default'; }
       }
-      const info = ins.run(filmId, studio.id, showDate, startTime, price, format);
-      created.push({ outlet, studio_id: studio.id, showtime_id: info.lastInsertRowid, price, price_source: source });
+      const info = ins.run(filmId, pickedStudio.id, showDate, startTime, price, format, companyId);
+      created.push({
+        outlet, studio_id: pickedStudio.id, studio_name: pickedStudio.name,
+        studio_type: pickedStudio.studio_type, showtime_id: info.lastInsertRowid,
+        price, price_source: source,
+      });
     }
-    res.json({ ok: true, created, skipped, summary: { total: outlets.length, ok: created.length, skipped: skipped.length } });
+
+    res.json({
+      ok: true,
+      film: { id: filmId, title: film.title, duration_min: film.duration_min },
+      occupancy_min: occupancy,
+      created, skipped,
+      summary: { total: outlets.length, created: created.length, skipped: skipped.length },
+    });
   });
 
   router.delete('/showtimes/:id', (req, res) => {
