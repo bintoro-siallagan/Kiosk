@@ -33,7 +33,7 @@ export default function TenantSignup() {
   const validateStep2 = () => {
     if (!form.owner_name.trim()) return "Nama pemilik wajib";
     if (!/^0\d{8,12}$/.test(form.owner_phone.replace(/[^0-9]/g, ""))) return "Nomor HP harus format 08xxx, 9–13 digit";
-    if (form.owner_pin && !/^\d{4,6}$/.test(form.owner_pin)) return "PIN harus 4–6 digit angka";
+    if (form.owner_pin && !/^\d{6}$/.test(form.owner_pin)) return "PIN harus 6 digit angka";
     if (form.owner_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.owner_email)) return "Format email tidak valid";
     return null;
   };
@@ -151,10 +151,10 @@ export default function TenantSignup() {
               <input value={form.owner_email} onChange={e => setField("owner_email", e.target.value)}
                 placeholder="owner@email.com" type="email" style={S.inp} />
             </Field>
-            <Field label="🔑 PIN ADMIN (4–6 digit, opsional)">
+            <Field label="🔑 PIN ADMIN (6 digit, opsional)">
               <input value={form.owner_pin} onChange={e => setField("owner_pin", e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
                 placeholder="Kosongkan biar auto-generate" inputMode="numeric" maxLength={6} style={S.inp} />
-              <div style={{ fontSize: 10, color: "#64748b", marginTop: 4 }}>Login admin pakai PIN ini di /?admin</div>
+              <div style={{ fontSize: 10, color: "#64748b", marginTop: 4 }}>6 digit angka. Login admin pakai PIN ini di /?admin</div>
             </Field>
 
             <div style={{ display: "flex", gap: 8, marginTop: 18 }}>

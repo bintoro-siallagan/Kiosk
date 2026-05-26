@@ -217,9 +217,10 @@ function setupCompanies(app, opts = {}) {
       if (!b[k] || !String(b[k]).trim()) return res.status(400).json({ error: `${k} wajib diisi` });
     }
     const vertical = ['fnb', 'cinema', 'hybrid'].includes(b.vertical) ? b.vertical : 'fnb';
-    const pin = (b.owner_pin && /^\d{4,6}$/.test(b.owner_pin))
+    // PIN 6-digit (sesuai login admin); auto-gen kalau gak provide
+    const pin = (b.owner_pin && /^\d{6}$/.test(b.owner_pin))
       ? b.owner_pin
-      : String(Math.floor(1000 + Math.random() * 9000)); // auto-gen 4 digit kalau gak provide
+      : String(Math.floor(100000 + Math.random() * 900000));
     const code = (b.code || generateCompanyCode(b.company_name)).toUpperCase().slice(0, 10);
 
     // Check duplicate phone (1 phone = 1 owner = 1 company)
