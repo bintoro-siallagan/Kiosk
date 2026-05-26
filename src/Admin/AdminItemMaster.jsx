@@ -1,7 +1,7 @@
 // src/Admin/AdminItemMaster.jsx
 // Item Master — registry terpadu: item core, kategori, tipe.
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#0891b2";
@@ -26,9 +26,12 @@ export default function AdminItemMaster({ apiBase = "" }) {
 
   return (
     <div>
-      <div style={S.intro}>
-        📦 <b style={{ color: AC }}>ITEM MASTER</b> — registry terpadu semua item: finished goods, raw
-        material, packaging, modifier. Item core (code/SKU/barcode), kategori &amp; tipe — jantung ecosystem.
+      <div style={{...S.intro, display:"flex", justifyContent:"space-between", alignItems:"center", gap:12, flexWrap:"wrap"}}>
+        <div style={{flex:1, minWidth:200}}>
+          📦 <b style={{ color: AC }}>ITEM MASTER</b> — registry terpadu semua item: finished goods, raw
+          material, packaging, modifier. Item core (code/SKU/barcode), kategori &amp; tipe — jantung ecosystem.
+        </div>
+        <BulkActions onDone={load}/>
       </div>
 
       <div style={S.kpiRow}>
@@ -95,6 +98,41 @@ export default function AdminItemMaster({ apiBase = "" }) {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+// ── Bulk CSV import — uploads to pos_menus, auto-syncs to item_master ──
+function BulkActions({ onDone }) {
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef(null);
+
+  async function handleUpload(file) {
+    setUploading(true);
+    const fd = new FormData(); fd.append('file', file);
+    try {
+      const r = await fetch('/api/master/menus/bulk-csv', { method: 'POST', body: fd });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'upload failed');
+      // Force item_master sync from pos_menus
+      await fetch('/api/item-master/sync', { method: 'POST' }).catch(()=>{});
+      alert(`✓ Imported ${j.imported}${j.skipped?`, skipped ${j.skipped}`:''}` + (j.errors?.length?`\n\n${j.errors.length} errors:\n${j.errors.slice(0,5).map(e=>`  Row ${e.row}: ${e.error}`).join('\n')}`:''));
+      onDone?.();
+    } catch (e) { alert('✗ ' + e.message); }
+    finally { setUploading(false); if (fileRef.current) fileRef.current.value = ''; }
+  }
+
+  const btn = (bg, color) => ({ padding:"8px 14px", borderRadius:8, fontSize:12, fontWeight:600, cursor:"pointer", border:"1px solid #1f2937", background:bg, color, textDecoration:"none", whiteSpace:"nowrap" });
+
+  return (
+    <div style={{display:"flex", gap:8}}>
+      <a href="/api/master/menus/bulk-template" download style={btn("#0d1117", "#cdd5df")}>📥 Template CSV</a>
+      <button onClick={()=>fileRef.current?.click()} disabled={uploading}
+        style={btn("#0891b2", "#fff")}>
+        {uploading ? "⏳ Uploading…" : "📤 Bulk Upload"}
+      </button>
+      <input ref={fileRef} type="file" accept=".csv,text/csv" style={{display:"none"}}
+        onChange={(e)=>{ const f=e.target.files?.[0]; if (f) handleUpload(f); }}/>
     </div>
   );
 }

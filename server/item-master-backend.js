@@ -58,7 +58,36 @@ function setupItemMaster(app, opts = {}) {
 
   const router = express.Router();
 
+  // Auto-sync helper: ensure every pos_menus item exists in item_master as Finished Goods
+  function syncFromPosMenus() {
+    const existingCodes = new Set(many(`SELECT item_code FROM item_master`).map(r => r.item_code));
+    const existingNames = new Set(many(`SELECT name FROM item_master`).map(r => (r.name || '').toLowerCase().trim()));
+    const ins = db.prepare(`INSERT OR IGNORE INTO item_master
+      (item_code, sku, barcode, name, short_name, category, subcategory, item_type, base_price, uom)
+      VALUES (?,?,?,?,?,?,?,?,?,?)`);
+    let n = many(`SELECT COUNT(*) c FROM item_master`)[0]?.c || 0;
+    const bc = () => '899' + String(2000000000 + (++n));
+    let added = 0;
+    for (const m of many(`SELECT id, category_id, name, price FROM pos_menus`)) {
+      if (existingNames.has((m.name || '').toLowerCase().trim())) continue;
+      const cat3 = (m.category_id || 'gen').slice(0, 3).toUpperCase();
+      // Use pos_menus.id as item_code prefix
+      let code = `FG-${cat3}-${String(m.id).slice(-6).toUpperCase()}`;
+      while (existingCodes.has(code)) code = `FG-${cat3}-${Math.random().toString(36).slice(-5).toUpperCase()}`;
+      ins.run(code, 'SKU-' + code, bc(), m.name, (m.name || '').split(' ')[0],
+        CAT_MAP[m.category_id] || 'Lainnya', (m.category_id || '').replace(/^\w/, c => c.toUpperCase()),
+        'Finished Goods', m.price || 0, 'pcs');
+      existingCodes.add(code);
+      existingNames.add((m.name || '').toLowerCase().trim());
+      added++;
+    }
+    return added;
+  }
+
   router.get('/', (req, res) => {
+    // Auto-sync newly-added pos_menus items so bulk uploads appear here too
+    try { syncFromPosMenus(); } catch (e) { console.warn('[item-master] sync failed:', e.message); }
+
     const items = many(`SELECT * FROM item_master ORDER BY item_type, name`);
     const typeCount = {};
     const catCount = {};
@@ -79,6 +108,14 @@ function setupItemMaster(app, opts = {}) {
         active: items.filter(i => i.status === 'active').length,
       },
     });
+  });
+
+  // POST /sync — force re-sync from pos_menus (called after bulk upload)
+  router.post('/sync', (req, res) => {
+    try {
+      const added = syncFromPosMenus();
+      res.json({ ok: true, added });
+    } catch (e) { res.status(500).json({ error: e.message }); }
   });
 
   const mountPath = opts.mountPath || '/api/item-master';
