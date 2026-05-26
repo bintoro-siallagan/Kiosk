@@ -95,39 +95,74 @@ CREATE TABLE IF NOT EXISTS billing_payments (
 );
 `;
 
-// Default plans seed
+// ─── FEATURE CODES (granular entitlements) ─────────────────────────────
+// Module ID → required feature code di-map di adminModules.js
+const FEATURE_BASE        = ['pos', 'kiosk', 'qr_order', 'dashboard', 'menu', 'settings', 'departments'];
+const FEATURE_LOYALTY     = ['loyalty', 'promo', 'reward', 'membership', 'customer_intel'];
+const FEATURE_INVENTORY   = ['inventory', 'item_master', 'stock_opname', 'goods_received', 'goods_delivery', 'supplier', 'procurement', 'auto_reorder', 'batch_tracking', 'production'];
+const FEATURE_FINANCE     = ['finance', 'finance_center', 'ar', 'ap', 'budget', 'journal', 'gl', 'coa', 'reconciliation', 'tax', 'food_cost', 'cash_flow', 'fin_statements', 'period_closing', 'payroll_finance'];
+const FEATURE_HR          = ['hr', 'hris', 'payroll', 'shift_roster', 'attendance', 'talenta', 'leave', 'motivation', 'reward_staff'];
+const FEATURE_MARKETING   = ['marketing', 'campaign', 'crm', 'broadcast', 'geo_engagement', 'clv_churn', 'feedback_segment'];
+const FEATURE_MULTI_OUTLET= ['multi_outlet', 'remote_ops', 'launch', 'service_visit', 'outlet_audit', 'incidents', 'escalation'];
+const FEATURE_CINEMA      = ['cinema_all'];
+const FEATURE_ENTERPRISE  = ['quality', 'internal_audit', 'document_hub', 'helpdesk', 'risk', 'contract', 'rfq', 'signage', 'compliance', 'self_audit', 'anti_fraud', 'consolidation', 'core_tax', 'platform'];
+
+// Bundle: plan code → list of feature codes
+const PLAN_FEATURES = {
+  TRIAL: ['*'], // wildcard = semua fitur unlocked selama trial
+  STARTER:    [...FEATURE_BASE],
+  GROWTH:     [...FEATURE_BASE, ...FEATURE_LOYALTY, ...FEATURE_INVENTORY],
+  PRO:        [...FEATURE_BASE, ...FEATURE_LOYALTY, ...FEATURE_INVENTORY, ...FEATURE_FINANCE, ...FEATURE_HR, ...FEATURE_MARKETING],
+  ENTERPRISE: ['*'], // semua termasuk cinema + multi-outlet + enterprise
+};
+
+// Default plans seed — restructured per user's pricing direction
 const DEFAULT_PLANS = [
   {
-    code: 'STARTER_FNB', name: 'Karya Bites Starter', vertical: 'fnb', tier: 'starter',
-    monthly_price_idr: 500_000, annual_price_idr: 5_000_000, max_outlets: 1, max_users: 5,
-    features_json: JSON.stringify(['POS Kasir', 'CDS', 'KDS', 'Self-Order Kiosk', 'Marquee', 'Loyalty Basic']),
-    description: 'F&B single outlet — POS + Kiosk + KDS, untuk warung dan kedai kecil.', display_order: 1,
+    code: 'TRIAL', name: '🎁 Free Trial 14 Hari', vertical: 'fnb', tier: 'starter',
+    monthly_price_idr: 0, annual_price_idr: 0, max_outlets: 1, max_users: 5,
+    features_json: JSON.stringify(PLAN_FEATURES.TRIAL),
+    description: 'Full akses selama 14 hari, no credit card. Auto-downgrade ke Starter setelah expire.',
+    display_order: 0,
   },
   {
-    code: 'GROWTH_FNB', name: 'Karya Bites Growth', vertical: 'fnb', tier: 'growth',
-    monthly_price_idr: 1_500_000, annual_price_idr: 15_000_000, max_outlets: 5, max_users: 25,
-    features_json: JSON.stringify(['All Starter', 'Multi-outlet', 'Owner Dashboard', 'Inventory', 'Stock Opname', 'Auto-promo', 'Sultan Celebration', 'Service Visit Tracker']),
-    description: 'F&B 2–5 outlet — owner dashboard + multi-outlet management.', display_order: 2,
+    code: 'STARTER', name: '🌱 Starter', vertical: 'fnb', tier: 'starter',
+    monthly_price_idr: 299_000, annual_price_idr: 2_990_000, max_outlets: 1, max_users: 5,
+    features_json: JSON.stringify(PLAN_FEATURES.STARTER),
+    description: 'Untuk kafe/warung kecil — POS Kasir + Self-Order Kiosk + QR Order + Dashboard basic. 1 outlet, 5 user.',
+    display_order: 1,
   },
   {
-    code: 'CINEMA_GROWTH', name: 'Karya Cinema Growth', vertical: 'cinema', tier: 'growth',
-    monthly_price_idr: 2_000_000, annual_price_idr: 20_000_000, max_outlets: 3, max_users: 30,
-    features_json: JSON.stringify(['Cinema POS', 'Showtime + Seat Editor', 'TMDB Auto-Fill', 'Self-Order Kiosk', 'Loyalty 4-tier', 'Subscription Pass', 'Party Package', 'Pajak Hiburan Report']),
-    description: 'Bioskop independent 1–3 layar — full cinema stack.', display_order: 3,
+    code: 'GROWTH', name: '📈 Growth', vertical: 'fnb', tier: 'growth',
+    monthly_price_idr: 799_000, annual_price_idr: 7_990_000, max_outlets: 3, max_users: 15,
+    features_json: JSON.stringify(PLAN_FEATURES.GROWTH),
+    description: 'Starter + Loyalty + Inventory lengkap. Cocok F&B 2–3 outlet yang udah grow.',
+    display_order: 2,
   },
   {
-    code: 'ENTERPRISE', name: 'karyaOS Enterprise', vertical: 'hybrid', tier: 'enterprise',
-    monthly_price_idr: 5_000_000, annual_price_idr: 54_000_000, max_outlets: null, max_users: null,
-    features_json: JSON.stringify(['All Growth', 'Hybrid F&B + Cinema', 'Unlimited outlet/user', 'Karys Platform View', 'Signage 5-zone', 'Custom integration', 'Dedicated support', 'White-label']),
-    description: 'Multi-vertical, multi-outlet >5, dedicated support + custom.', display_order: 4,
+    code: 'PRO', name: '💼 Pro', vertical: 'fnb', tier: 'enterprise',
+    monthly_price_idr: 1_499_000, annual_price_idr: 14_990_000, max_outlets: 10, max_users: 50,
+    features_json: JSON.stringify(PLAN_FEATURES.PRO),
+    description: 'Growth + Finance/Accounting + HR/Payroll + Marketing. Sampai 10 outlet, 50 user.',
+    display_order: 3,
   },
   {
-    code: 'TRIAL', name: '14-Day Free Trial', vertical: 'fnb', tier: 'starter',
-    monthly_price_idr: 0, annual_price_idr: 0, max_outlets: 1, max_users: 3,
-    features_json: JSON.stringify(['Full access selama 14 hari', 'Auto-downgrade ke Starter setelah trial']),
-    description: 'Coba dulu, bayar kemudian.', display_order: 0,
+    code: 'ENTERPRISE', name: '🏛️ Enterprise', vertical: 'hybrid', tier: 'enterprise',
+    monthly_price_idr: 3_500_000, annual_price_idr: 35_000_000, max_outlets: null, max_users: null,
+    features_json: JSON.stringify(PLAN_FEATURES.ENTERPRISE),
+    description: 'Semua fitur termasuk Cinema, Multi-outlet unlimited, Quality, Audit, Compliance, Doc Hub, dedicated support.',
+    display_order: 4,
   },
 ];
+
+// Helper: check apakah company punya entitlement untuk feature tertentu
+function _checkFeature(db, companyId, featureCode) {
+  if (!companyId) return true; // super-admin / karys
+  const tb = db.prepare(`SELECT plan_code FROM tenant_billing WHERE company_id=? AND status='active'`).get(companyId);
+  if (!tb) return false;
+  const features = PLAN_FEATURES[tb.plan_code] || [];
+  return features.includes('*') || features.includes(featureCode);
+}
 
 function genInvoiceNo(db) {
   const y = new Date().getFullYear();
@@ -393,6 +428,26 @@ function setupBillingEngine(app, opts = {}) {
     const overdueResult = db.prepare(`UPDATE billing_invoices SET status='overdue' WHERE status='open' AND due_at < ?`).run(now);
 
     res.json({ ok: true, generated: generated.length, invoices: generated, overdue_flagged: overdueResult.changes });
+  });
+
+  // ─── FEATURES: list apa yg tenant boleh akses ───
+  router.get('/features', (req, res) => {
+    const scope = req.companyScope || { is_super_admin: true };
+    if (scope.is_super_admin) {
+      // Super-admin / karys → semua
+      return res.json({ super_admin: true, features: ['*'], plan_code: null, plan_name: 'Karys Super-Admin' });
+    }
+    const tb = db.prepare(`SELECT tb.*, p.name as plan_name FROM tenant_billing tb LEFT JOIN billing_plans p ON p.code=tb.plan_code WHERE tb.company_id=?`).get(scope.company_id);
+    if (!tb) return res.json({ no_billing: true, features: [], plan_code: null });
+    const features = PLAN_FEATURES[tb.plan_code] || [];
+    res.json({
+      plan_code: tb.plan_code,
+      plan_name: tb.plan_name || tb.plan_code,
+      status: tb.status,
+      trial_until: tb.trial_until,
+      features,
+      has_all: features.includes('*'),
+    });
   });
 
   // ─── PUBLIC: tenant billing summary (own only) ───

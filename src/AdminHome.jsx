@@ -14,19 +14,23 @@ const ESBNotif      = lazy(() => import("./ESBNotif.jsx"));
 const MemberList    = lazy(() => import("./MemberList.jsx"));
 const PromoManager  = lazy(() => import("./PromoManager.jsx"));
 const ShiftManager  = lazy(() => import("./ShiftManager.jsx"));
-import { TABS, GROUPS as _RAW_GROUPS, filterGroupsForVertical } from "./adminModules.js";
+import { TABS, GROUPS as _RAW_GROUPS, filterGroupsForVertical, filterGroupsByFeatures, getModuleFeature } from "./adminModules.js";
 
 // Multi-tenant: helper baca company ctx (dipakai oleh AdminHome di runtime, BUKAN module-load).
 // Kalau dihitung di module-load, ctx selalu null karena login terjadi setelah file di-import.
 function _readCompanyCtx() {
   try { return JSON.parse(localStorage.getItem("karya_company_ctx") || "null"); } catch { return null; }
 }
-function _computeGROUPS() {
+function _computeGROUPS(features) {
   const ctx = _readCompanyCtx();
-  return filterGroupsForVertical(_RAW_GROUPS,
+  // Step 1: vertical filter (fnb tenant hide cinema modules, etc)
+  let groups = filterGroupsForVertical(_RAW_GROUPS,
     ctx?.company?.primary_vertical || null,
     { is_super_admin: !!(ctx?.is_super_admin || ctx?.company_id == null) }
   );
+  // Step 2: feature entitlement filter (Starter plan hide finance/hr/etc)
+  if (features != null) groups = filterGroupsByFeatures(groups, features);
+  return groups;
 }
 import { CommandPalette } from "./components/uiKit.jsx";
 import IncidentAlertBanner from "./components/IncidentAlertBanner.jsx";
@@ -169,7 +173,15 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
   // Multi-tenant: company context + filtered GROUPS dievaluasi setiap render.
   // Penting: BUKAN module-level — karena login terjadi setelah AdminHome di-import.
   const _adminCtx = useMemo(() => _readCompanyCtx(), []);
-  const GROUPS = useMemo(() => _computeGROUPS(), []);
+  const [tenantFeatures, setTenantFeatures] = useState(null); // null = belum load (treat as unlock-all to avoid flash)
+  useEffect(() => {
+    fetch(`${API}/api/billing/features`).then(r => r.json()).then(j => {
+      if (j?.super_admin || j?.has_all) setTenantFeatures(['*']);
+      else if (Array.isArray(j?.features)) setTenantFeatures(j.features);
+      else setTenantFeatures(['*']); // fallback: no billing → unlock-all (avoid blocking flow)
+    }).catch(() => setTenantFeatures(['*']));
+  }, []);
+  const GROUPS = useMemo(() => _computeGROUPS(tenantFeatures), [tenantFeatures]);
   const [now, setNow] = useState(new Date());
   const [orders, setOrders] = useState([]);
   const [allOrders, setAllOrders] = useState([]);

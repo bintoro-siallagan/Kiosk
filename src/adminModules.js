@@ -235,6 +235,112 @@ function _moduleVertical(id) {
   return "shared"; // generic modul (finance, payroll, dst)
 }
 
+// ─── FEATURE ENTITLEMENT — module ID → required feature code ──────────────
+// Plan punya array features (dari billing_plans.features_json) — kalau modul
+// gak punya feature di list, hide / lock dengan badge UPGRADE.
+// Wildcard '*' di tenant features = unlock all (Trial/Enterprise).
+const MODULE_FEATURE = {
+  // ── BASE (semua plan ada) ──
+  dashboard: "dashboard", config: "settings", outlet_master: "settings",
+  menu_builder: "menu", master: "menu", item_master: "menu", item_pricing: "menu",
+  item_config: "menu", item_rules: "menu", item_intel: "menu",
+  product_hub: "menu", product_versioning: "menu", price_list: "menu",
+  master_unit: "menu", master_category: "menu",
+  fnb_menu_periods: "menu", fnb_recipe: "menu", fnb_combo: "menu", fnb_dietary_tags: "menu",
+  staff: "settings", departments: "departments", admin_users: "settings",
+  email_config: "settings", outlet_pin_config: "settings",
+  marquee: "settings", optimization: "settings",
+  // ── LOYALTY ──
+  loyalty: "loyalty", loyalty_promo: "loyalty", reward: "reward", reward_benefit: "reward",
+  customer_intel: "customer_intel", feedback_segment: "customer_intel", clv_churn: "customer_intel",
+  fnb_membership_tier: "membership", fnb_birthday_promo: "loyalty", fnb_referral: "loyalty",
+  fnb_happy_hour: "promo",
+  // ── INVENTORY ──
+  gudang: "inventory", waste: "inventory", stock_list: "inventory",
+  stock_opname: "stock_opname", stock_transfer: "inventory",
+  goods_received: "goods_received", goods_delivery: "goods_delivery",
+  procurement_plus: "procurement", simple_purchase: "procurement",
+  auto_reorder: "auto_reorder", batch_tracking: "batch_tracking",
+  production: "production", food_cost: "inventory",
+  purchase_invoice: "procurement", purchase_return: "procurement", internal_return: "inventory",
+  // ── FINANCE ──
+  finance: "finance", finance_center: "finance_center", finance_alert: "finance_center",
+  ar: "ar", journal: "journal", general_ledger: "gl", coa: "coa",
+  reconciliation: "reconciliation", release_payment: "finance", settlement: "finance",
+  fin_statements: "fin_statements", budget: "budget", budget_plan: "budget",
+  petty_cash: "finance", aggregator: "finance", payment: "finance", convenience_fee: "finance",
+  period_closing: "period_closing", food_cost_calc: "food_cost",
+  cash_flow: "cash_flow", core_tax: "core_tax",
+  // ── HR ──
+  hris: "hris", hr: "hr", hr_command: "hr",
+  payroll: "payroll", talenta: "talenta",
+  shift_roster: "shift_roster", cashier_kpi: "hr",
+  user_kpi: "hr", motivation: "motivation",
+  // ── MARKETING ──
+  campaign: "campaign", broadcast: "broadcast",
+  marketing_behavior: "marketing", geo_engagement: "geo_engagement",
+  pos_behavior: "marketing",
+  // ── MULTI-OUTLET / FIELD OPS ──
+  remote_ops_command: "remote_ops", outlet_launch: "launch",
+  service_visit: "service_visit",
+  incidents: "incidents", escalation: "escalation",
+  // ── CINEMA (all) ──
+  cinema_ops: "cinema_all", cinema_ticketing: "cinema_all", cinema_box_office: "cinema_all",
+  cinema_validate: "cinema_all", cinema_refund: "cinema_all", cinema_bundles: "cinema_all",
+  cinema_bundle_redeem: "cinema_all", cinema_distribution: "cinema_all",
+  cinema_in_studio_queue: "cinema_all", cinema_event_booking: "cinema_all",
+  cinema_price_list: "cinema_all", cinema_command_center: "cinema_all",
+  cinema_promotion: "cinema_all", cinema_loyalty: "cinema_all", cinema_party: "cinema_all",
+  cinema_subscriptions: "cinema_all", cinema_holidays: "cinema_all", cinema_seat_types: "cinema_all",
+  cinema_crm: "cinema_all", cinema_analytics: "cinema_all", cinema_campaign: "cinema_all",
+  cinema_inventory: "cinema_all", cinema_dashboard: "cinema_all",
+  cinema_emergency: "cinema_all", cinema_closing: "cinema_all", cinema_cashier_kpi: "cinema_all",
+  // ── ENTERPRISE ──
+  quality: "quality", internal_audit: "internal_audit", document_hub: "document_hub",
+  helpdesk: "helpdesk", risk: "risk", contract: "contract", rfq: "rfq",
+  signage: "signage", compliance: "compliance", self_audit: "self_audit", anti_fraud: "anti_fraud",
+  consolidation: "consolidation", platform: "platform", billing: "settings",
+  approval: "settings", device_session: "settings", security: "settings",
+  role_dash: "settings", rbac: "settings",
+  refund_cancel: "anti_fraud", demand_forecast: "inventory", asset_maintenance: "inventory",
+  notif_center: "settings", checklist: "settings",
+  sales_pipeline: "marketing", franchise: "settings",
+  sales_order: "procurement", sales_invoice: "ar", sales_return: "ar",
+  delivery_order: "goods_delivery", quotation: "marketing", b2b_customer: "marketing",
+  sales_stock_sync: "inventory",
+  // ── FNB ENHANCED (mostly loyalty/marketing) ──
+  fnb_reservation: "membership", fnb_tip_pool: "hr",
+  fnb_delivery: "goods_delivery", fnb_menu_engineering: "marketing",
+  fnb_bill_split: "settings", fnb_order_transfer: "settings",
+  fnb_kds_routing: "settings", fnb_whatsapp: "broadcast",
+  fnb_bank_recon: "reconciliation", fnb_driver_tracking: "goods_delivery",
+  fnb_payment_methods: "finance",
+};
+
+export function getModuleFeature(moduleId) {
+  return MODULE_FEATURE[moduleId] || "settings"; // default ke base.settings
+}
+
+// Filter modules berdasarkan tenant features (dari /api/billing/features)
+// features: array of strings, '*' = unlock all
+export function filterGroupsByFeatures(groups, features) {
+  if (!features || features.includes("*")) return groups; // unlock all (super-admin / trial / enterprise)
+  const hasFeature = (id) => {
+    const f = getModuleFeature(id);
+    return features.includes(f);
+  };
+  return groups
+    .map(g => ({
+      ...g,
+      ids: (g.ids || []).filter(hasFeature),
+      categories: (g.categories || []).map(c => ({
+        ...c,
+        ids: (c.ids || []).filter(hasFeature),
+      })).filter(c => c.ids.length > 0),
+    }))
+    .filter(g => g.ids.length > 0 || (g.categories && g.categories.length > 0));
+}
+
 // Super-admin-only modules — sembunyikan dari semua user company-scoped
 const SUPER_ADMIN_ONLY = new Set(["platform"]);
 
