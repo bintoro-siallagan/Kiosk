@@ -59,8 +59,8 @@ const STATUS_META = {
   partial_refund: { label: "Refund Sebagian", color: "#F97316", bg: "rgba(249,115,22,0.12)", emoji: "↻" },
   waiting: { label: "Menunggu", color: "#FF6B35", bg: "rgba(245,158,11,0.12)", emoji: "⏳" },
   received: { label: "Diterima", color: "#FF6B35", bg: "rgba(245,158,11,0.12)", emoji: "📨" },
-  preparing: { label: "Disiapkan", color: "#3B82F6", bg: "rgba(59,130,246,0.12)", emoji: "👨‍🍳" },
-  in_progress: { label: "Disiapkan", color: "#3B82F6", bg: "rgba(59,130,246,0.12)", emoji: "👨‍🍳" },
+  preparing: { label: "Preparing", color: "#3B82F6", bg: "rgba(59,130,246,0.12)", emoji: "👨‍🍳" },
+  in_progress: { label: "Preparing", color: "#3B82F6", bg: "rgba(59,130,246,0.12)", emoji: "👨‍🍳" },
   ready: { label: "Siap Diambil", color: "#10B981", bg: "rgba(16,185,129,0.12)", emoji: "🎉" },
 };
 

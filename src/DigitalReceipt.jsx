@@ -95,7 +95,7 @@ export default function DigitalReceipt({ orderId, onDone }) {
           <div style={R.infoRow}><span style={R.ik}>No. Receipt</span><span style={R.iv}>{receipt.receiptNo}</span></div>
           <div style={R.infoRow}><span style={R.ik}>No. Order</span><span style={R.iv}>#{receipt.orderId}</span></div>
           <div style={R.infoRow}><span style={R.ik}>Waktu</span><span style={R.iv}>{receipt.timestamp}</span></div>
-          <div style={R.infoRow}><span style={R.ik}>Kasir</span><span style={R.iv}>{receipt.kasir}</span></div>
+          <div style={R.infoRow}><span style={R.ik}>Cashier</span><span style={R.iv}>{receipt.kasir}</span></div>
           <div style={R.infoRow}><span style={R.ik}>Tipe</span><span style={R.iv}>{receipt.type==="dine"?`🪑 Meja ${receipt.table}`:"🛍️ Bawa Pulang"}</span></div>
           {receipt.customer?.name && (
             <div style={R.infoRow}><span style={R.ik}>Customer</span><span style={R.iv}>{receipt.customer.name}</span></div>

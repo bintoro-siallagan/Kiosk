@@ -97,7 +97,7 @@ export default function CommandExecutive() {
           sub={summary.channels
             ? `POS ${fmtK(summary.channels.pos)} + Aggregator ${fmtK(summary.channels.aggregator)}`
             : `${summary.transactions} transaksi`} />
-        <Kpi label="Growth vs Kemarin"
+        <Kpi label="Growth vs Yesterday"
           value={summary.growth_pct == null ? "—" : (summary.growth_pct >= 0 ? "+" : "") + summary.growth_pct + "%"}
           accent={(summary.growth_pct || 0) >= 0 ? "#10b981" : "#ef4444"}
           sub={summary.growth_pct == null ? "no data" : summary.growth_pct >= 0 ? "naik" : "turun"} />

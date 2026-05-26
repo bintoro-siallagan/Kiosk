@@ -431,7 +431,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
             </div>
           )}
           <div style={S.metaRow}>
-            <span style={S.metaLabel}>Kasir</span>
+            <span style={S.metaLabel}>Cashier</span>
             <span style={S.metaValue}>👤 {cashier?.name}</span>
           </div>
         </div>

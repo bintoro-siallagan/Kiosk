@@ -343,7 +343,7 @@ export default function POSSplitPayment({ order, kasir, onClose, onSuccess }) {
             <span style={S.totalVal}>{fIDR(total)}</span>
           </div>
           <div style={S.summaryRow}>
-            <span>Total Dibayar</span>
+            <span>Total Paid</span>
             <span style={{...S.totalVal, color: isComplete ? "#10B981" : "#F59E0B"}}>{fIDR(totalPaid)}</span>
           </div>
           <div style={{...S.summaryRow, ...S.summaryRemaining}}>

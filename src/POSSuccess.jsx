@@ -33,7 +33,7 @@ export default function POSSuccess({ created, order, cashier, onDone, onAnother 
           <div style={S.detailRow}>
             <span style={S.detailLabel}>Status</span>
             <span style={isPay ? S.statusPaid : S.statusTab}>
-              {isPay ? "💵 Dibayar (Cash)" : "📋 Open Tab"}
+              {isPay ? "💵 Paid (Cash)" : "📋 Open Tab"}
             </span>
           </div>
           <div style={S.detailRow}>

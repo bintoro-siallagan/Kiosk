@@ -36,7 +36,7 @@ export default function CommandAnalytics() {
           accent={(s.wow_pct || 0) >= 0 ? "#10b981" : "#ef4444"}
           sub={s.wow_pct == null ? "no data" : "week-over-week"} />
         <Kpi label="Rata-rata Harian" value={"Rp " + fmtK(s.avg_daily)} accent="#3b82f6" sub="basis 14 hari" />
-        <Kpi label="Proyeksi Besok" value={"Rp " + fmtK(s.forecast_tomorrow)} accent="#a78bfa" sub="dari pola historis" />
+        <Kpi label="Proyeksi Tomorrow" value={"Rp " + fmtK(s.forecast_tomorrow)} accent="#a78bfa" sub="dari pola historis" />
       </div>
 
       <div style={{ ...S.card, borderColor: "#a78bfa44" }}>

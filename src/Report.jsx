@@ -240,7 +240,7 @@ export default function Report({ onBack }) {
   });
   const hourRows = Object.entries(byHour).sort((a,b)=>b[1]-a[1]).slice(0,6);
 
-  const dateRangeLabel = dateFilter === "today" ? `Hari ini, ${fmtDate(Date.now())}` : dateFilter === "week" ? "7 Hari Terakhir" : "30 Hari Terakhir";
+  const dateRangeLabel = dateFilter === "today" ? `Today, ${fmtDate(Date.now())}` : dateFilter === "week" ? "7 Hari Terakhir" : "30 Hari Terakhir";
 
   // ── PRINT ────────────────────────────────────────────────────────────────
   async function handlePrint() {

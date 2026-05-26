@@ -183,7 +183,7 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
       {step==="found" && customer && (
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 28px 28px",animation:"fadeUp 0.25s ease",maxWidth:480,margin:"0 auto",width:"100%"}}>
           <div style={{...C.stepEmoji,animation:"pop 0.4s ease"}}>🎉</div>
-          <div style={C.stepTitle}>Selamat Datang!</div>
+          <div style={C.stepTitle}>Welcome!</div>
 
           {/* Member card */}
           <div style={C.memberCard}>

@@ -199,7 +199,7 @@ export default function CinemaInStudioOrder({ apiBase }) {
                 ))}
               </div>
               <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: 10, paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <b style={{ fontSize: 14, letterSpacing: -0.3 }}>Total Dibayar</b>
+                <b style={{ fontSize: 14, letterSpacing: -0.3 }}>Total Paid</b>
                 <b style={{ color: "#10b981", fontFamily: "'Geist Mono',monospace", fontSize: 22, fontWeight: 800, letterSpacing: -0.5 }}>{rp(done.total)}</b>
               </div>
             </div>
@@ -377,13 +377,13 @@ export default function CinemaInStudioOrder({ apiBase }) {
   );
 }
 
-// Status timeline — visual progress 3 steps: Dibayar → Disiapkan → Diantar
+// Status timeline — visual progress 3 steps: Paid → Preparing → Delivered
 function OrderStatusTimeline({ status, paidAt, deliveredAt }) {
   // Step states: 'done' (green), 'active' (amber pulse), 'pending' (gray)
   const steps = [
-    { key: "paid",      label: "Dibayar",   emoji: "💳", time: paidAt },
-    { key: "preparing", label: "Disiapkan", emoji: "🍳", time: null   },
-    { key: "delivered", label: "Diantar",   emoji: "🚶", time: deliveredAt },
+    { key: "paid",      label: "Paid",   emoji: "💳", time: paidAt },
+    { key: "preparing", label: "Preparing", emoji: "🍳", time: null   },
+    { key: "delivered", label: "Delivered",   emoji: "🚶", time: deliveredAt },
   ];
   const order = ["paid", "preparing", "delivered"];
   // 'pending' = baru masuk; 'preparing' = lagi disiapkan; 'delivered' = done; 'cancelled' = ditolak

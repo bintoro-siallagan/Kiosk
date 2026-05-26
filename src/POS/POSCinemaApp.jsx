@@ -365,7 +365,7 @@ function TopBar({ cashier, stage, onLogout, onHome }) {
         </div>
         <div style={{ width: 1, height: 30, background: "rgba(255,255,255,0.08)" }} />
         <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 11.5, color: TH.sub }}>Kasir</div>
+          <div style={{ fontSize: 11.5, color: TH.sub }}>Cashier</div>
           <div style={{ fontSize: 13.5, fontWeight: 700, color: "#fff" }}>{cashier?.name || "—"}</div>
         </div>
         <button onClick={async () => {

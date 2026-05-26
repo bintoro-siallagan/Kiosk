@@ -205,7 +205,7 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
           </div>
           {order.cashier && (
             <div style={detailRow}>
-              <span style={detailLabel}>Kasir</span>
+              <span style={detailLabel}>Cashier</span>
               <span style={detailValue}>{order.cashier}</span>
             </div>
           )}

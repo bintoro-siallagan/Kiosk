@@ -360,7 +360,7 @@ export default function CinemaCDS() {
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 8, paddingTop: 6 }}>
           <div style={{ fontSize: 48, lineHeight: 1, filter: "drop-shadow(0 0 24px rgba(168,85,247,0.4))" }}>🎬</div>
           <div style={{ fontSize: 12, color: "#a855f7", letterSpacing: 4, fontFamily: "'Geist Mono',monospace", fontWeight: 800, lineHeight: 1 }}>karyaOS CINEMA</div>
-          <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: -1, color: "#fff", lineHeight: 1.1, margin: 0, textShadow: branding.bgUrl ? "0 2px 16px rgba(0,0,0,0.8)" : "none" }}>Selamat Datang</div>
+          <div style={{ fontSize: 36, fontWeight: 900, letterSpacing: -1, color: "#fff", lineHeight: 1.1, margin: 0, textShadow: branding.bgUrl ? "0 2px 16px rgba(0,0,0,0.8)" : "none" }}>Welcome</div>
           <div style={{ fontSize: 14, color: branding.bgUrl ? "#e6edf3" : "#9ca3af", maxWidth: 640, lineHeight: 1.5, margin: 0, textShadow: branding.bgUrl ? "0 1px 6px rgba(0,0,0,0.8)" : "none" }}>{branding.idleText || "Silakan pilih film & jadwal di counter — kasir akan bantu pesanan Anda"}</div>
         </div>
 

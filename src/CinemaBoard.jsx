@@ -78,7 +78,7 @@ export default function CinemaBoard({ apiBase }) {
       {/* Footer */}
       <div style={{ position: "relative", zIndex: 1, padding: "14px 42px", borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(8,9,15,0.78)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", display: "flex", justifyContent: "space-between", fontSize: 13, color: "rgba(255,255,255,0.45)", flexShrink: 0 }}>
         <div>Scan QR di kursi untuk pesan F&amp;B mid-movie</div>
-        <div style={{ fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>🍿 Antrian F&amp;B: <span style={{ color: "#fbbf24" }}>{(data.queue.pending || 0) + (data.queue.preparing || 0)}</span> order</div>
+        <div style={{ fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "rgba(255,255,255,0.7)" }}>🍿 Queue F&amp;B: <span style={{ color: "#fbbf24" }}>{(data.queue.pending || 0) + (data.queue.preparing || 0)}</span> order</div>
       </div>
     </div>
   );

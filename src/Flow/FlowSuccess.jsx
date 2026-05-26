@@ -89,7 +89,7 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
         <div style={{...S.title, color: currentStep >= 3 ? "#FF6B35" : "#10B981"}}>
           {currentStep >= 3 && "Order Complete!"}
           {currentStep === 2 && "Pesanan Siap Diambil!"}
-          {currentStep === 1 && "Sedang Disiapkan"}
+          {currentStep === 1 && "Sedang Preparing"}
           {currentStep === 0 && "Pesanan Diterima!"}
         </div>
         <div style={S.subtitle}>
@@ -111,7 +111,7 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
       <div style={S.steps}>
         <Step icon="📥" label="Diterima" active={currentStep >= 0} done={currentStep > 0} />
         <StepLine done={currentStep > 0} />
-        <Step icon="👨‍🍳" label="Disiapkan" active={currentStep >= 1} done={currentStep > 1} />
+        <Step icon="👨‍🍳" label="Preparing" active={currentStep >= 1} done={currentStep > 1} />
         <StepLine done={currentStep > 1} />
         <Step icon="🛎️" label="Siap" active={currentStep >= 2} done={currentStep > 2} />
         <StepLine done={currentStep > 2} />

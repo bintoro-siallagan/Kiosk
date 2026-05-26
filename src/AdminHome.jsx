@@ -1064,7 +1064,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
               </>)}
           </div>
 
-          {/* Antrian + revenue */}
+          {/* Queue + revenue */}
           <div style={S.dataGrid}>
             <div className="card" style={S.bigCard}>
               <Section label="LIVE ORDER QUEUE" accent="#3b82f6" mt={6}

@@ -11,7 +11,7 @@ const WS_URL = API_BASE.replace(/^http/, "ws") + (API_BASE.includes("localhost")
 
 const STAGES = [
   { key: "waiting",   label: "Diterima",     emoji: "📝", color: "#94A3B8" },
-  { key: "preparing", label: "Disiapkan",    emoji: "👨‍🍳", color: "#FF6B35" },
+  { key: "preparing", label: "Preparing",    emoji: "👨‍🍳", color: "#FF6B35" },
   { key: "ready",     label: "Siap Diambil", emoji: "🔔", color: "#10B981" },
   { key: "completed", label: "Done",      emoji: "✅", color: "#22C55E" },
 ];
@@ -495,7 +495,7 @@ function CDSWelcoming({ state }) {
           padding: "8px 24px", borderRadius: 999,
           background: accentBg, border: `1px solid ${accent}`
         }}>
-          {isNew ? "Member Baru" : "Selamat Datang Kembali"}
+          {isNew ? "Member Baru" : "Welcome Kembali"}
         </div>
 
         <div style={{

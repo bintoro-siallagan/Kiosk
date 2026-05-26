@@ -140,7 +140,7 @@ export default function ZReport({ onClose }) {
           <div style={{display:"flex",gap:6,alignItems:"center",flexWrap:"wrap"}}>
             {[
               {k:"today",     l:"Hari Ini"},
-              {k:"yesterday", l:"Kemarin"},
+              {k:"yesterday", l:"Yesterday"},
               {k:"7days",     l:"7 Hari"},
               {k:"30days",    l:"30 Hari"},
               {k:"thisMonth", l:"Bulan Ini"},

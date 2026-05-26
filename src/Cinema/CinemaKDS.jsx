@@ -256,7 +256,7 @@ function InStudioCard({ order, onUpdate }) {
           <button onClick={() => onUpdate(order.id, "preparing")} style={btnPrep}>🍳 Mulai Siapkan</button>
         )}
         {order.status === "preparing" && (
-          <button onClick={() => onUpdate(order.id, "delivered")} style={btnDelivered}>🚶 Sudah Diantar</button>
+          <button onClick={() => onUpdate(order.id, "delivered")} style={btnDelivered}>🚶 Sudah Delivered</button>
         )}
         <button onClick={() => onUpdate(order.id, "cancelled")} style={btnCancel}>✕</button>
       </div>

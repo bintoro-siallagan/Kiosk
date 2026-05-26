@@ -3,7 +3,7 @@ import { api } from "./api.js";
 
 const fIDR  = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
 const fDate = (d) => d ? new Date(d).toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"}) : "–";
-const fAgo  = (d) => { if(!d) return "–"; const s=Math.floor((Date.now()-d)/86400000); return s===0?"Hari ini":s===1?"Kemarin":`${s} hari lalu`; };
+const fAgo  = (d) => { if(!d) return "–"; const s=Math.floor((Date.now()-d)/86400000); return s===0?"Today":s===1?"Yesterday":`${s} hari lalu`; };
 
 const TAG_CFG = {
   member:{label:"Member",  bg:"rgba(56,189,248,0.12)", color:"#38BDF8"},

@@ -464,7 +464,7 @@ export default function ShiftManager({ onBack }) {
               <div>
                 <label style={S.label}>Role</label>
                 <select style={S.input} value={newUser.role} onChange={e=>setNewUser(p=>({...p,role:e.target.value}))}>
-                  <option value="kasir">Kasir</option>
+                  <option value="kasir">Cashier</option>
                   <option value="manager">Manager</option>
                 </select>
               </div>
