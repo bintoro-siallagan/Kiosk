@@ -47,11 +47,9 @@ export default function AdminLogin({ onLogin }) {
       localStorage.setItem("adminRole",  res.user.role);
       localStorage.setItem("adminName",  res.user.name);
       localStorage.setItem("adminUsername", res.user.username || "");
-      if (res.user.must_change_password) {
-        setMustChange({ token: res.token, user: res.user });
-      } else {
-        onLogin({ token: res.token, name: res.user.name, role: res.user.role });
-      }
+      // Force Change Password modal DISABLED — user bisa ganti via User Management.
+      // (Sebelumnya: if (res.user.must_change_password) setMustChange(...))
+      onLogin({ token: res.token, name: res.user.name, role: res.user.role });
     } catch (e) {
       setError(parseError(e));
       setShake(true); setTimeout(() => setShake(false), 500);
@@ -66,8 +64,8 @@ export default function AdminLogin({ onLogin }) {
       localStorage.setItem("adminToken", res.token);
       localStorage.setItem("adminRole",  res.role);
       localStorage.setItem("adminName",  res.name);
-      if (res.must_change_password) setMustChange({ token: res.token, user: res });
-      else onLogin(res);
+      // Force Change Password modal DISABLED (sama dengan password path)
+      onLogin(res);
     } catch (e) {
       setError("PIN salah");
       setPin(""); setShake(true); setTimeout(() => setShake(false), 500);
