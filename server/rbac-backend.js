@@ -56,7 +56,7 @@ const LEVELS = ['none', 'view', 'edit', 'approve', 'full'];
 const DEFAULTS = {
   'super-admin': 'ALL_FULL',
   'auditor': 'ALL_VIEW',
-  'owner':          { command: 'L', finance: 'A', procurement: 'A', hr: 'L', marketing: 'L', reward: 'L', audit: 'L', config: 'L' },
+  'owner':          'ALL_FULL',
   'area-manager':   { command: 'L', pos: 'L', kds: 'L', stock: 'A', procurement: 'A', hr: 'L', marketing: 'L', reward: 'L', audit: 'L' },
   'outlet-manager': { pos: 'E', kds: 'L', stock: 'E', hr: 'E', marketing: 'L', reward: 'L', command: 'L', audit: 'L' },
   'supervisor':     { pos: 'A', kds: 'L', stock: 'L', audit: 'E' },

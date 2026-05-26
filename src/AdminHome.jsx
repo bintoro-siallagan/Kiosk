@@ -747,17 +747,12 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
         <div className="ah-backdrop no-print" data-open={railOpen} onClick={() => setRailOpen(false)} />
         <aside style={{ ...S.left, display: navHidden ? "none" : undefined }} className={`ah-rail no-print${railOpen ? " ah-rail-open" : ""}`}>
           {/* Role preview selector — hanya untuk super-admin (audit / debug).
-              Untuk tenant owner/staff: viewRole sudah locked ke role mereka. */}
-          {_isSuperAdmin ? (
+              Tenant owner/staff: viewRole locked ke role mereka, no UI clutter. */}
+          {_isSuperAdmin && (
             <select value={viewRole} onChange={e => setViewRole(e.target.value)} title="Preview modul sesuai role lain (super-admin only)"
               style={{ width: "100%", background: "#0e0e11", border: "1px solid #2a2b30", borderRadius: 8, padding: "8px 10px", color: "#c9a8ff", fontSize: 12, fontWeight: 700, fontFamily: "inherit", boxSizing: "border-box", marginBottom: 10, outline: "none", cursor: "pointer" }}>
               {ADMIN_ROLES.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
             </select>
-          ) : (
-            <div style={{ marginBottom: 10, padding: "6px 10px", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 8, fontSize: 11, color: "#c9a8ff", fontFamily: "'Geist Mono',monospace", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
-              <span>👤</span>
-              <span style={{ flex: 1 }}>{(ADMIN_ROLES.find(r => r.id === viewRole)?.label || viewRole).toUpperCase()}</span>
-            </div>
           )}
           {filteredColumns.map((col, ci) => (
             <div key={col.title}>
