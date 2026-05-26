@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
+import API_HOST from "../apiBase.js";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3011";
+const API = API_HOST;
 
 export default function FlowHome({ session, tableContext, cartCount, cartTotal, onLogout, onNavigate }) {
   const [profile, setProfile] = useState(null);

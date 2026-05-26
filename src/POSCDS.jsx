@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useMenu } from "./MenuContext.jsx";
 import PromoBroadcastBanner from "./PromoBroadcastBanner.jsx";
+import API_HOST from "./apiBase.js";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
+const API_BASE = API_HOST;
 // Pakai path /ws yang sudah di-proxy nginx dengan WS upgrade headers.
 // Fallback ke root path (no /ws) untuk local dev tanpa nginx.
 const WS_URL = API_BASE.replace(/^http/, "ws") + (API_BASE.includes("localhost") || API_BASE.includes("127.0.0.1") ? "" : "/ws");

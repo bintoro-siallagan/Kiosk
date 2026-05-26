@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import * as audio from "./audio.js";
 
-const API_URL = import.meta.env?.VITE_API_URL || "http://localhost:3001";
+import API_HOST from "./apiBase.js";
+const API_URL = API_HOST;
 
 export default function Screensaver({ onDismiss }) {
   const [config, setConfig] = useState({ enabled: true, intervalSec: 5, fadeMs: 800, tagline: "SENTUH UNTUK MEMESAN" });

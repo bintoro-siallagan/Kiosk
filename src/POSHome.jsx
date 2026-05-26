@@ -4,7 +4,8 @@ import POSOrderHistory from "./POSOrderHistory.jsx";
 import POSMergeTabsModal from "./POSMergeTabsModal.jsx";
 import UpsellTicker from "./components/UpsellTicker.jsx";
 import TouchNumpad from "./components/TouchNumpad.jsx";
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
+import API_HOST from "./apiBase.js";
+const API_BASE = API_HOST;
 
 // Track CDS window reference across re-renders
 let cdsWindowRef = null;

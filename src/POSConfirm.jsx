@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from "react";
 import POSSplitPayment from "./POSSplitPayment.jsx";
 import { calcServiceCharge, loadServiceChargeConfig } from "./pricing.js";
+import API_HOST from "./apiBase.js";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
+const API_BASE = API_HOST;
 const fmt = (n) => (n || 0).toLocaleString("id-ID");
 
 // Konversi poin — TODO: fetch dari /api/config/public atau settings table
 // POINT_VALUE — fetched from /api/config/public (configurable via admin)
 let _cachedPointValue = 100;
-fetch((import.meta.env.VITE_API_URL || "http://localhost:3001") + "/api/config/public")
+fetch(API_HOST + "/api/config/public")
   .then(r => r.json())
   .then(c => { if (c.POINT_VALUE) _cachedPointValue = c.POINT_VALUE; })
   .catch(() => {});

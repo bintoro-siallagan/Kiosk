@@ -4,6 +4,7 @@ import QRISPayment from "./QRISPayment.jsx";
 import CashPayment from "./CashPayment.jsx";
 import { api } from "./api";
 import { calcServiceCharge, loadServiceChargeConfig } from "./pricing.js";
+import API_HOST from "./apiBase.js";
 
 const S = {
   page: {
@@ -73,7 +74,7 @@ export default function Payment({ cart, orderType, promo, tableData, customerDat
   }, []);
 
   // === Convenience fee — biaya layanan transaksi digital (QRIS) ===
-  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3001";
+  const API_BASE = API_HOST;
   const [convFee, setConvFee] = useState({ enabled: 0, amount: 0, label: "Biaya Layanan" });
   useEffect(() => {
     fetch(`${API_BASE}/api/convenience-fee`).then(r => r.json())

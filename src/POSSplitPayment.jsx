@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
+import API_HOST from "./apiBase.js";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3011";
+const API = API_HOST;
 const fIDR = (n) => "Rp " + (n || 0).toLocaleString("id-ID");
 
 function cdsCast(event, data) {

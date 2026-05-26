@@ -286,7 +286,7 @@ export default function App() {
   } else if (scene === "cds") {
     node = <POSCDS />;
   } else if (scene === "kds") {
-    node = <KDS apiBase={import.meta.env.VITE_API_URL || "http://localhost:3001"} wsUrl="/api/pos/broadcast/ws" />;
+    node = <KDS apiBase={API_HOST} wsUrl="/api/pos/broadcast/ws" />;
   } else {
     // Default scene — customer Kiosk. Static, no lazy chunks needed.
     node = (

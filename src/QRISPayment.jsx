@@ -1,3 +1,4 @@
+import API_HOST from "./apiBase.js";
 import { useEffect, useRef, useState } from 'react';
 import * as audio from "./audio.js";
 
@@ -20,7 +21,7 @@ import * as audio from "./audio.js";
  *   onBack       : function (opsional)
  */
 
-const API_BASE = 'http://localhost:3011';
+const API_BASE = API_HOST;
 const CHARGE_URL = `${API_BASE}/api/payment/gopay`;
 const STATUS_URL = (orderId) => `${API_BASE}/api/payment/status/${orderId}`;
 

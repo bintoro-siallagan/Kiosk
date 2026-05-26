@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { api, createSocket } from "./api.js";
+import API_HOST from "./apiBase.js";
 
 const fIDR = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
 const fTime = (d) => { if (!d) return "—"; const x = new Date(d); return isNaN(x) ? "—" : x.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"}); };
@@ -65,7 +66,7 @@ export default function ShiftManager({ onBack }) {
       // expose force-close also when no active state perceived but server still has lingering shift
       window.__forceCloseShift = async (reason) => {
         try {
-          const r = await fetch((import.meta.env.VITE_API_URL||"http://localhost:3001") + "/api/shifts/force-close", {
+          const r = await fetch(API_HOST + "/api/shifts/force-close", {
             method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({reason})
           });
           const data = await r.json();

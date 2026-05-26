@@ -5,6 +5,7 @@ import { api, createSocket } from "./api.js";
 import ZReport from "./ZReport.jsx";
 import FlowQRGen from "./Flow/FlowQRGen.jsx";
 import TableStatusManager from "./Admin/TableStatusManager.jsx";
+import API_HOST from "./apiBase.js";
 
 const fIDR = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
 const fTime = (d) => new Date(d).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});
@@ -348,7 +349,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
   const handleAudioPreview = async () => {
     setAudioPreviewing(true);
     try {
-      const apiUrl = (import.meta.env.VITE_API_URL || "http://localhost:3001");
+      const apiUrl = API_HOST;
       let playedFile = false;
       for (const ext of ["mp3","wav","ogg"]) {
         const fileExists = audioFiles.some(f => f.name === `thanks.${ext}`);
@@ -1132,7 +1133,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                             {idx + 1}
                           </div>
                           <div style={{width:160,aspectRatio:"16/9",borderRadius:8,overflow:"hidden",background:"#000",flexShrink:0}}>
-                            <img src={`${(import.meta.env.VITE_API_URL || "http://localhost:3001")}/screensaver/${img.name}`} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                            <img src={`${API_HOST}/screensaver/${img.name}`} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
                           </div>
                           <div style={{flex:1,minWidth:0}}>
                             <div style={{fontSize:13,fontWeight:600,color:"#fff",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>

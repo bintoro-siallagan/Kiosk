@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import API_HOST from "../apiBase.js";
 
 const BRAND = "#FF6B35";
 const BG = "#0A0A0A";
@@ -7,7 +8,7 @@ const BORDER = "#2A2A2A";
 const TEXT = "#FAFAFA";
 const SUB = "#A1A1AA";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3011";
+const API = API_HOST;
 
 const TYPE_META = {
   percent: { label: "% OFF", color: "#3B82F6", bg: "rgba(59,130,246,0.15)" },

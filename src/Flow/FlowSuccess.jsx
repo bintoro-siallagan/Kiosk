@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
+import API_HOST from "../apiBase.js";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3011";
+const API = API_HOST;
 const fIDR = n => "Rp " + (n || 0).toLocaleString("id-ID");
 
 // Map backend status → step index (0 diterima, 1 disiapkan, 2 siap, 3 selesai)

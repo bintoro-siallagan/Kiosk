@@ -1,3 +1,4 @@
+import API_HOST from "./apiBase.js";
 // ─── AUDIO NOTIFICATIONS — Web Audio synth (no files needed) ───────────────
 let _ctx = null;
 let _unlocked = false;
@@ -40,7 +41,7 @@ function playCustomFile(profile) {
 
 export async function loadAudioConfig(apiUrl) {
   try {
-    const base = apiUrl || (import.meta.env?.VITE_API_URL) || "http://localhost:3001";
+    const base = apiUrl || API_HOST;
     const res = await fetch(base + "/api/admin/audio-config");
     if (res.ok) {
       const cfg = await res.json();
@@ -251,7 +252,7 @@ export function speak(text, opts = {}) {
 
 
 // Try play audio file from backend; on error/404 fall back to TTS speak
-const API_URL = (import.meta && import.meta.env && import.meta.env.VITE_API_URL) || "http://localhost:3001";
+const API_URL = API_HOST;
 
 async function tryPlayAudioFile(name) {
   return new Promise((resolve) => {

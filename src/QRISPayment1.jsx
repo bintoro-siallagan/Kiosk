@@ -1,3 +1,4 @@
+import API_HOST from "./apiBase.js";
 import { useEffect, useRef, useState } from 'react';
 
 /**
@@ -19,7 +20,7 @@ import { useEffect, useRef, useState } from 'react';
  *   onBack       : function (opsional)
  */
 
-const API_BASE = 'http://localhost:3001';
+const API_BASE = API_HOST;
 const CHARGE_URL = `${API_BASE}/api/payment/qris`;
 const STATUS_URL = (orderId) => `${API_BASE}/api/payment/status/${orderId}`;
 

@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import ToppingPicker from "./ToppingPicker.jsx";
+import API_HOST from "./apiBase.js";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
+const API_BASE = API_HOST;
 
 // Cart key helper: same item + same toppings = same cart row
 function makeCartKey(item, addons) {

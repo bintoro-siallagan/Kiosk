@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { requireManagerPin } from "./components/ManagerPinGate.jsx";
+import API_HOST from "./apiBase.js";
 
-const API = import.meta.env.VITE_API_URL || "http://localhost:3011";
+const API = API_HOST;
 
 const STATUS_LABELS = {
   completed:      { label: "Selesai",          color: "#6B7280", bg: "rgba(107,114,128,0.15)", icon: "🏁" },

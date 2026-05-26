@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "./api.js";
+import API_HOST from "./apiBase.js";
 
 const formatIDR = (a) => "Rp " + Math.round(a).toLocaleString("id-ID");
 const fmtDate  = (d) => new Date(d).toLocaleDateString("id-ID", { day:"2-digit", month:"short", year:"numeric" });
@@ -46,7 +47,7 @@ function escpos() {
 async function printToEpson(data, printerIp, printerPort) {
   // Try via WebSocket proxy on backend
   try {
-    const res = await fetch(`http://localhost:3001/api/print`, {
+    const res = await fetch(`${API_HOST}/api/print`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -411,7 +412,7 @@ export default function Report({ onBack }) {
             </div>
             <button style={R.printerTestBtn} onClick={async () => {
               try {
-                const res = await fetch(`http://localhost:3001/api/print/test`, {
+                const res = await fetch(`${API_HOST}/api/print/test`, {
                   method:"POST", headers:{"Content-Type":"application/json"},
                   body: JSON.stringify({ ip: printer.ip, port: printer.port })
                 });

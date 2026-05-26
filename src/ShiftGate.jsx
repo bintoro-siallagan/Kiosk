@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
+import API_HOST from "./apiBase.js";
+const API_BASE = API_HOST;
 
 export default function ShiftGate({ children, cashier, onSwitchCashier, customerMode = false }) {
   const [shift, setShift]   = useState(undefined); // undefined=loading, null=closed, obj=active

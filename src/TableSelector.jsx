@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
+import API_HOST from "./apiBase.js";
+const API_BASE = API_HOST;
 
 export default function TableSelector({ onPick, onBack, onCancel }) {
   const [tables, setTables] = useState([]);
