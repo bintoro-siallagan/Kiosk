@@ -331,16 +331,19 @@ function StaffCard({ staff, activeShift, onClick }) {
 
       <div style={{
         ...styles.avatar,
-        background: isManager ? '#312e81' : '#1e3a8a',
-        color: isManager ? '#c4b5fd' : '#bfdbfe'
+        background: isManager
+          ? 'linear-gradient(135deg,#a855f7,#7c3aed)'
+          : 'linear-gradient(135deg,#22d3ee,#0891b2)',
+        color: '#fff',
       }}>{initials(staff.name)}</div>
 
       <div style={styles.staffName}>{staff.name}</div>
 
       <div style={{
         ...styles.roleBadge,
-        background: isManager ? '#4c1d95' : '#1d4ed8',
-        color: isManager ? '#ddd6fe' : '#dbeafe',
+        background: isManager ? 'rgba(168,85,247,0.15)' : 'rgba(34,211,238,0.15)',
+        border: `1px solid ${isManager ? 'rgba(168,85,247,0.4)' : 'rgba(34,211,238,0.4)'}`,
+        color: isManager ? '#c4b5fd' : '#67e8f9',
       }}>{(staff.role || 'kasir').toUpperCase()}</div>
 
       <div style={styles.staffMeta}>
@@ -434,51 +437,64 @@ function PinModal({ staff, onCancel, onSuccess, verifyPin }) {
   );
 }
 
-// STYLES
+// STYLES — Onyx Platinum (sama dengan rest of karyaOS surfaces)
 const styles = {
   root: {
-    minHeight: '100vh', background: '#0a0a0a', color: '#fff',
-    padding: '20px 40px', fontFamily: 'system-ui, -apple-system, sans-serif',
+    minHeight: '100vh',
+    background: 'linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)',
+    backgroundAttachment: 'fixed',
+    color: '#fff',
+    padding: '20px 40px', fontFamily: "'Inter','SF Pro Display',system-ui,-apple-system,sans-serif",
     boxSizing: 'border-box'
   },
-  topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 30, fontSize: 12, flexWrap: 'wrap', gap: 8 },
-  statusGroup: { display: 'flex', gap: 20, flexWrap: 'wrap' },
-  datetime: { color: '#9ca3af' },
+  topBar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24, fontSize: 12, flexWrap: 'wrap', gap: 8 },
+  statusGroup: { display: 'flex', gap: 18, flexWrap: 'wrap' },
+  datetime: { color: '#94a3b8', fontFamily: "'Geist Mono',monospace", letterSpacing: 0.3 },
 
-  logo: { textAlign: 'center', marginBottom: 24 },
+  logo: { textAlign: 'center', marginBottom: 22 },
   logoRow: { display: 'inline-flex', alignItems: 'center', gap: 14, marginBottom: 4 },
   logoIcon: { fontSize: 36 },
-  logoText: { fontSize: 36, fontWeight: 500, color: '#f97316', letterSpacing: '0.05em' },
-  logoSub: { fontSize: 11, color: '#6b7280', letterSpacing: '0.2em' },
+  logoText: {
+    fontSize: 32, fontWeight: 800, letterSpacing: -0.5,
+    background: 'linear-gradient(135deg,#F59E0B,#fbbf24)',
+    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+  },
+  logoSub: { fontSize: 11, color: '#64748b', letterSpacing: '0.2em', fontFamily: "'Geist Mono',monospace", fontWeight: 700 },
 
-  statsRow: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 30, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' },
-  statCard: { background: '#1f1f1f', borderRadius: 10, padding: '14px 18px', textAlign: 'center' },
-  statLabel: { fontSize: 10, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 500 },
-  statValue: { fontSize: 22, fontWeight: 500, marginTop: 4 },
+  statsRow: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: 10, marginBottom: 24, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' },
+  statCard: {
+    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: 12, padding: '14px 16px', textAlign: 'center',
+  },
+  statLabel: { fontSize: 10, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 700, fontFamily: "'Geist Mono',monospace" },
+  statValue: { fontSize: 22, fontWeight: 800, marginTop: 4, letterSpacing: -0.3 },
 
-  prompt: { textAlign: 'center', fontSize: 15, color: '#9ca3af', marginBottom: 20 },
+  prompt: { textAlign: 'center', fontSize: 14, color: '#cbd5e1', marginBottom: 18 },
 
-  staffGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14, maxWidth: 1100, marginLeft: 'auto', marginRight: 'auto' },
+  staffGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: 14, maxWidth: 1100, marginLeft: 'auto', marginRight: 'auto' },
   staffCard: {
-    background: '#1f1f1f', border: '1px solid #2a2a2a', borderRadius: 12,
-    padding: 18, textAlign: 'center', cursor: 'pointer', position: 'relative',
-    color: '#fff', fontFamily: 'inherit', transition: 'border-color 0.15s'
+    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: 14, padding: 20, textAlign: 'center', cursor: 'pointer', position: 'relative',
+    color: '#fff', fontFamily: 'inherit',
+    transition: 'all 0.18s cubic-bezier(0.4,0,0.2,1)',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.3), 0 6px 18px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.04)',
   },
-  staffStatus: { position: 'absolute', top: 12, right: 12 },
+  staffStatus: { position: 'absolute', top: 14, right: 14 },
   avatar: {
-    width: 50, height: 50, borderRadius: '50%',
+    width: 56, height: 56, borderRadius: '50%',
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 18, fontWeight: 500, marginBottom: 10
+    fontSize: 20, fontWeight: 800, marginBottom: 12,
+    boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.1), 0 4px 12px rgba(0,0,0,0.3)',
   },
-  staffName: { fontSize: 16, fontWeight: 500, marginBottom: 6 },
-  roleBadge: { display: 'inline-block', fontSize: 10, padding: '2px 10px', borderRadius: 4, fontWeight: 500, letterSpacing: '0.05em', marginBottom: 8 },
-  staffMeta: { fontSize: 11, color: '#6b7280', marginBottom: 10 },
-  staffCta: { padding: '8px 12px', borderRadius: 6, fontSize: 12, fontWeight: 500, transition: 'all 0.15s' },
+  staffName: { fontSize: 16, fontWeight: 700, marginBottom: 6, letterSpacing: -0.2 },
+  roleBadge: { display: 'inline-block', fontSize: 10, padding: '3px 11px', borderRadius: 6, fontWeight: 800, letterSpacing: '0.08em', marginBottom: 10, fontFamily: "'Geist Mono',monospace" },
+  staffMeta: { fontSize: 11, color: '#94a3b8', marginBottom: 12 },
+  staffCta: { padding: '10px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, transition: 'all 0.15s', letterSpacing: 0.3 },
 
-  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
-  modalBox: { background: '#1a1a1a', borderRadius: 16, padding: 28, minWidth: 320, maxWidth: '90vw', border: '1px solid #2a2a2a' },
-  pinError: { textAlign: 'center', color: '#ef4444', fontSize: 12, marginBottom: 12, background: 'rgba(239,68,68,0.1)', padding: 6, borderRadius: 4 },
+  modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
+  modalBox: { background: 'rgba(17,19,28,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 18, padding: 28, minWidth: 320, maxWidth: '90vw', boxShadow: '0 20px 60px rgba(0,0,0,0.5)' },
+  pinError: { textAlign: 'center', color: '#ef4444', fontSize: 12, marginBottom: 12, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', padding: 8, borderRadius: 6 },
   keypad: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 16 },
-  keyBtn: { padding: '16px 0', background: '#2a2a2a', color: '#fff', border: 'none', borderRadius: 8, fontSize: 20, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' },
-  cancelBtn: { width: '100%', padding: '12px', background: 'transparent', color: '#9ca3af', border: '1px solid #3a3a3a', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }
+  keyBtn: { padding: '16px 0', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, fontSize: 20, fontWeight: 700, cursor: 'pointer', fontFamily: "'Geist Mono',monospace" },
+  cancelBtn: { width: '100%', padding: '12px', background: 'transparent', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }
 };
