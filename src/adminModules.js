@@ -215,3 +215,50 @@ export const GROUPS = [
   { name: "Customer & Marketing", icon: "🎯", module: "marketing", ids: ["customer_intel", "mkt_behavior", "clv_churn", "feedback_segment", "geo_engage", "loyalty_promo", "campaign", "signage", "marquee", "helpdesk"] },
   { name: "Security & Admin", icon: "🔐", module: "rbac", ids: ["rbac", "role_dash", "approval", "device_session", "security", "contract", "risk", "internal_audit", "anti_fraud", "self_audit", "platform"] },
 ];
+
+// ─── MULTI-TENANT: GROUP FILTER BY VERTICAL ──────────────────────────────
+// F&B owner gak butuh modul cinema_*. Cinema owner gak butuh modul fnb_*.
+// Super-admin (kapten platform) liat semua + ada Karys Platform tab.
+// Heuristik: prefix id (cinema_* / fnb_*) → vertical-specific. Lainnya = shared.
+
+const CINEMA_PREFIX = ["cinema_", "cinema-"];
+const FNB_PREFIX    = ["fnb_", "fnb-"];
+
+function _moduleVertical(id) {
+  const s = String(id || "").toLowerCase();
+  if (CINEMA_PREFIX.some(p => s.startsWith(p))) return "cinema";
+  if (FNB_PREFIX.some(p => s.startsWith(p))) return "fnb";
+  return "shared"; // generic modul (finance, payroll, dst)
+}
+
+// Super-admin-only modules — sembunyikan dari semua user company-scoped
+const SUPER_ADMIN_ONLY = new Set(["platform"]);
+
+// Filter GROUPS untuk user dengan vertical tertentu.
+// vertical: 'fnb' | 'cinema' | 'hybrid' | null (= super-admin, lihat semua)
+export function filterGroupsForVertical(groups, vertical, opts = {}) {
+  const isSuperAdmin = opts.is_super_admin || !vertical;
+  if (isSuperAdmin) return groups; // super-admin lihat semua
+  return groups
+    .map(g => {
+      const filteredIds = (g.ids || []).filter(id => {
+        if (SUPER_ADMIN_ONLY.has(id)) return false; // hide platform tab dari non-super-admin
+        const v = _moduleVertical(id);
+        if (v === "shared") return true;
+        if (vertical === "hybrid") return true; // hybrid → liat keduanya
+        return v === vertical;
+      });
+      const filteredCategories = (g.categories || []).map(c => ({
+        ...c,
+        ids: (c.ids || []).filter(id => {
+          if (SUPER_ADMIN_ONLY.has(id)) return false;
+          const v = _moduleVertical(id);
+          if (v === "shared") return true;
+          if (vertical === "hybrid") return true;
+          return v === vertical;
+        }),
+      })).filter(c => c.ids.length > 0);
+      return { ...g, ids: filteredIds, categories: filteredCategories };
+    })
+    .filter(g => g.ids.length > 0); // drop empty group
+}

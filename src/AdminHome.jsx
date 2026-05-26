@@ -14,7 +14,15 @@ const ESBNotif      = lazy(() => import("./ESBNotif.jsx"));
 const MemberList    = lazy(() => import("./MemberList.jsx"));
 const PromoManager  = lazy(() => import("./PromoManager.jsx"));
 const ShiftManager  = lazy(() => import("./ShiftManager.jsx"));
-import { TABS, GROUPS } from "./adminModules.js";
+import { TABS, GROUPS as _RAW_GROUPS, filterGroupsForVertical } from "./adminModules.js";
+
+// Multi-tenant: filter modul nav by user's company vertical
+// Super-admin (company_id NULL) lihat semua; F&B/cinema owner cuma lihat modul relevan
+const _adminCtx = (() => { try { return JSON.parse(localStorage.getItem("karya_company_ctx") || "null"); } catch { return null; } })();
+const GROUPS = filterGroupsForVertical(_RAW_GROUPS,
+  _adminCtx?.company?.primary_vertical || null,
+  { is_super_admin: !!(_adminCtx?.is_super_admin || _adminCtx?.company_id == null) }
+);
 import { CommandPalette } from "./components/uiKit.jsx";
 import IncidentAlertBanner from "./components/IncidentAlertBanner.jsx";
 import API_HOST from "./apiBase.js";
@@ -550,6 +558,30 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
 
       {/* Global incident alert — listen WS + toast + persistent badge */}
       <IncidentAlertBanner onOpenPanel={(toolId) => openRight("tools", toolId)} />
+
+      {/* Impersonation banner — super-admin sedang drill-down ke company tertentu */}
+      {_adminCtx?._impersonating && (
+        <div style={{
+          background: "linear-gradient(90deg, rgba(168,85,247,0.18), rgba(251,191,36,0.18))",
+          borderBottom: "1px solid rgba(251,191,36,0.4)",
+          padding: "10px 22px", display: "flex", alignItems: "center", gap: 12,
+          fontSize: 12.5, color: "#fbbf24", fontWeight: 700,
+          boxShadow: "0 4px 12px rgba(168,85,247,0.15)",
+        }}>
+          <span style={{ fontSize: 16 }}>🎯</span>
+          <span style={{ fontFamily: "'Geist Mono',monospace", letterSpacing: 1, textTransform: "uppercase", fontSize: 10 }}>IMPERSONATING</span>
+          <span style={{ flex: 1, color: "#fff", fontWeight: 800 }}>{_adminCtx.company?.name || _adminCtx.company?.code}</span>
+          <button onClick={async () => {
+            const { stopImpersonate } = await import("./companyAuth.js");
+            stopImpersonate();
+            window.location.reload();
+          }} style={{
+            background: "rgba(0,0,0,0.4)", border: "1px solid rgba(251,191,36,0.4)",
+            color: "#fbbf24", padding: "6px 16px", borderRadius: 8,
+            fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", letterSpacing: 0.5,
+          }}>✕ Exit Impersonation</button>
+        </div>
+      )}
 
       {/* Topbar — polished with glow + brand pop */}
       <div style={S.topbar} className="no-print ah-topbar">

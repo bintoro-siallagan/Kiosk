@@ -798,9 +798,43 @@ function setupCinema(app, opts = {}) {
       FROM cinema_tickets t
       LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
       LEFT JOIN cinema_studios st ON st.id = s.studio_id
-      WHERE t.sold_at > ? ${outletWhere}
+      WHERE t.sold_at > ? ${outletWhere} ${cWhere}
       GROUP BY method
     `).all(since);
+
+    // 7-day sparkline data (tickets per day, last 7 days) + WoW comparison
+    const sparkline = [];
+    for (let i = 6; i >= 0; i--) {
+      const dayStart = now - (i + 1) * 86400;
+      const dayEnd = now - i * 86400;
+      const r = db.prepare(`
+        SELECT COUNT(t.id) AS tickets, COALESCE(SUM(t.price), 0) AS revenue
+        FROM cinema_tickets t
+        LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+        LEFT JOIN cinema_studios st ON st.id = s.studio_id
+        WHERE t.sold_at >= ? AND t.sold_at < ? ${outletWhere} ${cWhere}
+      `).get(dayStart, dayEnd);
+      sparkline.push({ d: i, tickets: r?.tickets || 0, revenue: r?.revenue || 0 });
+    }
+    // Week-over-week: this week vs last week
+    const thisWeekStart = now - 7 * 86400;
+    const lastWeekStart = now - 14 * 86400;
+    const thisWeek = db.prepare(`SELECT COUNT(t.id) AS tickets, COALESCE(SUM(t.price), 0) AS revenue FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE t.sold_at >= ? ${outletWhere} ${cWhere}`).get(thisWeekStart);
+    const lastWeek = db.prepare(`SELECT COUNT(t.id) AS tickets, COALESCE(SUM(t.price), 0) AS revenue FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE t.sold_at >= ? AND t.sold_at < ? ${outletWhere} ${cWhere}`).get(lastWeekStart, thisWeekStart);
+    const pctChange = (curr, prev) => {
+      if (!prev) return curr > 0 ? 100 : 0;
+      return Math.round((curr - prev) / prev * 100);
+    };
+    const wow = {
+      tickets: { current: thisWeek?.tickets || 0, previous: lastWeek?.tickets || 0, pct: pctChange(thisWeek?.tickets || 0, lastWeek?.tickets || 0) },
+      revenue: { current: thisWeek?.revenue || 0, previous: lastWeek?.revenue || 0, pct: pctChange(thisWeek?.revenue || 0, lastWeek?.revenue || 0) },
+    };
 
     res.json({
       period, outlet: outletFilter || null, since,
@@ -820,6 +854,8 @@ function setupCinema(app, opts = {}) {
       recent_sales: recent,
       bundles,
       by_payment_method: byMethod,
+      sparkline,
+      wow,
     });
   });
 

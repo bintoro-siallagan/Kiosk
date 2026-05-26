@@ -68,10 +68,16 @@ export default function CinemaOwnerDashboard({ apiBase = "", onNavigate }) {
 
       {data && !loading && (
         <>
-          {/* KPI Cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12, marginBottom: 20 }}>
-            <KPI label="🎟️ Tiket Terjual" value={data.kpi?.tickets || 0} color={PALETTE.amber} />
-            <KPI label="💰 Revenue" value={rp(data.kpi?.revenue)} color={PALETTE.green} />
+          {/* KPI Cards dengan sparkline + WoW delta */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12, marginBottom: 20 }}>
+            <KPI label="🎟️ Tiket Terjual" value={data.kpi?.tickets || 0}
+                 color={PALETTE.amber}
+                 spark={(data.sparkline || []).map(s => s.tickets)}
+                 wow={data.wow?.tickets} />
+            <KPI label="💰 Revenue" value={rp(data.kpi?.revenue)}
+                 color={PALETTE.green}
+                 spark={(data.sparkline || []).map(s => s.revenue)}
+                 wow={data.wow?.revenue} />
             <KPI label="🛒 Purchase" value={data.kpi?.purchases || 0} color={PALETTE.cyan} sub="transaksi" />
             <KPI label="🎬 Showtime Aktif" value={data.kpi?.active_showtimes || 0} color={PALETTE.purple} />
           </div>
@@ -116,9 +122,9 @@ export default function CinemaOwnerDashboard({ apiBase = "", onNavigate }) {
           {/* Top Films + Recent Sales */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 18 }}>
             <Section title="🎬 TOP FILMS">
-              {(data.topFilms || []).length === 0 ? (
+              {(data.top_films || []).length === 0 ? (
                 <div style={{ color: PALETTE.dim, fontSize: 12, padding: 14 }}>Belum ada penjualan.</div>
-              ) : (data.topFilms || []).map((f, i) => (
+              ) : (data.top_films || []).map((f, i) => (
                 <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: `1px solid ${PALETTE.border}` }}>
                   <span style={{ width: 24, fontSize: 11, color: PALETTE.dim, fontFamily: "'Geist Mono',monospace" }}>#{i + 1}</span>
                   {f.poster_url ? <img src={f.poster_url} style={{ width: 32, height: 48, borderRadius: 4, objectFit: "cover" }} /> : <span style={{ width: 32, height: 48, background: "rgba(255,255,255,0.03)", borderRadius: 4, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🎞️</span>}
@@ -129,7 +135,7 @@ export default function CinemaOwnerDashboard({ apiBase = "", onNavigate }) {
             </Section>
 
             <Section title="📊 RECENT SALES">
-              {(data.recent || []).slice(0, 8).map(t => (
+              {(data.recent_sales || []).slice(0, 8).map(t => (
                 <div key={t.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: `1px solid ${PALETTE.border}` }}>
                   <span style={{ fontSize: 10, color: PALETTE.dim, fontFamily: "'Geist Mono',monospace", width: 64 }}>{new Date(t.sold_at * 1000).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span>
                   <span style={{ flex: 1, fontSize: 12 }}>{t.film_title || "—"} <span style={{ color: PALETTE.sub }}>{t.studio_name}</span></span>
@@ -137,7 +143,7 @@ export default function CinemaOwnerDashboard({ apiBase = "", onNavigate }) {
                   <span style={{ fontSize: 12, fontFamily: "'Geist Mono',monospace", color: PALETTE.green, width: 80, textAlign: "right" }}>{rp(t.price)}</span>
                 </div>
               ))}
-              {(data.recent || []).length === 0 && <div style={{ color: PALETTE.dim, fontSize: 12, padding: 14 }}>Belum ada penjualan.</div>}
+              {(data.recent_sales || []).length === 0 && <div style={{ color: PALETTE.dim, fontSize: 12, padding: 14 }}>Belum ada penjualan.</div>}
             </Section>
           </div>
 
@@ -204,13 +210,44 @@ export default function CinemaOwnerDashboard({ apiBase = "", onNavigate }) {
   );
 }
 
-function KPI({ label, value, color, sub }) {
+function KPI({ label, value, color, sub, spark, wow }) {
+  const hasSpark = Array.isArray(spark) && spark.length > 1;
+  const hasWow = wow && typeof wow.pct === "number";
   return (
-    <div style={{ background: PALETTE.card, border: `1px solid ${PALETTE.border}`, borderRadius: 12, padding: "14px 16px" }}>
-      <div style={{ fontSize: 10, color: PALETTE.sub, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase", fontWeight: 700, marginBottom: 6 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 800, color, fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5 }}>{value}</div>
-      {sub && <div style={{ fontSize: 10, color: PALETTE.dim, marginTop: 2 }}>{sub}</div>}
+    <div style={{ background: PALETTE.card, border: `1px solid ${PALETTE.border}`, borderRadius: 12, padding: "14px 16px", position: "relative", overflow: "hidden" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 10, color: PALETTE.sub, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase", fontWeight: 700, marginBottom: 6 }}>{label}</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color, fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5 }}>{value}</div>
+          {hasWow && (
+            <div style={{ fontSize: 10, marginTop: 4, fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5,
+              color: wow.pct > 0 ? PALETTE.green : wow.pct < 0 ? PALETTE.red : PALETTE.dim }}>
+              {wow.pct > 0 ? "▲" : wow.pct < 0 ? "▼" : "·"} {Math.abs(wow.pct)}% vs minggu lalu
+            </div>
+          )}
+          {sub && !hasWow && <div style={{ fontSize: 10, color: PALETTE.dim, marginTop: 2 }}>{sub}</div>}
+        </div>
+        {hasSpark && <Sparkline data={spark} color={color} />}
+      </div>
     </div>
+  );
+}
+
+function Sparkline({ data, color, width = 70, height = 28 }) {
+  if (!data || data.length < 2) return null;
+  const max = Math.max(...data, 1);
+  const min = Math.min(...data, 0);
+  const range = max - min || 1;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * width;
+    const y = height - ((v - min) / range) * height;
+    return `${x},${y.toFixed(1)}`;
+  }).join(" ");
+  return (
+    <svg width={width} height={height} style={{ flexShrink: 0, marginTop: 14 }}>
+      <polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+      <circle cx={width} cy={height - ((data[data.length - 1] - min) / range) * height} r="2.5" fill={color} />
+    </svg>
   );
 }
 

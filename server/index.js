@@ -1558,14 +1558,24 @@ app.get("/api/marquee", (req, res) => {
   const cidFilter = scope.is_super_admin ? '' : ` AND (company_id IS NULL OR company_id = ${parseInt(scope.company_id, 10)})`;
   const cidExact = scope.is_super_admin ? '' : ` AND company_id = ${parseInt(scope.company_id, 10)}`;
 
-  // 1) Custom admin messages (pos_config KIOSK_MARQUEE_CUSTOM = JSON array of strings)
-  // Per-company: pos_config rows tagged with company_id; super-admin sees all
+  // 1) Custom admin messages
+  // Priority:
+  //   a. Per-outlet: pos_config key 'KIOSK_MARQUEE_CUSTOM:<OUTLET_CODE>' (kalau ?outlet=X di URL)
+  //   b. Per-company: 'KIOSK_MARQUEE_CUSTOM' dengan company_id = scope.company_id
+  //   c. Global: 'KIOSK_MARQUEE_CUSTOM' dengan company_id IS NULL
+  // Outlet-scoped messages OVERRIDE company/global biar outlet bisa custom (mis promo lokal)
   try {
-    // Try company-scoped first, fallback ke global (company_id IS NULL)
     let row = null;
-    if (!scope.is_super_admin) {
+    // a. Outlet-specific (override)
+    const outletCode = req.query.outlet ? String(req.query.outlet).trim().toUpperCase() : null;
+    if (outletCode) {
+      row = db.rawDb.prepare(`SELECT value FROM pos_config WHERE key = ?`).get(`KIOSK_MARQUEE_CUSTOM:${outletCode}`);
+    }
+    // b. Company-scoped
+    if (!row && !scope.is_super_admin) {
       row = db.rawDb.prepare(`SELECT value FROM pos_config WHERE key='KIOSK_MARQUEE_CUSTOM' AND company_id = ?`).get(scope.company_id);
     }
+    // c. Global default
     if (!row) {
       row = db.rawDb.prepare(`SELECT value FROM pos_config WHERE key='KIOSK_MARQUEE_CUSTOM' AND company_id IS NULL`).get();
     }
@@ -4455,7 +4465,7 @@ const sections = setupSections(app, { dbPath: DB_PATH });
 const hris = setupHris(app, { dbPath: DB_PATH });
 const talenta = setupTalenta(app, { dbPath: DB_PATH });
 const promoInsight = setupPromoInsight(app, { dbPath: DB_PATH });
-const leaderboard = setupLeaderboard(app, { dbPath: DB_PATH });
+const leaderboard = setupLeaderboard(app, { dbPath: DB_PATH, sendEmail: emailModule.sendEmail });
 const promoBroadcast = setupBroadcast(app, { dbPath: DB_PATH });
 const outletsMod = setupOutlets(app, { dbPath: DB_PATH });
 const engagement = setupEngagement(app, { dbPath: DB_PATH });

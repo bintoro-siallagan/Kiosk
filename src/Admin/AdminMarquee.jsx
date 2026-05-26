@@ -15,12 +15,24 @@ export default function AdminMarquee({ apiBase = "" }) {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState(null);
   const [preview, setPreview] = useState([]);
+  const [outlets, setOutlets] = useState([]);
+  const [scope, setScope] = useState("global");  // "global" atau outlet code (mis "OTL-001")
 
   const showToast = (m, kind = "ok") => { setToast({ m, kind }); setTimeout(() => setToast(null), 2200); };
 
+  // Load outlets buat dropdown scope
   useEffect(() => {
-    // Load existing custom messages from pos_config
-    fetch(`${base}/api/pos/config/KIOSK_MARQUEE_CUSTOM`)
+    fetch(`${base}/api/outlet-master`)
+      .then(r => r.json())
+      .then(d => setOutlets(d?.outlets || []))
+      .catch(() => {});
+  }, [base]);
+
+  // Load messages untuk scope yang dipilih (global atau per-outlet)
+  useEffect(() => {
+    setLoading(true);
+    const key = scope === "global" ? "KIOSK_MARQUEE_CUSTOM" : `KIOSK_MARQUEE_CUSTOM:${scope.toUpperCase()}`;
+    fetch(`${base}/api/pos/config/${key}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         const val = d?.value;
@@ -28,13 +40,16 @@ export default function AdminMarquee({ apiBase = "" }) {
         else if (typeof val === "string" && val.trim()) {
           try { const arr = JSON.parse(val); if (Array.isArray(arr)) setLines(arr); else setLines([val]); }
           catch { setLines([val]); }
-        }
+        } else setLines([]);
       })
-      .catch(() => {})
+      .catch(() => setLines([]))
       .finally(() => setLoading(false));
-    // Load full marquee preview (custom + auto-generated)
-    fetch(`${base}/api/marquee?surface=kiosk`).then(r => r.json()).then(d => setPreview(d?.items || [])).catch(() => {});
-  }, [base]);
+    // Load preview — kalau scope outlet, request marquee dengan outlet param
+    const previewUrl = scope === "global"
+      ? `${base}/api/marquee?surface=kiosk`
+      : `${base}/api/marquee?surface=kiosk&outlet=${encodeURIComponent(scope)}`;
+    fetch(previewUrl).then(r => r.json()).then(d => setPreview(d?.items || [])).catch(() => {});
+  }, [base, scope]);
 
   const updateLine = (i, val) => {
     const next = [...lines]; next[i] = val; setLines(next);
@@ -46,8 +61,9 @@ export default function AdminMarquee({ apiBase = "" }) {
     setSaving(true);
     try {
       const clean = lines.map(s => String(s).trim()).filter(Boolean);
+      const key = scope === "global" ? "KIOSK_MARQUEE_CUSTOM" : `KIOSK_MARQUEE_CUSTOM:${scope.toUpperCase()}`;
       // Coba PUT dulu — kalau key belum ada (404), buat via POST
-      let r = await fetch(`${base}/api/pos/config/KIOSK_MARQUEE_CUSTOM`, {
+      let r = await fetch(`${base}/api/pos/config/${key}`, {
         method: "PUT", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ value: clean, updated_by: "admin-marquee" }),
       });
@@ -56,8 +72,8 @@ export default function AdminMarquee({ apiBase = "" }) {
         r = await fetch(`${base}/api/pos/config`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            key: "KIOSK_MARQUEE_CUSTOM", value: clean, type: "json",
-            description: "Custom messages untuk text jalan kiosk (JSON array of strings)",
+            key, value: clean, type: "json",
+            description: scope === "global" ? "Custom marquee messages (global)" : `Custom marquee messages for outlet ${scope}`,
             category: "marketing", updated_by: "admin-marquee",
           }),
         });
@@ -66,8 +82,11 @@ export default function AdminMarquee({ apiBase = "" }) {
         const d = await r.json().catch(() => ({}));
         throw new Error(d.error || `Gagal menyimpan (${r.status})`);
       }
-      showToast(`Tersimpan (${clean.length} pesan)`);
-      const p = await fetch(`${base}/api/marquee?surface=kiosk`).then(r => r.json()).catch(() => null);
+      showToast(`Tersimpan (${clean.length} pesan, scope: ${scope})`);
+      const previewUrl = scope === "global"
+        ? `${base}/api/marquee?surface=kiosk`
+        : `${base}/api/marquee?surface=kiosk&outlet=${encodeURIComponent(scope)}`;
+      const p = await fetch(previewUrl).then(r => r.json()).catch(() => null);
       if (p?.items) setPreview(p.items);
     } catch (e) {
       showToast(e.message || "Gagal menyimpan", "err");
@@ -86,10 +105,26 @@ export default function AdminMarquee({ apiBase = "" }) {
         </div>
       </div>
 
+      {/* Scope selector — global vs per-outlet */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 14, marginBottom: 14, display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+        <div style={{ fontSize: 11, color: C.sub, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, textTransform: "uppercase", fontWeight: 700 }}>SCOPE</div>
+        <select value={scope} onChange={e => setScope(e.target.value)} style={{ ...inp, minWidth: 240, width: "auto" }}>
+          <option value="global">🌐 Global (semua outlet)</option>
+          {outlets.map(o => (
+            <option key={o.code} value={o.code}>📍 {o.code} — {o.name} ({o.area})</option>
+          ))}
+        </select>
+        <div style={{ fontSize: 11, color: scope === "global" ? "#22d3ee" : "#fbbf24", flex: 1 }}>
+          {scope === "global"
+            ? "Pesan akan tampil di SEMUA outlet (default)."
+            : `Pesan akan OVERRIDE global untuk outlet ${scope}. Outlet lain tetap pakai global.`}
+        </div>
+      </div>
+
       {/* Editor */}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 16, marginBottom: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <div style={{ fontSize: 12, color: "#fbbf24", fontFamily: "'Geist Mono',monospace", letterSpacing: 2, fontWeight: 700 }}>PESAN CUSTOM</div>
+          <div style={{ fontSize: 12, color: "#fbbf24", fontFamily: "'Geist Mono',monospace", letterSpacing: 2, fontWeight: 700 }}>PESAN CUSTOM · {scope === "global" ? "GLOBAL" : scope.toUpperCase()}</div>
           <button onClick={addLine} style={B.add}>＋ Tambah baris</button>
         </div>
         {loading ? (

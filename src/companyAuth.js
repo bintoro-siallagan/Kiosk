@@ -4,6 +4,52 @@
 // Karys super-admin (company_id=null) → header x-super-admin: true → akses semua.
 
 const STORAGE_KEY = "karya_company_ctx";
+const IMPERSONATE_BACKUP = "karya_company_original";  // backup ctx asli sebelum impersonate
+
+// ── IMPERSONATION (super-admin drill-down) ───────────────────────────────
+// Super-admin click 'Drill' di KaryasPlatformView → swap ctx ke target company.
+// Original ctx disimpan di IMPERSONATE_BACKUP biar bisa di-restore.
+export function startImpersonate(targetCompany) {
+  try {
+    const original = localStorage.getItem(STORAGE_KEY);
+    if (!original) return false;
+    const orig = JSON.parse(original);
+    if (!(orig.is_super_admin || orig.company_id == null)) return false; // hanya super-admin
+    // Backup original kalau belum ada
+    if (!localStorage.getItem(IMPERSONATE_BACKUP)) {
+      localStorage.setItem(IMPERSONATE_BACKUP, original);
+    }
+    // Set new ctx — preserve token, swap company info
+    const impersonated = {
+      ...orig,
+      company_id: targetCompany.id,
+      is_super_admin: false, // pretend regular user dari company target
+      company: targetCompany,
+      _impersonating: true,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(impersonated));
+    return true;
+  } catch { return false; }
+}
+
+export function stopImpersonate() {
+  try {
+    const backup = localStorage.getItem(IMPERSONATE_BACKUP);
+    if (backup) {
+      localStorage.setItem(STORAGE_KEY, backup);
+      localStorage.removeItem(IMPERSONATE_BACKUP);
+      return true;
+    }
+  } catch {}
+  return false;
+}
+
+export function isImpersonating() {
+  try {
+    const ctx = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    return !!ctx?._impersonating;
+  } catch { return false; }
+}
 
 // Read current company context
 export function getCompanyCtx() {

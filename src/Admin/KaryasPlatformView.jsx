@@ -36,12 +36,19 @@ export default function KaryasPlatformView({ apiBase = "" }) {
   };
   useEffect(reload, [apiBase]);
 
-  const switchToCompany = (code) => {
-    // Super-admin can switch context via URL param ?company=CODE
-    // (Saat ini cuma logging — full impersonation butuh backend session swap)
-    const url = new URL(window.location.href);
-    url.searchParams.set("company", code);
-    window.location.href = url.toString();
+  const switchToCompany = async (c) => {
+    // Impersonate: swap localStorage ctx → reload page → AdminHome akan render
+    // dashboard yang sesuai target company (cinema/fnb/hybrid)
+    try {
+      const { startImpersonate } = await import("../companyAuth.js");
+      const ok = startImpersonate({
+        id: c.id, code: c.code, name: c.name,
+        primary_vertical: c.primary_vertical, brand_color: c.brand_color, logo_url: c.logo_url,
+      });
+      if (!ok) { showToast("Gagal impersonate (mungkin sudah jalan?)", "err"); return; }
+      showToast(`Impersonating ${c.name}…`);
+      setTimeout(() => window.location.reload(), 400);
+    } catch (e) { showToast("Error: " + e.message, "err"); }
   };
 
   const showToast = (m, kind = "ok") => { setToast({ m, kind }); setTimeout(() => setToast(null), 2200); };
@@ -128,7 +135,7 @@ export default function KaryasPlatformView({ apiBase = "" }) {
                 <span style={{ width: 130, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 13, color: PALETTE.cyan }}>{rp(c.revenue?.month)}</span>
                 <span style={{ width: 60, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 13 }}>{c.transactions?.today}</span>
                 <span style={{ width: 100, textAlign: "right" }}>
-                  <button onClick={() => switchToCompany(c.code)} style={B.switch}>🎯 Drill</button>
+                  <button onClick={() => switchToCompany(c)} style={B.switch}>🎯 Drill</button>
                 </span>
               </div>
             ))}

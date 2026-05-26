@@ -141,6 +141,7 @@ const AdminReleasePayment         = lazy(() => import("./Admin/AdminReleasePayme
 const AdminPeriodClosing          = lazy(() => import("./Admin/AdminPeriodClosing.jsx"));
 const OwnerDashboard              = lazy(() => import("./Admin/OwnerDashboard.jsx"));
 const CinemaOwnerDashboard        = lazy(() => import("./Admin/CinemaOwnerDashboard.jsx"));
+const HybridDashboard             = lazy(() => import("./Admin/HybridDashboard.jsx"));
 const KaryasPlatformView          = lazy(() => import("./Admin/KaryasPlatformView.jsx"));
 const FnbRecipe                   = lazy(() => import("./Admin/FnbRecipe.jsx"));
 const FnbCombo                    = lazy(() => import("./Admin/FnbCombo.jsx"));
@@ -248,7 +249,8 @@ export default function AdminTools({ initialTab }) {
             setTab(navMap[key] || key);
           };
           if (vertical === "cinema") return <CinemaOwnerDashboard apiBase={API} onNavigate={onNav} />;
-          // 'fnb' atau 'hybrid' atau super-admin → OwnerDashboard existing (F&B-heavy)
+          if (vertical === "hybrid") return <HybridDashboard apiBase={API} onNavigate={onNav} />;
+          // 'fnb' atau super-admin → OwnerDashboard existing (F&B-heavy)
           return <OwnerDashboard apiBase={API} onNavigate={onNav} />;
         })()}
         {tab === "staff" && <StaffTab showToast={showToast} />}
