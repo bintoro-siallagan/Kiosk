@@ -91,6 +91,14 @@ export default function AdminUsers({ apiBase = "" }) {
     await callApi(`/api/auth/users/${u.id}`, "PATCH", { active: !u.active });
   };
 
+  const deleteUser = async (u) => {
+    if (!confirm(`Hapus user "${u.name}"?\n\nRole: ${u.role}\nID: ${u.id}\n\n⚠️ Tindakan ini tidak bisa di-undo. User gak bisa login lagi setelah dihapus.`)) return;
+    try {
+      await callApi(`/api/auth/users/${u.id}`, "DELETE");
+      setInfo(`✓ User "${u.name}" sudah dihapus permanen`);
+    } catch {}
+  };
+
   return (
     <div style={{ padding: 20, color: "#e6edf3", fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif" }}>
       <header style={{ marginBottom: 18 }}>
@@ -164,12 +172,13 @@ export default function AdminUsers({ apiBase = "" }) {
                 <span style={chip(GREEN)}>Aktif</span>
               )}
             </div>
-            <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>
               {u.is_locked && (
                 <button onClick={() => unlockOne(u)} disabled={busy} style={{...actionBtn, background: RED, color: "#fff", borderColor: RED}}>🔓 Unlock</button>
               )}
               <button onClick={() => setPassword(u)} disabled={busy} style={actionBtn}>🔑 Password</button>
               <button onClick={() => toggleActive(u)} disabled={busy} style={actionBtn}>{u.active ? "✕ Nonaktif" : "✓ Aktif"}</button>
+              <button onClick={() => deleteUser(u)} disabled={busy} title="Hapus user permanen" style={{ ...actionBtn, background: "rgba(239,68,68,0.1)", borderColor: "rgba(239,68,68,0.4)", color: "#fca5a5" }}>🗑️ Hapus</button>
             </div>
           </div>
         ))}
