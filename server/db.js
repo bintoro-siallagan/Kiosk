@@ -135,6 +135,10 @@ try { db.exec("ALTER TABLE admin_users ADD COLUMN last_login_at INTEGER"); } cat
 try { db.exec("ALTER TABLE admin_users ADD COLUMN last_login_ip TEXT"); } catch {}
 try { db.exec("ALTER TABLE admin_users ADD COLUMN failed_login_count INTEGER DEFAULT 0"); } catch {}
 try { db.exec("ALTER TABLE admin_users ADD COLUMN locked_until INTEGER"); } catch {}
+// Multi-tenant: company_id (NULL = karys super-admin akses semua company / global)
+try { db.exec("ALTER TABLE admin_users ADD COLUMN company_id INTEGER"); } catch {}
+try { db.exec("ALTER TABLE orders ADD COLUMN company_id INTEGER"); } catch {}
+try { db.exec("CREATE INDEX IF NOT EXISTS idx_orders_company ON orders(company_id)"); } catch {}
 try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users(username) WHERE username IS NOT NULL"); } catch {}
 
 // Login audit log
@@ -181,13 +185,13 @@ const stmts = {
       subtotal, tax, total,
       customer_id, customer_name, customer_phone,
       promo_code, promo_discount, promo_free_items,
-      midtrans_id, cash_received, cash_change, points_redeemed, points_discount, points_earned, kasir, source, convenience_fee, service_charge
+      midtrans_id, cash_received, cash_change, points_redeemed, points_discount, points_earned, kasir, source, convenience_fee, service_charge, company_id
     ) VALUES (
       @id, @time, @type, @table, @status, @pay, @items, @addons,
       @subtotal, @tax, @total,
       @customer_id, @customer_name, @customer_phone,
       @promo_code, @promo_discount, @promo_free_items,
-      @midtrans_id, @cash_received, @cash_change, @points_redeemed, @points_discount, @points_earned, @kasir, @source, @convenience_fee, @service_charge
+      @midtrans_id, @cash_received, @cash_change, @points_redeemed, @points_discount, @points_earned, @kasir, @source, @convenience_fee, @service_charge, @company_id
     )
   `),
   updateStatus: db.prepare(`UPDATE orders SET status = ? WHERE id = ?`),
@@ -224,6 +228,7 @@ function orderToRow(o) {
     source:          o.source || null,
     convenience_fee: o.convenienceFee ?? 0,
     service_charge:  o.serviceCharge ?? 0,
+    company_id:      o.companyId ?? null,  // multi-tenant tag
   };
 }
 
@@ -264,6 +269,7 @@ function rowToOrder(r) {
     refundedBy:     r.refunded_by || null,
     refundReason:   r.refund_reason || null,
     payments:       r.payments ? (typeof r.payments === 'string' ? JSON.parse(r.payments) : r.payments) : [],
+    companyId:      r.company_id ?? null,  // multi-tenant tag
   };
 }
 
@@ -491,11 +497,11 @@ const adminUserStmts = {
     (id, name, pin, role, active, created_at,
      username, email, password_hash, password_salt, password_changed_at,
      must_change_password, last_login_at, last_login_ip,
-     failed_login_count, locked_until)
+     failed_login_count, locked_until, company_id)
     VALUES (@id, @name, @pin, @role, @active, @created_at,
      @username, @email, @password_hash, @password_salt, @password_changed_at,
      @must_change_password, @last_login_at, @last_login_ip,
-     @failed_login_count, @locked_until)`),
+     @failed_login_count, @locked_until, @company_id)`),
   selectAll: db.prepare(`SELECT * FROM admin_users ORDER BY id`),
   delete:    db.prepare(`DELETE FROM admin_users WHERE id = ?`),
 };
@@ -509,6 +515,8 @@ const adminUserToRow = u => ({
   last_login_at: u.last_login_at || null, last_login_ip: u.last_login_ip || null,
   failed_login_count: u.failed_login_count || 0,
   locked_until: u.locked_until || null,
+  // Multi-tenant: company_id (NULL = karys super-admin)
+  company_id: u.company_id ?? null,
 });
 const rowToAdminUser = r => ({
   id: r.id, name: r.name, pin: r.pin, role: r.role,
@@ -520,6 +528,8 @@ const rowToAdminUser = r => ({
   last_login_at: r.last_login_at, last_login_ip: r.last_login_ip,
   failed_login_count: r.failed_login_count || 0,
   locked_until: r.locked_until,
+  // Multi-tenant: company_id (NULL = karys super-admin)
+  company_id: r.company_id ?? null,
 });
 function loadAllAdminUsers() { return adminUserStmts.selectAll.all().map(rowToAdminUser); }
 function insertAdminUser(u)  { adminUserStmts.insert.run(adminUserToRow(u)); }

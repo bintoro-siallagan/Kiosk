@@ -830,28 +830,35 @@ function setupCinema(app, opts = {}) {
 
   // ── FILMS ──
   router.get('/films', (req, res) => {
+    // Multi-tenant: filter by company_id kalau bukan super-admin
+    const scope = req.companyScope || { is_super_admin: true };
+    const where = scope.is_super_admin ? '' : `WHERE f.company_id = ${parseInt(scope.company_id, 10)}`;
     res.json({ films: db.prepare(`
       SELECT f.*, d.name AS distributor_name, d.code AS distributor_code,
              ROUND((SELECT AVG(rating) FROM cinema_film_ratings WHERE film_id = f.id), 2) AS avg_rating,
              (SELECT COUNT(*) FROM cinema_film_ratings WHERE film_id = f.id) AS ratings_count
       FROM cinema_films f
       LEFT JOIN cinema_distributors d ON d.id = f.distributor_id
+      ${where}
       ORDER BY f.status, f.title`).all() });
   });
   router.post('/films', (req, res) => {
     const b = req.body || {};
     if (!b.title || !String(b.title).trim()) return res.status(400).json({ error: 'title wajib diisi' });
     const status = ['now_showing', 'coming_soon', 'archived'].includes(b.status) ? b.status : 'now_showing';
+    // Multi-tenant: auto-tag company_id (scope.company_id atau default 2 = Cinema)
+    const scope = req.companyScope || { is_super_admin: true };
+    const companyId = scope.is_super_admin ? (parseInt(b.company_id, 10) || 2) : scope.company_id;
     const info = db.prepare(`INSERT INTO cinema_films
       (title, genre, duration_min, rating, status, synopsis,
-       distributor_id, license_start, license_end, revenue_share_pct, min_run_days, distributor_notes)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`)
+       distributor_id, license_start, license_end, revenue_share_pct, min_run_days, distributor_notes, company_id)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
       .run(String(b.title).trim(), b.genre || '', Number(b.duration_min) || 0, b.rating || 'SU', status, b.synopsis || '',
            b.distributor_id ? parseInt(b.distributor_id, 10) : null,
            b.license_start || null, b.license_end || null,
            b.revenue_share_pct == null || b.revenue_share_pct === '' ? 0 : parseFloat(b.revenue_share_pct),
            b.min_run_days ? parseInt(b.min_run_days, 10) : 0,
-           b.distributor_notes || '');
+           b.distributor_notes || '', companyId);
     res.json({ ok: true, id: info.lastInsertRowid });
   });
   router.delete('/films/:id', (req, res) => {
@@ -1062,6 +1069,12 @@ function setupCinema(app, opts = {}) {
     // By default exclude archived; ?include_archived=1 to include them
     if (String(req.query.include_archived || '') !== '1') {
       wh.push(`COALESCE(s.is_archived, 0) = 0`);
+    }
+    // Multi-tenant: filter by company_id (kalau bukan super-admin)
+    const scope = req.companyScope || { is_super_admin: true };
+    if (!scope.is_super_admin) {
+      wh.push(`s.company_id = ?`);
+      p.push(scope.company_id);
     }
     if (wh.length) sql += ` WHERE ` + wh.join(' AND ');
     sql += ` ORDER BY s.show_date, s.start_time`;
@@ -3352,9 +3365,12 @@ function setupCinema(app, opts = {}) {
 
   router.get('/promotions', (req, res) => {
     const all = String(req.query.all || '') === '1';
+    // Multi-tenant filter
+    const scope = req.companyScope || { is_super_admin: true };
+    const cFilter = scope.is_super_admin ? '' : ` AND company_id = ${parseInt(scope.company_id, 10)}`;
     const sql = all
-      ? `SELECT * FROM cinema_promotions ORDER BY is_active DESC, code`
-      : `SELECT * FROM cinema_promotions WHERE is_active = 1 ORDER BY code`;
+      ? `SELECT * FROM cinema_promotions WHERE 1=1${cFilter} ORDER BY is_active DESC, code`
+      : `SELECT * FROM cinema_promotions WHERE is_active = 1${cFilter} ORDER BY code`;
     res.json({ promotions: db.prepare(sql).all() });
   });
   router.post('/promotions', (req, res) => {
@@ -3444,6 +3460,9 @@ function setupCinema(app, opts = {}) {
   router.get('/auto-promos', (req, res) => {
     const today = new Date().toISOString().slice(0, 10);
     const outlet = String(req.query.outlet || '').trim().toUpperCase();
+    // Multi-tenant: filter by company
+    const scope = req.companyScope || { is_super_admin: true };
+    const cFilter = scope.is_super_admin ? '' : ` AND company_id = ${parseInt(scope.company_id, 10)}`;
     const promos = db.prepare(`
       SELECT * FROM cinema_promotions
       WHERE is_active = 1
@@ -3451,6 +3470,7 @@ function setupCinema(app, opts = {}) {
         AND (valid_from IS NULL OR valid_from <= ?)
         AND (valid_to IS NULL OR valid_to >= ?)
         AND (max_redemptions IS NULL OR redemption_count < max_redemptions)
+        ${cFilter}
     `).all(today, today);
     // Hitung progress: total sales / tickets hari ini (paid only, global)
     // Outlet-level accounting belum diimplementasi (showtimes belum punya outlet_code)

@@ -48,9 +48,19 @@ export default function AdminLogin({ onLogin }) {
       localStorage.setItem("adminRole",  res.user.role);
       localStorage.setItem("adminName",  res.user.name);
       localStorage.setItem("adminUsername", res.user.username || "");
+      // Multi-tenant: save company context (company_id, is_super_admin, company info)
+      try {
+        const { setCompanyCtx } = await import("./companyAuth.js");
+        setCompanyCtx({
+          token: res.token,
+          company_id: res.user.company_id ?? null,
+          is_super_admin: !!res.user.is_super_admin,
+          company: res.company || null,
+          user: { id: res.user.id, name: res.user.name, role: res.user.role },
+        });
+      } catch {}
       // Force Change Password modal DISABLED — user bisa ganti via User Management.
-      // (Sebelumnya: if (res.user.must_change_password) setMustChange(...))
-      onLogin({ token: res.token, name: res.user.name, role: res.user.role });
+      onLogin({ token: res.token, name: res.user.name, role: res.user.role, company: res.company });
     } catch (e) {
       setError(parseError(e));
       setShake(true); setTimeout(() => setShake(false), 500);
@@ -65,6 +75,17 @@ export default function AdminLogin({ onLogin }) {
       localStorage.setItem("adminToken", res.token);
       localStorage.setItem("adminRole",  res.role);
       localStorage.setItem("adminName",  res.name);
+      // Multi-tenant: save company context
+      try {
+        const { setCompanyCtx } = await import("./companyAuth.js");
+        setCompanyCtx({
+          token: res.token,
+          company_id: res.user?.company_id ?? null,
+          is_super_admin: !!res.user?.is_super_admin,
+          company: res.company || null,
+          user: res.user || { name: res.name, role: res.role },
+        });
+      } catch {}
       // Force Change Password modal DISABLED (sama dengan password path)
       onLogin(res);
     } catch (e) {

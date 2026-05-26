@@ -53,7 +53,13 @@ function setupOutletMaster(app, opts = {}) {
   router.use(express.json());
 
   router.get('/', (req, res) => {
-    const outlets = db.prepare(`SELECT * FROM outlet_master ORDER BY code`).all().map(o => {
+    // Multi-tenant: filter by company_id (super-admin sees all)
+    const scope = req.companyScope || { is_super_admin: true };
+    const sql = scope.is_super_admin
+      ? `SELECT * FROM outlet_master ORDER BY code`
+      : `SELECT * FROM outlet_master WHERE company_id = ? ORDER BY code`;
+    const rows = scope.is_super_admin ? db.prepare(sql).all() : db.prepare(sql).all(scope.company_id);
+    const outlets = rows.map(o => {
       // performa harian — deterministik dari id + kapasitas (order belum ter-tag per outlet)
       const seed = ((o.id * 2654435761) % 1000) / 1000;        // 0..1 stabil per outlet
       const orders = o.status === 'active' ? Math.round(40 + (o.seat_capacity || 30) * 1.4 * (0.6 + seed * 0.8)) : 0;

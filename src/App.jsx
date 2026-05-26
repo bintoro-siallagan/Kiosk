@@ -156,6 +156,8 @@ export default function App() {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminRole");
     localStorage.removeItem("adminName");
+    // Multi-tenant: clear company context
+    import("./companyAuth.js").then(m => m.clearCompanyCtx()).catch(() => {});
     setAdmin(null);
     setScene("admin-login");
   }

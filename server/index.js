@@ -157,6 +157,51 @@ app.post("/api/reports/z/email", async (req, res) => {
 
 app.use(express.json({ limit: "5mb", verify: (req, _res, buf) => { req.rawBody = buf; } }));
 
+// ─── MULTI-TENANT MIDDLEWARE ─────────────────────────────────────────────
+// Resolve company scope dengan priority:
+//   1. x-super-admin: true header → akses semua (karys platform admin)
+//   2. x-company-id header → filter by company (authenticated admin/kasir)
+//   3. ?outlet=CODE param → derive company dari outlet_master (customer kiosk)
+//   4. Fallback → no-filter (public assets)
+const _scopeCache = new Map(); // outlet_code → company_id cache (refresh 60s)
+function _resolveOutletCompany(outletCode) {
+  if (!outletCode) return null;
+  const code = String(outletCode).toUpperCase();
+  const cached = _scopeCache.get(code);
+  if (cached && cached.expires > Date.now()) return cached.cid;
+  try {
+    const row = db.rawDb.prepare(`SELECT company_id FROM outlet_master WHERE UPPER(code) = ? OR UPPER(name) = ?`).get(code, code);
+    const cid = row?.company_id || null;
+    _scopeCache.set(code, { cid, expires: Date.now() + 60000 });
+    return cid;
+  } catch { return null; }
+}
+app.use((req, _res, next) => {
+  // Priority 1: super-admin
+  if (String(req.headers['x-super-admin'] || '') === 'true') {
+    req.companyScope = { company_id: null, is_super_admin: true, filter_sql: '1=1', filter_params: [] };
+    return next();
+  }
+  // Priority 2: explicit company header
+  const cid = parseInt(req.headers['x-company-id'], 10);
+  if (cid) {
+    req.companyScope = { company_id: cid, is_super_admin: false, filter_sql: 'company_id = ?', filter_params: [cid] };
+    return next();
+  }
+  // Priority 3: outlet param → derive company
+  const outletCode = req.query.outlet || (req.body && req.body.outlet) || null;
+  if (outletCode) {
+    const derivedCid = _resolveOutletCompany(outletCode);
+    if (derivedCid) {
+      req.companyScope = { company_id: derivedCid, is_super_admin: false, filter_sql: 'company_id = ?', filter_params: [derivedCid], from: 'outlet' };
+      return next();
+    }
+  }
+  // Priority 4: no scope (public/no-filter mode — backwards compat)
+  req.companyScope = { company_id: null, is_super_admin: true, filter_sql: '1=1', filter_params: [], from: 'fallback' };
+  next();
+});
+
 // ─── CDS Cinema — second display state (NOW receives parsed body) ───
 // POS Cinema POST current sale state → backend broadcast via WS ke semua CDS terminal.
 app.post("/api/cinema/cds/state", (req, res) => {
@@ -316,7 +361,12 @@ app.get("/api/health", (req, res) => {
 // GET all orders
 app.get("/api/orders", (req, res) => {
   const { status } = req.query;
-  const result = status ? orders.filter(o => o.status === status) : orders;
+  let result = status ? orders.filter(o => o.status === status) : orders;
+  // Multi-tenant: filter by company_id (super-admin sees all)
+  const scope = req.companyScope || { is_super_admin: true };
+  if (!scope.is_super_admin) {
+    result = result.filter(o => o.companyId == null || o.companyId === scope.company_id);
+  }
   res.json(result);
 });
 
@@ -426,6 +476,11 @@ app.post("/api/orders", (req, res) => {
   } catch (e) { /* config missing → no charge */ }
   const total = subtotalAfterPromo + convenienceFee + serviceCharge;
 
+  // Multi-tenant: tag order dengan company_id dari scope (default 1 = Karya Bites F&B)
+  const _orderScope = req.companyScope || { is_super_admin: true, company_id: null };
+  const _orderCompanyId = _orderScope.is_super_admin
+    ? (parseInt(req.body.company_id, 10) || 1)
+    : _orderScope.company_id;
   const order = {
     id:       `A${String(++orderCounter).padStart(2, "0")}`,
     time:     Date.now(),
@@ -435,6 +490,7 @@ app.post("/api/orders", (req, res) => {
     pay:      pay || "QRIS",
     kasir:    kasir || null,
     source:   source || "kiosk",
+    companyId: _orderCompanyId,
     items,
     addons:   addons || {},
     subtotal,
@@ -1497,10 +1553,25 @@ app.get("/api/promos", (req, res) => {
 app.get("/api/marquee", (req, res) => {
   const surface = String(req.query.surface || "kiosk").toLowerCase();
   const items = [];
+  // Multi-tenant: scope from middleware
+  const scope = req.companyScope || { is_super_admin: true, company_id: null };
+  const cidFilter = scope.is_super_admin ? '' : ` AND (company_id IS NULL OR company_id = ${parseInt(scope.company_id, 10)})`;
+  const cidExact = scope.is_super_admin ? '' : ` AND company_id = ${parseInt(scope.company_id, 10)}`;
 
   // 1) Custom admin messages (pos_config KIOSK_MARQUEE_CUSTOM = JSON array of strings)
+  // Per-company: pos_config rows tagged with company_id; super-admin sees all
   try {
-    const row = db.rawDb.prepare(`SELECT value FROM pos_config WHERE key='KIOSK_MARQUEE_CUSTOM'`).get();
+    // Try company-scoped first, fallback ke global (company_id IS NULL)
+    let row = null;
+    if (!scope.is_super_admin) {
+      row = db.rawDb.prepare(`SELECT value FROM pos_config WHERE key='KIOSK_MARQUEE_CUSTOM' AND company_id = ?`).get(scope.company_id);
+    }
+    if (!row) {
+      row = db.rawDb.prepare(`SELECT value FROM pos_config WHERE key='KIOSK_MARQUEE_CUSTOM' AND company_id IS NULL`).get();
+    }
+    if (!row && scope.is_super_admin) {
+      row = db.rawDb.prepare(`SELECT value FROM pos_config WHERE key='KIOSK_MARQUEE_CUSTOM'`).get();
+    }
     if (row?.value) {
       const arr = JSON.parse(row.value);
       if (Array.isArray(arr)) {
@@ -1513,12 +1584,15 @@ app.get("/api/marquee", (req, res) => {
     }
   } catch {}
 
-  // 2) Sultan jam ini (top 1 dari spend_leaderboard, current hour)
+  // 2) Sultan jam ini (top 1 dari spend_leaderboard, current hour, per-company)
   try {
     const hourStart = (() => { const d = new Date(); d.setMinutes(0, 0, 0); return Math.floor(d.getTime() / 1000); })();
-    const top = db.rawDb.prepare(
-      `SELECT name, amount FROM spend_leaderboard WHERE created_at >= ? ORDER BY amount DESC, id ASC LIMIT 1`
-    ).get(hourStart);
+    const sultanQuery = scope.is_super_admin
+      ? `SELECT name, amount FROM spend_leaderboard WHERE created_at >= ? ORDER BY amount DESC, id ASC LIMIT 1`
+      : `SELECT name, amount FROM spend_leaderboard WHERE created_at >= ? AND company_id = ? ORDER BY amount DESC, id ASC LIMIT 1`;
+    const top = scope.is_super_admin
+      ? db.rawDb.prepare(sultanQuery).get(hourStart)
+      : db.rawDb.prepare(sultanQuery).get(hourStart, scope.company_id);
     if (top && top.amount > 0) {
       const rp = "Rp " + Math.round(top.amount).toLocaleString("id-ID");
       items.push({
@@ -1529,12 +1603,13 @@ app.get("/api/marquee", (req, res) => {
     }
   } catch {}
 
-  // 3) Cinema auto-promo (unlocked = aktif, progress = belum)
+  // 3) Cinema auto-promo (unlocked = aktif, progress = belum, per-company)
   try {
     const today = new Date().toISOString().slice(0, 10);
     const promos = db.rawDb.prepare(`
       SELECT * FROM cinema_promotions
       WHERE is_active = 1 AND trigger_type IN ('auto_daily_sales','auto_daily_tickets')
+        ${cidExact}
         AND (valid_from IS NULL OR valid_from <= ?)
         AND (valid_to IS NULL OR valid_to >= ?)
         AND (max_redemptions IS NULL OR redemption_count < max_redemptions)
@@ -1571,13 +1646,14 @@ app.get("/api/marquee", (req, res) => {
     }
   } catch {}
 
-  // 4) Film coming soon (top 3 by license_start)
+  // 4) Film coming soon (top 3 by license_start, per-company)
   if (surface === "kiosk" || surface === "cds") {
     try {
       const films = db.rawDb.prepare(`
         SELECT title, license_start, genre
         FROM cinema_films
         WHERE status = 'coming_soon'
+          ${cidExact}
           AND (license_start IS NULL OR license_start >= date('now'))
         ORDER BY license_start ASC LIMIT 3
       `).all();
@@ -2631,17 +2707,34 @@ app.post("/api/auth/login-password", (req, res) => {
   // Success
   const token = genToken();
   const expiresAt = Date.now() + SESSION_TTL_MS;
-  adminSessions.set(token, { userId: user.id, name: user.name, role: user.role, loginAt: Date.now(), expiresAt, ip });
+  // Multi-tenant: resolve company info dari user.company_id
+  const companyInfo = resolveCompanyForUser(user);
+  adminSessions.set(token, {
+    userId: user.id, name: user.name, role: user.role,
+    company_id: user.company_id ?? null, is_super_admin: user.company_id == null,
+    loginAt: Date.now(), expiresAt, ip,
+  });
   db.insertAdminUser({ ...user, failed_login_count: 0, locked_until: null, last_login_at: Math.floor(Date.now() / 1000), last_login_ip: ip });
   db.logLoginAttempt({ user_id: user.id, username, ip, user_agent: ua, method: "password", success: 1 });
-  console.log(`🔐 Enterprise login: ${user.name} (@${user.username}, ${user.role}) from ${ip}`);
+  console.log(`🔐 Enterprise login: ${user.name} (@${user.username}, ${user.role}, company=${companyInfo?.code || 'KARYS'}) from ${ip}`);
   res.json({
     ok: true, token,
     user: { id: user.id, name: user.name, username: user.username, email: user.email, role: user.role,
-            must_change_password: !!user.must_change_password, last_login_at: user.last_login_at },
+            must_change_password: !!user.must_change_password, last_login_at: user.last_login_at,
+            company_id: user.company_id ?? null, is_super_admin: user.company_id == null },
+    company: companyInfo,  // {id, code, name, primary_vertical, brand_color} atau null untuk super-admin
     expiresAt,
   });
 });
+
+// Helper untuk resolve company info (dipakai semua login endpoint)
+function resolveCompanyForUser(user) {
+  if (!user || user.company_id == null) return null; // super-admin
+  try {
+    const row = db.rawDb.prepare(`SELECT id, code, name, primary_vertical, brand_color, logo_url FROM companies WHERE id = ?`).get(user.company_id);
+    return row || null;
+  } catch { return null; }
+}
 
 // ── Change password (require existing session + current password) ─────
 app.post("/api/auth/change-password", (req, res) => {
@@ -2710,10 +2803,22 @@ app.post("/api/auth/login", (req, res) => {
   }
   const token = genToken();
   const expiresAt = Date.now() + SESSION_TTL_MS;
-  adminSessions.set(token, { userId: user.id, name: user.name, role: user.role, loginAt: Date.now(), expiresAt, ip });
+  // Multi-tenant: company info for kasir/manager PIN login
+  const companyInfo = resolveCompanyForUser(user);
+  adminSessions.set(token, {
+    userId: user.id, name: user.name, role: user.role,
+    company_id: user.company_id ?? null, is_super_admin: user.company_id == null,
+    loginAt: Date.now(), expiresAt, ip,
+  });
   db.logLoginAttempt({ user_id: user.id, username: user.username, ip, user_agent: ua, method: "pin", success: 1 });
-  console.log(`🔐 PIN Login: ${user.name} (${user.role})`);
-  res.json({ ok: true, token, name: user.name, role: user.role, must_change_password: !!user.must_change_password });
+  console.log(`🔐 PIN Login: ${user.name} (${user.role}, company=${companyInfo?.code || 'KARYS'})`);
+  res.json({
+    ok: true, token, name: user.name, role: user.role,
+    must_change_password: !!user.must_change_password,
+    user: { id: user.id, name: user.name, role: user.role,
+            company_id: user.company_id ?? null, is_super_admin: user.company_id == null },
+    company: companyInfo,
+  });
 });
 
 app.post("/api/auth/logout", (req, res) => {
@@ -2727,7 +2832,9 @@ app.get("/api/auth/me", (req, res) => {
   const session = token && adminSessions.get(token);
   if (!session) return res.status(401).json({ error: "Not authenticated" });
   const user = adminUsers.find(u => u.id === session.userId);
-  res.json({ ...session, pin: undefined });
+  // Refresh company info (kalau company berubah primary_vertical/brand)
+  const companyInfo = user ? resolveCompanyForUser(user) : null;
+  res.json({ ...session, pin: undefined, company: companyInfo });
 });
 
 app.get("/api/auth/users", (req, res) => {

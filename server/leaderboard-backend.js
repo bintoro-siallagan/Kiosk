@@ -47,36 +47,54 @@ function setupLeaderboard(app, opts = {}) {
   const router = express.Router();
   router.use(express.json());
 
-  const topNow = (limit) => db.prepare(
-    `SELECT name, amount FROM spend_leaderboard WHERE created_at >= ? ORDER BY amount DESC, id ASC LIMIT ?`
-  ).all(hourStart(), limit)
-    .map((r, i) => ({ rank: i + 1, name: r.name || 'Tamu', amount: r.amount, ...titleFor(r.amount) }));
+  // Multi-tenant: company filter helper (per-company isolated leaderboard)
+  const _scopeWhere = (req) => {
+    const scope = req?.companyScope || { is_super_admin: true };
+    if (scope.is_super_admin) return { sql: '', val: null };
+    return { sql: ' AND company_id = ?', val: scope.company_id };
+  };
 
-  const statsNow = () => {
+  const topNow = (limit, req) => {
+    const sc = _scopeWhere(req);
+    const params = [hourStart()]; if (sc.val != null) params.push(sc.val); params.push(limit);
+    return db.prepare(
+      `SELECT name, amount FROM spend_leaderboard WHERE created_at >= ?${sc.sql} ORDER BY amount DESC, id ASC LIMIT ?`
+    ).all(...params)
+      .map((r, i) => ({ rank: i + 1, name: r.name || 'Tamu', amount: r.amount, ...titleFor(r.amount) }));
+  };
+
+  const statsNow = (req) => {
+    const sc = _scopeWhere(req);
+    const params = [hourStart()]; if (sc.val != null) params.push(sc.val);
     const s = db.prepare(
       `SELECT COALESCE(MAX(amount),0) top_transaction, COALESCE(AVG(amount),0) avg_bill, COUNT(*) count
-       FROM spend_leaderboard WHERE created_at >= ?`
-    ).get(hourStart());
+       FROM spend_leaderboard WHERE created_at >= ?${sc.sql}`
+    ).get(...params);
     return { top_transaction: Math.round(s.top_transaction), avg_bill: Math.round(s.avg_bill), count: s.count };
   };
 
-  // GET — leaderboard belanja jam ini
+  // GET — leaderboard belanja jam ini (per-company)
   router.get('/', (req, res) => {
     res.json({
       window: hourLabel(),
-      top: topNow(Math.min(Number(req.query.limit) || 10, 50)),
-      stats: statsNow(),
+      top: topNow(Math.min(Number(req.query.limit) || 10, 50), req),
+      stats: statsNow(req),
     });
   });
 
-  // POST — catat transaksi, balikin gelar + rank + leaderboard + stats jam ini
+  // POST — catat transaksi, balikin gelar + rank + leaderboard + stats jam ini (per-company)
   router.post('/record', (req, res) => {
     const { name, amount } = req.body || {};
     const amt = Number(amount) || 0;
     if (amt <= 0) return res.status(400).json({ error: 'amount tidak valid' });
-    db.prepare(`INSERT INTO spend_leaderboard (name, amount) VALUES (?,?)`)
-      .run((name || '').trim() || 'Tamu', amt);
-    const all = db.prepare(`SELECT amount FROM spend_leaderboard WHERE created_at >= ?`).all(hourStart());
+    // Multi-tenant: auto-tag company_id dari scope (fallback ke 1 = F&B kalau no scope)
+    const scope = req.companyScope || { company_id: 1, is_super_admin: false };
+    const companyId = scope.is_super_admin ? (parseInt(req.body?.company_id, 10) || 1) : scope.company_id;
+    db.prepare(`INSERT INTO spend_leaderboard (name, amount, company_id) VALUES (?,?,?)`)
+      .run((name || '').trim() || 'Tamu', amt, companyId);
+    const sc = _scopeWhere(req);
+    const params = [hourStart()]; if (sc.val != null) params.push(sc.val);
+    const all = db.prepare(`SELECT amount FROM spend_leaderboard WHERE created_at >= ?${sc.sql}`).all(...params);
     const rank = all.filter(r => r.amount > amt).length + 1;
     res.json({
       window: hourLabel(),
@@ -84,8 +102,8 @@ function setupLeaderboard(app, opts = {}) {
       amount: amt,
       rank,
       total_hour: all.length,
-      top: topNow(8),
-      stats: statsNow(),
+      top: topNow(8, req),
+      stats: statsNow(req),
     });
   });
 
