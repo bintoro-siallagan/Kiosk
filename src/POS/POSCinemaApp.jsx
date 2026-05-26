@@ -266,7 +266,7 @@ export default function POSCinemaApp() {
         <style>{CSS}</style>
         <div style={S.mesh} aria-hidden />
         <TopBar cashier={cashier} stage={stage} onLogout={handleLogout} onHome={resetSale} />
-        <UpsellTicker />
+        <UpsellTicker vertical="cinema" />
 
         {stage === "home" && (
           <>
