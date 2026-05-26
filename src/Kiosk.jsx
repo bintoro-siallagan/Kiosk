@@ -753,11 +753,12 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
       <div style={K.splitRight}>
         {/* Cart header */}
         <div style={K.cartPanelHeader}>
-          <h2 style={K.cartPanelTitle}>
-            PESANAN{cartCount>0?` (${cartCount})`:""}
-          </h2>
+          <div>
+            <h2 style={K.cartPanelTitle}>Your order</h2>
+            <div style={K.cartPanelSub}>{cartCount>0 ? `${cartCount} item${cartCount===1?"":"s"}` : "No items yet"}</div>
+          </div>
           {cart.length>0 && (
-            <button onClick={clearCart} style={K.clearAllBtn}>🗑 Kosongin</button>
+            <button onClick={clearCart} style={K.clearAllBtn}>Clear</button>
           )}
         </div>
 
@@ -765,14 +766,15 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
         <div style={K.cartPanelBody}>
           {cart.length===0 ? (
             <div style={K.emptyCartPanel}>
-              <div style={{fontSize:56,opacity:0.2,lineHeight:1}}>🛒</div>
-              <div style={{fontSize:15,fontWeight:700,color:"#fff",opacity:0.35,marginTop:10}}>Belum ada pesanan</div>
-              <div style={{fontSize:12,color:"#444",marginTop:6,textAlign:"center",lineHeight:1.6}}>
-                Ketuk item di sebelah kiri<br/>untuk mulai pesan
+              <div style={{position:"relative",width:120,height:120,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <div style={{position:"absolute",inset:0,borderRadius:"50%",background:"radial-gradient(circle,color-mix(in srgb,var(--brand-primary,#FF6B35) 14%,transparent),transparent 65%)",filter:"blur(20px)"}}/>
+                <div style={{fontSize:54,opacity:.5,position:"relative"}}>🛍️</div>
               </div>
-              <div style={{marginTop:14,padding:"7px 14px",borderRadius:999,border:"1px dashed #2a2a2a",fontSize:11,color:"#333",display:"flex",alignItems:"center",gap:6}}>
+              <div style={K.emptyTitle}>Your cart is empty</div>
+              <div style={K.emptyHint}>Browse the menu on the left to start your order</div>
+              <div style={K.emptyChip}>
                 <span style={{animation:"arrowPulse 1.8s ease-in-out infinite"}}>←</span>
-                <span>pilih menu dulu</span>
+                <span>tap a dish to begin</span>
               </div>
             </div>
           ) : (
@@ -782,28 +784,28 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
               const labels = getAddonLabels(e.addons, e.item.category);
               return (
                 <div key={e.uid} className="lg" style={K.cartPanelRow}>
-                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:5}}>
+                  <div style={{display:"flex",justifyContent:"space-between",gap:10,marginBottom:6}}>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{fontSize:14,fontWeight:700,lineHeight:1.3}}>
-                        <span style={{marginRight:6}}>{e.item.emoji}</span>{e.item.name}
+                      <div style={K.cartRowName}>
+                        {e.item.emoji && <span style={{marginRight:6}}>{e.item.emoji}</span>}{e.item.name}
                       </div>
-                      <div style={{fontSize:12,color:"#666",marginTop:2}}>{fIDR(e.item.price)}</div>
+                      <div style={K.cartRowUnit}>{fIDR(e.item.price)} each</div>
                     </div>
-                    <button onClick={()=>changeQty(e.uid,-q)} style={K.removeBtn}>✕</button>
+                    <button onClick={()=>changeQty(e.uid,-q)} style={K.removeBtn} aria-label="Remove item">✕</button>
                   </div>
                   {labels.length>0 && (
-                    <div style={{fontSize:11,color:"#FF6B35",marginBottom:6,lineHeight:1.5}}>
+                    <div style={K.cartRowAddons}>
                       + {labels.join(", ")}
-                      {e.addonTotal>0 && <span style={{color:"#FF6B35"}}> ({fIDR(e.addonTotal)})</span>}
+                      {e.addonTotal>0 && <span> · {fIDR(e.addonTotal)}</span>}
                     </div>
                   )}
-                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:4}}>
-                      <button onClick={()=>changeQty(e.uid,-1)} style={K.qtyMinus}>−</button>
-                      <div style={{width:30,textAlign:"center",fontSize:13,fontWeight:700}}>{q}</div>
-                      <button onClick={()=>changeQty(e.uid,1)} style={K.qtyPlus}>+</button>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6}}>
+                    <div style={K.cartQtyGroup}>
+                      <button onClick={()=>changeQty(e.uid,-1)} style={K.qtyMinus} aria-label="Decrease">−</button>
+                      <div style={K.cartQtyVal}>{q}</div>
+                      <button onClick={()=>changeQty(e.uid,1)} style={K.qtyPlus} aria-label="Increase">+</button>
                     </div>
-                    <span style={{fontSize:14,fontWeight:700}}>{fIDR(lineTotal)}</span>
+                    <span style={K.cartLineTotal}>{fIDR(lineTotal)}</span>
                   </div>
                 </div>
               );
@@ -817,29 +819,30 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
             <>
               {/* Subtotal + service charge breakdown — kalau dine-in */}
               {serviceCharge > 0 && (
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4,fontSize:12,color:"rgba(255,255,255,0.55)"}}>
+                <div style={K.cartFooterRow}>
                   <span>Subtotal</span>
-                  <span>{fIDR(subtotal)}</span>
+                  <span style={{fontVariantNumeric:"tabular-nums"}}>{fIDR(subtotal)}</span>
                 </div>
               )}
               {serviceCharge > 0 && (
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,fontSize:12,color:"#FBBF24"}}>
-                  <span>🍽️ {serviceConfig.label} {serviceConfig.pct}%</span>
-                  <span>+{fIDR(serviceCharge)}</span>
+                <div style={{...K.cartFooterRow,color:"rgba(251,191,36,0.85)"}}>
+                  <span>{serviceConfig.label} · {serviceConfig.pct}%</span>
+                  <span style={{fontVariantNumeric:"tabular-nums"}}>+{fIDR(serviceCharge)}</span>
                 </div>
               )}
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-                <span style={{fontFamily:"'Inter',sans-serif",fontSize:18,letterSpacing:1,color:"#aaa"}}>TOTAL</span>
-                <span style={{fontFamily:"'Inter',sans-serif",fontSize:30,color:"#FF6B35"}}>{fIDR(total)}</span>
+              {serviceCharge > 0 && <div style={K.cartFooterDivider}/>}
+              <div style={K.cartFooterTotal}>
+                <span style={K.cartFooterTotalLabel}>Total</span>
+                <span style={K.cartFooterTotalVal}>{fIDR(total)}</span>
               </div>
               <button onClick={goToConfirm} className="lg lg-brand order-pill"
-                style={{width:"100%",padding:"16px",borderRadius:16,border:"none",color:"#fff",fontFamily:"'Inter',sans-serif",fontSize:17,fontWeight:600,letterSpacing:"-0.3px",cursor:"pointer"}}>
+                style={K.cartCheckoutBtn}>
                 Checkout →
               </button>
             </>
           ) : (
-            <button disabled style={{width:"100%",padding:"16px",borderRadius:14,background:"rgba(255,255,255,0.025)",border:BORDER_DEFAULT,color:"rgba(255,255,255,0.2)",fontFamily:"'Inter',sans-serif",fontSize:16,fontWeight:700,letterSpacing:1.5,cursor:"not-allowed"}}>
-              PILIH MENU DULU
+            <button disabled style={K.cartCheckoutDisabled}>
+              Select a dish to continue
             </button>
           )}
         </div>
@@ -1039,14 +1042,33 @@ const K = {
   editorialAddBtn:  {width:34,height:34,minWidth:34,borderRadius:"50%",border:"none",background:"linear-gradient(180deg,var(--brand-primary,#FF6B35) 0%,var(--brand-secondary,#E55A2B) 100%)",color:"#fff",fontSize:18,fontWeight:700,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.3),0 4px 14px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent)",fontFamily:"'Inter',sans-serif"},
 
   // ── CART PANEL ──
-  cartPanelHeader:{padding:"18px 22px",borderBottom:BORDER_DEFAULT,flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"center"},
-  cartPanelTitle:{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:750,color:"#FF6B35",letterSpacing:"-0.5px"},
+  cartPanelHeader:{padding:"20px 22px 16px",borderBottom:BORDER_DEFAULT,flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-end",gap:12},
+  cartPanelTitle:{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:600,color:"rgba(255,255,255,0.95)",letterSpacing:"-0.6px",lineHeight:1,margin:0},
+  cartPanelSub:  {fontSize:11,color:"rgba(255,255,255,0.4)",marginTop:5,fontWeight:400,letterSpacing:0.2,fontFamily:"'Inter',sans-serif"},
   cartPanelBody:{flex:1,overflowY:"auto",padding:"0 14px"},
   // bg/border/shadow handled by .lg class on element
   cartPanelRow:{borderRadius:16,padding:"13px",marginTop:8,transition:"all 0.2s cubic-bezier(0.4,0,0.2,1)"},
   cartPanelFooter:{padding:"18px 22px",borderTop:BORDER_DEFAULT,flexShrink:0,background:"linear-gradient(180deg,transparent,rgba(13,17,23,0.6))"},
-  emptyCartPanel:{height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 24px",gap:0,userSelect:"none",paddingTop:60},
-  removeBtn:{background:"transparent",border:"none",color:"#F87171",fontSize:16,cursor:"pointer",padding:"0 4px",flexShrink:0,transition:"all 0.2s ease",opacity:0.7},
+  emptyCartPanel:{height:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 28px 40px",gap:14,userSelect:"none"},
+  emptyTitle:    {fontSize:16,fontWeight:600,color:"rgba(255,255,255,0.78)",letterSpacing:"-0.3px",fontFamily:"'Inter',sans-serif"},
+  emptyHint:     {fontSize:12,color:"rgba(255,255,255,0.38)",textAlign:"center",lineHeight:1.55,fontFamily:"'Inter',sans-serif",marginTop:-6,maxWidth:200},
+  emptyChip:     {marginTop:6,padding:"8px 16px",borderRadius:999,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.025)",fontSize:11,color:"rgba(255,255,255,0.45)",display:"flex",alignItems:"center",gap:7,fontFamily:"'Inter',sans-serif",letterSpacing:0.2},
+  removeBtn:{background:"transparent",border:"none",color:"rgba(248,113,113,0.7)",fontSize:14,cursor:"pointer",padding:"4px 6px",flexShrink:0,transition:"all 0.2s ease",borderRadius:8},
+  // cart row fine-grain
+  cartRowName:   {fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:600,letterSpacing:"-0.2px",color:"rgba(255,255,255,0.95)",lineHeight:1.3},
+  cartRowUnit:   {fontSize:11,color:"rgba(255,255,255,0.4)",marginTop:3,fontVariantNumeric:"tabular-nums",fontFamily:"'Inter',sans-serif"},
+  cartRowAddons: {fontSize:11,color:"color-mix(in srgb,var(--brand-primary,#FF6B35) 88%,#fff)",marginBottom:4,lineHeight:1.5,fontVariantNumeric:"tabular-nums"},
+  cartQtyGroup:  {display:"flex",alignItems:"center",gap:6},
+  cartQtyVal:    {width:28,textAlign:"center",fontSize:13,fontWeight:600,fontVariantNumeric:"tabular-nums"},
+  cartLineTotal: {fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:600,color:"#fff",fontVariantNumeric:"tabular-nums",letterSpacing:"-0.2px"},
+  // cart footer rows
+  cartFooterRow: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6,fontSize:12,color:"rgba(255,255,255,0.55)",fontFamily:"'Inter',sans-serif"},
+  cartFooterDivider:{height:1,background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent)",margin:"8px 0"},
+  cartFooterTotal:{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:16},
+  cartFooterTotalLabel:{fontFamily:"'Inter',sans-serif",fontSize:13,letterSpacing:0.4,color:"rgba(255,255,255,0.55)",fontWeight:400,textTransform:"uppercase"},
+  cartFooterTotalVal:{fontFamily:"'Inter',sans-serif",fontSize:28,color:"#fff",fontWeight:600,letterSpacing:"-0.7px",fontVariantNumeric:"tabular-nums"},
+  cartCheckoutBtn:{width:"100%",padding:"16px",borderRadius:16,border:"none",color:"#fff",fontFamily:"'Inter',sans-serif",fontSize:16,fontWeight:600,letterSpacing:"-0.3px",cursor:"pointer"},
+  cartCheckoutDisabled:{width:"100%",padding:"15px",borderRadius:16,background:"rgba(255,255,255,0.025)",border:"1px solid rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.3)",fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:500,letterSpacing:0.1,cursor:"not-allowed"},
 
   // ── IDLE ──
   idleOverlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',sans-serif"},
@@ -1105,11 +1127,11 @@ const K = {
   cardPrice:  {fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:800,color:"#FF6B35",letterSpacing:"-0.5px"},
   addBtn:     {background:"linear-gradient(135deg,#FF6B35,#E55A2B)",border:"1px solid rgba(255,107,53,0.5)",borderRadius:16,padding:"9px 14px",color:"#000",fontSize:12,fontWeight:700,letterSpacing:0.5,boxShadow:"0 1px 2px rgba(0,0,0,0.3),0 4px 12px rgba(255,107,53,0.25),inset 0 1px 0 rgba(255,255,255,0.15)"},
   soldOutBadge:{background:"rgba(248,113,113,0.15)",color:"#F87171",border:"1px solid rgba(248,113,113,0.3)",borderRadius:20,padding:"6px 10px",fontSize:10,fontWeight:700,letterSpacing:1,fontFamily:"'Geist Mono',monospace",textTransform:"uppercase"},
-  clearAllBtn:{background:"transparent",border:"none",color:"rgba(248,113,113,0.7)",fontSize:12,cursor:"pointer",transition:"all 0.2s ease"},
+  clearAllBtn:{background:"rgba(248,113,113,0.08)",border:"1px solid rgba(248,113,113,0.18)",borderRadius:999,padding:"5px 12px",color:"rgba(248,113,113,0.85)",fontSize:11,fontWeight:500,cursor:"pointer",transition:"all 0.2s ease",fontFamily:"'Inter',sans-serif",letterSpacing:0.2},
 
   // ── CART QTY ──
-  qtyMinus:   {background:"rgba(255,255,255,0.05)",border:BORDER_DEFAULT,borderRadius:"50%",width:28,height:28,color:"#fff",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s ease"},
-  qtyPlus:    {background:"linear-gradient(135deg,#FF6B35,#F59E0B)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:"50%",width:28,height:28,color:"#fff",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(255,107,53,0.3),inset 0 1px 0 rgba(255,255,255,0.18)",transition:"all 0.2s ease"},
+  qtyMinus:   {background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"50%",width:28,height:28,color:"rgba(255,255,255,0.7)",fontSize:14,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s ease",cursor:"pointer"},
+  qtyPlus:    {background:"linear-gradient(180deg,var(--brand-primary,#FF6B35),var(--brand-secondary,#E55A2B))",border:"1px solid rgba(255,255,255,0.18)",borderRadius:"50%",width:28,height:28,color:"#fff",fontSize:14,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.22),0 4px 12px color-mix(in srgb,var(--brand-primary,#FF6B35) 32%,transparent)",transition:"all 0.2s ease",cursor:"pointer"},
   qtyVal:     {fontSize:14,fontWeight:750,minWidth:20,textAlign:"center",fontFamily:"'Geist Mono',monospace"},
 
   // ── STAFF CALL ──
