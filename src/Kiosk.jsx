@@ -499,25 +499,25 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
     <div style={K.root}>
       <style>{FONT_CSS+KIOSK_CSS+BRAND_OVERRIDE_CSS}</style>
       <div style={K.confirmHeader}>
-        <button style={K.backBtn} onClick={()=>setScreen("menu")}>← KEMBALI</button>
-        <h2 style={K.confirmTitle}>KONFIRMASI PESANAN</h2>
-        <div style={K.typePill}>{orderType==="dine"?"🪑 Makan di Sini":"🛍️ Bawa Pulang"}</div>
+        <button style={K.backBtn} onClick={()=>setScreen("menu")}>← Back</button>
+        <h2 style={K.confirmTitle}>Review your order</h2>
+        <div style={K.typePill}>{orderType==="dine"?"🪑 Dine In":"🛍️ Takeaway"}</div>
       </div>
       <div style={K.confirmBody}>
         <div style={K.confirmItems}>
           {cart.map(e=>{
             const labels = getAddonLabels(e.addons,e.item.category);
             return (
-              <div key={e.uid} style={K.confirmItem}>
+              <div key={e.uid} className="lg" style={K.confirmItem}>
                 <FoodImage item={e.item} size={72}/>
                 <div style={K.confirmItemInfo}>
                   <div style={K.confirmItemName}>{e.item.name}</div>
                   {labels.length>0 && <div style={{...K.confirmItemAddon,marginTop:4,lineHeight:1.6}}>{labels.map((l,i)=><div key={i}>· {l}</div>)}</div>}
                   {e.note && <div style={K.confirmItemNote}>📝 {e.note}</div>}
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginTop:6}}>
-                    <button style={K.qtyMinus} onClick={()=>changeQty(e.uid,-1)}>−</button>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginTop:8}}>
+                    <button style={K.qtyMinus} onClick={()=>changeQty(e.uid,-1)} aria-label="Decrease">−</button>
                     <span style={K.qtyVal}>{e.qty}</span>
-                    <button style={K.qtyPlus} onClick={()=>changeQty(e.uid,1)}>+</button>
+                    <button style={K.qtyPlus} onClick={()=>changeQty(e.uid,1)} aria-label="Increase">+</button>
                   </div>
                 </div>
                 <div style={K.confirmItemPrice}>{fIDR((e.item.price+e.addonTotal)*e.qty)}</div>
@@ -526,108 +526,105 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           })}
         </div>
 
-        <button style={{
-          display:"flex",alignItems:"center",justifyContent:"space-between",
-          width:"100%",background:promo?"rgba(52,211,153,0.08)":"#1a1a1a",
-          border:`1px solid ${promo?"rgba(52,211,153,0.3)":"#2a2a2a"}`,
-          borderRadius:14,padding:"14px 16px",color:"#fff",marginBottom:16,cursor:"pointer",
-        }} onClick={()=>setShowPromo(true)}>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <span style={{fontSize:20}}>🏷️</span>
-            <div style={{textAlign:"left"}}>
+        <button className="lg" style={K.promoCard} onClick={()=>setShowPromo(true)}>
+          <div style={{display:"flex",alignItems:"center",gap:12,minWidth:0,flex:1}}>
+            <span style={K.promoIcon}>🏷️</span>
+            <div style={{textAlign:"left",minWidth:0,flex:1}}>
               {promo ? (
                 <>
-                  <div style={{fontSize:13,fontWeight:700,color:"#34D399"}}>{promo.code}</div>
-                  <div style={{fontSize:11,color:"#888"}}>{promo.desc}</div>
+                  <div style={K.promoCodeApplied}>{promo.code}</div>
+                  <div style={K.promoDesc}>{promo.desc}</div>
                   {promo.freeItems?.length > 0 && (
-                    <div style={{fontSize:11,color:"#34D399",marginTop:3,fontWeight:600}}>
-                      🎁 GRATIS: {promo.freeItems.map(fi=>`${fi.qty}× ${fi.name}`).join(", ")}
+                    <div style={K.promoFreeItems}>
+                      🎁 Free: {promo.freeItems.map(fi=>`${fi.qty}× ${fi.name}`).join(", ")}
                     </div>
                   )}
                 </>
               ) : (
                 <>
-                  <div style={{fontSize:13,fontWeight:600}}>Punya kode promo?</div>
-                  <div style={{fontSize:11,color:"#666"}}>Ketuk untuk memasukkan kode</div>
+                  <div style={K.promoTitle}>Have a promo code?</div>
+                  <div style={K.promoDesc}>Tap to enter your code</div>
                 </>
               )}
             </div>
           </div>
           {promo ? (
-            <div style={{display:"flex",alignItems:"center",gap:8}}>
-              <span style={{fontFamily:"'Inter',sans-serif",fontSize:18,color:"#34D399",letterSpacing:1}}>-{fIDR(discount)}</span>
-              <button style={{background:"transparent",border:"none",color:"#F87171",fontSize:14,padding:"4px 8px",borderRadius:8}}
-                onClick={e=>{e.stopPropagation();setPromo(null);}}>✕</button>
+            <div style={{display:"flex",alignItems:"center",gap:6,flexShrink:0}}>
+              <span style={K.promoDiscount}>−{fIDR(discount)}</span>
+              <button style={K.promoRemoveBtn}
+                onClick={e=>{e.stopPropagation();setPromo(null);}} aria-label="Remove promo">✕</button>
             </div>
           ) : (
-            <span style={{color:"#555",fontSize:13}}>→</span>
+            <span style={K.promoArrow}>→</span>
           )}
         </button>
 
-        <div style={{fontSize:12,color:"#FB923C",margin:"-4px 0 14px",display:"flex",alignItems:"center",gap:7,background:"rgba(251,146,60,0.08)",border:"1px solid rgba(251,146,60,0.25)",borderRadius:10,padding:"9px 12px"}}>
-          🎁 <span><b>Punya poin?</b> Bisa ditukar jadi diskon di langkah berikutnya — masukkan nomor HP member-mu.</span>
+        <div style={K.pointsHint}>
+          <span style={{fontSize:14}}>🎁</span>
+          <span><b style={{color:"rgba(255,255,255,0.85)"}}>Have loyalty points?</b> Redeem at the next step with your phone number.</span>
         </div>
 
-        <div style={K.billBox}>
-          <div style={K.billRow}><span style={K.billLabel}>Subtotal</span><span>{fIDR(subtotal)}</span></div>
+        <div className="lg" style={K.billBox}>
+          <div style={K.billRow}><span style={K.billLabel}>Subtotal</span><span style={K.billVal}>{fIDR(subtotal)}</span></div>
           {promo && (
             <>
-              <div style={{...K.billRow,color:"#34D399"}}>
-                <span>🏷️ {promo.code}</span><span>-{fIDR(discount)}</span>
+              <div style={{...K.billRow,color:"rgba(52,211,153,0.92)"}}>
+                <span>{promo.code}</span><span style={K.billVal}>−{fIDR(discount)}</span>
               </div>
               {promo.freeItems?.length > 0 && (
-                <div style={{fontSize:10,color:"#6EE7B7",marginTop:-6,marginBottom:6,paddingLeft:18,fontStyle:"italic"}}>
-                  🎁 {promo.freeItems.map(fi=>`${fi.qty}× ${fi.name}`).join(", ")} gratis
+                <div style={K.billFreeLine}>
+                  🎁 {promo.freeItems.map(fi=>`${fi.qty}× ${fi.name}`).join(", ")} included
                 </div>
               )}
             </>
           )}
           {serviceCharge > 0 && (
-            <div style={{...K.billRow, color:"#FBBF24"}}>
-              <span style={K.billLabel}>🍽️ {serviceConfig.label} {serviceConfig.pct}%</span>
-              <span>{fIDR(serviceCharge)}</span>
+            <div style={{...K.billRow, color:"rgba(251,191,36,0.85)"}}>
+              <span style={K.billLabel}>{serviceConfig.label} · {serviceConfig.pct}%</span>
+              <span style={K.billVal}>{fIDR(serviceCharge)}</span>
             </div>
           )}
-          <div style={K.billRow}><span style={K.billLabel}>PPN 11%</span><span>{fIDR(tax)}</span></div>
+          <div style={K.billRow}><span style={K.billLabel}>VAT · 11%</span><span style={K.billVal}>{fIDR(tax)}</span></div>
           <div style={K.billDivider}/>
           <div style={K.billTotal}>
-            <span>TOTAL PEMBAYARAN</span>
-            <span style={{color:"#FF6B35"}}>{fIDR(total)}</span>
+            <span style={K.billTotalLabel}>Total</span>
+            <span style={K.billTotalVal}>{fIDR(total)}</span>
           </div>
         </div>
       </div>
 
       <div style={K.confirmFooter}>
-        <button style={K.editOrderBtn} onClick={()=>setScreen("menu")}>✎ Edit Pesanan</button>
-        <button className="pay-btn-premium" style={K.payBtn} onClick={()=>onCheckout?onCheckout(cart,orderType,promo,tableInfo):null}>
-          BAYAR SEKARANG  •  {fIDR(total)}
+        <button style={K.editOrderBtn} onClick={()=>setScreen("menu")}>✎ Edit order</button>
+        <button className="lg lg-brand order-pill" style={K.payBtn} onClick={()=>onCheckout?onCheckout(cart,orderType,promo,tableInfo):null}>
+          <span>Pay now</span>
+          <span style={K.payBtnAmount}>{fIDR(total)}</span>
         </button>
       </div>
 
       {showPromoTeaser && (
         <div onClick={()=>{audio.playClick();setShowPromoTeaser(false);setScreen("confirm");}}
-          style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",backdropFilter:"blur(8px)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",animation:"fadeIn 0.2s ease"}}>
-          <div onClick={e=>e.stopPropagation()}
-            style={{background:"linear-gradient(135deg,#1a1a2e 0%,#050810 100%)",border:"2px solid #F59E0B44",borderRadius:24,padding:"40px 36px",maxWidth:480,width:"90%",textAlign:"center",boxShadow:"0 20px 60px rgba(245,158,11,0.2)",animation:"slideUp 0.3s ease"}}>
-            <div style={{fontSize:80,marginBottom:20,animation:"giftBounce 1.2s ease infinite"}}>🎁</div>
-            <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:42,letterSpacing:3,margin:"0 0 12px",color:"#F59E0B"}}>CEK PROMO DULU?</h2>
-            <p style={{fontSize:15,color:"#aaa",lineHeight:1.6,margin:"0 0 28px"}}>
-              Punya kode promo atau voucher diskon?<br/>Pakai sekarang sebelum bayar!
+          style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(16px) saturate(180%)",WebkitBackdropFilter:"blur(16px) saturate(180%)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",animation:"fadeIn 0.2s ease"}}>
+          <div className="lg" onClick={e=>e.stopPropagation()}
+            style={{borderRadius:28,padding:"40px 36px 32px",maxWidth:440,width:"90%",textAlign:"center",animation:"slideUp 0.35s cubic-bezier(.2,.8,.2,1)"}}>
+            <div style={{fontSize:64,marginBottom:14,animation:"giftBounce 1.2s ease infinite",filter:"drop-shadow(0 8px 20px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent))"}}>🎁</div>
+            <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:600,letterSpacing:"-0.6px",margin:"0 0 10px",color:"rgba(255,255,255,0.95)"}}>Check promo first?</h2>
+            <p style={{fontSize:14,color:"rgba(255,255,255,0.55)",lineHeight:1.55,margin:"0 0 26px",fontFamily:"'Inter',sans-serif"}}>
+              Got a code or voucher? Apply it before checkout.
             </p>
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
-              <button onClick={()=>{audio.playConfirm();setShowPromoTeaser(false);setScreen("confirm");setShowPromo(true);}}
-                style={{background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:14,padding:"18px 24px",color:"#050810",fontSize:16,fontWeight:800,fontFamily:"'Inter',sans-serif",letterSpacing:3,cursor:"pointer"}}>
-                🎟 YA, MASUKKAN KODE PROMO
+              <button className="lg lg-brand order-pill" onClick={()=>{audio.playConfirm();setShowPromoTeaser(false);setScreen("confirm");setShowPromo(true);}}
+                style={{border:"none",borderRadius:14,padding:"15px 22px",color:"#fff",fontSize:15,fontWeight:600,fontFamily:"'Inter',sans-serif",letterSpacing:"-0.2px",cursor:"pointer"}}>
+                Enter promo code
               </button>
               <button onClick={()=>{audio.playClick();setShowPromoTeaser(false);setScreen("confirm");}}
-                style={{background:"transparent",border:"1px solid #333",borderRadius:14,padding:"14px 24px",color:"#888",fontSize:13,fontWeight:600,cursor:"pointer"}}>
-                Lewati, lanjut ke konfirmasi
+                style={{background:"transparent",border:"1px solid rgba(255,255,255,0.08)",borderRadius:14,padding:"13px 22px",color:"rgba(255,255,255,0.55)",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
+                Skip, continue to checkout
               </button>
             </div>
           </div>
           <style>{`
-            @keyframes giftBounce{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-10px) rotate(5deg)}}
-            @keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+            @keyframes giftBounce{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-8px) rotate(4deg)}}
+            @keyframes slideUp{from{transform:translateY(30px) scale(.96);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
             @keyframes fadeIn{from{opacity:0}to{opacity:1}}
           `}</style>
         </div>
@@ -1132,31 +1129,50 @@ const K = {
   // ── CART QTY ──
   qtyMinus:   {background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"50%",width:28,height:28,color:"rgba(255,255,255,0.7)",fontSize:14,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s ease",cursor:"pointer"},
   qtyPlus:    {background:"linear-gradient(180deg,var(--brand-primary,#FF6B35),var(--brand-secondary,#E55A2B))",border:"1px solid rgba(255,255,255,0.18)",borderRadius:"50%",width:28,height:28,color:"#fff",fontSize:14,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.22),0 4px 12px color-mix(in srgb,var(--brand-primary,#FF6B35) 32%,transparent)",transition:"all 0.2s ease",cursor:"pointer"},
-  qtyVal:     {fontSize:14,fontWeight:750,minWidth:20,textAlign:"center",fontFamily:"'Geist Mono',monospace"},
+  qtyVal:     {fontSize:14,fontWeight:600,minWidth:24,textAlign:"center",fontFamily:"'Inter',sans-serif",fontVariantNumeric:"tabular-nums",color:"rgba(255,255,255,0.92)"},
 
   // ── STAFF CALL ──
   staffCallBtn:{position:"fixed",bottom:20,right:20,background:GLASS_BG,backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",border:"1px solid rgba(245,158,11,0.3)",borderRadius:30,padding:"11px 20px",color:"#F59E0B",fontSize:13,fontWeight:700,zIndex:50,display:"flex",alignItems:"center",gap:6,boxShadow:"0 1px 2px rgba(0,0,0,0.3),0 8px 24px rgba(245,158,11,0.15),inset 0 1px 0 rgba(255,255,255,0.05)",transition:"all 0.2s cubic-bezier(0.4,0,0.2,1)"},
 
   // ── CONFIRM SCREEN ──
-  confirmHeader:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",background:"rgba(13,17,23,0.7)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderBottom:BORDER_DEFAULT,position:"sticky",top:0,zIndex:10},
-  backBtn:    {background:"transparent",border:BORDER_DEFAULT,borderRadius:10,padding:"8px 14px",color:"rgba(255,255,255,0.55)",fontSize:11,letterSpacing:1.5,fontFamily:"'Geist Mono',monospace",textTransform:"uppercase",transition:"all 0.2s ease"},
-  confirmTitle:{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,letterSpacing:"-0.5px",color:"#FF6B35"},
-  typePill:   {background:"rgba(255,255,255,0.04)",border:BORDER_DEFAULT,borderRadius:20,padding:"5px 14px",fontSize:11,color:"rgba(255,255,255,0.65)",fontFamily:"'Geist Mono',monospace",letterSpacing:0.5},
-  confirmBody:{flex:1,overflowY:"auto",padding:"20px 24px",display:"flex",flexDirection:"column",gap:0,background:"#08090a",color:"#fff"},
-  confirmItems:{display:"flex",flexDirection:"column",gap:12,marginBottom:20},
-  confirmItem:{display:"flex",alignItems:"flex-start",gap:14,background:CARD_BG,borderRadius:16,padding:"16px",border:BORDER_DEFAULT,boxShadow:SHADOW_CARD,color:"#fff"},
-  confirmItemInfo:{flex:1,color:"#fff"},
-  confirmItemName:{fontSize:16,fontWeight:750,marginBottom:4,letterSpacing:"-0.3px",color:"#fff"},
-  confirmItemAddon:{fontSize:12,color:"#FF6B35",marginBottom:3},
-  confirmItemNote:{fontSize:11,color:"rgba(255,255,255,0.45)",marginBottom:6,fontStyle:"italic"},
-  confirmItemPrice:{fontSize:16,fontWeight:800,color:"#FF6B35",fontFamily:"'Inter',sans-serif",letterSpacing:"-0.5px",whiteSpace:"nowrap"},
-  billBox:    {background:CARD_BG,backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",borderRadius:16,padding:"20px 24px",marginBottom:16,border:BORDER_DEFAULT,boxShadow:SHADOW_CARD},
-  billRow:    {display:"flex",justifyContent:"space-between",padding:"7px 0",fontSize:14,borderBottom:"1px solid rgba(255,255,255,0.04)"},
+  confirmHeader:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 24px",background:"rgba(13,17,23,0.7)",backdropFilter:"blur(20px) saturate(180%)",WebkitBackdropFilter:"blur(20px) saturate(180%)",borderBottom:BORDER_DEFAULT,position:"sticky",top:0,zIndex:10,gap:12},
+  backBtn:    {background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:999,padding:"7px 14px",color:"rgba(255,255,255,0.65)",fontSize:12,fontWeight:500,fontFamily:"'Inter',sans-serif",letterSpacing:"-0.1px",cursor:"pointer",transition:"all 0.2s ease"},
+  confirmTitle:{fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:600,letterSpacing:"-0.5px",color:"rgba(255,255,255,0.95)",margin:0,lineHeight:1},
+  typePill:   {background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:999,padding:"6px 14px",fontSize:12,color:"rgba(255,255,255,0.75)",fontFamily:"'Inter',sans-serif",fontWeight:500,letterSpacing:"-0.1px"},
+  confirmBody:{flex:1,overflowY:"auto",padding:"24px 24px 28px",display:"flex",flexDirection:"column",gap:0,color:"#fff"},
+  confirmItems:{display:"flex",flexDirection:"column",gap:10,marginBottom:18},
+  // bg/shadow handled by .lg class
+  confirmItem:{display:"flex",alignItems:"flex-start",gap:14,borderRadius:18,padding:"14px",color:"#fff"},
+  confirmItemInfo:{flex:1,color:"#fff",minWidth:0},
+  confirmItemName:{fontSize:15,fontWeight:600,marginBottom:3,letterSpacing:"-0.3px",color:"rgba(255,255,255,0.95)",fontFamily:"'Inter',sans-serif"},
+  confirmItemAddon:{fontSize:11,color:"color-mix(in srgb,var(--brand-primary,#FF6B35) 85%,#fff)",marginBottom:3,fontFamily:"'Inter',sans-serif"},
+  confirmItemNote:{fontSize:11,color:"rgba(255,255,255,0.45)",marginBottom:6,fontStyle:"italic",fontFamily:"'Inter',sans-serif"},
+  confirmItemPrice:{fontSize:15,fontWeight:600,color:"#fff",fontFamily:"'Inter',sans-serif",letterSpacing:"-0.3px",whiteSpace:"nowrap",fontVariantNumeric:"tabular-nums"},
+  // Promo card (full-width)
+  promoCard:  {display:"flex",alignItems:"center",justifyContent:"space-between",width:"100%",borderRadius:16,padding:"14px 16px",color:"#fff",marginBottom:14,cursor:"pointer",border:"none",gap:12,fontFamily:"'Inter',sans-serif"},
+  promoIcon:  {fontSize:22,filter:"drop-shadow(0 2px 8px rgba(0,0,0,0.3))",flexShrink:0},
+  promoTitle: {fontSize:14,fontWeight:600,color:"rgba(255,255,255,0.9)",letterSpacing:"-0.2px"},
+  promoDesc:  {fontSize:11,color:"rgba(255,255,255,0.45)",marginTop:2,fontFamily:"'Inter',sans-serif"},
+  promoCodeApplied:{fontSize:13,fontWeight:600,color:"#34D399",letterSpacing:"-0.2px"},
+  promoFreeItems:{fontSize:11,color:"#34D399",marginTop:3,fontWeight:500,fontFamily:"'Inter',sans-serif"},
+  promoDiscount:{fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:600,color:"#34D399",fontVariantNumeric:"tabular-nums"},
+  promoRemoveBtn:{background:"rgba(248,113,113,0.1)",border:"1px solid rgba(248,113,113,0.2)",color:"rgba(248,113,113,0.85)",fontSize:11,padding:"4px 8px",borderRadius:8,cursor:"pointer"},
+  promoArrow: {color:"rgba(255,255,255,0.3)",fontSize:16,flexShrink:0},
+  // Loyalty hint chip
+  pointsHint: {fontSize:12,color:"rgba(255,255,255,0.55)",margin:"-2px 0 16px",display:"flex",alignItems:"flex-start",gap:9,background:"rgba(255,255,255,0.025)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:12,padding:"10px 13px",lineHeight:1.5,fontFamily:"'Inter',sans-serif"},
+  // Bill box — .lg class on element
+  billBox:    {borderRadius:18,padding:"18px 20px",marginBottom:18},
+  billRow:    {display:"flex",justifyContent:"space-between",padding:"6px 0",fontSize:13,color:"rgba(255,255,255,0.6)",fontFamily:"'Inter',sans-serif"},
   billLabel:  {color:"rgba(255,255,255,0.55)"},
-  billDivider:{height:1,background:"rgba(255,255,255,0.08)",margin:"10px 0"},
-  billTotal:  {display:"flex",justifyContent:"space-between",fontSize:22,fontWeight:800,fontFamily:"'Inter',sans-serif",letterSpacing:"-0.8px",paddingTop:4},
-  confirmFooter:{padding:"16px 20px",background:"rgba(13,17,23,0.7)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderTop:BORDER_DEFAULT,display:"flex",gap:12},
-  editOrderBtn:{background:"rgba(255,255,255,0.03)",border:BORDER_DEFAULT,borderRadius:14,padding:"16px 20px",color:"rgba(255,255,255,0.6)",fontSize:13,fontWeight:600,flex:1,transition:"all 0.2s ease"},
-  payBtn:     {flex:2,background:"linear-gradient(135deg,#FF6B35,#E55A2B)",border:"1px solid rgba(255,107,53,0.5)",borderRadius:14,padding:"16px",color:"#000",fontSize:14,fontWeight:800,letterSpacing:0.5,fontFamily:"'Inter',sans-serif",boxShadow:SHADOW_CTA},
+  billVal:    {fontVariantNumeric:"tabular-nums",color:"rgba(255,255,255,0.85)"},
+  billFreeLine:{fontSize:11,color:"rgba(110,231,183,0.75)",marginTop:-4,marginBottom:6,paddingLeft:0,fontStyle:"italic",fontFamily:"'Inter',sans-serif"},
+  billDivider:{height:1,background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent)",margin:"10px 0 8px"},
+  billTotal:  {display:"flex",justifyContent:"space-between",alignItems:"baseline",fontFamily:"'Inter',sans-serif",paddingTop:2},
+  billTotalLabel:{fontSize:13,letterSpacing:0.4,color:"rgba(255,255,255,0.55)",fontWeight:400,textTransform:"uppercase"},
+  billTotalVal:{fontSize:30,fontWeight:600,color:"#fff",letterSpacing:"-0.8px",fontVariantNumeric:"tabular-nums"},
+  confirmFooter:{padding:"16px 20px 20px",background:"rgba(13,17,23,0.75)",backdropFilter:"blur(20px) saturate(180%)",WebkitBackdropFilter:"blur(20px) saturate(180%)",borderTop:BORDER_DEFAULT,display:"flex",gap:10},
+  editOrderBtn:{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:16,padding:"15px 18px",color:"rgba(255,255,255,0.7)",fontSize:13,fontWeight:500,flex:1,transition:"all 0.2s ease",cursor:"pointer",fontFamily:"'Inter',sans-serif",letterSpacing:"-0.1px"},
+  payBtn:     {flex:2,padding:"15px 22px",borderRadius:16,border:"none",color:"#fff",fontSize:15,fontWeight:600,letterSpacing:"-0.3px",fontFamily:"'Inter',sans-serif",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12},
+  payBtnAmount:{fontSize:17,fontWeight:600,letterSpacing:"-0.4px",fontVariantNumeric:"tabular-nums"},
   proceedBtn: {width:"100%",marginTop:14,background:"linear-gradient(135deg,#FF6B35,#F59E0B)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"18px",color:"#fff",fontSize:15,fontWeight:800,letterSpacing:1.5,fontFamily:"'Inter',sans-serif",boxShadow:SHADOW_CTA},
 };
