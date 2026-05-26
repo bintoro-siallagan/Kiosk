@@ -1088,7 +1088,7 @@ const CSS = `
 // Premium dark — Linear/Vercel: flat near-black, hairline borders,
 // calm neutrals, depth via subtle inset highlight (di CSS .card).
 const S = {
-  root: { minHeight: "100vh", background: "#08090a", color: "#c3c4c9", fontFamily: "'Geist','Inter',system-ui,sans-serif", padding: "16px 28px 24px", boxSizing: "border-box" },
+  root: { minHeight: "100vh", background: "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)", backgroundAttachment: "fixed", color: "#c3c4c9", fontFamily: "'Geist','Inter',system-ui,sans-serif", padding: "16px 28px 24px", boxSizing: "border-box" },
   topbar: { display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 14, borderBottom: "1px solid #1a1b1e" },
   logo: { width: 38, height: 38, borderRadius: 10, background: "linear-gradient(160deg,#f5a623,#d97706)", color: "#1a1205", fontWeight: 900, fontSize: 21, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   brand: { fontSize: 21, fontWeight: 750, color: "#f0f0f2", letterSpacing: -0.4, lineHeight: 1 },
