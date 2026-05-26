@@ -2,6 +2,8 @@ import { installOffline } from './offline.js'
 installOffline();   // patch fetch buat mode offline — sebelum app render
 import { installFetchInterceptor } from './companyAuth.js'
 installFetchInterceptor();   // multi-tenant: inject x-company-id / x-super-admin headers
+import { installAutoFlush } from './offlineQueue.js'
+installAutoFlush();   // offline queue: auto-flush pending operations saat network kembali
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'

@@ -39,6 +39,7 @@ const CinemaCDS              = lazy(() => import("./Cinema/CinemaCDS.jsx"));
 const CinemaFeedback         = lazy(() => import("./Cinema/CinemaFeedback.jsx"));
 const CinemaDigitalTicket    = lazy(() => import("./Cinema/CinemaDigitalTicket.jsx"));
 const SignagePlayer          = lazy(() => import("./SignagePlayer.jsx"));
+import OfflineBanner from "./components/OfflineBanner.jsx";
 const OutletAudit            = lazy(() => import("./RemoteOps/OutletAudit.jsx"));
 const OutletVisit            = lazy(() => import("./RemoteOps/OutletVisit.jsx"));
 const LaunchFieldWorker      = lazy(() => import("./RemoteOps/LaunchFieldWorker.jsx"));
@@ -308,5 +309,10 @@ export default function App() {
     );
   }
 
-  return <Suspense fallback={<SceneLoading />}>{node}</Suspense>;
+  return (
+    <>
+      <OfflineBanner />
+      <Suspense fallback={<SceneLoading />}>{node}</Suspense>
+    </>
+  );
 }
