@@ -273,30 +273,65 @@ function InvoicesView({ invoices, onReload, API }) {
   );
 }
 
-function PlansCatalog({ plans }) {
+function PlansCatalog({ plans, currentPlan, onUpgrade }) {
+  const PLAN_ORDER = { TRIAL: 0, STARTER: 1, GROWTH: 2, PRO: 3, ENTERPRISE: 4 };
+  const curIdx = PLAN_ORDER[currentPlan] ?? -1;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%, 280px),1fr))", gap: 14 }}>
-      {plans.filter(p => p.code !== "TRIAL").map(p => (
-        <div key={p.code} style={{ padding: 18, background: CARD_BG, border: BORDER, borderRadius: 12 }}>
-          <div style={{ fontSize: 10, color: p.vertical === "cinema" ? PINK : p.vertical === "fnb" ? CYAN : PURPLE, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>{p.vertical.toUpperCase()} · {p.tier.toUpperCase()}</div>
-          <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", marginTop: 4, marginBottom: 2 }}>{p.name}</div>
-          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 14 }}>{p.description}</div>
+      {plans.filter(p => p.code !== "TRIAL").map(p => {
+        const isCurrent = currentPlan === p.code;
+        const isDowngrade = (PLAN_ORDER[p.code] ?? 99) < curIdx;
+        const isUpgrade = !isCurrent && !isDowngrade;
+        const planColor = p.tier === "enterprise" ? "#fbbf24" : p.tier === "growth" ? "#22d3ee" : "#10b981";
+        return (
+          <div key={p.code} style={{
+            padding: 18, background: isCurrent ? `linear-gradient(135deg, ${planColor}22, rgba(0,0,0,0.4))` : CARD_BG,
+            border: isCurrent ? `2px solid ${planColor}` : BORDER, borderRadius: 12,
+            position: "relative",
+          }}>
+            {isCurrent && (
+              <div style={{ position: "absolute", top: -10, right: 14, padding: "3px 10px", background: planColor, color: "#000", fontSize: 10, fontWeight: 800, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", borderRadius: 5 }}>CURRENT</div>
+            )}
+            <div style={{ fontSize: 10, color: planColor, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>{p.vertical.toUpperCase()} · {p.tier.toUpperCase()}</div>
+            <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", marginTop: 4, marginBottom: 2 }}>{p.name}</div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 14 }}>{p.description}</div>
 
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", fontFamily: "'Geist Mono',monospace" }}>{fmtIDR(p.monthly_price_idr)}<span style={{ fontSize: 12, color: "#64748b", fontWeight: 400 }}> / bulan</span></div>
-            <div style={{ fontSize: 11, color: GREEN, marginTop: 2 }}>atau {fmtIDR(p.annual_price_idr)}/tahun (hemat 2 bulan)</div>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", fontFamily: "'Geist Mono',monospace" }}>{fmtIDR(p.monthly_price_idr)}<span style={{ fontSize: 12, color: "#64748b", fontWeight: 400 }}> / bulan</span></div>
+              <div style={{ fontSize: 11, color: GREEN, marginTop: 2 }}>atau {fmtIDR(p.annual_price_idr)}/tahun (hemat 2 bulan)</div>
+            </div>
+
+            <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 6 }}>FITUR</div>
+            <ul style={{ margin: 0, padding: "0 0 0 18px", fontSize: 12, color: "#cbd5e1", lineHeight: 1.7 }}>
+              {p.features?.map((f, i) => <li key={i}>{typeof f === "string" ? f : f.label || f.feature || JSON.stringify(f)}</li>)}
+            </ul>
+
+            <div style={{ marginTop: 14, paddingTop: 12, borderTop: BORDER, fontSize: 11, color: "#94a3b8" }}>
+              🏪 {p.max_outlets === null ? "Unlimited" : p.max_outlets} outlet · 👥 {p.max_users === null ? "Unlimited" : p.max_users} user
+            </div>
+
+            {/* Upgrade CTA — only shows for tenant view (onUpgrade prop set) */}
+            {onUpgrade && (
+              <div style={{ marginTop: 14 }}>
+                {isCurrent ? (
+                  <div style={{ padding: 10, textAlign: "center", fontSize: 12, color: planColor, fontWeight: 700, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, background: `${planColor}11`, borderRadius: 8 }}>✓ AKTIF</div>
+                ) : isDowngrade ? (
+                  <button disabled style={{ width: "100%", padding: 12, background: "rgba(255,255,255,0.04)", border: "1px dashed rgba(255,255,255,0.15)", borderRadius: 8, color: "#64748b", fontWeight: 700, fontSize: 12, cursor: "not-allowed", fontFamily: "inherit" }}>
+                    Downgrade — hubungi support
+                  </button>
+                ) : (
+                  <button onClick={() => onUpgrade(p)} style={{
+                    width: "100%", padding: 12,
+                    background: `linear-gradient(135deg, ${planColor}, ${planColor}cc)`,
+                    border: "none", borderRadius: 8, color: "#000",
+                    fontWeight: 800, fontSize: 13, cursor: "pointer", fontFamily: "inherit", letterSpacing: 0.3,
+                  }}>🚀 Upgrade ke {p.name.replace(/^[^\w]+/, "").trim()}</button>
+                )}
+              </div>
+            )}
           </div>
-
-          <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 6 }}>FITUR</div>
-          <ul style={{ margin: 0, padding: "0 0 0 18px", fontSize: 12, color: "#cbd5e1", lineHeight: 1.7 }}>
-            {p.features?.map((f, i) => <li key={i}>{f}</li>)}
-          </ul>
-
-          <div style={{ marginTop: 14, paddingTop: 12, borderTop: BORDER, fontSize: 11, color: "#94a3b8" }}>
-            🏪 {p.max_outlets === null ? "Unlimited" : p.max_outlets} outlet · 👥 {p.max_users === null ? "Unlimited" : p.max_users} user
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -307,6 +342,28 @@ function TenantView({ my, plans, API }) {
   const t = my.tenant;
   const isTrial = t?.plan_code === "TRIAL";
   const trialDaysLeft = isTrial && t?.trial_until ? Math.max(0, Math.ceil((t.trial_until - Date.now()/1000) / 86400)) : null;
+  const [upgrading, setUpgrading] = useState(null); // { plan } during confirmation
+  const [busy, setBusy] = useState(false);
+  const [success, setSuccess] = useState(null);
+  const [cycleChoice, setCycleChoice] = useState("monthly");
+
+  const confirmUpgrade = async () => {
+    if (!upgrading) return;
+    setBusy(true);
+    try {
+      const r = await fetch(`${API}/api/billing/self-upgrade`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan_code: upgrading.code, billing_cycle: cycleChoice }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j?.error || "Gagal");
+      setSuccess(j);
+      setUpgrading(null);
+      // Reload after 2s so user sees new plan
+      setTimeout(() => window.location.reload(), 2500);
+    } catch (e) { alert("⚠ " + e.message); }
+    setBusy(false);
+  };
 
   return (
     <>
@@ -362,8 +419,72 @@ function TenantView({ my, plans, API }) {
       {/* Upgrade CTA */}
       <div style={{ marginTop: 24 }}>
         <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Geist Mono',monospace", marginBottom: 10 }}>🚀 UPGRADE PLAN</div>
-        <PlansCatalog plans={plans} />
+        <PlansCatalog plans={plans} currentPlan={t?.plan_code} onUpgrade={(plan) => { setUpgrading(plan); setCycleChoice("monthly"); }} />
       </div>
+
+      {/* Upgrade Confirm Modal */}
+      {upgrading && (
+        <div onClick={() => !busy && setUpgrading(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20, backdropFilter: "blur(6px)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "min(480px, 100%)", background: "rgba(10,15,28,0.96)", border: `1px solid ${PURPLE}55`, borderRadius: 16, padding: 26 }}>
+            <div style={{ textAlign: "center", marginBottom: 18 }}>
+              <div style={{ fontSize: 48, marginBottom: 6 }}>🚀</div>
+              <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>UPGRADE CONFIRMATION</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginTop: 6 }}>{upgrading.name}</div>
+            </div>
+            <div style={{ padding: 14, background: "rgba(168,85,247,0.08)", border: `1px solid ${PURPLE}33`, borderRadius: 10, marginBottom: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6, fontSize: 13 }}>
+                <span style={{ color: "#94a3b8" }}>Plan saat ini:</span>
+                <span style={{ color: "#fff", fontWeight: 600 }}>{t.plan_name || t.plan_code}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                <span style={{ color: "#94a3b8" }}>Plan baru:</span>
+                <span style={{ color: PURPLE, fontWeight: 800 }}>{upgrading.name}</span>
+              </div>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, color: "#94a3b8", letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Geist Mono',monospace", marginBottom: 6 }}>SIKLUS PEMBAYARAN</div>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => setCycleChoice("monthly")} style={{ flex: 1, padding: 10, background: cycleChoice === "monthly" ? PURPLE : "transparent", border: `1px solid ${cycleChoice === "monthly" ? PURPLE : "rgba(255,255,255,0.15)"}`, borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+                  Bulanan<br /><span style={{ fontSize: 14, fontFamily: "'Geist Mono',monospace" }}>{fmtIDR(upgrading.monthly_price_idr)}</span>
+                </button>
+                <button onClick={() => setCycleChoice("annual")} style={{ flex: 1, padding: 10, background: cycleChoice === "annual" ? PURPLE : "transparent", border: `1px solid ${cycleChoice === "annual" ? PURPLE : "rgba(255,255,255,0.15)"}`, borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", position: "relative" }}>
+                  Tahunan<br /><span style={{ fontSize: 14, fontFamily: "'Geist Mono',monospace" }}>{fmtIDR(upgrading.annual_price_idr)}</span>
+                  <span style={{ position: "absolute", top: -8, right: -8, padding: "2px 6px", background: GREEN, color: "#001", fontSize: 9, fontWeight: 800, borderRadius: 4 }}>HEMAT</span>
+                </button>
+              </div>
+            </div>
+            <div style={{ padding: 12, background: "rgba(245,158,11,0.08)", border: `1px solid ${AMBER}33`, borderRadius: 8, fontSize: 11, color: "#cbd5e1", marginBottom: 14, lineHeight: 1.6 }}>
+              💡 Setelah konfirmasi: invoice langsung dibuat. Transfer ke <b style={{ color: "#fff" }}>BCA 5430-1100-22 a.n. Karys Indonesia</b>, lalu submit bukti via chat WA. Plan aktif setelah pembayaran diverifikasi.
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => setUpgrading(null)} disabled={busy} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={confirmUpgrade} disabled={busy} style={{ flex: 2, padding: 12, background: `linear-gradient(135deg, ${PURPLE}, #7c3aed)`, border: "none", borderRadius: 10, color: "#fff", fontWeight: 800, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
+                {busy ? "⏳ Memproses…" : "✅ Konfirmasi Upgrade"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {success && (
+        <div onClick={() => setSuccess(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: "min(440px, 100%)", background: "rgba(10,15,28,0.96)", border: `1px solid ${GREEN}55`, borderRadius: 16, padding: 28, textAlign: "center" }}>
+            <div style={{ fontSize: 64 }}>🎉</div>
+            <div style={{ fontSize: 11, color: GREEN, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginTop: 6 }}>UPGRADE BERHASIL</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginTop: 6 }}>{success.old_plan} → {success.new_plan}</div>
+            {success.invoice_no && (
+              <div style={{ marginTop: 14, padding: 12, background: "rgba(0,0,0,0.4)", border: `1px dashed ${AMBER}55`, borderRadius: 10 }}>
+                <div style={{ fontSize: 10, color: AMBER, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>INVOICE</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", marginTop: 4, fontFamily: "'Geist Mono',monospace" }}>{success.invoice_no}</div>
+                <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 4 }}>{fmtIDR(success.amount_idr)} · transfer ke BCA</div>
+              </div>
+            )}
+            <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 14, lineHeight: 1.6 }}>{success.message}</div>
+            <button onClick={() => window.location.reload()} style={{ marginTop: 18, padding: "12px 24px", background: GREEN, border: "none", borderRadius: 10, color: "#001", fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>OK</button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -439,6 +439,57 @@ function setupBillingEngine(app, opts = {}) {
     res.json({ ok: true, generated: generated.length, invoices: generated, overdue_flagged: overdueResult.changes });
   });
 
+  // ─── SELF-SERVICE UPGRADE — tenant ganti plan sendiri ───
+  // Constraint: tenant cuma boleh upgrade (price baru >= price lama). Downgrade lewat support.
+  const PLAN_ORDER = ['TRIAL', 'STARTER', 'GROWTH', 'PRO', 'ENTERPRISE'];
+  router.post('/self-upgrade', (req, res) => {
+    const scope = req.companyScope || { is_super_admin: true };
+    if (scope.is_super_admin || scope.company_id == null) return res.status(403).json({ error: 'Endpoint untuk tenant scope, bukan super-admin' });
+    const b = req.body || {};
+    const newCode = String(b.plan_code || '').toUpperCase();
+    const cycle = b.billing_cycle === 'annual' ? 'annual' : 'monthly';
+    const newPlan = db.prepare(`SELECT * FROM billing_plans WHERE code=? AND active=1`).get(newCode);
+    if (!newPlan) return res.status(404).json({ error: 'Plan tidak ditemukan' });
+    const current = db.prepare(`SELECT plan_code FROM tenant_billing WHERE company_id=?`).get(scope.company_id);
+    if (!current) return res.status(404).json({ error: 'Tenant billing record not found' });
+    // Block downgrade
+    const curIdx = PLAN_ORDER.indexOf(current.plan_code);
+    const newIdx = PLAN_ORDER.indexOf(newCode);
+    if (newIdx < curIdx) return res.status(400).json({ error: `Tidak bisa downgrade dari ${current.plan_code} ke ${newCode}. Hubungi support.` });
+
+    const amount = cycle === 'annual' ? newPlan.annual_price_idr : newPlan.monthly_price_idr;
+    const cycleSec = cycle === 'annual' ? YEAR : MONTH;
+    const now = nowSec();
+    db.prepare(`UPDATE tenant_billing SET plan_code=?, billing_cycle=?, amount_idr=?, next_due_at=?, status='active', updated_at=?, notes=? WHERE company_id=?`)
+      .run(newCode, cycle, amount, now + cycleSec, now, `Self-upgrade dari ${current.plan_code} → ${newCode} oleh tenant`, scope.company_id);
+
+    // Auto-generate invoice untuk plan baru (untuk paid plans)
+    let invoiceNo = null;
+    if (amount > 0) {
+      const tb = db.prepare(`SELECT * FROM tenant_billing WHERE company_id=?`).get(scope.company_id);
+      invoiceNo = generateInvoice(db, tb, now, now + cycleSec);
+    }
+
+    // Reactivate company kalau lagi suspended
+    db.prepare(`UPDATE companies SET status='active' WHERE id=?`).run(scope.company_id);
+    // Invalidate feature cache
+    try { global.featureEnforcement?.clearCache?.(scope.company_id); } catch {}
+
+    console.log(`[billing] self-upgrade company_id=${scope.company_id} ${current.plan_code} → ${newCode} (${cycle})`);
+    res.json({
+      ok: true,
+      old_plan: current.plan_code,
+      new_plan: newCode,
+      billing_cycle: cycle,
+      amount_idr: amount,
+      invoice_no: invoiceNo,
+      next_due_at: now + cycleSec,
+      message: amount > 0
+        ? `Upgrade berhasil. Invoice ${invoiceNo} dibuat — silakan transfer ke rekening Karys untuk aktifasi.`
+        : 'Upgrade berhasil.',
+    });
+  });
+
   // ─── FEATURES: list apa yg tenant boleh akses ───
   router.get('/features', (req, res) => {
     const scope = req.companyScope || { is_super_admin: true };
