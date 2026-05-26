@@ -22,6 +22,7 @@ export default function AdminLogin({ onLogin }) {
   const [busy, setBusy] = useState(false);
   const [shake, setShake] = useState(false);
   const [mustChange, setMustChange] = useState(null);     // { token, user } when need to change pwd
+  const [showForgot, setShowForgot] = useState(false);
   const usernameRef = useRef(null);
 
   useEffect(() => {
@@ -83,6 +84,9 @@ export default function AdminLogin({ onLogin }) {
   if (mustChange) {
     return <ForceChangePassword session={mustChange} onDone={onLogin} />;
   }
+  if (showForgot) {
+    return <ForgotPasswordModal onClose={() => setShowForgot(false)} />;
+  }
 
   return (
     <div style={L.root}>
@@ -120,7 +124,7 @@ export default function AdminLogin({ onLogin }) {
                 <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
                 Remember username
               </label>
-              <a href="#" onClick={(e) => { e.preventDefault(); alert("Hubungi admin untuk reset password."); }} style={{ fontSize: 11, color: "#3b82f6", textDecoration: "none" }}>Lupa password?</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); setShowForgot(true); }} style={{ fontSize: 11, color: "#3b82f6", textDecoration: "none" }}>Lupa password?</a>
             </div>
 
             <button type="submit" disabled={busy} style={{ ...L.primaryBtn, marginTop: 18, opacity: busy ? 0.6 : 1, cursor: busy ? "not-allowed" : "pointer" }}>
@@ -228,6 +232,169 @@ function ForceChangePassword({ session, onDone }) {
               {busy ? "Menyimpan…" : "💾 Simpan & Lanjut"}
             </button>
           </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ─── Forgot Password Modal — request email reset ──
+function ForgotPasswordModal({ onClose }) {
+  const [usernameOrEmail, setUsernameOrEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [msg, setMsg] = useState("");
+  const [err, setErr] = useState("");
+
+  const submit = async (e) => {
+    e?.preventDefault();
+    setErr("");
+    if (!usernameOrEmail.trim()) { setErr("Username atau email wajib"); return; }
+    setBusy(true);
+    try {
+      const isEmail = usernameOrEmail.includes("@");
+      const r = await fetch("/api/auth/forgot-password", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(isEmail ? { email: usernameOrEmail.trim() } : { username: usernameOrEmail.trim() }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j?.error || "Gagal kirim reset");
+      setSent(true);
+      setMsg(j.message || "Link reset dikirim ke email.");
+    } catch (e) { setErr(e.message); }
+    setBusy(false);
+  };
+
+  if (sent) {
+    return (
+      <div style={L.root}>
+        <style>{CSS}</style>
+        <div style={L.wrap}>
+          <div style={{ fontSize: 56, marginBottom: 10 }}>📧</div>
+          <div style={L.title}>EMAIL TERKIRIM</div>
+          <div style={{ ...L.sub, lineHeight: 1.6 }}>{msg}<br/><br/>Cek inbox <b style={{ color: "#fff" }}>{usernameOrEmail}</b> dalam 1-2 menit.<br/>Link berlaku <b>30 menit</b>.</div>
+          <button onClick={onClose} style={{ ...L.primaryBtn, marginTop: 18 }}>← Kembali ke Login</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={L.root}>
+      <style>{CSS}</style>
+      <div style={L.wrap}>
+        <img src="/logo.png" alt="KaryaOS" style={L.logoImg} />
+        <div style={L.title}>RESET PASSWORD</div>
+        <div style={L.sub}>Masukkan username atau email akun Anda. Link reset password akan dikirim ke email terdaftar.</div>
+        {err && <div style={L.error}>⚠ {err}</div>}
+        <form onSubmit={submit} style={L.form}>
+          <label style={L.label}>👤 USERNAME / EMAIL</label>
+          <input type="text" value={usernameOrEmail} onChange={e => setUsernameOrEmail(e.target.value)}
+            placeholder="admin atau email@anda.com" autoFocus required style={L.input} />
+          <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
+            <button type="button" onClick={onClose} style={{
+              flex: 1, padding: "14px 18px", background: "rgba(255,255,255,0.04)",
+              border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10,
+              color: "#cbd5e1", fontSize: 13, fontWeight: 700, fontFamily: "inherit", cursor: "pointer",
+            }}>← Batal</button>
+            <button type="submit" disabled={busy || !usernameOrEmail.trim()} style={{ ...L.primaryBtn, flex: 2, marginTop: 0, opacity: busy ? 0.6 : 1 }}>
+              {busy ? "Mengirim…" : "📧 Kirim Link Reset"}
+            </button>
+          </div>
+        </form>
+        <div style={L.footer}>Kalau tidak punya akses email → hubungi admin untuk reset manual.</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Reset Password Page — invoked via /?reset=TOKEN ──
+export function ResetPasswordPage() {
+  const token = new URLSearchParams(window.location.search).get("reset");
+  const [validating, setValidating] = useState(true);
+  const [valid, setValid] = useState(null);
+  const [tokenInfo, setTokenInfo] = useState(null);
+  const [pwd, setPwd] = useState("");
+  const [conf, setConf] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    if (!token) { setValid(false); setValidating(false); return; }
+    fetch(`/api/auth/reset-password/${token}`)
+      .then(r => r.json())
+      .then(j => { setValid(j.valid); setTokenInfo(j); if (!j.valid) setErr(j.error); })
+      .catch(() => setValid(false))
+      .finally(() => setValidating(false));
+  }, [token]);
+
+  const submit = async (e) => {
+    e?.preventDefault();
+    setErr("");
+    if (pwd.length < 8) { setErr("Password minimum 8 karakter"); return; }
+    if (!/[A-Z]/.test(pwd) || !/[a-z]/.test(pwd) || !/[0-9]/.test(pwd)) { setErr("Harus mengandung huruf besar, kecil, dan angka"); return; }
+    if (pwd !== conf) { setErr("Konfirmasi password tidak cocok"); return; }
+    setBusy(true);
+    try {
+      const r = await fetch("/api/auth/reset-password", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, new_password: pwd }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j?.error);
+      setDone(true);
+    } catch (e) { setErr(e.message); }
+    setBusy(false);
+  };
+
+  if (validating) return <div style={L.root}><div style={L.wrap}><div style={{ fontSize: 14, color: "#94a3b8" }}>⏳ Memverifikasi token…</div></div></div>;
+
+  if (!valid) return (
+    <div style={L.root}>
+      <style>{CSS}</style>
+      <div style={L.wrap}>
+        <div style={{ fontSize: 56, marginBottom: 10 }}>⚠️</div>
+        <div style={L.title}>LINK TIDAK VALID</div>
+        <div style={L.sub}>{err || "Token reset tidak valid, sudah dipakai, atau expired."}<br/><br/>Link reset berlaku <b>30 menit</b> dan hanya bisa dipakai 1×.</div>
+        <a href="/?admin" style={{ ...L.primaryBtn, marginTop: 18, textDecoration: "none", display: "inline-block" }}>← Ke Login</a>
+      </div>
+    </div>
+  );
+
+  if (done) return (
+    <div style={L.root}>
+      <style>{CSS}</style>
+      <div style={L.wrap}>
+        <div style={{ fontSize: 60, marginBottom: 10 }}>✅</div>
+        <div style={L.title}>PASSWORD BERHASIL DIUPDATE</div>
+        <div style={L.sub}>Anda bisa login sekarang dengan password baru.</div>
+        <a href="/?admin" style={{ ...L.primaryBtn, marginTop: 18, textDecoration: "none", display: "inline-block" }}>🔐 Login Sekarang</a>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={L.root}>
+      <style>{CSS}</style>
+      <div style={L.wrap}>
+        <img src="/logo.png" alt="KaryaOS" style={L.logoImg} />
+        <div style={L.title}>RESET PASSWORD</div>
+        <div style={L.sub}>Hai <b style={{ color: "#fff" }}>{tokenInfo?.name || "—"}</b><br/>Email: {tokenInfo?.email_masked || "—"}</div>
+        {err && <div style={L.error}>⚠ {err}</div>}
+        <form onSubmit={submit} style={L.form}>
+          <label style={L.label}>🔒 PASSWORD BARU</label>
+          <input type="password" value={pwd} onChange={e => setPwd(e.target.value)} placeholder="min 8 karakter" autoFocus autoComplete="new-password" required style={L.input} />
+          <label style={{ ...L.label, marginTop: 12 }}>🔒 KONFIRMASI PASSWORD</label>
+          <input type="password" value={conf} onChange={e => setConf(e.target.value)} placeholder="ulang password baru" autoComplete="new-password" required style={L.input} />
+          <div style={{ fontSize: 11, color: "#64748b", marginTop: 12, lineHeight: 1.55 }}>
+            Persyaratan password:<br/>
+            • Min 8 karakter<br/>
+            • Huruf besar, kecil, dan angka
+          </div>
+          <button type="submit" disabled={busy} style={{ ...L.primaryBtn, marginTop: 18, opacity: busy ? 0.6 : 1 }}>
+            {busy ? "Menyimpan…" : "💾 Simpan Password Baru"}
+          </button>
         </form>
       </div>
     </div>

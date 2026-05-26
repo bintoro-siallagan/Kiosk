@@ -22,7 +22,7 @@ if (typeof window !== "undefined") {
 // — Small shared chrome (banners, gate) bundles cheaply with the shell
 import PromoBroadcastBanner from "./PromoBroadcastBanner.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
-import AdminLogin from "./AdminLogin.jsx";
+import AdminLogin, { ResetPasswordPage } from "./AdminLogin.jsx";
 import Kiosk from "./Kiosk.jsx";
 import ShiftGate from "./ShiftGate.jsx";
 
@@ -82,6 +82,7 @@ function getScene() {
   if (new URLSearchParams(q).has("audit")) return "outlet-audit";
   if (new URLSearchParams(q).has("visit")) return "outlet-visit";
   if (new URLSearchParams(q).has("launch")) return "launch-field";
+  if (new URLSearchParams(q).has("reset")) return "reset-password";
   if (new URLSearchParams(q).has("service")) return "service-staff";
   if (new URLSearchParams(q).get("ticket")) return "cinema-digital-ticket";
   if (q.includes("cinema-snack")) return "cinema-snack";
@@ -215,6 +216,8 @@ export default function App() {
     node = <OutletAudit />;
   } else if (scene === "outlet-visit") {
     node = <OutletVisit />;
+  } else if (scene === "reset-password") {
+    node = <ResetPasswordPage />;
   } else if (scene === "launch-field") {
     node = <LaunchFieldWorker />;
   } else if (scene === "service-staff") {

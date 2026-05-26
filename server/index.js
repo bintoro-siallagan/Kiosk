@@ -2649,56 +2649,113 @@ app.post("/api/auth/users/unlock-all", (req, res) => {
   res.json({ ok: true, unlocked_count: locked.length, unlocked: locked.map(u => u.name) });
 });
 
-// Emergency unlock — bookmarkable GET endpoint untuk recovery cepat
-// dari browser. Reset semua failed_count + locked_until + ALSO reset
-// password Super Admin ke 'admin123' (kalau ada).
-app.get("/api/auth/emergency-unlock", (req, res) => {
+// ─── FORGOT PASSWORD FLOW (proper, email-verified) ────────────────────
+// Schema: password_reset_tokens (lazy-create on first use)
+try {
+  db.rawDb.exec(`CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    token TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    email TEXT NOT NULL,
+    expires_at INTEGER NOT NULL,
+    used_at INTEGER,
+    requested_ip TEXT,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+  )`);
+} catch {}
+
+// POST /api/auth/forgot-password — { username|email } → kirim email reset
+app.post("/api/auth/forgot-password", async (req, res) => {
   try {
+    const { username, email } = req.body || {};
+    if (!username && !email) return res.status(400).json({ error: "Username atau email wajib" });
     adminUsers = db.loadAllAdminUsers();
-    const locked = adminUsers.filter(u => u.locked_until || u.failed_login_count > 0);
-    for (const u of locked) {
-      db.insertAdminUser({ ...u, failed_login_count: 0, locked_until: null });
+    // Lookup by username OR email (case-insensitive)
+    const id = String(username || email || "").toLowerCase();
+    const user = adminUsers.find(u =>
+      (u.username && u.username.toLowerCase() === id) ||
+      (u.email && u.email.toLowerCase() === id)
+    );
+    // ALWAYS return success (anti enumeration) — kalau user gak ada, just log + return
+    if (!user || !user.email) {
+      console.log(`[forgot-pwd] no user/email for '${id}' (anti-enumeration, returning ok)`);
+      return res.json({ ok: true, message: "Kalau email terdaftar, link reset sudah dikirim." });
     }
-    // Reset Super Admin password ke 'admin123'
-    let resetPassword = false;
-    const sa = adminUsers.find(u => u.role === 'super-admin' && u.username === 'admin');
-    if (sa) {
-      const { hash, salt } = hashPassword('admin123');
-      db.insertAdminUser({ ...sa, password_hash: hash, password_salt: salt,
-        password_changed_at: Math.floor(Date.now() / 1000),
-        failed_login_count: 0, locked_until: null, must_change_password: 0 });
-      resetPassword = true;
+    // Generate token (32 bytes hex) + expire 30 min
+    const token = require("crypto").randomBytes(32).toString("hex");
+    const expiresAt = Date.now() + 30 * 60 * 1000;
+    db.rawDb.prepare(`INSERT INTO password_reset_tokens (token, user_id, email, expires_at, requested_ip) VALUES (?,?,?,?,?)`)
+      .run(token, user.id, user.email, expiresAt, req.ip || req.headers["x-forwarded-for"] || "");
+    const baseUrl = req.headers.origin || `https://${req.headers.host}`;
+    const resetLink = `${baseUrl}/?reset=${token}`;
+    // Send email
+    try {
+      const cfg = emailModule.getConfig();
+      if (!cfg.enabled || !cfg.smtpUser) {
+        console.warn(`[forgot-pwd] SMTP not configured — token: ${token.slice(0,12)}... reset_link: ${resetLink}`);
+        return res.json({ ok: true, message: "Link reset dikirim ke email Anda. Cek inbox (tunggu 1-2 menit).", smtp_disabled: true });
+      }
+      await emailModule.sendEmail({
+        to: user.email,
+        subject: "[karyaOS] Reset Password Anda",
+        text: `Halo ${user.name},\n\nKami menerima permintaan reset password untuk akun karyaOS Anda.\n\nKlik link berikut untuk reset (berlaku 30 menit):\n${resetLink}\n\nKalau bukan Anda yang minta, abaikan email ini.\n\nkaryaOS`,
+        html: `<!DOCTYPE html><html><body style="font-family:-apple-system,'Inter',sans-serif;background:#08090f;color:#e6edf3;padding:32px 20px;margin:0">
+<div style="max-width:480px;margin:0 auto;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:28px">
+<div style="font-size:11px;color:#a855f7;letter-spacing:3px;font-weight:800;font-family:'Geist Mono',monospace">karyaOS · ACCOUNT RECOVERY</div>
+<h1 style="margin:8px 0 14px;font-size:22px;color:#fff">Reset Password Anda</h1>
+<p style="color:#cbd5e1;line-height:1.6">Halo <b style="color:#fff">${user.name}</b>,</p>
+<p style="color:#cbd5e1;line-height:1.6">Kami menerima permintaan reset password untuk akun karyaOS Anda. Klik tombol di bawah untuk lanjut (berlaku <b>30 menit</b>).</p>
+<a href="${resetLink}" style="display:inline-block;padding:14px 28px;background:linear-gradient(135deg,#f59e0b,#f97316);color:#111;border-radius:10px;text-decoration:none;font-weight:800;letter-spacing:0.5px;margin:18px 0">🔑 Reset Password Sekarang</a>
+<p style="color:#94a3b8;font-size:12px;line-height:1.55">Atau copy link: <br/><code style="color:#22d3ee;word-break:break-all">${resetLink}</code></p>
+<hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:20px 0"/>
+<p style="color:#64748b;font-size:11px;line-height:1.55">Kalau bukan Anda yang minta reset, abaikan email ini — password Anda tidak akan berubah. Link akan expired otomatis dalam 30 menit.</p>
+<p style="color:#64748b;font-size:10px;margin-top:14px">karyaOS · Operations Platform</p>
+</div></body></html>`,
+      });
+      res.json({ ok: true, message: "Link reset dikirim ke email Anda. Cek inbox." });
+    } catch (e) {
+      console.error("[forgot-pwd] email send error:", e.message);
+      res.json({ ok: true, message: "Permintaan dicatat. (Email service belum dikonfigurasi, hubungi admin)", smtp_error: true });
     }
-    adminUsers = db.loadAllAdminUsers();
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(`<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>karyaOS Emergency Unlock</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<style>
-  body{margin:0;background:linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%);color:#fff;font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
-  .card{max-width:480px;width:100%;background:rgba(10,15,28,0.7);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:32px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
-  .icon{font-size:60px;margin-bottom:14px}
-  h1{margin:0 0 10px;font-size:22px}
-  .ok{color:#10b981;font-weight:800}
-  .row{padding:10px 14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);border-radius:10px;margin:8px 0;text-align:left;font-size:13px;font-family:'Geist Mono',monospace}
-  .cta{display:inline-block;margin-top:20px;padding:14px 28px;background:linear-gradient(135deg,#f59e0b,#f97316);color:#111;border-radius:10px;text-decoration:none;font-weight:800;letter-spacing:0.5px}
-  .muted{color:#94a3b8;font-size:12px;margin-top:14px}
-</style></head><body>
-<div class="card">
-  <div class="icon">🔓</div>
-  <h1 class="ok">Emergency Unlock Selesai</h1>
-  <div class="muted">Reset performed at ${new Date().toLocaleString('id-ID')}</div>
-  <div class="row">✓ ${locked.length} akun terkunci di-unlock</div>
-  ${resetPassword ? '<div class="row">✓ Super Admin password reset ke <b>admin123</b></div>' : ''}
-  <div class="row">→ admin / admin123 — siap login</div>
-  <div class="row">→ PIN 999999 (Super Admin) — siap login</div>
-  <div class="row">→ PIN 123456 (Manager) — siap login</div>
-  <a href="/?admin" class="cta">🔐 Login Sekarang</a>
-  <div class="muted">karyaOS · emergency recovery endpoint</div>
-</div></body></html>`);
   } catch (e) {
-    res.status(500).send(`<h1>Error</h1><pre>${e.message}</pre>`);
+    console.error("[forgot-pwd] error:", e);
+    res.status(500).json({ error: e.message });
   }
+});
+
+// POST /api/auth/reset-password — { token, new_password } → set password baru
+app.post("/api/auth/reset-password", (req, res) => {
+  try {
+    const { token, new_password } = req.body || {};
+    if (!token || !new_password) return res.status(400).json({ error: "Token + password baru wajib" });
+    if (String(new_password).length < 8) return res.status(400).json({ error: "Password minimum 8 karakter" });
+    const row = db.rawDb.prepare(`SELECT * FROM password_reset_tokens WHERE token=?`).get(token);
+    if (!row) return res.status(400).json({ error: "Token tidak valid atau sudah dipakai" });
+    if (row.used_at) return res.status(400).json({ error: "Token sudah pernah dipakai" });
+    if (row.expires_at < Date.now()) return res.status(400).json({ error: "Token sudah expired (lewat 30 menit). Mohon request reset lagi." });
+    adminUsers = db.loadAllAdminUsers();
+    const user = adminUsers.find(u => u.id === row.user_id);
+    if (!user) return res.status(404).json({ error: "User tidak ditemukan" });
+    const { hash, salt } = hashPassword(new_password);
+    db.insertAdminUser({ ...user, password_hash: hash, password_salt: salt,
+      password_changed_at: Math.floor(Date.now() / 1000),
+      failed_login_count: 0, locked_until: null, must_change_password: 0 });
+    db.rawDb.prepare(`UPDATE password_reset_tokens SET used_at=? WHERE token=?`).run(Date.now(), token);
+    adminUsers = db.loadAllAdminUsers();
+    console.log(`[forgot-pwd] ✓ password reset for ${user.username || user.name}`);
+    res.json({ ok: true, message: "Password berhasil di-update. Silakan login dengan password baru." });
+  } catch (e) {
+    console.error("[reset-pwd] error:", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/auth/reset-password/:token — validate token sebelum show form
+app.get("/api/auth/reset-password/:token", (req, res) => {
+  const row = db.rawDb.prepare(`SELECT t.expires_at, t.used_at, u.name, u.username, u.email FROM password_reset_tokens t LEFT JOIN admin_users u ON u.id=t.user_id WHERE t.token=?`).get(req.params.token);
+  if (!row) return res.status(404).json({ valid: false, error: "Token tidak valid" });
+  if (row.used_at) return res.status(400).json({ valid: false, error: "Token sudah dipakai" });
+  if (row.expires_at < Date.now()) return res.status(400).json({ valid: false, error: "Token expired" });
+  res.json({ valid: true, name: row.name, username: row.username, email_masked: row.email ? row.email.replace(/(.{2})(.*)(@.*)/, "$1***$3") : null });
 });
 
 // ─── TABLE / MEJA MANAGEMENT ─────────────────────────────────────────────────
