@@ -721,6 +721,31 @@ function setupMasterItems(app, opts = {}) {
     }
   });
 
+  // POST /menus/:id/image — upload menu item image (multipart)
+  // Server saves under /server/uploads/menu_<id>_<timestamp>.<ext>, returns public url.
+  router.post('/menus/:id/image', (req, res) => {
+    const upload = opts.uploadMiddleware;
+    if (!upload) return res.status(500).json({ error: 'upload middleware not configured' });
+    upload.single('image')(req, res, (err) => {
+      if (err) return res.status(400).json({ error: err.message });
+      if (!req.file) return res.status(400).json({ error: 'no image uploaded' });
+      const url = `/uploads/${req.file.filename}`;
+      try {
+        const r = db.prepare(`UPDATE pos_menus SET image_url = ?, updated_at = strftime('%s','now') WHERE id = ?`).run(url, req.params.id);
+        if (!r.changes) return res.status(404).json({ error: 'menu not found' });
+        res.json({ ok: true, image_url: url });
+      } catch (e) { res.status(500).json({ error: e.message }); }
+    });
+  });
+
+  // DELETE /menus/:id/image — remove image association
+  router.delete('/menus/:id/image', (req, res) => {
+    try {
+      db.prepare(`UPDATE pos_menus SET image_url = NULL, updated_at = strftime('%s','now') WHERE id = ?`).run(req.params.id);
+      res.json({ ok: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
   router.put('/menus/:id', (req, res) => {
     const b = req.body || {};
     const allowed = ['category_id','emoji','name','description','price','free_extras',

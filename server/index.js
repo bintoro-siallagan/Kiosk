@@ -773,8 +773,28 @@ app.get("/api/menu/config", (req, res) => {
   });
 });
 
+// Enrich legacy in-memory menu with image_url from pos_menus table (admin-uploaded)
+// Match by id first, fallback to name (case-insensitive) — covers hardcoded numeric vs string SKU mismatch.
+function _enrichMenu(items) {
+  try {
+    const rows = db.rawDb.prepare(`SELECT id, name, image_url, description FROM pos_menus WHERE image_url IS NOT NULL OR description != ''`).all();
+    if (!rows.length) return items;
+    const byId = new Map(rows.map(r => [String(r.id), r]));
+    const byName = new Map(rows.map(r => [String(r.name || '').toLowerCase().trim(), r]));
+    return items.map(m => {
+      const match = byId.get(String(m.id)) || byName.get(String(m.name || '').toLowerCase().trim());
+      if (!match) return m;
+      return {
+        ...m,
+        image_url: match.image_url || m.image_url || null,
+        description: match.description || m.description || m.desc || "",
+      };
+    });
+  } catch { return items; }
+}
+
 app.get("/api/menu", (req, res) => {
-  res.json(menu);
+  res.json(_enrichMenu(menu));
 });
 
 
@@ -784,7 +804,7 @@ app.get('/api/toppings', (req, res) => {
 
 // GET available menu only
 app.get("/api/menu/available", (req, res) => {
-  res.json(menu.filter(m => m.avail));
+  res.json(_enrichMenu(menu.filter(m => m.avail)));
 });
 
 // PATCH update menu item (price / availability)
@@ -4512,7 +4532,7 @@ const { setupHelpdesk }         = require('./helpdesk-backend');
 const DB_PATH = require('path').join(__dirname, 'data.db');   // shared with db.js
 
 const procurement     = setupProcurement(app,     { dbPath: DB_PATH, mountPath: '/api/procurement' });
-const masterItems     = setupMasterItems(app,     { dbPath: DB_PATH, mountPath: '/api/master' });
+const masterItems     = setupMasterItems(app,     { dbPath: DB_PATH, mountPath: '/api/master', uploadMiddleware: upload });
 const phase4b         = setupPhase4B(app,         { dbPath: DB_PATH, mountPath: '/api/pos' });
 const menuBuilder     = setupMenuBuilder(app,     { dbPath: DB_PATH, mountPath: '/api/master' });
 const procurementGaps = setupProcurementGaps(app, { dbPath: DB_PATH, mountPath: '/api/procurement' });

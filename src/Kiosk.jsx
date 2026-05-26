@@ -19,6 +19,19 @@ function FoodImage({ item, size = 140 }) {
     "📦 Take Home":     ["#78350F","#F59E0B","#FCD34D","#FEF3C7"],
     "✨ Special":       ["#7F1D1D","#EF4444","#FCA5A5","#FEE2E2"],
   };
+  // Prefer uploaded image if available
+  const imageUrl = item.image_url || item.image;
+  if (imageUrl) {
+    const src = imageUrl.startsWith("http") ? imageUrl : imageUrl;
+    return (
+      <div style={{ width:size, height:size, borderRadius:16, overflow:"hidden", flexShrink:0, position:"relative", background:"#0a0e16" }}>
+        <img src={src} alt={item.name} loading="lazy"
+          style={{ width:"100%", height:"100%", objectFit:"cover", display:"block" }}
+          onError={(e) => { e.currentTarget.style.display = "none"; }} />
+      </div>
+    );
+  }
+  // Fallback: SVG gradient + emoji
   const colors = palettes[item.category] || ["#333","#555","#777","#999"];
   const id = `grad-${item.id}`;
   return (

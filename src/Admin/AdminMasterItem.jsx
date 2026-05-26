@@ -235,7 +235,42 @@ function MenuForm({ initial, categories, onSave, onCancel }) {
           <label>Price* <input type="number" value={f.price} onChange={update('price')} /></label>
           <label>Free Extras <input type="number" value={f.free_extras} onChange={update('free_extras')} /></label>
           <label style={{gridColumn:'1/-1'}}>Description <textarea value={f.description} onChange={update('description')} rows={2} /></label>
-          <label>Image URL <input value={f.image_url || ''} onChange={update('image_url')} /></label>
+          <label style={{gridColumn:'1/-1'}}>
+            <div style={{ marginBottom: 6 }}>Menu Image</div>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+              {f.image_url ? (
+                <img src={f.image_url.startsWith('http') ? f.image_url : (typeof window !== 'undefined' ? window.location.origin : '') + f.image_url}
+                  alt={f.name} style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, border: '1px solid #2a2b30', background: '#0a0e16' }} />
+              ) : (
+                <div style={{ width: 80, height: 80, borderRadius: 8, border: '1px dashed #2a2b30', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#444', background: '#0a0e16' }}>📷</div>
+              )}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <input value={f.image_url || ''} onChange={update('image_url')} placeholder="Or paste image URL" />
+                <label style={{ padding: '6px 12px', background: 'rgba(34,211,238,0.1)', border: '1px solid rgba(34,211,238,0.3)', borderRadius: 6, cursor: 'pointer', fontSize: 12, color: '#22d3ee', fontWeight: 700, textAlign: 'center' }}>
+                  📤 Upload Image
+                  <input type="file" accept="image/*" style={{ display: 'none' }}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]; if (!file) return;
+                      if (!f.id) { alert('Save menu first before uploading image'); return; }
+                      const formData = new FormData();
+                      formData.append('image', file);
+                      try {
+                        const r = await fetch(`${typeof window !== 'undefined' ? window.location.origin : ''}/api/master/menus/${f.id}/image`, { method: 'POST', body: formData });
+                        const j = await r.json();
+                        if (!r.ok) throw new Error(j?.error || 'Upload failed');
+                        update('image_url')({ target: { value: j.image_url } });
+                      } catch (err) { alert('Upload failed: ' + err.message); }
+                    }} />
+                </label>
+                {f.image_url && (
+                  <button type="button" onClick={() => update('image_url')({ target: { value: '' } })}
+                    style={{ padding: '4px 8px', background: 'transparent', border: '1px solid #ef444455', borderRadius: 6, color: '#ef4444', fontSize: 11, cursor: 'pointer' }}>
+                    🗑️ Remove image
+                  </button>
+                )}
+              </div>
+            </div>
+          </label>
           <label style={{display:'flex', alignItems:'center', gap:6}}>
             <input type="checkbox" checked={f.is_popular} onChange={update('is_popular')} /> Popular ⭐
           </label>
