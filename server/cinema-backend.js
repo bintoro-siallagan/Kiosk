@@ -2327,6 +2327,301 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: true, count: results.length, days_window: days, results });
   });
 
+  // ── BIRTHDAY PARTY PACKAGE ──
+  // Package bundle (studio + F&B + decoration + photographer) untuk private event birthday/anniversary.
+  // Conflict-check via existing cinema_studio_bookings.
+  try { db.exec(`CREATE TABLE IF NOT EXISTS cinema_party_packages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT,
+    studio_type TEXT,        -- which studio type required (Regular/Deluxe/Premiere)
+    min_pax INTEGER DEFAULT 10,
+    max_pax INTEGER DEFAULT 50,
+    duration_hours INTEGER DEFAULT 3,
+    base_price INTEGER NOT NULL,
+    includes_fnb INTEGER DEFAULT 1,
+    fnb_bundle_per_pax INTEGER DEFAULT 0,  -- harga per orang untuk F&B
+    includes_decoration INTEGER DEFAULT 1,
+    includes_host INTEGER DEFAULT 0,
+    includes_photographer INTEGER DEFAULT 0,
+    inclusions_json TEXT,    -- JSON array of inclusion items
+    image_url TEXT,
+    is_active INTEGER DEFAULT 1,
+    company_id INTEGER,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+  )`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_party_company ON cinema_party_packages(company_id)`); } catch {}
+  try { db.exec(`CREATE TABLE IF NOT EXISTS cinema_party_bookings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    package_id INTEGER NOT NULL,
+    studio_id INTEGER NOT NULL,
+    booking_date TEXT NOT NULL,
+    start_time TEXT NOT NULL,
+    end_time TEXT NOT NULL,
+    customer_name TEXT NOT NULL,
+    customer_phone TEXT,
+    customer_email TEXT,
+    pax INTEGER NOT NULL,
+    occasion TEXT,           -- 'birthday' | 'anniversary' | 'corporate' | 'school' | 'other'
+    decoration_theme TEXT,   -- 'frozen' | 'spiderman' | 'unicorn' | 'custom'
+    custom_requests TEXT,
+    total_price INTEGER NOT NULL,
+    deposit_paid INTEGER DEFAULT 0,
+    full_paid INTEGER DEFAULT 0,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending','confirmed','cancelled','completed')),
+    company_id INTEGER,
+    created_by TEXT,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+  )`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_party_booking_date ON cinema_party_bookings(booking_date, studio_id)`); } catch {}
+
+  // GET available packages
+  router.get('/party-packages', (req, res) => {
+    const scope = req.companyScope || { is_super_admin: true };
+    const where = scope.is_super_admin ? `WHERE is_active = 1` : `WHERE is_active = 1 AND company_id = ${parseInt(scope.company_id, 10)}`;
+    const rows = db.prepare(`SELECT * FROM cinema_party_packages ${where} ORDER BY base_price`).all().map(p => ({
+      ...p,
+      inclusions: p.inclusions_json ? (() => { try { return JSON.parse(p.inclusions_json); } catch { return []; } })() : [],
+    }));
+    res.json({ packages: rows });
+  });
+
+  // POST create package (admin)
+  router.post('/party-packages', (req, res) => {
+    const b = req.body || {};
+    if (!b.name || !b.base_price) return res.status(400).json({ error: 'name & base_price wajib' });
+    const scope = req.companyScope || { is_super_admin: true };
+    const companyId = scope.is_super_admin ? (parseInt(b.company_id, 10) || 2) : scope.company_id;
+    const info = db.prepare(`INSERT INTO cinema_party_packages
+      (name, description, studio_type, min_pax, max_pax, duration_hours, base_price,
+       includes_fnb, fnb_bundle_per_pax, includes_decoration, includes_host, includes_photographer,
+       inclusions_json, image_url, is_active, company_id)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+      .run(b.name, b.description || '', b.studio_type || 'Deluxe',
+           parseInt(b.min_pax, 10) || 10, parseInt(b.max_pax, 10) || 50,
+           parseInt(b.duration_hours, 10) || 3, parseInt(b.base_price, 10),
+           b.includes_fnb === false ? 0 : 1, parseInt(b.fnb_bundle_per_pax, 10) || 0,
+           b.includes_decoration === false ? 0 : 1, b.includes_host ? 1 : 0, b.includes_photographer ? 1 : 0,
+           Array.isArray(b.inclusions) ? JSON.stringify(b.inclusions) : null,
+           b.image_url || null, 1, companyId);
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+
+  // POST book package
+  router.post('/party-bookings', (req, res) => {
+    const b = req.body || {};
+    if (!b.package_id || !b.studio_id || !b.booking_date || !b.start_time || !b.pax || !b.customer_name) {
+      return res.status(400).json({ error: 'package_id, studio_id, booking_date, start_time, pax, customer_name wajib' });
+    }
+    const pkg = db.prepare(`SELECT * FROM cinema_party_packages WHERE id = ? AND is_active = 1`).get(parseInt(b.package_id, 10));
+    if (!pkg) return res.status(404).json({ error: 'Package tidak ditemukan' });
+    const pax = parseInt(b.pax, 10);
+    if (pax < pkg.min_pax || pax > pkg.max_pax) {
+      return res.status(400).json({ error: `Pax harus antara ${pkg.min_pax}-${pkg.max_pax}` });
+    }
+    // Calculate end_time
+    const _toMin = hhmm => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
+    const _minToHHMM = m => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+    const startMin = _toMin(b.start_time);
+    const endMin = startMin + pkg.duration_hours * 60;
+    const endTime = _minToHHMM(endMin);
+
+    // Conflict check: studio busy oleh showtime atau party booking lain?
+    const showConflict = db.prepare(`
+      SELECT id, start_time, f.duration_min FROM cinema_showtimes s
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      WHERE s.studio_id = ? AND s.show_date = ? AND COALESCE(s.is_archived,0)=0
+    `).all(parseInt(b.studio_id, 10), b.booking_date);
+    const overlap = showConflict.find(sh => {
+      const sStart = _toMin(sh.start_time);
+      const sEnd = sStart + (sh.duration_min || 0) + 25; // pre + clean
+      return startMin < sEnd && endMin > sStart;
+    });
+    if (overlap) {
+      return res.status(409).json({ error: `Studio bentrok dengan showtime jam ${overlap.start_time}` });
+    }
+    const partyConflict = db.prepare(`SELECT id, start_time, end_time, customer_name FROM cinema_party_bookings
+      WHERE studio_id = ? AND booking_date = ? AND status != 'cancelled'`).all(parseInt(b.studio_id, 10), b.booking_date);
+    const partyOverlap = partyConflict.find(pb => {
+      const pbStart = _toMin(pb.start_time);
+      const pbEnd = _toMin(pb.end_time);
+      return startMin < pbEnd && endMin > pbStart;
+    });
+    if (partyOverlap) {
+      return res.status(409).json({ error: `Studio sudah di-book untuk ${partyOverlap.customer_name} jam ${partyOverlap.start_time}-${partyOverlap.end_time}` });
+    }
+
+    // Calculate total price
+    const fnbCost = pkg.includes_fnb && pkg.fnb_bundle_per_pax ? pkg.fnb_bundle_per_pax * pax : 0;
+    const totalPrice = pkg.base_price + fnbCost;
+
+    const scope = req.companyScope || { is_super_admin: true };
+    const companyId = scope.is_super_admin ? (parseInt(b.company_id, 10) || 2) : scope.company_id;
+
+    const info = db.prepare(`INSERT INTO cinema_party_bookings
+      (package_id, studio_id, booking_date, start_time, end_time, customer_name, customer_phone, customer_email,
+       pax, occasion, decoration_theme, custom_requests, total_price, deposit_paid, company_id, created_by)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+      .run(parseInt(b.package_id, 10), parseInt(b.studio_id, 10), b.booking_date,
+           b.start_time, endTime, b.customer_name, b.customer_phone || null, b.customer_email || null,
+           pax, b.occasion || 'birthday', b.decoration_theme || null, b.custom_requests || null,
+           totalPrice, parseInt(b.deposit_paid, 10) || 0, companyId, b.created_by || 'admin');
+    res.json({ ok: true, id: info.lastInsertRowid, total_price: totalPrice, end_time: endTime });
+  });
+
+  // GET party bookings list
+  router.get('/party-bookings', (req, res) => {
+    const scope = req.companyScope || { is_super_admin: true };
+    const where = scope.is_super_admin ? '' : `WHERE pb.company_id = ${parseInt(scope.company_id, 10)}`;
+    const rows = db.prepare(`
+      SELECT pb.*, pp.name AS package_name, st.name AS studio_name, st.outlet
+      FROM cinema_party_bookings pb
+      LEFT JOIN cinema_party_packages pp ON pp.id = pb.package_id
+      LEFT JOIN cinema_studios st ON st.id = pb.studio_id
+      ${where}
+      ORDER BY pb.booking_date DESC, pb.start_time DESC
+      LIMIT 100
+    `).all();
+    res.json({ bookings: rows });
+  });
+
+  // ── CINEMA LOYALTY / MEMBERSHIP ──
+  // Tier auto-assign by lifetime spend (Bronze<2jt, Silver 2-10jt, Gold 10-50jt, Platinum 50jt+).
+  // 1 point per Rp 1000 spent · point redeemable di future tickets (1pt = Rp 100 discount).
+  // Birthday bonus: 1x free regular ticket per tahun (configurable).
+  try { db.exec(`CREATE TABLE IF NOT EXISTS cinema_loyalty (
+    customer_phone TEXT PRIMARY KEY,
+    customer_name TEXT,
+    customer_email TEXT,
+    birthday TEXT,
+    lifetime_spend INTEGER DEFAULT 0,
+    points_balance INTEGER DEFAULT 0,
+    total_tickets INTEGER DEFAULT 0,
+    tier TEXT DEFAULT 'bronze',
+    last_visit_at INTEGER,
+    joined_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+    birthday_used_year INTEGER,
+    company_id INTEGER
+  )`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_loyalty_tier ON cinema_loyalty(tier)`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_loyalty_company ON cinema_loyalty(company_id)`); } catch {}
+  try { db.exec(`CREATE TABLE IF NOT EXISTS cinema_loyalty_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    customer_phone TEXT NOT NULL,
+    type TEXT CHECK (type IN ('earn','redeem','birthday_bonus','expire','adjustment')),
+    amount INTEGER NOT NULL,
+    balance_after INTEGER,
+    ref_purchase_id TEXT,
+    description TEXT,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+  )`); } catch {}
+
+  const TIER_THRESHOLDS = [
+    { tier: 'platinum', min: 50000000, label: '👑 Platinum', point_multiplier: 2.0 },
+    { tier: 'gold',     min: 10000000, label: '🥇 Gold',     point_multiplier: 1.5 },
+    { tier: 'silver',   min:  2000000, label: '🥈 Silver',   point_multiplier: 1.2 },
+    { tier: 'bronze',   min:        0, label: '🥉 Bronze',   point_multiplier: 1.0 },
+  ];
+  function computeTier(lifetimeSpend) {
+    for (const t of TIER_THRESHOLDS) if (lifetimeSpend >= t.min) return t;
+    return TIER_THRESHOLDS[TIER_THRESHOLDS.length - 1];
+  }
+
+  // GET member profile by phone
+  router.get('/loyalty/:phone', (req, res) => {
+    const phone = String(req.params.phone).replace(/[^0-9]/g, '');
+    const m = db.prepare(`SELECT * FROM cinema_loyalty WHERE customer_phone = ?`).get(phone);
+    if (!m) return res.status(404).json({ error: 'Member tidak ditemukan' });
+    const tierInfo = computeTier(m.lifetime_spend);
+    const recent = db.prepare(`SELECT * FROM cinema_loyalty_transactions WHERE customer_phone = ? ORDER BY id DESC LIMIT 10`).all(phone);
+    res.json({ member: m, tier_info: tierInfo, recent_transactions: recent });
+  });
+
+  // POST register/upsert member
+  router.post('/loyalty', (req, res) => {
+    const b = req.body || {};
+    const phone = String(b.customer_phone || '').replace(/[^0-9]/g, '');
+    if (!phone) return res.status(400).json({ error: 'customer_phone wajib' });
+    const scope = req.companyScope || { is_super_admin: true };
+    const companyId = scope.is_super_admin ? (parseInt(b.company_id, 10) || 2) : scope.company_id;
+    const existing = db.prepare(`SELECT * FROM cinema_loyalty WHERE customer_phone = ?`).get(phone);
+    if (existing) {
+      // Update profile (name, email, birthday)
+      db.prepare(`UPDATE cinema_loyalty SET customer_name = COALESCE(?, customer_name), customer_email = COALESCE(?, customer_email), birthday = COALESCE(?, birthday) WHERE customer_phone = ?`)
+        .run(b.customer_name || null, b.customer_email || null, b.birthday || null, phone);
+      return res.json({ ok: true, action: 'updated', member: db.prepare(`SELECT * FROM cinema_loyalty WHERE customer_phone = ?`).get(phone) });
+    }
+    db.prepare(`INSERT INTO cinema_loyalty (customer_phone, customer_name, customer_email, birthday, company_id) VALUES (?,?,?,?,?)`)
+      .run(phone, b.customer_name || null, b.customer_email || null, b.birthday || null, companyId);
+    res.json({ ok: true, action: 'registered', tier: 'bronze' });
+  });
+
+  // POST earn points (saat purchase tiket)
+  router.post('/loyalty/earn', (req, res) => {
+    const b = req.body || {};
+    const phone = String(b.customer_phone || '').replace(/[^0-9]/g, '');
+    const amount = parseInt(b.amount, 10) || 0; // amount spent
+    if (!phone || amount <= 0) return res.status(400).json({ error: 'customer_phone + amount wajib' });
+    const m = db.prepare(`SELECT * FROM cinema_loyalty WHERE customer_phone = ?`).get(phone);
+    if (!m) return res.status(404).json({ error: 'Member belum register' });
+    const tierNow = computeTier(m.lifetime_spend);
+    const pointsEarned = Math.floor(amount / 1000 * tierNow.point_multiplier); // 1pt per Rp 1k * multiplier
+    const newLifetime = m.lifetime_spend + amount;
+    const newBalance = m.points_balance + pointsEarned;
+    const newTier = computeTier(newLifetime);
+    db.prepare(`UPDATE cinema_loyalty SET lifetime_spend = ?, points_balance = ?, total_tickets = total_tickets + 1, tier = ?, last_visit_at = strftime('%s','now') WHERE customer_phone = ?`)
+      .run(newLifetime, newBalance, newTier.tier, phone);
+    db.prepare(`INSERT INTO cinema_loyalty_transactions (customer_phone, type, amount, balance_after, ref_purchase_id, description) VALUES (?,?,?,?,?,?)`)
+      .run(phone, 'earn', pointsEarned, newBalance, b.ref_purchase_id || null, `Earn dari purchase Rp ${amount.toLocaleString('id-ID')} (×${tierNow.point_multiplier})`);
+    const tierUp = newTier.tier !== m.tier;
+    res.json({ ok: true, points_earned: pointsEarned, new_balance: newBalance, new_tier: newTier.tier, tier_up: tierUp, tier_label: newTier.label });
+  });
+
+  // POST redeem points (untuk diskon ticket)
+  router.post('/loyalty/redeem', (req, res) => {
+    const b = req.body || {};
+    const phone = String(b.customer_phone || '').replace(/[^0-9]/g, '');
+    const pointsToRedeem = parseInt(b.points, 10) || 0;
+    if (!phone || pointsToRedeem <= 0) return res.status(400).json({ error: 'customer_phone + points wajib' });
+    const m = db.prepare(`SELECT * FROM cinema_loyalty WHERE customer_phone = ?`).get(phone);
+    if (!m) return res.status(404).json({ error: 'Member tidak ditemukan' });
+    if (m.points_balance < pointsToRedeem) return res.status(400).json({ error: `Saldo poin tidak cukup (tersedia ${m.points_balance})` });
+    const discountRupiah = pointsToRedeem * 100; // 1pt = Rp 100
+    const newBalance = m.points_balance - pointsToRedeem;
+    db.prepare(`UPDATE cinema_loyalty SET points_balance = ? WHERE customer_phone = ?`).run(newBalance, phone);
+    db.prepare(`INSERT INTO cinema_loyalty_transactions (customer_phone, type, amount, balance_after, ref_purchase_id, description) VALUES (?,?,?,?,?,?)`)
+      .run(phone, 'redeem', -pointsToRedeem, newBalance, b.ref_purchase_id || null, `Redeem ${pointsToRedeem}pt → Rp ${discountRupiah.toLocaleString('id-ID')} discount`);
+    res.json({ ok: true, points_redeemed: pointsToRedeem, discount_rupiah: discountRupiah, new_balance: newBalance });
+  });
+
+  // POST claim birthday bonus (1x free ticket per tahun)
+  router.post('/loyalty/birthday-claim', (req, res) => {
+    const b = req.body || {};
+    const phone = String(b.customer_phone || '').replace(/[^0-9]/g, '');
+    if (!phone) return res.status(400).json({ error: 'customer_phone wajib' });
+    const m = db.prepare(`SELECT * FROM cinema_loyalty WHERE customer_phone = ?`).get(phone);
+    if (!m) return res.status(404).json({ error: 'Member tidak ditemukan' });
+    if (!m.birthday) return res.status(400).json({ error: 'Birthday belum di-set' });
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    if (m.birthday_used_year === currentYear) return res.status(400).json({ error: `Birthday bonus sudah diklaim tahun ${currentYear}` });
+    // Cek apakah tanggal hari ini ±7 hari dari birthday (window grace)
+    const bday = m.birthday; // format YYYY-MM-DD
+    const thisYearBday = new Date(`${currentYear}-${bday.slice(5)}`);
+    const diff = Math.abs((now.getTime() - thisYearBday.getTime()) / (86400000));
+    if (diff > 7) return res.status(400).json({ error: 'Birthday claim hanya tersedia ±7 hari dari tanggal lahir' });
+    // Grant 1 free ticket (issue voucher code via points: 50000pt special bonus)
+    const FREE_TICKET_POINTS = 500; // setara Rp 50k discount
+    db.prepare(`UPDATE cinema_loyalty SET points_balance = points_balance + ?, birthday_used_year = ? WHERE customer_phone = ?`)
+      .run(FREE_TICKET_POINTS, currentYear, phone);
+    db.prepare(`INSERT INTO cinema_loyalty_transactions (customer_phone, type, amount, balance_after, description) VALUES (?,?,?,?,?)`)
+      .run(phone, 'birthday_bonus', FREE_TICKET_POINTS, m.points_balance + FREE_TICKET_POINTS, `🎂 Birthday bonus ${currentYear}`);
+    res.json({ ok: true, points_granted: FREE_TICKET_POINTS, equivalent_rupiah: FREE_TICKET_POINTS * 100 });
+  });
+
+  // GET tier list
+  router.get('/loyalty-tiers', (_, res) => res.json({ tiers: TIER_THRESHOLDS }));
+
   // ── STUDIO CLEANING SCHEDULE ──
   // Between-show cleaning log: staff scan QR studio post-show → log cleaning
   // dengan foto bukti. Auto-prompt: cek pending cleaning (showtime finished
