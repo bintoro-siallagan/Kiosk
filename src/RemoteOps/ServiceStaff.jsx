@@ -28,6 +28,10 @@ export default function ServiceStaff() {
   const [startSelfie, setStartSelfie] = useState(null);
   const [finishSelfie, setFinishSelfie] = useState(null);
   const [finishSummary, setFinishSummary] = useState("");
+  // Airplane mode — bypass GPS dengan manager approval (audit logged)
+  const [gpsBypass, setGpsBypass] = useState(false);
+  const [gpsBypassReason, setGpsBypassReason] = useState("");
+  const [gpsBypassApprover, setGpsBypassApprover] = useState("");
 
   useEffect(() => {
     const root = document.getElementById("root");
@@ -80,12 +84,19 @@ export default function ServiceStaff() {
   const startTicket = async () => {
     setErr("");
     if (!startSelfie) { setErr("Selfie kerja wajib"); return; }
-    if (!gps) { setErr("GPS wajib di-aktifkan"); return; }
+    if (!gps && !gpsBypass) { setErr("GPS wajib di-aktifkan (atau pakai Mode Pesawat dengan approval manager)"); return; }
     setBusy(true);
     try {
       const r = await fetch(`${API_HOST}/api/service/tickets/${selectedTicket.id}/start`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ selfie_b64: startSelfie, gps_lat: gps.lat, gps_lon: gps.lon, device_id: deviceId }),
+        body: JSON.stringify({
+          selfie_b64: startSelfie,
+          gps_lat: gps?.lat ?? null, gps_lon: gps?.lon ?? null,
+          device_id: deviceId,
+          gps_bypass: gpsBypass ? 1 : 0,
+          gps_bypass_reason: gpsBypassReason || null,
+          gps_bypass_approver: gpsBypassApprover || null,
+        }),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j?.error);
@@ -143,6 +154,9 @@ export default function ServiceStaff() {
       {step === "start" && selectedTicket && (
         <StartStep ticket={selectedTicket} detail={detail} gps={gps} gpsErr={gpsErr} grabGps={grabGps}
           selfie={startSelfie} setSelfie={setStartSelfie} busy={busy} err={err}
+          gpsBypass={gpsBypass} setGpsBypass={setGpsBypass}
+          gpsBypassReason={gpsBypassReason} setGpsBypassReason={setGpsBypassReason}
+          gpsBypassApprover={gpsBypassApprover} setGpsBypassApprover={setGpsBypassApprover}
           onStart={startTicket} onBack={() => setStep("tickets")} />
       )}
       {step === "work" && detail && (
@@ -225,7 +239,7 @@ function TicketsStep({ staffName, tickets, busy, err, onPick, onRefresh, onLogou
   );
 }
 
-function StartStep({ ticket, detail, gps, gpsErr, grabGps, selfie, setSelfie, busy, err, onStart, onBack }) {
+function StartStep({ ticket, detail, gps, gpsErr, grabGps, selfie, setSelfie, busy, err, onStart, onBack, gpsBypass, setGpsBypass, gpsBypassReason, setGpsBypassReason, gpsBypassApprover, setGpsBypassApprover }) {
   return (
     <div style={{ padding: "max(16px, env(safe-area-inset-top)) clamp(12px, 4vw, 22px) 30px" }}>
       <button onClick={onBack} style={{ background: "transparent", border: "none", color: "#94a3b8", fontSize: 13, cursor: "pointer", marginBottom: 10 }}>← Kembali</button>
@@ -234,17 +248,60 @@ function StartStep({ ticket, detail, gps, gpsErr, grabGps, selfie, setSelfie, bu
         <div style={{ fontSize: 10, color: PURPLE, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>{ticket.ticket_no}</div>
         <div style={{ fontSize: 17, fontWeight: 900, color: "#fff", marginTop: 4 }}>{ticket.title}</div>
         <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 4 }}>🏪 {ticket.outlet_name || ticket.outlet_code}</div>
-        {detail?.items?.length > 0 && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 6 }}>📋 {detail.items.length} checklist items</div>}
+        {ticket.description && <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 6, lineHeight: 1.5 }}>{ticket.description}</div>}
       </div>
 
+      {/* Checklist preview BEFORE start — biar staff persiapan (foto sebelum dll) */}
+      {detail?.items?.length > 0 && (
+        <div style={{ marginBottom: 16, padding: 14, background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "#22d3ee", letterSpacing: 1, fontFamily: "'Geist Mono',monospace" }}>
+              📋 PREVIEW CHECKLIST ({detail.items.length} item)
+            </div>
+            <div style={{ fontSize: 10, color: "#7d8590" }}>Persiapan dulu sebelum mulai</div>
+          </div>
+          <div style={{ maxHeight: 220, overflowY: "auto", borderRadius: 8, background: "rgba(0,0,0,0.2)" }}>
+            {detail.items.map((it, idx) => (
+              <div key={it.id} style={{ display: "flex", alignItems: "flex-start", gap: 8, padding: "8px 10px", borderBottom: idx < detail.items.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none" }}>
+                <span style={{ fontSize: 11, color: "#22d3ee", fontFamily: "'Geist Mono',monospace", fontWeight: 700, minWidth: 22 }}>{String(idx + 1).padStart(2, "0")}</span>
+                <span style={{ fontSize: 12, color: "#cbd5e1", flex: 1, lineHeight: 1.4 }}>{it.item_label}</span>
+                {it.requires_photo === 1 && <span style={{ fontSize: 10, color: AMBER, fontWeight: 700, whiteSpace: "nowrap" }}>📸</span>}
+              </div>
+            ))}
+          </div>
+          {detail.items.filter(i => i.requires_photo === 1).length > 0 && (
+            <div style={{ marginTop: 8, fontSize: 10.5, color: AMBER, fontFamily: "'Geist Mono',monospace" }}>
+              📸 {detail.items.filter(i => i.requires_photo === 1).length} item butuh foto bukti
+            </div>
+          )}
+        </div>
+      )}
+
       <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", marginBottom: 10 }}>📍 1. AKTIFKAN GPS</div>
-      <div style={{ marginBottom: 14, padding: 12, background: "rgba(0,0,0,0.3)", border: `1px solid ${gps ? GREEN+'55' : AMBER+'55'}`, borderRadius: 10 }}>
+      <div style={{ marginBottom: 14, padding: 12, background: "rgba(0,0,0,0.3)", border: `1px solid ${gps ? GREEN+'55' : gpsBypass ? "#a855f755" : AMBER+'55'}`, borderRadius: 10 }}>
         {gps ? (
           <div style={{ fontSize: 12, color: GREEN, fontFamily: "'Geist Mono',monospace" }}>✓ GPS Terkunci ({gps.acc}m)</div>
+        ) : gpsBypass ? (
+          <div>
+            <div style={{ fontSize: 12, color: "#c084fc", fontWeight: 700, fontFamily: "'Geist Mono',monospace" }}>✈️ MODE PESAWAT AKTIF — GPS di-bypass</div>
+            <div style={{ fontSize: 11, color: "#a855f7", marginTop: 4 }}>Approver: {gpsBypassApprover || "?"} · Alasan: {gpsBypassReason || "-"}</div>
+            <button onClick={() => { setGpsBypass(false); setGpsBypassReason(""); setGpsBypassApprover(""); }} style={{ marginTop: 6, padding: "5px 10px", background: "transparent", border: "1px solid rgba(168,85,247,0.4)", borderRadius: 6, color: "#c084fc", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>↺ Nyalakan GPS lagi</button>
+          </div>
         ) : (
           <>
             <div style={{ fontSize: 12, color: AMBER, marginBottom: 6 }}>{gpsErr || "Mengambil GPS…"}</div>
-            <button onClick={grabGps} style={{ padding: "6px 12px", background: AMBER, border: "none", borderRadius: 6, color: "#000", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>📡 Coba Lagi</button>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <button onClick={grabGps} style={{ padding: "6px 12px", background: AMBER, border: "none", borderRadius: 6, color: "#000", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>📡 Coba Lagi</button>
+              <button onClick={async () => {
+                const reason = window.prompt("⚠️ Mode pesawat butuh manager approval.\n\nAlasan bypass GPS (indoor / signal lemah / dll):");
+                if (!reason || !reason.trim()) return;
+                const pin = window.prompt("Manager PIN (audit log):");
+                if (!pin || !pin.trim()) return;
+                setGpsBypass(true);
+                setGpsBypassReason(reason.trim());
+                setGpsBypassApprover(`PIN:${pin.trim().slice(0, 4)}***`);
+              }} style={{ padding: "6px 12px", background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.4)", borderRadius: 6, color: "#c084fc", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✈️ Mode Pesawat</button>
+            </div>
           </>
         )}
       </div>
@@ -261,8 +318,8 @@ function StartStep({ ticket, detail, gps, gpsErr, grabGps, selfie, setSelfie, bu
 
       {err && <div style={errBox}>⚠ {err}</div>}
 
-      <button onClick={onStart} disabled={busy || !selfie || !gps} style={primaryBtn(!busy && selfie && gps)}>
-        {busy ? "⏳ Starting…" : "▶ Mulai Tiket"}
+      <button onClick={onStart} disabled={busy || !selfie || (!gps && !gpsBypass)} style={primaryBtn(!busy && selfie && (gps || gpsBypass))}>
+        {busy ? "⏳ Starting…" : gpsBypass ? "▶ Mulai (Mode Pesawat)" : "▶ Mulai Tiket"}
       </button>
     </div>
   );

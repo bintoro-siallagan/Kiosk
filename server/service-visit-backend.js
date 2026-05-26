@@ -441,17 +441,34 @@ function setupServiceVisit(app, opts = {}) {
         return res.status(400).json({ error: `Ticket sudah ${ticket.status}` });
       }
       if (!b.selfie_b64) return res.status(400).json({ error: 'Selfie kerja wajib (anti-nitip-ID)' });
-      if (!b.gps_lat || !b.gps_lon) return res.status(400).json({ error: 'GPS wajib' });
 
-      const isSA = isSuperAdminPin(b.bypass_pin);
-      const geo = geofenceCheck(ticket.outlet_code, b.gps_lat, b.gps_lon, isSA);
-      if (!geo.ok) return res.status(403).json({ error: geo.error, distance_m: geo.distance, radius_m: geo.radius });
+      // Airplane mode bypass — GPS skip kalau manager approve
+      const bypass = b.gps_bypass === 1 || b.gps_bypass === true;
+      if (bypass) {
+        if (!b.gps_bypass_reason || !b.gps_bypass_approver) {
+          return res.status(400).json({ error: 'Mode pesawat wajib reason + approver PIN' });
+        }
+      } else {
+        if (!b.gps_lat || !b.gps_lon) return res.status(400).json({ error: 'GPS wajib (atau pakai mode pesawat dengan approval)' });
+        const isSA = isSuperAdminPin(b.bypass_pin);
+        const geo = geofenceCheck(ticket.outlet_code, b.gps_lat, b.gps_lon, isSA);
+        if (!geo.ok) return res.status(403).json({ error: geo.error, distance_m: geo.distance, radius_m: geo.radius });
+        var distance = geo.distance;
+      }
 
       const selfieFn = saveB64Photo(b.selfie_b64, `start_${ticket.ticket_no}_${Date.now()}`);
       const now = nowSec();
-      db.prepare(`UPDATE service_tickets SET status='in_progress', started_at=?, start_gps_lat=?, start_gps_lon=?, start_gps_distance_m=?, start_selfie=?, start_device_id=? WHERE id=?`)
-        .run(now, b.gps_lat, b.gps_lon, geo.distance, selfieFn, b.device_id || null, req.params.id);
-      res.json({ ok: true, distance_m: geo.distance });
+      db.prepare(`UPDATE service_tickets
+        SET status='in_progress', started_at=?, start_gps_lat=?, start_gps_lon=?, start_gps_distance_m=?,
+            start_selfie=?, start_device_id=?,
+            gps_bypass=?, gps_bypass_reason=?, gps_bypass_approver=?
+        WHERE id=?`)
+        .run(now, b.gps_lat || null, b.gps_lon || null, bypass ? null : (typeof distance !== 'undefined' ? distance : null),
+             selfieFn, b.device_id || null,
+             bypass ? 1 : 0, b.gps_bypass_reason || null, b.gps_bypass_approver || null,
+             req.params.id);
+      if (bypass) console.log(`✈️ [service] GPS BYPASS — ticket ${ticket.ticket_no} · reason="${b.gps_bypass_reason}" · approver=${b.gps_bypass_approver}`);
+      res.json({ ok: true, distance_m: bypass ? null : distance, gps_bypassed: bypass });
     } catch (e) { console.error('[service] start error', e); res.status(500).json({ error: e.message }); }
   });
 

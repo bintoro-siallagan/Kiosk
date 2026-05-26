@@ -20,6 +20,10 @@ CREATE TABLE IF NOT EXISTS outlet_master (
 // Migrations idempotent — kalau column sudah ada, ignore error
 const MIGRATIONS = [
   `ALTER TABLE outlet_master ADD COLUMN vertical TEXT DEFAULT 'fnb'`,
+  `ALTER TABLE outlet_master ADD COLUMN lat REAL`,
+  `ALTER TABLE outlet_master ADD COLUMN lon REAL`,
+  `ALTER TABLE outlet_master ADD COLUMN geofence_radius_m INTEGER DEFAULT 100`,
+  `ALTER TABLE outlet_master ADD COLUMN gps_lock INTEGER DEFAULT 0`,  // 0=staff bisa bypass, 1=strict
 ];
 const TYPES = ['Dine-in', 'Express', 'Kiosk'];
 const STATUSES = ['active', 'renovation', 'onboarding', 'closed'];
@@ -106,13 +110,17 @@ function setupOutletMaster(app, opts = {}) {
     if (!o) return res.status(404).json({ error: 'outlet tidak ditemukan' });
     const b = req.body || {};
     const fields = [], args = [];
-    const num = new Set(['seat_capacity']);
-    for (const k of ['name', 'area', 'address', 'phone', 'manager', 'outlet_type', 'seat_capacity', 'status', 'vertical']) {
+    const num = new Set(['seat_capacity', 'geofence_radius_m', 'gps_lock']);
+    const float = new Set(['lat', 'lon']);
+    for (const k of ['name', 'area', 'address', 'phone', 'manager', 'outlet_type', 'seat_capacity', 'status', 'vertical', 'lat', 'lon', 'geofence_radius_m', 'gps_lock']) {
       if (b[k] !== undefined) {
         if (k === 'outlet_type' && !TYPES.includes(b[k])) continue;
         if (k === 'status' && !STATUSES.includes(b[k])) continue;
         if (k === 'vertical' && !VERTICALS.includes(b[k])) continue;
-        fields.push(`${k} = ?`); args.push(num.has(k) ? Number(b[k]) : String(b[k]));
+        fields.push(`${k} = ?`);
+        if (float.has(k)) args.push(b[k] === null || b[k] === '' ? null : parseFloat(b[k]));
+        else if (num.has(k)) args.push(Number(b[k]));
+        else args.push(String(b[k]));
       }
     }
     if (!fields.length) return res.json({ ok: true, noop: true });

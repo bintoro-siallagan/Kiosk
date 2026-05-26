@@ -125,6 +125,7 @@ export default function AdminOutletMaster({ apiBase = "" }) {
 function OutletForm({ data, isEdit, d, onChange, onClose, onSave }) {
   const inp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 12.5, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
   const lbl = { fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4, fontFamily: "'Geist Mono',monospace" };
+  const mapBtnSmall = { padding: "5px 12px", borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" };
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%" }}>
@@ -148,6 +149,40 @@ function OutletForm({ data, isEdit, d, onChange, onClose, onSave }) {
               </select>
             </div>
           )}
+
+          {/* GPS Geofence (untuk staff check-in / anti-fraud lokasi) */}
+          <div style={{ gridColumn: "1/-1", marginTop: 8, padding: 12, background: "rgba(34,211,238,0.04)", border: "1px solid rgba(34,211,238,0.18)", borderRadius: 8 }}>
+            <div style={{ fontSize: 11, color: "#22d3ee", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700, marginBottom: 8 }}>📍 LOKASI GPS + GEOFENCE</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+              <div><div style={lbl}>LATITUDE</div><input type="number" step="any" value={data.lat ?? ""} onChange={e => onChange({ lat: e.target.value === "" ? null : parseFloat(e.target.value) })} placeholder="-6.2088" style={inp} /></div>
+              <div><div style={lbl}>LONGITUDE</div><input type="number" step="any" value={data.lon ?? ""} onChange={e => onChange({ lon: e.target.value === "" ? null : parseFloat(e.target.value) })} placeholder="106.8456" style={inp} /></div>
+              <div><div style={lbl}>RADIUS (m)</div><input type="number" min="50" max="2000" value={data.geofence_radius_m || 100} onChange={e => onChange({ geofence_radius_m: Number(e.target.value) })} style={inp} /></div>
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+              <button onClick={() => {
+                if (!navigator.geolocation) { alert("Browser tidak support GPS"); return; }
+                navigator.geolocation.getCurrentPosition(
+                  p => { onChange({ lat: p.coords.latitude, lon: p.coords.longitude }); },
+                  e => { alert("GPS error: " + e.message); },
+                  { enableHighAccuracy: true, timeout: 10000 }
+                );
+              }} style={{ ...mapBtnSmall, background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.4)", color: "#10b981" }}>📍 Gunakan lokasi saya</button>
+              <button onClick={() => {
+                const lat = data.lat, lon = data.lon;
+                if (lat && lon) window.open(`https://www.google.com/maps?q=${lat},${lon}`, "_blank");
+                else window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.address || data.area || "Indonesia")}`, "_blank");
+              }} style={{ ...mapBtnSmall, background: "rgba(34,211,238,0.12)", border: "1px solid rgba(34,211,238,0.4)", color: "#22d3ee" }}>🗺️ Buka Google Maps</button>
+              <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#9ca3af", marginLeft: "auto" }}>
+                <input type="checkbox" checked={!!data.gps_lock} onChange={e => onChange({ gps_lock: e.target.checked ? 1 : 0 })} />
+                🔒 Strict (anti-bypass)
+              </label>
+            </div>
+            {data.lat && data.lon && (
+              <div style={{ marginTop: 8, fontSize: 11, color: "#7d8590", fontFamily: "'Geist Mono',monospace" }}>
+                Coord: {data.lat.toFixed(6)}, {data.lon.toFixed(6)} · radius {data.geofence_radius_m || 100}m
+              </div>
+            )}
+          </div>
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
           <button onClick={onClose} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
