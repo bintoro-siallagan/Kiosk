@@ -235,10 +235,10 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
   const MENU_ITEMS = _menu.items;
 
   // Per-tenant brand override — fetch from /api/companies/branding (auto-scoped via outlet param or x-company-id)
-  const [tenantBrand, setTenantBrand] = useState({ primary: "#FF6B35", secondary: "#E55A2B", name: null });
+  const [tenantBrand, setTenantBrand] = useState({ primary: "#FF6B35", secondary: "#E55A2B", name: null, code: null });
   useEffect(() => {
     fetch("/api/companies/branding").then(r => r.json()).then(b => {
-      if (b?.brand_color) setTenantBrand({ primary: b.brand_color, secondary: b.brand_secondary || b.brand_color, name: b.name });
+      if (b?.brand_color) setTenantBrand({ primary: b.brand_color, secondary: b.brand_secondary || b.brand_color, name: b.name, code: b.company_code });
     }).catch(() => {});
   }, []);
   // Inject CSS variables so existing #FF6B35 references auto-themed via root override
@@ -247,9 +247,12 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
     r.style.setProperty("--brand-primary", tenantBrand.primary);
     r.style.setProperty("--brand-secondary", tenantBrand.secondary);
   }, [tenantBrand]);
-  // Brand-color override CSS — applies via class selectors (overrides inline #FF6B35).
-  // Activated only when tenant brand_color != default orange.
-  const isCustomBrand = tenantBrand.primary && tenantBrand.primary.toUpperCase() !== "#FF6B35";
+  // "Platform default" tenant — these are the bootstrap/seed companies, treat as karyaos surface (not a customer brand).
+  // BTS = Karya Bites (bootstrap F&B tenant), CMX = Cinema Express (bootstrap cinema tenant).
+  const PLATFORM_TENANT_CODES = ["BTS", "CMX", "KARYAOS"];
+  const isPlatformDefault = !tenantBrand.code || PLATFORM_TENANT_CODES.includes(tenantBrand.code);
+  // Custom brand = real customer with their own brand identity (not bootstrap default, with brand color set)
+  const isCustomBrand = !isPlatformDefault && tenantBrand.primary && tenantBrand.primary.toUpperCase() !== "#FF6B35";
   const BRAND_OVERRIDE_CSS = isCustomBrand ? `
     .add-btn { background: linear-gradient(135deg, ${tenantBrand.primary}, ${tenantBrand.secondary}) !important; }
     .pay-btn-premium { background: linear-gradient(135deg, ${tenantBrand.primary}, ${tenantBrand.secondary}) !important; }
@@ -661,52 +664,52 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           </div>
         </div>
 
-        {/* Category bar */}
-        <div style={K.catBar}>
-          {CATEGORIES.map(c=>(
-            <button key={c} className="cat-btn-premium" style={{...K.catBtn,...(cat===c?K.catActive:{})}} onClick={()=>setCat(c)}>
-              {c}
-            </button>
-          ))}
-        </div>
-
-        {/* Menu grid — scrollable */}
+        {/* Editorial rows — per category horizontal scroll, Netflix-style */}
         <div style={K.splitMenuScroll}>
-          <div style={K.grid}>
-            {filtered.map((item,i)=>{
-              const inCart=cart.filter(e=>e.item.id===item.id).reduce((a,e)=>a+e.qty,0);
-              return (
-                <div key={item.id} className="menu-card lg" style={{...K.card,animationDelay:`${i*0.03}s`,opacity:item.avail===false?0.5:1,pointerEvents:item.avail===false?"none":"auto"}}>
-                  {item.tag && (
-                    <div style={{...K.tag,background:TAG_CLR[item.tag]?.bg,color:TAG_CLR[item.tag]?.tx}}>{item.tag}</div>
-                  )}
-                  {inCart>0 && <div style={K.inCartBadge}>{inCart}</div>}
-                  <div style={K.imgWrap}>
-                    <FoodImage item={item} size={110}/>
-                  </div>
-                  <div style={K.cardInfo}>
-                    <div style={K.cardName}>{item.name}</div>
-                    <div style={K.cardDesc}>{item.desc}</div>
-                    <div style={{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}}>
-                      <span style={K.calBadge}>{item.cal} kal</span>
-                      <span style={K.addonHint}>✦ custom</span>
-                    </div>
-                    <div style={K.cardBottom}>
-                      <span style={K.cardPrice}>{fIDR(item.price)}</span>
-                      {item.avail === false ? (
-                        <span style={K.soldOutBadge}>HABIS</span>
-                      ) : (
-                        <button className="add-btn" style={K.addBtn}
-                          onClick={()=>{audio.playTap();(item.freeToppings>0?setToppingItem(item):setAddonItem(item));}}>
-                          {inCart>0?"+ LAGI":"+ TAMBAH"}
-                        </button>
-                      )}
-                    </div>
-                  </div>
+          {CATEGORIES.filter(c=>c!=="All").map(c=>{
+            const rowItems = menuWithStock.filter(i=>i.category===c);
+            if (rowItems.length===0) return null;
+            return (
+              <section key={c} style={K.editorialSection}>
+                <header style={K.editorialHeader}>
+                  <h2 style={K.editorialTitle}>{c}</h2>
+                  <span style={K.editorialSub}>{rowItems.length} {rowItems.length===1?"item":"items"}</span>
+                </header>
+                <div className="editorial-row" style={K.editorialRow}>
+                  {rowItems.map((item,i)=>{
+                    const inCart=cart.filter(e=>e.item.id===item.id).reduce((a,e)=>a+e.qty,0);
+                    return (
+                      <div key={item.id} className="menu-card lg" style={{...K.editorialCard,animationDelay:`${i*0.04}s`,opacity:item.avail===false?0.5:1,pointerEvents:item.avail===false?"none":"auto"}}>
+                        {item.tag && (
+                          <div style={{...K.tag,background:TAG_CLR[item.tag]?.bg,color:TAG_CLR[item.tag]?.tx}}>{item.tag}</div>
+                        )}
+                        {inCart>0 && <div style={K.inCartBadge}>{inCart}</div>}
+                        <div style={K.editorialCardImg}>
+                          <FoodImage item={item} size={200}/>
+                        </div>
+                        <div style={K.editorialCardInfo}>
+                          <div style={K.editorialCardName}>{item.name}</div>
+                          <div style={K.editorialCardBottom}>
+                            <span style={K.editorialCardPrice}>{fIDR(item.price)}</span>
+                            {item.avail === false ? (
+                              <span style={K.soldOutBadge}>SOLD OUT</span>
+                            ) : (
+                              <button className="add-btn" style={K.editorialAddBtn}
+                                onClick={()=>{audio.playTap();(item.freeToppings>0?setToppingItem(item):setAddonItem(item));}}
+                                aria-label={inCart>0?"Add more":"Add"}>
+                                {inCart>0?"+1":"+"}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
+              </section>
+            );
+          })}
+          <div style={{height:24}}/>
         </div>
       </div>
 
@@ -957,7 +960,21 @@ const K = {
   splitRoot:{height:"100vh",background:PREMIUM_BG,backgroundAttachment:"fixed",color:"#fff",display:"flex",overflow:"hidden",fontFamily:"'Inter',sans-serif"},
   splitLeft:{flex:"0 0 60%",display:"flex",flexDirection:"column",borderRight:BORDER_DEFAULT,overflow:"hidden"},
   splitRight:{flex:"0 0 40%",display:"flex",flexDirection:"column",background:"linear-gradient(180deg,rgba(13,17,23,0.6),rgba(8,9,10,0.85))",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderLeft:BORDER_DEFAULT},
-  splitMenuScroll:{flex:1,overflowY:"auto",padding:"12px 12px 16px"},
+  splitMenuScroll:{flex:1,overflowY:"auto",padding:"6px 0 0"},
+
+  // ── EDITORIAL ROWS (Netflix-style horizontal scroll per category) ──
+  editorialSection: {marginBottom:18},
+  editorialHeader:  {padding:"14px 18px 10px",display:"flex",justifyContent:"space-between",alignItems:"baseline"},
+  editorialTitle:   {fontFamily:"'Inter',sans-serif",fontSize:21,fontWeight:600,letterSpacing:"-0.5px",color:"rgba(255,255,255,0.95)",margin:0,lineHeight:1.1},
+  editorialSub:     {fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:400,letterSpacing:0.3,fontFamily:"'Inter',sans-serif"},
+  editorialRow:     {display:"flex",gap:14,overflowX:"auto",padding:"6px 18px 14px",scrollSnapType:"x mandatory",scrollPaddingLeft:18,WebkitOverflowScrolling:"touch"},
+  editorialCard:    {flex:"0 0 220px",scrollSnapAlign:"start",borderRadius:22,display:"flex",flexDirection:"column",position:"relative",cursor:"pointer"},
+  editorialCardImg: {height:170,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",borderTopLeftRadius:22,borderTopRightRadius:22,background:"radial-gradient(ellipse 80% 60% at 50% 30%,rgba(255,255,255,0.04),transparent 70%)"},
+  editorialCardInfo:{padding:"12px 14px 14px",display:"flex",flexDirection:"column",gap:8},
+  editorialCardName:{fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:600,letterSpacing:"-0.3px",color:"rgba(255,255,255,0.95)",lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",minHeight:36},
+  editorialCardBottom:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10},
+  editorialCardPrice:{fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:600,color:"#fff",letterSpacing:"-0.2px",fontVariantNumeric:"tabular-nums"},
+  editorialAddBtn:  {width:34,height:34,minWidth:34,borderRadius:"50%",border:"none",background:"linear-gradient(180deg,var(--brand-primary,#FF6B35) 0%,var(--brand-secondary,#E55A2B) 100%)",color:"#fff",fontSize:18,fontWeight:700,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.3),0 4px 14px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent)",fontFamily:"'Inter',sans-serif"},
 
   // ── CART PANEL ──
   cartPanelHeader:{padding:"18px 22px",borderBottom:BORDER_DEFAULT,flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"center"},
