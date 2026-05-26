@@ -798,6 +798,113 @@ function setupMasterItems(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // ─── BULK CSV IMPORT ────────────────────────────────────────────
+  // GET /menus/bulk-template — download CSV template with example rows
+  router.get('/menus/bulk-template', (req, res) => {
+    const header = 'id,category_id,emoji,name,description,price,free_extras,is_popular,is_available,image_url,badge_text';
+    const examples = [
+      ',froyo,🍦,Vanilla Bliss,Classic vanilla froyo · 2 toppings,52000,2,1,1,,BESTSELLER',
+      ',froyo,🍓,Strawberry Cloud,Sweet strawberry with mochi,54000,2,0,1,,',
+      ',drinks,☕,Iced Mocha,Espresso meets chocolate,34000,0,0,1,,NEW',
+      'custom-id-001,bites,🍪,House Cookie,Warm chocolate chip,18000,0,0,1,/uploads/cookie.jpg,',
+    ];
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="menu-template.csv"');
+    res.send([header, ...examples].join('\n') + '\n');
+  });
+
+  // POST /menus/bulk-csv — upload CSV file, parse, INSERT OR REPLACE into pos_menus
+  router.post('/menus/bulk-csv', (req, res) => {
+    const upload = opts.uploadMiddleware;
+    if (!upload) return res.status(500).json({ error: 'upload middleware not configured' });
+    upload.single('file')(req, res, (err) => {
+      if (err) return res.status(400).json({ error: err.message });
+      if (!req.file) return res.status(400).json({ error: 'no file uploaded' });
+      const fs = require('fs');
+      let content;
+      try { content = fs.readFileSync(req.file.path, 'utf8'); }
+      catch (e) { return res.status(400).json({ error: 'failed to read file: ' + e.message }); }
+      // Clean up upload file after read
+      try { fs.unlinkSync(req.file.path); } catch {}
+
+      // Parse CSV — simple line-based, supports quoted strings
+      const parseRow = (line) => {
+        const out = []; let cur = ''; let inQ = false;
+        for (let i = 0; i < line.length; i++) {
+          const c = line[i];
+          if (c === '"') { if (inQ && line[i+1] === '"') { cur += '"'; i++; } else inQ = !inQ; continue; }
+          if (c === ',' && !inQ) { out.push(cur); cur = ''; continue; }
+          cur += c;
+        }
+        out.push(cur);
+        return out.map(x => x.trim());
+      };
+
+      const lines = content.split(/\r?\n/).filter(l => l.trim().length > 0);
+      if (lines.length < 2) return res.status(400).json({ error: 'CSV must have header + at least 1 data row' });
+      const header = parseRow(lines[0]).map(h => h.toLowerCase());
+      const idx = (k) => header.indexOf(k);
+
+      // Verify required columns
+      const required = ['category_id', 'name', 'price'];
+      for (const r of required) {
+        if (idx(r) < 0) return res.status(400).json({ error: `missing required column: ${r}` });
+      }
+
+      // Validate categories exist
+      const validCats = new Set(db.prepare(`SELECT id FROM pos_menu_categories`).all().map(r => r.id));
+
+      const stmt = db.prepare(`INSERT OR REPLACE INTO pos_menus
+        (id, category_id, emoji, name, description, price, free_extras, is_popular, is_available, image_url, badge_text, display_order, created_at, updated_at, company_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT created_at FROM pos_menus WHERE id = ?), ?), ?, ?)`);
+
+      const results = { imported: 0, skipped: 0, errors: [] };
+      const sc = req.companyScope || {};
+      const companyId = sc.company_id || 1;
+      const now = nowSec();
+
+      const tx = db.transaction(() => {
+        for (let i = 1; i < lines.length; i++) {
+          const row = parseRow(lines[i]);
+          try {
+            const get = (k) => { const j = idx(k); return j >= 0 ? row[j] : ''; };
+            const category_id = get('category_id');
+            const name = get('name');
+            const priceRaw = get('price');
+            if (!category_id || !name || !priceRaw) {
+              results.errors.push({ row: i + 1, error: 'missing category_id/name/price' });
+              results.skipped++; continue;
+            }
+            if (!validCats.has(category_id)) {
+              results.errors.push({ row: i + 1, error: `unknown category_id "${category_id}"` });
+              results.skipped++; continue;
+            }
+            const price = parseFloat(priceRaw);
+            if (isNaN(price)) {
+              results.errors.push({ row: i + 1, error: 'invalid price' });
+              results.skipped++; continue;
+            }
+            const id = get('id') || `${category_id}-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').slice(0, 30)}-${Date.now().toString(36).slice(-4)}`;
+            const emoji = get('emoji') || '';
+            const description = get('description') || '';
+            const free_extras = parseInt(get('free_extras') || '0') || 0;
+            const is_popular = ['1', 'true', 'yes', 'y'].includes((get('is_popular') || '').toLowerCase()) ? 1 : 0;
+            const is_available = ['0', 'false', 'no', 'n'].includes((get('is_available') || '').toLowerCase()) ? 0 : 1;
+            const image_url = get('image_url') || null;
+            const badge_text = get('badge_text') || null;
+            stmt.run(id, category_id, emoji, name, description, price, free_extras, is_popular, is_available, image_url, badge_text, i, id, now, now, companyId);
+            results.imported++;
+          } catch (e) {
+            results.errors.push({ row: i + 1, error: e.message });
+            results.skipped++;
+          }
+        }
+      });
+      tx();
+      res.json({ ok: true, ...results });
+    });
+  });
+
   router.post('/menus/bulk-toggle', (req, res) => {
     const { ids, is_available } = req.body || {};
     if (!Array.isArray(ids)) return res.status(400).json({ error: 'ids array required' });

@@ -116,7 +116,7 @@ function Menus() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
         <div>
           <h3 style={{ margin: 0, display: 'inline-block', marginRight: 12 }}>Menus ({list.length})</h3>
           <select value={filter} onChange={e => setFilter(e.target.value)}>
@@ -124,7 +124,10 @@ function Menus() {
             {categories.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
           </select>
         </div>
-        <button onClick={() => { setEditing({ isNew: true }); setShowForm(true); }} style={btnPrimary}>+ Add Menu</button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <BulkImport categories={categories} onDone={load} />
+          <button onClick={() => { setEditing({ isNew: true }); setShowForm(true); }} style={btnPrimary}>+ Add Menu</button>
+        </div>
       </div>
 
       {showForm && <MenuForm initial={editing} categories={categories} onSave={handleSave} onCancel={() => { setShowForm(false); setEditing(null); }} />}
@@ -157,6 +160,71 @@ function Menus() {
         </tbody>
       </table>
     </div>
+  );
+}
+
+// ── Bulk CSV import ─────────────────────────────────────────────
+function BulkImport({ categories, onDone }) {
+  const [uploading, setUploading] = useState(false);
+  const [result, setResult] = useState(null);
+  const fileRef = React.useRef(null);
+
+  async function handleUpload(file) {
+    setUploading(true); setResult(null);
+    const fd = new FormData(); fd.append('file', file);
+    try {
+      const res = await fetch(`${API}/menus/bulk-csv`, { method: 'POST', body: fd });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || 'upload failed');
+      setResult(j);
+      onDone?.();
+    } catch (e) { setResult({ error: e.message }); }
+    finally { setUploading(false); if (fileRef.current) fileRef.current.value = ''; }
+  }
+
+  return (
+    <>
+      <a href={`${API}/menus/bulk-template`} download
+        style={{ ...btnSmall, background: '#f3f4f6', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        📥 Download template
+      </a>
+      <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{ ...btnSmall, background: '#e0e7ff', color: '#3730a3' }}>
+        {uploading ? '⏳ Uploading…' : '📤 Bulk upload CSV'}
+      </button>
+      <input ref={fileRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }}
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); }} />
+
+      {result && (
+        <div style={{
+          marginTop: 8, padding: 12, borderRadius: 10, fontSize: 13,
+          background: result.error ? '#fef2f2' : '#ecfdf5',
+          border: `1px solid ${result.error ? '#fecaca' : '#a7f3d0'}`,
+          color: result.error ? '#991b1b' : '#065f46',
+          maxWidth: 480, position: 'absolute', zIndex: 100, marginLeft: -200, marginTop: 38,
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+        }}>
+          {result.error ? (
+            <><b>Upload failed:</b> {result.error}</>
+          ) : (
+            <>
+              <b>✓ Done.</b> Imported <b>{result.imported}</b>, skipped <b>{result.skipped}</b>
+              {result.errors?.length > 0 && (
+                <details style={{ marginTop: 6 }}>
+                  <summary style={{ cursor: 'pointer' }}>Show {result.errors.length} errors</summary>
+                  <ul style={{ marginTop: 4, paddingLeft: 20, fontSize: 12 }}>
+                    {result.errors.slice(0, 10).map((e, i) => <li key={i}>Row {e.row}: {e.error}</li>)}
+                    {result.errors.length > 10 && <li>… and {result.errors.length - 10} more</li>}
+                  </ul>
+                </details>
+              )}
+              <div style={{ marginTop: 6, fontSize: 11 }}>
+                <button onClick={() => setResult(null)} style={{ background: 'none', border: 'none', color: '#065f46', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>Dismiss</button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </>
   );
 }
 
