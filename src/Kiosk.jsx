@@ -464,16 +464,17 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
       <div className="aurora-blob aurora-3"/>
       <div style={K.welcomeInner}>
         <div style={K.logoWrap}>
-          <div style={{position:"relative",display:"inline-block",width:172,height:172}} className="logo-float">
+          {/* Soft floating accent dot — replaces rigid logo box */}
+          <div style={{position:"relative",display:"inline-block",marginBottom:18}} className="logo-float"
+               onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}}>
             <div className="logo-halo"/>
-            <div className="lg lg-orb" style={{
-              width:172,height:172,borderRadius:"50%",
-              display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",
-            }} onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}}>
-              <img src="/logo.png" alt="KaryaOS" style={{width:100,height:100,objectFit:"contain",filter:"drop-shadow(0 6px 14px rgba(0,0,0,0.55))"}}/>
-            </div>
+            <div style={{
+              position:"relative",zIndex:1,width:18,height:18,borderRadius:"50%",cursor:"pointer",
+              background:`radial-gradient(circle at 30% 30%,#fff 0%,var(--brand-primary,#FF6B35) 55%,var(--brand-secondary,#E55A2B) 100%)`,
+              boxShadow:`0 0 0 6px color-mix(in srgb,var(--brand-primary,#FF6B35) 12%,transparent),0 8px 24px color-mix(in srgb,var(--brand-primary,#FF6B35) 45%,transparent),inset 0 1px 2px rgba(255,255,255,0.5)`,
+            }}/>
           </div>
-          <h1 style={K.brand}>{isCustomBrand ? tenantBrand.name : "KaryaOS"}</h1>
+          <h1 style={K.brand}>{isCustomBrand ? (tenantBrand.name) : (<>karya<span style={{fontWeight:400,letterSpacing:"-1px",opacity:.55}}>OS</span></>)}</h1>
           <p style={K.tagline}>Crafted with love · Ordered with ease</p>
         </div>
         <div style={K.clockDisp}>{time.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</div>
@@ -975,7 +976,7 @@ const K = {
   welcomeInner:{textAlign:"center",padding:"40px 24px",maxWidth:560,width:"100%",position:"relative",zIndex:1},
   logoWrap:   {marginBottom:32},
   logoIcon:   {fontSize:72,lineHeight:1,marginBottom:10,display:"block"},
-  brand:      {fontFamily:"'Inter',sans-serif",fontSize:"min(58px,9vw)",fontWeight:700,letterSpacing:"-2px",color:"#fff",lineHeight:1.05,marginTop:18,background:"linear-gradient(180deg,#fff 0%,rgba(255,255,255,0.72) 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"},
+  brand:      {fontFamily:"'Inter',sans-serif",fontSize:"min(84px,13vw)",fontWeight:700,letterSpacing:"-3.5px",color:"#fff",lineHeight:1,marginTop:6,background:"linear-gradient(180deg,#fff 0%,rgba(255,255,255,0.6) 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"},
   tagline:    {fontSize:14,color:"rgba(255,255,255,0.5)",marginTop:12,letterSpacing:0.2,fontFamily:"'Inter',sans-serif",fontWeight:400},
   clockDisp:  {fontSize:13,color:"rgba(255,255,255,0.32)",marginBottom:36,letterSpacing:6,fontFamily:"'Inter',sans-serif",fontVariantNumeric:"tabular-nums",fontWeight:500},
   welcomeQ:   {fontSize:15,letterSpacing:"-0.2px",color:"rgba(255,255,255,0.78)",marginBottom:28,fontFamily:"'Inter',sans-serif",fontWeight:500},
