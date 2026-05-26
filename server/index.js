@@ -4314,6 +4314,11 @@ const { setupCinema } = require('./cinema-backend');
 setupCinema(app, { dbPath: DB_PATH, broadcast, tcpPrint });
 const { setupFnbFeatures } = require('./fnb-features-backend');
 setupFnbFeatures(app, { dbPath: DB_PATH });
+// MUST mount AFTER setupCinema/setupFnbFeatures — companies-backend ALTERs their tables
+const { setupCompanies } = require('./companies-backend');
+const companies = setupCompanies(app, { dbPath: DB_PATH });
+// Expose resolveScope helper to global (semua endpoint lain bisa pakai untuk filter)
+global.resolveCompanyScope = companies.resolveScope;
 const { setupOwnerDashboardExtras } = require('./owner-dashboard-extras');
 setupOwnerDashboardExtras(app, { dbPath: DB_PATH });
 const bridge          = setupBridge(app,          { dbPath: DB_PATH, mountPath: '/api/bridge' });
