@@ -20,6 +20,27 @@ const fmtIDRShort = (n) => {
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—";
 const fmtDateTime = (ts) => ts ? new Date(ts * 1000).toLocaleString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
 
+// Human-readable feature group labels — agregat raw codes ke bullet points yg readable
+const FEATURE_GROUPS = [
+  { name: "🧾 POS & Self-Order",  codes: ["pos","kiosk","qr_order","menu","cds","kds"],   desc: "POS Kasir + Customer Kiosk + QR Order + KDS Dapur" },
+  { name: "📊 Dashboard & Settings", codes: ["dashboard","settings","departments"],         desc: "Owner Dashboard + Outlet Settings + Departments" },
+  { name: "🏆 Loyalty & Promo",   codes: ["loyalty","promo","reward","membership","customer_intel"], desc: "Membership tier + Promo Code + Reward + CRM" },
+  { name: "📦 Inventory & Stock", codes: ["inventory","item_master","stock_opname","goods_received","goods_delivery","supplier","procurement","auto_reorder","batch_tracking","production"], desc: "Stock Opname + Item Master + Auto-Reorder + Supplier" },
+  { name: "💰 Finance & Akuntansi", codes: ["finance","finance_center","ar","ap","journal","gl","coa","budget","tax","cash_flow","reconciliation","fin_statements","period_closing","food_cost"], desc: "GL + AR/AP + Budget + Tax + Reconciliation + Statements" },
+  { name: "👥 HR & Payroll",      codes: ["hr","hris","payroll","shift_roster","attendance","talenta","motivation"], desc: "Karyawan + Payroll + Shift + Talenta sync" },
+  { name: "🎯 Marketing & CRM",   codes: ["marketing","campaign","crm","broadcast","geo_engagement","clv_churn"], desc: "Kampanye + Broadcast + Geo Engagement + Churn Analysis" },
+  { name: "🏪 Multi-Outlet & Field Ops", codes: ["multi_outlet","remote_ops","launch","service_visit","incidents"], desc: "Multi-outlet + KROC + KOLR + Service Visit + Incidents" },
+  { name: "🎬 Cinema Suite",      codes: ["cinema_all"], desc: "Cinema POS + Showtime + Loyalty + Subscription + Party + Pajak Hiburan" },
+  { name: "🛡️ Enterprise Compliance", codes: ["quality","internal_audit","document_hub","helpdesk","risk","contract","rfq","signage","compliance"], desc: "Quality + Audit + Doc Hub + Risk + Contract + Signage" },
+];
+
+function expandPlanFeatures(rawFeatures) {
+  if (!Array.isArray(rawFeatures)) return [];
+  if (rawFeatures.includes("*")) return [{ name: "🌟 Akses Penuh", desc: "Semua fitur unlocked — tanpa batas" }];
+  const set = new Set(rawFeatures);
+  return FEATURE_GROUPS.filter(g => g.codes.some(c => set.has(c)));
+}
+
 export default function AdminBilling({ apiBase = "" }) {
   const API = apiBase || (typeof window !== "undefined" && window.location.origin) || "";
   const [my, setMy] = useState(null);
@@ -301,10 +322,18 @@ function PlansCatalog({ plans, currentPlan, onUpgrade }) {
               <div style={{ fontSize: 11, color: GREEN, marginTop: 2 }}>atau {fmtIDR(p.annual_price_idr)}/tahun (hemat 2 bulan)</div>
             </div>
 
-            <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 6 }}>FITUR</div>
-            <ul style={{ margin: 0, padding: "0 0 0 18px", fontSize: 12, color: "#cbd5e1", lineHeight: 1.7 }}>
-              {p.features?.map((f, i) => <li key={i}>{typeof f === "string" ? f : f.label || f.feature || JSON.stringify(f)}</li>)}
-            </ul>
+            <div style={{ fontSize: 10, color: "#64748b", letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 6 }}>YANG KAMU DAPAT</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {expandPlanFeatures(p.features).map((g, i) => (
+                <div key={i} style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                  <span style={{ color: GREEN, fontWeight: 800, marginTop: 1 }}>✓</span>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, color: "#fff", fontWeight: 700 }}>{g.name}</div>
+                    <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 1, lineHeight: 1.4 }}>{g.desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
 
             <div style={{ marginTop: 14, paddingTop: 12, borderTop: BORDER, fontSize: 11, color: "#94a3b8" }}>
               🏪 {p.max_outlets === null ? "Unlimited" : p.max_outlets} outlet · 👥 {p.max_users === null ? "Unlimited" : p.max_users} user

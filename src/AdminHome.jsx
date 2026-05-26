@@ -37,6 +37,7 @@ import { CommandPalette } from "./components/uiKit.jsx";
 import IncidentAlertBanner from "./components/IncidentAlertBanner.jsx";
 import TrialBanner from "./components/TrialBanner.jsx";
 import UpgradePrompt from "./components/UpgradePrompt.jsx";
+import OnboardingChecklist from "./components/OnboardingChecklist.jsx";
 import API_HOST from "./apiBase.js";
 import { LocaleSwitcher as KaryaLocaleSwitcher } from "./i18n";
 
@@ -674,6 +675,9 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
 
       {/* Trial expiry + unpaid invoice banner — non-blocking, opens Billing tab */}
       <TrialBanner onUpgrade={() => openRight("tools", "billing")} />
+
+      {/* Onboarding checklist — first-login walkthrough, auto-hides after all done */}
+      <OnboardingChecklist onNavigate={(modId) => openRight("tools", modId)} />
 
       {/* Impersonation banner — super-admin sedang drill-down ke company tertentu */}
       {_adminCtx?._impersonating && (

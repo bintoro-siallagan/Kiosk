@@ -189,7 +189,11 @@ export default function TenantSignup() {
             <div style={{ padding: 18, background: "rgba(0,0,0,0.4)", border: `2px dashed ${AMBER}77`, borderRadius: 12, marginBottom: 16, textAlign: "center" }}>
               <div style={{ fontSize: 10, color: AMBER, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>📌 PIN LOGIN ADMIN — SIMPAN BAIK-BAIK</div>
               <div style={{ fontSize: 38, fontWeight: 900, color: "#fff", marginTop: 8, fontFamily: "'Geist Mono',monospace", letterSpacing: 8 }}>{result.login_pin}</div>
-              <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 6 }}>Login di <span style={{ color: CYAN, fontFamily: "'Geist Mono',monospace" }}>/?admin</span> pakai PIN ini</div>
+              <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 10 }}>
+                <CopyButton text={result.login_pin} label="Salin PIN" />
+                <CopyButton text={`Login ke karyaOS:\nPIN: ${result.login_pin}\nURL: ${typeof window !== "undefined" ? window.location.origin : ""}/?admin`} label="Salin info login" />
+              </div>
+              <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 8 }}>Login di <span style={{ color: CYAN, fontFamily: "'Geist Mono',monospace" }}>/?admin</span> pakai PIN ini</div>
             </div>
 
             <div style={{ padding: 14, background: "rgba(245,158,11,0.06)", border: `1px solid ${AMBER}33`, borderRadius: 10, marginBottom: 16 }}>
@@ -217,6 +221,36 @@ export default function TenantSignup() {
         Sudah punya akun? <a href="/?admin" style={{ color: CYAN, textDecoration: "none" }}>Login di sini →</a>
       </div>
     </div>
+  );
+}
+
+function CopyButton({ text, label }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // fallback
+      const ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta);
+      ta.select(); document.execCommand("copy");
+      document.body.removeChild(ta);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+  return (
+    <button onClick={copy} style={{
+      padding: "6px 12px", background: copied ? GREEN : "rgba(255,255,255,0.06)",
+      border: `1px solid ${copied ? GREEN : "rgba(255,255,255,0.15)"}`,
+      borderRadius: 6, color: copied ? "#001" : "#cbd5e1",
+      fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+      transition: "all 0.15s",
+    }}>
+      {copied ? "✓ Tersalin" : "📋 " + label}
+    </button>
   );
 }
 
