@@ -464,24 +464,16 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
       <div className="aurora-blob aurora-3"/>
       <div style={K.welcomeInner}>
         <div style={K.logoWrap}>
-          <div style={{position:"relative",display:"inline-block",width:200,height:200,marginBottom:8}} className="logo-float">
-            <div className="logo-halo"/>
-            <div className="lg lg-orb" style={{
-              width:200,height:200,borderRadius:"50%",
-              display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",
-            }} onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}}>
-              {/* Big typographic monogram — gradient brand color, lives inside the glass not on top */}
-              <span style={{
-                fontFamily:"'Inter',sans-serif",fontSize:140,fontWeight:700,lineHeight:1,letterSpacing:"-6px",
-                background:`linear-gradient(180deg,#fff 0%,var(--brand-primary,#FF6B35) 55%,var(--brand-secondary,#E55A2B) 100%)`,
-                WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",
-                filter:"drop-shadow(0 4px 16px rgba(0,0,0,0.4))",
-                userSelect:"none",
-                transform:"translateY(-4px)",
-              }}>{isCustomBrand && tenantBrand.name ? tenantBrand.name.charAt(0).toUpperCase() : "K"}</span>
-            </div>
+          {/* Pure wordmark hero — no container, ambient brand glow at the back, 5x logo-tap to admin */}
+          <div style={{position:"relative",display:"inline-block",padding:"8px 16px"}}
+               onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}}>
+            <div className="wordmark-glow"/>
+            <h1 style={K.brand}>
+              {isCustomBrand
+                ? tenantBrand.name
+                : (<>karya<span style={{fontWeight:400,letterSpacing:"-2px",opacity:.5}}>OS</span></>)}
+            </h1>
           </div>
-          <h1 style={K.brand}>{isCustomBrand ? (tenantBrand.name) : (<>karya<span style={{fontWeight:400,letterSpacing:"-1px",opacity:.55}}>OS</span></>)}</h1>
           <p style={K.tagline}>Crafted with love · Ordered with ease</p>
         </div>
         <div style={K.clockDisp}>{time.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</div>
@@ -900,6 +892,7 @@ const KIOSK_CSS = `
   @keyframes aurora{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(3%,-2%) scale(1.06)}66%{transform:translate(-2%,3%) scale(0.96)}}
   .logo-float{animation:float 6s ease-in-out infinite}
   .logo-halo{position:absolute;inset:-80px;border-radius:50%;background:radial-gradient(circle,var(--brand-primary,#FF6B35) 0%,transparent 60%);opacity:.30;filter:blur(48px);animation:breathe 5s ease-in-out infinite;pointer-events:none}
+  .wordmark-glow{position:absolute;inset:-60px -40px;background:radial-gradient(ellipse 80% 60% at 50% 50%,var(--brand-primary,#FF6B35) 0%,transparent 65%);opacity:.32;filter:blur(70px);animation:breathe 6s ease-in-out infinite;pointer-events:none;z-index:0}
   .aurora-blob{position:absolute;border-radius:50%;filter:blur(100px);pointer-events:none;will-change:transform}
   .aurora-1{top:-15%;left:-15%;width:65%;height:65%;background:radial-gradient(circle,var(--brand-primary,#FF6B35) 0%,transparent 70%);opacity:.22;animation:aurora 22s ease-in-out infinite}
   .aurora-2{bottom:-20%;right:-15%;width:70%;height:70%;background:radial-gradient(circle,var(--brand-secondary,#E55A2B) 0%,transparent 70%);opacity:.18;animation:aurora 28s ease-in-out infinite reverse}
@@ -983,7 +976,7 @@ const K = {
   welcomeInner:{textAlign:"center",padding:"40px 24px",maxWidth:560,width:"100%",position:"relative",zIndex:1},
   logoWrap:   {marginBottom:32},
   logoIcon:   {fontSize:72,lineHeight:1,marginBottom:10,display:"block"},
-  brand:      {fontFamily:"'Inter',sans-serif",fontSize:"min(84px,13vw)",fontWeight:700,letterSpacing:"-3.5px",color:"#fff",lineHeight:1,marginTop:6,background:"linear-gradient(180deg,#fff 0%,rgba(255,255,255,0.6) 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"},
+  brand:      {fontFamily:"'Inter',sans-serif",fontSize:"min(120px,17vw)",fontWeight:700,letterSpacing:"-5px",color:"#fff",lineHeight:1,background:"linear-gradient(180deg,#fff 0%,rgba(255,255,255,0.55) 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",position:"relative",zIndex:1,cursor:"pointer",userSelect:"none"},
   tagline:    {fontSize:14,color:"rgba(255,255,255,0.5)",marginTop:12,letterSpacing:0.2,fontFamily:"'Inter',sans-serif",fontWeight:400},
   clockDisp:  {fontSize:13,color:"rgba(255,255,255,0.32)",marginBottom:36,letterSpacing:6,fontFamily:"'Inter',sans-serif",fontVariantNumeric:"tabular-nums",fontWeight:500},
   welcomeQ:   {fontSize:15,letterSpacing:"-0.2px",color:"rgba(255,255,255,0.78)",marginBottom:28,fontFamily:"'Inter',sans-serif",fontWeight:500},
