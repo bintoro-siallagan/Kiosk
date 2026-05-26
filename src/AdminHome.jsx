@@ -508,6 +508,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
           : toolsSub },
       { label: "Management", icon: "📊", c: "#3b82f6", on: () => openRight("command") },
       { label: "👥 Manajemen Pengguna", icon: "👥", c: "#a855f7", on: () => openRight("tools", "admin_users") },
+      { label: "📧 Email / SMTP Config", icon: "📧", c: "#22d3ee", on: () => openRight("tools", "email_config") },
     ] },
   ];
 

@@ -301,6 +301,7 @@ export default function AdminTools({ initialTab }) {
         {tab === "service_visit" && <ServiceVisitTracker apiBase={API} />}
         {tab === "departments" && <DepartmentsConfig apiBase={API} />}
         {tab === "user_kpi" && <UserKpiDashboard apiBase={API} />}
+        {tab === "email_config" && <EmailConfig apiBase={API} />}
         {tab === "cinema_promotion" && <CinemaPromotion apiBase={API} />}
         {tab === "cinema_holidays" && <CinemaHolidays apiBase={API} />}
         {tab === "cinema_seat_types" && <CinemaSeatTypes apiBase={API} />}
