@@ -46,7 +46,7 @@ export default function OutletLaunchTracker({ apiBase = "" }) {
       </header>
 
       {/* KPI strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 10, marginBottom: 18 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%, 140px),1fr))", gap: 10, marginBottom: 18 }}>
         <KpiCard icon="🔨" label="ACTIVE PROJECT"   value={summary.active} color={PURPLE} />
         <KpiCard icon="🔥" label="≤ 7 HARI OPEN"    value={summary.urgent} color={summary.urgent ? RED : "#475569"} />
         <KpiCard icon="✅" label="SUDAH LIVE"        value={summary.live} color={GREEN} />
@@ -64,7 +64,7 @@ export default function OutletLaunchTracker({ apiBase = "" }) {
       {err && <ErrorInline error={err} onRetry={load} label="Daftar proyek belum dapat dimuat" />}
 
       {/* Launch grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(360px,1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%, 300px),1fr))", gap: 12 }}>
         {launches.map(l => <LaunchCard key={l.id} launch={l} onClick={() => setSelected(l)} />)}
         {launches.length === 0 && !loading && (
           <div style={{ gridColumn: "1/-1", padding: 60, textAlign: "center", color: "#64748b" }}>

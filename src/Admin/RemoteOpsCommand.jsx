@@ -71,7 +71,7 @@ export default function RemoteOpsCommand({ apiBase = "" }) {
       </header>
 
       {/* KPI summary strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: 10, marginBottom: 18 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%, 140px),1fr))", gap: 10, marginBottom: 18 }}>
         <KPICard icon="🏪" label="OUTLETS"           value={summary.totalOutlets} sub="terdaftar" color="#22d3ee" />
         <KPICard icon="💯" label="AVG HEALTH"        value={summary.avgScore} sub="dari 100" color={scoreColor(summary.avgScore)} />
         <KPICard icon="🔴" label="OUTLETS MERAH"     value={summary.red} sub="<60 score" color={summary.red ? COLORS.D : COLORS.muted} />
@@ -104,7 +104,7 @@ export default function RemoteOpsCommand({ apiBase = "" }) {
       </div>
 
       {/* Outlet grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%, 260px),1fr))", gap: 12 }}>
         {filtered.map(o => (
           <OutletCard key={o.code} outlet={o} onClick={() => setSelected(o)} />
         ))}
@@ -274,7 +274,7 @@ function AuditTab({ audit, API }) {
         </div>
         {a.notes && <div style={{ marginTop: 8, fontSize: 12, color: "#cbd5e1", fontStyle: "italic" }}>"{a.notes}"</div>}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 12 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%, 200px),1fr))", gap: 12 }}>
         {items.map(it => (
           <div key={it.id} style={{ background: CARD_BG, border: BORDER, borderRadius: 10, overflow: "hidden" }}>
             {it.photo_filename ? (
@@ -307,7 +307,7 @@ function CctvTab({ cameras }) {
     </div>
   );
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(320px,1fr))", gap: 12 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%, 280px),1fr))", gap: 12 }}>
       {cameras.map(cam => (
         <div key={cam.id} style={{ background: CARD_BG, border: BORDER, borderRadius: 10, overflow: "hidden" }}>
           <div style={{ padding: "8px 12px", background: "rgba(0,0,0,0.4)", fontSize: 11, color: "#22d3ee", fontWeight: 700, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", display: "flex", justifyContent: "space-between" }}>
@@ -335,7 +335,7 @@ function KpiTab({ outlet }) {
   const m = outlet.health?.metrics;
   if (!b) return <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>Belum ada data health score</div>;
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%, 200px),1fr))", gap: 12 }}>
       <KpiBlock title="💰 SALES (30%)"   pct={b.sales_pct}    detail={`Today: Rp ${(m?.sales_today || 0).toLocaleString("id-ID")} • 7d avg: Rp ${(m?.sales_7d_avg || 0).toLocaleString("id-ID")}`} />
       <KpiBlock title="⭐ RATING (25%)"  pct={b.rating_pct}   detail={`Avg ${(m?.avg_rating || 0).toFixed(2)}★ dari ${m?.rating_count || 0} review`} />
       <KpiBlock title="🚨 INCIDENT (20%)" pct={b.incident_pct} detail={`${m?.open_incidents || 0} insiden terbuka`} />
