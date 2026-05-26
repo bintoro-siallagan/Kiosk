@@ -112,7 +112,7 @@ export default function EscalationMatrix({ apiBase }) {
         <div style={{ color: C.dim, fontSize: 13, padding: "24px 0" }}>Memuat…</div>
       ) : active.length === 0 ? (
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "26px 18px", textAlign: "center", color: C.sub, fontSize: 13 }}>
-          ✅ Tidak ada eskalasi aktif — semua insiden tertangani.
+          ✅ None eskalasi aktif — semua insiden tertangani.
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

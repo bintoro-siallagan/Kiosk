@@ -159,7 +159,7 @@ function Suppliers() {
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Nonaktifkan supplier ini?')) return;
+    if (!confirm('Deactivate supplier ini?')) return;
     await api(`/suppliers/${id}`, { method: 'DELETE' });
     load();
   };
@@ -168,7 +168,7 @@ function Suppliers() {
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
         <h3 style={{ margin: 0 }}>Suppliers ({list.length})</h3>
-        <button onClick={() => { setEditing(null); setShowForm(true); }} style={btnPrimary}>+ Tambah Supplier</button>
+        <button onClick={() => { setEditing(null); setShowForm(true); }} style={btnPrimary}>+ Add Supplier</button>
       </div>
       {showForm && (
         <SupplierForm initial={editing} onSave={handleSave} onCancel={() => { setShowForm(false); setEditing(null); }} />
@@ -191,7 +191,7 @@ function Suppliers() {
               <td>{s.is_active ? <StatusBadge status="active" /> : <StatusBadge status="inactive" />}</td>
               <td>
                 <button onClick={() => { setEditing(s); setShowForm(true); }} style={btnSmall}>Edit</button>{' '}
-                {s.is_active === 1 && <button onClick={() => handleDelete(s.id)} style={btnSmallDanger}>Nonaktifkan</button>}
+                {s.is_active === 1 && <button onClick={() => handleDelete(s.id)} style={btnSmallDanger}>Deactivate</button>}
               </td>
             </tr>
           ))}
@@ -211,7 +211,7 @@ function SupplierForm({ initial, onSave, onCancel }) {
 
   return (
     <div style={formCard}>
-      <h4>{initial?.id ? 'Edit Supplier' : 'Tambah Supplier'}</h4>
+      <h4>{initial?.id ? 'Edit Supplier' : 'Add Supplier'}</h4>
       <div style={formGrid}>
         <label>Code <input value={f.code || ''} onChange={update('code')} placeholder="auto" /></label>
         <label>Nama* <input value={f.name} onChange={update('name')} required /></label>
@@ -227,8 +227,8 @@ function SupplierForm({ initial, onSave, onCancel }) {
         <label style={{ gridColumn: '1 / -1' }}>Notes <textarea value={f.notes || ''} onChange={update('notes')} rows={2} /></label>
       </div>
       <div style={{ marginTop: 12 }}>
-        <button onClick={() => onSave(f)} style={btnPrimary}>Simpan</button>{' '}
-        <button onClick={onCancel} style={btnSecondary}>Batal</button>
+        <button onClick={() => onSave(f)} style={btnPrimary}>Save</button>{' '}
+        <button onClick={onCancel} style={btnSecondary}>Cancel</button>
       </div>
     </div>
   );
@@ -362,7 +362,7 @@ function PRForm({ onClose }) {
       <div style={{ marginTop: 12 }}>
         <button onClick={()=>submit(true)} style={btnSecondary}>Simpan Draft</button>{' '}
         <button onClick={()=>submit(false)} style={btnPrimary}>Submit untuk Approval</button>{' '}
-        <button onClick={onClose} style={btnSecondary}>Batal</button>
+        <button onClick={onClose} style={btnSecondary}>Cancel</button>
       </div>
     </div>
   );
@@ -480,7 +480,7 @@ function PRDetail({ prId, onClose }) {
               </tbody>
             </table>
             <button onClick={doConvert} style={btnPrimary}>Buat PO</button>{' '}
-            <button onClick={() => setConvertMode(false)} style={btnSecondary}>Batal</button>
+            <button onClick={() => setConvertMode(false)} style={btnSecondary}>Cancel</button>
           </div>
         )}
       </div>
@@ -635,7 +635,7 @@ function GRForm({ po, onDone }) {
   const upd = (idx, k, v) => { const a=[...items]; a[idx]={...a[idx], [k]:v}; setItems(a); };
 
   const submit = async () => {
-    if (!received_by) return alert('Nama penerima wajib diisi');
+    if (!received_by) return alert('Nama penerima required');
     try {
       const result = await api('/gr', { method: 'POST', body: {
         po_id: po.id, received_by, delivery_note,
@@ -681,7 +681,7 @@ function GRForm({ po, onDone }) {
       </table>
       <p style={{ fontSize: 12, color: '#059669' }}>⚠️ Submit GR akan otomatis: (1) update stok di audit_warehouse, (2) update qty received di PO, (3) log ke pos_events.</p>
       <button onClick={submit} style={btnPrimary}>Submit GR</button>{' '}
-      <button onClick={onDone} style={btnSecondary}>Batal</button>
+      <button onClick={onDone} style={btnSecondary}>Cancel</button>
     </div>
   );
 }
@@ -873,8 +873,8 @@ function InvoiceForm({ onClose }) {
         <label style={{gridColumn:'1/-1'}}>Notes <textarea value={f.notes} onChange={e=>setF({...f,notes:e.target.value})} rows={2} /></label>
       </div>
       <div style={{ marginTop: 12 }}>
-        <button onClick={submit} style={btnPrimary}>Simpan</button>{' '}
-        <button onClick={onClose} style={btnSecondary}>Batal</button>
+        <button onClick={submit} style={btnPrimary}>Save</button>{' '}
+        <button onClick={onClose} style={btnSecondary}>Cancel</button>
       </div>
     </div>
   );
@@ -911,7 +911,7 @@ function InvoiceDetail({ invId, onClose }) {
 
         {inv.payments && inv.payments.length > 0 && (
           <>
-            <h4>Riwayat Pembayaran</h4>
+            <h4>Payment History</h4>
             <table style={tableStyle}>
               <thead><tr><th>No. Payment</th><th>Tanggal</th><th>Jumlah</th><th>Metode</th><th>Reference</th><th>Paid by</th></tr></thead>
               <tbody>
@@ -972,7 +972,7 @@ function PaymentForm({ invoice, onDone }) {
       </div>
       <p style={{ fontSize: 12, color: '#92400e' }}>⚠️ Payment akan otomatis tercatat sebagai expense di Finance (COGS - Bahan Baku).</p>
       <button onClick={submit} style={btnPrimary}>Bayar</button>{' '}
-      <button onClick={onDone} style={btnSecondary}>Batal</button>
+      <button onClick={onDone} style={btnSecondary}>Cancel</button>
     </div>
   );
 }

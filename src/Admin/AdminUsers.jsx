@@ -136,17 +136,17 @@ export default function AdminUsers({ apiBase = "" }) {
         </div>
       )}
 
-      {err && <ErrorInline error={err} onRetry={load} label="Daftar pengguna belum dapat dimuat" />}
+      {err && <ErrorInline error={err} onRetry={load} label="Unable to load users" />}
 
       {/* User table */}
       <div style={{ background: CARD_BG, border: BORDER, borderRadius: 12, overflow: "hidden", marginTop: 12 }}>
         <div style={{ padding: "12px 16px", borderBottom: BORDER, fontSize: 11, color: "#94a3b8", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700, display: "grid", gridTemplateColumns: "70px 1fr 1fr 90px 110px 1fr", gap: 10, alignItems: "center" }}>
-          <div>ID</div><div>NAMA</div><div>USERNAME</div><div>ROLE</div><div>STATUS</div><div style={{ textAlign: "right" }}>AKSI</div>
+          <div>ID</div><div>NAME</div><div>USERNAME</div><div>ROLE</div><div>STATUS</div><div style={{ textAlign: "right" }}>ACTIONS</div>
         </div>
         {filtered.length === 0 && (
           <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>👤</div>
-            <div>{filter === "locked" ? "Tidak ada akun terkunci" : filter === "inactive" ? "Tidak ada akun nonaktif" : "Belum ada pengguna"}</div>
+            <div>{filter === "locked" ? "No locked accounts" : filter === "inactive" ? "No inactive accounts" : "No users"}</div>
           </div>
         )}
         {filtered.map(u => (
@@ -234,7 +234,7 @@ function CreateUserModal({ API, token, roles, onClose, onCreated }) {
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20, backdropFilter: "blur(6px)" }}>
       <div onClick={e => e.stopPropagation()} style={{ width: "min(480px, 100%)", background: "rgba(10,15,28,0.96)", border: `1px solid ${PURPLE}55`, borderRadius: 16, padding: 26 }}>
         <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>NEW USER</div>
-        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginTop: 6, marginBottom: 16 }}>➕ Tambah Pengguna Baru</div>
+        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginTop: 6, marginBottom: 16 }}>➕ Tambah New Users</div>
 
         <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>FULL NAME *</div>

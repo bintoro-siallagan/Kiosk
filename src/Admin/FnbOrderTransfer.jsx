@@ -25,7 +25,7 @@ export default function FnbOrderTransfer({ apiBase = "" }) {
     showToast("Transfer diupdate"); setEditing(null); load();
   };
   const remove = async (r) => {
-    const ok = await confirm({ title: "Hapus log transfer?", message: `Transfer order #${r.order_id} dari ${r.from_table || "—"} → ${r.to_table} akan dihapus permanen.`, danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: "Hapus log transfer?", message: `Transfer order #${r.order_id} dari ${r.from_table || "—"} → ${r.to_table} akan dihapus permanen.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     await fetch(`${base}/order-transfers/${r.id}`, { method: "DELETE" });
     showToast("Log transfer dihapus"); load();
@@ -50,9 +50,9 @@ export default function FnbOrderTransfer({ apiBase = "" }) {
       </div>
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
         <div style={{ display: "flex", padding: "8px 14px", borderBottom: `1px solid ${C.border}`, color: C.dim, fontSize: 11, letterSpacing: 1, gap: 10 }}>
-          <span style={{ width: 140 }}>WAKTU</span><span style={{ width: 100 }}>ORDER</span><span style={{ width: 100 }}>DARI</span><span style={{ width: 100 }}>KE</span><span style={{ flex: 1 }}>ALASAN</span><span style={{ width: 120 }}>OLEH</span><span style={{ width: 90 }}>AKSI</span>
+          <span style={{ width: 140 }}>WAKTU</span><span style={{ width: 100 }}>ORDER</span><span style={{ width: 100 }}>DARI</span><span style={{ width: 100 }}>KE</span><span style={{ flex: 1 }}>ALASAN</span><span style={{ width: 120 }}>OLEH</span><span style={{ width: 90 }}>ACTIONS</span>
         </div>
-        {rows.length === 0 ? <div style={{ padding: "30px 18px", textAlign: "center", color: C.sub, fontSize: 13 }}>Belum ada transfer.</div> : rows.map(r => (
+        {rows.length === 0 ? <div style={{ padding: "30px 18px", textAlign: "center", color: C.sub, fontSize: 13 }}>No transfer.</div> : rows.map(r => (
           <div key={r.id} style={{ display: "flex", padding: "8px 14px", borderBottom: `1px solid ${C.border}`, gap: 10, fontSize: 12, alignItems: "center" }}>
             <span style={{ width: 140, fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{fmtTs(r.created_at)}</span>
             <span style={{ width: 100, fontFamily: "'Geist Mono',monospace", color: "#fbbf24" }}>#{r.order_id} {r.order_ref}</span>
@@ -62,7 +62,7 @@ export default function FnbOrderTransfer({ apiBase = "" }) {
             <span style={{ width: 120, color: C.dim }}>{r.transferred_by || "—"}</span>
             <span style={{ width: 90, display: "flex", gap: 4 }}>
               <button onClick={() => setEditing({ ...r })} style={Ba("#f59e0b")} title="Edit">✏️</button>
-              <button onClick={() => remove(r)} style={Ba("#ef4444")} title="Hapus">🗑️</button>
+              <button onClick={() => remove(r)} style={Ba("#ef4444")} title="Delete">🗑️</button>
             </span>
           </div>
         ))}
@@ -86,7 +86,7 @@ export default function FnbOrderTransfer({ apiBase = "" }) {
               <Field label="Catatan"><input value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} style={inp} /></Field>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={B.save}>💾 Simpan</button>
             </div>
           </div>

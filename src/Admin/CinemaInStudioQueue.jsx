@@ -65,7 +65,7 @@ export default function CinemaInStudioQueue({ apiBase = "" }) {
   const rmItem = (i) => setCreating(c => ({ ...c, items: c.items.filter((_, idx) => idx !== i) }));
   const submitCreate = async () => {
     if (!creating) return;
-    if (!creating.seat || !creating.seat.trim()) { setMsg("⚠ Kursi wajib diisi"); return; }
+    if (!creating.seat || !creating.seat.trim()) { setMsg("⚠ Kursi required"); return; }
     if (!creating.items || !creating.items.length) { setMsg("⚠ Tambah minimal 1 item"); return; }
     const sd = studios.find(s => String(s.id) === String(creating.studio_id));
     const body = {
@@ -115,7 +115,7 @@ export default function CinemaInStudioQueue({ apiBase = "" }) {
       {msg && <div style={{ background: msg.startsWith("✓") ? "#10b98115" : "#ef444415", border: `1px solid ${msg.startsWith("✓") ? "#10b98133" : "#ef444433"}`, borderRadius: 8, padding: "8px 12px", color: msg.startsWith("✓") ? "#86efac" : "#fca5a5", fontSize: 12, marginBottom: 12 }}>{msg}</div>}
 
       <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-        {[["active", "Aktif"], ["all", "Semua"], ["delivered", "Diantar"]].map(([id, label]) => (
+        {[["active", "Active"], ["all", "Semua"], ["delivered", "Diantar"]].map(([id, label]) => (
           <button key={id} onClick={() => setFilter(id)}
             style={{ background: filter === id ? "#a855f72a" : "transparent", border: `1px solid ${filter === id ? "#a855f766" : C.border}`, borderRadius: 8, padding: "7px 14px", color: filter === id ? "#fff" : C.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{label}</button>
         ))}
@@ -123,7 +123,7 @@ export default function CinemaInStudioQueue({ apiBase = "" }) {
 
       {orders.length === 0 ? (
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "30px 18px", textAlign: "center", color: C.sub, fontSize: 13 }}>
-          Tidak ada pesanan.
+          None pesanan.
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(320px,1fr))", gap: 12 }}>
@@ -192,7 +192,7 @@ export default function CinemaInStudioQueue({ apiBase = "" }) {
                 </CSField>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <CSField label="Nama Customer"><input style={modalInp} value={creating.buyer_name || ""} onChange={e => setCreating({ ...creating, buyer_name: e.target.value })} /></CSField>
+                <CSField label="Customer Name"><input style={modalInp} value={creating.buyer_name || ""} onChange={e => setCreating({ ...creating, buyer_name: e.target.value })} /></CSField>
                 <CSField label="No. HP"><input style={modalInp} value={creating.buyer_phone || ""} onChange={e => setCreating({ ...creating, buyer_phone: e.target.value })} /></CSField>
               </div>
               <CSField label="Catatan"><input style={modalInp} value={creating.notes || ""} onChange={e => setCreating({ ...creating, notes: e.target.value })} /></CSField>
@@ -209,7 +209,7 @@ export default function CinemaInStudioQueue({ apiBase = "" }) {
                   <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>ITEMS *</div>
                   <button onClick={addItem} disabled={!menu.length} style={{ background: "#a855f71f", border: "1px solid #a855f755", color: "#a855f7", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: menu.length ? "pointer" : "not-allowed", opacity: menu.length ? 1 : 0.5, fontFamily: "inherit" }}>+ Item</button>
                 </div>
-                {(!creating.items || !creating.items.length) && <div style={{ fontSize: 11, color: C.dim, padding: "8px 0" }}>Belum ada item — klik "+ Item" untuk menambah.</div>}
+                {(!creating.items || !creating.items.length) && <div style={{ fontSize: 11, color: C.dim, padding: "8px 0" }}>No item — klik "+ Item" untuk menambah.</div>}
                 {(creating.items || []).map((it, i) => {
                   const m = menu.find(x => String(x.id) === String(it.bundle_id));
                   return (
@@ -226,7 +226,7 @@ export default function CinemaInStudioQueue({ apiBase = "" }) {
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
-              <button onClick={() => setCreating(null)} style={{ background: "transparent", border: "1px solid #30363d", color: "#9da7b3", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={() => setCreating(null)} style={{ background: "transparent", border: "1px solid #30363d", color: "#9da7b3", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
               <button onClick={submitCreate} style={{ background: "#a855f7", border: "none", color: "#fff", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Tambah Order</button>
             </div>
           </div>

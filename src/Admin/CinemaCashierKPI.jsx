@@ -80,7 +80,7 @@ export default function CinemaCashierKPI({ apiBase = "" }) {
           ))}
         </div>
         <select value={outlet} onChange={e => setOutlet(e.target.value)} style={selStyle}>
-          <option value="">Semua Outlet</option>
+          <option value="">All Outlets</option>
           {outlets.map(o => <option key={o.code || o.id} value={o.code || o.name}>{o.name || o.code}</option>)}
         </select>
         <button onClick={load} style={pillBtn(false)}>{loading ? "⏳" : "↻"} Refresh</button>
@@ -121,7 +121,7 @@ export default function CinemaCashierKPI({ apiBase = "" }) {
         {!loading && leaders.length === 0 && (
           <div style={{ padding: 32, textAlign: "center", color: "#64748b" }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>📭</div>
-            <div style={{ fontSize: 13 }}>Belum ada rating untuk periode ini</div>
+            <div style={{ fontSize: 13 }}>No rating untuk periode ini</div>
           </div>
         )}
         {!loading && leaders.map((c, i) => (
@@ -165,7 +165,7 @@ export default function CinemaCashierKPI({ apiBase = "" }) {
               <button onClick={() => setSelected(null)} style={{ width: 36, height: 36, borderRadius: 8, border: BORDER, background: "transparent", color: "#fff", fontSize: 20, cursor: "pointer" }}>×</button>
             </div>
             {detail.length === 0 ? (
-              <div style={{ padding: 32, textAlign: "center", color: "#64748b" }}>Belum ada review</div>
+              <div style={{ padding: 32, textAlign: "center", color: "#64748b" }}>No review</div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {detail.map((r, i) => (

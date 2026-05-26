@@ -105,7 +105,7 @@ export default function AdminCoa({ apiBase = "" }) {
       <div style={S.kpiRow}>
         <Kpi label="Total Akun" v={String(s.total)} c={AC} />
         <Kpi label="Akun Aktif" v={String(s.active)} c="#10b981" />
-        <Kpi label="Nonaktif" v={String(s.inactive)} c={s.inactive > 0 ? "#f59e0b" : "#5b6470"} />
+        <Kpi label="Inactive" v={String(s.inactive)} c={s.inactive > 0 ? "#f59e0b" : "#5b6470"} />
         <Kpi label="Tipe Akun" v={String(s.by_type.length)} c="#a855f7" />
       </div>
 
@@ -168,7 +168,7 @@ export default function AdminCoa({ apiBase = "" }) {
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
               <button onClick={saveEdit} style={S.btn}>💾 Simpan</button>
-              <button onClick={() => setEditing(null)} style={{ background: "#1b212c", border: "1px solid #2a2b30", color: "#9ca3af", padding: "8px 16px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#1b212c", border: "1px solid #2a2b30", color: "#9ca3af", padding: "8px 16px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
             </div>
           </div>
         </div>
@@ -329,7 +329,7 @@ function JournalMapModal({ apiBase, map, accounts, onReload, onClose }) {
           <button onClick={add} style={S.btn}>+ Map</button>
         </div>
         <div style={{ maxHeight: 320, overflowY: "auto" }}>
-          {map.length === 0 ? <div style={{ padding: 20, textAlign: "center", color: "#5b6470", fontSize: 12 }}>Belum ada mapping (sistem pakai default COA_MAP hardcoded).</div> :
+          {map.length === 0 ? <div style={{ padding: 20, textAlign: "center", color: "#5b6470", fontSize: 12 }}>No mapping (sistem pakai default COA_MAP hardcoded).</div> :
             map.map(m => (
               <div key={m.id} style={{ display: "flex", padding: "6px 0", borderTop: "1px solid #1b212c", alignItems: "center", gap: 8, fontSize: 12 }}>
                 <span style={{ flex: 1.5 }}>{m.account_name}</span>

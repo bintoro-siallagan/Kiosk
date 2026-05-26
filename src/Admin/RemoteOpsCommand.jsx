@@ -111,7 +111,7 @@ export default function RemoteOpsCommand({ apiBase = "" }) {
         {filtered.length === 0 && !loading && (
           <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "#64748b" }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>📭</div>
-            <div>Belum ada outlet untuk filter ini</div>
+            <div>No outlet untuk filter ini</div>
           </div>
         )}
       </div>
@@ -257,7 +257,7 @@ function AuditTab({ audit, API }) {
   if (!audit?.submitted) return (
     <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
       <div style={{ fontSize: 36, marginBottom: 8 }}>📋</div>
-      <div>Belum ada audit submission hari ini</div>
+      <div>No audit submission hari ini</div>
       <div style={{ fontSize: 11, marginTop: 6, color: "#475569" }}>Manager outlet wajib submit sebelum jam 10:00</div>
     </div>
   );
@@ -302,7 +302,7 @@ function CctvTab({ cameras }) {
   if (cameras.length === 0) return (
     <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
       <div style={{ fontSize: 36, marginBottom: 8 }}>📹</div>
-      <div>Belum ada kamera ter-config untuk outlet ini</div>
+      <div>No kamera ter-config untuk outlet ini</div>
       <div style={{ fontSize: 11, marginTop: 6, color: "#475569" }}>Tambah via menu Outlet Pins & Cameras</div>
     </div>
   );
@@ -333,7 +333,7 @@ function CctvTab({ cameras }) {
 function KpiTab({ outlet }) {
   const b = outlet.health?.breakdown;
   const m = outlet.health?.metrics;
-  if (!b) return <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>Belum ada data health score</div>;
+  if (!b) return <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>No data yet health score</div>;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%, 200px),1fr))", gap: 12 }}>
       <KpiBlock title="💰 SALES (30%)"   pct={b.sales_pct}    detail={`Today: Rp ${(m?.sales_today || 0).toLocaleString("id-ID")} • 7d avg: Rp ${(m?.sales_7d_avg || 0).toLocaleString("id-ID")}`} />
@@ -359,7 +359,7 @@ function KpiBlock({ title, pct, detail }) {
 }
 
 function VisitsTab({ visits, API }) {
-  if (visits.length === 0) return <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>Belum ada visit log untuk outlet ini</div>;
+  if (visits.length === 0) return <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>No visit log untuk outlet ini</div>;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {visits.map(v => (

@@ -52,7 +52,7 @@ export default function AdminCampaign({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
   const remove = async (item) => {
-    const ok = await confirm({ title: `Hapus "${item.name || '#' + item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: `Hapus "${item.name || '#' + item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Delete" });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/campaign-impact/${item.id}`, { method: "DELETE" });
     const j = await r.json();
@@ -99,7 +99,7 @@ export default function AdminCampaign({ apiBase = "" }) {
           <div style={S.sub}>
             <div style={{ fontSize: 12, fontWeight: 700, color: "#e6edf3", marginBottom: 8 }}>💰 Payday Window (tgl 25–2)</div>
             {im.payday_uplift == null ? (
-              <div style={{ fontSize: 12, color: "#5b6470", padding: "6px 0" }}>Belum ada transaksi di window payday pada rentang data ini — analisis aktif begitu data bertambah.</div>
+              <div style={{ fontSize: 12, color: "#5b6470", padding: "6px 0" }}>No transaksi di window payday pada rentang data ini — analisis aktif begitu data bertambah.</div>
             ) : (
               <>
                 <Row label="Payday" v={`${im.payday.orders_per_day} order/hari`} c="#10b981" />
@@ -167,7 +167,7 @@ export default function AdminCampaign({ apiBase = "" }) {
               {(c.channels || []).map((id, i) => <span key={i} title={(chMap[id] || {}).name}>{(chMap[id] || {}).icon}</span>)}
             </div>
             <button onClick={() => setEditing({ ...c, channels: Array.isArray(c.channels) ? [...c.channels] : [] })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
-            <button onClick={() => remove(c)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+            <button onClick={() => remove(c)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
           </div>
         ))}
       </div>
@@ -206,7 +206,7 @@ export default function AdminCampaign({ apiBase = "" }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

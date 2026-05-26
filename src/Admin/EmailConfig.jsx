@@ -43,12 +43,12 @@ export default function EmailConfig({ apiBase = "" }) {
   const save = async () => {
     setInfo(""); setErr(null);
     // Validation guard — anti-overwrite dengan empty values
-    if (!form.smtpHost?.trim()) { alert("SMTP Host wajib diisi"); return; }
-    if (!form.smtpUser?.trim()) { alert("USERNAME / EMAIL wajib diisi"); return; }
+    if (!form.smtpHost?.trim()) { alert("SMTP Host required"); return; }
+    if (!form.smtpUser?.trim()) { alert("USERNAME / EMAIL required"); return; }
     // Cek apakah password masked (artinya user belum re-type, jadi backend skip)
     const passIsMasked = form.smtpPass && form.smtpPass.includes("•");
     if (!form.smtpPass?.trim() && !passIsMasked) {
-      alert("PASSWORD / API KEY wajib diisi.\n\nUntuk Gmail: generate App Password 16-char dari myaccount.google.com/apppasswords (BUKAN password Gmail biasa).");
+      alert("PASSWORD / API KEY required.\n\nUntuk Gmail: generate App Password 16-char dari myaccount.google.com/apppasswords (BUKAN password Gmail biasa).");
       return;
     }
     setBusy(true);

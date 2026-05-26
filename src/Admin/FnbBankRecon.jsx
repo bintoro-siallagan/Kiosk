@@ -37,7 +37,7 @@ export default function FnbBankRecon({ apiBase = "" }) {
   const importCSV = async () => {
     const parsed = parseCSV();
     if (!parsed) { showToast("Format header CSV invalid (butuh: date, amount, description)", "err"); return; }
-    if (!parsed.length) { showToast("Tidak ada baris valid", "err"); return; }
+    if (!parsed.length) { showToast("None baris valid", "err"); return; }
     const r = await fetch(`${base}/bank-transactions/import`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: parsed, bank_name: bankName }) });
     const d = await r.json(); if (!d.ok) { showToast(d.error, "err"); return; }
     showToast(`${d.imported} transaksi di-import`); setCsvText(""); load();
@@ -58,7 +58,7 @@ export default function FnbBankRecon({ apiBase = "" }) {
     showToast("Transaksi diupdate"); setEditing(null); load();
   };
   const removeTxn = async (t) => {
-    const ok = await confirm({ title: "Hapus transaksi bank?", message: `${t.txn_date} · ${rp(t.amount)} · ${t.description || ""}\n\nTidak bisa dibatalkan.`, danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: "Hapus transaksi bank?", message: `${t.txn_date} · ${rp(t.amount)} · ${t.description || ""}\n\nTidak bisa dibatalkan.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     await fetch(`${base}/bank-transactions/${t.id}`, { method: "DELETE" });
     showToast("Transaksi dihapus"); load();
@@ -95,9 +95,9 @@ export default function FnbBankRecon({ apiBase = "" }) {
       </div>
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
         <div style={{ display: "flex", padding: "8px 14px", borderBottom: `1px solid ${C.border}`, color: C.dim, fontSize: 11, letterSpacing: 1, gap: 10 }}>
-          <span style={{ width: 110 }}>TGL</span><span style={{ flex: 1.6 }}>DESKRIPSI</span><span style={{ width: 110 }}>REF</span><span style={{ width: 110 }}>BANK</span><span style={{ width: 130, textAlign: "right" }}>AMOUNT</span><span style={{ width: 130 }}>SETTLEMENT</span><span style={{ width: 180, textAlign: "right" }}>AKSI</span>
+          <span style={{ width: 110 }}>DATE</span><span style={{ flex: 1.6 }}>DESKRIPSI</span><span style={{ width: 110 }}>REF</span><span style={{ width: 110 }}>BANK</span><span style={{ width: 130, textAlign: "right" }}>AMOUNT</span><span style={{ width: 130 }}>SETTLEMENT</span><span style={{ width: 180, textAlign: "right" }}>ACTIONS</span>
         </div>
-        {rows.length === 0 ? <Empty>Belum ada transaksi.</Empty> : rows.map(t => {
+        {rows.length === 0 ? <Empty>No transaksi.</Empty> : rows.map(t => {
           const matched = !!t.matched_settlement_id;
           return (
             <div key={t.id} style={{ display: "flex", padding: "9px 14px", borderBottom: `1px solid ${C.border}`, gap: 10, alignItems: "center" }}>
@@ -110,7 +110,7 @@ export default function FnbBankRecon({ apiBase = "" }) {
               <span style={{ width: 180, display: "flex", gap: 4, justifyContent: "flex-end" }}>
                 {!matched ? <button onClick={() => match(t)} style={Ba("#10b981")}>Match</button> : <button onClick={() => unmatch(t)} style={Ba("#ef4444")}>Unmatch</button>}
                 <button onClick={() => setEditing({ ...t })} style={Ba("#f59e0b")} title="Edit">✏️</button>
-                <button onClick={() => removeTxn(t)} style={Ba("#ef4444")} title="Hapus">🗑️</button>
+                <button onClick={() => removeTxn(t)} style={Ba("#ef4444")} title="Delete">🗑️</button>
               </span>
             </div>
           );
@@ -132,7 +132,7 @@ export default function FnbBankRecon({ apiBase = "" }) {
             <div style={{ marginTop: 8 }}><div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, marginBottom: 4 }}>REFERENCE NO</div><input value={editing.reference_no || ""} onChange={e => setEditing({ ...editing, reference_no: e.target.value })} style={inp} /></div>
             <div style={{ marginTop: 8 }}><div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, marginBottom: 4 }}>CATATAN</div><input value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} style={inp} /></div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={B.save}>💾 Simpan</button>
             </div>
           </div>

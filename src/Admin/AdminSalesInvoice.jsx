@@ -49,7 +49,7 @@ export default function AdminSalesInvoice({ apiBase = "" }) {
     const ok = await confirm({
       title: "Hapus invoice?", danger: true,
       message: `Hapus invoice ${inv.invoice_no} (${inv.customer_name}, total ${fmtRp(inv.total)})? Tindakan ini tidak bisa dibatalkan.`,
-      okLabel: "Hapus",
+      okLabel: "Delete",
     });
     if (!ok) return;
     fetch(`${apiBase}/api/sales-invoice/${inv.id}`, { method: "DELETE" })
@@ -96,7 +96,7 @@ export default function AdminSalesInvoice({ apiBase = "" }) {
                   {inv.status !== "paid" && <button onClick={() => pay(inv)} style={S.act}>💵 Catat Bayar</button>}
                   <button onClick={() => setOpen(open === inv.id ? null : inv.id)} style={S.btnGhost}>{open === inv.id ? "▲" : "▼ COA"}</button>
                   <button onClick={() => setEditing({ ...inv })} title="Edit" style={S.iconBtn("#f59e0b")}>✏️</button>
-                  <button onClick={() => remove(inv)} title="Hapus" style={S.iconBtn("#ef4444")}>🗑️</button>
+                  <button onClick={() => remove(inv)} title="Delete" style={S.iconBtn("#ef4444")}>🗑️</button>
                 </div>
                 {open === inv.id && (
                   <div style={{ marginTop: 9, background: "#0d1117", border: "1px solid #161b22", borderRadius: 7, padding: "9px 11px" }}>
@@ -149,7 +149,7 @@ export default function AdminSalesInvoice({ apiBase = "" }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

@@ -22,7 +22,7 @@ export default function AdminPriceList({ apiBase = "" }) {
   useEffect(() => { load(); }, [load]);
 
   const save = () => {
-    if (!form.item_name.trim() || !(Number(form.price) > 0)) { setMsg("⚠ Item & harga wajib diisi"); return; }
+    if (!form.item_name.trim() || !(Number(form.price) > 0)) { setMsg("⚠ Item & harga required"); return; }
     const body = { ...form, price: Number(form.price), valid_until: fromDateInput(form.valid_until), updated_by: "Manager" };
     const url = form.id ? `${apiBase}/api/price-list/${form.id}` : `${apiBase}/api/price-list`;
     fetch(url, { method: form.id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
@@ -61,7 +61,7 @@ export default function AdminPriceList({ apiBase = "" }) {
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center" }}>
           <button onClick={save} style={S.btnPrimary}>{form.id ? "Simpan Perubahan" : "+ Tambah ke Price List"}</button>
-          {form.id ? <button onClick={() => { setForm(EMPTY); setMsg(""); }} style={S.btnGhost}>Batal</button> : null}
+          {form.id ? <button onClick={() => { setForm(EMPTY); setMsg(""); }} style={S.btnGhost}>Cancel</button> : null}
           {msg ? <span style={{ fontSize: 12, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</span> : null}
         </div>
       </div>
@@ -98,7 +98,7 @@ export default function AdminPriceList({ apiBase = "" }) {
                 </td>
               </tr>
             ))}
-            {rows.length === 0 ? <tr><td colSpan={8} style={{ ...S.td, color: "#5b6470", textAlign: "center", padding: 20 }}>Belum ada harga</td></tr> : null}
+            {rows.length === 0 ? <tr><td colSpan={8} style={{ ...S.td, color: "#5b6470", textAlign: "center", padding: 20 }}>No harga</td></tr> : null}
           </tbody>
         </table>
       </div>

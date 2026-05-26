@@ -39,7 +39,7 @@ export default function AdminApproval({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
   const remove = async (item) => {
-    const ok = await confirm({ title: `Hapus request "#${item.id}"?`, message: `${item.description || item.category} — ${fmtRp(item.amount)}. Akan dihapus permanen.`, danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: `Hapus request "#${item.id}"?`, message: `${item.description || item.category} — ${fmtRp(item.amount)}. Akan dihapus permanen.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/approval/${item.id}`, { method: "DELETE" });
     const j = await r.json();
@@ -123,7 +123,7 @@ export default function AdminApproval({ apiBase = "" }) {
             <button onClick={() => decide(r.id, "approved")} style={S.btnOk}>✓ Approve</button>
             <button onClick={() => decide(r.id, "rejected")} style={S.btnNo}>✕ Reject</button>
             <button onClick={() => setEditing({ ...r })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
-            <button onClick={() => remove(r)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+            <button onClick={() => remove(r)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
           </div>
         ))}
       </div>
@@ -141,7 +141,7 @@ export default function AdminApproval({ apiBase = "" }) {
               {r.status === "approved" ? "✓ APPROVED" : "✕ REJECTED"}
             </span>
             <button onClick={() => setEditing({ ...r })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
-            <button onClick={() => remove(r)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+            <button onClick={() => remove(r)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
           </div>
         ))}
       </div>
@@ -169,7 +169,7 @@ export default function AdminApproval({ apiBase = "" }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

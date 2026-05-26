@@ -211,7 +211,7 @@ export default function AdminCashierKPI({ apiBase = "" }) {
       <div style={S.card}>
         <div style={S.label}>📡 Rating per Sales Channel</div>
         {bySource.length === 0 ? (
-          <div style={{ color: "#555", padding: 8, fontSize: 13 }}>Belum ada feedback di periode ini</div>
+          <div style={{ color: "#555", padding: 8, fontSize: 13 }}>No feedback di periode ini</div>
         ) : (
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             {bySource.map(s => {
@@ -239,7 +239,7 @@ export default function AdminCashierKPI({ apiBase = "" }) {
       <div style={S.card}>
         <div style={S.label}>🏆 Peringkat Kasir — KPI digerakin rating customer</div>
         {loading ? <div style={{ color: "#555", padding: 12 }}>Loading...</div> :
-          cashiers.length === 0 ? <div style={{ color: "#555", padding: 12 }}>Belum ada data kasir di periode ini</div> :
+          cashiers.length === 0 ? <div style={{ color: "#555", padding: 12 }}>No data yet kasir di periode ini</div> :
             cashiers.map((c, i) => (
               <div key={c.cashier} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderBottom: "1px solid #0f1629" }}>
                 <div style={{ fontSize: 18, fontWeight: 800, color: "#555", width: 30, fontFamily: "'Geist Mono',monospace" }}>#{i + 1}</div>

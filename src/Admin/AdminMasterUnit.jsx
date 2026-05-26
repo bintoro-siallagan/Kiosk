@@ -47,9 +47,9 @@ export default function AdminMasterUnit({ apiBase = "" }) {
 
       <div style={S.kpiRow}>
         <Kpi label="Total Satuan" v={String(s.total)} c={AC} />
-        <Kpi label="Aktif" v={String(s.active)} c="#10b981" />
+        <Kpi label="Active" v={String(s.active)} c="#10b981" />
         <Kpi label="Kategori" v={String(s.by_category.length)} c="#a855f7" />
-        <Kpi label="Nonaktif" v={String(s.total - s.active)} c={s.total - s.active > 0 ? "#f59e0b" : "#5b6470"} />
+        <Kpi label="Inactive" v={String(s.total - s.active)} c={s.total - s.active > 0 ? "#f59e0b" : "#5b6470"} />
       </div>
 
       <div style={{ ...S.card, marginTop: 14 }}>

@@ -60,7 +60,7 @@ export default function OptimizationCenter({ apiBase }) {
           </div>
           {anomalies.length === 0 ? (
             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "22px 18px", textAlign: "center", color: C.sub, fontSize: 13, marginBottom: 22 }}>
-              ✅ Tidak ada anomali — semua hari dalam rentang normal (±2σ).
+              ✅ None anomali — semua hari dalam rentang normal (±2σ).
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 22 }}>
@@ -90,7 +90,7 @@ export default function OptimizationCenter({ apiBase }) {
             BENCHMARK OUTLET <span style={{ color: C.dim }}>· rata-rata {rp(avg)}</span>
           </div>
           <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "6px 14px" }}>
-            {ranked.length === 0 ? <div style={{ color: C.sub, fontSize: 13, padding: "16px 0" }}>Belum ada data outlet.</div> : ranked.map((o, i) => (
+            {ranked.length === 0 ? <div style={{ color: C.sub, fontSize: 13, padding: "16px 0" }}>No data yet outlet.</div> : ranked.map((o, i) => (
               <div key={o.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 0", borderBottom: i < ranked.length - 1 ? `1px solid ${C.border}` : "none" }}>
                 <div style={{ width: 22, fontFamily: "'Geist Mono',monospace", fontSize: 12, color: C.dim }}>#{i + 1}</div>
                 <div style={{ width: 130, flexShrink: 0, fontSize: 12.5, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.name}</div>

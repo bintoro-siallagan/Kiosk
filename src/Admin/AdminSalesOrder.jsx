@@ -8,7 +8,7 @@ const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#6d28d9";
 const CT_C = { "Antar PT": "#3b82f6", "Lintas Brand": "#a855f7", Korporat: "#0d9488", Franchise: "#fbbf24" };
 const STAT = { draft: { c: "#f59e0b", l: "DRAFT" }, confirmed: { c: "#3b82f6", l: "CONFIRMED" }, fulfilled: { c: "#0d9488", l: "FULFILLED" }, invoiced: { c: "#10b981", l: "INVOICED" } };
-const NEXT = { draft: "Konfirmasi", confirmed: "Fulfill", fulfilled: "Buat Invoice" };
+const NEXT = { draft: "Confirm", confirmed: "Fulfill", fulfilled: "Buat Invoice" };
 
 export default function AdminSalesOrder({ apiBase = "" }) {
   const { confirm } = useUiKit();
@@ -62,7 +62,7 @@ export default function AdminSalesOrder({ apiBase = "" }) {
     const ok = await confirm({
       title: "Hapus Sales Order?", danger: true,
       message: `Hapus ${o.so_number} (${o.customer_name}, ${fmtRp(o.total)})? Tindakan ini tidak bisa dibatalkan.`,
-      okLabel: "Hapus",
+      okLabel: "Delete",
     });
     if (!ok) return;
     fetch(`${apiBase}/api/sales-order/${o.id}`, { method: "DELETE" })
@@ -133,7 +133,7 @@ export default function AdminSalesOrder({ apiBase = "" }) {
                   {NEXT[o.status] && <button onClick={() => advance(o)} style={S.act}>{NEXT[o.status]}</button>}
                   <button onClick={() => setOpen(open === o.id ? null : o.id)} style={S.btnGhost}>{open === o.id ? "▲" : "▼ COA"}</button>
                   <button onClick={() => setEditing({ ...o })} title="Edit" style={S.iconBtn("#f59e0b")}>✏️</button>
-                  <button onClick={() => remove(o)} title="Hapus" style={S.iconBtn("#ef4444")}>🗑️</button>
+                  <button onClick={() => remove(o)} title="Delete" style={S.iconBtn("#ef4444")}>🗑️</button>
                 </div>
                 {open === o.id && (
                   <div style={{ marginTop: 9, background: "#0d1117", border: "1px solid #161b22", borderRadius: 7, padding: "9px 11px" }}>
@@ -188,7 +188,7 @@ export default function AdminSalesOrder({ apiBase = "" }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

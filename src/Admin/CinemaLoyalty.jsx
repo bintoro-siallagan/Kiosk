@@ -154,7 +154,7 @@ export default function CinemaLoyalty({ apiBase = "" }) {
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
             <button onClick={register} style={B.save}>Daftarkan</button>
-            <button onClick={() => setForm({})} style={B.cancel}>Batal</button>
+            <button onClick={() => setForm({})} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}

@@ -102,7 +102,7 @@ export default function TableStatusManager() {
         <div style={{ padding: 40, textAlign: "center", color: "#5b6470" }}>Memuat meja…</div>
       ) : tables.length === 0 ? (
         <div style={{ padding: 40, textAlign: "center", color: "#5b6470" }}>
-          Belum ada meja terdaftar. Tambah meja di tab QR Meja.
+          No meja terdaftar. Tambah meja di tab QR Meja.
         </div>
       ) : (
         Object.keys(zones).sort().map(z => (

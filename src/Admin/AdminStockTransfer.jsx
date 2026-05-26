@@ -43,7 +43,7 @@ export default function AdminStockTransfer({ apiBase = "" }) {
   };
 
   const remove = async (t) => {
-    const ok = await confirm({ title: "Hapus transfer?", message: `Hapus ${t.transfer_no}? Tindakan ini tidak dapat dibatalkan.`, danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: "Hapus transfer?", message: `Hapus ${t.transfer_no}? This action tidak dapat dibatalkan.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     fetch(`${apiBase}/api/stock-transfer/${t.id}`, { method: "DELETE" })
       .then(r => r.json()).then(j => {
@@ -90,7 +90,7 @@ export default function AdminStockTransfer({ apiBase = "" }) {
                   {t.status === "requested" && <button onClick={() => act(t, "send", `✓ ${t.transfer_no} dikirim`)} style={S.btn("#3b82f6")}>📤 Kirim</button>}
                   {t.status === "in_transit" && <button onClick={() => act(t, "receive", `✓ ${t.transfer_no} diterima`)} style={S.btn("#10b981")}>📥 Terima</button>}
                   <button onClick={() => setEditing({ ...t })} title="Edit" style={S.btnEdit}>✏️</button>
-                  <button onClick={() => remove(t)} title="Hapus" style={S.btnDel}>🗑️</button>
+                  <button onClick={() => remove(t)} title="Delete" style={S.btnDel}>🗑️</button>
                 </div>
                 <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {t.items.map((it, i) => (
@@ -142,7 +142,7 @@ export default function AdminStockTransfer({ apiBase = "" }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

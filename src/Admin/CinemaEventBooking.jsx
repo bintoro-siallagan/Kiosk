@@ -122,7 +122,7 @@ export default function CinemaEventBooking({ apiBase = "" }) {
             <Field label="Jumlah tamu"><input type="number" value={form.attendees || 0} onChange={e => setForm({ ...form, attendees: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
             <Field label="Tanggal"><input type="date" value={form.event_date || ""} onChange={e => setForm({ ...form, event_date: e.target.value })} style={inp} /></Field>
             <Field label="Mulai"><input type="time" value={form.start_time || ""} onChange={e => setForm({ ...form, start_time: e.target.value })} style={inp} /></Field>
-            <Field label="Selesai"><input type="time" value={form.end_time || ""} onChange={e => setForm({ ...form, end_time: e.target.value })} style={inp} /></Field>
+            <Field label="Completed"><input type="time" value={form.end_time || ""} onChange={e => setForm({ ...form, end_time: e.target.value })} style={inp} /></Field>
             <Field label="Kontak person"><input value={form.contact_name || ""} onChange={e => setForm({ ...form, contact_name: e.target.value })} style={inp} /></Field>
             <Field label="Telepon"><input value={form.contact_phone || ""} onChange={e => setForm({ ...form, contact_phone: e.target.value })} style={inp} /></Field>
             <Field label="Email"><input value={form.contact_email || ""} onChange={e => setForm({ ...form, contact_email: e.target.value })} style={inp} /></Field>
@@ -131,15 +131,15 @@ export default function CinemaEventBooking({ apiBase = "" }) {
             <Field label="Catatan"><input value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} style={inp} /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat booking" : "Simpan"}</button>
-            <button onClick={cancel} style={B.cancel}>Batal</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Buat booking" : "Save"}</button>
+            <button onClick={cancel} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}
 
       {rows.length === 0 ? (
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "30px 18px", textAlign: "center", color: C.sub, fontSize: 13 }}>
-          Tidak ada booking di filter ini.
+          None booking di filter ini.
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(380px,1fr))", gap: 12 }}>
@@ -171,7 +171,7 @@ export default function CinemaEventBooking({ apiBase = "" }) {
                   {r.status === "pending" && <button onClick={() => setStatus(r, "confirmed")} style={Bact("#10b981")}>✓ Confirm</button>}
                   {r.status === "confirmed" && <button onClick={() => setStatus(r, "completed")} style={Bact("#6b7280")}>✓ Done</button>}
                   <button onClick={() => startEdit(r)} style={Bact("#a855f7")}>Edit</button>
-                  {r.status !== "cancelled" && <button onClick={() => setStatus(r, "cancelled")} style={Bact("#ef4444")}>Batal</button>}
+                  {r.status !== "cancelled" && <button onClick={() => setStatus(r, "cancelled")} style={Bact("#ef4444")}>Cancel</button>}
                   <button onClick={() => remove(r)} style={Bact("#ef4444")}>×</button>
                 </div>
               </div>

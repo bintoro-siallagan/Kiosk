@@ -57,7 +57,7 @@ export default function AdminStockOpname({ apiBase = "" }) {
   };
 
   const remove = async (sess) => {
-    const ok = await confirm({ title: "Hapus sesi opname?", message: `Hapus ${sess.opname_no}? Tindakan ini tidak dapat dibatalkan.`, danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: "Hapus sesi opname?", message: `Hapus ${sess.opname_no}? This action tidak dapat dibatalkan.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     fetch(`${apiBase}/api/stock-opname/${sess.id}`, { method: "DELETE" })
       .then(r => r.json()).then(j => {
@@ -82,7 +82,7 @@ export default function AdminStockOpname({ apiBase = "" }) {
       <div style={S.kpiRow}>
         <Kpi label="Total Sesi" v={String(s.total)} c={AC} />
         <Kpi label="Sedang Berjalan" v={String(s.in_progress)} c={s.in_progress > 0 ? "#f59e0b" : "#10b981"} />
-        <Kpi label="Selesai" v={String(s.completed)} c="#10b981" />
+        <Kpi label="Completed" v={String(s.completed)} c="#10b981" />
         <Kpi label="Selisih Terakhir" v={fmtRp(s.last_variance)} c={s.last_variance === 0 ? "#10b981" : "#ef4444"} />
       </div>
 
@@ -108,7 +108,7 @@ export default function AdminStockOpname({ apiBase = "" }) {
                 Selisih nilai: <b style={{ color: sel.variance_value === 0 ? "#10b981" : "#ef4444" }}>{fmtRp(sel.variance_value)}</b>
               </span>
               <button onClick={() => setEditing({ ...sel })} title="Edit" style={S.btnEdit}>✏️</button>
-              <button onClick={() => remove(sel)} title="Hapus" style={S.btnDel}>🗑️</button>
+              <button onClick={() => remove(sel)} title="Delete" style={S.btnDel}>🗑️</button>
             </span>
           </div>
           <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
@@ -170,7 +170,7 @@ export default function AdminStockOpname({ apiBase = "" }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

@@ -32,7 +32,7 @@ export default function CinemaBundles({ apiBase = "" }) {
   const cancel = () => { setEditing(null); setForm(empty); };
 
   async function save() {
-    if (!form.name?.trim()) { showToast("Nama wajib diisi", "err"); return; }
+    if (!form.name?.trim()) { showToast("Nama required", "err"); return; }
     try {
       if (editing === "new") {
         const r = await fetch(`${base}/bundles`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
@@ -142,7 +142,7 @@ export default function CinemaBundles({ apiBase = "" }) {
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
             <button onClick={save} style={B.save}>{editing === "new" ? "Buat bundle" : "Simpan perubahan"}</button>
-            <button onClick={cancel} style={B.cancel}>Batal</button>
+            <button onClick={cancel} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}
@@ -150,15 +150,15 @@ export default function CinemaBundles({ apiBase = "" }) {
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
         <div style={{ ...row, color: C.dim, fontSize: 11, letterSpacing: 1, padding: "10px 14px", borderBottom: `1px solid ${C.border}` }}>
           <span style={{ width: 50 }}>#</span>
-          <span style={{ flex: 1.4 }}>NAMA</span>
+          <span style={{ flex: 1.4 }}>NAME</span>
           <span style={{ flex: 1.6 }}>DESKRIPSI</span>
           <span style={{ width: 110, textAlign: "right" }}>HARGA</span>
           <span style={{ width: 70 }}>STATUS</span>
           <span style={{ width: 60, textAlign: "right" }}>URUT</span>
-          <span style={{ width: 150, textAlign: "right" }}>AKSI</span>
+          <span style={{ width: 150, textAlign: "right" }}>ACTIONS</span>
         </div>
         {rows.length === 0 ? (
-          <div style={{ padding: "22px 14px", textAlign: "center", color: C.sub, fontSize: 13 }}>Belum ada bundle. Klik "Bundle baru" untuk membuat.</div>
+          <div style={{ padding: "22px 14px", textAlign: "center", color: C.sub, fontSize: 13 }}>No bundle. Klik "Bundle baru" untuk membuat.</div>
         ) : rows.map(b => (
           <div key={b.id} style={{ ...row, padding: "12px 14px", borderBottom: `1px solid ${C.border}` }}>
             <span style={{ width: 50, fontFamily: "'Geist Mono',monospace", fontSize: 12, color: C.dim }}>{b.id}</span>

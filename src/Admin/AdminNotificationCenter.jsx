@@ -39,7 +39,7 @@ export default function AdminNotificationCenter({ apiBase = "" }) {
     const ok = await confirm({
       title: `Hapus "${item.title || '#' + item.key}"?`,
       message: "Notifikasi akan dihapus permanen. Tidak bisa dibatalkan.",
-      danger: true, okLabel: "Hapus",
+      danger: true, okLabel: "Delete",
     });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/notification-center/${encodeURIComponent(item.key)}`, { method: "DELETE" });
@@ -80,7 +80,7 @@ export default function AdminNotificationCenter({ apiBase = "" }) {
         <div style={S.kicker}>🔔 ALERT FEED — {list.length}</div>
         {msg ? <div style={{ fontSize: 12, margin: "8px 2px 0", color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
         {list.length === 0 ? (
-          <div style={{ fontSize: 13, color: "#10b981", padding: "14px 0", textAlign: "center" }}>✓ Tidak ada alert. Semua terkendali.</div>
+          <div style={{ fontSize: 13, color: "#10b981", padding: "14px 0", textAlign: "center" }}>✓ None alert. Semua terkendali.</div>
         ) : list.map(n => {
           const pri = PRI[n.priority] || PRI.low;
           return (
@@ -94,7 +94,7 @@ export default function AdminNotificationCenter({ apiBase = "" }) {
               <span style={{ fontSize: 9, fontWeight: 700, color: pri.c, background: pri.c + "1f", border: `1px solid ${pri.c}55`, borderRadius: 5, padding: "2px 8px", fontFamily: "'Geist Mono',monospace" }}>{pri.l}</span>
               <button onClick={() => dismiss(n)} style={S.btn}>✓ Selesai</button>
               <button onClick={() => setEditing({ ...n })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
-              <button onClick={() => remove(n)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+              <button onClick={() => remove(n)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
             </div>
           );
         })}
@@ -126,7 +126,7 @@ export default function AdminNotificationCenter({ apiBase = "" }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Tandai Dismissed</button>
             </div>
           </div>

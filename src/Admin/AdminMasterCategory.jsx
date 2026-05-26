@@ -43,7 +43,7 @@ export default function AdminMasterCategory({ apiBase = "" }) {
     const ok = await confirm({
       title: `Hapus ${isSub ? "sub-kategori" : "kategori"} "${c.name}"?`,
       message: isSub ? "Sub-kategori akan dihapus permanen." : (childCount > 0 ? `Kategori ini punya ${childCount} sub-kategori — SEMUA akan ikut terhapus.` : "Kategori akan dihapus permanen."),
-      danger: true, okLabel: "Hapus",
+      danger: true, okLabel: "Delete",
     });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/master-category/${c.id}`, { method: "DELETE" });
@@ -67,7 +67,7 @@ export default function AdminMasterCategory({ apiBase = "" }) {
         <Kpi label="Kategori" v={String(s.total_categories)} c={AC} />
         <Kpi label="Sub-Kategori" v={String(s.total_subcategories)} c="#3b82f6" />
         <Kpi label="Ter-mapping COA" v={`${s.coa_mapped}/${s.total_categories}`} c="#10b981" />
-        <Kpi label="Aktif" v={String(s.active)} c="#a855f7" />
+        <Kpi label="Active" v={String(s.active)} c="#a855f7" />
       </div>
 
       <div style={{ ...S.card, marginTop: 14 }}>
@@ -105,7 +105,7 @@ export default function AdminMasterCategory({ apiBase = "" }) {
                 <span style={{ fontSize: 10, color: "#f59e0b", fontFamily: "'Geist Mono',monospace" }}>📉 {c.cogs_account}</span>
                 <button onClick={() => toggle(c)} style={S.tog(c.is_active)}>{c.is_active ? "● AKTIF" : "○ OFF"}</button>
                 <button onClick={() => setEditing({ ...c })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
-                <button onClick={() => remove(c)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+                <button onClick={() => remove(c)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
               </div>
               <div style={{ fontSize: 10, color: "#5b6470", marginTop: 2 }}>{c.sales_account_name} · {c.cogs_account_name}</div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
@@ -129,7 +129,7 @@ export default function AdminMasterCategory({ apiBase = "" }) {
           <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 480, width: "100%" }}>
             <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit {editing._isSub ? "Sub-Kategori" : "Kategori"} — {editing.code}</div>
             <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>NAMA</div>
+              <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>NAME</div>
               <input value={editing.name || ""} onChange={e => setEditing({ ...editing, name: e.target.value })} style={S.input} />
             </div>
             {!editing._isSub && (
@@ -150,7 +150,7 @@ export default function AdminMasterCategory({ apiBase = "" }) {
               </>
             )}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={S.btn}>💾 Simpan</button>
             </div>
           </div>

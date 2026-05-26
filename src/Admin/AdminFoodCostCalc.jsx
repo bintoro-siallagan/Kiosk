@@ -54,7 +54,7 @@ export default function AdminFoodCostCalc({ apiBase = "" }) {
     const ok = await confirm({
       title: `Hapus "${item.product_name}"?`,
       message: "Kalkulasi food cost akan dihapus permanen. Tidak bisa dibatalkan.",
-      danger: true, okLabel: "Hapus",
+      danger: true, okLabel: "Delete",
     });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/food-cost-calc/${item.id}`, { method: "DELETE" });
@@ -96,7 +96,7 @@ export default function AdminFoodCostCalc({ apiBase = "" }) {
             <button onClick={addRow} style={S.btnGhost}>+ Bahan</button>
           </div>
           <div style={{ marginTop: 10 }}>
-            {rows.length === 0 ? <div style={{ fontSize: 12, color: "#5b6470" }}>Belum ada bahan.</div> : rows.map((r, i) => (
+            {rows.length === 0 ? <div style={{ fontSize: 12, color: "#5b6470" }}>No bahan.</div> : rows.map((r, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, padding: "4px 0", borderTop: "1px solid #161b22" }}>
                 <span style={{ flex: 1, color: "#e6edf3" }}>{r.name} <span style={{ color: "#5b6470" }}>· {r.qty} {r.unit}</span></span>
                 <span style={{ fontFamily: "'Geist Mono',monospace", color: "#9da7b3" }}>{fmtRp(r.unit_cost * r.qty)}</span>
@@ -152,7 +152,7 @@ export default function AdminFoodCostCalc({ apiBase = "" }) {
                 <td style={{ ...S.td, ...S.mono, fontWeight: 700, color: c.margin_pct >= 60 ? "#10b981" : "#f59e0b" }}>{c.margin_pct}%</td>
                 <td style={S.td}>
                   <button onClick={() => setEditing({ ...c })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
-                  <button onClick={() => remove(c)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, marginLeft: 4 }}>🗑️</button>
+                  <button onClick={() => remove(c)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, marginLeft: 4 }}>🗑️</button>
                 </td>
               </tr>
             ))}
@@ -177,7 +177,7 @@ export default function AdminFoodCostCalc({ apiBase = "" }) {
               <div style={{ fontSize: 11, color: "#5b6470", padding: "6px 0" }}>Bahan: {editing.ingredients ? (Array.isArray(editing.ingredients) ? editing.ingredients.length : 0) : 0} item · margin akan dihitung ulang otomatis</div>
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
-              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #21262d", color: "#9da7b3", padding: "8px 14px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #21262d", color: "#9da7b3", padding: "8px 14px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: AC, border: "none", color: "#fff", padding: "8px 16px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>💾 Simpan</button>
             </div>
           </div>

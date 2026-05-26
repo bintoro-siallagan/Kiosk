@@ -126,7 +126,7 @@ function IncidentsLog({ base, setMsg }) {
         <div style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 10, padding: 30, textAlign: "center" }}>
           <div style={{ fontSize: 48, marginBottom: 8 }}>✅</div>
           <div style={{ fontSize: 14, fontWeight: 800, color: "#10b981" }}>All Clear</div>
-          <div style={{ fontSize: 12, color: C.sub, marginTop: 4 }}>Tidak ada incident {onlyOpen ? "open" : ""} saat ini</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 4 }}>None incident {onlyOpen ? "open" : ""} saat ini</div>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -583,7 +583,7 @@ function ConflictSection({ title, items, render }) {
     <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
       <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 10 }}>{title} <span style={{ color: C.dim, fontFamily: "'Geist Mono',monospace" }}>({items.length})</span></div>
       <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 320, overflowY: "auto" }}>
-        {items.length === 0 ? <div style={{ fontSize: 11, color: C.dim, padding: 10, textAlign: "center" }}>Tidak ada</div> :
+        {items.length === 0 ? <div style={{ fontSize: 11, color: C.dim, padding: 10, textAlign: "center" }}>None</div> :
           items.map((it, i) => (
             <div key={i} style={{ fontSize: 11, padding: "6px 10px", background: "rgba(255,255,255,0.02)", borderRadius: 6, color: "#cbd5e1" }}>
               {render(it)}

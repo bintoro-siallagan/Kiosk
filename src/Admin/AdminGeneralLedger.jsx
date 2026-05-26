@@ -33,7 +33,7 @@ export default function AdminGeneralLedger({ apiBase = "" }) {
     const ok = await confirm({
       title: `Hapus jurnal "${m.ref}"?`,
       message: "⚠️ Audit-sensitive: hanya jurnal <24 jam (anggap draft) yang bisa dihapus. Jika sudah ter-posting, buat jurnal koreksi/balik.",
-      danger: true, okLabel: "Hapus",
+      danger: true, okLabel: "Delete",
     });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/general-ledger/memorial/${m.id}`, { method: "DELETE" });
@@ -151,7 +151,7 @@ export default function AdminGeneralLedger({ apiBase = "" }) {
               </label>
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
-              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #21262d", color: "#9da7b3", padding: "8px 14px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #21262d", color: "#9da7b3", padding: "8px 14px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: AC, border: "none", color: "#fff", padding: "8px 16px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>💾 Simpan</button>
             </div>
           </div>

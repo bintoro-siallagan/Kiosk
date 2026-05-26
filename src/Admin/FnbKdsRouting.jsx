@@ -22,7 +22,7 @@ export default function FnbKdsRouting({ apiBase = "" }) {
     showToast("Station disimpan"); setEditing(null); setForm(empty); load();
   };
   const { confirm } = useUiKit();
-  const remove = async (r) => { if (!(await confirm({ title: `Hapus station "${r.name}"?`, message: "Order yang ke station ini akan kembali ke routing default.", danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/kds-stations/${r.id}`, { method: "DELETE" }); load(); };
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus station "${r.name}"?`, message: "Order yang ke station ini akan kembali ke routing default.", danger: true, okLabel: "Delete" }))) return; await fetch(`${base}/kds-stations/${r.id}`, { method: "DELETE" }); load(); };
   const testRoute = async () => {
     const r = await fetch(`${base}/kds-route?category=${encodeURIComponent(testCat)}`).then(r => r.json());
     setTestResult(r);
@@ -59,8 +59,8 @@ export default function FnbKdsRouting({ apiBase = "" }) {
             <Field label="Urut"><input type="number" value={form.sort_order} onChange={e => setForm({ ...form, sort_order: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Simpan"}</button>
-            <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Batal</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Cancel</button>
             <label style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto", fontSize: 13 }}>
               <input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Aktif
             </label>

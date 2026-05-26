@@ -49,7 +49,7 @@ function QueueTab({ base, showToast }) {
           <button key={v} onClick={() => setFilter(v)} style={{ background: filter === v ? "#a855f72a" : "transparent", border: `1px solid ${filter === v ? "#a855f766" : C.border}`, borderRadius: 8, padding: "7px 14px", color: filter === v ? "#fff" : C.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{l}</button>
         ))}
       </div>
-      {rows.length === 0 ? <Empty>Tidak ada delivery.</Empty> :
+      {rows.length === 0 ? <Empty>None delivery.</Empty> :
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(360px,1fr))", gap: 12 }}>
           {rows.map(r => {
             const st = DEL_STATUS[r.status] || DEL_STATUS.pending;
@@ -105,7 +105,7 @@ function DriversTab({ base, showToast }) {
     showToast("Driver disimpan"); setEditing(null); load();
   };
   const { confirm } = useUiKit();
-  const remove = async (r) => { if (!(await confirm({ title: `Hapus driver "${r.name}"?`, message: "History delivery driver akan tetap tersimpan.", danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/drivers/${r.id}`, { method: "DELETE" }); load(); };
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus driver "${r.name}"?`, message: "History delivery driver akan tetap tersimpan.", danger: true, okLabel: "Delete" }))) return; await fetch(`${base}/drivers/${r.id}`, { method: "DELETE" }); load(); };
   return (
     <>
       <div style={{ marginBottom: 12 }}>{!editing && <button onClick={() => { setEditing("new"); setForm({ name: "", phone: "", vehicle_type: "motor", vehicle_plate: "", status: "available", outlet: "", is_active: 1 }); }} style={B.add}>＋ Driver baru</button>}</div>
@@ -121,16 +121,16 @@ function DriversTab({ base, showToast }) {
             <Field label="Status"><select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} style={inp}>{Object.entries(DRIVER_STATUS).map(([v, s]) => <option key={v} value={v}>{s.label}</option>)}</select></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Simpan"}</button>
-            <button onClick={() => setEditing(null)} style={B.cancel}>Batal</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={() => setEditing(null)} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
         <div style={{ display: "flex", padding: "8px 14px", borderBottom: `1px solid ${C.border}`, color: C.dim, fontSize: 11, letterSpacing: 1, gap: 10 }}>
-          <span style={{ flex: 1.3 }}>NAMA</span><span style={{ width: 130 }}>PHONE</span><span style={{ width: 100 }}>KENDARAAN</span><span style={{ width: 110 }}>PLAT</span><span style={{ width: 110 }}>STATUS</span><span style={{ width: 80 }}>DELIV</span><span style={{ width: 70 }}>RATING</span><span style={{ width: 100, textAlign: "right" }}>AKSI</span>
+          <span style={{ flex: 1.3 }}>NAME</span><span style={{ width: 130 }}>PHONE</span><span style={{ width: 100 }}>KENDARAAN</span><span style={{ width: 110 }}>PLAT</span><span style={{ width: 110 }}>STATUS</span><span style={{ width: 80 }}>DELIV</span><span style={{ width: 70 }}>RATING</span><span style={{ width: 100, textAlign: "right" }}>ACTIONS</span>
         </div>
-        {rows.length === 0 ? <Empty>Belum ada driver.</Empty> : rows.map(r => {
+        {rows.length === 0 ? <Empty>No driver.</Empty> : rows.map(r => {
           const st = DRIVER_STATUS[r.status] || DRIVER_STATUS.off_duty;
           return (
             <div key={r.id} style={{ display: "flex", padding: "10px 14px", borderBottom: `1px solid ${C.border}`, gap: 10, alignItems: "center" }}>
@@ -168,7 +168,7 @@ function ZonesTab({ base, showToast }) {
     showToast("Zone disimpan"); setEditing(null); setForm(empty); load();
   };
   const { confirm } = useUiKit();
-  const remove = async (r) => { if (!(await confirm({ title: `Hapus zone "${r.name}"?`, danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/delivery-zones/${r.id}`, { method: "DELETE" }); load(); };
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus zone "${r.name}"?`, danger: true, okLabel: "Delete" }))) return; await fetch(`${base}/delivery-zones/${r.id}`, { method: "DELETE" }); load(); };
   return (
     <>
       <div style={{ marginBottom: 12 }}>{!editing && <button onClick={() => { setEditing("new"); setForm(empty); }} style={B.add}>＋ Zone baru</button>}</div>
@@ -189,8 +189,8 @@ function ZonesTab({ base, showToast }) {
             <Field label="Keyword area (CSV)" wide><input value={form.area_keywords} onChange={e => setForm({ ...form, area_keywords: e.target.value })} placeholder="paskal,sayati,setiabudi" style={inp} /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Simpan"}</button>
-            <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Batal</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}

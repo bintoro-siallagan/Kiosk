@@ -87,7 +87,7 @@ export default function DepartmentsConfig({ apiBase = "" }) {
             </div>
             <div style={{ marginTop: 10, display: "flex", gap: 6 }}>
               <button onClick={() => setEditing(d)} style={{ flex: 1, padding: "6px", background: "rgba(168,85,247,0.15)", border: `1px solid ${PURPLE}55`, borderRadius: 6, color: PURPLE, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>✏️ Edit</button>
-              <button onClick={() => toggleActive(d)} style={{ flex: 1, padding: "6px", background: d.active ? "rgba(239,68,68,0.1)" : "rgba(16,185,129,0.1)", border: `1px solid ${(d.active ? RED : GREEN)}55`, borderRadius: 6, color: d.active ? RED : GREEN, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{d.active ? "✕ Nonaktifkan" : "✓ Aktifkan"}</button>
+              <button onClick={() => toggleActive(d)} style={{ flex: 1, padding: "6px", background: d.active ? "rgba(239,68,68,0.1)" : "rgba(16,185,129,0.1)", border: `1px solid ${(d.active ? RED : GREEN)}55`, borderRadius: 6, color: d.active ? RED : GREEN, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{d.active ? "✕ Deactivate" : "✓ Activate"}</button>
             </div>
           </div>
         ))}
@@ -184,7 +184,7 @@ function DeptEditModal({ dept, onClose, onSaved, API }) {
         {err && <div style={{ padding: 10, background: "rgba(239,68,68,0.1)", border: `1px solid ${RED}55`, borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 10 }}>⚠ {err}</div>}
 
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+          <button onClick={onClose} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
           <button onClick={submit} disabled={busy} style={{ flex: 2, padding: 12, background: `linear-gradient(135deg,${PURPLE},#7c3aed)`, border: "none", borderRadius: 10, color: "#fff", fontWeight: 800, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>{busy ? "⏳" : "💾 Simpan"}</button>
         </div>
       </div>

@@ -31,7 +31,7 @@ export default function KaryasPlatformView({ apiBase = "" }) {
     fetch(`${apiBase}/api/companies/platform/summary`, { headers: { "x-super-admin": "true" } })
       .then(r => r.ok ? r.json() : r.json().then(d => Promise.reject(d)))
       .then(d => setData(d))
-      .catch(e => setErr(e.error || "Gagal memuat platform summary"))
+      .catch(e => setErr(e.error || "Failed to load platform summary"))
       .finally(() => setLoading(false));
   };
   useEffect(reload, [apiBase]);
@@ -110,14 +110,14 @@ export default function KaryasPlatformView({ apiBase = "" }) {
           <div style={{ background: PALETTE.card, border: `1px solid ${PALETTE.border}`, borderRadius: 14, overflow: "hidden" }}>
             <div style={{ display: "flex", padding: "12px 16px", borderBottom: `1px solid ${PALETTE.border}`, fontSize: 10, letterSpacing: 1.5, color: PALETTE.dim, fontWeight: 800, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase" }}>
               <span style={{ width: 70 }}>CODE</span>
-              <span style={{ flex: 1.4 }}>NAMA</span>
+              <span style={{ flex: 1.4 }}>NAME</span>
               <span style={{ width: 80 }}>VERTICAL</span>
               <span style={{ width: 60, textAlign: "right" }}>OUTLET</span>
               <span style={{ width: 60, textAlign: "right" }}>USER</span>
               <span style={{ width: 130, textAlign: "right" }}>OMZET HARI INI</span>
               <span style={{ width: 130, textAlign: "right" }}>OMZET BULAN INI</span>
               <span style={{ width: 60, textAlign: "right" }}>TX</span>
-              <span style={{ width: 100, textAlign: "right" }}>AKSI</span>
+              <span style={{ width: 100, textAlign: "right" }}>ACTIONS</span>
             </div>
             {(data.companies || []).map(c => (
               <div key={c.id} style={{ display: "flex", alignItems: "center", padding: "12px 16px", borderBottom: `1px solid ${PALETTE.border}` }}>
@@ -192,7 +192,7 @@ export default function KaryasPlatformView({ apiBase = "" }) {
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
               <button onClick={createCompany} style={B.save}>Buat Company</button>
-              <button onClick={() => setCreating(false)} style={B.cancel}>Batal</button>
+              <button onClick={() => setCreating(false)} style={B.cancel}>Cancel</button>
             </div>
           </div>
         </div>

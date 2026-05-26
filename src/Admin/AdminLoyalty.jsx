@@ -58,7 +58,7 @@ export default function AdminLoyalty({ apiBase = '' }) {
 
   const saveTier = async () => {
     const f = tierForm;
-    if (!f.name.trim() || (!editTierCode && !f.code.trim())) { alert('Code & nama tier wajib diisi'); return; }
+    if (!f.name.trim() || (!editTierCode && !f.code.trim())) { alert('Code & nama tier required'); return; }
     const body = {
       name: f.name, emoji: f.emoji, color: f.color,
       min_lifetime_spend: Number(f.min_lifetime_spend) || 0,
@@ -267,7 +267,7 @@ export default function AdminLoyalty({ apiBase = '' }) {
         <div style={{padding: 16}}>
           <div style={{display: 'flex', gap: 8, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap'}}>
             <input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Cari nama / phone / email..."
+              placeholder="Search by name / phone / email..."
               onKeyDown={e => e.key === 'Enter' && loadCustomers()}
               style={{...styles.input, flex: 1, maxWidth: 400}} />
             <button onClick={loadCustomers} style={styles.btnPrimary}>Search</button>
@@ -290,7 +290,7 @@ export default function AdminLoyalty({ apiBase = '' }) {
               <th style={styles.th}></th>
             </tr></thead>
             <tbody>
-              {customers.length === 0 && <tr><td colSpan={8} style={{...styles.td, textAlign: 'center', color: '#6b7280', padding: 30}}>Belum ada customer</td></tr>}
+              {customers.length === 0 && <tr><td colSpan={8} style={{...styles.td, textAlign: 'center', color: '#6b7280', padding: 30}}>No customer</td></tr>}
               {customers.map(c => (
                 <tr key={c.id} style={{borderBottom: '1px solid #2a2a2a', cursor: 'pointer'}} onClick={() => openDrill(c)}>
                   <td style={{...styles.td, fontFamily: 'monospace', fontSize: 12}}>{c.phone}</td>
@@ -512,7 +512,7 @@ function CustomerDrill({ customer, transactions, onClose, apiBase }) {
               </div>
             </div>
           ))}
-          {transactions.length === 0 && <div style={styles.empty}>Belum ada transaksi</div>}
+          {transactions.length === 0 && <div style={styles.empty}>No transaksi</div>}
         </div>
 
         {customer.referral_code && (
@@ -561,7 +561,7 @@ function EditCustomerModal({ customer, apiBase, onSaved, onCancel }) {
           <input value={email} onChange={e => setEmail(e.target.value)} style={styles.input} placeholder="email@contoh.com" />
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={onCancel} style={{ ...styles.btn, flex: 1 }}>Batal</button>
+          <button onClick={onCancel} style={{ ...styles.btn, flex: 1 }}>Cancel</button>
           <button onClick={save} disabled={saving} style={{ ...styles.btnPrimary, flex: 2 }}>
             {saving ? 'Menyimpan…' : '💾 Simpan'}
           </button>
@@ -595,7 +595,7 @@ function AdjustModal({ customer, onSubmit, onCancel }) {
           ⚠️ Adjust manual ke-log dengan severity warning di anomaly events. Pakai sparingly.
         </div>
         <div style={{display: 'flex', gap: 8}}>
-          <button onClick={onCancel} style={{...styles.btn, flex: 1}}>Batal</button>
+          <button onClick={onCancel} style={{...styles.btn, flex: 1}}>Cancel</button>
           <button onClick={() => { if (points && description) onSubmit(customer.id, points, description); }}
             disabled={!points || !description} style={{...styles.btnPrimary, flex: 2}}>Submit</button>
         </div>
@@ -660,7 +660,7 @@ function RewardForm({ reward, tiers, onSave, onCancel }) {
           </div>
         </div>
         <div style={{display: 'flex', gap: 8, marginTop: 12}}>
-          <button onClick={onCancel} style={{...styles.btn, flex: 1}}>Batal</button>
+          <button onClick={onCancel} style={{...styles.btn, flex: 1}}>Cancel</button>
           <button onClick={() => onSave(data)} disabled={!data.name || !data.cost_points} style={{...styles.btnPrimary, flex: 2}}>Save</button>
         </div>
       </div>

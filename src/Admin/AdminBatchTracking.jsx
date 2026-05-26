@@ -105,7 +105,7 @@ export default function AdminBatchTracking({ apiBase = "" }) {
             <div style={{ display: "grid", gap: 10 }}>
               <input value={editing.batch_no || ""} onChange={e => setEditing({ ...editing, batch_no: e.target.value })} placeholder="Batch No" style={modalInp} />
               <input value={editing.sku || ""} onChange={e => setEditing({ ...editing, sku: e.target.value })} placeholder="SKU" style={modalInp} />
-              <input value={editing.item_name || ""} onChange={e => setEditing({ ...editing, item_name: e.target.value })} placeholder="Nama Item" style={modalInp} />
+              <input value={editing.item_name || ""} onChange={e => setEditing({ ...editing, item_name: e.target.value })} placeholder="Item Name" style={modalInp} />
               <input type="number" value={editing.qty ?? ""} onChange={e => setEditing({ ...editing, qty: Number(e.target.value) })} placeholder="Qty" style={modalInp} />
               <input value={editing.unit || ""} onChange={e => setEditing({ ...editing, unit: e.target.value })} placeholder="Unit (kg/liter)" style={modalInp} />
               <input value={editing.location || ""} onChange={e => setEditing({ ...editing, location: e.target.value })} placeholder="Lokasi" style={modalInp} />
@@ -115,7 +115,7 @@ export default function AdminBatchTracking({ apiBase = "" }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

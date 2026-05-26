@@ -54,7 +54,7 @@ export default function AdminSalesStockSync({ apiBase = "" }) {
         <div style={S.card}>
           <div style={S.kicker}>🥣 BAHAN PALING BANYAK DIKONSUMSI</div>
           {d.top_ingredients.length === 0 ? (
-            <div style={{ fontSize: 12, color: "#5b6470", padding: "10px 0" }}>Belum ada konsumsi. Hook menunggu transaksi baru.</div>
+            <div style={{ fontSize: 12, color: "#5b6470", padding: "10px 0" }}>No konsumsi. Hook menunggu transaksi baru.</div>
           ) : d.top_ingredients.map(i => (
             <div key={i.sku} style={{ display: "flex", alignItems: "center", gap: 9, padding: "7px 0" }}>
               <span style={{ width: 110, fontSize: 12, color: "#cdd5df" }}>{i.name}</span>
@@ -70,7 +70,7 @@ export default function AdminSalesStockSync({ apiBase = "" }) {
           <div style={S.kicker}>📜 LOG KONSUMSI STOK — 40 terbaru</div>
           {d.log.length === 0 ? (
             <div style={{ fontSize: 12, color: "#5b6470", padding: "10px 0", lineHeight: 1.6 }}>
-              Belum ada konsumsi tercatat. Begitu ada order POS/Kiosk baru pakai menu ber-resep,
+              No konsumsi tercatat. Begitu ada order POS/Kiosk baru pakai menu ber-resep,
               konsumsi bahan baku langsung muncul di sini & stok gudang berkurang otomatis.
             </div>
           ) : d.log.map(l => (

@@ -26,7 +26,7 @@ export default function FnbHappyHour({ apiBase = "" }) {
     showToast("Happy hour disimpan"); setEditing(null); setForm(empty); load();
   };
   const { confirm } = useUiKit();
-  const remove = async (r) => { if (!(await confirm({ title: `Hapus happy hour "${r.name}"?`, danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/happy-hours/${r.id}`, { method: "DELETE" }); load(); };
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus happy hour "${r.name}"?`, danger: true, okLabel: "Delete" }))) return; await fetch(`${base}/happy-hours/${r.id}`, { method: "DELETE" }); load(); };
   return (
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
@@ -66,22 +66,22 @@ export default function FnbHappyHour({ apiBase = "" }) {
             <Field label="Deskripsi" wide><input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={inp} /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Simpan"}</button>
-            <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Batal</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
         <div style={{ display: "flex", color: C.dim, fontSize: 11, letterSpacing: 1, padding: "8px 14px", borderBottom: `1px solid ${C.border}`, gap: 10 }}>
-          <span style={{ flex: 1.4 }}>NAMA</span>
+          <span style={{ flex: 1.4 }}>NAME</span>
           <span style={{ width: 110 }}>JAM</span>
           <span style={{ width: 130 }}>HARI</span>
           <span style={{ width: 110, textAlign: "right" }}>DISCOUNT</span>
           <span style={{ width: 130 }}>PERIODE</span>
           <span style={{ width: 70 }}>STATUS</span>
-          <span style={{ width: 110, textAlign: "right" }}>AKSI</span>
+          <span style={{ width: 110, textAlign: "right" }}>ACTIONS</span>
         </div>
-        {rows.length === 0 ? <Empty>Belum ada happy hour.</Empty> : rows.map(r => (
+        {rows.length === 0 ? <Empty>No happy hour.</Empty> : rows.map(r => (
           <div key={r.id} style={{ display: "flex", padding: "10px 14px", borderBottom: `1px solid ${C.border}`, gap: 10, alignItems: "center" }}>
             <span style={{ flex: 1.4 }}>
               <div style={{ fontWeight: 700, fontSize: 13 }}>{r.name}</div>

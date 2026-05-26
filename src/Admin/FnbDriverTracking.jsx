@@ -42,7 +42,7 @@ export default function FnbDriverTracking({ apiBase = "" }) {
   };
 
   const del = async (d) => {
-    const ok = await confirm({ title: "Hapus driver?", message: `Driver "${d.name}" akan dihapus permanen. Tidak bisa dibatalkan.`, danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: "Hapus driver?", message: `Driver "${d.name}" akan dihapus permanen. Tidak bisa dibatalkan.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     const res = await fetch(`${base}/drivers/${d.id}`, { method: "DELETE" });
     const j = await res.json();
@@ -89,7 +89,7 @@ export default function FnbDriverTracking({ apiBase = "" }) {
                      style={{ fontSize: 11, color: "#22d3ee", textDecoration: "none", marginTop: 4, display: "inline-block" }}>🗺️ Buka Google Maps →</a>
                 </>
               ) : (
-                <div style={{ color: C.dim }}>📍 Belum ada ping</div>
+                <div style={{ color: C.dim }}>📍 No ping</div>
               )}
             </div>
             <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -101,7 +101,7 @@ export default function FnbDriverTracking({ apiBase = "" }) {
           </div>
         ))}
       </div>
-      {drivers.length === 0 && <EmptyState icon="🚴" title="Belum ada driver aktif" desc="Klik '+ Tambah Driver' untuk mulai." />}
+      {drivers.length === 0 && <EmptyState icon="🚴" title="No driver aktif" desc="Klik '+ Tambah Driver' untuk mulai." />}
 
       {editing && (
         <Modal title={editing.id ? `Edit Driver — ${editing.name}` : "+ Tambah Driver Baru"} onClose={() => setEditing(null)}>
@@ -122,8 +122,8 @@ export default function FnbDriverTracking({ apiBase = "" }) {
             Aktif
           </label>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-            <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
-            <button onClick={save} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>{editing.id ? "Simpan" : "Tambah"}</button>
+            <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
+            <button onClick={save} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>{editing.id ? "Save" : "Tambah"}</button>
           </div>
         </Modal>
       )}

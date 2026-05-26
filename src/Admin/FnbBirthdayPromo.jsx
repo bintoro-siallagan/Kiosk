@@ -26,7 +26,7 @@ export default function FnbBirthdayPromo({ apiBase = "" }) {
     showToast("Campaign disimpan"); setEditing(null); setForm(empty); load();
   };
   const { confirm } = useUiKit();
-  const remove = async (r) => { if (!(await confirm({ title: `Hapus campaign "${r.name}"?`, danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/birthday-campaigns/${r.id}`, { method: "DELETE" }); load(); };
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus campaign "${r.name}"?`, danger: true, okLabel: "Delete" }))) return; await fetch(`${base}/birthday-campaigns/${r.id}`, { method: "DELETE" }); load(); };
   return (
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
@@ -53,8 +53,8 @@ export default function FnbBirthdayPromo({ apiBase = "" }) {
             <Field label="Status"><label style={{ display: "flex", gap: 8, fontSize: 13, alignItems: "center" }}><input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Aktif</label></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Simpan"}</button>
-            <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Batal</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}

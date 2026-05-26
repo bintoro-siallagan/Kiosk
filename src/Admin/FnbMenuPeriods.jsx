@@ -16,14 +16,14 @@ export default function FnbMenuPeriods({ apiBase = "" }) {
   const load = useCallback(async () => { const d = await fetch(`${base}/menu-periods`).then(r => r.json()); setRows(d.periods || []); setCurrent(d.current_period); setTime(d.current_time); }, [base]);
   useEffect(() => { load(); const iv = setInterval(load, 60000); return () => clearInterval(iv); }, [load]);
   const save = async () => {
-    if (!form.name || !form.start_time || !form.end_time) { showToast("Wajib diisi", "err"); return; }
+    if (!form.name || !form.start_time || !form.end_time) { showToast("Required", "err"); return; }
     const url = editing === "new" ? `${base}/menu-periods` : `${base}/menu-periods/${editing}`;
     const r = await fetch(url, { method: editing === "new" ? "POST" : "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
     const d = await r.json(); if (!d.ok) { showToast(d.error, "err"); return; }
     showToast("Period disimpan"); setEditing(null); setForm(empty); load();
   };
   const { confirm } = useUiKit();
-  const remove = async (r) => { if (!(await confirm({ title: `Hapus period "${r.name}"?`, danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/menu-periods/${r.id}`, { method: "DELETE" }); load(); };
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus period "${r.name}"?`, danger: true, okLabel: "Delete" }))) return; await fetch(`${base}/menu-periods/${r.id}`, { method: "DELETE" }); load(); };
   return (
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
@@ -50,15 +50,15 @@ export default function FnbMenuPeriods({ apiBase = "" }) {
             <Field label="Nama"><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Lunch" style={inp} /></Field>
             <Field label="Icon"><input value={form.icon} onChange={e => setForm({ ...form, icon: e.target.value })} placeholder="🍱" style={inp} /></Field>
             <Field label="Mulai"><input type="time" value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} style={inp} /></Field>
-            <Field label="Selesai"><input type="time" value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} style={inp} /></Field>
+            <Field label="Completed"><input type="time" value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} style={inp} /></Field>
             <Field label="Hari berlaku"><input value={form.applicable_days} onChange={e => setForm({ ...form, applicable_days: e.target.value })} placeholder="kosong = semua hari" style={inp} /></Field>
             <Field label="Urutan"><input type="number" value={form.sort_order} onChange={e => setForm({ ...form, sort_order: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
             <Field label="Catatan"><input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} style={inp} /></Field>
             <Field label="Status"><label style={{ display: "flex", gap: 8, fontSize: 13, alignItems: "center" }}><input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Aktif</label></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Simpan"}</button>
-            <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Batal</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}

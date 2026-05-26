@@ -153,7 +153,7 @@ function InsightsTab({ base }) {
   }, [base]);
   useEffect(() => { load(); }, [load]);
   if (loading) return <Empty>Memuat insight…</Empty>;
-  if (!data?.insights?.length) return <Empty>Tidak ada insight signifikan saat ini.</Empty>;
+  if (!data?.insights?.length) return <Empty>None insight signifikan saat ini.</Empty>;
   const COLOR = { good: "#10b981", warn: "#f59e0b", info: "#22d3ee", bad: "#ef4444" };
   const ICON  = { trending_up: "📈", trending_down: "📉", low_occupancy: "⚠️", top_combo: "🏆", peak_band: "🎯" };
   return (

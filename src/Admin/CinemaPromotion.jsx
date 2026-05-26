@@ -157,8 +157,8 @@ export default function CinemaPromotion({ apiBase = "" }) {
             </Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat promo" : "Simpan"}</button>
-            <button onClick={cancel} style={B.cancel}>Batal</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Buat promo" : "Save"}</button>
+            <button onClick={cancel} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}
@@ -166,15 +166,15 @@ export default function CinemaPromotion({ apiBase = "" }) {
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
         <div style={{ display: "flex", color: C.dim, fontSize: 11, letterSpacing: 1, padding: "8px 14px", borderBottom: `1px solid ${C.border}`, gap: 10, alignItems: "center" }}>
           <span style={{ width: 110 }}>KODE</span>
-          <span style={{ flex: 1.4 }}>NAMA</span>
+          <span style={{ flex: 1.4 }}>NAME</span>
           <span style={{ width: 100 }}>TIPE</span>
           <span style={{ width: 120, textAlign: "right" }}>DISCOUNT</span>
           <span style={{ width: 140 }}>PERIODE</span>
           <span style={{ width: 110 }}>REDEMPTION</span>
           <span style={{ width: 60 }}>STATUS</span>
-          <span style={{ width: 130, textAlign: "right" }}>AKSI</span>
+          <span style={{ width: 130, textAlign: "right" }}>ACTIONS</span>
         </div>
-        {rows.length === 0 ? <div style={{ padding: 22, textAlign: "center", color: C.sub, fontSize: 13 }}>Belum ada promo.</div> :
+        {rows.length === 0 ? <div style={{ padding: 22, textAlign: "center", color: C.sub, fontSize: 13 }}>No promo.</div> :
           rows.map(r => (
             <div key={r.id} style={{ display: "flex", padding: "11px 14px", borderBottom: `1px solid ${C.border}`, gap: 10, alignItems: "center" }}>
               <span style={{ width: 110, fontFamily: "'Geist Mono',monospace", color: "#fbbf24", letterSpacing: 1.5, fontSize: 12, fontWeight: 700 }}>

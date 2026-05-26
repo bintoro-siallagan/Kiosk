@@ -107,14 +107,14 @@ function DistributorTab({ base, showToast }) {
             </Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Simpan"}</button>
-            <button onClick={cancel} style={B.cancel}>Batal</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={cancel} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
         <Header cols={["DISTRIBUTOR", "KODE", "VAT", "KONTAK", "STATUS", "AKSI"]} widths={[260, 70, 70, 280, 70, 140]} />
-        {rows.length === 0 ? <Empty>Belum ada distributor.</Empty> :
+        {rows.length === 0 ? <Empty>No distributor.</Empty> :
           rows.map(r => (
             <div key={r.id} style={rowS}>
               <span style={{ width: 260, fontWeight: 700, fontSize: 13 }}>{r.name}</span>
@@ -219,7 +219,7 @@ function LicenseTab({ base, showToast }) {
                 borderRadius: 8, cursor: "pointer", color: C.text, fontFamily: "inherit",
               }}>
               <div style={{ fontSize: 13, fontWeight: 700 }}>{f.title}</div>
-              <div style={{ fontSize: 11, color: C.sub }}>{f.distributor_name ? `🏢 ${f.distributor_name}` : "Belum ada distributor"}</div>
+              <div style={{ fontSize: 11, color: C.sub }}>{f.distributor_name ? `🏢 ${f.distributor_name}` : "No distributor"}</div>
             </button>
           ))}
         </div>
@@ -256,7 +256,7 @@ function LicenseTab({ base, showToast }) {
                 <div style={{ fontSize: 12, color: "#fbbf24", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>TIERED REVENUE SHARE</div>
                 <button onClick={seedStandard} style={B.small("#10b981")}>+ Template Standar (W1 50/50 · W2 60/40 · W3+ 70/30)</button>
               </div>
-              {tiers.length === 0 ? <div style={{ padding: "16px 0", color: C.sub, fontSize: 13, textAlign: "center" }}>Belum ada tier. Klik "+ Template Standar" atau buat manual.</div> :
+              {tiers.length === 0 ? <div style={{ padding: "16px 0", color: C.sub, fontSize: 13, textAlign: "center" }}>No tier. Klik "+ Template Standar" atau buat manual.</div> :
                 <div style={{ marginBottom: 12 }}>
                   <Header cols={["MINGGU", "CINEMA %", "DISTRIBUTOR %", "CATATAN", "AKSI"]} widths={[120, 100, 130, "auto", 70]} />
                   {tiers.map(t => (
@@ -322,7 +322,7 @@ function SettlementTab({ base }) {
       </div>
 
       <Section title="PER DISTRIBUTOR">
-        {!data || data.by_distributor.length === 0 ? <Empty>Tidak ada data.</Empty> : (
+        {!data || data.by_distributor.length === 0 ? <Empty>None data.</Empty> : (
           <>
             <Header cols={["DISTRIBUTOR", "TKT", "NET", "ROYALTI", "CINEMA SHARE"]} widths={[300, 70, 130, 140, 140]} />
             {data.by_distributor.map((r, i) => (
@@ -339,7 +339,7 @@ function SettlementTab({ base }) {
       </Section>
 
       <Section title="PER FILM">
-        {!data || data.by_film.length === 0 ? <Empty>Tidak ada data.</Empty> : (
+        {!data || data.by_film.length === 0 ? <Empty>None data.</Empty> : (
           <>
             <Header cols={["FILM", "DISTRIBUTOR", "TKT", "NET", "ROYALTI", "CINEMA"]} widths={[230, 200, 70, 130, 130, 130]} />
             {data.by_film.map((r, i) => (
@@ -357,7 +357,7 @@ function SettlementTab({ base }) {
       </Section>
 
       <Section title="PER TIER (BREAKDOWN AUDIT / RECON)">
-        {!data || data.by_tier.length === 0 ? <Empty>Tidak ada data.</Empty> : (
+        {!data || data.by_tier.length === 0 ? <Empty>None data.</Empty> : (
           <>
             <Header cols={["FILM × DISTRIBUTOR", "TIER", "TKT", "NET", "ROYALTI", "CINEMA"]} widths={[300, 180, 60, 130, 130, 130]} />
             {data.by_tier.map((r, i) => (

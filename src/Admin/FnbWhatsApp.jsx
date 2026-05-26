@@ -17,7 +17,7 @@ export default function FnbWhatsApp({ apiBase = "" }) {
   const { confirm } = useUiKit();
   const showToast = (m, k = "ok") => { setToast({ m, k }); setTimeout(() => setToast(null), 2200); };
   const removeMsg = async (m) => {
-    const ok = await confirm({ title: "Hapus log pesan?", message: `Pesan ke ${m.recipient_phone} akan dihapus permanen.`, danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: "Hapus log pesan?", message: `Pesan ke ${m.recipient_phone} akan dihapus permanen.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     await fetch(`${base}/wa-messages/${m.id}`, { method: "DELETE" });
     showToast("Pesan dihapus"); load();
@@ -96,7 +96,7 @@ export default function FnbWhatsApp({ apiBase = "" }) {
             <div style={{ display: "flex", padding: "8px 14px", borderBottom: `1px solid ${C.border}`, color: C.dim, fontSize: 11, letterSpacing: 1, gap: 10 }}>
               <span style={{ width: 140 }}>WAKTU</span><span style={{ width: 140 }}>NOMOR</span><span style={{ flex: 1 }}>PESAN</span><span style={{ width: 90 }}>STATUS</span><span style={{ width: 40 }}></span>
             </div>
-            {messages.length === 0 ? <Empty>Belum ada pesan.</Empty> : messages.map(m => {
+            {messages.length === 0 ? <Empty>No pesan.</Empty> : messages.map(m => {
               const st = STATUS[m.status] || STATUS.queued;
               return (
                 <div key={m.id} style={{ display: "flex", padding: "8px 14px", borderBottom: `1px solid ${C.border}`, gap: 10, fontSize: 12, alignItems: "center" }}>
@@ -104,7 +104,7 @@ export default function FnbWhatsApp({ apiBase = "" }) {
                   <span style={{ width: 140, fontFamily: "'Geist Mono',monospace" }}>{m.recipient_phone}{m.recipient_name ? <div style={{ fontSize: 10, color: C.dim }}>{m.recipient_name}</div> : null}</span>
                   <span style={{ flex: 1, color: C.sub, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={m.message}>{m.message}{m.error ? <span style={{ color: "#ef4444", marginLeft: 6 }}> · {m.error}</span> : ""}</span>
                   <span style={{ width: 90 }}><span style={{ background: st.color + "22", color: st.color, padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 700 }}>{st.label}</span></span>
-                  <button onClick={() => removeMsg(m)} style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }} title="Hapus">🗑️</button>
+                  <button onClick={() => removeMsg(m)} style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }} title="Delete">🗑️</button>
                 </div>
               );
             })}

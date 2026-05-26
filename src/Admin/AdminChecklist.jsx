@@ -57,7 +57,7 @@ function Section({ apiBase, type, title, accent }) {
               <input value={editLabel} onChange={e => setEditLabel(e.target.value)}
                 onKeyDown={e => e.key === "Enter" && saveEdit(it.id)} style={{ ...S.input, flex: 1 }} autoFocus />
               <button onClick={() => saveEdit(it.id)} style={S.btn("#34D399")}>💾 Simpan</button>
-              <button onClick={() => setEditId(null)} style={S.btn("#555")}>Batal</button>
+              <button onClick={() => setEditId(null)} style={S.btn("#555")}>Cancel</button>
             </>
           ) : (
             <>
@@ -101,7 +101,7 @@ export default function AdminChecklist({ apiBase = "" }) {
       <div style={S.card}>
         <div style={S.label}>Riwayat Checklist ({subs.length})</div>
         {subs.length === 0 ? (
-          <div style={{ color: "#555", padding: 8, fontSize: 13 }}>Belum ada checklist disubmit</div>
+          <div style={{ color: "#555", padding: 8, fontSize: 13 }}>No checklist disubmit</div>
         ) : subs.map(s => (
           <div key={s.id} style={S.row}>
             <span style={{ ...S.btn(s.type === "opening" ? "#10B981" : "#F59E0B"), padding: "3px 9px", fontSize: 11, cursor: "default" }}>

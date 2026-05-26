@@ -46,7 +46,7 @@ export default function AdminRfq({ apiBase = "" }) {
   };
 
   const remove = async (item) => {
-    const ok = await confirm({ title: `Hapus "${item.item || item.rfq_no || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: `Hapus "${item.item || item.rfq_no || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Delete" });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/rfq/${item.id}`, { method: "DELETE" });
     const j = await r.json();
@@ -113,7 +113,7 @@ export default function AdminRfq({ apiBase = "" }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>
@@ -134,7 +134,7 @@ export default function AdminRfq({ apiBase = "" }) {
                   ? <span style={{ fontSize: 10, fontWeight: 700, color: "#10b981", background: "#10b9811f", border: "1px solid #10b98155", borderRadius: 5, padding: "3px 9px", fontFamily: "'Geist Mono',monospace" }}>✓ AWARD: {r.awarded_vendor}</span>
                   : <button onClick={() => post(`/api/rfq/${r.id}/award`, {}, "✓ RFQ di-award ke penawaran terbaik")} style={S.btn} disabled={!r.best}>🏆 Award Termurah</button>}
                 <button onClick={() => setEditing({ ...r })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
-                <button onClick={() => remove(r)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+                <button onClick={() => remove(r)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
               </div>
               <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 8 }}>
                 <thead><tr style={{ color: "#5b6470", fontSize: 10, textAlign: "left" }}>
@@ -153,7 +153,7 @@ export default function AdminRfq({ apiBase = "" }) {
                       </tr>
                     );
                   })}
-                  {r.quotes.length === 0 && <tr><td colSpan={5} style={{ ...S.td, color: "#5b6470" }}>Belum ada penawaran</td></tr>}
+                  {r.quotes.length === 0 && <tr><td colSpan={5} style={{ ...S.td, color: "#5b6470" }}>No penawaran</td></tr>}
                 </tbody>
               </table>
               {r.status === "open" && (

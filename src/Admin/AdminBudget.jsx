@@ -25,7 +25,7 @@ export default function AdminBudget({ apiBase = "" }) {
   useEffect(() => { load(); }, [load]);
 
   const save = () => {
-    if (!cat || !(Number(amt) > 0)) { setMsg("⚠ Kategori & jumlah wajib diisi"); return; }
+    if (!cat || !(Number(amt) > 0)) { setMsg("⚠ Kategori & jumlah required"); return; }
     fetch(`${apiBase}/api/budget`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ category_id: cat, amount: Number(amt) }),
@@ -84,7 +84,7 @@ export default function AdminBudget({ apiBase = "" }) {
       <div style={{ ...S.card, marginTop: 14 }}>
         <div style={S.kicker}>📊 BUDGET vs REALISASI — {d.budgets.length} KATEGORI</div>
         {d.budgets.length === 0 ? (
-          <div style={{ color: "#5b6470", fontSize: 13, padding: "12px 0" }}>Belum ada budget — set di atas.</div>
+          <div style={{ color: "#5b6470", fontSize: 13, padding: "12px 0" }}>No budget — set di atas.</div>
         ) : d.budgets.map(b => {
           const st = ST[b.status] || ST.ok;
           return (
@@ -132,7 +132,7 @@ export default function AdminBudget({ apiBase = "" }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

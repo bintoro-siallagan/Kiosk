@@ -160,7 +160,7 @@ function Returns() {
     } catch (e) { setMsg(e.message); }
   };
   const remove = async (item) => {
-    const ok = await confirm({ title: `Hapus "${item.doc_no || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: `Hapus "${item.doc_no || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Delete" });
     if (!ok) return;
     try {
       await api(`/returns/${item.id}`, { method: "DELETE" });
@@ -192,7 +192,7 @@ function Returns() {
                 <div style={{ display:'flex', gap:4, justifyContent:'flex-end' }}>
                   {r.status === 'draft' && <button onClick={()=>finalize(r.id)} style={btnPrimary}>Finalize</button>}
                   {r.status === 'draft' && <button onClick={() => setEditing({ ...r })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>}
-                  {r.status !== 'finalized' && <button onClick={() => remove(r)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>}
+                  {r.status !== 'finalized' && <button onClick={() => remove(r)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>}
                 </div>
               </td>
             </tr>
@@ -220,7 +220,7 @@ function Returns() {
               <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>REFUND METHOD</div><input value={editing.refund_method || ""} onChange={e => setEditing({ ...editing, refund_method: e.target.value })} style={modalInp} /></div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>
@@ -314,7 +314,7 @@ function ReturnForm({onClose}) {
 
         <div style={{marginTop:16}}>
           <button onClick={submit} style={btnPrimary}>Simpan Draft</button>{' '}
-          <button onClick={onClose} style={btn}>Batal</button>
+          <button onClick={onClose} style={btn}>Cancel</button>
         </div>
       </div>
     </div>
@@ -363,7 +363,7 @@ function Advances() {
     } catch (e) { setMsg(e.message); }
   };
   const remove = async (item) => {
-    const ok = await confirm({ title: `Hapus "${item.doc_no || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: `Hapus "${item.doc_no || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Delete" });
     if (!ok) return;
     try {
       await api(`/advances/${item.id}`, { method: "DELETE" });
@@ -401,7 +401,7 @@ function Advances() {
                     </>
                   )}
                   {a.status === 'pending' && <button onClick={() => setEditing({ ...a })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>}
-                  {a.status === 'pending' && (a.applied_amount || 0) === 0 && <button onClick={() => remove(a)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>}
+                  {a.status === 'pending' && (a.applied_amount || 0) === 0 && <button onClick={() => remove(a)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>}
                 </div>
               </td>
             </tr>
@@ -427,7 +427,7 @@ function Advances() {
               <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>PO ID</div><input type="number" value={editing.po_id || ""} onChange={e => setEditing({ ...editing, po_id: e.target.value ? Number(e.target.value) : null })} style={modalInp} /></div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>
@@ -470,8 +470,8 @@ function AdvanceForm({suppliers, onClose}) {
           <label style={{gridColumn:'1/-1'}}>Notes <textarea value={f.notes} onChange={update('notes')} rows={2} /></label>
         </div>
         <div style={{marginTop:16}}>
-          <button onClick={submit} style={btnPrimary}>Simpan</button>{' '}
-          <button onClick={onClose} style={btn}>Batal</button>
+          <button onClick={submit} style={btnPrimary}>Save</button>{' '}
+          <button onClick={onClose} style={btn}>Cancel</button>
         </div>
       </div>
     </div>
@@ -552,7 +552,7 @@ function PRSuggest() {
       const r = await api('/pr-suggest/generate-draft', {method:'POST', body:{
         urgency_filter: urgency, ...params
       }});
-      if (r.items_count === 0) return alert('Tidak ada urgent items');
+      if (r.items_count === 0) return alert('None urgent items');
       alert(`Draft PR: ${r.items_count} items siap. ${r.hint}\n\nCopy shape ini ke /api/procurement/pr POST untuk create draft.`);
       console.log('Draft PR shape:', r.draft_pr);
     } catch (e) { alert(e.message); }

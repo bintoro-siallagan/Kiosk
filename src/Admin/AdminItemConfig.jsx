@@ -43,7 +43,7 @@ export default function AdminItemConfig({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
   const removeGroup = async (g) => {
-    const ok = await confirm({ title: `Hapus modifier group "${g.name}"?`, message: `${g.options.length} opsi akan hilang. Tidak bisa dibatalkan.`, danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: `Hapus modifier group "${g.name}"?`, message: `${g.options.length} opsi akan hilang. Tidak bisa dibatalkan.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/item-config/modifiers/${g.id}`, { method: "DELETE" });
     const j = await r.json();
@@ -122,7 +122,7 @@ export default function AdminItemConfig({ apiBase = "" }) {
             ))}
             <button onClick={() => setEditing({ ...editing, options: [...(editing.options || []), { name: "", price: 0 }] })} style={{ background: "#161b22", border: "1px dashed #30363d", color: "#9ca3af", padding: "5px 12px", borderRadius: 6, fontSize: 11, cursor: "pointer", fontFamily: "inherit", marginTop: 4 }}>+ Opsi</button>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveGroup} style={{ background: AC, color: "#fff", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>{editing.id ? "💾 Simpan" : "+ Tambah"}</button>
             </div>
           </div>

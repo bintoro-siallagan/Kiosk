@@ -303,7 +303,7 @@ function Expenses() {
     const ok = await confirm({
       title: `Hapus "${item.doc_no || '#'+item.id}"?`,
       message: "Expense yang sudah voided akan dihapus permanen. Tidak bisa dibatalkan.",
-      danger: true, okLabel: "Hapus"
+      danger: true, okLabel: "Delete"
     });
     if (!ok) return;
     try {
@@ -360,7 +360,7 @@ function Expenses() {
                     <button onClick={() => voidExpense(e.id)} style={btnDanger}>Void</button>
                   )}
                   {e.status === 'voided' && (
-                    <button onClick={() => remove(e)} title="Hapus" style={{ background: "#fee2e2", border: "1px solid #fca5a5", color: "#dc2626", padding: "4px 10px", borderRadius: 4, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️ Hapus</button>
+                    <button onClick={() => remove(e)} title="Delete" style={{ background: "#fee2e2", border: "1px solid #fca5a5", color: "#dc2626", padding: "4px 10px", borderRadius: 4, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️ Hapus</button>
                   )}
                 </div>
               </td>
@@ -407,8 +407,8 @@ function ExpenseForm({initial, categories, onClose}) {
           <label style={{gridColumn:'1/-1'}}>Notes <textarea value={f.notes} onChange={update('notes')} rows={2} /></label>
         </div>
         <div style={{marginTop:16}}>
-          <button onClick={submit} style={btnPrimary}>Simpan</button>{' '}
-          <button onClick={onClose} style={btn}>Batal</button>
+          <button onClick={submit} style={btnPrimary}>Save</button>{' '}
+          <button onClick={onClose} style={btn}>Cancel</button>
         </div>
       </div>
     </div>
@@ -498,7 +498,7 @@ function COGSDetail() {
       </table>
       {data.by_sku.length === 0 && (
         <div style={{padding:20, background:'#fef3c7', borderRadius:8, color:'#92400e', marginTop:12}}>
-          ⚠️ Belum ada data COGS. Pastikan: (1) POS sale udah trigger <code>consumeStockForOrder()</code>, (2) BOM udah di-set per menu, (3) <code>audit_warehouse.last_cost</code> ter-isi (update via procurement GR).
+          ⚠️ No data yet COGS. Pastikan: (1) POS sale udah trigger <code>consumeStockForOrder()</code>, (2) BOM udah di-set per menu, (3) <code>audit_warehouse.last_cost</code> ter-isi (update via procurement GR).
         </div>
       )}
     </div>

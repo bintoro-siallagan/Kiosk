@@ -294,9 +294,9 @@ function PackageForm({initial, onClose}) {
         </div>
 
         <div style={{marginTop:16}}>
-          <button onClick={submit} style={btnPrimary}>Simpan</button>{' '}
-          <button onClick={onClose} style={btn}>Batal</button>
-          {!isNew && <button onClick={remove} style={{...btnDanger, float:'right'}}>Hapus</button>}
+          <button onClick={submit} style={btnPrimary}>Save</button>{' '}
+          <button onClick={onClose} style={btn}>Cancel</button>
+          {!isNew && <button onClick={remove} style={{...btnDanger, float:'right'}}>Delete</button>}
         </div>
 
         <div style={{marginTop:16, padding:12, background:'#0a1422', borderRadius:8, fontSize:12, color:'#93c5fd'}}>

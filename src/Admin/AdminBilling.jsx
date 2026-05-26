@@ -26,7 +26,7 @@ const FEATURE_GROUPS = [
   { name: "📊 Dashboard & Settings", codes: ["dashboard","settings","departments"],         desc: "Owner Dashboard + Outlet Settings + Departments" },
   { name: "🏆 Loyalty & Promo",   codes: ["loyalty","promo","reward","membership","customer_intel"], desc: "Membership tier + Promo Code + Reward + CRM" },
   { name: "📦 Inventory & Stock", codes: ["inventory","item_master","stock_opname","goods_received","goods_delivery","supplier","procurement","auto_reorder","batch_tracking","production"], desc: "Stock Opname + Item Master + Auto-Reorder + Supplier" },
-  { name: "💰 Finance & Akuntansi", codes: ["finance","finance_center","ar","ap","journal","gl","coa","budget","tax","cash_flow","reconciliation","fin_statements","period_closing","food_cost"], desc: "GL + AR/AP + Budget + Tax + Reconciliation + Statements" },
+  { name: "💰 Finance & Accounting", codes: ["finance","finance_center","ar","ap","journal","gl","coa","budget","tax","cash_flow","reconciliation","fin_statements","period_closing","food_cost"], desc: "GL + AR/AP + Budget + Tax + Reconciliation + Statements" },
   { name: "👥 HR & Payroll",      codes: ["hr","hris","payroll","shift_roster","attendance","talenta","motivation"], desc: "Karyawan + Payroll + Shift + Talenta sync" },
   { name: "🎯 Marketing & CRM",   codes: ["marketing","campaign","crm","broadcast","geo_engagement","clv_churn"], desc: "Kampanye + Broadcast + Geo Engagement + Churn Analysis" },
   { name: "🏪 Multi-Outlet & Field Ops", codes: ["multi_outlet","remote_ops","launch","service_visit","incidents"], desc: "Multi-outlet + KROC + KOLR + Service Visit + Incidents" },
@@ -36,7 +36,7 @@ const FEATURE_GROUPS = [
 
 function expandPlanFeatures(rawFeatures) {
   if (!Array.isArray(rawFeatures)) return [];
-  if (rawFeatures.includes("*")) return [{ name: "🌟 Akses Penuh", desc: "Semua fitur unlocked — tanpa batas" }];
+  if (rawFeatures.includes("*")) return [{ name: "🌟 Full Access", desc: "All features unlocked — unlimited" }];
   const set = new Set(rawFeatures);
   return FEATURE_GROUPS.filter(g => g.codes.some(c => set.has(c)));
 }
@@ -94,7 +94,7 @@ export default function AdminBilling({ apiBase = "" }) {
           💳 Billing & Subscription
         </div>
         <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>
-          {isSuperAdmin ? "MRR/ARR, churn, invoice management cross-tenant" : "Plan kamu + invoice history + upgrade"}
+          {isSuperAdmin ? "MRR/ARR, churn, invoice management cross-tenant" : "Your plan + invoice history + upgrade"}
         </div>
       </header>
 
@@ -157,14 +157,14 @@ function DashboardView({ mrr }) {
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
       <div style={{ padding: 16, background: CARD_BG, border: BORDER, borderRadius: 10 }}>
         <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Geist Mono',monospace", marginBottom: 12 }}>📊 MRR BY PLAN</div>
-        {mrr.by_plan.length === 0 && <div style={{ color: "#64748b", fontSize: 12 }}>Belum ada subscriber aktif</div>}
+        {mrr.by_plan.length === 0 && <div style={{ color: "#64748b", fontSize: 12 }}>No subscriber aktif</div>}
         {mrr.by_plan.map((p, i) => (
           <BreakdownBar key={p.plan} label={p.plan} value={p.mrr} count={p.count} total={mrr.mrr} color={[PURPLE, CYAN, PINK, BLUE][i % 4]} />
         ))}
       </div>
       <div style={{ padding: 16, background: CARD_BG, border: BORDER, borderRadius: 10 }}>
         <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Geist Mono',monospace", marginBottom: 12 }}>🎯 MRR BY VERTICAL</div>
-        {mrr.by_vertical.length === 0 && <div style={{ color: "#64748b", fontSize: 12 }}>Belum ada data</div>}
+        {mrr.by_vertical.length === 0 && <div style={{ color: "#64748b", fontSize: 12 }}>No data yet</div>}
         {mrr.by_vertical.map((v, i) => (
           <BreakdownBar key={v.vertical} label={v.vertical.toUpperCase()} value={v.mrr} count={v.count} total={mrr.mrr} color={v.vertical === "cinema" ? PINK : v.vertical === "fnb" ? CYAN : PURPLE} />
         ))}
@@ -367,7 +367,7 @@ function PlansCatalog({ plans, currentPlan, onUpgrade }) {
 
 // ─── TENANT VIEW ───
 function TenantView({ my, plans, API }) {
-  if (my?.no_billing) return <div style={{ padding: 40, textAlign: "center", color: "#94a3b8" }}>⚠ Belum ada subscription. Hubungi admin Karys.</div>;
+  if (my?.no_billing) return <div style={{ padding: 40, textAlign: "center", color: "#94a3b8" }}>⚠ No subscription. Hubungi admin Karys.</div>;
   const t = my.tenant;
   const isTrial = t?.plan_code === "TRIAL";
   const trialDaysLeft = isTrial && t?.trial_until ? Math.max(0, Math.ceil((t.trial_until - Date.now()/1000) / 86400)) : null;
@@ -421,7 +421,7 @@ function TenantView({ my, plans, API }) {
       {/* Invoice history */}
       <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: 1.5, fontWeight: 700, fontFamily: "'Geist Mono',monospace", marginBottom: 10 }}>🧾 RIWAYAT INVOICE</div>
       {my.invoices.length === 0 ? (
-        <div style={{ padding: 30, textAlign: "center", color: "#64748b", background: CARD_BG, border: BORDER, borderRadius: 10 }}>Belum ada invoice</div>
+        <div style={{ padding: 30, textAlign: "center", color: "#64748b", background: CARD_BG, border: BORDER, borderRadius: 10 }}>No invoice</div>
       ) : (
         <div style={{ background: CARD_BG, border: BORDER, borderRadius: 10, overflow: "hidden" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
@@ -486,7 +486,7 @@ function TenantView({ my, plans, API }) {
               💡 Setelah konfirmasi: invoice langsung dibuat. Transfer ke <b style={{ color: "#fff" }}>BCA 5430-1100-22 a.n. Karys Indonesia</b>, lalu submit bukti via chat WA. Plan aktif setelah pembayaran diverifikasi.
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setUpgrading(null)} disabled={busy} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={() => setUpgrading(null)} disabled={busy} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>Cancel</button>
               <button onClick={confirmUpgrade} disabled={busy} style={{ flex: 2, padding: 12, background: `linear-gradient(135deg, ${PURPLE}, #7c3aed)`, border: "none", borderRadius: 10, color: "#fff", fontWeight: 800, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
                 {busy ? "⏳ Memproses…" : "✅ Konfirmasi Upgrade"}
               </button>
@@ -568,7 +568,7 @@ function EditTenantModal({ tenant, plans, onClose, onSaved, API }) {
         {err && <div style={{ padding: 10, background: "rgba(239,68,68,0.1)", border: `1px solid ${RED}55`, borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 10 }}>⚠ {err}</div>}
 
         <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: BORDER, borderRadius: 10, color: "#fff", fontWeight: 700, cursor: "pointer" }}>Batal</button>
+          <button onClick={onClose} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: BORDER, borderRadius: 10, color: "#fff", fontWeight: 700, cursor: "pointer" }}>Cancel</button>
           <button onClick={submit} disabled={busy} style={{ flex: 2, padding: 12, background: `linear-gradient(135deg,${PURPLE},#7c3aed)`, border: "none", borderRadius: 10, color: "#fff", fontWeight: 800, cursor: busy ? "not-allowed" : "pointer" }}>{busy ? "⏳" : "💾 Simpan"}</button>
         </div>
       </div>

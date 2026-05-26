@@ -60,7 +60,7 @@ export default function AdminPurchaseReturn({ apiBase = "" }) {
     const ok = await confirm({
       title: "Hapus retur?", danger: true,
       message: `Hapus retur ${r.return_no} (${r.supplier}, nilai ${fmtRp(r.total_value)})? Tindakan ini tidak bisa dibatalkan.`,
-      okLabel: "Hapus",
+      okLabel: "Delete",
     });
     if (!ok) return;
     fetch(`${apiBase}/api/purchase-return/${r.id}`, { method: "DELETE" })
@@ -122,7 +122,7 @@ export default function AdminPurchaseReturn({ apiBase = "" }) {
                     ? <span style={{ fontSize: 10, fontWeight: 700, color: "#10b981", fontFamily: "'Geist Mono',monospace", width: 90, textAlign: "right" }}>✓ DIPROSES</span>
                     : <button onClick={() => complete(r)} style={S.act}>Proses Retur</button>}
                   <button onClick={() => setEditing({ ...r })} title="Edit" style={S.iconBtn("#f59e0b")}>✏️</button>
-                  <button onClick={() => remove(r)} title="Hapus" style={S.iconBtn("#ef4444")}>🗑️</button>
+                  <button onClick={() => remove(r)} title="Delete" style={S.iconBtn("#ef4444")}>🗑️</button>
                 </div>
                 <div style={{ marginTop: 7, display: "flex", gap: 6, flexWrap: "wrap" }}>
                   {r.items.map((it, i) => (
@@ -167,7 +167,7 @@ export default function AdminPurchaseReturn({ apiBase = "" }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

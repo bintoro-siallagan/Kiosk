@@ -35,7 +35,7 @@ export default function CinemaOwnerDashboard({ apiBase = "", onNavigate }) {
       fetch(`${apiBase}/api/leaderboard?limit=5`).then(r => r.json()).catch(() => null),
     ]).then(([d, p, s]) => {
       setData(d || null); setAutoPromos(p?.promos || []); setSultan(s || null);
-      if (!d) setErr("Gagal memuat data cinema");
+      if (!d) setErr("Failed to load data cinema");
     }).finally(() => setLoading(false));
   }, [apiBase, period]);
 
@@ -63,7 +63,7 @@ export default function CinemaOwnerDashboard({ apiBase = "", onNavigate }) {
         </div>
       </div>
 
-      {loading && <div style={{ padding: 30, textAlign: "center", color: PALETTE.dim }}>Memuat data cinema…</div>}
+      {loading && <div style={{ padding: 30, textAlign: "center", color: PALETTE.dim }}>Loading data cinema…</div>}
       {err && !loading && <div style={{ padding: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, color: "#fca5a5", fontSize: 13 }}>{err}</div>}
 
       {data && !loading && (
@@ -123,7 +123,7 @@ export default function CinemaOwnerDashboard({ apiBase = "", onNavigate }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginTop: 18 }}>
             <Section title="🎬 TOP FILMS">
               {(data.top_films || []).length === 0 ? (
-                <div style={{ color: PALETTE.dim, fontSize: 12, padding: 14 }}>Belum ada penjualan.</div>
+                <div style={{ color: PALETTE.dim, fontSize: 12, padding: 14 }}>No penjualan.</div>
               ) : (data.top_films || []).map((f, i) => (
                 <div key={f.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: `1px solid ${PALETTE.border}` }}>
                   <span style={{ width: 24, fontSize: 11, color: PALETTE.dim, fontFamily: "'Geist Mono',monospace" }}>#{i + 1}</span>
@@ -143,7 +143,7 @@ export default function CinemaOwnerDashboard({ apiBase = "", onNavigate }) {
                   <span style={{ fontSize: 12, fontFamily: "'Geist Mono',monospace", color: PALETTE.green, width: 80, textAlign: "right" }}>{rp(t.price)}</span>
                 </div>
               ))}
-              {(data.recent_sales || []).length === 0 && <div style={{ color: PALETTE.dim, fontSize: 12, padding: 14 }}>Belum ada penjualan.</div>}
+              {(data.recent_sales || []).length === 0 && <div style={{ color: PALETTE.dim, fontSize: 12, padding: 14 }}>No penjualan.</div>}
             </Section>
           </div>
 
@@ -165,7 +165,7 @@ export default function CinemaOwnerDashboard({ apiBase = "", onNavigate }) {
                   </div>
                 );
               })}
-              {(data.occupancy || []).length === 0 && <div style={{ color: PALETTE.dim, fontSize: 12, padding: 14 }}>Belum ada jadwal.</div>}
+              {(data.occupancy || []).length === 0 && <div style={{ color: PALETTE.dim, fontSize: 12, padding: 14 }}>No jadwal.</div>}
             </Section>
 
             <Section title="👑 SULTAN JAM INI">
@@ -179,7 +179,7 @@ export default function CinemaOwnerDashboard({ apiBase = "", onNavigate }) {
                   <span style={{ fontSize: 12, fontFamily: "'Geist Mono',monospace", color: PALETTE.amber, width: 96, textAlign: "right" }}>{rp(r.amount)}</span>
                 </div>
               ))}
-              {(!sultan?.top || sultan.top.length === 0) && <div style={{ color: PALETTE.dim, fontSize: 12, padding: 14 }}>Belum ada transaksi jam ini.</div>}
+              {(!sultan?.top || sultan.top.length === 0) && <div style={{ color: PALETTE.dim, fontSize: 12, padding: 14 }}>No transaksi jam ini.</div>}
             </Section>
           </div>
 

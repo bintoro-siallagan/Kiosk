@@ -99,7 +99,7 @@ export default function CinemaPartyPackages({ apiBase = "" }) {
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
             <button onClick={savePkg} style={B.save}>Buat Package</button>
-            <button onClick={cancel} style={B.cancel}>Batal</button>
+            <button onClick={cancel} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}
@@ -107,7 +107,7 @@ export default function CinemaPartyPackages({ apiBase = "" }) {
       {/* Packages list */}
       {tab === "packages" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(320px,1fr))", gap: 14 }}>
-          {packages.length === 0 ? <div style={{ gridColumn: "1/-1", padding: 30, textAlign: "center", color: C.sub, background: C.card, border: `1px dashed ${C.border}`, borderRadius: 12 }}>Belum ada package. Klik ＋ Package baru.</div>
+          {packages.length === 0 ? <div style={{ gridColumn: "1/-1", padding: 30, textAlign: "center", color: C.sub, background: C.card, border: `1px dashed ${C.border}`, borderRadius: 12 }}>No package. Klik ＋ Package baru.</div>
             : packages.map(p => (
               <div key={p.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, overflow: "hidden", display: "flex", flexDirection: "column" }}>
                 {p.image_url && <img src={p.image_url} style={{ width: "100%", height: 140, objectFit: "cover" }} />}
@@ -142,7 +142,7 @@ export default function CinemaPartyPackages({ apiBase = "" }) {
       {/* Bookings list */}
       {tab === "bookings" && (
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
-          {bookings.length === 0 ? <div style={{ padding: 30, textAlign: "center", color: C.sub }}>Belum ada booking.</div>
+          {bookings.length === 0 ? <div style={{ padding: 30, textAlign: "center", color: C.sub }}>No booking.</div>
             : bookings.map(b => (
               <div key={b.id} style={{ display: "grid", gridTemplateColumns: "auto 1fr 1fr 0.8fr 0.8fr 0.6fr", padding: "14px 16px", borderBottom: `1px solid ${C.border}`, gap: 12, alignItems: "center" }}>
                 <span style={{ fontSize: 28 }}>{OCCASION_ICON[b.occasion] || "🎉"}</span>

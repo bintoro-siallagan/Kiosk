@@ -31,7 +31,7 @@ export default function AdminSimplePurchase({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
   const remove = async (item) => {
-    const ok = await confirm({ title: `Hapus "${item.purchase_no || item.item_name || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: `Hapus "${item.purchase_no || item.item_name || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Delete" });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/simple-purchase/${item.id}`, { method: "DELETE" });
     const j = await r.json();
@@ -41,7 +41,7 @@ export default function AdminSimplePurchase({ apiBase = "" }) {
 
   const save = () => {
     if (!form.item_name.trim() || !(Number(form.qty) > 0) || !(Number(form.unit_price) > 0)) {
-      setMsg("⚠ Item, qty & harga wajib diisi"); return;
+      setMsg("⚠ Item, qty & harga required"); return;
     }
     fetch(`${apiBase}/api/simple-purchase`, {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -64,7 +64,7 @@ export default function AdminSimplePurchase({ apiBase = "" }) {
       </div>
 
       <div style={S.kpiRow}>
-        <Kpi label="Total Pembelian" v={String(s.total_purchases)} c={AC} />
+        <Kpi label="Total Purchases" v={String(s.total_purchases)} c={AC} />
         <Kpi label="Belanja Bulan Ini" v={fmtRp(s.month_spend)} c="#f59e0b" />
         <Kpi label="Total Belanja" v={fmtRp(s.total_spend)} c="#3b82f6" />
         <Kpi label="Via Petty Cash" v={fmtRp((s.by_payment.find(p => p.method === "Petty Cash") || {}).total)} c="#fb923c" />
@@ -113,7 +113,7 @@ export default function AdminSimplePurchase({ apiBase = "" }) {
                 <td style={S.td}>
                   <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
                     <button onClick={() => setEditing({ ...p })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
-                    <button onClick={() => remove(p)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+                    <button onClick={() => remove(p)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
                   </div>
                 </td>
               </tr>
@@ -147,7 +147,7 @@ export default function AdminSimplePurchase({ apiBase = "" }) {
               <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>CATATAN</div><input value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} style={modalInp} /></div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

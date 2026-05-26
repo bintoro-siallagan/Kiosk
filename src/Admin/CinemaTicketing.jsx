@@ -162,11 +162,11 @@ export default function CinemaTicketing({ apiBase }) {
               <span style={{ fontSize: 12, fontWeight: 700, color: "#e6edf3" }}>🎟️ Tiket Terjual Showtime Ini ({tickets.length})</span>
               <span style={{ fontSize: 10.5, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>VOID = audit trail · DELETE = hard delete koreksi</span>
             </div>
-            {tickets.length === 0 ? <div style={{ padding: "16px 14px", textAlign: "center", color: C.sub, fontSize: 12 }}>Belum ada tiket terjual.</div>
+            {tickets.length === 0 ? <div style={{ padding: "16px 14px", textAlign: "center", color: C.sub, fontSize: 12 }}>No tickets terjual.</div>
               : (
                 <div style={{ maxHeight: 260, overflowY: "auto" }}>
                   <div style={{ display: "flex", padding: "6px 14px", borderBottom: `1px solid ${C.border}`, color: C.dim, fontSize: 10, letterSpacing: 1, gap: 10, fontFamily: "'Geist Mono',monospace" }}>
-                    <span style={{ width: 60 }}>#ID</span><span style={{ width: 70 }}>KURSI</span><span style={{ width: 110, textAlign: "right" }}>HARGA</span><span style={{ width: 70 }}>STATUS</span><span style={{ flex: 1 }}>WAKTU JUAL</span><span style={{ width: 130, textAlign: "right" }}>AKSI</span>
+                    <span style={{ width: 60 }}>#ID</span><span style={{ width: 70 }}>KURSI</span><span style={{ width: 110, textAlign: "right" }}>HARGA</span><span style={{ width: 70 }}>STATUS</span><span style={{ flex: 1 }}>WAKTU JUAL</span><span style={{ width: 130, textAlign: "right" }}>ACTIONS</span>
                   </div>
                   {tickets.map(t => {
                     const isVoid = t.status === "void" || t.status === "voided" || t.status === "cancelled";

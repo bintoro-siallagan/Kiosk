@@ -41,7 +41,7 @@ export default function AdminSupplierMaster({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
   const remove = async (v) => {
-    const ok = await confirm({ title: `Hapus vendor "${v.name}"?`, message: `Vendor ${v.code} akan dihapus permanen dari registry. Tidak bisa dibatalkan.`, danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: `Hapus vendor "${v.name}"?`, message: `Vendor ${v.code} akan dihapus permanen dari registry. Tidak bisa dibatalkan.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/supplier-master/${v.id}`, { method: "DELETE" });
     const j = await r.json();
@@ -61,7 +61,7 @@ export default function AdminSupplierMaster({ apiBase = "" }) {
 
       <div style={S.kpiRow}>
         <Kpi label="Total Vendor" v={String(s.total)} c={AC} />
-        <Kpi label="Aktif" v={String(s.active)} c="#10b981" />
+        <Kpi label="Active" v={String(s.active)} c="#10b981" />
         <Kpi label="Avg Score" v={String(s.avg_score)} c={s.avg_score >= 85 ? "#10b981" : "#f59e0b"} />
         <Kpi label="Grade A" v={String(s.grade_a)} c="#10b981" />
       </div>
@@ -142,7 +142,7 @@ export default function AdminSupplierMaster({ apiBase = "" }) {
               <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>HARGA</div><input type="number" min="0" max="100" value={editing.price_score || 0} onChange={e => setEditing({ ...editing, price_score: Number(e.target.value) })} style={S.input} /></div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={S.btn}>💾 Simpan</button>
             </div>
           </div>

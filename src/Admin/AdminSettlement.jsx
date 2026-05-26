@@ -65,7 +65,7 @@ export default function AdminSettlement({ apiBase = "" }) {
           </thead>
           <tbody>
             {d.channels.length === 0 ? (
-              <tr><td colSpan={7} style={{ padding: 20, textAlign: "center", color: "#5b6470" }}>Tidak ada transaksi di periode ini</td></tr>
+              <tr><td colSpan={7} style={{ padding: 20, textAlign: "center", color: "#5b6470" }}>None transaksi di periode ini</td></tr>
             ) : d.channels.map((c, i) => (
               <tr key={i} style={{ borderTop: "1px solid #161b22", fontSize: 13 }}>
                 <td style={{ ...S.td, color: "#e6edf3", fontWeight: 600 }}>{c.channel}</td>

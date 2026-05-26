@@ -48,7 +48,7 @@ export default function AdminReconciliation({ apiBase = "" }) {
     const ok = await confirm({
       title: `Hapus "${label}"?`,
       message: "Akan dihapus permanen. Tidak bisa dibatalkan.",
-      danger: true, okLabel: "Hapus",
+      danger: true, okLabel: "Delete",
     });
     if (!ok) return;
     const path = kind === "cash" ? `cash-count/${item.id}` : `bank-item/${item.id}`;
@@ -100,7 +100,7 @@ export default function AdminReconciliation({ apiBase = "" }) {
                 {it.matched ? "✓ matched" : "○ match"}
               </button>
               <button onClick={() => setEditing({ kind: "bank", ...it })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
-              <button onClick={() => remove("bank", it)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+              <button onClick={() => remove("bank", it)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
             </div>
           ))}
         </div>
@@ -127,7 +127,7 @@ export default function AdminReconciliation({ apiBase = "" }) {
                   <td style={{ ...S.td, color: "#5b6470" }}>{c.counted_by}</td>
                   <td style={S.td}>
                     <button onClick={() => setEditing({ kind: "cash", ...c })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
-                    <button onClick={() => remove("cash", c)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, marginLeft: 4 }}>🗑️</button>
+                    <button onClick={() => remove("cash", c)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, marginLeft: 4 }}>🗑️</button>
                   </td>
                 </tr>
               ))}
@@ -182,7 +182,7 @@ export default function AdminReconciliation({ apiBase = "" }) {
               </div>
             )}
             <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
-              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #21262d", color: "#9da7b3", padding: "8px 14px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #21262d", color: "#9da7b3", padding: "8px 14px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: AC, border: "none", color: "#fff", padding: "8px 16px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>💾 Simpan</button>
             </div>
           </div>

@@ -69,7 +69,7 @@ export default function OutletLaunchTracker({ apiBase = "" }) {
         {launches.length === 0 && !loading && (
           <div style={{ gridColumn: "1/-1", padding: 60, textAlign: "center", color: "#64748b" }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🚀</div>
-            <div style={{ fontSize: 14, marginBottom: 16 }}>Belum ada outlet launch project tercatat</div>
+            <div style={{ fontSize: 14, marginBottom: 16 }}>No outlet launch project tercatat</div>
             <button onClick={() => setShowCreate(true)} style={{ padding: "10px 18px", background: PURPLE, border: "none", borderRadius: 8, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Mulai Project Pertama</button>
           </div>
         )}
@@ -498,7 +498,7 @@ function AuditTrailPanel({ launchId, API }) {
 
   if (loading) return <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>⏳ Loading audit trail…</div>;
   if (err) return <ErrorInline error={err} />;
-  if (events.length === 0) return <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>Belum ada activity log</div>;
+  if (events.length === 0) return <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>No activity log</div>;
 
   return (
     <div>
@@ -588,7 +588,7 @@ function CreateLaunchModal({ onClose, onCreated, API }) {
         </div>
 
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+          <button onClick={onClose} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
           <button onClick={submit} disabled={busy} style={{ flex: 2, padding: 12, background: `linear-gradient(135deg,${PURPLE},#7c3aed)`, border: "none", borderRadius: 10, color: "#fff", fontWeight: 800, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>{busy ? "⏳ Membuat…" : "🚀 Buat Project"}</button>
         </div>
       </div>

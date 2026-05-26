@@ -32,7 +32,7 @@ export default function FnbRecipe({ apiBase = "" }) {
     showToast("Recipe diupdate"); setEditing(null); load();
   };
   const remove = async (r) => {
-    if (!(await confirm({ title: `Hapus ingredient "${r.ingredient_name}"?`, message: `dari recipe "${r.menu_item_name}"`, danger: true, okLabel: "Hapus" }))) return;
+    if (!(await confirm({ title: `Hapus ingredient "${r.ingredient_name}"?`, message: `dari recipe "${r.menu_item_name}"`, danger: true, okLabel: "Delete" }))) return;
     await fetch(`${base}/recipes/${r.id}`, { method: "DELETE" }); load();
     undoToast(`Ingredient "${r.ingredient_name}" dihapus`, async () => {
       await fetch(`${base}/recipes`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(r) });
@@ -70,7 +70,7 @@ export default function FnbRecipe({ apiBase = "" }) {
               <button onClick={add} style={B.save}>+</button>
             </div>
           </div>
-          {Object.values(grouped).length === 0 ? <Empty>Belum ada recipe.</Empty> :
+          {Object.values(grouped).length === 0 ? <Empty>No recipe.</Empty> :
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(380px,1fr))", gap: 12 }}>
               {Object.values(grouped).map(g => (
                 <div key={g.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14 }}>
@@ -86,7 +86,7 @@ export default function FnbRecipe({ apiBase = "" }) {
                       <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
                         <span style={{ fontFamily: "'Geist Mono',monospace", color: "#fbbf24", fontWeight: 700 }}>{fmtNum(it.qty)} {it.unit}</span>
                         <button onClick={() => setEditing({ ...it })} style={Ba("#f59e0b")} title="Edit">✏️</button>
-                        <button onClick={() => remove(it)} style={Ba("#ef4444")} title="Hapus">×</button>
+                        <button onClick={() => remove(it)} style={Ba("#ef4444")} title="Delete">×</button>
                       </span>
                     </div>
                   ))}
@@ -105,7 +105,7 @@ export default function FnbRecipe({ apiBase = "" }) {
             <span style={{ width: 130 }}>SOURCE</span>
             <span style={{ flex: 1 }}>CATATAN</span>
           </div>
-          {movements.length === 0 ? <Empty>Belum ada pergerakan.</Empty> : movements.map(m => (
+          {movements.length === 0 ? <Empty>No pergerakan.</Empty> : movements.map(m => (
             <div key={m.id} style={{ display: "flex", padding: "8px 14px", borderBottom: `1px solid ${C.border}`, fontSize: 12 }}>
               <span style={{ width: 150, fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{fmtTs(m.created_at)}</span>
               <span style={{ flex: 1, fontWeight: 700 }}>{m.ingredient_name}</span>
@@ -131,7 +131,7 @@ export default function FnbRecipe({ apiBase = "" }) {
               <Field label="Catatan"><input value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} style={inp} /></Field>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={B.save}>💾 Simpan</button>
             </div>
           </div>

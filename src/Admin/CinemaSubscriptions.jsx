@@ -106,14 +106,14 @@ export default function CinemaSubscriptions({ apiBase = "" }) {
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
             <button onClick={savePlan} style={B.save}>Buat Plan</button>
-            <button onClick={cancel} style={B.cancel}>Batal</button>
+            <button onClick={cancel} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}
 
       {tab === "plans" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 14 }}>
-          {plans.length === 0 ? <div style={{ gridColumn: "1/-1", padding: 30, textAlign: "center", color: C.sub, background: C.card, border: `1px dashed ${C.border}`, borderRadius: 12 }}>Belum ada plan. Klik ＋ Plan baru.</div>
+          {plans.length === 0 ? <div style={{ gridColumn: "1/-1", padding: 30, textAlign: "center", color: C.sub, background: C.card, border: `1px dashed ${C.border}`, borderRadius: 12 }}>No plan. Klik ＋ Plan baru.</div>
             : plans.map(p => (
               <div key={p.id} style={{ background: C.card, border: `1px solid ${p.plan_type === "unlimited" ? "#a855f755" : "#22d3ee55"}`, borderRadius: 14, padding: 16 }}>
                 <div style={{ fontSize: 11, color: p.plan_type === "unlimited" ? "#c084fc" : "#22d3ee", fontFamily: "'Geist Mono',monospace", letterSpacing: 1.5, fontWeight: 800, marginBottom: 6 }}>
@@ -144,7 +144,7 @@ export default function CinemaSubscriptions({ apiBase = "" }) {
 
       {tab === "subs" && (
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
-          {subs.length === 0 ? <div style={{ padding: 30, textAlign: "center", color: C.sub }}>Belum ada subscriber.</div>
+          {subs.length === 0 ? <div style={{ padding: 30, textAlign: "center", color: C.sub }}>No subscriber.</div>
             : subs.map(s => {
               const daysLeft = Math.max(0, Math.ceil((s.expires_at - Date.now() / 1000) / 86400));
               return (

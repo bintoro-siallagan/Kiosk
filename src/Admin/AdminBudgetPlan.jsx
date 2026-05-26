@@ -66,7 +66,7 @@ export default function AdminBudgetPlan({ apiBase = "" }) {
     const ok = await confirm({
       title: `Hapus alokasi "${line.category}"?`,
       message: "Alokasi & semua revisi terkait akan dihapus permanen. Tidak bisa dibatalkan.",
-      danger: true, okLabel: "Hapus",
+      danger: true, okLabel: "Delete",
     });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/budget-plan/line/${line.id}`, { method: "DELETE" });
@@ -127,7 +127,7 @@ export default function AdminBudgetPlan({ apiBase = "" }) {
               </label>
             </div>
             <div style={{ display: "flex", gap: 8, marginTop: 16, justifyContent: "flex-end" }}>
-              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #21262d", color: "#9da7b3", padding: "8px 14px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #21262d", color: "#9da7b3", padding: "8px 14px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: AC, border: "none", color: "#fff", padding: "8px 16px", borderRadius: 7, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>💾 Simpan</button>
             </div>
           </div>
@@ -161,7 +161,7 @@ export default function AdminBudgetPlan({ apiBase = "" }) {
                         <button onClick={() => revise(l, "increase")} style={S.btnSm("#10b981")}>+ Naik</button>
                         <button onClick={() => revise(l, "decrease")} style={{ ...S.btnSm("#ef4444"), marginLeft: 4 }}>− Turun</button>
                         <button onClick={() => setEditing({ ...l })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, marginLeft: 4 }}>✏️</button>
-                        <button onClick={() => remove(l)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, marginLeft: 4 }}>🗑️</button>
+                        <button onClick={() => remove(l)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, marginLeft: 4 }}>🗑️</button>
                       </td>
                     </tr>
                   );
@@ -179,7 +179,7 @@ export default function AdminBudgetPlan({ apiBase = "" }) {
           <div style={{ ...S.card, marginTop: 14 }}>
             <div style={S.kicker}>🔁 RIWAYAT REVISI — {sel.revisions.length}</div>
             {sel.revisions.length === 0 ? (
-              <div style={{ fontSize: 12, color: "#5b6470", padding: "10px 0" }}>Belum ada revisi di periode ini.</div>
+              <div style={{ fontSize: 12, color: "#5b6470", padding: "10px 0" }}>No revisi di periode ini.</div>
             ) : sel.revisions.map(r => (
               <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderTop: "1px solid #161b22", fontSize: 12 }}>
                 <span style={{ fontSize: 14 }}>{r.rev_type === "increase" ? "⬆️" : "⬇️"}</span>

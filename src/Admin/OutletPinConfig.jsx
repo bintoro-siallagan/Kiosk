@@ -104,10 +104,10 @@ export default function OutletPinConfig({ apiBase = "" }) {
 
       <div style={{ background: CARD_BG, border: BORDER, borderRadius: 12, overflow: "hidden" }}>
         <div style={{ padding: "12px 16px", borderBottom: BORDER, fontSize: 11, color: "#94a3b8", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700, display: "grid", gridTemplateColumns: "1fr 80px 110px 100px 110px 1fr 110px", gap: 10, alignItems: "center" }}>
-          <div>OUTLET</div><div>VERTICAL</div><div>GPS</div><div>RADIUS</div><div>GEOFENCE</div><div>WA / PIN</div><div style={{ textAlign: "right" }}>AKSI</div>
+          <div>OUTLET</div><div>VERTICAL</div><div>GPS</div><div>RADIUS</div><div>GEOFENCE</div><div>WA / PIN</div><div style={{ textAlign: "right" }}>ACTIONS</div>
         </div>
         {mergedList.length === 0 && !loading && (
-          <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>Belum ada outlet terdaftar</div>
+          <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>No outlet terdaftar</div>
         )}
         {mergedList.map(o => (
           <div key={o.outlet_code} style={{
@@ -328,7 +328,7 @@ function PinEditModal({ outlet, onClose, onSaved, API }) {
         {err && <div style={{ padding: 10, background: "rgba(239,68,68,0.1)", border: `1px solid ${RED}55`, borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 12 }}>⚠ {err}</div>}
 
         <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+          <button onClick={onClose} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
           <button onClick={save} disabled={busy} style={{ flex: 2, padding: 12, background: `linear-gradient(135deg,${PURPLE},#7c3aed)`, border: "none", borderRadius: 10, color: "#fff", fontWeight: 800, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>{busy ? "⏳ Menyimpan…" : "💾 Simpan Konfigurasi"}</button>
         </div>
       </div>

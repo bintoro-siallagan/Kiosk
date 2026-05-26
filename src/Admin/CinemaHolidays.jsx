@@ -51,12 +51,12 @@ export default function CinemaHolidays({ apiBase = "" }) {
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
         <div style={{ display: "flex", padding: "8px 14px", borderBottom: `1px solid ${C.border}`, color: C.dim, fontSize: 11, letterSpacing: 1, gap: 10 }}>
           <span style={{ width: 110 }}>TANGGAL</span>
-          <span style={{ flex: 1 }}>NAMA</span>
+          <span style={{ flex: 1 }}>NAME</span>
           <span style={{ flex: 1 }}>CATATAN</span>
           <span style={{ width: 70 }}>STATUS</span>
-          <span style={{ width: 100, textAlign: "right" }}>AKSI</span>
+          <span style={{ width: 100, textAlign: "right" }}>ACTIONS</span>
         </div>
-        {rows.length === 0 ? <div style={{ padding: 22, textAlign: "center", color: C.sub, fontSize: 13 }}>Belum ada tanggal libur.</div> :
+        {rows.length === 0 ? <div style={{ padding: 22, textAlign: "center", color: C.sub, fontSize: 13 }}>No tanggal libur.</div> :
           rows.map(r => (
             <div key={r.id} style={{ display: "flex", padding: "10px 14px", borderBottom: `1px solid ${C.border}`, gap: 10, alignItems: "center" }}>
               <span style={{ width: 110, fontFamily: "'Geist Mono',monospace", fontSize: 13, color: r.is_active ? "#fbbf24" : C.dim }}>{r.date}</span>

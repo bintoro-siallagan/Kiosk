@@ -29,7 +29,7 @@ export default function FnbCombo({ apiBase = "" }) {
     showToast("Combo disimpan"); setEditing(null); setForm(empty); load();
   };
   const remove = async (r) => {
-    if (!(await confirm({ title: `Hapus combo "${r.name}"?`, message: "Combo akan dihapus permanen. Tidak bisa di-undo.", danger: true, okLabel: "Hapus" }))) return;
+    if (!(await confirm({ title: `Hapus combo "${r.name}"?`, message: "Combo akan dihapus permanen. Tidak bisa di-undo.", danger: true, okLabel: "Delete" }))) return;
     await fetch(`${base}/combos/${r.id}`, { method: "DELETE" }); load();
     undoToast(`Combo "${r.name}" dihapus`, async () => {
       await fetch(`${base}/combos`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(r) });
@@ -80,13 +80,13 @@ export default function FnbCombo({ apiBase = "" }) {
             </div>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat Combo" : "Simpan"}</button>
-            <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Batal</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Buat Combo" : "Save"}</button>
+            <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}
       {rows.length === 0 ? (
-        <EmptyState icon="🍔" title="Belum ada combo" desc="Buat combo (set meal) untuk menggabungkan beberapa item jadi 1 harga bundle. Mis: Paket Nasi Goreng = main + drink + dessert."
+        <EmptyState icon="🍔" title="No combo" desc="Buat combo (set meal) untuk menggabungkan beberapa item jadi 1 harga bundle. Mis: Paket Nasi Goreng = main + drink + dessert."
           action={!editing ? { label: "＋ Buat combo pertama", onClick: () => { setEditing("new"); setForm(empty); }, color: "#f59e0b" } : null} />
       ) : (
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(320px,1fr))", gap: 12 }}>

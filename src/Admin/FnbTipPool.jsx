@@ -22,7 +22,7 @@ export default function FnbTipPool({ apiBase = "" }) {
     showToast("Tip diupdate"); setEditingTip(null); loadTips(); loadPool();
   };
   const removeTip = async (t) => {
-    const ok = await confirm({ title: "Hapus tip log?", message: `Tip ${rp(t.amount)} ${t.staff_name ? `untuk ${t.staff_name}` : ""} akan dihapus permanen.`, danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: "Hapus tip log?", message: `Tip ${rp(t.amount)} ${t.staff_name ? `untuk ${t.staff_name}` : ""} akan dihapus permanen.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     await fetch(`${base}/tips/${t.id}`, { method: "DELETE" });
     showToast("Tip dihapus"); loadTips(); loadPool();
@@ -109,9 +109,9 @@ export default function FnbTipPool({ apiBase = "" }) {
           </div>
         </div>
         <div style={{ display: "flex", color: C.dim, fontSize: 10, letterSpacing: 1, padding: "4px 0", borderBottom: `1px solid ${C.border}` }}>
-          <span style={{ flex: 1.4 }}>STAFF</span><span style={{ width: 100 }}>SHIFT</span><span style={{ width: 100 }}>JAM</span><span style={{ width: 90 }}>SHARE%</span><span style={{ width: 130 }}>PAYOUT</span><span style={{ width: 130 }}>STATUS</span><span style={{ width: 90, textAlign: "right" }}>AKSI</span>
+          <span style={{ flex: 1.4 }}>STAFF</span><span style={{ width: 100 }}>SHIFT</span><span style={{ width: 100 }}>JAM</span><span style={{ width: 90 }}>SHARE%</span><span style={{ width: 130 }}>PAYOUT</span><span style={{ width: 130 }}>STATUS</span><span style={{ width: 90, textAlign: "right" }}>ACTIONS</span>
         </div>
-        {entries.length === 0 ? <Empty>Belum ada distribusi.</Empty> : entries.map((e, i) => (
+        {entries.length === 0 ? <Empty>No distribusi.</Empty> : entries.map((e, i) => (
           <div key={i} style={{ display: "flex", padding: "6px 0", borderBottom: `1px solid #1f2937`, gap: 6, alignItems: "center" }}>
             <input value={e.staff_name} onChange={ev => updateEntry(i, "staff_name", ev.target.value)} placeholder="Nama" style={{ ...inp, flex: 1.4 }} />
             <input value={e.shift || ""} onChange={ev => updateEntry(i, "shift", ev.target.value)} placeholder="A/B/C" style={{ ...inp, width: 100 }} />
@@ -129,7 +129,7 @@ export default function FnbTipPool({ apiBase = "" }) {
 
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14 }}>
         <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>RIWAYAT TIP {date}</div>
-        {tips.length === 0 ? <Empty>Belum ada tip.</Empty> : tips.map(t => (
+        {tips.length === 0 ? <Empty>No tip.</Empty> : tips.map(t => (
           <div key={t.id} style={{ display: "flex", padding: "5px 0", borderBottom: `1px solid #1f2937`, alignItems: "center", fontSize: 12.5, gap: 10 }}>
             <span style={{ width: 130, fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{fmtTs(t.created_at)}</span>
             <span style={{ flex: 1, fontWeight: 700 }}>{t.staff_name || "—"}</span>
@@ -138,7 +138,7 @@ export default function FnbTipPool({ apiBase = "" }) {
             <span style={{ flex: 1, fontSize: 11, color: C.dim }}>{t.notes || ""}</span>
             <span style={{ display: "flex", gap: 4 }}>
               <button onClick={() => setEditingTip({ ...t })} style={Ba("#f59e0b")} title="Edit">✏️</button>
-              <button onClick={() => removeTip(t)} style={Ba("#ef4444")} title="Hapus">🗑️</button>
+              <button onClick={() => removeTip(t)} style={Ba("#ef4444")} title="Delete">🗑️</button>
             </span>
           </div>
         ))}
@@ -161,7 +161,7 @@ export default function FnbTipPool({ apiBase = "" }) {
             </div>
             <div style={{ marginTop: 8 }}><div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, marginBottom: 4 }}>CATATAN</div><input value={editingTip.notes || ""} onChange={e => setEditingTip({ ...editingTip, notes: e.target.value })} style={inp} /></div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditingTip(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditingTip(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveTipEdit} style={B.save}>💾 Simpan</button>
             </div>
           </div>

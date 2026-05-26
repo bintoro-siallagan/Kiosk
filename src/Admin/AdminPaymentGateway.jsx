@@ -151,7 +151,7 @@ export default function AdminPaymentGateway({ apiBase = "" }) {
     const ok = await confirm({
       title: `Hapus provider "${p.name}"?`,
       message: "Akan dihapus permanen. Tidak bisa kalau masih dipakai intent.",
-      danger: true, okLabel: "Hapus",
+      danger: true, okLabel: "Delete",
     });
     if (!ok) return;
     try {
@@ -167,7 +167,7 @@ export default function AdminPaymentGateway({ apiBase = "" }) {
     if (!creating) return;
     const code = String(creating.code || "").trim().toLowerCase();
     const name = String(creating.name || "").trim();
-    if (!code || !name) { showToast("⚠ Code + Name wajib diisi"); return; }
+    if (!code || !name) { showToast("⚠ Code + Name required"); return; }
     try {
       const r = await fetch(`${apiBase}/api/payment-gateway/providers`, {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -262,7 +262,7 @@ export default function AdminPaymentGateway({ apiBase = "" }) {
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
-              <button onClick={() => setCreating(null)} style={{ background: "transparent", border: "1px solid #30363d", color: "#9da7b3", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={() => setCreating(null)} style={{ background: "transparent", border: "1px solid #30363d", color: "#9da7b3", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
               <button onClick={submitCreate} style={{ background: "#34D399", border: "none", color: "#04130c", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Tambah Provider</button>
             </div>
           </div>
@@ -320,7 +320,7 @@ export default function AdminPaymentGateway({ apiBase = "" }) {
           </div>
         </div>
         {intents.length === 0
-          ? <div style={{ color: "#555", padding: 12 }}>Belum ada transaksi gateway</div>
+          ? <div style={{ color: "#555", padding: 12 }}>No transaksi gateway</div>
           : intents.map((it) => (
             <div key={it.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #0f1629", gap: 8 }}>
               <div>

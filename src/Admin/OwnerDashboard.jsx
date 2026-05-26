@@ -373,7 +373,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
           icon="⏱️"
           color="#3b82f6" />
         <MiniPanel
-          title="Karyawan Aktif"
+          title="Active Employees"
           value={(data.employees || []).filter(e => e.is_active !== 0 && e.active !== 0).length}
           sub={`${(data.employees || []).length} staff terdaftar`}
           icon="👥"
@@ -607,7 +607,7 @@ function MiniPanel({ title, value, sub, icon, color, onClick }) {
 // REVENUE TREND CHART
 // ============================================================
 function RevenueTrend({ data }) {
-  if (!data || data.length < 2) return <div style={styles.empty}>Belum ada cukup data</div>;
+  if (!data || data.length < 2) return <div style={styles.empty}>No cukup data</div>;
   const width = 600, height = 200, padding = { top: 20, right: 20, bottom: 30, left: 60 };
   const innerW = width - padding.left - padding.right;
   const innerH = height - padding.top - padding.bottom;
@@ -657,9 +657,9 @@ function RevenueTrend({ data }) {
 // CHANNEL MIX (donut with legend)
 // ============================================================
 function ChannelMixDonut({ data }) {
-  if (!data || data.length === 0) return <div style={styles.empty}>Belum ada data channel</div>;
+  if (!data || data.length === 0) return <div style={styles.empty}>No data yet channel</div>;
   const total = data.reduce((s, d) => s + (d.amount || 0), 0);
-  if (total === 0) return <div style={styles.empty}>Belum ada revenue</div>;
+  if (total === 0) return <div style={styles.empty}>No revenue</div>;
 
   const colors = ['#f97316', '#16a34a', '#3b82f6', '#a855f7', '#fbbf24', '#ef4444'];
   let startAngle = -Math.PI / 2;
@@ -712,7 +712,7 @@ function ChannelMixDonut({ data }) {
 // TOP ITEMS BAR
 // ============================================================
 function TopItemsBar({ items }) {
-  if (!items || items.length === 0) return <div style={styles.empty}>Belum ada data item</div>;
+  if (!items || items.length === 0) return <div style={styles.empty}>No data yet item</div>;
   const max = Math.max(...items.map(i => i.revenue || 0), 1);
 
   return (
@@ -736,7 +736,7 @@ function TopItemsBar({ items }) {
 // PAYMENT METHOD MIX
 // ============================================================
 function PaymentMethodMix({ data }) {
-  if (!data || data.length === 0) return <div style={styles.empty}>Belum ada data tender</div>;
+  if (!data || data.length === 0) return <div style={styles.empty}>No data yet tender</div>;
   const total = data.reduce((s, d) => s + (d.amount || 0), 0);
   const sorted = [...data].sort((a, b) => b.amount - a.amount);
 
@@ -764,7 +764,7 @@ function PaymentMethodMix({ data }) {
 // P&L SUMMARY
 // ============================================================
 function PLSummary({ data }) {
-  if (!data) return <div style={styles.empty}>Belum ada data P&L. Setup General Ledger dulu.</div>;
+  if (!data) return <div style={styles.empty}>No data yet P&L. Setup General Ledger dulu.</div>;
   const grossMargin = data.revenue.total > 0 ? ((data.revenue.total - data.expenses.total) / data.revenue.total) * 100 : 0;
 
   return (
@@ -808,7 +808,7 @@ function PLSummary({ data }) {
 // ============================================================
 function AggregatorBreakdown({ data }) {
   const providers = data?.by_provider || [];
-  if (providers.length === 0) return <div style={styles.empty}>Belum ada data aggregator</div>;
+  if (providers.length === 0) return <div style={styles.empty}>No data yet aggregator</div>;
 
   return (
     <div style={{padding: 12}}>
@@ -850,7 +850,7 @@ function AggregatorBreakdown({ data }) {
 // TIER DISTRIBUTION
 // ============================================================
 function TierDistribution({ data }) {
-  if (!data || data.length === 0) return <div style={styles.empty}>Belum ada loyalty members</div>;
+  if (!data || data.length === 0) return <div style={styles.empty}>No loyalty members</div>;
   const total = data.reduce((s, d) => s + d.c, 0);
   const tierColors = { bronze: '#cd7f32', silver: '#c0c0c0', gold: '#ffd700', platinum: '#e5e4e2' };
 

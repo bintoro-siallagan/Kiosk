@@ -49,7 +49,7 @@ export default function AdminStockList({ apiBase = "" }) {
       <div style={{ ...S.card, marginTop: 14 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={S.kicker}>📦 DAFTAR STOK — {items.length}</span>
-          <input value={q} onChange={e => setQ(e.target.value)} placeholder="🔍 Cari item / SKU…" style={S.search} />
+          <input value={q} onChange={e => setQ(e.target.value)} placeholder="🔍 Search items / SKU…" style={S.search} />
         </div>
         <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
           <thead>

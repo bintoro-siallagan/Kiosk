@@ -44,7 +44,7 @@ export default function AdminInternalAudit({ apiBase = "" }) {
     const ok = await confirm({
       title: `Hapus audit "${a.code}"?`,
       message: `${a.title}. Hanya audit dijadwalkan yang bisa dihapus. Akan dihapus permanen.`,
-      danger: true, okLabel: "Hapus",
+      danger: true, okLabel: "Delete",
     });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/internal-audit/${a.id}`, { method: "DELETE" });
@@ -103,7 +103,7 @@ export default function AdminInternalAudit({ apiBase = "" }) {
                     {["scheduled", "in_progress", "completed"].map(x => <option key={x} value={x}>{STT[x].l}</option>)}
                   </select>
                   <button onClick={e => { e.stopPropagation(); setEditing({ ...a, findings_json: JSON.stringify(a.findings || [], null, 2) }); }} title="Edit" style={S.btnEdit}>✏️</button>
-                  <button onClick={e => { e.stopPropagation(); remove(a); }} title="Hapus" style={S.btnDel}>🗑️</button>
+                  <button onClick={e => { e.stopPropagation(); remove(a); }} title="Delete" style={S.btnDel}>🗑️</button>
                 </div>
                 {exp === a.id && a.findings.map((f, i) => (
                   <div key={i} style={{ marginTop: 6, paddingLeft: 10, borderLeft: `2px solid ${SEV[f.severity] || "#5b6470"}` }}>
@@ -144,8 +144,8 @@ export default function AdminInternalAudit({ apiBase = "" }) {
             </Field>
             <div style={{ fontSize: 10, color: "#5b6470", marginBottom: 8 }}>Catatan: audit dengan status <b>completed</b> immutable — server akan menolak edit.</div>
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-              <button onClick={() => setEditing(null)} style={{ ...S.btn, background: "#21262d", color: "#e6edf3", flex: 1 }}>Batal</button>
-              <button onClick={saveEdit} style={{ ...S.btn, flex: 1 }}>Simpan</button>
+              <button onClick={() => setEditing(null)} style={{ ...S.btn, background: "#21262d", color: "#e6edf3", flex: 1 }}>Cancel</button>
+              <button onClick={saveEdit} style={{ ...S.btn, flex: 1 }}>Save</button>
             </div>
           </div>
         </div>

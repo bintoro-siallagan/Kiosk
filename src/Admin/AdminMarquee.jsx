@@ -89,7 +89,7 @@ export default function AdminMarquee({ apiBase = "" }) {
       const p = await fetch(previewUrl).then(r => r.json()).catch(() => null);
       if (p?.items) setPreview(p.items);
     } catch (e) {
-      showToast(e.message || "Gagal menyimpan", "err");
+      showToast(e.message || "Failed to save", "err");
     } finally {
       setSaving(false);
     }
@@ -131,7 +131,7 @@ export default function AdminMarquee({ apiBase = "" }) {
           <div style={{ color: C.sub, fontSize: 13, padding: 16, textAlign: "center" }}>Memuat…</div>
         ) : lines.length === 0 ? (
           <div style={{ color: C.dim, fontSize: 13, padding: "30px 12px", textAlign: "center", border: `1px dashed ${C.border}`, borderRadius: 10 }}>
-            Belum ada pesan custom. Klik <b>+ Tambah baris</b> untuk mulai.
+            No pesan custom. Klik <b>+ Tambah baris</b> untuk mulai.
             <div style={{ fontSize: 11, marginTop: 6, color: C.dim }}>Auto-konten (Sultan/promo/coming soon) tetap jalan walaupun custom kosong.</div>
           </div>
         ) : (
@@ -161,7 +161,7 @@ export default function AdminMarquee({ apiBase = "" }) {
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 16 }}>
         <div style={{ fontSize: 12, color: "#22d3ee", fontFamily: "'Geist Mono',monospace", letterSpacing: 2, fontWeight: 700, marginBottom: 10 }}>📡 PREVIEW SAAT INI</div>
         {preview.length === 0 ? (
-          <div style={{ color: C.dim, fontSize: 13 }}>Belum ada pesan apapun di marquee.</div>
+          <div style={{ color: C.dim, fontSize: 13 }}>No pesan apapun di marquee.</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {preview.map((it, i) => (

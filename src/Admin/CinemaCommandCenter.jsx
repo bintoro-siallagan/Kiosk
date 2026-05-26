@@ -7,9 +7,9 @@ import { useState, useEffect, useCallback } from "react";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtTs = (s) => s ? new Date(s * 1000).toLocaleString("id-ID", { hour12: false }) : "—";
-const DS_LABEL = { scheduled: "Terjadwal", running: "Berlangsung", closed: "Tutup", sold_out: "Sold Out", cancelled: "Batal" };
+const DS_LABEL = { scheduled: "Terjadwal", running: "Berlangsung", closed: "Close", sold_out: "Sold Out", cancelled: "Cancel" };
 const DS_COLOR = { scheduled: "#10b981", running: "#f59e0b", closed: "#6b7280", sold_out: "#ef4444", cancelled: "#dc2626" };
-const MAINT_LABEL = { operational: "Operational", cleaning: "Cleaning", maintenance: "Maintenance", closed: "Tutup" };
+const MAINT_LABEL = { operational: "Operational", cleaning: "Cleaning", maintenance: "Maintenance", closed: "Close" };
 const MAINT_COLOR = { operational: "#10b981", cleaning: "#22d3ee", maintenance: "#f59e0b", closed: "#ef4444" };
 
 export default function CinemaCommandCenter({ apiBase = "" }) {
@@ -66,10 +66,10 @@ export default function CinemaCommandCenter({ apiBase = "" }) {
         {/* Left column: showtimes */}
         <div>
           <Section title={`🟢 SEDANG BERLANGSUNG (${running.length})`}>
-            {running.length === 0 ? <Empty>Tidak ada jadwal yang sedang berlangsung.</Empty> : running.map(s => <ShowRow key={s.id} s={s} />)}
+            {running.length === 0 ? <Empty>None jadwal yang sedang berlangsung.</Empty> : running.map(s => <ShowRow key={s.id} s={s} />)}
           </Section>
           <Section title={`⏰ JADWAL BERIKUTNYA (${upcoming.length})`}>
-            {upcoming.length === 0 ? <Empty>Tidak ada jadwal yang akan datang hari ini.</Empty> : upcoming.slice(0, 8).map(s => <ShowRow key={s.id} s={s} />)}
+            {upcoming.length === 0 ? <Empty>None jadwal yang akan datang hari ini.</Empty> : upcoming.slice(0, 8).map(s => <ShowRow key={s.id} s={s} />)}
           </Section>
           {completed.length > 0 && (
             <Section title={`✓ SUDAH SELESAI (${completed.length})`}>
@@ -87,7 +87,7 @@ export default function CinemaCommandCenter({ apiBase = "" }) {
               <QueueStat label="Baru"      value={data.queue.pending || 0}    color="#ef4444" />
               <QueueStat label="Disiapkan" value={data.queue.preparing || 0}  color="#f59e0b" />
               <QueueStat label="Diantar"   value={data.queue.delivered || 0}  color="#10b981" />
-              <QueueStat label="Batal"     value={data.queue.cancelled || 0}  color="#6b7280" />
+              <QueueStat label="Cancel"     value={data.queue.cancelled || 0}  color="#6b7280" />
             </div>
           </Section>
 
@@ -108,7 +108,7 @@ export default function CinemaCommandCenter({ apiBase = "" }) {
           </Section>
 
           <Section title="⭐ FEEDBACK TERBARU">
-            {data.feedback.length === 0 ? <Empty>Belum ada feedback hari ini.</Empty> :
+            {data.feedback.length === 0 ? <Empty>No feedback hari ini.</Empty> :
               data.feedback.map(f => (
                 <div key={f.id} style={{ padding: "10px 14px", borderBottom: `1px solid ${C.border}`, fontSize: 12 }}>
                   <div style={{ fontWeight: 700, marginBottom: 3 }}>{f.film_title || "—"}</div>

@@ -98,7 +98,7 @@ export default function AdminGoodsDelivery({ apiBase = "" }) {
   };
 
   const remove = async (gd) => {
-    const ok = await confirm({ title: "Hapus GD?", message: `Hapus ${gd.gd_number}? Tindakan ini tidak dapat dibatalkan.`, danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: "Hapus GD?", message: `Hapus ${gd.gd_number}? This action tidak dapat dibatalkan.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     fetch(`${apiBase}/api/goods-delivery/${gd.id}`, { method: "DELETE" })
       .then(r => r.json()).then(j => {
@@ -157,7 +157,7 @@ export default function AdminGoodsDelivery({ apiBase = "" }) {
       <div style={{ ...S.card, marginTop: 14 }}>
         <div style={S.kicker}>📥 BARANG DALAM PERJALANAN — {inTransit.length}</div>
         {inTransit.length === 0 ? (
-          <div style={{ color: "#5b6470", fontSize: 13, padding: "12px 0" }}>Tidak ada pengiriman berjalan.</div>
+          <div style={{ color: "#5b6470", fontSize: 13, padding: "12px 0" }}>None pengiriman berjalan.</div>
         ) : inTransit.map(gd => (
           <div key={gd.id} style={{ border: "1px solid #21262d", borderRadius: 8, padding: 12, marginTop: 10 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, alignItems: "center", gap: 8 }}>
@@ -165,7 +165,7 @@ export default function AdminGoodsDelivery({ apiBase = "" }) {
               <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <span style={{ color: "#5b6470", fontSize: 11 }}>{gd.po_ref || "tanpa PO"} · {fmtDate(gd.shipped_at)}</span>
                 <button onClick={() => setEditing({ ...gd })} title="Edit" style={S.btnEdit}>✏️</button>
-                <button onClick={() => remove(gd)} title="Hapus" style={S.btnDel}>🗑️</button>
+                <button onClick={() => remove(gd)} title="Delete" style={S.btnDel}>🗑️</button>
               </span>
             </div>
             {gd.items.map(it => (
@@ -199,7 +199,7 @@ export default function AdminGoodsDelivery({ apiBase = "" }) {
                       <button onClick={() => closeGd(gd)} style={S.btnClose}>🔒 Tutup GD</button>
                     </>}
                 <button onClick={() => setEditing({ ...gd })} title="Edit" style={S.btnEdit}>✏️</button>
-                <button onClick={() => remove(gd)} title="Hapus" style={S.btnDel}>🗑️</button>
+                <button onClick={() => remove(gd)} title="Delete" style={S.btnDel}>🗑️</button>
               </span>
             </div>
           ))}
@@ -239,7 +239,7 @@ export default function AdminGoodsDelivery({ apiBase = "" }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

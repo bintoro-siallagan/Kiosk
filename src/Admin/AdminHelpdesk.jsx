@@ -43,7 +43,7 @@ export default function AdminHelpdesk({ apiBase = "" }) {
     const ok = await confirm({
       title: `Hapus tiket "${item.ticket_no}"?`,
       message: `${item.subject}. Akan dihapus permanen. Tidak bisa dibatalkan.`,
-      danger: true, okLabel: "Hapus",
+      danger: true, okLabel: "Delete",
     });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/helpdesk/${item.id}`, { method: "DELETE" });
@@ -121,7 +121,7 @@ export default function AdminHelpdesk({ apiBase = "" }) {
                 <td style={S.td}>
                   <div style={{ display: "flex", gap: 4 }}>
                     <button onClick={() => setEditing({ ...t })} title="Edit" style={S.btnEdit}>✏️</button>
-                    <button onClick={() => remove(t)} title="Hapus" style={S.btnDel}>🗑️</button>
+                    <button onClick={() => remove(t)} title="Delete" style={S.btnDel}>🗑️</button>
                   </div>
                 </td>
               </tr>
@@ -154,8 +154,8 @@ export default function AdminHelpdesk({ apiBase = "" }) {
             <Field label="Outlet"><input value={editing.outlet || ""} onChange={e => setEditing({ ...editing, outlet: e.target.value })} style={modalInp} /></Field>
             <Field label="Owner (Assigned)"><input value={editing.owner || ""} onChange={e => setEditing({ ...editing, owner: e.target.value })} style={modalInp} /></Field>
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-              <button onClick={() => setEditing(null)} style={{ ...S.btn, background: "#21262d", color: "#e6edf3", flex: 1 }}>Batal</button>
-              <button onClick={saveEdit} style={{ ...S.btn, flex: 1 }}>Simpan</button>
+              <button onClick={() => setEditing(null)} style={{ ...S.btn, background: "#21262d", color: "#e6edf3", flex: 1 }}>Cancel</button>
+              <button onClick={saveEdit} style={{ ...S.btn, flex: 1 }}>Save</button>
             </div>
           </div>
         </div>

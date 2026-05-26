@@ -29,7 +29,7 @@ export default function FnbReservation({ apiBase = "" }) {
   };
   const setStatus = async (r, status) => { await fetch(`${base}/reservations/${r.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) }); showToast(`Status: ${STATUS[status]?.label}`); load(); };
   const { confirm } = useUiKit();
-  const remove = async (r) => { if (!(await confirm({ title: `Hapus booking ${r.reservation_code}?`, message: `${r.customer_name} · ${r.reservation_date} ${r.reservation_time}`, danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/reservations/${r.id}`, { method: "DELETE" }); load(); };
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus booking ${r.reservation_code}?`, message: `${r.customer_name} · ${r.reservation_date} ${r.reservation_time}`, danger: true, okLabel: "Delete" }))) return; await fetch(`${base}/reservations/${r.id}`, { method: "DELETE" }); load(); };
   return (
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
@@ -63,12 +63,12 @@ export default function FnbReservation({ apiBase = "" }) {
             <Field label="Special request" wide><textarea value={form.special_requests} onChange={e => setForm({ ...form, special_requests: e.target.value })} rows={2} style={{ ...inp, resize: "vertical" }} placeholder="High chair, alergi, dll" /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Simpan"}</button>
-            <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Batal</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}
-      {rows.length === 0 ? <Empty>Tidak ada booking di filter ini.</Empty> : (
+      {rows.length === 0 ? <Empty>None booking di filter ini.</Empty> : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(360px,1fr))", gap: 12 }}>
           {rows.map(r => {
             const st = STATUS[r.status] || STATUS.pending;

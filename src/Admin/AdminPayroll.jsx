@@ -43,7 +43,7 @@ export default function AdminPayroll({ apiBase = "" }) {
     const ok = await confirm({
       title: `Hapus payroll periode ${item.period}?`,
       message: "Payroll run akan dihapus permanen. Catatan beban gaji di Finance tetap. Tidak bisa dibatalkan.",
-      danger: true, okLabel: "Hapus",
+      danger: true, okLabel: "Delete",
     });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/payroll/${item.id}`, { method: "DELETE" });
@@ -81,7 +81,7 @@ export default function AdminPayroll({ apiBase = "" }) {
           </span>
           <div style={{ display: "flex", gap: 6 }}>
             <button onClick={() => setEditing({ ...d.processed })} title="Edit" style={S.btnEdit}>✏️</button>
-            <button onClick={() => remove(d.processed)} title="Hapus" style={S.btnDel}>🗑️</button>
+            <button onClick={() => remove(d.processed)} title="Delete" style={S.btnDel}>🗑️</button>
           </div>
         </div>
       ) : (
@@ -131,8 +131,8 @@ export default function AdminPayroll({ apiBase = "" }) {
             <Field label="Total THP"><input value={fmtRp(editing.total_thp)} disabled style={{ ...modalInp, opacity: 0.6 }} /></Field>
             <div style={{ fontSize: 10, color: "#5b6470", marginTop: 4, marginBottom: 10 }}>Catatan: angka payroll dihitung otomatis dari HRIS — hanya metadata yang bisa diedit.</div>
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-              <button onClick={() => setEditing(null)} style={{ ...S.btnPrimary, background: "#21262d", color: "#e6edf3", flex: 1 }}>Batal</button>
-              <button onClick={saveEdit} style={{ ...S.btnPrimary, flex: 1 }}>Simpan</button>
+              <button onClick={() => setEditing(null)} style={{ ...S.btnPrimary, background: "#21262d", color: "#e6edf3", flex: 1 }}>Cancel</button>
+              <button onClick={saveEdit} style={{ ...S.btnPrimary, flex: 1 }}>Save</button>
             </div>
           </div>
         </div>

@@ -67,7 +67,7 @@ export default function AdminPettyCash({ apiBase = "" }) {
     const ok = await confirm({
       title: "Hapus transaksi?", danger: true,
       message: `Hapus transaksi ${t.txn_type === "topup" ? "TOP-UP" : "EXPENSE"} ${fmtRp(t.amount)} di ${t.outlet}? Tindakan ini tidak bisa dibatalkan.`,
-      okLabel: "Hapus",
+      okLabel: "Delete",
     });
     if (!ok) return;
     fetch(`${apiBase}/api/petty-cash/${t.id}`, { method: "DELETE" })
@@ -139,7 +139,7 @@ export default function AdminPettyCash({ apiBase = "" }) {
               {t.txn_type === "topup" ? "+" : "−"}{fmtRp(t.amount)}
             </span>
             <button onClick={() => setEditing({ ...t })} title="Edit" style={S.iconBtn("#f59e0b")}>✏️</button>
-            <button onClick={() => remove(t)} title="Hapus" style={S.iconBtn("#ef4444")}>🗑️</button>
+            <button onClick={() => remove(t)} title="Delete" style={S.iconBtn("#ef4444")}>🗑️</button>
           </div>
         ))}
       </div>
@@ -169,7 +169,7 @@ export default function AdminPettyCash({ apiBase = "" }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

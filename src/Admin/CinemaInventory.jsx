@@ -104,8 +104,8 @@ function ItemsTab({ base, showToast }) {
             </Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Simpan"}</button>
-            <button onClick={cancel} style={B.cancel}>Batal</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={cancel} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}
@@ -117,13 +117,13 @@ function ItemsTab({ base, showToast }) {
               <input type="number" step="0.01" value={restockQty} onChange={e => setRestockQty(e.target.value)} placeholder="mis: 10" style={inp} autoFocus />
             </Field>
             <button onClick={doRestock} style={B.save}>+ Restock</button>
-            <button onClick={() => { setRestocking(null); setRestockQty(""); }} style={B.cancel}>Batal</button>
+            <button onClick={() => { setRestocking(null); setRestockQty(""); }} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
         <Header cols={["NAMA", "UNIT", "STOCK", "MIN", "COST/UNIT", "VALUE", "STATUS", "AKSI"]} widths={[200, 70, 110, 90, 110, 130, 70, 170]} />
-        {rows.length === 0 ? <Empty>Belum ada item.</Empty> :
+        {rows.length === 0 ? <Empty>No item.</Empty> :
           rows.map(r => {
             const low = r.current_stock <= r.low_stock_threshold;
             const value = (r.current_stock || 0) * (r.cost_per_unit || 0);
@@ -195,7 +195,7 @@ function RecipesTab({ base, showToast }) {
       </div>
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden", marginBottom: 12 }}>
         <Header cols={["INGREDIENT", "QTY", "UNIT", "CURRENT STOCK", "AKSI"]} widths={[280, 110, 80, 150, 70]} />
-        {recipe.length === 0 ? <Empty>Belum ada ingredient. Tambah di bawah.</Empty> :
+        {recipe.length === 0 ? <Empty>No ingredient. Tambah di bawah.</Empty> :
           recipe.map(r => (
             <div key={r.inventory_item_id} style={rowS}>
               <span style={{ width: 280, fontWeight: 700 }}>{r.item_name}</span>
@@ -233,7 +233,7 @@ function MovementsTab({ base }) {
   return (
     <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
       <Header cols={["WAKTU", "ITEM", "PERUBAHAN", "SOURCE", "CATATAN"]} widths={[150, 220, 100, 140, "auto"]} />
-      {rows.length === 0 ? <Empty>Belum ada pergerakan stok.</Empty> :
+      {rows.length === 0 ? <Empty>No pergerakan stok.</Empty> :
         rows.map(r => (
           <div key={r.id} style={rowS}>
             <span style={{ width: 150, fontSize: 11.5, color: C.sub, fontFamily: "'Geist Mono',monospace" }}>{fmtTs(r.created_at)}</span>

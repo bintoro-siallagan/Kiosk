@@ -49,7 +49,7 @@ export default function AdminAutoReorder({ apiBase = "" }) {
   };
 
   const remove = async (item) => {
-    const ok = await confirm({ title: `Hapus "${item.pr_number || '#' + item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: `Hapus "${item.pr_number || '#' + item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Delete" });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/auto-reorder/${item.id}`, { method: "DELETE" });
     const j = await r.json();
@@ -117,7 +117,7 @@ export default function AdminAutoReorder({ apiBase = "" }) {
       <div style={{ ...S.card, marginTop: 14 }}>
         <div style={S.kicker}>🧾 PR TER-GENERATE OTOMATIS — {d.generated_prs.length}</div>
         {d.generated_prs.length === 0 ? (
-          <div style={{ fontSize: 12, color: "#5b6470", padding: "10px 0" }}>Belum ada PR auto-generated. Klik "Generate" di atas.</div>
+          <div style={{ fontSize: 12, color: "#5b6470", padding: "10px 0" }}>No PR auto-generated. Klik "Generate" di atas.</div>
         ) : d.generated_prs.map(pr => (
           <div key={pr.pr_number} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 0", borderTop: "1px solid #161b22", fontSize: 12 }}>
             <span style={{ fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "#a5b4fc" }}>{pr.pr_number}</span>
@@ -125,7 +125,7 @@ export default function AdminAutoReorder({ apiBase = "" }) {
             <span style={{ fontFamily: "'Geist Mono',monospace", color: "#cdd5df" }}>{fmtRp(pr.total_estimated)}</span>
             <span style={{ fontSize: 10, fontWeight: 700, color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>→ {pr.status.toUpperCase()}</span>
             <button onClick={() => setEditing({ ...pr })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
-            <button onClick={() => remove(pr)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+            <button onClick={() => remove(pr)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
           </div>
         ))}
       </div>
@@ -153,7 +153,7 @@ export default function AdminAutoReorder({ apiBase = "" }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

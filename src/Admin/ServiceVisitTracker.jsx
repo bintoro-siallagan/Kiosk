@@ -93,7 +93,7 @@ export default function ServiceVisitTracker({ apiBase = "" }) {
         <div style={{ flex: 1 }} />
         {view === "tickets" && (
           <button onClick={() => setCreating(true)} style={{ padding: "8px 14px", background: `linear-gradient(135deg,${PURPLE},#7c3aed)`, border: "none", borderRadius: 7, color: "#fff", fontSize: 12, fontWeight: 800, fontFamily: "inherit", cursor: "pointer" }}>
-            + Buat Ticket
+            + New Ticket
           </button>
         )}
         {view === "templates" && (
@@ -103,21 +103,21 @@ export default function ServiceVisitTracker({ apiBase = "" }) {
         )}
       </div>
 
-      {err && <ErrorInline error={err} onRetry={load} label="Data belum dapat dimuat" />}
+      {err && <ErrorInline error={err} onRetry={load} label="Unable to load data" />}
 
       {/* TICKETS VIEW */}
       {view === "tickets" && (
         <>
           <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
             <select value={filter.status} onChange={e => setFilter(f => ({...f, status: e.target.value}))} style={inp}>
-              <option value="">Semua Status</option>
+              <option value="">All Statuses</option>
               <option value="open">Open</option>
               <option value="in_progress">In Progress</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>
             <select value={filter.department} onChange={e => setFilter(f => ({...f, department: e.target.value}))} style={inp}>
-              <option value="">Semua Dept</option>
+              <option value="">All Departments</option>
               {departments.map(d => <option key={d.code} value={d.code}>{d.icon} {d.label}</option>)}
             </select>
           </div>
@@ -126,7 +126,7 @@ export default function ServiceVisitTracker({ apiBase = "" }) {
             {filtered.length === 0 && !loading && (
               <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "#64748b" }}>
                 <div style={{ fontSize: 36, marginBottom: 8 }}>🎫</div>
-                <div>Belum ada tiket{filter.status || filter.department ? " sesuai filter" : ""}</div>
+                <div>No tickets yet{filter.status || filter.department ? " sesuai filter" : ""}</div>
               </div>
             )}
           </div>
@@ -206,7 +206,7 @@ function TicketCard({ ticket, departments, onClick }) {
 }
 
 function DeptKpiPanel({ kpi, departments }) {
-  if (kpi.length === 0) return <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>Belum ada data KPI (30 hari terakhir)</div>;
+  if (kpi.length === 0) return <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>No data yet KPI (30 hari terakhir)</div>;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%, 320px),1fr))", gap: 12 }}>
       {kpi.map(k => {
@@ -358,7 +358,7 @@ function TicketDetailDrawer({ ticket, departments, templates, onClose, onRefresh
                 <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
                   <select value={syncTplId} onChange={e => setSyncTplId(e.target.value)} style={inp}>
                     <option value="">— Pilih template untuk sync —</option>
-                    {deptTemplates.length === 0 && <option disabled>(Belum ada template — buat di tab Templates)</option>}
+                    {deptTemplates.length === 0 && <option disabled>(No template — buat di tab Templates)</option>}
                     {deptTemplates.map(t => <option key={t.id} value={t.id}>[{t.department}] {t.template_name} ({t.items?.length || 0} items)</option>)}
                   </select>
                   <button onClick={syncTemplate} disabled={busyItem || !syncTplId} style={{ padding: "8px 14px", background: PURPLE, border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", opacity: busyItem || !syncTplId ? 0.5 : 1 }}>🔄 Sync</button>
@@ -506,8 +506,8 @@ function CreateTicketModal({ onClose, onCreated, API, departments, outlets, user
         {err && <div style={{ padding: 10, background: "rgba(239,68,68,0.1)", border: `1px solid ${RED}55`, borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 10 }}>⚠ {err}</div>}
 
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
-          <button onClick={submit} disabled={busy} style={{ flex: 2, padding: 12, background: `linear-gradient(135deg,${PURPLE},#7c3aed)`, border: "none", borderRadius: 10, color: "#fff", fontWeight: 800, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>{busy ? "⏳" : "🎫 Buat Ticket"}</button>
+          <button onClick={onClose} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+          <button onClick={submit} disabled={busy} style={{ flex: 2, padding: 12, background: `linear-gradient(135deg,${PURPLE},#7c3aed)`, border: "none", borderRadius: 10, color: "#fff", fontWeight: 800, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>{busy ? "⏳" : "🎫 New Ticket"}</button>
         </div>
       </div>
     </div>
@@ -577,7 +577,7 @@ function TemplateEditModal({ template, departments, onClose, onSaved, API }) {
                 <button onClick={() => removeItem(i)} style={{ padding: "2px 8px", background: "transparent", border: "none", color: RED, fontSize: 14, cursor: "pointer" }}>×</button>
               </div>
             ))}
-            {form.items.length === 0 && <div style={{ padding: 10, textAlign: "center", fontSize: 11, color: "#64748b" }}>Belum ada item</div>}
+            {form.items.length === 0 && <div style={{ padding: 10, textAlign: "center", fontSize: 11, color: "#64748b" }}>No item</div>}
           </div>
           <div style={{ display: "flex", gap: 6 }}>
             <input value={newItem} onChange={e => setNewItem(e.target.value)} onKeyDown={e => e.key === "Enter" && addItem()} placeholder="Tambah item baru…" style={inp} />
@@ -588,7 +588,7 @@ function TemplateEditModal({ template, departments, onClose, onSaved, API }) {
         {err && <div style={{ padding: 10, background: "rgba(239,68,68,0.1)", border: `1px solid ${RED}55`, borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 10 }}>⚠ {err}</div>}
 
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={onClose} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+          <button onClick={onClose} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
           <button onClick={submit} disabled={busy} style={{ flex: 2, padding: 12, background: `linear-gradient(135deg,${PURPLE},#7c3aed)`, border: "none", borderRadius: 10, color: "#fff", fontWeight: 800, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>{busy ? "⏳" : "💾 Simpan Template"}</button>
         </div>
       </div>

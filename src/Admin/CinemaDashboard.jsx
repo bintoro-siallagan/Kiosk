@@ -49,7 +49,7 @@ export default function CinemaDashboard({ apiBase }) {
   }, [apiBase, period, outletFilter]);
 
   if (loading && !data) return <div style={{ padding: 40, color: "#7d8590", textAlign: "center" }}>⏳ Loading dashboard...</div>;
-  if (!data) return <div style={{ padding: 40, color: "#94a3b8", textAlign: "center" }}>Memuat data dashboard…</div>;
+  if (!data) return <div style={{ padding: 40, color: "#94a3b8", textAlign: "center" }}>Loading data dashboard…</div>;
 
   const k = data.kpi || {};
 
@@ -260,5 +260,5 @@ function Panel({ title, color, children }) {
 }
 
 function Empty() {
-  return <div style={{ padding: 30, textAlign: "center", color: "#5b6470", fontSize: 12 }}>Belum ada data di periode ini</div>;
+  return <div style={{ padding: 30, textAlign: "center", color: "#5b6470", fontSize: 12 }}>No data yet di periode ini</div>;
 }

@@ -29,7 +29,7 @@ export default function AdminInternalReturn({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
   const remove = async (item) => {
-    const ok = await confirm({ title: `Hapus "${item.return_no || '#'+item.id}"?`, message: "Akan dihapus permanen. Hanya draft yang bisa dihapus.", danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: `Hapus "${item.return_no || '#'+item.id}"?`, message: "Akan dihapus permanen. Hanya draft yang bisa dihapus.", danger: true, okLabel: "Delete" });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/internal-return/${item.id}`, { method: "DELETE" });
     const j = await r.json();
@@ -60,7 +60,7 @@ export default function AdminInternalReturn({ apiBase = "" }) {
         <Kpi label="Total Retur" v={String(s.total)} c={AC} />
         <Kpi label="Draft" v={String(s.draft)} c={s.draft > 0 ? "#f59e0b" : "#10b981"} />
         <Kpi label="Partial" v={String(s.partial)} c={s.partial > 0 ? "#3b82f6" : "#5b6470"} />
-        <Kpi label="Selesai" v={String(s.completed)} c="#10b981" />
+        <Kpi label="Completed" v={String(s.completed)} c="#10b981" />
       </div>
       <div style={{ fontSize: 11, color: "#5b6470", margin: "8px 2px", fontFamily: "'Geist Mono',monospace" }}>
         {s.transfer} transfer return · {s.delivery} delivery return
@@ -90,7 +90,7 @@ export default function AdminInternalReturn({ apiBase = "" }) {
                   {r.status === 'draft' && (
                     <>
                       <button onClick={() => setEditing({ ...r })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
-                      <button onClick={() => remove(r)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+                      <button onClick={() => remove(r)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
                     </>
                   )}
                 </div>
@@ -149,7 +149,7 @@ export default function AdminInternalReturn({ apiBase = "" }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

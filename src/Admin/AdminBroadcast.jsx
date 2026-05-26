@@ -46,7 +46,7 @@ export default function AdminBroadcast({ apiBase = "" }) {
   const applyTemplate = (t) => { setTitle(t.title); setMessage(t.message); setCode(t.code); setAccent(t.accent); };
 
   const push = async () => {
-    if (!title.trim()) { alert("Judul promo wajib diisi"); return; }
+    if (!title.trim()) { alert("Judul promo required"); return; }
     setBusy(true);
     try {
       const r = await fetch(`${apiBase}/api/broadcast`, {
@@ -75,7 +75,7 @@ export default function AdminBroadcast({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
   const remove = async (item) => {
-    const ok = await confirm({ title: `Hapus "${item.title || '#' + item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: `Hapus "${item.title || '#' + item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Delete" });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/broadcast/${item.id}`, { method: "DELETE" });
     const j = await r.json();
@@ -104,7 +104,7 @@ export default function AdminBroadcast({ apiBase = "" }) {
           </button>
         </div>
       ) : (
-        <div style={{ ...S.card, color: "#555", fontSize: 13 }}>Belum ada promo yang tayang.</div>
+        <div style={{ ...S.card, color: "#555", fontSize: 13 }}>No promo yang tayang.</div>
       )}
 
       {/* COMPOSE */}
@@ -158,14 +158,14 @@ export default function AdminBroadcast({ apiBase = "" }) {
       <div style={S.card}>
         <div style={S.label}>Riwayat Broadcast ({history.length})</div>
         {history.length === 0 ? (
-          <div style={{ color: "#555", fontSize: 13, padding: 6 }}>Belum ada</div>
+          <div style={{ color: "#555", fontSize: 13, padding: 6 }}>No</div>
         ) : history.map(h => (
           <div key={h.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid #0f1629" }}>
             <span style={{ width: 8, height: 8, borderRadius: 8, background: h.accent || "#f97316", flexShrink: 0 }} />
             <span style={{ flex: 1, fontSize: 13, color: "#c9d1d9" }}>{h.title}{h.code ? ` · ${h.code}` : ""}</span>
             <span style={{ fontSize: 11, color: "#555", fontFamily: MONO }}>{new Date((h.created_at || 0) * 1000).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
             <button onClick={() => setEditing({ ...h })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
-            <button onClick={() => remove(h)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+            <button onClick={() => remove(h)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
           </div>
         ))}
         {msg ? <div style={{ fontSize: 12, marginTop: 8, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
@@ -201,7 +201,7 @@ export default function AdminBroadcast({ apiBase = "" }) {
               </div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

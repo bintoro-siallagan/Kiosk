@@ -178,7 +178,7 @@ export default function AdminAggregator({ apiBase = '' }) {
           {/* Orders list */}
           <h3 style={styles.sectionTitle}>Order Aktif</h3>
           {activeOrders.length === 0 ? (
-            <div style={styles.empty}>Tidak ada order pending. Klik "+ Test Order" buat simulasi.</div>
+            <div style={styles.empty}>None order pending. Klik "+ Test Order" buat simulasi.</div>
           ) : (
             <div style={styles.orderList}>
               {activeOrders.map(o => (
@@ -209,7 +209,7 @@ export default function AdminAggregator({ apiBase = '' }) {
                 }}>
                   {o.status}
                 </span>
-                <button onClick={() => remove(o)} title="Hapus" style={{ background: '#ef444418', border: '1px solid #ef444444', color: '#ef4444', padding: '3px 7px', borderRadius: 5, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}>🗑️</button>
+                <button onClick={() => remove(o)} title="Delete" style={{ background: '#ef444418', border: '1px solid #ef444444', color: '#ef4444', padding: '3px 7px', borderRadius: 5, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}>🗑️</button>
               </div>
             ))}
           </div>
@@ -241,7 +241,7 @@ export default function AdminAggregator({ apiBase = '' }) {
             </tr></thead>
             <tbody>
               {reconcile.by_provider.length === 0 && (
-                <tr><td colSpan={8} style={{...styles.td, textAlign: 'center', color: '#6b7280', padding: 30}}>Belum ada data</td></tr>
+                <tr><td colSpan={8} style={{...styles.td, textAlign: 'center', color: '#6b7280', padding: 30}}>No data yet</td></tr>
               )}
               {reconcile.by_provider.map(r => (
                 <tr key={r.provider_code} style={{borderBottom: '1px solid #2a2a2a'}}>
@@ -274,7 +274,7 @@ export default function AdminAggregator({ apiBase = '' }) {
       {tab === 'sync' && (
         <div style={{padding: 16}}>
           <h3 style={styles.sectionTitle}>Menu Sync Log (50 terakhir)</h3>
-          {syncLog.length === 0 ? <div style={styles.empty}>Belum ada sync activity</div> : (
+          {syncLog.length === 0 ? <div style={styles.empty}>No sync activity</div> : (
             <table style={styles.table}>
               <thead><tr>
                 <th style={styles.th}>Tanggal</th>
@@ -473,7 +473,7 @@ function ManualEntry({ providers, apiBase, onSaved }) {
           <button onClick={() => removeItem(i)} style={{...styles.rejectBtn, padding: '6px 10px'}}>×</button>
         </div>
       ))}
-      <button onClick={addItem} style={{...styles.input, cursor: 'pointer', textAlign: 'center', color: '#9ca3af'}}>+ Tambah Item</button>
+      <button onClick={addItem} style={{...styles.input, cursor: 'pointer', textAlign: 'center', color: '#9ca3af'}}>+ Add Item</button>
 
       <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12}}>
         <div style={styles.formGroup}>
@@ -529,7 +529,7 @@ function ProvidersConfig({ providers, apiBase, onUpdated }) {
               <div style={{fontSize: 16, fontWeight: 600, color: '#fff'}}>{PROVIDER_ICONS[p.code]} {p.name}</div>
               <div style={{fontSize: 11, color: '#9ca3af', marginTop: 4}}>
                 Commission: {(p.commission_rate*100).toFixed(1)}% · Prep buffer: {p.prep_buffer_minutes} menit
-                {p.api_key ? ' · ✓ API Connected' : ' · ⚠️ Belum ada API key'}
+                {p.api_key ? ' · ✓ API Connected' : ' · ⚠️ No API key'}
               </div>
             </div>
             <div style={{display: 'flex', gap: 6}}>
@@ -574,7 +574,7 @@ function ProvidersConfig({ providers, apiBase, onUpdated }) {
                   style={styles.input} />
               </div>
               <div style={{display: 'flex', gap: 8, marginTop: 12}}>
-                <button onClick={() => setEditing(null)} style={styles.btn}>Batal</button>
+                <button onClick={() => setEditing(null)} style={styles.btn}>Cancel</button>
                 <button onClick={() => save(p.code, editing)} style={styles.acceptBtn}>Save</button>
               </div>
               <div style={{fontSize: 10, color: '#6b7280', marginTop: 8}}>

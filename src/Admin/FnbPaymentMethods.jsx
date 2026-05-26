@@ -53,7 +53,7 @@ function MethodsTab({ base, showToast }) {
     showToast(editing === "new" ? "Method dibuat" : "Method diperbarui"); setEditing(null); setForm(emptyM); load();
   };
   const { confirm } = useUiKit();
-  const remove = async (r) => { if (!(await confirm({ title: `Hapus method "${r.name}"?`, message: "Method ini akan hilang dari semua outlet.", danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/payment-methods/${r.id}`, { method: "DELETE" }); load(); };
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus method "${r.name}"?`, message: "Method ini akan hilang dari semua outlet.", danger: true, okLabel: "Delete" }))) return; await fetch(`${base}/payment-methods/${r.id}`, { method: "DELETE" }); load(); };
   const toggleSelect = (id) => setSelected(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const pushSelected = async () => {
     if (!selected.size) { showToast("Pilih method dulu", "err"); return; }
@@ -113,8 +113,8 @@ function MethodsTab({ base, showToast }) {
             <Field label="Catatan"><input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} style={inp} /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Simpan"}</button>
-            <button onClick={() => { setEditing(null); setForm(emptyM); }} style={B.cancel}>Batal</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={() => { setEditing(null); setForm(emptyM); }} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}
@@ -122,16 +122,16 @@ function MethodsTab({ base, showToast }) {
         <div style={{ display: "flex", padding: "8px 14px", borderBottom: `1px solid ${C.border}`, color: C.dim, fontSize: 11, letterSpacing: 1, gap: 10, alignItems: "center" }}>
           <span style={{ width: 22 }}><input type="checkbox" checked={selected.size === filtered.length && filtered.length > 0} onChange={e => setSelected(e.target.checked ? new Set(filtered.map(r => r.id)) : new Set())} /></span>
           <span style={{ width: 36 }}></span>
-          <span style={{ flex: 1.5 }}>NAMA</span>
+          <span style={{ flex: 1.5 }}>NAME</span>
           <span style={{ width: 110 }}>KATEGORI</span>
           <span style={{ width: 70, textAlign: "right" }}>MDR%</span>
           <span style={{ width: 70, textAlign: "right" }}>DISC%</span>
           <span style={{ width: 90 }}>OUTLET</span>
           <span style={{ width: 90 }}>FLAGS</span>
           <span style={{ width: 60 }}>STATUS</span>
-          <span style={{ width: 100, textAlign: "right" }}>AKSI</span>
+          <span style={{ width: 100, textAlign: "right" }}>ACTIONS</span>
         </div>
-        {filtered.length === 0 ? <Empty>Tidak ada payment method.</Empty> : filtered.map(r => {
+        {filtered.length === 0 ? <Empty>None payment method.</Empty> : filtered.map(r => {
           const cat = cats.find(c => c.code === r.category);
           return (
             <div key={r.id} style={{ display: "flex", padding: "10px 14px", borderBottom: `1px solid ${C.border}`, gap: 10, alignItems: "center" }}>
@@ -173,7 +173,7 @@ function CategoriesTab({ base, showToast }) {
     showToast("Kategori disimpan"); setEditing(null); setForm(emptyC); load();
   };
   const { confirm } = useUiKit();
-  const remove = async (r) => { if (!(await confirm({ title: `Hapus kategori "${r.name}"?`, message: "Method yang pakai kategori ini akan jadi 'Lainnya'.", danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/payment-categories/${r.id}`, { method: "DELETE" }); load(); };
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus kategori "${r.name}"?`, message: "Method yang pakai kategori ini akan jadi 'Lainnya'.", danger: true, okLabel: "Delete" }))) return; await fetch(`${base}/payment-categories/${r.id}`, { method: "DELETE" }); load(); };
   return (
     <>
       <div style={{ marginBottom: 12 }}>{!editing && <button onClick={() => { setEditing("new"); setForm(emptyC); }} style={B.add}>＋ Kategori baru</button>}</div>
@@ -190,8 +190,8 @@ function CategoriesTab({ base, showToast }) {
             <Field label="Deskripsi"><input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={inp} /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Simpan"}</button>
-            <button onClick={() => { setEditing(null); setForm(emptyC); }} style={B.cancel}>Batal</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={() => { setEditing(null); setForm(emptyC); }} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}

@@ -237,7 +237,7 @@ export default function AdminRBAC({ apiBase = "" }) {
               💡 After the role is created, configure module-level access by clicking cells in the matrix below. Users can be assigned this role in <b>Users</b>.
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-              <button onClick={() => setCreating(false)} disabled={busy} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setCreating(false)} disabled={busy} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={submitCreate} disabled={busy || !newRole.name.trim()} style={{ background: "linear-gradient(135deg, #a855f7, #7c3aed)", color: "#fff", border: "none", padding: "8px 18px", borderRadius: 7, cursor: (busy || !newRole.name.trim()) ? "not-allowed" : "pointer", fontFamily: "inherit", fontWeight: 800, opacity: (busy || !newRole.name.trim()) ? 0.5 : 1 }}>
                 {busy ? "⏳ Processing…" : "➕ Add Role"}
               </button>
@@ -262,7 +262,7 @@ export default function AdminRBAC({ apiBase = "" }) {
               ))}
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

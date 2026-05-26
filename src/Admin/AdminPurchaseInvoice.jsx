@@ -76,7 +76,7 @@ export default function AdminPurchaseInvoice({ apiBase = "" }) {
     const ok = await confirm({
       title: "Hapus invoice?", danger: true,
       message: `Hapus invoice ${inv.invoice_number} (${inv.supplier}, total ${fmtRp(inv.total)})? Tindakan ini tidak bisa dibatalkan.`,
-      okLabel: "Hapus",
+      okLabel: "Delete",
     });
     if (!ok) return;
     fetch(`${apiBase}/api/purchase-invoice/${inv.id}`, { method: "DELETE" })
@@ -117,7 +117,7 @@ export default function AdminPurchaseInvoice({ apiBase = "" }) {
       <div style={{ ...S.card, marginTop: 14 }}>
         <div style={S.kicker}>🧾 DAFTAR INVOICE — {invoices.length}</div>
         {invoices.length === 0 ? (
-          <div style={{ color: "#5b6470", fontSize: 13, padding: "10px 0" }}>Belum ada invoice.</div>
+          <div style={{ color: "#5b6470", fontSize: 13, padding: "10px 0" }}>No invoice.</div>
         ) : invoices.map(inv => {
           const due = DUE[inv.due_status] || DUE.aman;
           const activeStep = ACTIVE[inv.status];
@@ -128,7 +128,7 @@ export default function AdminPurchaseInvoice({ apiBase = "" }) {
                   <span style={{ color: "#9da7b3", fontWeight: 400, fontSize: 12 }}> · {inv.supplier}</span></span>
                 <span style={{ color: due.c, fontSize: 11, fontWeight: 700 }}>{due.t}</span>
                 <button onClick={() => setEditing({ ...inv })} title="Edit" style={S.iconBtn("#f59e0b")}>✏️</button>
-                <button onClick={() => remove(inv)} title="Hapus" style={S.iconBtn("#ef4444")}>🗑️</button>
+                <button onClick={() => remove(inv)} title="Delete" style={S.iconBtn("#ef4444")}>🗑️</button>
               </div>
               <div style={{ fontSize: 11, color: "#5b6470", marginTop: 2 }}>
                 {inv.gd_number} · vendor inv: {inv.supplier_invoice_no || "—"} · jatuh tempo {fmtDate(inv.due_date)}
@@ -195,7 +195,7 @@ export default function AdminPurchaseInvoice({ apiBase = "" }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

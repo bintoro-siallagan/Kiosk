@@ -610,7 +610,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "Cinema Analytics",   icon: "📊", c: "#10b981", vertical: "cinema", on: () => openRight("tools", "cinema_analytics") },
       { label: "ESB Sync",           icon: "🔗", c: "#22d3ee", on: () => openRight("esb-sync") },
       { label: "Push Notifications", icon: "🔔", c: "#a855f7", on: () => openRight("esb-notif") },
-      { label: "Tools",              icon: "🛠️", c: "#f59e0b", searchable: true,
+      { label: "All Modules",        icon: "🛠️", c: "#f59e0b", searchable: true,
         getSub: (q) => q.trim()
           ? TABS.filter(t => _allowedTabIds.has(t.id) && t.label.toLowerCase().includes(q.trim().toLowerCase()) && canSee(moduleOf(t.id)))
               .map(t => ({ _k: "m:" + t.id, label: t.label, on: () => openRight("tools", t.id) }))

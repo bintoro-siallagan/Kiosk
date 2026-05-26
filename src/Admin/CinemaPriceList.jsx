@@ -127,8 +127,8 @@ export default function CinemaPriceList({ apiBase = "" }) {
             </Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Simpan"}</button>
-            <button onClick={cancel} style={B.cancel}>Batal</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={cancel} style={B.cancel}>Cancel</button>
           </div>
         </div>
       )}
@@ -168,7 +168,7 @@ export default function CinemaPriceList({ apiBase = "" }) {
                 </div>
               </>
             ) : (
-              <div style={{ fontSize: 13, color: "#fca5a5" }}>Tidak ada aturan yang cocok. Tambah aturan fallback default.</div>
+              <div style={{ fontSize: 13, color: "#fca5a5" }}>None aturan yang cocok. Tambah aturan fallback default.</div>
             )}
           </div>
         )}
@@ -176,7 +176,7 @@ export default function CinemaPriceList({ apiBase = "" }) {
 
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
         <Header cols={["OUTLET", "STUDIO", "FORMAT", "HARI", "TIME", "HARGA", "CATATAN", "STATUS", "AKSI"]} widths={[140, 90, 60, 100, 90, 110, "auto", 70, 110]} />
-        {rows.length === 0 ? <Empty>Tidak ada aturan harga di filter ini.</Empty> :
+        {rows.length === 0 ? <Empty>None aturan harga di filter ini.</Empty> :
           rows.map(r => (
             <div key={r.id} style={rowS}>
               <span style={{ width: 140, fontWeight: 700, fontSize: 13 }}>{r.outlet}</span>

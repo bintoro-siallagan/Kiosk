@@ -97,7 +97,7 @@ export default function HybridDashboard({ apiBase = "", onNavigate }) {
 
 function CombinedView({ loading, data }) {
   if (loading) return <Loading />;
-  if (!data) return <div style={{ color: PALETTE.dim, padding: 30, textAlign: "center" }}>Gagal memuat data combined.</div>;
+  if (!data) return <div style={{ color: PALETTE.dim, padding: 30, textAlign: "center" }}>Failed to load data combined.</div>;
 
   const totalRevToday = (data.fnb.today.revenue || 0) + (data.cinema.today.revenue || 0);
   const totalRevMonth = (data.fnb.month.revenue || 0) + (data.cinema.month.revenue || 0);

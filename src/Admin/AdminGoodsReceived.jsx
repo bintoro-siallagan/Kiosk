@@ -56,7 +56,7 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
   };
 
   const remove = async (gr) => {
-    const ok = await confirmDlg({ title: "Hapus GR?", message: `Hapus ${gr.gr_number}? Tindakan ini tidak dapat dibatalkan.`, danger: true, okLabel: "Hapus" });
+    const ok = await confirmDlg({ title: "Hapus GR?", message: `Hapus ${gr.gr_number}? This action tidak dapat dibatalkan.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     fetch(`${apiBase}/api/goods-received/${gr.id}`, { method: "DELETE" })
       .then(r => r.json()).then(j => {
@@ -114,7 +114,7 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
                     {busy === gr.id ? "Memproses…" : "✓ Konfirmasi Terima"}
                   </button>
                   <button onClick={() => setEditing({ ...gr })} title="Edit" style={S.btnEdit}>✏️</button>
-                  <button onClick={() => remove(gr)} title="Hapus" style={S.btnDel}>🗑️</button>
+                  <button onClick={() => remove(gr)} title="Delete" style={S.btnDel}>🗑️</button>
                 </div>
                 <div style={{ display: "grid", gap: 3 }}>
                   {gr.items.map((it, i) => (
@@ -155,7 +155,7 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
                 <td style={S.td}>
                   <span style={{ display: "inline-flex", gap: 4 }}>
                     <button onClick={() => setEditing({ ...gr })} title="Edit" style={S.btnEdit}>✏️</button>
-                    <button onClick={() => remove(gr)} title="Hapus" style={S.btnDel}>🗑️</button>
+                    <button onClick={() => remove(gr)} title="Delete" style={S.btnDel}>🗑️</button>
                   </span>
                 </td>
               </tr>
@@ -196,7 +196,7 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

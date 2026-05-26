@@ -36,7 +36,7 @@ export default function AdminPeriodClosing({ apiBase = "" }) {
     const ok = await confirm({
       title: `Hapus periode "${pr.period_name}"?`,
       message: `${pr.closing_type === "accounting" ? "Akuntansi" : "Stok"}. Hanya periode terbuka (draft) yang bisa dihapus.`,
-      danger: true, okLabel: "Hapus",
+      danger: true, okLabel: "Delete",
     });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/period-closing/${pr.id}`, { method: "DELETE" });
@@ -66,7 +66,7 @@ export default function AdminPeriodClosing({ apiBase = "" }) {
                   {!closed && (
                     <>
                       <button onClick={() => setEditing({ ...pr })} title="Edit" style={S.btnEdit}>✏️</button>
-                      <button onClick={() => remove(pr)} title="Hapus" style={S.btnDel}>🗑️</button>
+                      <button onClick={() => remove(pr)} title="Delete" style={S.btnDel}>🗑️</button>
                     </>
                   )}
                 </div>
@@ -85,7 +85,7 @@ export default function AdminPeriodClosing({ apiBase = "" }) {
               ) : (
                 <button onClick={() => post(`${pr.id}/close`, { closed_by: "Finance Director" }, `✓ ${pr.period_name} ditutup`)}
                   disabled={!ready} style={{ ...S.btn, opacity: ready ? 1 : 0.4, cursor: ready ? "pointer" : "not-allowed" }}>
-                  {ready ? "🔒 Tutup Periode" : "Checklist belum lengkap"}
+                  {ready ? "🔒 Period Closing" : "Checklist belum lengkap"}
                 </button>
               )}
             </div>
@@ -127,8 +127,8 @@ export default function AdminPeriodClosing({ apiBase = "" }) {
             <Field label="Status"><input value={editing.status || ""} disabled style={{ ...modalInp, opacity: 0.6 }} /></Field>
             <div style={{ fontSize: 10, color: "#5b6470", marginBottom: 8 }}>Periode <b>closed</b> immutable — server akan menolak edit.</div>
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-              <button onClick={() => setEditing(null)} style={{ ...S.btn, background: "#21262d", color: "#e6edf3", flex: 1 }}>Batal</button>
-              <button onClick={saveEdit} style={{ ...S.btn, flex: 1 }}>Simpan</button>
+              <button onClick={() => setEditing(null)} style={{ ...S.btn, background: "#21262d", color: "#e6edf3", flex: 1 }}>Cancel</button>
+              <button onClick={saveEdit} style={{ ...S.btn, flex: 1 }}>Save</button>
             </div>
           </div>
         </div>

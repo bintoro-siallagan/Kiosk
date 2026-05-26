@@ -45,7 +45,7 @@ export default function AdminRewardBenefit({ apiBase = "" }) {
     const ok = await confirm({
       title: `Hapus redemption "${item.reward_name}"?`,
       message: `Crew: ${item.staff_name} · ${item.point_cost} poin. Akan dihapus permanen.`,
-      danger: true, okLabel: "Hapus",
+      danger: true, okLabel: "Delete",
     });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/reward-benefits/${item.id}`, { method: "DELETE" });
@@ -141,7 +141,7 @@ export default function AdminRewardBenefit({ apiBase = "" }) {
                         ? <button onClick={() => setStatus(r.id, st.next)} style={S.btnSm}>{st.action}</button>
                         : <span style={{ color: "#10b981", fontSize: 11 }}>✓ selesai</span>}
                       <button onClick={() => setEditing({ ...r })} style={S.btnEdit} title="Edit">✎</button>
-                      <button onClick={() => remove(r)} style={S.btnDel} title="Hapus">🗑</button>
+                      <button onClick={() => remove(r)} style={S.btnDel} title="Delete">🗑</button>
                     </div>
                   </td>
                 </tr>
@@ -179,8 +179,8 @@ export default function AdminRewardBenefit({ apiBase = "" }) {
               </Field>
             </div>
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #30363d", color: "#9da7b3", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
-              <button onClick={saveEdit} style={{ background: "#ec4899", border: "none", color: "#fff", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Simpan</button>
+              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #30363d", color: "#9da7b3", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+              <button onClick={saveEdit} style={{ background: "#ec4899", border: "none", color: "#fff", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Save</button>
             </div>
           </div>
         </div>

@@ -4,7 +4,7 @@ import { useUiKit, EmptyState, TooltipButton } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtTs = (s) => s ? new Date(s * 1000).toLocaleString("id-ID", { hour12: false }) : "—";
-const STATUS = { pending: { label: "Pending", color: "#f59e0b" }, registered: { label: "Daftar", color: "#22d3ee" }, first_order: { label: "1st Order", color: "#a855f7" }, rewarded: { label: "Rewarded", color: "#10b981" }, expired: { label: "Expired", color: "#6b7280" } };
+const STATUS = { pending: { label: "Pending", color: "#f59e0b" }, registered: { label: "Register", color: "#22d3ee" }, first_order: { label: "1st Order", color: "#a855f7" }, rewarded: { label: "Rewarded", color: "#10b981" }, expired: { label: "Expired", color: "#6b7280" } };
 
 export default function FnbReferral({ apiBase = "" }) {
   const base = (apiBase || "") + "/api/fnb";
@@ -28,7 +28,7 @@ export default function FnbReferral({ apiBase = "" }) {
   };
   const setStatus = async (r, status) => { await fetch(`${base}/referrals/${r.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) }); load(); };
   const { confirm } = useUiKit();
-  const remove = async (r) => { if (!(await confirm({ title: `Hapus referral ${r.referral_code}?`, danger: true, okLabel: "Hapus" }))) return; await fetch(`${base}/referrals/${r.id}`, { method: "DELETE" }); load(); };
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus referral ${r.referral_code}?`, danger: true, okLabel: "Delete" }))) return; await fetch(`${base}/referrals/${r.id}`, { method: "DELETE" }); load(); };
   return (
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
@@ -54,7 +54,7 @@ export default function FnbReferral({ apiBase = "" }) {
         </div>
       </div>
       <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-        {[["", "Semua"], ["pending", "Pending"], ["registered", "Daftar"], ["first_order", "1st Order"], ["rewarded", "Rewarded"]].map(([v, l]) => (
+        {[["", "Semua"], ["pending", "Pending"], ["registered", "Register"], ["first_order", "1st Order"], ["rewarded", "Rewarded"]].map(([v, l]) => (
           <button key={v} onClick={() => setFilter(v)} style={{ background: filter === v ? "#a855f72a" : "transparent", border: `1px solid ${filter === v ? "#a855f766" : C.border}`, borderRadius: 8, padding: "7px 14px", color: filter === v ? "#fff" : C.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{l}</button>
         ))}
       </div>
@@ -66,9 +66,9 @@ export default function FnbReferral({ apiBase = "" }) {
           <span style={{ width: 110 }}>STATUS</span>
           <span style={{ width: 140 }}>REWARD</span>
           <span style={{ width: 130 }}>DIBUAT</span>
-          <span style={{ width: 200, textAlign: "right" }}>AKSI</span>
+          <span style={{ width: 200, textAlign: "right" }}>ACTIONS</span>
         </div>
-        {rows.length === 0 ? <Empty>Belum ada referral.</Empty> : rows.map(r => {
+        {rows.length === 0 ? <Empty>No referral.</Empty> : rows.map(r => {
           const st = STATUS[r.status] || STATUS.pending;
           return (
             <div key={r.id} style={{ display: "flex", padding: "11px 14px", borderBottom: `1px solid ${C.border}`, gap: 10, alignItems: "center" }}>

@@ -56,7 +56,7 @@ export default function AdminJournal({ apiBase = "" }) {
       <div style={S.card}>
         <div style={S.kicker}>📓 JURNAL UMUM — {d.entries.length} ENTRI</div>
         {d.entries.length === 0 ? (
-          <div style={{ color: "#5b6470", fontSize: 13, padding: "12px 0" }}>Belum ada transaksi di periode ini.</div>
+          <div style={{ color: "#5b6470", fontSize: 13, padding: "12px 0" }}>No transaksi di periode ini.</div>
         ) : d.entries.map((e, i) => (
           <div key={i} style={{ borderTop: "1px solid #161b22", padding: "10px 0" }}>
             <div style={{ fontSize: 12, color: "#e6edf3", fontWeight: 600 }}>

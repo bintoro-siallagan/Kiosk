@@ -129,7 +129,7 @@ export default function CinemaRefund({ apiBase = "" }) {
       <div style={S.section}>
         <div style={S.h}>JADWAL DENGAN TIKET TERJUAL</div>
         {showtimes.length === 0 ? (
-          <div style={S.empty}>Belum ada tiket terjual.</div>
+          <div style={S.empty}>No tickets terjual.</div>
         ) : (
           <select
             value={picked}
@@ -151,7 +151,7 @@ export default function CinemaRefund({ apiBase = "" }) {
           TIKET AKTIF {pickedMeta ? `· ${pickedMeta.film_title} · ${pickedMeta.show_date} ${pickedMeta.start_time}` : ""}
         </div>
         {loadingT ? <div style={S.empty}>Memuat…</div> :
-         tickets.length === 0 ? <div style={S.empty}>Tidak ada tiket aktif.</div> : (
+         tickets.length === 0 ? <div style={S.empty}>None tiket aktif.</div> : (
           <div style={S.card}>
             <div style={{ ...S.row, color: C.dim, fontSize: 11, letterSpacing: 1, padding: "8px 12px", borderBottom: `1px solid ${C.border}` }}>
               <span style={{ width: 130 }}>KODE</span>
@@ -196,7 +196,7 @@ export default function CinemaRefund({ apiBase = "" }) {
             ))}
           </div>
         </div>
-        {voids.rows.length === 0 ? <div style={S.empty}>Tidak ada void di periode ini.</div> : (
+        {voids.rows.length === 0 ? <div style={S.empty}>None void di periode ini.</div> : (
           <div style={S.card}>
             <div style={{ ...S.row, color: C.dim, fontSize: 11, letterSpacing: 1, padding: "8px 12px", borderBottom: `1px solid ${C.border}` }}>
               <span style={{ width: 130 }}>KODE</span>

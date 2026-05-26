@@ -34,7 +34,7 @@ export default function AdminShiftRoster({ apiBase = "" }) {
     const ok = await confirm({
       title: `Hapus shift "${sh.staff_name}"?`,
       message: `${sh.shift_type} · ${sh.outlet} · ${sh.shift_date}. Akan dihapus permanen.`,
-      danger: true, okLabel: "Hapus",
+      danger: true, okLabel: "Delete",
     });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/shift-roster/${sh.id}`, { method: "DELETE" });
@@ -99,7 +99,7 @@ export default function AdminShiftRoster({ apiBase = "" }) {
                   <div style={{ fontSize: 10, color: "#5b6470" }}>{sh.outlet} · {sh.shift_type} {sh.hours}</div>
                 </div>
                 <button onClick={() => setEditing({ ...sh })} title="Edit" style={S.btnEdit}>✏️</button>
-                <button onClick={() => remove(sh)} title="Hapus" style={S.btnDel}>🗑️</button>
+                <button onClick={() => remove(sh)} title="Delete" style={S.btnDel}>🗑️</button>
               </div>
             ))}
           </div>
@@ -120,8 +120,8 @@ export default function AdminShiftRoster({ apiBase = "" }) {
               </select>
             </Field>
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-              <button onClick={() => setEditing(null)} style={{ ...S.btn, background: "#21262d", color: "#e6edf3", flex: 1 }}>Batal</button>
-              <button onClick={saveEdit} style={{ ...S.btn, flex: 1 }}>Simpan</button>
+              <button onClick={() => setEditing(null)} style={{ ...S.btn, background: "#21262d", color: "#e6edf3", flex: 1 }}>Cancel</button>
+              <button onClick={saveEdit} style={{ ...S.btn, flex: 1 }}>Save</button>
             </div>
           </div>
         </div>

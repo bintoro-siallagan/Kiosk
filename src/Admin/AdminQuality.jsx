@@ -39,7 +39,7 @@ export default function AdminQuality({ apiBase = "" }) {
   };
 
   const remove = async (item) => {
-    const ok = await confirm({ title: `Hapus "${item.code || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: `Hapus "${item.code || '#'+item.id}"?`, message: "Akan dihapus permanen. Tidak bisa dibatalkan.", danger: true, okLabel: "Delete" });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/quality/${item.id}`, { method: "DELETE" });
     const j = await r.json();
@@ -99,7 +99,7 @@ export default function AdminQuality({ apiBase = "" }) {
               <textarea value={typeof editing.findings === "string" ? editing.findings : (Array.isArray(editing.findings) ? editing.findings.join("\n") : "")} onChange={e => setEditing({ ...editing, findings: e.target.value })} placeholder="Temuan (1 per baris)" rows={3} style={{ ...modalInp, resize: "vertical", fontFamily: "inherit" }} />
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>
@@ -121,7 +121,7 @@ export default function AdminQuality({ apiBase = "" }) {
                   <span style={{ fontSize: 20, fontWeight: 800, color: r.c, fontFamily: "'Geist Mono',monospace" }}>{ins.score}</span>
                   <span style={{ fontSize: 9, fontWeight: 700, color: r.c, background: r.c + "1f", border: `1px solid ${r.c}55`, borderRadius: 5, padding: "3px 8px", width: 78, textAlign: "center", fontFamily: "'Geist Mono',monospace" }}>{r.l}</span>
                   <button onClick={() => setEditing({ ...ins, findings: Array.isArray(ins.findings) ? ins.findings.join("\n") : ins.findings })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
-                  <button onClick={() => remove(ins)} title="Hapus" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+                  <button onClick={() => remove(ins)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
                 </div>
                 {ins.findings.length > 0 && (
                   <div style={{ marginTop: 7, display: "grid", gap: 3 }}>

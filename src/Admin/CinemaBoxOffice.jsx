@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 // karyaOS cinema vertical (admin side). Reads /api/cinema/box-office.
 const C = { card: "#0d1117", border: "#1b212c", sub: "#7d8590", dim: "#5b6470" };
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
-const DS_LABEL = { scheduled: "Terjadwal", running: "Berlangsung", closed: "Tutup", sold_out: "Sold Out", cancelled: "Batal" };
+const DS_LABEL = { scheduled: "Terjadwal", running: "Berlangsung", closed: "Close", sold_out: "Sold Out", cancelled: "Cancel" };
 const DS_COLOR = { scheduled: "#10b981", running: "#f59e0b", closed: "#6b7280", sold_out: "#ef4444", cancelled: "#dc2626" };
 
 export default function CinemaBoxOffice({ apiBase }) {
@@ -49,7 +49,7 @@ export default function CinemaBoxOffice({ apiBase }) {
           <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>PENJUALAN PER FILM</div>
           {films.length === 0 ? (
             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "22px 18px", textAlign: "center", color: C.sub, fontSize: 13, marginBottom: 22 }}>
-              Belum ada tiket terjual.
+              No tickets yet terjual.
             </div>
           ) : (
             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "6px 14px", marginBottom: 22 }}>
@@ -71,7 +71,7 @@ export default function CinemaBoxOffice({ apiBase }) {
           <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>OKUPANSI PER JADWAL</div>
           {shows.length === 0 ? (
             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "22px 18px", textAlign: "center", color: C.sub, fontSize: 13 }}>
-              Belum ada jadwal tayang.
+              No jadwal tayang.
             </div>
           ) : (
             <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "6px 14px" }}>

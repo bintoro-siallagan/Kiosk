@@ -124,7 +124,7 @@ function Menus() {
             {categories.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
           </select>
         </div>
-        <button onClick={() => { setEditing({ isNew: true }); setShowForm(true); }} style={btnPrimary}>+ Tambah Menu</button>
+        <button onClick={() => { setEditing({ isNew: true }); setShowForm(true); }} style={btnPrimary}>+ Add Menu</button>
       </div>
 
       {showForm && <MenuForm initial={editing} categories={categories} onSave={handleSave} onCancel={() => { setShowForm(false); setEditing(null); }} />}
@@ -221,7 +221,7 @@ function MenuForm({ initial, categories, onSave, onCancel }) {
     <div style={modalOverlay} onClick={onCancel}>
       <div style={modalBox} onClick={e=>e.stopPropagation()}>
         <div style={{ display:'flex', justifyContent:'space-between' }}>
-          <h3>{isNew ? 'Tambah Menu' : `Edit ${f.name}`}</h3>
+          <h3>{isNew ? 'Add Menu' : `Edit ${f.name}`}</h3>
           <button onClick={onCancel} style={btnSmall}>×</button>
         </div>
 
@@ -275,14 +275,14 @@ function MenuForm({ initial, categories, onSave, onCancel }) {
         )}
 
         <div style={{ marginTop: 16 }}>
-          <button onClick={submit} style={btnPrimary}>Simpan</button>{' '}
-          <button onClick={onCancel} style={btnSecondary}>Batal</button>
+          <button onClick={submit} style={btnPrimary}>Save</button>{' '}
+          <button onClick={onCancel} style={btnSecondary}>Cancel</button>
           {!isNew && (
             <button onClick={async () => {
               if (!confirm(`Hapus menu ${f.name}?`)) return;
               await api(`/menus/${f.id}`, { method: 'DELETE' });
               onCancel();
-            }} style={{...btnSmallDanger, marginLeft: 'auto', float: 'right'}}>Hapus Menu</button>
+            }} style={{...btnSmallDanger, marginLeft: 'auto', float: 'right'}}>Delete Menu</button>
           )}
         </div>
       </div>
@@ -340,7 +340,7 @@ function BOMEditor({ parentType, parentId, bom, setBom, warehouseSkus, units }) 
           ))}
         </tbody>
       </table>
-      <button onClick={addRow} style={btnSmall}>+ Tambah Bahan</button>
+      <button onClick={addRow} style={btnSmall}>+ Add Material</button>
       <p style={{ fontSize: 11, color: '#6b7280', marginTop: 8 }}>
         Tip: ketik di kolom SKU untuk lihat saran dari warehouse. Unit conversion otomatis (gr↔kg, ml↔l).
       </p>
@@ -464,8 +464,8 @@ function ExtraForm({ initial, groups, onClose }) {
           </>
         )}
         <div style={{ marginTop: 16 }}>
-          <button onClick={submit} style={btnPrimary}>Simpan</button>{' '}
-          <button onClick={onClose} style={btnSecondary}>Batal</button>
+          <button onClick={submit} style={btnPrimary}>Save</button>{' '}
+          <button onClick={onClose} style={btnSecondary}>Cancel</button>
         </div>
       </div>
     </div>

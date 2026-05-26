@@ -43,7 +43,7 @@ export default function AdminProduction({ apiBase = "" }) {
   };
 
   const remove = async (o) => {
-    const ok = await confirm({ title: "Hapus Production Order?", message: `Hapus ${o.order_no} — ${o.product_name}?`, danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: "Hapus Production Order?", message: `Hapus ${o.order_no} — ${o.product_name}?`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     fetch(`${apiBase}/api/production/${o.id}`, { method: "DELETE" })
       .then(r => r.json()).then(j => {
@@ -90,7 +90,7 @@ export default function AdminProduction({ apiBase = "" }) {
                   {o.status === "planned" && <button onClick={() => act(o, "start", () => `✓ ${o.product_name} dimulai`)} style={S.btn("#f59e0b")}>▶ Mulai</button>}
                   {o.status === "in_progress" && <button onClick={() => act(o, "complete", j => `✓ Produksi selesai — ${j.materials_consumed} bahan terkonsumsi`)} style={S.btn("#10b981")}>✓ Selesai</button>}
                   <button onClick={() => setEditing({ ...o })} title="Edit" style={S.btnEdit}>✏️</button>
-                  <button onClick={() => remove(o)} title="Hapus" style={S.btnDel}>🗑️</button>
+                  <button onClick={() => remove(o)} title="Delete" style={S.btnDel}>🗑️</button>
                 </div>
                 <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap" }}>
                   <span style={{ fontSize: 10, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>BAHAN:</span>
@@ -137,7 +137,7 @@ export default function AdminProduction({ apiBase = "" }) {
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
               <button onClick={saveEdit} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>💾 Simpan</button>
             </div>
           </div>

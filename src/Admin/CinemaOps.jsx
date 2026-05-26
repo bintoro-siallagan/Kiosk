@@ -41,7 +41,7 @@ const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const statusLabel = (s) => (STATUSES.find(x => x[0] === s) || [s, s])[1];
 const statusColor = (s) => s === "now_showing" ? "#10b981" : s === "coming_soon" ? "#eab308" : "#5b6470";
 // Derived showtime status (computed from time + sold + manual_closed_at)
-const DS_LABEL = { scheduled: "Terjadwal", running: "Berlangsung", closed: "Tutup", sold_out: "Sold Out", cancelled: "Batal" };
+const DS_LABEL = { scheduled: "Terjadwal", running: "Berlangsung", closed: "Close", sold_out: "Sold Out", cancelled: "Cancel" };
 const DS_COLOR = { scheduled: "#10b981", running: "#f59e0b", closed: "#6b7280", sold_out: "#ef4444", cancelled: "#dc2626" };
 
 export default function CinemaOpsWrapped(props) {
@@ -97,14 +97,14 @@ function CinemaOpsInner({ apiBase }) {
     setMsg("");
     fetch(`${base}/${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       .then(r => r.json()).then(d => { if (d && d.error) setMsg(d.error); else { setForm({}); reload(); } })
-      .catch(() => setMsg("Gagal menyimpan"));
+      .catch(() => setMsg("Failed to save"));
   };
   const del = (path) => { fetch(`${base}/${path}`, { method: "DELETE" }).then(() => reload()).catch(() => {}); };
   const askDelete = async (item, path, label) => {
     const ok = await confirm({
       title: `Hapus "${label || item.title || item.name || ('#' + item.id)}"?`,
       message: "Akan dihapus permanen — termasuk data terkait (jadwal/tiket).",
-      danger: true, okLabel: "Hapus",
+      danger: true, okLabel: "Delete",
     });
     if (!ok) return;
     del(path);
@@ -133,7 +133,7 @@ function CinemaOpsInner({ apiBase }) {
       const j = await r.json();
       if (j.ok) { setMsg("✓ Tersimpan"); setEditing(null); reload(); }
       else setMsg(j.error || "gagal");
-    } catch { setMsg("Gagal menyimpan"); }
+    } catch { setMsg("Failed to save"); }
   };
   const closeShow = (id) => {
     const reason = window.prompt("Alasan tutup showtime (opsional):", "") ?? "";
@@ -154,7 +154,7 @@ function CinemaOpsInner({ apiBase }) {
     <button onClick={() => setEditing({ type, data: { ...item } })} title="Edit" style={{ background: "transparent", border: "1px solid #30363d", borderRadius: 6, padding: "4px 9px", color: "#9da7b3", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>✎</button>
   );
   const delBtnAsk = (item, path, label) => (
-    <button onClick={() => askDelete(item, path, label)} title="Hapus" style={{ background: "transparent", border: "1px solid #ef444444", borderRadius: 6, padding: "4px 9px", color: "#ef4444", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+    <button onClick={() => askDelete(item, path, label)} title="Delete" style={{ background: "transparent", border: "1px solid #ef444444", borderRadius: 6, padding: "4px 9px", color: "#ef4444", fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
   );
 
   return (
@@ -203,7 +203,7 @@ function CinemaOpsInner({ apiBase }) {
             <input style={{ ...inp, flex: 1, minWidth: 140 }} placeholder="Trailer URL (YouTube)" value={f("trailer_url")} onChange={set("trailer_url")} />
             {btn("+ Tambah", () => add("films", { title: f("title"), genre: f("genre"), duration_min: f("duration_min"), rating: f("rating") || "SU", status: f("status") || "now_showing", language: f("language") || "Indonesia", subtitle: f("subtitle") || "", poster_url: f("poster_url") || "", trailer_url: f("trailer_url") || "" }))}
           </Form>
-          <List empty={films.length === 0} emptyText="Belum ada film.">
+          <List empty={films.length === 0} emptyText="No film.">
             {films.map(x => (
               <Row key={x.id}>
                 <div style={{ flex: 2, minWidth: 150 }}>
@@ -231,7 +231,7 @@ function CinemaOpsInner({ apiBase }) {
             <input style={{ ...inp, flex: 1, minWidth: 100 }} placeholder="Outlet" value={f("outlet")} onChange={set("outlet")} />
             {btn("+ Tambah", () => add("studios", { name: f("name"), studio_type: f("studio_type") || "Regular", rows: f("rows") || 8, cols: f("cols") || 12, outlet: f("outlet") }))}
           </Form>
-          <List empty={studios.length === 0} emptyText="Belum ada studio.">
+          <List empty={studios.length === 0} emptyText="No studio.">
             {studios.map(x => (
               <Row key={x.id}>
                 <div style={{ flex: 2, minWidth: 130 }}>
@@ -302,7 +302,7 @@ function CinemaOpsInner({ apiBase }) {
               if (!f("film_id")) { setMsg("⚠ Film belum dipilih"); return; }
               if (!f("studio_id")) { setMsg("⚠ Studio belum dipilih"); return; }
               if (!f("show_date")) { setMsg("⚠ Tanggal belum dipilih"); return; }
-              if (!times || times.length === 0) { setMsg("⚠ Belum ada jam dipilih"); return; }
+              if (!times || times.length === 0) { setMsg("⚠ No jam dipilih"); return; }
               setMsg(`🚀 Membuat ${times.length} jam tayang…`);
               const results = { ok: [], fail: [] };
               for (const t of times) {
@@ -369,7 +369,7 @@ function CinemaOpsInner({ apiBase }) {
                 <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={async () => {
                   if (selectedOutlets.size === 0) { setMsg("Centang minimal 1 outlet"); return; }
-                  if (!f("film_id") || !f("show_date")) { setMsg("Film & tanggal wajib diisi"); return; }
+                  if (!f("film_id") || !f("show_date")) { setMsg("Film & tanggal required"); return; }
                   setBulkBusy(true); setMsg(""); setBulkResult(null);
                   try {
                     const r = await fetch(`${base}/showtimes/bulk-preview`, {
@@ -401,7 +401,7 @@ function CinemaOpsInner({ apiBase }) {
                 </button>
                 <button onClick={async () => {
                   if (selectedOutlets.size === 0) { setMsg("Centang minimal 1 outlet"); return; }
-                  if (!f("film_id") || !f("show_date") || !f("start_time")) { setMsg("Film, tanggal, dan jam wajib diisi di form atas"); return; }
+                  if (!f("film_id") || !f("show_date") || !f("start_time")) { setMsg("Film, tanggal, dan jam required di form atas"); return; }
                   setBulkBusy(true); setMsg(""); setBulkResult(null);
                   try {
                     const r = await fetch(`${base}/showtimes/bulk`, {
@@ -479,7 +479,7 @@ function CinemaOpsInner({ apiBase }) {
               )}
             </div>
           )}
-          <List empty={showtimes.length === 0} emptyText="Belum ada jadwal tayang.">
+          <List empty={showtimes.length === 0} emptyText="No jadwal tayang.">
             {showtimes.map(x => {
               const ds = x.derived_status || "scheduled";
               const isClosedManual = !!x.manual_closed_at;
@@ -650,8 +650,8 @@ function CinemaOpsInner({ apiBase }) {
             )}
 
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
-              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #30363d", color: "#9da7b3", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
-              <button onClick={saveEdit} style={{ background: "#a855f7", border: "none", color: "#fff", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Simpan</button>
+              <button onClick={() => setEditing(null)} style={{ background: "transparent", border: "1px solid #30363d", color: "#9da7b3", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+              <button onClick={saveEdit} style={{ background: "#a855f7", border: "none", color: "#fff", borderRadius: 7, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Save</button>
             </div>
           </div>
         </div>
@@ -688,7 +688,7 @@ function CinemaOpsInner({ apiBase }) {
             </div>
             {tmdbModal.loading && <div style={{ padding: 30, textAlign: "center", color: "#9ca3af" }}>⏳ Mencari di TMDB...</div>}
             {tmdbModal.error && <div style={{ padding: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, color: "#fca5a5", fontSize: 13 }}>⚠ {tmdbModal.error}<br/><span style={{ fontSize: 11, opacity: 0.7 }}>Pastikan TMDB_API_KEY sudah di-set di server .env (free signup di themoviedb.org)</span></div>}
-            {!tmdbModal.loading && !tmdbModal.error && tmdbModal.results.length === 0 && <div style={{ padding: 30, textAlign: "center", color: "#9ca3af" }}>Tidak ada hasil</div>}
+            {!tmdbModal.loading && !tmdbModal.error && tmdbModal.results.length === 0 && <div style={{ padding: 30, textAlign: "center", color: "#9ca3af" }}>None hasil</div>}
             <div style={{ display: "grid", gap: 8 }}>
               {tmdbModal.results.map(m => (
                 <button key={m.tmdb_id} onClick={async () => {
@@ -1067,7 +1067,7 @@ function ShowtimeTemplatesPanel({ apiBase, films, studios, onChanged }) {
           </div>
           <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
             <button onClick={save} style={{ background: "#10b981", border: "none", color: "#04130c", borderRadius: 8, padding: "9px 18px", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>💾 Simpan</button>
-            <button onClick={() => setEditing(null)} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#9ca3af", borderRadius: 8, padding: "9px 18px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+            <button onClick={() => setEditing(null)} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", color: "#9ca3af", borderRadius: 8, padding: "9px 18px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
           </div>
         </div>
       )}
@@ -1076,7 +1076,7 @@ function ShowtimeTemplatesPanel({ apiBase, films, studios, onChanged }) {
 
       {rows.length === 0 ? (
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 30, textAlign: "center", color: C.sub }}>
-          Belum ada template. Klik "+ Template baru" untuk membuat jadwal recurring.
+          No template. Klik "+ Template baru" untuk membuat jadwal recurring.
         </div>
       ) : (
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
@@ -1121,7 +1121,7 @@ function ShowtimeSlotSuggest({ base, filmId, studioId, date, onPick, onBulkCreat
     setSelected(new Set());  // reset selection saat ganti film/studio/date
     fetch(`${base}/showtimes/available-slots?film_id=${filmId}&studio_id=${studioId}&date=${encodeURIComponent(date)}`)
       .then(r => r.json()).then(d => setSlots(d))
-      .catch(() => setSlots({ error: "Gagal memuat slot" }))
+      .catch(() => setSlots({ error: "Failed to load slot" }))
       .finally(() => setLoading(false));
   }, [base, filmId, studioId, date]);
 
@@ -1249,7 +1249,7 @@ function ShowtimeSlotSuggest({ base, filmId, studioId, date, onPick, onBulkCreat
             </div>
           )}
           {!loading && available.length === 0 && blocked.length === 0 && (
-            <div style={{ fontSize: 11, color: "#9ca3af", padding: 6 }}>Belum ada slot — cek lagi film duration.</div>
+            <div style={{ fontSize: 11, color: "#9ca3af", padding: 6 }}>No slot — cek lagi film duration.</div>
           )}
         </>
       )}

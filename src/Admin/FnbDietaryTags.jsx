@@ -87,10 +87,10 @@ export default function FnbDietaryTags({ apiBase = "" }) {
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
         <div style={{ display: "flex", padding: "8px 14px", borderBottom: `1px solid ${C.border}`, color: C.dim, fontSize: 11, letterSpacing: 1 }}>
           <span style={{ width: 80 }}>ITEM ID</span>
-          <span style={{ flex: 1 }}>NAMA</span>
+          <span style={{ flex: 1 }}>NAME</span>
           <span style={{ flex: 2 }}>TAGS</span>
         </div>
-        {Object.values(grouped).length === 0 ? <Empty>Belum ada item yang di-tag.</Empty> :
+        {Object.values(grouped).length === 0 ? <Empty>No item yang di-tag.</Empty> :
           Object.values(grouped).map(g => (
             <div key={g.id} style={{ display: "flex", padding: "10px 14px", borderBottom: `1px solid ${C.border}`, alignItems: "center" }}>
               <span style={{ width: 80, fontFamily: "'Geist Mono',monospace", color: C.dim, fontSize: 12 }}>#{g.id}</span>

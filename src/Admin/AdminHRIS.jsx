@@ -98,7 +98,7 @@ export default function AdminHRIS({ apiBase = "" }) {
       <div style={S.card}>
         <div style={S.label}>Recap Absensi per Staff</div>
         {recap.staff.length === 0 ? (
-          <div style={{ color: "#555", fontSize: 13, padding: 8 }}>Belum ada data absensi di rentang ini</div>
+          <div style={{ color: "#555", fontSize: 13, padding: 8 }}>No data yet absensi di rentang ini</div>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead><tr>

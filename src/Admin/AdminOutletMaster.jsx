@@ -46,7 +46,7 @@ export default function AdminOutletMaster({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
   const remove = async (o) => {
-    const ok = await confirm({ title: `Hapus outlet "${o.name}"?`, message: `Outlet ${o.code} akan dihapus permanen. Data transaksi terkait tetap ada di history tapi referensi outlet hilang.\n\nTidak bisa dibatalkan.`, danger: true, okLabel: "Hapus" });
+    const ok = await confirm({ title: `Hapus outlet "${o.name}"?`, message: `Outlet ${o.code} akan dihapus permanen. Data transaksi terkait tetap ada di history tapi referensi outlet hilang.\n\nTidak bisa dibatalkan.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/outlet-master/${o.id}`, { method: "DELETE" });
     const j = await r.json();
@@ -185,7 +185,7 @@ function OutletForm({ data, isEdit, d, onChange, onClose, onSave }) {
           </div>
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-          <button onClick={onClose} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+          <button onClick={onClose} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
           <button onClick={onSave} style={{ background: AC, color: "#fff", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>{isEdit ? "💾 Simpan" : "+ Tambah"}</button>
         </div>
       </div>

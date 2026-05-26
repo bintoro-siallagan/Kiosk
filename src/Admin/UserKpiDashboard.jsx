@@ -98,7 +98,7 @@ export default function UserKpiDashboard({ apiBase = "" }) {
         <div style={{ padding: "12px 16px", borderBottom: BORDER, fontSize: 11, color: "#94a3b8", letterSpacing: 1, fontFamily: "'Geist Mono',monospace", fontWeight: 700, display: "grid", gridTemplateColumns: "40px 1fr 90px 70px 70px 70px 80px", gap: 10, alignItems: "center" }}>
           <div>#</div><div>USER</div><div style={{ textAlign: "right" }}>SCORE</div><div style={{ textAlign: "right" }}>RATING</div><div style={{ textAlign: "right" }}>TIKET</div><div style={{ textAlign: "right" }}>AUDIT</div><div style={{ textAlign: "right" }}>DETAIL</div>
         </div>
-        {filtered.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>Belum ada user</div>}
+        {filtered.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>No user</div>}
         {filtered.map((u, i) => (
           <div key={u.user_id} style={{
             padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.04)",
