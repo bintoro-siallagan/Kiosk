@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3011";
 
-export default function ShiftGate({ children, cashier, onSwitchCashier }) {
+export default function ShiftGate({ children, cashier, onSwitchCashier, customerMode = false }) {
   const [shift, setShift]   = useState(undefined); // undefined=loading, null=closed, obj=active
   const [dayState, setDay]  = useState(null);      // { closed, closedAt, closedBy }
   const [busy, setBusy]     = useState(false);
@@ -56,8 +56,23 @@ export default function ShiftGate({ children, cashier, onSwitchCashier }) {
   };
 
   if (shift === undefined) return <div style={S.loading}>☕ Memuat…</div>;
-  // Day closed → show Buka Hari
+  // Day closed → show informational screen
   if (dayState?.closed) {
+    // CUSTOMER mode: no "Buka Hari" button — customer gak boleh buka hari
+    if (customerMode) {
+      return (
+        <div style={S.overlay}>
+          <div style={S.icon}>🌙</div>
+          <h1 style={S.title}>OUTLET SEDANG TUTUP</h1>
+          <p style={S.subtitle}>
+            Mohon maaf, layanan sedang tidak tersedia.<br/>
+            Silakan kembali saat outlet sudah buka. Terima kasih 🙏
+          </p>
+          <div style={S.hint}>Auto-refresh setiap 20 detik</div>
+        </div>
+      );
+    }
+    // STAFF/ADMIN mode: show Buka Hari button
     return (
       <div style={S.overlay}>
         <div style={S.icon}>🌙</div>

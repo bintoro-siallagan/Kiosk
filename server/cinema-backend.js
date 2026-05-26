@@ -731,9 +731,9 @@ function setupCinema(app, opts = {}) {
       LIMIT 10
     `).all(since);
 
-    // Top films (by tickets sold)
+    // Top films (by tickets sold) — avg_rating computed from rating_count/rating_sum if columns exist
     const topFilms = db.prepare(`
-      SELECT f.id, f.title, f.poster_url, f.avg_rating, COUNT(t.id) AS tickets, COALESCE(SUM(t.price), 0) AS revenue
+      SELECT f.id, f.title, f.poster_url, COUNT(t.id) AS tickets, COALESCE(SUM(t.price), 0) AS revenue
       FROM cinema_tickets t
       LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
       LEFT JOIN cinema_studios st ON st.id = s.studio_id

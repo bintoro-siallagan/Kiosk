@@ -196,7 +196,7 @@ export default function App() {
   } else if (adminRoutes.includes(scene)) {
     node = <AdminHome initialView={scene} adminSession={adminSession} onLogout={handleAdminLogout} onExit={() => setScene("kiosk")} />;
   } else if (scene === "flow") {
-    node = <ShiftGate><FlowApp /></ShiftGate>;
+    node = <ShiftGate customerMode><FlowApp /></ShiftGate>;
   } else if (scene === "cinema") {
     node = <CinemaKiosk apiBase={API_HOST} />;
   } else if (scene === "cinema-snack") {
@@ -225,7 +225,7 @@ export default function App() {
     node = <OrderTracking onHome={go("kiosk")}/>;
   } else if (scene === "table-select" && checkoutData) {
     node = (
-      <ShiftGate><TableSelector
+      <ShiftGate customerMode><TableSelector
         onPick={handleTableSelect}
         onBack={go("kiosk")}
         onCancel={go("kiosk")}
@@ -233,7 +233,7 @@ export default function App() {
     );
   } else if (scene === "customer-input" && checkoutData) {
     node = (
-      <ShiftGate><CustomerInput
+      <ShiftGate customerMode><CustomerInput
         cart={checkoutData.cart}
         orderType={checkoutData.orderType}
         onConfirm={handleCustomerConfirm}
@@ -242,7 +242,7 @@ export default function App() {
     );
   } else if (scene === "payment" && checkoutData && customerData) {
     node = (
-      <ShiftGate><Payment
+      <ShiftGate customerMode><Payment
         cart={checkoutData.cart}
         orderType={checkoutData.orderType}
         promo={checkoutData.promo}
@@ -287,7 +287,7 @@ export default function App() {
   } else {
     // Default scene — customer Kiosk. Static, no lazy chunks needed.
     node = (
-      <ShiftGate>
+      <ShiftGate customerMode>
         <PromoBroadcastBanner/>
         <OfflineBanner/>
         <Kiosk

@@ -368,6 +368,23 @@ function TopBar({ cashier, stage, onLogout, onHome }) {
           <div style={{ fontSize: 11.5, color: TH.sub }}>Kasir</div>
           <div style={{ fontSize: 13.5, fontWeight: 700, color: "#fff" }}>{cashier?.name || "—"}</div>
         </div>
+        <button onClick={async () => {
+          if (!window.confirm("TUTUP HARI?\n\nShift aktif ikut ditutup. Customer tidak bisa beli tiket sampai Manager 'Buka Hari' lagi. Pastikan semua transaksi cinema hari ini sudah ditutup.")) return;
+          try {
+            const r = await fetch('/api/day/close', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ by: cashier?.name || 'Manager Cinema' }) });
+            const j = await r.json();
+            if (!r.ok) throw new Error(j?.error || 'Gagal tutup hari');
+            alert('✅ Hari berhasil ditutup.\nCinema sekarang offline sampai Manager buka hari berikutnya.');
+            if (onLogout) onLogout();
+          } catch (e) { alert('⚠ ' + e.message); }
+        }} className="ghost-btn" style={{
+          ...S.ghostBtn,
+          background: "rgba(168,85,247,0.10)",
+          border: "1px solid rgba(168,85,247,0.35)",
+          color: "#c084fc",
+          fontWeight: 700,
+          padding: "9px 14px",
+        }}>🌙 Tutup Hari</button>
         <button onClick={onLogout} className="ghost-btn" style={{
           ...S.ghostBtn,
           background: "rgba(239,68,68,0.08)",
