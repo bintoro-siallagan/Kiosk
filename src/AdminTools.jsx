@@ -141,6 +141,7 @@ const AdminReleasePayment         = lazy(() => import("./Admin/AdminReleasePayme
 const AdminPeriodClosing          = lazy(() => import("./Admin/AdminPeriodClosing.jsx"));
 const OwnerDashboard              = lazy(() => import("./Admin/OwnerDashboard.jsx"));
 const CinemaOwnerDashboard        = lazy(() => import("./Admin/CinemaOwnerDashboard.jsx"));
+const KaryasPlatformView          = lazy(() => import("./Admin/KaryasPlatformView.jsx"));
 const FnbRecipe                   = lazy(() => import("./Admin/FnbRecipe.jsx"));
 const FnbCombo                    = lazy(() => import("./Admin/FnbCombo.jsx"));
 const FnbMenuPeriods              = lazy(() => import("./Admin/FnbMenuPeriods.jsx"));
@@ -322,6 +323,7 @@ export default function AdminTools({ initialTab }) {
         {tab === "email_config" && <EmailConfig apiBase={API} />}
         {tab === "cinema_promotion" && <CinemaPromotion apiBase={API} />}
         {tab === "marquee" && <AdminMarquee apiBase={API} />}
+        {tab === "platform" && <KaryasPlatformView apiBase={API} />}
         {tab === "cinema_holidays" && <CinemaHolidays apiBase={API} />}
         {tab === "cinema_seat_types" && <CinemaSeatTypes apiBase={API} />}
         {tab === "cinema_crm" && <CinemaCRM apiBase={API} />}

@@ -191,6 +191,54 @@ function setupCompanies(app, opts = {}) {
     }
   });
 
+  // Platform summary (super-admin only) — KPI agregat per company
+  // Dipakai karys super-admin untuk pantau semua tenant side-by-side
+  router.get('/platform/summary', (req, res) => {
+    const isSuperAdmin = String(req.headers['x-super-admin'] || '') === 'true';
+    if (!isSuperAdmin) return res.status(403).json({ error: 'super-admin only' });
+    const now = Math.floor(Date.now() / 1000);
+    const dayAgo = now - 86400;
+    const monthAgo = now - 30 * 86400;
+    const today = new Date().toISOString().slice(0, 10);
+    const companies = db.prepare(`SELECT * FROM companies ORDER BY id`).all();
+    const summaries = companies.map(c => {
+      const outletCount = safeGet(db, `SELECT COUNT(*) c FROM outlet_master WHERE company_id = ?`, [c.id])?.c || 0;
+      const userCount   = safeGet(db, `SELECT COUNT(*) c FROM admin_users WHERE company_id = ? AND active = 1`, [c.id])?.c || 0;
+      // F&B metrics
+      const fnbToday = safeGet(db, `SELECT COUNT(*) c, COALESCE(SUM(total),0) r FROM orders WHERE company_id = ? AND time > ?`, [c.id, dayAgo * 1000]);
+      const fnbMonth = safeGet(db, `SELECT COUNT(*) c, COALESCE(SUM(total),0) r FROM orders WHERE company_id = ? AND time > ?`, [c.id, monthAgo * 1000]);
+      // Cinema metrics
+      const cinemaToday = safeGet(db, `SELECT COUNT(*) c, COALESCE(SUM(price),0) r FROM cinema_tickets WHERE company_id = ? AND sold_at > ?`, [c.id, dayAgo]);
+      const cinemaMonth = safeGet(db, `SELECT COUNT(*) c, COALESCE(SUM(price),0) r FROM cinema_tickets WHERE company_id = ? AND sold_at > ?`, [c.id, monthAgo]);
+      // Total combined
+      const revToday = (fnbToday?.r || 0) + (cinemaToday?.r || 0);
+      const revMonth = (fnbMonth?.r || 0) + (cinemaMonth?.r || 0);
+      const txToday = (fnbToday?.c || 0) + (cinemaToday?.c || 0);
+      return {
+        id: c.id, code: c.code, name: c.name, primary_vertical: c.primary_vertical,
+        brand_color: c.brand_color, logo_url: c.logo_url, status: c.status,
+        outlets: outletCount, users: userCount,
+        revenue: { today: revToday, month: revMonth },
+        transactions: { today: txToday },
+        fnb: { today: fnbToday, month: fnbMonth },
+        cinema: { today: cinemaToday, month: cinemaMonth },
+      };
+    });
+    // Platform totals
+    const platformRevToday = summaries.reduce((s, c) => s + c.revenue.today, 0);
+    const platformRevMonth = summaries.reduce((s, c) => s + c.revenue.month, 0);
+    const platformTxToday  = summaries.reduce((s, c) => s + c.transactions.today, 0);
+    res.json({
+      companies: summaries,
+      platform: { revenue_today: platformRevToday, revenue_month: platformRevMonth, tx_today: platformTxToday, company_count: companies.length },
+      generated_at: Date.now(), today,
+    });
+  });
+
+  function safeGet(db, sql, args = []) {
+    try { return db.prepare(sql).get(...args); } catch { return null; }
+  }
+
   // Patch (super-admin only)
   router.patch('/:id', (req, res) => {
     const isSuperAdmin = String(req.headers['x-super-admin'] || '') === 'true';
