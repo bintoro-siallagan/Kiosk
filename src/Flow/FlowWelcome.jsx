@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import API_HOST from "../apiBase.js";
+import { useT } from "../i18n";
 
 const API = API_HOST;
 
@@ -50,6 +51,7 @@ function strictMatch(storedPhone, inputPhone) {
 }
 
 export default function FlowWelcome({ onAuth, tableContext }) {
+  const t = useT();
   const [step, setStep] = useState("phone");
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
@@ -137,14 +139,14 @@ export default function FlowWelcome({ onAuth, tableContext }) {
         <img src="/logo.png" alt="KaryaOS" style={{ width: 132, height: 132, objectFit: "contain", marginBottom: 6 }} />
         <div style={S.tagline}>Order Langsung dari HP-mu</div>
         {tableContext && (
-          <div style={S.tableBadge}>📍 Meja {tableContext}</div>
+          <div style={S.tableBadge}>📍 {t("flow.table_no")} {tableContext}</div>
         )}
       </div>
 
       <div style={S.card}>
         {step === "phone" && (
           <>
-            <div style={S.cardTitle}>Selamat Datang ☕</div>
+            <div style={S.cardTitle}>{t("kiosk.welcome")} ☕</div>
             <div style={S.cardSub}>Masukin nomor WhatsApp kamu</div>
 
             <div style={S.inputGroup}>
@@ -189,7 +191,7 @@ export default function FlowWelcome({ onAuth, tableContext }) {
                 ...(!canSubmit ? S.btnDisabled : {}),
               }}
             >
-              {loading ? "Mengecek..." : "Lanjut →"}
+              {loading ? t("common.loading") : t("common.next") + " →"}
             </button>
 
             <div style={S.hint}>
@@ -232,7 +234,7 @@ export default function FlowWelcome({ onAuth, tableContext }) {
                 ...(loading || name.trim().length < 2 ? S.btnDisabled : {}),
               }}
             >
-              {loading ? "Mendaftar..." : "Daftar & Lanjut →"}
+              {loading ? t("common.loading") : t("common.continue") + " →"}
             </button>
 
             <button onClick={() => { setStep("phone"); setName(""); setError(""); }} style={S.btnGhost}>

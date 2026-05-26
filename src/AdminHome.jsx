@@ -31,6 +31,7 @@ function _computeGROUPS() {
 import { CommandPalette } from "./components/uiKit.jsx";
 import IncidentAlertBanner from "./components/IncidentAlertBanner.jsx";
 import API_HOST from "./apiBase.js";
+import { LocaleSwitcher as KaryaLocaleSwitcher } from "./i18n";
 
 function PanelLoading() {
   return (
@@ -1074,6 +1075,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       <div style={S.footer} className="no-print">
         {onLogout && <button className="tile" style={{ ...S.footBtn, color: "#f87171", borderColor: "#f8717133" }} onClick={onLogout}>Logout</button>}
         <span style={{ flex: 1 }} />
+        <KaryaLocaleSwitcher />
         <span style={S.footNote}>karyaOS · 145+ modul · 🎬 Cinema · 🍽️ F&B · 🛡️ Enterprise · v5 · <kbd style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 4, padding: "1px 5px", fontSize: 9.5, color: "rgba(255,255,255,0.6)", fontFamily: "'Geist Mono',monospace" }}>⌘K</kbd> untuk cari</span>
       </div>
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import DelightPopup from "./components/DelightPopup.jsx";
 import MarqueeTicker from "./components/MarqueeTicker.jsx";
 import CinemaCelebration from "./CinemaCelebration.jsx";
+import { useT, LocaleSwitcher } from "./i18n";
 
 // CinemaKiosk — customer-facing cinema ticket flow.
 // films → showtimes → seats → F&B bundles → confirmation. Uses /api/cinema/*.
@@ -18,6 +19,7 @@ const RATING_LABEL = { "SU": "Semua Umur", "13+": "13 tahun ke atas", "17+": "17
 const RESTRICTED_RATINGS = ["17+", "21+", "D21"];
 
 export default function CinemaKiosk({ apiBase }) {
+  const t = useT();
   // Outlet context — kiosk di outlet A liat jadwal & harga outlet A
   // URL: ?cinema&outlet=JKT01 (admin set per-kiosk lewat URL config)
   // Persist last selected outlet di localStorage biar refresh gak hilang
@@ -583,9 +585,10 @@ export default function CinemaKiosk({ apiBase }) {
         <div style={{ flex: 1 }} />
         <div style={{ fontSize: 10, fontFamily: "'Geist Mono',monospace", letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.45)" }}>
           {["films", "showtimes", "seats", "bundles"].map((s, i) => (
-            <span key={s} style={{ color: step === s ? "#a855f7" : "rgba(255,255,255,0.4)", fontWeight: step === s ? 800 : 500 }}>{i > 0 ? " · " : ""}{["Film", "Jadwal", "Kursi", "F&B"][i]}</span>
+            <span key={s} style={{ color: step === s ? "#a855f7" : "rgba(255,255,255,0.4)", fontWeight: step === s ? 800 : 500 }}>{i > 0 ? " · " : ""}{[t("cinema.choose_film").split(" ").pop(), t("cinema.choose_showtime").split(" ").pop(), t("cinema.choose_seats").split(" ").pop(), "F&B"][i]}</span>
           ))}
         </div>
+        <LocaleSwitcher compact style={{ marginLeft: 8 }} />
       </div>
 
       {/* Text jalan — running ticker (promo/sultan/coming soon/custom message) */}
@@ -605,7 +608,7 @@ export default function CinemaKiosk({ apiBase }) {
             {!bestAutoPromo && autoPromos.length > 0 && (
               <AutoPromoProgressBanner promos={autoPromos} />
             )}
-            <H>Pilih Film</H>
+            <H>{t("cinema.choose_film")}</H>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 14 }}>
               {films.filter(f => f.status === "now_showing" && filmIdsWithShows.has(f.id)).map(f => (
                 <button key={f.id} onClick={() => setPreviewFilm(f)} className="karya-film-card" style={{ ...card(), padding: 0, overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.6), 0 12px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)" }}>
@@ -713,7 +716,7 @@ export default function CinemaKiosk({ apiBase }) {
         {/* STEP: seats */}
         {step === "seats" && seatData && (
           <>
-            <H>Pilih Kursi</H>
+            <H>{t("cinema.choose_seats")}</H>
             <div style={{ fontSize: 13, color: "#7d8590", marginTop: -8, marginBottom: 16 }}>
               {film.title} · {show.studio_name} · {show.show_date} {show.start_time}
             </div>
@@ -968,7 +971,7 @@ export default function CinemaKiosk({ apiBase }) {
                 color: seats.size ? "#04130c" : "rgba(255,255,255,0.3)", fontSize: 15, fontWeight: 800, cursor: seats.size ? "pointer" : "not-allowed", fontFamily: "inherit", boxShadow: seats.size ? "0 4px 12px rgba(16,185,129,0.3), inset 0 1px 0 rgba(255,255,255,0.2)" : "none", letterSpacing: 0.3, transition: "transform 0.15s ease, filter 0.15s ease" }}
               onMouseEnter={(e) => { if (seats.size) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.filter = "brightness(1.08)"; } }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.filter = "none"; }}>
-              {bundleCatalog.length > 0 ? "Lanjut → F&B" : "Beli Tiket"}
+              {bundleCatalog.length > 0 ? t("cinema.add_snack") + " →" : t("cinema.buy_ticket")}
             </button>
           </div>
         </div>
@@ -1038,7 +1041,7 @@ export default function CinemaKiosk({ apiBase }) {
         show={showDelight && step === "done"}
         emoji="🎉"
         title="Tiket Siap!"
-        sub={`Selamat menonton ${done?.film?.title || ""}! Tunjukkan QR di pintu studio.`}
+        sub={`${t("cinema.enjoy_movie")} ${done?.film?.title || ""}! ${t("cinema.scan_ticket")}.`}
         accent="#10b981"
         onClose={() => setShowDelight(false)}
       />
@@ -1059,7 +1062,7 @@ export default function CinemaKiosk({ apiBase }) {
             <button onClick={() => { setCart({}); setStep("payment"); }} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 22px", color: "rgba(255,255,255,0.65)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "background 0.15s ease" }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}>
-              Lewati F&amp;B
+              {t("cinema.skip_snack")}
             </button>
             <button onClick={() => setStep("payment")}
               style={{ background: "linear-gradient(135deg,#10b981,#34d399)", border: "none", borderRadius: 12, padding: "13px 28px", color: "#04130c", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(16,185,129,0.3), inset 0 1px 0 rgba(255,255,255,0.2)", letterSpacing: 0.3, transition: "transform 0.15s ease, filter 0.15s ease" }}

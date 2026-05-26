@@ -7,6 +7,7 @@ import FlowSuccess from "./FlowSuccess.jsx";
 import FlowHistory from "./FlowHistory";
 import FlowPromos from "./FlowPromos";
 import FlowRedeem from "./FlowRedeem.jsx";
+import { LocaleSwitcher } from "../i18n";
 
 const SESSION_KEY = "flowos_session";
 const CART_KEY = "flowos_cart";
@@ -186,6 +187,11 @@ export default function FlowApp() {
           onOrderMore={() => { setLastOrder(null); setScreen("menu"); }}
         />
       )}
+
+      {/* Floating language switcher — visible across all FlowApp screens */}
+      <div style={{ position: "fixed", top: "calc(env(safe-area-inset-top) + 12px)", right: 12, zIndex: 9999 }}>
+        <LocaleSwitcher compact />
+      </div>
     </div>
   );
 }

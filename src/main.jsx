@@ -9,15 +9,18 @@ import App from './App.jsx'
 import { MenuProvider } from './MenuContext.jsx'
 import { PinGateProvider } from './components/ManagerPinGate.jsx'
 import { UiKitProvider } from './components/uiKit.jsx'
+import { LocaleProvider } from './i18n'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <MenuProvider>
-      <PinGateProvider>
-        <UiKitProvider>
-          <App />
-        </UiKitProvider>
-      </PinGateProvider>
-    </MenuProvider>
+    <LocaleProvider>
+      <MenuProvider>
+        <PinGateProvider>
+          <UiKitProvider>
+            <App />
+          </UiKitProvider>
+        </PinGateProvider>
+      </MenuProvider>
+    </LocaleProvider>
   </StrictMode>,
 )
