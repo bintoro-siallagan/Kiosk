@@ -211,9 +211,11 @@ try {
 } catch (e) { console.warn('[multi-tenant] filter middleware skipped:', e.message); }
 
 // Feature entitlement enforcement — 402 untuk endpoint yang feature-nya gak di-cover plan
+// MUST register before route handlers but use lazy DB path lookup (DB_PATH defined later in file).
 try {
   const { setupFeatureEnforcement } = require('./feature-enforcement');
-  global.featureEnforcement = setupFeatureEnforcement(app, { dbPath: DB_PATH });
+  const _path = require('path');
+  global.featureEnforcement = setupFeatureEnforcement(app, { dbPath: _path.join(__dirname, 'data.db') });
 } catch (e) { console.warn('[feature-enforcement] skipped:', e.message); }
 
 // ─── CDS Cinema — second display state (NOW receives parsed body) ───
