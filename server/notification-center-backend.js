@@ -110,8 +110,12 @@ function setupNotificationCenter(app, opts = {}) {
 
   router.get('/', (req, res) => {
     const dismissed = new Set(many(`SELECT notif_key FROM notif_dismissed`).map(r => r.notif_key));
+    // Multi-tenant: tag setiap derived notification dgn _shared:true biar scope filter pass-through
+    // (aggregate alerts from system-wide collectors aren't tenant-specific yet).
+    const sc = req.companyScope || {};
     const notifs = collect().filter(x => !dismissed.has(x.key))
-      .sort((a, b) => PRANK[a.priority] - PRANK[b.priority]);
+      .sort((a, b) => PRANK[a.priority] - PRANK[b.priority])
+      .map(n => ({ ...n, _shared: true, company_id: sc.company_id ?? null }));
     const byCat = {};
     for (const x of notifs) byCat[x.category] = (byCat[x.category] || 0) + 1;
     res.json({
