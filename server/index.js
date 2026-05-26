@@ -95,8 +95,12 @@ app.post("/api/upload", upload.single("file"), (req, res) => {
 
 
 // ─── ADMIN: Email/SMTP config ────────────────────────────────────────
+// IMPORTANT: PATCH endpoint butuh JSON body parser. Body parser global
+// di-load di line ~154, jadi pakai local express.json() middleware untuk
+// endpoint ini biar req.body terparsed walau urutan registrasi sebelum
+// global body parser. [[express-middleware-order]] gotcha.
 app.get("/api/admin/email-config", (_, res) => res.json(emailModule.getMaskedConfig()));
-app.patch("/api/admin/email-config", (req, res) => {
+app.patch("/api/admin/email-config", express.json({ limit: "5mb" }), (req, res) => {
   try {
     const cur = emailModule.getConfig();
     const patch = req.body || {};
@@ -107,7 +111,7 @@ app.patch("/api/admin/email-config", (req, res) => {
     res.json({ ok: true, config: emailModule.getMaskedConfig() });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
-app.post("/api/admin/email-test", async (req, res) => {
+app.post("/api/admin/email-test", express.json({ limit: "5mb" }), async (req, res) => {
   try {
     await emailModule.testConnection();
     // Also send a test email if recipient provided
