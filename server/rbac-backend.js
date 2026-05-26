@@ -97,6 +97,20 @@ function setupRBAC(app, opts = {}) {
     }
   }
 
+  // Custom roles table — selain 15 ROLES hardcoded, admin bisa tambah role baru
+  db.exec(`CREATE TABLE IF NOT EXISTS rbac_custom_roles (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    cat TEXT,
+    icon TEXT,
+    created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+  )`);
+
+  function allRoles() {
+    const custom = db.prepare(`SELECT id, name, cat, icon FROM rbac_custom_roles ORDER BY created_at`).all();
+    return [...ROLES, ...custom.map(c => ({ ...c, custom: true }))];
+  }
+
   const router = express.Router();
   router.use(express.json());
 
@@ -106,23 +120,75 @@ function setupRBAC(app, opts = {}) {
     for (const p of perms) {
       accessByRole[p.role_id] = (accessByRole[p.role_id] || 0) + (p.level !== 'none' ? 1 : 0);
     }
+    const roles = allRoles();
     res.json({
-      roles: ROLES.map(r => ({ ...r, modules_accessible: accessByRole[r.id] || 0 })),
+      roles: roles.map(r => ({ ...r, modules_accessible: accessByRole[r.id] || 0 })),
       modules: MODULES,
       levels: LEVELS,
       permissions: perms,
       summary: {
-        roles: ROLES.length,
+        roles: roles.length,
         modules: MODULES.length,
         full_access_roles: ROLES.filter(r => DEFAULTS[r.id] === 'ALL_FULL').length,
         readonly_roles: ROLES.filter(r => DEFAULTS[r.id] === 'ALL_VIEW').length,
+        custom_roles: roles.filter(r => r.custom).length,
       },
     });
   });
 
+  // POST /roles — tambah custom role
+  router.post('/roles', (req, res) => {
+    const b = req.body || {};
+    const name = String(b.name || '').trim();
+    if (!name) return res.status(400).json({ error: 'name wajib diisi' });
+    // Auto-generate id dari name kalau gak provide
+    const id = String(b.id || name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')).slice(0, 40);
+    if (!id) return res.status(400).json({ error: 'id role tidak valid' });
+    // Check duplicate (hardcoded ROLES + custom)
+    if (ROLES.find(r => r.id === id)) return res.status(409).json({ error: `role '${id}' sudah ada sebagai built-in` });
+    const exists = db.prepare(`SELECT id FROM rbac_custom_roles WHERE id = ?`).get(id);
+    if (exists) return res.status(409).json({ error: `role '${id}' sudah ada` });
+    try {
+      db.prepare(`INSERT INTO rbac_custom_roles (id, name, cat, icon) VALUES (?,?,?,?)`)
+        .run(id, name, b.cat || 'Custom', b.icon || '⚙️');
+      // Seed default permissions = 'none' untuk semua module (admin atur manual lewat matrix)
+      const ins = db.prepare(`INSERT OR IGNORE INTO rbac_permissions (role_id, module_id, level) VALUES (?,?,?)`);
+      for (const m of MODULE_IDS) ins.run(id, m, b.default_level || 'none');
+      res.json({ ok: true, id, name, custom: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
+  // PATCH /roles/:id — rename / update icon
+  router.patch('/roles/:id', (req, res) => {
+    const b = req.body || {};
+    const row = db.prepare(`SELECT * FROM rbac_custom_roles WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'custom role tidak ditemukan (built-in roles tidak bisa di-rename)' });
+    const fields = []; const args = [];
+    if (b.name) { fields.push('name = ?'); args.push(String(b.name).trim()); }
+    if (b.cat) { fields.push('cat = ?'); args.push(String(b.cat)); }
+    if (b.icon) { fields.push('icon = ?'); args.push(String(b.icon)); }
+    if (!fields.length) return res.json({ ok: true, noop: true });
+    args.push(req.params.id);
+    db.prepare(`UPDATE rbac_custom_roles SET ${fields.join(', ')} WHERE id = ?`).run(...args);
+    res.json({ ok: true });
+  });
+
+  // DELETE /roles/:id — hapus custom role + cleanup permissions
+  router.delete('/roles/:id', (req, res) => {
+    if (ROLES.find(r => r.id === req.params.id)) {
+      return res.status(400).json({ error: 'role built-in tidak bisa dihapus' });
+    }
+    const row = db.prepare(`SELECT id FROM rbac_custom_roles WHERE id = ?`).get(req.params.id);
+    if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
+    db.prepare(`DELETE FROM rbac_custom_roles WHERE id = ?`).run(req.params.id);
+    db.prepare(`DELETE FROM rbac_permissions WHERE role_id = ?`).run(req.params.id);
+    res.json({ ok: true });
+  });
+
   router.post('/permission', (req, res) => {
     const b = req.body || {};
-    if (!ROLES.find(r => r.id === b.role_id)) return res.status(400).json({ error: 'role tidak valid' });
+    const validRole = ROLES.find(r => r.id === b.role_id) || db.prepare(`SELECT id FROM rbac_custom_roles WHERE id = ?`).get(b.role_id);
+    if (!validRole) return res.status(400).json({ error: 'role tidak valid' });
     if (!MODULE_IDS.includes(b.module_id)) return res.status(400).json({ error: 'module tidak valid' });
     if (!LEVELS.includes(b.level)) return res.status(400).json({ error: 'level tidak valid' });
     db.prepare(`INSERT INTO rbac_permissions (role_id, module_id, level) VALUES (?,?,?)

@@ -75,6 +75,43 @@ export default function AdminRBAC({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
+  // Create custom role
+  const [creating, setCreating] = useState(false);
+  const [newRole, setNewRole] = useState({ name: "", icon: "⚙️", default_level: "view" });
+  const [busy, setBusy] = useState(false);
+
+  const submitCreate = async () => {
+    if (!newRole.name.trim()) { setMsg("⚠ Nama role wajib diisi"); return; }
+    setBusy(true);
+    try {
+      const r = await fetch(`${apiBase}/api/rbac/roles`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newRole),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j?.error || "gagal");
+      setMsg(`✓ Role "${j.name}" ditambah · ID: ${j.id}`);
+      setCreating(false);
+      setNewRole({ name: "", icon: "⚙️", default_level: "view" });
+      load();
+    } catch (e) { setMsg("⚠ " + e.message); }
+    setBusy(false);
+  };
+
+  const deleteRole = async (role) => {
+    if (!role.custom) { setMsg("⚠ Role built-in tidak bisa dihapus, cuma di-reset"); return; }
+    const ok = await confirm({
+      title: `Hapus role "${role.name}"?`,
+      message: `Role ini akan dihapus permanent dan semua user dengan role ini perlu di-assign ulang.`,
+      danger: true, okLabel: "Hapus",
+    });
+    if (!ok) return;
+    const r = await fetch(`${apiBase}/api/rbac/roles/${role.id}`, { method: "DELETE" });
+    const j = await r.json();
+    if (j.ok) { setMsg(`✓ Role "${role.name}" dihapus`); load(); }
+    else setMsg("⚠ " + (j.error || "gagal"));
+  };
+
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat RBAC Matrix…</div>;
   const s = d.summary;
 
@@ -83,6 +120,18 @@ export default function AdminRBAC({ apiBase = "" }) {
       <div style={S.intro}>
         🔐 <b style={{ color: "#a855f7" }}>RBAC — ROLE & PERMISSION MATRIX</b> — {s.roles} role × {s.modules} modul.
         Klik cell buat ganti level akses: <b>none → view → edit → approve → full</b>. Dynamic RBAC, enterprise-ready.
+      </div>
+
+      {/* Action bar */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+        <button onClick={() => setCreating(true)} style={{ padding: "9px 16px", background: "linear-gradient(135deg, #a855f7, #7c3aed)", border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", letterSpacing: 0.3 }}>
+          ➕ Tambah Role Custom
+        </button>
+        {s.custom_roles > 0 && (
+          <div style={{ padding: "9px 14px", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 8, color: "#c084fc", fontSize: 11, fontFamily: "'Geist Mono',monospace", fontWeight: 700, alignSelf: "center" }}>
+            {s.custom_roles} CUSTOM ROLE AKTIF
+          </div>
+        )}
       </div>
 
       <div style={S.kpiRow}>
@@ -120,9 +169,12 @@ export default function AdminRBAC({ apiBase = "" }) {
           </thead>
           <tbody>
             {d.roles.map(r => (
-              <tr key={r.id}>
+              <tr key={r.id} style={r.custom ? { background: "rgba(168,85,247,0.04)" } : {}}>
                 <td style={S.roleTd}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: "#e6edf3" }}>{r.icon} {r.name}</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#e6edf3" }}>
+                    {r.icon} {r.name}
+                    {r.custom && <span style={{ marginLeft: 6, fontSize: 9, padding: "1px 5px", background: "#a855f722", border: "1px solid #a855f744", borderRadius: 3, color: "#c084fc", fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>CUSTOM</span>}
+                  </div>
                   <div style={{ fontSize: 9, color: "#5b6470" }}>{r.cat} · {r.modules_accessible} modul</div>
                 </td>
                 {d.modules.map(m => {
@@ -140,7 +192,11 @@ export default function AdminRBAC({ apiBase = "" }) {
                 })}
                 <td style={{ padding: 2, textAlign: "center", whiteSpace: "nowrap" }}>
                   <button onClick={() => openEdit(r)} title="Edit semua permission role" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700, marginRight: 4 }}>✏️</button>
-                  <button onClick={() => resetRole(r)} title="Reset semua permission role ke 'none'" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+                  {r.custom ? (
+                    <button onClick={() => deleteRole(r)} title="Hapus custom role" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
+                  ) : (
+                    <button onClick={() => resetRole(r)} title="Reset semua permission role ke 'none'" style={{ background: "#64748b22", border: "1px solid #64748b44", color: "#94a3b8", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>♻️</button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -150,6 +206,45 @@ export default function AdminRBAC({ apiBase = "" }) {
       <div style={{ fontSize: 11, color: "#5b6470", marginTop: 8 }}>
         💡 Tiap role punya dashboard &amp; akses berbeda. Perubahan tersimpan otomatis &amp; langsung berlaku.
       </div>
+
+      {creating && (
+        <div onClick={() => setCreating(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20, backdropFilter: "blur(6px)" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #a855f755", borderRadius: 14, padding: 24, maxWidth: 460, width: "100%" }}>
+            <div style={{ fontSize: 11, color: "#a855f7", letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>NEW CUSTOM ROLE</div>
+            <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", marginTop: 6, marginBottom: 14 }}>➕ Tambah Role Baru</div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>NAMA ROLE *</div>
+              <input value={newRole.name} onChange={e => setNewRole({ ...newRole, name: e.target.value })} placeholder="cth: Floor Supervisor" autoFocus style={{ ...modalInp, width: "100%" }} />
+              <div style={{ fontSize: 10, color: "#5b6470", marginTop: 4 }}>ID auto-generate dari nama (slugified). Kalau "Floor Supervisor" → id "floor-supervisor"</div>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 10, marginBottom: 12 }}>
+              <div>
+                <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>ICON</div>
+                <input value={newRole.icon} onChange={e => setNewRole({ ...newRole, icon: e.target.value })} maxLength={2} style={{ ...modalInp, width: "100%", textAlign: "center", fontSize: 20 }} />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>DEFAULT AKSES</div>
+                <select value={newRole.default_level} onChange={e => setNewRole({ ...newRole, default_level: e.target.value })} style={{ ...modalInp, width: "100%" }}>
+                  <option value="none">None (atur manual nanti)</option>
+                  <option value="view">View (read-only semua modul)</option>
+                  <option value="edit">Edit (bisa ubah semua modul)</option>
+                  <option value="approve">Approve</option>
+                  <option value="full">Full Access</option>
+                </select>
+              </div>
+            </div>
+            <div style={{ padding: 10, background: "rgba(168,85,247,0.06)", border: "1px solid #a855f733", borderRadius: 8, fontSize: 11, color: "#cbd5e1", marginBottom: 14, lineHeight: 1.5 }}>
+              💡 Setelah role dibuat, kamu bisa atur akses per modul lewat matrix di bawah (klik cell). User bisa di-assign role ini di <b>Manajemen Pengguna</b>.
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button onClick={() => setCreating(false)} disabled={busy} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
+              <button onClick={submitCreate} disabled={busy || !newRole.name.trim()} style={{ background: "linear-gradient(135deg, #a855f7, #7c3aed)", color: "#fff", border: "none", padding: "8px 18px", borderRadius: 7, cursor: (busy || !newRole.name.trim()) ? "not-allowed" : "pointer", fontFamily: "inherit", fontWeight: 800, opacity: (busy || !newRole.name.trim()) ? 0.5 : 1 }}>
+                {busy ? "⏳ Memproses…" : "➕ Tambah Role"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {editing && (
         <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>

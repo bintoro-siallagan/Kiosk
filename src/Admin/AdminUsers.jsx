@@ -16,6 +16,8 @@ export default function AdminUsers({ apiBase = "" }) {
   const [busy, setBusy] = useState(false);
   const [filter, setFilter] = useState("all"); // all | locked | inactive
   const [info, setInfo] = useState("");
+  const [creating, setCreating] = useState(false); // open modal create user
+  const [customRoles, setCustomRoles] = useState([]); // custom roles dari RBAC (selain 15 default)
 
   const load = useCallback(() => {
     setErr(null);
@@ -25,6 +27,13 @@ export default function AdminUsers({ apiBase = "" }) {
   }, [API, token]);
 
   useEffect(() => { load(); const t = setInterval(load, 30_000); return () => clearInterval(t); }, [load]);
+
+  // Load roles dari RBAC backend supaya dropdown create user mengikuti definisi role yg ada
+  useEffect(() => {
+    fetch(`${API}/api/rbac`).then(r => r.json()).then(j => {
+      if (Array.isArray(j?.roles)) setCustomRoles(j.roles);
+    }).catch(() => {});
+  }, [API]);
 
   const filtered = useMemo(() => {
     return users.filter(u => {
@@ -102,9 +111,12 @@ export default function AdminUsers({ apiBase = "" }) {
       <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "wrap" }}>
         <Pills value={filter} onChange={setFilter} options={[["all","Semua"],["locked",`🔒 Terkunci (${lockedCount})`],["inactive","Nonaktif"]]} />
         <div style={{ flex: 1 }} />
+        <button onClick={() => setCreating(true)} style={{ padding: "8px 16px", background: `linear-gradient(135deg, ${PURPLE}, #7c3aed)`, border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", letterSpacing: 0.3 }}>
+          ➕ Tambah User
+        </button>
         {lockedCount > 0 && (
           <button onClick={unlockAll} disabled={busy} style={{ padding: "8px 14px", background: RED, border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", letterSpacing: 0.3 }}>
-            🔓 Buka Semua Akun Terkunci ({lockedCount})
+            🔓 Buka Semua ({lockedCount})
           </button>
         )}
         <button onClick={load} style={ghostBtn}>{busy ? "⏳" : "↻"} Refresh</button>
@@ -169,6 +181,99 @@ export default function AdminUsers({ apiBase = "" }) {
         • Tombol <b>🔓 Unlock</b> bisa mempercepat recovery untuk staf yang lupa password.<br/>
         • Aktifkan PIN backup untuk semua akun — login PIN tidak terpengaruh lockout password.<br/>
         • Audit login attempt tersedia via <code>/api/auth/audit</code>.
+      </div>
+
+      {creating && (
+        <CreateUserModal
+          API={API} token={token} roles={customRoles}
+          onClose={() => setCreating(false)}
+          onCreated={(msg) => { setCreating(false); setInfo(msg); load(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function CreateUserModal({ API, token, roles, onClose, onCreated }) {
+  const [name, setName] = useState("");
+  const [pin, setPin] = useState("");
+  const [role, setRole] = useState("kasir");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const genPin = () => setPin(String(Math.floor(100000 + Math.random() * 900000)));
+
+  const submit = async () => {
+    setErr("");
+    if (!name.trim()) { setErr("Nama wajib diisi"); return; }
+    if (!/^\d{6}$/.test(pin)) { setErr("PIN harus 6 digit angka"); return; }
+    if (!role) { setErr("Pilih role"); return; }
+    setBusy(true);
+    try {
+      const r = await fetch(`${API}/api/auth/users`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: token ? `Bearer ${token}` : undefined },
+        body: JSON.stringify({ name: name.trim(), pin, role }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j?.error || "Gagal");
+      onCreated(`✓ User "${name}" dibuat — PIN: ${pin}, Role: ${role}`);
+    } catch (e) { setErr(e.message); }
+    setBusy(false);
+  };
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20, backdropFilter: "blur(6px)" }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "min(480px, 100%)", background: "rgba(10,15,28,0.96)", border: `1px solid ${PURPLE}55`, borderRadius: 16, padding: 26 }}>
+        <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>NEW USER</div>
+        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginTop: 6, marginBottom: 16 }}>➕ Tambah Pengguna Baru</div>
+
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>NAMA LENGKAP *</div>
+          <input value={name} onChange={e => setName(e.target.value)} placeholder="cth: Andre Wijaya" autoFocus
+            style={{ width: "100%", padding: 10, background: "rgba(0,0,0,0.4)", border: BORDER, borderRadius: 8, color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box", outline: "none" }} />
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>PIN 6 DIGIT *</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <input value={pin} onChange={e => setPin(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))} placeholder="cth: 123456" inputMode="numeric" maxLength={6}
+              style={{ flex: 1, padding: 10, background: "rgba(0,0,0,0.4)", border: BORDER, borderRadius: 8, color: "#fff", fontSize: 18, fontFamily: "'Geist Mono',monospace", letterSpacing: 4, textAlign: "center", boxSizing: "border-box", outline: "none" }} />
+            <button onClick={genPin} title="Generate random PIN" style={{ padding: "10px 14px", background: `${PURPLE}22`, border: `1px solid ${PURPLE}55`, borderRadius: 8, color: PURPLE, fontSize: 16, cursor: "pointer", fontFamily: "inherit" }}>🎲</button>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>ROLE *</div>
+          <select value={role} onChange={e => setRole(e.target.value)}
+            style={{ width: "100%", padding: 10, background: "rgba(0,0,0,0.4)", border: BORDER, borderRadius: 8, color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box", outline: "none", cursor: "pointer" }}>
+            {(roles && roles.length > 0 ? roles : [
+              { id: "owner", name: "Owner / Director", icon: "💼" },
+              { id: "manager", name: "Outlet Manager", icon: "👑" },
+              { id: "supervisor", name: "Supervisor", icon: "🧭" },
+              { id: "kasir", name: "Kasir / Crew", icon: "🧾" },
+              { id: "kitchen", name: "Kitchen", icon: "👨‍🍳" },
+              { id: "warehouse", name: "Warehouse", icon: "📦" },
+              { id: "finance", name: "Finance", icon: "💰" },
+              { id: "hr", name: "HR", icon: "👥" },
+              { id: "marketing", name: "Marketing", icon: "🎯" },
+              { id: "auditor", name: "Auditor", icon: "🔍" },
+            ]).filter(r => r.id !== "super-admin" && r.id !== "customer").map(r => (
+              <option key={r.id} value={r.id}>{r.icon || "👤"} {r.name || r.id}</option>
+            ))}
+          </select>
+          <div style={{ fontSize: 10, color: "#64748b", marginTop: 4 }}>
+            💡 Role-nya nentuin akses modul (atur permission di tab <b>RBAC Matrix</b>).
+          </div>
+        </div>
+
+        {err && <div style={{ padding: "10px 12px", background: "rgba(239,68,68,0.1)", border: `1px solid ${RED}55`, borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 12 }}>⚠ {err}</div>}
+
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={onClose} disabled={busy} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: BORDER, borderRadius: 10, color: "#fff", fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>Batal</button>
+          <button onClick={submit} disabled={busy} style={{ flex: 2, padding: 12, background: `linear-gradient(135deg, ${PURPLE}, #7c3aed)`, border: "none", borderRadius: 10, color: "#fff", fontWeight: 800, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
+            {busy ? "⏳ Memproses…" : "➕ Tambah User"}
+          </button>
+        </div>
       </div>
     </div>
   );
