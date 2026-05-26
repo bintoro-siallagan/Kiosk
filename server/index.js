@@ -202,6 +202,14 @@ app.use((req, _res, next) => {
   next();
 });
 
+// Generic response filter — strip out items dengan company_id != tenant
+// Registered HERE supaya berjalan sebelum semua route handler downstream.
+try {
+  const { scopeFilterMiddleware } = require('./multi-tenant-mass-migrate');
+  app.use(scopeFilterMiddleware);
+  console.log('[multi-tenant] scope filter middleware armed (defense-in-depth for list endpoints)');
+} catch (e) { console.warn('[multi-tenant] filter middleware skipped:', e.message); }
+
 // ─── CDS Cinema — second display state (NOW receives parsed body) ───
 // POS Cinema POST current sale state → backend broadcast via WS ke semua CDS terminal.
 app.post("/api/cinema/cds/state", (req, res) => {
@@ -4507,6 +4515,12 @@ const { setupCompanies } = require('./companies-backend');
 const companies = setupCompanies(app, { dbPath: DB_PATH });
 // Expose resolveScope helper to global (semua endpoint lain bisa pakai untuk filter)
 global.resolveCompanyScope = companies.resolveScope;
+
+// Mass migration: ALTER all leaky tables ADD COLUMN company_id + backfill.
+// MUST run after companies table exists (setupCompanies creates it).
+const { massMigrate } = require('./multi-tenant-mass-migrate');
+massMigrate({ dbPath: DB_PATH });
+console.log('[multi-tenant] mass migration done');
 const { setupOwnerDashboardExtras } = require('./owner-dashboard-extras');
 setupOwnerDashboardExtras(app, { dbPath: DB_PATH });
 
