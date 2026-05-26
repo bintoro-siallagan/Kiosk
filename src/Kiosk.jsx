@@ -169,11 +169,11 @@ function AddonModal({ item, onClose, onConfirm }) {
                         if(g.type==="single") setSel(s=>({...s,[g.id]:opt.id}));
                         else setSel(s=>({...s,[g.id]:s[g.id]?.includes(opt.id)?s[g.id].filter(x=>x!==opt.id):[...(s[g.id]||[]),opt.id]}));
                       }}>
-                      <div style={{...AM.radio,borderColor:active?"#FF6B35":"#444",background:active?"#FF6B35":"transparent"}}>
+                      <div style={{...AM.radio,borderColor:active?"#DBDE4D":"#444",background:active?"#DBDE4D":"transparent"}}>
                         {active && <div style={{width:8,height:8,borderRadius:"50%",background:"#fff"}}/>}
                       </div>
                       <span style={{flex:1,fontSize:15}}>{opt.label}</span>
-                      <span style={{fontSize:13,color:opt.price?"#FF6B35":"#555",fontWeight:600}}>
+                      <span style={{fontSize:13,color:opt.price?"#DBDE4D":"#555",fontWeight:600}}>
                         {opt.price?`+${fIDR(opt.price)}`:"Gratis"}
                       </span>
                     </button>
@@ -205,7 +205,7 @@ const AM = {
   sheet:{background:"#141414",borderRadius:"24px 24px 0 0",width:"100%",maxWidth:640,maxHeight:"90vh",display:"flex",flexDirection:"column",animation:"slideUp 0.3s ease",border:"1px solid #2a2a2a",borderBottom:"none"},
   header:{display:"flex",gap:16,padding:"20px 20px 16px",borderBottom:"1px solid #1e1e1e",alignItems:"flex-start"},
   name:{fontSize:20,fontWeight:700,lineHeight:1.2,marginBottom:4},
-  price:{fontSize:18,fontWeight:700,color:"#FF6B35",fontFamily:"'Inter',sans-serif",letterSpacing:1},
+  price:{fontSize:18,fontWeight:700,color:"#DBDE4D",fontFamily:"'Inter',sans-serif",letterSpacing:1},
   desc:{fontSize:12,color:"#666",marginTop:4,lineHeight:1.4},
   close:{background:"#2a2a2a",border:"none",borderRadius:"50%",width:36,height:36,color:"#aaa",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"},
   body:{overflowY:"auto",padding:"0 20px",flex:1},
@@ -214,17 +214,17 @@ const AM = {
   groupHint:{fontSize:10,color:"#555",fontWeight:400,letterSpacing:0,textTransform:"none"},
   opts:{display:"flex",flexDirection:"column",gap:8},
   opt:{display:"flex",alignItems:"center",gap:12,background:"#1a1a1a",border:"1px solid #222",borderRadius:14,padding:"14px 16px",cursor:"pointer",color:"#ccc",textAlign:"left",transition:"all 0.15s"},
-  optOn:{background:"rgba(255,107,53,0.08)",border:"1px solid #FF6B35",color:"#fff"},
+  optOn:{background:"rgba(219,222,77,0.08)",border:"1px solid #DBDE4D",color:"#fff"},
   radio:{width:20,height:20,borderRadius:"50%",border:"2px solid",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"},
   note:{width:"100%",background:"#1a1a1a",border:"1px solid #222",borderRadius:12,padding:"12px 14px",color:"#ccc",fontSize:14,fontFamily:"'Inter',sans-serif",boxSizing:"border-box"},
   footer:{padding:"14px 20px 28px",borderTop:"1px solid #1e1e1e",background:"#0d0d0d"},
   addonSum:{fontSize:12,color:"#888",textAlign:"center",marginBottom:8},
-  confirm:{width:"100%",background:"linear-gradient(90deg,#FF6B35,#FF3B30)",border:"none",borderRadius:16,padding:"18px",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",letterSpacing:1,fontFamily:"'Inter',sans-serif"},
+  confirm:{width:"100%",background:"linear-gradient(135deg,#DBDE4D,#b8bc22)",border:"none",borderRadius:16,padding:"18px",color:"#000",fontSize:15,fontWeight:700,cursor:"pointer",letterSpacing:1,fontFamily:"'Inter',sans-serif"},
 };
 
 const TAG_CLR = {
-  "BESTSELLER":{bg:"#FF6B35",tx:"#fff"},"NEW":{bg:"#00C896",tx:"#fff"},"HOT 🔥":{bg:"#FF3B30",tx:"#fff"},
-  "CHEF'S PICK":{bg:"#FFB800",tx:"#111"},"FRESH":{bg:"#4CD964",tx:"#fff"},"HEALTHY":{bg:"#5AC8FA",tx:"#fff"},
+  "BESTSELLER":{bg:"#DBDE4D",tx:"#000"},"NEW":{bg:"#00C896",tx:"#fff"},"HOT 🔥":{bg:"#FF3B30",tx:"#fff"},
+  "CHEF'S PICK":{bg:"#DBDE4D",tx:"#111"},"FRESH":{bg:"#4CD964",tx:"#fff"},"HEALTHY":{bg:"#5AC8FA",tx:"#fff"},
 };
 
 const IDLE_TIMEOUT = 45;
@@ -556,7 +556,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           <div style={K.billDivider}/>
           <div style={K.billTotal}>
             <span>TOTAL PEMBAYARAN</span>
-            <span style={{color:"#FF6B35"}}>{fIDR(total)}</span>
+            <span style={{color:"#DBDE4D"}}>{fIDR(total)}</span>
           </div>
         </div>
       </div>
@@ -718,9 +718,9 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
                     <button onClick={()=>changeQty(e.uid,-q)} style={K.removeBtn}>✕</button>
                   </div>
                   {labels.length>0 && (
-                    <div style={{fontSize:11,color:"#FF6B35",marginBottom:6,lineHeight:1.5}}>
+                    <div style={{fontSize:11,color:"#DBDE4D",marginBottom:6,lineHeight:1.5}}>
                       + {labels.join(", ")}
-                      {e.addonTotal>0 && <span style={{color:"#FF6B35"}}> ({fIDR(e.addonTotal)})</span>}
+                      {e.addonTotal>0 && <span style={{color:"#DBDE4D"}}> ({fIDR(e.addonTotal)})</span>}
                     </div>
                   )}
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
@@ -756,10 +756,10 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
               )}
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
                 <span style={{fontFamily:"'Inter',sans-serif",fontSize:18,letterSpacing:1,color:"#aaa"}}>TOTAL</span>
-                <span style={{fontFamily:"'Inter',sans-serif",fontSize:30,color:"#FF6B35"}}>{fIDR(total)}</span>
+                <span style={{fontFamily:"'Inter',sans-serif",fontSize:30,color:"#DBDE4D"}}>{fIDR(total)}</span>
               </div>
               <button onClick={goToConfirm} className="pay-btn-premium"
-                style={{width:"100%",padding:"16px",borderRadius:14,background:"linear-gradient(135deg,#FF6B35,#F59E0B)",border:"1px solid rgba(255,255,255,0.12)",color:"#fff",fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:800,letterSpacing:1.5,cursor:"pointer",boxShadow:SHADOW_CTA}}>
+                style={{width:"100%",padding:"16px",borderRadius:14,background:"linear-gradient(135deg,#DBDE4D,#b8bc22)",border:"1px solid rgba(219,222,77,0.4)",color:"#000",fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:800,letterSpacing:1.5,cursor:"pointer",boxShadow:SHADOW_CTA}}>
                 CHECKOUT →
               </button>
             </>
@@ -840,7 +840,7 @@ const KIOSK_CSS = `
   html,body{background:#08090a;color:#fff}
   *{box-sizing:border-box;margin:0;padding:0}
   ::-webkit-scrollbar{width:3px;height:3px}
-  ::-webkit-scrollbar-thumb{background:rgba(255,107,53,0.6);border-radius:2px}
+  ::-webkit-scrollbar-thumb{background:rgba(219,222,77,0.6);border-radius:2px}
   ::-webkit-scrollbar-track{background:transparent}
   .cat-scroll::-webkit-scrollbar{display:none}
   .cat-scroll{-ms-overflow-style:none;scrollbar-width:none}
@@ -852,14 +852,14 @@ const KIOSK_CSS = `
   .menu-card{animation:fadeIn 0.3s cubic-bezier(0.4,0,0.2,1) forwards;transition:transform 0.25s cubic-bezier(0.4,0,0.2,1),border-color 0.25s ease,box-shadow 0.25s ease}
   .menu-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,0.12)!important;box-shadow:0 1px 2px rgba(0,0,0,0.3),0 12px 40px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)}
   .add-btn{transition:all 0.2s cubic-bezier(0.4,0,0.2,1)}
-  .add-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(255,107,53,0.35),inset 0 1px 0 rgba(255,255,255,0.15)}
+  .add-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(219,222,77,0.35),inset 0 1px 0 rgba(255,255,255,0.15)}
   .add-btn:active{animation:pop 0.3s ease;transform:scale(0.93)!important}
   .cat-btn-premium{transition:all 0.2s cubic-bezier(0.4,0,0.2,1)}
   .cat-btn-premium:hover{background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.12)}
   .order-btn-premium{transition:all 0.25s cubic-bezier(0.4,0,0.2,1)}
   .order-btn-premium:hover{transform:translateY(-2px);box-shadow:0 1px 2px rgba(0,0,0,0.3),0 18px 48px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.06)}
   .pay-btn-premium{transition:all 0.25s cubic-bezier(0.4,0,0.2,1)}
-  .pay-btn-premium:hover{transform:translateY(-1px);box-shadow:0 1px 2px rgba(0,0,0,0.3),0 16px 40px rgba(255,107,53,0.4),inset 0 1px 0 rgba(255,255,255,0.18)}
+  .pay-btn-premium:hover{transform:translateY(-1px);box-shadow:0 1px 2px rgba(0,0,0,0.3),0 16px 40px rgba(219,222,77,0.4),inset 0 1px 0 rgba(255,255,255,0.18)}
   button{cursor:pointer;font-family:'Inter',sans-serif}
   input,textarea{font-family:'Inter',sans-serif}
 `;
@@ -874,7 +874,7 @@ const CARD_BG = "linear-gradient(180deg,#15171c 0%,#0d0f14 100%)";
 const BORDER_DEFAULT = "1px solid rgba(255,255,255,0.08)";
 const BORDER_FOCUS = "1px solid rgba(255,255,255,0.12)";
 const SHADOW_CARD = "0 1px 2px rgba(0,0,0,0.3),0 8px 24px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.04)";
-const SHADOW_CTA = "0 1px 2px rgba(0,0,0,0.3),0 10px 32px rgba(255,107,53,0.32),inset 0 1px 0 rgba(255,255,255,0.18)";
+const SHADOW_CTA = "0 1px 2px rgba(0,0,0,0.3),0 10px 32px rgba(219,222,77,0.32),inset 0 1px 0 rgba(255,255,255,0.18)";
 
 const K = {
   root:     {fontFamily:"'Inter',sans-serif",background:PREMIUM_BG,backgroundAttachment:"fixed",color:"#fff",minHeight:"100vh",display:"flex",flexDirection:"column",overflowX:"hidden",position:"relative"},
@@ -887,7 +887,7 @@ const K = {
 
   // ── CART PANEL ──
   cartPanelHeader:{padding:"18px 22px",borderBottom:BORDER_DEFAULT,flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"center"},
-  cartPanelTitle:{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:750,color:"#FF6B35",letterSpacing:"-0.5px"},
+  cartPanelTitle:{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:750,color:"#DBDE4D",letterSpacing:"-0.5px"},
   cartPanelBody:{flex:1,overflowY:"auto",padding:"0 14px"},
   cartPanelRow:{background:CARD_BG,border:BORDER_DEFAULT,borderRadius:14,padding:"13px",marginTop:8,boxShadow:"0 1px 2px rgba(0,0,0,0.25),inset 0 1px 0 rgba(255,255,255,0.03)",transition:"all 0.2s cubic-bezier(0.4,0,0.2,1)"},
   cartPanelFooter:{padding:"18px 22px",borderTop:BORDER_DEFAULT,flexShrink:0,background:"linear-gradient(180deg,transparent,rgba(13,17,23,0.6))"},
@@ -897,12 +897,12 @@ const K = {
   // ── IDLE ──
   idleOverlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",zIndex:500,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Inter',sans-serif"},
   idleBox:    {textAlign:"center",padding:"44px 36px",background:GLASS_BG,backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderRadius:28,border:BORDER_FOCUS,maxWidth:380,boxShadow:"0 1px 2px rgba(0,0,0,0.4),0 24px 80px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.06)"},
-  idleTitle:  {fontFamily:"'Inter',sans-serif",fontSize:32,fontWeight:750,letterSpacing:"-0.5px",color:"#FF6B35",marginBottom:8},
+  idleTitle:  {fontFamily:"'Inter',sans-serif",fontSize:32,fontWeight:750,letterSpacing:"-0.5px",color:"#DBDE4D",marginBottom:8},
   idleSub:    {fontSize:13,color:"rgba(255,255,255,0.5)",marginBottom:12,fontFamily:"'Geist Mono',monospace",letterSpacing:1.5,textTransform:"uppercase"},
   idleCount:  {fontFamily:"'Inter',sans-serif",fontSize:72,fontWeight:750,letterSpacing:"-2px",color:"#fff",lineHeight:1,marginBottom:12},
   idleBar:    {height:6,background:"rgba(255,255,255,0.06)",borderRadius:3,marginBottom:24,overflow:"hidden"},
-  idleFill:   {height:"100%",background:"linear-gradient(90deg,#FF6B35,#F59E0B)",borderRadius:3,transition:"width 1s linear",boxShadow:"0 0 12px rgba(255,107,53,0.5)"},
-  idleBtn:    {width:"100%",background:"linear-gradient(135deg,#FF6B35,#F59E0B)",border:"none",borderRadius:14,padding:"16px",color:"#fff",fontSize:13,fontWeight:700,letterSpacing:1.5,fontFamily:"'Inter',sans-serif",marginBottom:10,boxShadow:SHADOW_CTA,transition:"all 0.2s cubic-bezier(0.4,0,0.2,1)"},
+  idleFill:   {height:"100%",background:"linear-gradient(90deg,#DBDE4D,#b8bc22)",borderRadius:3,transition:"width 1s linear",boxShadow:"0 0 12px rgba(219,222,77,0.5)"},
+  idleBtn:    {width:"100%",background:"linear-gradient(135deg,#DBDE4D,#F59E0B)",border:"none",borderRadius:14,padding:"16px",color:"#fff",fontSize:13,fontWeight:700,letterSpacing:1.5,fontFamily:"'Inter',sans-serif",marginBottom:10,boxShadow:SHADOW_CTA,transition:"all 0.2s cubic-bezier(0.4,0,0.2,1)"},
   idleCancel: {background:"transparent",border:BORDER_DEFAULT,borderRadius:10,padding:"10px 20px",color:"rgba(255,255,255,0.45)",fontSize:12,transition:"all 0.2s ease"},
 
   // ── WELCOME ──
@@ -910,13 +910,13 @@ const K = {
   welcomeInner:{textAlign:"center",padding:"40px 24px",maxWidth:620,width:"100%",position:"relative",zIndex:1},
   logoWrap:   {marginBottom:28},
   logoIcon:   {fontSize:72,lineHeight:1,marginBottom:10,display:"block"},
-  brand:      {fontFamily:"'Inter',sans-serif",fontSize:"min(72px,11vw)",fontWeight:800,letterSpacing:"-1.5px",color:"#FF6B35",lineHeight:1,whiteSpace:"nowrap"},
+  brand:      {fontFamily:"'Inter',sans-serif",fontSize:"min(72px,11vw)",fontWeight:800,letterSpacing:"-1.5px",color:"#DBDE4D",lineHeight:1,whiteSpace:"nowrap"},
   tagline:    {fontSize:13,color:"rgba(255,255,255,0.45)",marginTop:10,letterSpacing:2,fontFamily:"'Geist Mono',monospace",textTransform:"uppercase"},
   clockDisp:  {fontSize:14,color:"rgba(255,255,255,0.3)",marginBottom:40,letterSpacing:4,fontFamily:"'Geist Mono',monospace",fontVariantNumeric:"tabular-nums"},
   welcomeQ:   {fontSize:10,letterSpacing:3,color:"rgba(255,255,255,0.4)",marginBottom:24,fontFamily:"'Geist Mono',monospace",textTransform:"uppercase"},
   orderRow:   {display:"flex",gap:20,justifyContent:"center",marginBottom:40},
   orderBtn:   {background:CARD_BG,border:BORDER_DEFAULT,backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",borderRadius:24,padding:"34px 40px",display:"flex",flexDirection:"column",alignItems:"center",gap:8,flex:1,maxWidth:220,color:"#fff",cursor:"pointer",boxShadow:SHADOW_CARD},
-  orderBtnAlt:{background:"linear-gradient(135deg,#FF6B35,#F59E0B)",border:"1px solid rgba(255,255,255,0.12)",boxShadow:"0 1px 2px rgba(0,0,0,0.3),0 14px 40px rgba(255,107,53,0.3),inset 0 1px 0 rgba(255,255,255,0.18)"},
+  orderBtnAlt:{background:"linear-gradient(135deg,#DBDE4D,#F59E0B)",border:"1px solid rgba(255,255,255,0.12)",boxShadow:"0 1px 2px rgba(0,0,0,0.3),0 14px 40px rgba(219,222,77,0.3),inset 0 1px 0 rgba(255,255,255,0.18)"},
   orderBtnIcon:{fontSize:44},
   orderBtnLabel:{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:750,letterSpacing:"-0.5px"},
   orderBtnSub:{fontSize:11,color:"rgba(255,255,255,0.55)",fontFamily:"'Geist Mono',monospace",letterSpacing:1,textTransform:"uppercase",marginTop:2},
@@ -924,7 +924,7 @@ const K = {
 
   // ── HEADER ──
   header:     {display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 18px",background:"rgba(13,17,23,0.6)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderBottom:BORDER_DEFAULT,flexShrink:0},
-  headerBrand:{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,letterSpacing:"-0.5px",color:"#FF6B35"},
+  headerBrand:{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,letterSpacing:"-0.5px",color:"#DBDE4D"},
   headerSub:  {fontSize:10,color:"rgba(255,255,255,0.45)",fontFamily:"'Geist Mono',monospace",letterSpacing:1.5,textTransform:"uppercase",marginTop:2},
   headerTime: {fontSize:13,color:"rgba(255,255,255,0.35)",fontVariantNumeric:"tabular-nums",fontFamily:"'Geist Mono',monospace"},
   resetBtn:   {background:"transparent",border:BORDER_DEFAULT,borderRadius:8,padding:"6px 12px",color:"rgba(255,255,255,0.5)",fontSize:11,cursor:"pointer",transition:"all 0.2s ease",fontFamily:"'Geist Mono',monospace",letterSpacing:0.5},
@@ -932,28 +932,28 @@ const K = {
   // ── CATEGORY ──
   catBar:     {display:"flex",gap:6,padding:"12px",overflowX:"auto",background:"rgba(13,17,23,0.4)",borderBottom:BORDER_DEFAULT,flexShrink:0},
   catBtn:     {background:"transparent",border:BORDER_DEFAULT,borderRadius:30,padding:"8px 16px",color:"rgba(255,255,255,0.55)",fontSize:13,whiteSpace:"nowrap",minHeight:40,flexShrink:0,fontWeight:500,letterSpacing:"-0.2px"},
-  catActive:  {background:"rgba(255,107,53,0.15)",border:"1px solid rgba(255,107,53,0.4)",color:"#FF6B35",fontWeight:700,boxShadow:"inset 0 1px 0 rgba(255,255,255,0.08),0 0 16px rgba(255,107,53,0.15)"},
+  catActive:  {background:"rgba(219,222,77,0.15)",border:"1px solid rgba(219,222,77,0.4)",color:"#DBDE4D",fontWeight:700,boxShadow:"inset 0 1px 0 rgba(255,255,255,0.08),0 0 16px rgba(219,222,77,0.15)"},
 
   // ── MENU GRID ──
   grid:       {display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:12},
   card:       {background:CARD_BG,borderRadius:18,overflow:"hidden",display:"flex",flexDirection:"column",border:BORDER_DEFAULT,position:"relative",boxShadow:SHADOW_CARD},
   tag:        {position:"absolute",top:8,left:8,zIndex:2,fontSize:9,fontWeight:700,letterSpacing:1,padding:"3px 8px",borderRadius:20,boxShadow:"0 4px 12px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.2)"},
-  inCartBadge:{position:"absolute",top:8,right:8,zIndex:2,background:"linear-gradient(135deg,#FF6B35,#F59E0B)",color:"#fff",borderRadius:"50%",width:26,height:26,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,boxShadow:"0 4px 14px rgba(255,107,53,0.45),inset 0 1px 0 rgba(255,255,255,0.25)"},
+  inCartBadge:{position:"absolute",top:8,right:8,zIndex:2,background:"linear-gradient(135deg,#DBDE4D,#F59E0B)",color:"#fff",borderRadius:"50%",width:26,height:26,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:800,boxShadow:"0 4px 14px rgba(219,222,77,0.45),inset 0 1px 0 rgba(255,255,255,0.25)"},
   imgWrap:    {background:"linear-gradient(180deg,rgba(255,255,255,0.03) 0%,rgba(255,255,255,0.005) 100%)",padding:"12px",display:"flex",alignItems:"center",justifyContent:"center",minHeight:120},
   cardInfo:   {padding:"10px 12px",flex:1,display:"flex",flexDirection:"column",color:"#fff"},
   cardName:   {fontSize:14,fontWeight:750,lineHeight:1.25,marginBottom:4,letterSpacing:"-0.3px",color:"#fff"},
   cardDesc:   {fontSize:10,color:"rgba(255,255,255,0.4)",lineHeight:1.5,marginBottom:6,flex:1},
   calBadge:   {fontSize:9,color:"rgba(255,255,255,0.45)",background:"rgba(255,255,255,0.05)",border:BORDER_DEFAULT,padding:"2px 7px",borderRadius:20,fontFamily:"'Geist Mono',monospace",letterSpacing:0.5},
-  addonHint:  {fontSize:9,color:"#FF6B35",background:"rgba(255,107,53,0.08)",padding:"2px 7px",borderRadius:20,border:"1px solid rgba(255,107,53,0.2)",fontFamily:"'Geist Mono',monospace",letterSpacing:0.5},
+  addonHint:  {fontSize:9,color:"#DBDE4D",background:"rgba(219,222,77,0.08)",padding:"2px 7px",borderRadius:20,border:"1px solid rgba(219,222,77,0.2)",fontFamily:"'Geist Mono',monospace",letterSpacing:0.5},
   cardBottom: {display:"flex",alignItems:"center",justifyContent:"space-between",marginTop:"auto",paddingTop:6},
-  cardPrice:  {fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:800,color:"#FF6B35",letterSpacing:"-0.5px"},
-  addBtn:     {background:"linear-gradient(135deg,#FF6B35,#F59E0B)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"9px 14px",color:"#fff",fontSize:12,fontWeight:700,letterSpacing:0.5,boxShadow:"0 1px 2px rgba(0,0,0,0.3),0 4px 12px rgba(255,107,53,0.25),inset 0 1px 0 rgba(255,255,255,0.15)"},
+  cardPrice:  {fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:800,color:"#DBDE4D",letterSpacing:"-0.5px"},
+  addBtn:     {background:"linear-gradient(135deg,#DBDE4D,#b8bc22)",border:"1px solid rgba(219,222,77,0.5)",borderRadius:16,padding:"9px 14px",color:"#000",fontSize:12,fontWeight:700,letterSpacing:0.5,boxShadow:"0 1px 2px rgba(0,0,0,0.3),0 4px 12px rgba(219,222,77,0.25),inset 0 1px 0 rgba(255,255,255,0.15)"},
   soldOutBadge:{background:"rgba(248,113,113,0.15)",color:"#F87171",border:"1px solid rgba(248,113,113,0.3)",borderRadius:20,padding:"6px 10px",fontSize:10,fontWeight:700,letterSpacing:1,fontFamily:"'Geist Mono',monospace",textTransform:"uppercase"},
   clearAllBtn:{background:"transparent",border:"none",color:"rgba(248,113,113,0.7)",fontSize:12,cursor:"pointer",transition:"all 0.2s ease"},
 
   // ── CART QTY ──
   qtyMinus:   {background:"rgba(255,255,255,0.05)",border:BORDER_DEFAULT,borderRadius:"50%",width:28,height:28,color:"#fff",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s ease"},
-  qtyPlus:    {background:"linear-gradient(135deg,#FF6B35,#F59E0B)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:"50%",width:28,height:28,color:"#fff",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(255,107,53,0.3),inset 0 1px 0 rgba(255,255,255,0.18)",transition:"all 0.2s ease"},
+  qtyPlus:    {background:"linear-gradient(135deg,#DBDE4D,#F59E0B)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:"50%",width:28,height:28,color:"#fff",fontSize:14,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 8px rgba(219,222,77,0.3),inset 0 1px 0 rgba(255,255,255,0.18)",transition:"all 0.2s ease"},
   qtyVal:     {fontSize:14,fontWeight:750,minWidth:20,textAlign:"center",fontFamily:"'Geist Mono',monospace"},
 
   // ── STAFF CALL ──
@@ -962,16 +962,16 @@ const K = {
   // ── CONFIRM SCREEN ──
   confirmHeader:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px",background:"rgba(13,17,23,0.7)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderBottom:BORDER_DEFAULT,position:"sticky",top:0,zIndex:10},
   backBtn:    {background:"transparent",border:BORDER_DEFAULT,borderRadius:10,padding:"8px 14px",color:"rgba(255,255,255,0.55)",fontSize:11,letterSpacing:1.5,fontFamily:"'Geist Mono',monospace",textTransform:"uppercase",transition:"all 0.2s ease"},
-  confirmTitle:{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,letterSpacing:"-0.5px",color:"#FF6B35"},
+  confirmTitle:{fontFamily:"'Inter',sans-serif",fontSize:20,fontWeight:800,letterSpacing:"-0.5px",color:"#DBDE4D"},
   typePill:   {background:"rgba(255,255,255,0.04)",border:BORDER_DEFAULT,borderRadius:20,padding:"5px 14px",fontSize:11,color:"rgba(255,255,255,0.65)",fontFamily:"'Geist Mono',monospace",letterSpacing:0.5},
   confirmBody:{flex:1,overflowY:"auto",padding:"20px 24px",display:"flex",flexDirection:"column",gap:0,background:"#08090a",color:"#fff"},
   confirmItems:{display:"flex",flexDirection:"column",gap:12,marginBottom:20},
   confirmItem:{display:"flex",alignItems:"flex-start",gap:14,background:CARD_BG,borderRadius:16,padding:"16px",border:BORDER_DEFAULT,boxShadow:SHADOW_CARD,color:"#fff"},
   confirmItemInfo:{flex:1,color:"#fff"},
   confirmItemName:{fontSize:16,fontWeight:750,marginBottom:4,letterSpacing:"-0.3px",color:"#fff"},
-  confirmItemAddon:{fontSize:12,color:"#FF6B35",marginBottom:3},
+  confirmItemAddon:{fontSize:12,color:"#DBDE4D",marginBottom:3},
   confirmItemNote:{fontSize:11,color:"rgba(255,255,255,0.45)",marginBottom:6,fontStyle:"italic"},
-  confirmItemPrice:{fontSize:16,fontWeight:800,color:"#FF6B35",fontFamily:"'Inter',sans-serif",letterSpacing:"-0.5px",whiteSpace:"nowrap"},
+  confirmItemPrice:{fontSize:16,fontWeight:800,color:"#DBDE4D",fontFamily:"'Inter',sans-serif",letterSpacing:"-0.5px",whiteSpace:"nowrap"},
   billBox:    {background:CARD_BG,backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",borderRadius:16,padding:"20px 24px",marginBottom:16,border:BORDER_DEFAULT,boxShadow:SHADOW_CARD},
   billRow:    {display:"flex",justifyContent:"space-between",padding:"7px 0",fontSize:14,borderBottom:"1px solid rgba(255,255,255,0.04)"},
   billLabel:  {color:"rgba(255,255,255,0.55)"},
@@ -979,6 +979,6 @@ const K = {
   billTotal:  {display:"flex",justifyContent:"space-between",fontSize:22,fontWeight:800,fontFamily:"'Inter',sans-serif",letterSpacing:"-0.8px",paddingTop:4},
   confirmFooter:{padding:"16px 20px",background:"rgba(13,17,23,0.7)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderTop:BORDER_DEFAULT,display:"flex",gap:12},
   editOrderBtn:{background:"rgba(255,255,255,0.03)",border:BORDER_DEFAULT,borderRadius:14,padding:"16px 20px",color:"rgba(255,255,255,0.6)",fontSize:13,fontWeight:600,flex:1,transition:"all 0.2s ease"},
-  payBtn:     {flex:2,background:"linear-gradient(135deg,#FF6B35,#F59E0B)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:14,padding:"16px",color:"#fff",fontSize:14,fontWeight:800,letterSpacing:0.5,fontFamily:"'Inter',sans-serif",boxShadow:SHADOW_CTA},
-  proceedBtn: {width:"100%",marginTop:14,background:"linear-gradient(135deg,#FF6B35,#F59E0B)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"18px",color:"#fff",fontSize:15,fontWeight:800,letterSpacing:1.5,fontFamily:"'Inter',sans-serif",boxShadow:SHADOW_CTA},
+  payBtn:     {flex:2,background:"linear-gradient(135deg,#DBDE4D,#b8bc22)",border:"1px solid rgba(219,222,77,0.5)",borderRadius:14,padding:"16px",color:"#000",fontSize:14,fontWeight:800,letterSpacing:0.5,fontFamily:"'Inter',sans-serif",boxShadow:SHADOW_CTA},
+  proceedBtn: {width:"100%",marginTop:14,background:"linear-gradient(135deg,#DBDE4D,#F59E0B)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"18px",color:"#fff",fontSize:15,fontWeight:800,letterSpacing:1.5,fontFamily:"'Inter',sans-serif",boxShadow:SHADOW_CTA},
 };
