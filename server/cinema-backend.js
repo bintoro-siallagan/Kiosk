@@ -2052,8 +2052,11 @@ function setupCinema(app, opts = {}) {
       } catch {}
       if (!price || price <= 0) { price = 50000; priceSource = priceSource || 'default'; }
     }
-    const info = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price, format) VALUES (?,?,?,?,?,?)`)
-      .run(Number(b.film_id), Number(b.studio_id), String(b.show_date), String(b.start_time), price, b.format || '2D');
+    // Multi-tenant: auto-tag company_id (scope.company_id atau default cinema=2)
+    const _shtScope = req.companyScope || { is_super_admin: true };
+    const _shtCompanyId = _shtScope.is_super_admin ? (parseInt(b.company_id, 10) || 2) : _shtScope.company_id;
+    const info = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price, format, company_id) VALUES (?,?,?,?,?,?,?)`)
+      .run(Number(b.film_id), Number(b.studio_id), String(b.show_date), String(b.start_time), price, b.format || '2D', _shtCompanyId);
     res.json({ ok: true, id: info.lastInsertRowid, price, price_source: priceSource });
   });
   // ── SHOWTIME TEMPLATES — recurring schedule (auto-generate harian/mingguan) ──
@@ -2497,7 +2500,11 @@ function setupCinema(app, opts = {}) {
 
     const crypto = require('crypto');
     const purchaseId = 'CP-' + crypto.randomBytes(4).toString('hex').toUpperCase();
-    const ins   = db.prepare(`INSERT INTO cinema_tickets (showtime_id, seat, price, buyer, buyer_email, buyer_phone, code, purchase_id, payment_ref, payment_method, payment_status, paid_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`);
+    // Multi-tenant: derive company dari showtime (or scope fallback)
+    const _tktScope = req.companyScope || { is_super_admin: true };
+    const _tktShow = db.prepare(`SELECT company_id FROM cinema_showtimes WHERE id = ?`).get(req.body.showtime_id);
+    const _tktCompanyId = _tktShow?.company_id || (_tktScope.is_super_admin ? 2 : _tktScope.company_id);
+    const ins   = db.prepare(`INSERT INTO cinema_tickets (showtime_id, seat, price, buyer, buyer_email, buyer_phone, code, purchase_id, payment_ref, payment_method, payment_status, paid_at, company_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`);
     const insB  = db.prepare(`INSERT INTO cinema_purchase_bundles (purchase_id, bundle_id, bundle_name, qty, price) VALUES (?,?,?,?,?)`);
     const newTickets = [];
     const newBundles = [];
@@ -2506,7 +2513,7 @@ function setupCinema(app, opts = {}) {
         for (const s of seats) {
           const code = 'CT-' + crypto.randomBytes(4).toString('hex').toUpperCase();
           const seatPrice = priceForSeat(s);
-          const info = ins.run(st.id, s, seatPrice, b.buyer || '', b.buyer_email || '', b.buyer_phone || '', code, purchaseId, paymentRef || null, paymentMethod || null, payStatus, paidAt);
+          const info = ins.run(st.id, s, seatPrice, b.buyer || '', b.buyer_email || '', b.buyer_phone || '', code, purchaseId, paymentRef || null, paymentMethod || null, payStatus, paidAt, _tktCompanyId);
           newTickets.push({ id: info.lastInsertRowid, seat: s, price: seatPrice, type: seatTypeMap[s] || 'regular', code, purchase_id: purchaseId });
         }
         for (const r of bundleRows) {
@@ -2611,9 +2618,12 @@ function setupCinema(app, opts = {}) {
   router.get('/bundles', (req, res) => {
     const all = String(req.query.all || '') === '1';
     const outletFilter = String(req.query.outlet || '').trim();
+    // Multi-tenant: filter by company_id
+    const scope = req.companyScope || { is_super_admin: true };
+    const cFilter = scope.is_super_admin ? '' : ` AND company_id = ${parseInt(scope.company_id, 10)}`;
     const sql = all
-      ? `SELECT * FROM cinema_bundles ORDER BY sort_order, name`
-      : `SELECT * FROM cinema_bundles WHERE is_active = 1 ORDER BY sort_order, name`;
+      ? `SELECT * FROM cinema_bundles WHERE 1=1${cFilter} ORDER BY sort_order, name`
+      : `SELECT * FROM cinema_bundles WHERE is_active = 1${cFilter} ORDER BY sort_order, name`;
     let bundles = db.prepare(sql).all();
     // Filter per outlet — bundle dengan outlet_codes NULL = global (all outlets),
     // dengan CSV = only outlets listed
@@ -2635,11 +2645,14 @@ function setupCinema(app, opts = {}) {
       const arr = Array.isArray(b.outlet_codes) ? b.outlet_codes : String(b.outlet_codes).split(',');
       outletCodes = arr.map(s => String(s).trim().toUpperCase()).filter(Boolean).join(',') || null;
     }
-    const info = db.prepare(`INSERT INTO cinema_bundles (name, description, price, is_active, sort_order, outlet_codes, image_url)
-                             VALUES (?,?,?,?,?,?,?)`)
+    // Multi-tenant: auto-tag company_id
+    const _bdlScope = req.companyScope || { is_super_admin: true };
+    const _bdlCompanyId = _bdlScope.is_super_admin ? (parseInt(b.company_id, 10) || 2) : _bdlScope.company_id;
+    const info = db.prepare(`INSERT INTO cinema_bundles (name, description, price, is_active, sort_order, outlet_codes, image_url, company_id)
+                             VALUES (?,?,?,?,?,?,?,?)`)
       .run(b.name, b.description || '', parseInt(b.price, 10) || 0,
            b.is_active === false ? 0 : 1, parseInt(b.sort_order, 10) || 0,
-           outletCodes, b.image_url || null);
+           outletCodes, b.image_url || null, _bdlCompanyId);
     res.json({ ok: true, id: info.lastInsertRowid });
   });
   router.patch('/bundles/:id', (req, res) => {
@@ -3420,12 +3433,15 @@ function setupCinema(app, opts = {}) {
     if (b.code && db.prepare(`SELECT 1 FROM cinema_promotions WHERE UPPER(code) = ?`).get(String(b.code).toUpperCase())) {
       return res.status(409).json({ ok: false, error: 'Kode sudah dipakai' });
     }
+    // Multi-tenant: auto-tag company_id (scope.company_id atau default 2 = Cinema)
+    const scope = req.companyScope || { is_super_admin: true };
+    const companyId = scope.is_super_admin ? (parseInt(b.company_id, 10) || 2) : scope.company_id;
     const info = db.prepare(`INSERT INTO cinema_promotions
       (code, name, description, promo_type, discount_type, discount_value,
        min_purchase, max_discount, applies_to_film_id, applies_to_bundle_id,
        bank_name, valid_from, valid_to, max_redemptions, is_active,
-       trigger_type, trigger_threshold, trigger_scope)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+       trigger_type, trigger_threshold, trigger_scope, company_id)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
       .run(b.code ? String(b.code).toUpperCase() : null, b.name, b.description || '',
            b.promo_type || 'all', b.discount_type || 'percentage', parseFloat(b.discount_value) || 0,
            parseInt(b.min_purchase, 10) || 0, b.max_discount ? parseInt(b.max_discount, 10) : null,
@@ -3436,7 +3452,8 @@ function setupCinema(app, opts = {}) {
            b.is_active === false ? 0 : 1,
            b.trigger_type || 'code',
            parseInt(b.trigger_threshold, 10) || 0,
-           b.trigger_scope || 'global');
+           b.trigger_scope || 'global',
+           companyId);
     res.json({ ok: true, id: info.lastInsertRowid });
   });
   router.patch('/promotions/:id', (req, res) => {
