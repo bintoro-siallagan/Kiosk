@@ -667,45 +667,8 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           </div>
         </div>
 
-        {/* Editorial rows — per category horizontal scroll, Netflix-style */}
+        {/* Editorial rows — per category horizontal scroll */}
         <div style={K.splitMenuScroll}>
-          {/* ── FEATURED HERO ── tag BEST/PROMO/SIGNATURE or fallback to first ── */}
-          {(() => {
-            const hero =
-              menuWithStock.find(m => ["PROMO","BEST","SIGNATURE","FEATURED","🔥","⭐"].some(t => (m.tag||"").toUpperCase().includes(t.toUpperCase()))) ||
-              menuWithStock.find(m => m.avail !== false);
-            if (!hero) return null;
-            const inCart = cart.filter(e=>e.item.id===hero.id).reduce((a,e)=>a+e.qty,0);
-            return (
-              <section style={K.heroSection}>
-                <div className="lg" style={K.heroCard} onClick={()=>{audio.playTap();(hero.freeToppings>0?setToppingItem(hero):setAddonItem(hero));}}>
-                  {/* Background image — full bleed */}
-                  <div style={K.heroImg}>
-                    <div style={{fontSize:240,filter:"drop-shadow(0 24px 60px rgba(0,0,0,0.55))",transform:"translateY(-20px)"}}>{hero.emoji || "🍦"}</div>
-                  </div>
-                  {/* Dark gradient overlay for text readability */}
-                  <div style={K.heroImgGloss}/>
-                  {/* Text content overlay at bottom */}
-                  <div style={K.heroInfo}>
-                    <div style={K.heroBadge}>
-                      <span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:"#fff",boxShadow:"0 0 8px rgba(255,255,255,0.7)"}}/>
-                      <span>{hero.tag || "TODAY'S PICK"}</span>
-                    </div>
-                    <div style={K.heroName}>{hero.name}</div>
-                    {hero.desc && <div style={K.heroDesc}>{hero.desc}</div>}
-                    <div style={K.heroBottom}>
-                      <span style={K.heroPrice}>{fIDR(hero.price)}</span>
-                      <button className="lg lg-brand order-pill" style={K.heroAddBtn}
-                        onClick={(e)=>{e.stopPropagation();audio.playTap();(hero.freeToppings>0?setToppingItem(hero):setAddonItem(hero));}}>
-                        {inCart>0 ? `+ Add more (${inCart})` : "+ Add to order"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </section>
-            );
-          })()}
-
           {CATEGORIES.filter(c=>c!=="All").map(c=>{
             const rowItems = menuWithStock.filter(i=>i.category===c);
             if (rowItems.length===0) return null;
@@ -1039,11 +1002,11 @@ const K = {
   editorialHeader:  {padding:"18px 20px 8px",display:"flex",justifyContent:"space-between",alignItems:"baseline"},
   editorialTitle:   {fontFamily:"'Inter',sans-serif",fontSize:19,fontWeight:600,letterSpacing:"-0.4px",color:"rgba(255,255,255,0.92)",margin:0,lineHeight:1.1,display:"inline-flex",alignItems:"center",gap:6},
   editorialSub:     {fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:400,letterSpacing:0.3,fontFamily:"'Inter',sans-serif",display:"inline-flex",alignItems:"center",gap:4},
-  editorialRow:     {display:"flex",gap:12,overflowX:"auto",padding:"4px 20px 14px",scrollSnapType:"x mandatory",scrollPaddingLeft:20,WebkitOverflowScrolling:"touch"},
-  editorialCard:    {flex:"0 0 180px",scrollSnapAlign:"start",borderRadius:18,display:"flex",flexDirection:"column",position:"relative",cursor:"pointer"},
-  editorialCardImg: {height:130,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",borderTopLeftRadius:18,borderTopRightRadius:18,background:"radial-gradient(ellipse 80% 60% at 50% 30%,rgba(255,255,255,0.04),transparent 70%)"},
-  editorialCardInfo:{padding:"10px 12px 12px",display:"flex",flexDirection:"column",gap:8},
-  editorialCardName:{fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:600,letterSpacing:"-0.2px",color:"rgba(255,255,255,0.95)",lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",minHeight:34},
+  editorialRow:     {display:"flex",gap:14,overflowX:"auto",padding:"6px 20px 16px",scrollSnapType:"x mandatory",scrollPaddingLeft:20,WebkitOverflowScrolling:"touch"},
+  editorialCard:    {flex:"0 0 220px",scrollSnapAlign:"start",borderRadius:20,display:"flex",flexDirection:"column",position:"relative",cursor:"pointer"},
+  editorialCardImg: {height:160,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",borderTopLeftRadius:20,borderTopRightRadius:20,background:"radial-gradient(ellipse 80% 60% at 50% 30%,rgba(255,255,255,0.04),transparent 70%)"},
+  editorialCardInfo:{padding:"12px 14px 14px",display:"flex",flexDirection:"column",gap:9},
+  editorialCardName:{fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:600,letterSpacing:"-0.3px",color:"rgba(255,255,255,0.95)",lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",minHeight:36},
   editorialCardBottom:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8},
   editorialCardPrice:{fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:600,color:"#fff",letterSpacing:"-0.2px",fontVariantNumeric:"tabular-nums"},
   editorialAddBtn:  {width:30,height:30,minWidth:30,borderRadius:"50%",border:"none",background:"linear-gradient(180deg,var(--brand-primary,#FF6B35) 0%,var(--brand-secondary,#E55A2B) 100%)",color:"#fff",fontSize:16,fontWeight:700,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.3),0 4px 12px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent)",fontFamily:"'Inter',sans-serif"},
