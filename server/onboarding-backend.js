@@ -72,11 +72,10 @@ function setupOnboarding(app, opts = {}) {
           results.categories_added++;
         }
 
-        // 2. Seed menu items
-        const menuIns = db.prepare(`INSERT OR IGNORE INTO pos_menus (id, category_id, emoji, name, description, price, available, company_id) VALUES (?,?,?,?,?,?,?,?)`);
+        // 2. Seed menu items (pos_menus.id is TEXT)
+        const menuIns = db.prepare(`INSERT OR IGNORE INTO pos_menus (id, category_id, emoji, name, description, price, is_available, company_id) VALUES (?,?,?,?,?,?,?,?)`);
         for (const m of SAMPLE_MENU) {
-          // ID range 9000-9999 dedicated untuk sample data, suffix company_id biar unique
-          const itemId = m.id * 100 + companyId;
+          const itemId = `M_DEMO_${m.id}_${companyId}`;
           const catId = `${m.cat}_${companyId}`;
           menuIns.run(itemId, catId, m.emoji, m.name, m.desc, m.price, m.avail, companyId);
           results.menu_added++;
@@ -105,7 +104,7 @@ function setupOnboarding(app, opts = {}) {
     const scope = req.companyScope || {};
     if (!scope.company_id || scope.is_super_admin) return res.status(400).json({ error: 'tenant scope only' });
     try {
-      const menuDel = db.prepare(`DELETE FROM pos_menus WHERE company_id = ? AND id BETWEEN 900000 AND 999999`).run(scope.company_id);
+      const menuDel = db.prepare(`DELETE FROM pos_menus WHERE company_id = ? AND id LIKE 'M_DEMO_%'`).run(scope.company_id);
       const catDel = db.prepare(`DELETE FROM pos_menu_categories WHERE company_id = ? AND id LIKE ?`).run(scope.company_id, `%_${scope.company_id}`);
       const custDel = db.prepare(`DELETE FROM customers WHERE company_id = ? AND id LIKE 'C_DEMO_%'`).run(scope.company_id);
       res.json({ ok: true, menu_removed: menuDel.changes, categories_removed: catDel.changes, customers_removed: custDel.changes });
