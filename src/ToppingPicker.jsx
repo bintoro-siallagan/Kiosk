@@ -76,7 +76,8 @@ export default function ToppingPicker({ item, onConfirm, onClose }) {
 
   return (
     <div style={S.overlay} onClick={onClose}>
-      <div style={S.panel} onClick={e => e.stopPropagation()}>
+      <style>{`@keyframes tpSlideUp{from{transform:translateY(30px) scale(.97);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}`}</style>
+      <div className="lg" style={S.panel} onClick={e => e.stopPropagation()}>
 
         {/* ── HEADER ──────────────────────── */}
         <div style={S.header}>
@@ -84,7 +85,7 @@ export default function ToppingPicker({ item, onConfirm, onClose }) {
             <span style={S.itemEmoji}>{item.emoji}</span>
             <div>
               <div style={S.itemName}>{item.name}</div>
-              <div style={S.itemDesc}>{item.desc}</div>
+              {item.desc && <div style={S.itemDesc}>{item.desc}</div>}
             </div>
           </div>
           <div style={S.basePrice}>Rp {item.price.toLocaleString('id-ID')}</div>
@@ -93,9 +94,9 @@ export default function ToppingPicker({ item, onConfirm, onClose }) {
         {/* ── PROGRESS BAR ────────────────── */}
         <div style={S.progressSection}>
           <div style={S.progressLabel}>
-            <span>{freeUsed}/{freeCount} topping gratis dipilih</span>
+            <span>{freeUsed}/{freeCount} free toppings selected</span>
             {extraCount > 0 && (
-              <span style={S.extraBadge}>+{extraCount} extra (Rp {(extraCount * EXTRA_TOPPING_PRICE).toLocaleString('id-ID')})</span>
+              <span style={S.extraBadge}>+{extraCount} extra · Rp {(extraCount * EXTRA_TOPPING_PRICE).toLocaleString('id-ID')}</span>
             )}
           </div>
           <div style={S.progressTrack}>
@@ -103,7 +104,7 @@ export default function ToppingPicker({ item, onConfirm, onClose }) {
               style={{
                 ...S.progressFill,
                 width: `${Math.min(100, (selected.length / Math.max(freeCount, 1)) * 100)}%`,
-                background: selected.length > freeCount ? '#F59E0B' : '#FF6B35',
+                background: selected.length > freeCount ? '#F59E0B' : 'linear-gradient(90deg,var(--brand-primary,#FF6B35),var(--brand-secondary,#E55A2B))',
               }}
             />
           </div>
@@ -111,7 +112,7 @@ export default function ToppingPicker({ item, onConfirm, onClose }) {
 
         {/* ── GROUP TABS ──────────────────── */}
         <div style={S.tabs}>
-          {[{ name: 'all', label: 'Semua' }, ...groups.map(g => ({ name: g.name, label: g.name }))].map(tab => (
+          {[{ name: 'all', label: 'All' }, ...groups.map(g => ({ name: g.name, label: g.name }))].map(tab => (
             <button
               key={tab.name}
               style={{
@@ -144,15 +145,14 @@ export default function ToppingPicker({ item, onConfirm, onClose }) {
                 style={{
                   ...S.toppingBtn,
                   ...(sel ? S.toppingSelected : {}),
-                  borderColor: sel ? '#FF6B35' : 'rgba(255,255,255,0.08)',
                 }}
                 onClick={() => toggle(t)}
               >
                 <div style={S.toppingName}>{t.name}</div>
                 <div style={S.toppingMeta}>
                   {isPremium && <span style={S.premiumTag}>+Rp {t.price.toLocaleString('id-ID')}</span>}
-                  {sel && isFree && <span style={S.freeTag}>GRATIS</span>}
-                  {sel && !isFree && <span style={S.extraTag}>EXTRA</span>}
+                  {sel && isFree && <span style={S.freeTag}>Free</span>}
+                  {sel && !isFree && <span style={S.extraTag}>Extra</span>}
                 </div>
                 {sel && <div style={S.checkCircle}>✓</div>}
               </button>
@@ -168,8 +168,8 @@ export default function ToppingPicker({ item, onConfirm, onClose }) {
                 key={t.id}
                 style={{
                   ...S.selectedChip,
-                  background: i < freeCount ? 'rgba(255,107,53,0.15)' : 'rgba(245,158,11,0.15)',
-                  borderColor: i < freeCount ? '#FF6B35' : '#F59E0B',
+                  background: i < freeCount ? 'color-mix(in srgb,var(--brand-primary,#FF6B35) 14%,transparent)' : 'rgba(245,158,11,0.15)',
+                  borderColor: i < freeCount ? 'color-mix(in srgb,var(--brand-primary,#FF6B35) 45%,transparent)' : 'rgba(245,158,11,0.45)',
                 }}
                 onClick={() => toggle(t)}
               >
@@ -182,13 +182,13 @@ export default function ToppingPicker({ item, onConfirm, onClose }) {
         {/* ── FOOTER / CTA ────────────────── */}
         <div style={S.footer}>
           <button style={S.cancelBtn} onClick={onClose}>
-            ← Batal
+            Cancel
           </button>
 
           <div style={S.priceBreakdown}>
             {addonCost > 0 && (
               <div style={S.addonLine}>
-                Topping +Rp {addonCost.toLocaleString('id-ID')}
+                Toppings +Rp {addonCost.toLocaleString('id-ID')}
               </div>
             )}
             <div style={S.totalLine}>
@@ -196,8 +196,8 @@ export default function ToppingPicker({ item, onConfirm, onClose }) {
             </div>
           </div>
 
-          <button style={S.confirmBtn} onClick={handleConfirm}>
-            Tambah ke Keranjang
+          <button className="lg lg-brand order-pill" style={S.confirmBtn} onClick={handleConfirm}>
+            Add to cart
           </button>
         </div>
       </div>
@@ -206,30 +206,32 @@ export default function ToppingPicker({ item, onConfirm, onClose }) {
 }
 
 // ============================================================
-// STYLES — dark kiosk theme with Sour Sally pink accent
+// STYLES — Apple-feel liquid glass, brand-color aware via CSS var
 // ============================================================
+const FONT = "'Inter',sans-serif";
 const S = {
   overlay: {
     position: 'fixed',
     inset: 0,
-    background: 'rgba(0,0,0,0.96)',
-    backdropFilter: 'blur(2px)',
+    background: 'rgba(0,0,0,0.6)',
+    backdropFilter: 'blur(20px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(20px) saturate(180%)',
     zIndex: 9999,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
+    fontFamily: FONT,
   },
   panel: {
     width: '100%',
     maxWidth: 720,
     maxHeight: '95vh',
-    background: '#111',
-    borderRadius: 20,
-    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: 28,
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
+    animation: 'tpSlideUp 0.35s cubic-bezier(.2,.8,.2,1)',
   },
 
   // Header
@@ -244,93 +246,110 @@ const S = {
     display: 'flex',
     alignItems: 'center',
     gap: 14,
+    minWidth: 0,
+    flex: 1,
   },
   itemEmoji: {
-    fontSize: 40,
+    fontSize: 38,
+    filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.3))',
   },
   itemName: {
     fontSize: 18,
-    fontWeight: 700,
-    color: '#fff',
+    fontWeight: 600,
+    color: 'rgba(255,255,255,0.95)',
+    letterSpacing: '-0.4px',
+    fontFamily: FONT,
   },
   itemDesc: {
     fontSize: 12,
     color: 'rgba(255,255,255,0.5)',
-    marginTop: 2,
+    marginTop: 3,
+    fontFamily: FONT,
   },
   basePrice: {
-    fontSize: 18,
-    fontWeight: 700,
-    color: 'rgba(255,255,255,0.6)',
+    fontSize: 16,
+    fontWeight: 600,
+    color: 'rgba(255,255,255,0.7)',
+    fontVariantNumeric: 'tabular-nums',
+    letterSpacing: '-0.2px',
+    fontFamily: FONT,
   },
 
   // Progress
   progressSection: {
-    padding: '12px 24px 8px',
+    padding: '14px 24px 8px',
   },
   progressLabel: {
     display: 'flex',
     justifyContent: 'space-between',
     fontSize: 12,
     color: 'rgba(255,255,255,0.6)',
-    marginBottom: 6,
+    marginBottom: 7,
+    fontFamily: FONT,
   },
   extraBadge: {
     color: '#F59E0B',
-    fontWeight: 600,
+    fontWeight: 500,
+    fontVariantNumeric: 'tabular-nums',
   },
   progressTrack: {
     height: 4,
     borderRadius: 2,
-    background: 'rgba(255,255,255,0.08)',
+    background: 'rgba(255,255,255,0.06)',
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     borderRadius: 2,
-    transition: 'width 0.2s, background 0.2s',
+    transition: 'width 0.3s cubic-bezier(.2,.8,.2,1), background 0.2s',
   },
 
   // Tabs
   tabs: {
     display: 'flex',
     gap: 6,
-    padding: '8px 24px 4px',
+    padding: '10px 24px 6px',
     overflowX: 'auto',
   },
   tab: {
     padding: '6px 14px',
     borderRadius: 999,
-    border: '1px solid rgba(255,255,255,0.1)',
-    background: 'transparent',
-    color: 'rgba(255,255,255,0.6)',
-    fontSize: 13,
+    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'rgba(255,255,255,0.025)',
+    color: 'rgba(255,255,255,0.65)',
+    fontSize: 12,
+    fontWeight: 500,
     cursor: 'pointer',
     whiteSpace: 'nowrap',
     display: 'flex',
     alignItems: 'center',
     gap: 4,
+    fontFamily: FONT,
+    letterSpacing: '-0.1px',
+    transition: 'all 0.18s ease',
   },
   tabActive: {
-    background: '#FF6B35',
+    background: 'linear-gradient(180deg,var(--brand-primary,#FF6B35),var(--brand-secondary,#E55A2B))',
     color: '#fff',
-    borderColor: '#FF6B35',
+    borderColor: 'rgba(255,255,255,0.16)',
     fontWeight: 600,
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 12px color-mix(in srgb,var(--brand-primary,#FF6B35) 32%,transparent)',
   },
   tabCount: {
     fontSize: 10,
-    background: 'rgba(255,107,53,0.3)',
+    background: 'color-mix(in srgb,var(--brand-primary,#FF6B35) 25%,transparent)',
     borderRadius: 99,
     padding: '1px 5px',
     minWidth: 14,
     textAlign: 'center',
+    fontVariantNumeric: 'tabular-nums',
   },
 
   // Grid
   grid: {
     flex: 1,
     overflowY: 'auto',
-    padding: '12px 24px',
+    padding: '12px 24px 16px',
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
     gap: 10,
@@ -339,51 +358,59 @@ const S = {
   toppingBtn: {
     position: 'relative',
     padding: '14px 12px',
-    borderRadius: 12,
-    border: '2px solid rgba(255,255,255,0.08)',
-    background: 'rgba(255,255,255,0.02)',
-    color: '#fff',
+    borderRadius: 14,
+    border: '1px solid rgba(255,255,255,0.06)',
+    background: 'rgba(255,255,255,0.025)',
+    color: 'rgba(255,255,255,0.92)',
     cursor: 'pointer',
     textAlign: 'left',
-    transition: 'all 0.15s',
-    minHeight: 64,
+    transition: 'all 0.18s cubic-bezier(.2,.8,.2,1)',
+    minHeight: 66,
+    fontFamily: FONT,
   },
   toppingSelected: {
-    background: 'rgba(255,107,53,0.08)',
+    background: 'color-mix(in srgb,var(--brand-primary,#FF6B35) 10%,rgba(255,255,255,0.02))',
+    border: '1px solid color-mix(in srgb,var(--brand-primary,#FF6B35) 50%,transparent)',
+    color: '#fff',
   },
   toppingName: {
     fontSize: 13,
     fontWeight: 600,
-    marginBottom: 4,
+    marginBottom: 5,
+    letterSpacing: '-0.1px',
   },
   toppingMeta: {
     display: 'flex',
-    gap: 6,
+    gap: 5,
     flexWrap: 'wrap',
   },
   premiumTag: {
     fontSize: 10,
-    padding: '2px 6px',
-    borderRadius: 4,
-    background: 'rgba(245,158,11,0.15)',
+    padding: '2px 7px',
+    borderRadius: 6,
+    background: 'rgba(245,158,11,0.14)',
     color: '#F59E0B',
     fontWeight: 600,
+    fontVariantNumeric: 'tabular-nums',
+    letterSpacing: '-0.1px',
   },
   freeTag: {
     fontSize: 10,
-    padding: '2px 6px',
-    borderRadius: 4,
-    background: 'rgba(34,197,94,0.15)',
-    color: '#22C55E',
-    fontWeight: 700,
+    padding: '2px 7px',
+    borderRadius: 6,
+    background: 'rgba(52,211,153,0.16)',
+    color: '#34D399',
+    fontWeight: 600,
+    letterSpacing: '-0.1px',
   },
   extraTag: {
     fontSize: 10,
-    padding: '2px 6px',
-    borderRadius: 4,
-    background: 'rgba(245,158,11,0.15)',
+    padding: '2px 7px',
+    borderRadius: 6,
+    background: 'rgba(245,158,11,0.14)',
     color: '#F59E0B',
-    fontWeight: 700,
+    fontWeight: 600,
+    letterSpacing: '-0.1px',
   },
   checkCircle: {
     position: 'absolute',
@@ -392,13 +419,14 @@ const S = {
     width: 20,
     height: 20,
     borderRadius: 10,
-    background: '#FF6B35',
+    background: 'linear-gradient(180deg,var(--brand-primary,#FF6B35),var(--brand-secondary,#E55A2B))',
     color: '#fff',
     fontSize: 11,
-    fontWeight: 800,
+    fontWeight: 700,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), 0 3px 8px color-mix(in srgb,var(--brand-primary,#FF6B35) 32%,transparent)',
   },
 
   // Selected bar
@@ -406,16 +434,19 @@ const S = {
     display: 'flex',
     flexWrap: 'wrap',
     gap: 6,
-    padding: '8px 24px',
-    borderTop: '1px solid rgba(255,255,255,0.06)',
+    padding: '8px 24px 4px',
+    borderTop: '1px solid rgba(255,255,255,0.05)',
   },
   selectedChip: {
-    padding: '4px 10px',
+    padding: '5px 11px',
     borderRadius: 999,
     border: '1px solid',
     fontSize: 11,
+    fontWeight: 500,
     color: '#fff',
     cursor: 'pointer',
+    fontFamily: FONT,
+    letterSpacing: '-0.1px',
   },
 
   // Footer
@@ -423,44 +454,51 @@ const S = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: '16px 24px',
-    borderTop: '1px solid rgba(255,255,255,0.08)',
-    background: 'rgba(0,0,0,0.3)',
+    padding: '14px 22px 18px',
+    borderTop: '1px solid rgba(255,255,255,0.06)',
     gap: 12,
   },
   cancelBtn: {
     padding: '12px 18px',
-    borderRadius: 12,
-    border: '1px solid rgba(255,255,255,0.12)',
-    background: 'transparent',
-    color: 'rgba(255,255,255,0.6)',
+    borderRadius: 14,
+    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'rgba(255,255,255,0.04)',
+    color: 'rgba(255,255,255,0.7)',
     cursor: 'pointer',
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: 500,
     whiteSpace: 'nowrap',
+    fontFamily: FONT,
+    letterSpacing: '-0.1px',
   },
   priceBreakdown: {
     textAlign: 'center',
     flex: 1,
+    fontFamily: FONT,
   },
   addonLine: {
     fontSize: 11,
-    color: '#F59E0B',
+    color: 'rgba(255,255,255,0.45)',
+    fontVariantNumeric: 'tabular-nums',
+    marginBottom: 2,
   },
   totalLine: {
     fontSize: 20,
-    fontWeight: 800,
+    fontWeight: 600,
     color: '#fff',
+    fontVariantNumeric: 'tabular-nums',
+    letterSpacing: '-0.6px',
   },
   confirmBtn: {
-    padding: '14px 28px',
-    borderRadius: 12,
+    padding: '12px 22px',
+    borderRadius: 14,
     border: 'none',
-    background: '#FF6B35',
     color: '#fff',
-    fontSize: 15,
-    fontWeight: 800,
+    fontSize: 14,
+    fontWeight: 600,
     cursor: 'pointer',
     whiteSpace: 'nowrap',
-    letterSpacing: 0.5,
+    letterSpacing: '-0.2px',
+    fontFamily: FONT,
   },
 };

@@ -143,38 +143,39 @@ function AddonModal({ item, onClose, onConfirm }) {
   }, 0);
   return (
     <div style={AM.overlay} onClick={onClose}>
-      <div style={AM.sheet} onClick={e=>e.stopPropagation()}>
+      <div className="lg" style={AM.sheet} onClick={e=>e.stopPropagation()}>
+        <div style={AM.handle}/>
         <div style={AM.header}>
           <FoodImage item={item} size={72}/>
-          <div style={{flex:1}}>
+          <div style={{flex:1,minWidth:0}}>
             <div style={AM.name}>{item.name}</div>
             <div style={AM.price}>{fIDR(item.price)}</div>
-            <div style={AM.desc}>{item.desc}</div>
+            {item.desc && <div style={AM.desc}>{item.desc}</div>}
           </div>
-          <button style={AM.close} onClick={onClose}>✕</button>
+          <button style={AM.close} onClick={onClose} aria-label="Close">✕</button>
         </div>
         <div style={AM.body}>
           {groups.map(g => (
             <div key={g.id} style={AM.group}>
               <div style={AM.groupTitle}>
-                {g.group}
-                <span style={AM.groupHint}>{g.type==="single"?"Pilih 1":"Bisa lebih dari 1"}</span>
+                <span>{g.group}</span>
+                <span style={AM.groupHint}>{g.type==="single"?"Pick one":"Choose any"}</span>
               </div>
               <div style={AM.opts}>
                 {g.options.map(opt => {
                   const active = g.type==="single" ? sel[g.id]===opt.id : sel[g.id]?.includes(opt.id);
                   return (
-                    <button key={opt.id} style={{...AM.opt,...(active?AM.optOn:{})}}
+                    <button key={opt.id} className={active?"lg":""} style={{...AM.opt,...(active?AM.optOn:{})}}
                       onClick={()=>{
                         if(g.type==="single") setSel(s=>({...s,[g.id]:opt.id}));
                         else setSel(s=>({...s,[g.id]:s[g.id]?.includes(opt.id)?s[g.id].filter(x=>x!==opt.id):[...(s[g.id]||[]),opt.id]}));
                       }}>
-                      <div style={{...AM.radio,borderColor:active?"#FF6B35":"#444",background:active?"#FF6B35":"transparent"}}>
+                      <div style={{...AM.radio,borderColor:active?"var(--brand-primary,#FF6B35)":"rgba(255,255,255,0.18)",background:active?"var(--brand-primary,#FF6B35)":"transparent"}}>
                         {active && <div style={{width:8,height:8,borderRadius:"50%",background:"#fff"}}/>}
                       </div>
-                      <span style={{flex:1,fontSize:15}}>{opt.label}</span>
-                      <span style={{fontSize:13,color:opt.price?"#FF6B35":"#555",fontWeight:600}}>
-                        {opt.price?`+${fIDR(opt.price)}`:"Gratis"}
+                      <span style={AM.optLabel}>{opt.label}</span>
+                      <span style={{...AM.optPrice,color:opt.price?"#fff":"rgba(255,255,255,0.4)"}}>
+                        {opt.price?`+${fIDR(opt.price)}`:"Free"}
                       </span>
                     </button>
                   );
@@ -183,15 +184,16 @@ function AddonModal({ item, onClose, onConfirm }) {
             </div>
           ))}
           <div style={AM.group}>
-            <div style={AM.groupTitle}>Catatan <span style={AM.groupHint}>Opsional</span></div>
-            <textarea style={AM.note} rows={2} placeholder="Contoh: tidak pakai bawang..."
+            <div style={AM.groupTitle}><span>Note</span> <span style={AM.groupHint}>Optional</span></div>
+            <textarea style={AM.note} rows={2} placeholder="e.g. no onions, less spicy..."
               value={note} onChange={e=>setNote(e.target.value)}/>
           </div>
         </div>
         <div style={AM.footer}>
-          {addonTotal>0 && <div style={AM.addonSum}>Tambahan: +{fIDR(addonTotal)}</div>}
-          <button style={AM.confirm} onClick={()=>onConfirm(item,sel,note,addonTotal)}>
-            TAMBAH KE KERANJANG  •  {fIDR(item.price+addonTotal)}
+          {addonTotal>0 && <div style={AM.addonSum}>Add-ons +{fIDR(addonTotal)}</div>}
+          <button className="lg lg-brand order-pill" style={AM.confirm} onClick={()=>onConfirm(item,sel,note,addonTotal)}>
+            <span>Add to cart</span>
+            <span style={AM.confirmAmount}>{fIDR(item.price+addonTotal)}</span>
           </button>
         </div>
       </div>
@@ -201,25 +203,29 @@ function AddonModal({ item, onClose, onConfirm }) {
 }
 
 const AM = {
-  overlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.88)",zIndex:300,display:"flex",alignItems:"flex-end",justifyContent:"center"},
-  sheet:{background:"#141414",borderRadius:"24px 24px 0 0",width:"100%",maxWidth:640,maxHeight:"90vh",display:"flex",flexDirection:"column",animation:"slideUp 0.3s ease",border:"1px solid #2a2a2a",borderBottom:"none"},
-  header:{display:"flex",gap:16,padding:"20px 20px 16px",borderBottom:"1px solid #1e1e1e",alignItems:"flex-start"},
-  name:{fontSize:20,fontWeight:700,lineHeight:1.2,marginBottom:4},
-  price:{fontSize:18,fontWeight:700,color:"#FF6B35",fontFamily:"'Inter',sans-serif",letterSpacing:1},
-  desc:{fontSize:12,color:"#666",marginTop:4,lineHeight:1.4},
-  close:{background:"#2a2a2a",border:"none",borderRadius:"50%",width:36,height:36,color:"#aaa",cursor:"pointer",fontSize:16,display:"flex",alignItems:"center",justifyContent:"center"},
-  body:{overflowY:"auto",padding:"0 20px",flex:1},
-  group:{padding:"16px 0",borderBottom:"1px solid #1a1a1a"},
-  groupTitle:{fontSize:12,fontWeight:700,letterSpacing:2,color:"#aaa",textTransform:"uppercase",marginBottom:10,display:"flex",justifyContent:"space-between"},
-  groupHint:{fontSize:10,color:"#555",fontWeight:400,letterSpacing:0,textTransform:"none"},
+  overlay:{position:"fixed",inset:0,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(16px) saturate(180%)",WebkitBackdropFilter:"blur(16px) saturate(180%)",zIndex:300,display:"flex",alignItems:"flex-end",justifyContent:"center"},
+  sheet:{borderRadius:"32px 32px 0 0",width:"100%",maxWidth:640,maxHeight:"90vh",display:"flex",flexDirection:"column",animation:"slideUp 0.35s cubic-bezier(.2,.8,.2,1)",borderBottom:"none",overflow:"hidden"},
+  handle:{width:40,height:4,borderRadius:2,background:"rgba(255,255,255,0.15)",margin:"10px auto 4px"},
+  header:{display:"flex",gap:14,padding:"14px 22px 18px",borderBottom:"1px solid rgba(255,255,255,0.06)",alignItems:"flex-start"},
+  name:{fontSize:19,fontWeight:600,lineHeight:1.2,marginBottom:4,color:"rgba(255,255,255,0.95)",letterSpacing:"-0.4px",fontFamily:"'Inter',sans-serif"},
+  price:{fontSize:16,fontWeight:600,color:"#fff",fontFamily:"'Inter',sans-serif",letterSpacing:"-0.3px",fontVariantNumeric:"tabular-nums"},
+  desc:{fontSize:12,color:"rgba(255,255,255,0.5)",marginTop:5,lineHeight:1.45,fontFamily:"'Inter',sans-serif"},
+  close:{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"50%",width:34,height:34,color:"rgba(255,255,255,0.6)",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0},
+  body:{overflowY:"auto",padding:"0 22px",flex:1},
+  group:{padding:"16px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"},
+  groupTitle:{fontSize:13,fontWeight:600,letterSpacing:"-0.2px",color:"rgba(255,255,255,0.92)",marginBottom:11,display:"flex",justifyContent:"space-between",alignItems:"baseline",fontFamily:"'Inter',sans-serif"},
+  groupHint:{fontSize:11,color:"rgba(255,255,255,0.4)",fontWeight:400,letterSpacing:0,fontFamily:"'Inter',sans-serif"},
   opts:{display:"flex",flexDirection:"column",gap:8},
-  opt:{display:"flex",alignItems:"center",gap:12,background:"#1a1a1a",border:"1px solid #222",borderRadius:14,padding:"14px 16px",cursor:"pointer",color:"#ccc",textAlign:"left",transition:"all 0.15s"},
-  optOn:{background:"rgba(255,107,53,0.08)",border:"1px solid #FF6B35",color:"#fff"},
-  radio:{width:20,height:20,borderRadius:"50%",border:"2px solid",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"},
-  note:{width:"100%",background:"#1a1a1a",border:"1px solid #222",borderRadius:12,padding:"12px 14px",color:"#ccc",fontSize:14,fontFamily:"'Inter',sans-serif",boxSizing:"border-box"},
-  footer:{padding:"14px 20px 28px",borderTop:"1px solid #1e1e1e",background:"#0d0d0d"},
-  addonSum:{fontSize:12,color:"#888",textAlign:"center",marginBottom:8},
-  confirm:{width:"100%",background:"linear-gradient(135deg,#FF6B35,#E55A2B)",border:"none",borderRadius:16,padding:"18px",color:"#000",fontSize:15,fontWeight:700,cursor:"pointer",letterSpacing:1,fontFamily:"'Inter',sans-serif"},
+  opt:{display:"flex",alignItems:"center",gap:12,background:"rgba(255,255,255,0.025)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:14,padding:"13px 14px",cursor:"pointer",color:"rgba(255,255,255,0.85)",textAlign:"left",transition:"all 0.18s cubic-bezier(.2,.8,.2,1)",fontFamily:"'Inter',sans-serif"},
+  optOn:{borderColor:"color-mix(in srgb,var(--brand-primary,#FF6B35) 50%,transparent)",color:"#fff",background:"color-mix(in srgb,var(--brand-primary,#FF6B35) 8%,rgba(255,255,255,0.02))"},
+  optLabel:{flex:1,fontSize:14,fontWeight:500,letterSpacing:"-0.1px"},
+  optPrice:{fontSize:13,fontWeight:600,fontVariantNumeric:"tabular-nums",letterSpacing:"-0.1px"},
+  radio:{width:20,height:20,borderRadius:"50%",border:"2px solid",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.18s ease"},
+  note:{width:"100%",background:"rgba(255,255,255,0.025)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:14,padding:"12px 14px",color:"rgba(255,255,255,0.9)",fontSize:14,fontFamily:"'Inter',sans-serif",boxSizing:"border-box",letterSpacing:"-0.1px"},
+  footer:{padding:"14px 22px 24px",borderTop:"1px solid rgba(255,255,255,0.06)",background:"linear-gradient(180deg,transparent,rgba(0,0,0,0.18))"},
+  addonSum:{fontSize:11,color:"rgba(255,255,255,0.5)",textAlign:"center",marginBottom:8,letterSpacing:0.2,fontFamily:"'Inter',sans-serif"},
+  confirm:{width:"100%",border:"none",borderRadius:16,padding:"15px 20px",color:"#fff",fontSize:15,fontWeight:600,cursor:"pointer",letterSpacing:"-0.3px",fontFamily:"'Inter',sans-serif",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12},
+  confirmAmount:{fontSize:16,fontWeight:600,letterSpacing:"-0.4px",fontVariantNumeric:"tabular-nums"},
 };
 
 const TAG_CLR = {
@@ -857,45 +863,46 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           }}/>
       )}
 
-      {/* Staff call button */}
+      {/* Staff call button — floating pill, brand-themed */}
       {tableInfo && (
-        <button style={K.staffCallBtn} onClick={()=>{setStaffCall(true);setCallSent(false);setCallReason("");}}>
-          🔔 Panggil Staff
+        <button className="lg" style={K.staffCallBtn} onClick={()=>{setStaffCall(true);setCallSent(false);setCallReason("");}}>
+          🔔 <span style={{marginLeft:6}}>Call staff</span>
         </button>
       )}
 
       {/* Staff call modal */}
       {showStaffCall && (
-        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.85)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}>
-          <div style={{background:"#0d1117",border:"1px solid #1a1a2e",borderRadius:20,padding:"28px",width:"100%",maxWidth:480,textAlign:"center"}}>
+        <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",backdropFilter:"blur(20px) saturate(180%)",WebkitBackdropFilter:"blur(20px) saturate(180%)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:"20px"}}>
+          <div className="lg" style={{borderRadius:28,padding:"32px 28px",width:"100%",maxWidth:440,textAlign:"center",animation:"slideUp 0.35s cubic-bezier(.2,.8,.2,1)"}}>
             {callSent ? (
               <>
-                <div style={{fontSize:56,marginBottom:12}}>✅</div>
-                <div style={{fontFamily:"'Inter',sans-serif",fontSize:24,letterSpacing:3,color:"#34D399",marginBottom:8}}>STAFF DIPANGGIL!</div>
-                <div style={{fontSize:13,color:"#888",marginBottom:20}}>Please wait sebentar.</div>
-                <button style={{...K.proceedBtn,background:"#1a1a2e",color:"#888"}} onClick={()=>setStaffCall(false)}>Close</button>
+                <div style={{fontSize:56,marginBottom:14,filter:"drop-shadow(0 8px 20px rgba(52,211,153,0.35))"}}>✅</div>
+                <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:600,letterSpacing:"-0.5px",color:"rgba(255,255,255,0.95)",marginBottom:8}}>Staff is on the way</div>
+                <div style={{fontSize:13,color:"rgba(255,255,255,0.55)",marginBottom:22,fontFamily:"'Inter',sans-serif"}}>Please wait a moment.</div>
+                <button style={{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:14,padding:"12px 28px",color:"rgba(255,255,255,0.7)",fontSize:13,fontWeight:500,fontFamily:"'Inter',sans-serif",cursor:"pointer"}} onClick={()=>setStaffCall(false)}>Close</button>
               </>
             ) : (
               <>
-                <div style={{fontSize:48,marginBottom:12}}>🔔</div>
-                <div style={{fontFamily:"'Inter',sans-serif",fontSize:24,letterSpacing:3,marginBottom:8}}>PANGGIL STAFF</div>
-                <div style={{fontSize:13,color:"#666",marginBottom:20}}>Meja: {tableInfo?.name||"-"}</div>
-                <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:16}}>
-                  {["Butuh bantuan","Meja kotor","Peralatan makan","Keluhan pesanan","Lainnya"].map(r=>(
-                    <button key={r} style={{
-                      background:callReason===r?"rgba(245,158,11,0.15)":"#1a1a2e",
-                      border:`1px solid ${callReason===r?"#F59E0B44":"#21262d"}`,
-                      borderRadius:10,padding:"12px",color:callReason===r?"#F59E0B":"#888",
-                      fontSize:13,fontWeight:600,textAlign:"left",
-                    }} onClick={()=>setCallReason(r)}>{r}</button>
+                <div style={{fontSize:44,marginBottom:10,filter:"drop-shadow(0 6px 16px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent))"}}>🔔</div>
+                <div style={{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:600,letterSpacing:"-0.5px",color:"rgba(255,255,255,0.95)",marginBottom:4}}>Call staff</div>
+                <div style={{fontSize:12,color:"rgba(255,255,255,0.45)",marginBottom:22,fontFamily:"'Inter',sans-serif",letterSpacing:0.2}}>Table {tableInfo?.name||"-"}</div>
+                <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:18,textAlign:"left"}}>
+                  {[{en:"Need assistance",id:"Butuh bantuan"},{en:"Clean table",id:"Meja kotor"},{en:"Utensils",id:"Peralatan makan"},{en:"Order issue",id:"Keluhan pesanan"},{en:"Other",id:"Lainnya"}].map(r=>(
+                    <button key={r.id} style={{
+                      background:callReason===r.id?"color-mix(in srgb,var(--brand-primary,#FF6B35) 12%,rgba(255,255,255,0.02))":"rgba(255,255,255,0.025)",
+                      border:`1px solid ${callReason===r.id?"color-mix(in srgb,var(--brand-primary,#FF6B35) 45%,transparent)":"rgba(255,255,255,0.06)"}`,
+                      borderRadius:12,padding:"12px 14px",
+                      color:callReason===r.id?"#fff":"rgba(255,255,255,0.72)",
+                      fontSize:13,fontWeight:500,textAlign:"left",cursor:"pointer",fontFamily:"'Inter',sans-serif",letterSpacing:"-0.1px",transition:"all 0.18s ease",
+                    }} onClick={()=>setCallReason(r.id)}>{r.en}</button>
                   ))}
                 </div>
                 <div style={{display:"flex",gap:10}}>
-                  <button style={{flex:1,background:"#1a1a2e",border:"1px solid #21262d",borderRadius:12,padding:"14px",color:"#666",fontSize:13}} onClick={()=>setStaffCall(false)}>Cancel</button>
-                  <button style={{flex:2,background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:12,padding:"14px",color:"#050810",fontWeight:700,fontSize:14,fontFamily:"'Inter',sans-serif",letterSpacing:1,opacity:!callReason?0.4:1}}
+                  <button style={{flex:1,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:14,padding:"13px",color:"rgba(255,255,255,0.7)",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif"}} onClick={()=>setStaffCall(false)}>Cancel</button>
+                  <button className="lg lg-brand order-pill" style={{flex:2,border:"none",borderRadius:14,padding:"13px",color:"#fff",fontWeight:600,fontSize:14,fontFamily:"'Inter',sans-serif",letterSpacing:"-0.2px",opacity:!callReason?0.4:1,cursor:"pointer"}}
                     disabled={!callReason}
                     onClick={async()=>{await api.staffCall({tableId:tableInfo?.id,reason:callReason}).catch(()=>{});setCallSent(true);}}>
-                    PANGGIL STAFF 🔔
+                    Send call 🔔
                   </button>
                 </div>
               </>
@@ -1132,7 +1139,8 @@ const K = {
   qtyVal:     {fontSize:14,fontWeight:600,minWidth:24,textAlign:"center",fontFamily:"'Inter',sans-serif",fontVariantNumeric:"tabular-nums",color:"rgba(255,255,255,0.92)"},
 
   // ── STAFF CALL ──
-  staffCallBtn:{position:"fixed",bottom:20,right:20,background:GLASS_BG,backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",border:"1px solid rgba(245,158,11,0.3)",borderRadius:30,padding:"11px 20px",color:"#F59E0B",fontSize:13,fontWeight:700,zIndex:50,display:"flex",alignItems:"center",gap:6,boxShadow:"0 1px 2px rgba(0,0,0,0.3),0 8px 24px rgba(245,158,11,0.15),inset 0 1px 0 rgba(255,255,255,0.05)",transition:"all 0.2s cubic-bezier(0.4,0,0.2,1)"},
+  // .lg class handles glass treatment; this just adds position + brand tint
+  staffCallBtn:{position:"fixed",bottom:24,right:24,borderRadius:999,padding:"11px 18px",color:"rgba(255,255,255,0.92)",fontSize:13,fontWeight:600,zIndex:50,display:"flex",alignItems:"center",cursor:"pointer",fontFamily:"'Inter',sans-serif",letterSpacing:"-0.2px"},
 
   // ── CONFIRM SCREEN ──
   confirmHeader:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 24px",background:"rgba(13,17,23,0.7)",backdropFilter:"blur(20px) saturate(180%)",WebkitBackdropFilter:"blur(20px) saturate(180%)",borderBottom:BORDER_DEFAULT,position:"sticky",top:0,zIndex:10,gap:12},
