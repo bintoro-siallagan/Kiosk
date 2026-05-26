@@ -4,8 +4,7 @@
 // Anti-fraud: GPS validated against outlet pin (haversine, 200m radius).
 import { useEffect, useState } from "react";
 import CameraCapture from "../components/CameraCapture.jsx";
-
-const API_HOST = import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
+import API_HOST from "../apiBase.js";
 const CYAN = "#22d3ee", GREEN = "#10b981", AMBER = "#f59e0b", RED = "#ef4444";
 
 export default function OutletVisit() {

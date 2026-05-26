@@ -4,8 +4,7 @@
 // Anti-fraud: PIN sha256, GPS auto-tagged, timestamp embed, one submission per day.
 import { useEffect, useRef, useState } from "react";
 import CameraCapture from "../components/CameraCapture.jsx";
-
-const API_HOST = import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
+import API_HOST from "../apiBase.js";
 const PURPLE = "#a855f7", GREEN = "#10b981", AMBER = "#f59e0b", RED = "#ef4444";
 
 export default function OutletAudit() {

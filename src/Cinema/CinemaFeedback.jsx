@@ -3,7 +3,7 @@
 // Simple star rating + comment form, mobile-first design.
 import { useState, useEffect } from "react";
 
-const API_HOST = import.meta.env.VITE_API_URL || "http://localhost:3001";
+import API_HOST from "../apiBase.js";
 
 export default function CinemaFeedback() {
   const params = new URLSearchParams(window.location.search);

@@ -4,8 +4,7 @@
 // tick checklist + upload foto evidence + sign-off PIN.
 import { useCallback, useEffect, useState } from "react";
 import CameraCapture from "../components/CameraCapture.jsx";
-
-const API_HOST = import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
+import API_HOST from "../apiBase.js";
 const PURPLE = "#a855f7", GREEN = "#10b981", AMBER = "#f59e0b", RED = "#ef4444", CYAN = "#22d3ee";
 
 export default function LaunchFieldWorker() {
