@@ -27,6 +27,11 @@ export default function CinemaKiosk({ apiBase }) {
     } catch { return ""; }
   })();
   const [outletInfo, setOutletInfo] = useState(null); // { code, name, area } from /api/outlet-master
+  const [autoPromos, setAutoPromos] = useState([]);    // [{id,name,discount_type,discount_value,progress:{unlocked}}]
+  // Auto-print state: idle | printing | success | error | unconfigured
+  const [printState, setPrintState] = useState("idle");
+  const [printMsg, setPrintMsg] = useState("");
+  const printTriedRef = useRef(null); // prevent duplicate prints per purchase
   const [step, setStep] = useState("films");
   const [films, setFilms] = useState([]);
   const [showtimes, setShowtimes] = useState([]);
@@ -83,6 +88,55 @@ export default function CinemaKiosk({ apiBase }) {
     }
     // eslint-disable-next-line
   }, []);
+
+  // ── Auto-trigger promos: poll setiap 30s, unlock kalau omzet/tiket harian capai threshold ──
+  useEffect(() => {
+    let timer;
+    const fetchAuto = () => {
+      const u = `${base}/auto-promos${outletCode ? `?outlet=${encodeURIComponent(outletCode)}` : ""}`;
+      fetch(u).then(r => r.json()).then(d => setAutoPromos(d.promos || [])).catch(() => {});
+    };
+    fetchAuto();
+    timer = setInterval(fetchAuto, 30000);
+    return () => clearInterval(timer);
+  }, [base, outletCode]);
+
+  // Best unlocked auto-promo (highest discount among yang sudah ke-unlock)
+  const bestAutoPromo = useMemo(() => {
+    const unlocked = autoPromos.filter(p => p.progress?.unlocked);
+    if (!unlocked.length) return null;
+    // Estimate: pick highest discount_value (rough heuristic; final discount dihitung di server)
+    return unlocked.slice().sort((a, b) => (b.discount_value || 0) - (a.discount_value || 0))[0];
+  }, [autoPromos]);
+
+  // ── AUTO-PRINT thermal ticket saat masuk step 'done' ──
+  // Customer tidak perlu pencet tombol — backend langsung kirim ESC/POS ke printer LAN.
+  // Anti-duplicate via printTriedRef (per purchase_id).
+  useEffect(() => {
+    if (step !== "done" || !done?.purchase_id) return;
+    if (printTriedRef.current === done.purchase_id) return;
+    printTriedRef.current = done.purchase_id;
+    setPrintState("printing"); setPrintMsg("Mencetak tiket…");
+    fetch(`${base}/purchases/${encodeURIComponent(done.purchase_id)}/print`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ outlet: outletCode || undefined }),
+    })
+      .then(r => r.json().then(d => ({ status: r.status, d })))
+      .then(({ status, d }) => {
+        if (d?.ok && d.printed > 0) {
+          setPrintState("success");
+          setPrintMsg(`Tiket dicetak (${d.printed}/${d.total})`);
+        } else if (status === 503) {
+          setPrintState("unconfigured");
+          setPrintMsg(d?.error || "Printer belum di-konfigurasi");
+        } else {
+          setPrintState("error");
+          setPrintMsg(d?.error || "Cetak gagal — minta bantuan staff");
+        }
+      })
+      .catch(e => { setPrintState("error"); setPrintMsg("Cetak gagal — minta bantuan staff"); });
+  }, [step, done?.purchase_id, base, outletCode]);
+
   // ── Customer rating (1-5 stars) on done step ──
   const [showDelight, setShowDelight] = useState(false);
   const [rateValue, setRateValue] = useState(0);
@@ -129,6 +183,33 @@ export default function CinemaKiosk({ apiBase }) {
     const b = bundleCatalog.find(x => x.id === parseInt(id, 10));
     return a + (b ? b.price * qty : 0);
   }, 0);
+
+  // Compute discount client-side untuk auto-promo (server-side compute = /promotions/apply,
+  // tapi auto-promo gak punya code jadi kita hitung di sini pakai formula yang sama)
+  const computeAutoDiscount = (promo, subtotal) => {
+    if (!promo || !subtotal) return 0;
+    if (promo.min_purchase && subtotal < promo.min_purchase) return 0;
+    let d = promo.discount_type === 'percentage'
+      ? Math.floor(subtotal * (promo.discount_value || 0) / 100)
+      : Math.min(promo.discount_value || 0, subtotal);
+    if (promo.max_discount && d > promo.max_discount) d = promo.max_discount;
+    return d;
+  };
+
+  // Auto-apply best unlocked auto-promo saat masuk step bundles (kalau customer belum entry kode manual)
+  useEffect(() => {
+    if (step !== "bundles" || !bestAutoPromo || promoApplied) return;
+    const subtotal = grandSubtotal();
+    if (!subtotal) return;
+    if (bestAutoPromo.min_purchase && subtotal < bestAutoPromo.min_purchase) return;
+    if (bestAutoPromo.applies_to_film_id && film && bestAutoPromo.applies_to_film_id !== film.id) return;
+    const discount = computeAutoDiscount(bestAutoPromo, subtotal);
+    if (discount > 0) {
+      setPromoApplied({ promo: bestAutoPromo, discount, _auto: true });
+      setPromoMsg(`🎉 Diskon otomatis aktif — Hemat ${rp(discount)}`);
+    }
+    // eslint-disable-next-line
+  }, [step, bestAutoPromo]);
   async function applyPromo() {
     const code = promoCode.trim();
     if (!code) return;
@@ -258,6 +339,7 @@ export default function CinemaKiosk({ apiBase }) {
     setStep("films"); setFilm(null); setShow(null); setSeatData(null);
     setSeats(new Set()); setCart({}); setEmail(""); setPhone(""); setDone(null); setMsg("");
     setPromoCode(""); setPromoApplied(null); setPromoMsg("");
+    setPrintState("idle"); setPrintMsg(""); printTriedRef.current = null;
     setAutoResetIn(0);
   };
 
@@ -503,6 +585,14 @@ export default function CinemaKiosk({ apiBase }) {
         {/* STEP: films — hanya tampilkan film yang udah ada jadwal aktif */}
         {step === "films" && (
           <>
+            {/* Auto-promo unlocked banner — milestone-based discount */}
+            {bestAutoPromo && (
+              <AutoPromoBanner promo={bestAutoPromo} />
+            )}
+            {/* Progress banner untuk auto-promo yang BELUM unlocked — biar customer aware */}
+            {!bestAutoPromo && autoPromos.length > 0 && (
+              <AutoPromoProgressBanner promos={autoPromos} />
+            )}
             <H>Pilih Film</H>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 14 }}>
               {films.filter(f => f.status === "now_showing" && filmIdsWithShows.has(f.id)).map(f => (
@@ -694,14 +784,18 @@ export default function CinemaKiosk({ apiBase }) {
               {bundleCatalog.length === 0 && <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 14 }}>Tidak ada combo tersedia.</div>}
             </div>
 
-            {/* Promo code */}
+            {/* Promo code (atau auto-promo yang udah ke-apply) */}
             <div style={{ marginTop: 22, background: "linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.005))", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: 16, boxShadow: "0 4px 12px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04)" }}>
-              <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 10, color: "#fbbf24", letterSpacing: 2, textTransform: "uppercase", fontWeight: 800, marginBottom: 10 }}>🎁 PUNYA KODE PROMO?</div>
+              <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 10, color: "#fbbf24", letterSpacing: 2, textTransform: "uppercase", fontWeight: 800, marginBottom: 10 }}>
+                {promoApplied?._auto ? "🎉 DISKON OTOMATIS" : "🎁 PUNYA KODE PROMO?"}
+              </div>
               {promoApplied ? (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.35)", borderRadius: 12, padding: "12px 14px" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: promoApplied._auto ? "rgba(245,158,11,0.12)" : "rgba(16,185,129,0.1)", border: `1px solid ${promoApplied._auto ? "rgba(245,158,11,0.4)" : "rgba(16,185,129,0.35)"}`, borderRadius: 12, padding: "12px 14px" }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: "#10b981" }}>✓ {promoApplied.promo.name}</div>
-                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>Hemat <b style={{ color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>{rp(promoApplied.discount)}</b></div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: promoApplied._auto ? "#fbbf24" : "#10b981" }}>
+                      {promoApplied._auto ? "🎉 " : "✓ "}{promoApplied.promo.name}
+                    </div>
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>Hemat <b style={{ color: promoApplied._auto ? "#fbbf24" : "#10b981", fontFamily: "'Geist Mono',monospace" }}>{rp(promoApplied.discount)}</b></div>
                   </div>
                   <button onClick={clearPromo} style={{ background: "transparent", border: "1px solid rgba(239,68,68,0.4)", color: "#fca5a5", padding: "6px 12px", borderRadius: 8, fontSize: 11.5, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>× Lepas</button>
                 </div>
@@ -798,10 +892,9 @@ export default function CinemaKiosk({ apiBase }) {
                 </>
               )}
             </div>
+            {/* Auto-print status indicator (replace tombol Cetak — customer suka pencet berulang) */}
+            <PrintStatusBanner state={printState} message={printMsg} />
             <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 18, flexWrap: "wrap" }}>
-              <button onClick={printTickets} style={btnGold}>
-                🖨️ Cetak {done.bundles?.length > 0 ? "+ Voucher F&B" : "Tiket"}
-              </button>
               <button onClick={emailTickets} disabled={sending} style={btnEmail(sending)}>
                 {sending ? "Mengirim…" : done.emailSent ? "✅ Email terkirim" : "📧 Kirim Email"}
               </button>
@@ -942,6 +1035,93 @@ export default function CinemaKiosk({ apiBase }) {
 function H({ children }) {
   return <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 800, letterSpacing: -0.4, marginBottom: 14, color: "#fff" }}>{children}</div>;
 }
+
+// Banner: auto-promo sudah ke-unlock (omzet/tiket harian capai threshold)
+function AutoPromoBanner({ promo }) {
+  const label = promo.discount_type === "percentage"
+    ? `${promo.discount_value}% OFF`
+    : `Rp ${(promo.discount_value || 0).toLocaleString("id-ID")} OFF`;
+  return (
+    <div style={{
+      position: "relative", overflow: "hidden",
+      background: "linear-gradient(135deg, rgba(245,158,11,0.18), rgba(168,85,247,0.18))",
+      border: "1px solid rgba(245,158,11,0.45)", borderRadius: 16, padding: "14px 18px",
+      marginBottom: 16, display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
+      boxShadow: "0 8px 24px rgba(245,158,11,0.15), inset 0 1px 0 rgba(255,255,255,0.08)",
+      animation: "karyaKioskFadeUp 0.4s ease-out",
+    }}>
+      <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(400px 200px at 0% 50%, rgba(251,191,36,0.12), transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ fontSize: 32, lineHeight: 1, filter: "drop-shadow(0 0 12px rgba(245,158,11,0.5))" }}>🎉</div>
+      <div style={{ flex: 1, minWidth: 200, position: "relative" }}>
+        <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 10, letterSpacing: 2, textTransform: "uppercase", fontWeight: 800, color: "#fbbf24", marginBottom: 2 }}>DISKON OTOMATIS AKTIF</div>
+        <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: -0.3, color: "#fff" }}>{promo.name}</div>
+        {promo.description && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", marginTop: 2 }}>{promo.description}</div>}
+      </div>
+      <div style={{
+        fontFamily: "'Geist Mono',monospace", fontSize: 18, fontWeight: 900, color: "#fbbf24",
+        background: "rgba(0,0,0,0.35)", border: "1px solid rgba(245,158,11,0.5)",
+        borderRadius: 10, padding: "8px 14px", letterSpacing: -0.3,
+        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+      }}>{label}</div>
+    </div>
+  );
+}
+
+// Print status indicator pada step done — replace tombol cetak (anti spam tap)
+function PrintStatusBanner({ state, message }) {
+  if (state === "idle") return null;
+  const palette = {
+    printing:      { bg: "rgba(245,158,11,0.10)", border: "rgba(245,158,11,0.35)", color: "#fbbf24", icon: "🖨️", label: "MENCETAK" },
+    success:       { bg: "rgba(16,185,129,0.10)", border: "rgba(16,185,129,0.35)", color: "#10b981", icon: "✅", label: "TIKET DICETAK" },
+    error:         { bg: "rgba(239,68,68,0.10)",  border: "rgba(239,68,68,0.35)",  color: "#fca5a5", icon: "⚠️", label: "CETAK GAGAL" },
+    unconfigured:  { bg: "rgba(168,85,247,0.08)", border: "rgba(168,85,247,0.30)", color: "#c084fc", icon: "ℹ️", label: "E-TIKET ONLY" },
+  };
+  const p = palette[state] || palette.printing;
+  return (
+    <div style={{
+      marginTop: 18, display: "inline-flex", alignItems: "center", gap: 12,
+      padding: "10px 18px", background: p.bg, border: `1px solid ${p.border}`,
+      borderRadius: 999, fontSize: 12.5, color: p.color,
+      fontFamily: "'Geist Mono',monospace", fontWeight: 700, letterSpacing: 0.8,
+      animation: state === "printing" ? "kioskAutoPulse 1.4s ease-in-out infinite" : "karyaKioskFadeUp 0.3s ease-out",
+    }}>
+      <span style={{ fontSize: 16 }}>{p.icon}</span>
+      <span style={{ letterSpacing: 1.4 }}>{p.label}</span>
+      {message && <span style={{ opacity: 0.75, fontWeight: 600, letterSpacing: 0.4, fontFamily: "'Inter',sans-serif" }}>· {message}</span>}
+    </div>
+  );
+}
+
+// Banner: progress menuju unlock — biar customer tahu ada milestone yang nanti aktif
+function AutoPromoProgressBanner({ promos }) {
+  // Pick yang paling dekat unlock (highest percent progress)
+  const closest = promos.slice().sort((a, b) => (b.progress?.percent || 0) - (a.progress?.percent || 0))[0];
+  if (!closest) return null;
+  const pct = closest.progress?.percent || 0;
+  const label = closest.discount_type === "percentage"
+    ? `${closest.discount_value}% OFF`
+    : `Rp ${(closest.discount_value || 0).toLocaleString("id-ID")} OFF`;
+  const metric = closest.trigger_type === "auto_daily_sales" ? "omzet" : "tiket";
+  return (
+    <div style={{
+      background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.18)",
+      borderRadius: 14, padding: "12px 16px", marginBottom: 16,
+      display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
+    }}>
+      <div style={{ fontSize: 22, opacity: 0.7 }}>🔓</div>
+      <div style={{ flex: 1, minWidth: 200 }}>
+        <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 9.5, letterSpacing: 2, textTransform: "uppercase", fontWeight: 800, color: "#a78bfa", marginBottom: 4 }}>SEGERA UNLOCK · {label}</div>
+        <div style={{ position: "relative", height: 6, background: "rgba(255,255,255,0.05)", borderRadius: 999, overflow: "hidden" }}>
+          <div style={{ position: "absolute", inset: 0, width: `${pct}%`, background: "linear-gradient(90deg,#a855f7,#c084fc)", borderRadius: 999, transition: "width 0.4s ease" }} />
+        </div>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 5 }}>
+          {closest.progress?.current?.toLocaleString("id-ID")} / {closest.progress?.target?.toLocaleString("id-ID")} {metric} hari ini ({pct}%)
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Line({ k, v }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", gap: 16, fontSize: 13, padding: "5px 0" }}>

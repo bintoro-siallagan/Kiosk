@@ -169,4 +169,62 @@ function buildCustomerReceipt(order) {
   return r.done();
 }
 
-module.exports = { buildKitchenTicket, buildCustomerReceipt, Receipt };
+// ─── CINEMA TICKET ─────────────────────────────────────────────────────
+// Print 1 struk per tiket (Epson TM-T82 / 80mm). QR di tengah biar mudah scan.
+// payload = { purchase_id, film, show, ticket:{code,seat,price}, bundles?, total, paid_at }
+function buildCinemaTicket(payload) {
+  const r = new Receipt();
+  const film = payload.film || {};
+  const show = payload.show || {};
+  const ticket = payload.ticket || {};
+
+  r.align("center").bold(true).size("dbl").line("KaryaOS Cinema")
+   .size("normal").bold(false).line("E-Ticket").feed();
+  r.hr("=");
+
+  r.align("center").bold(true).size("dblH").line(String(film.title || "-").slice(0, 28))
+   .size("normal").bold(false).feed();
+
+  r.align("left");
+  r.row("Jadwal", `${show.show_date || "-"} ${show.start_time || ""}`);
+  r.row("Studio", `${show.studio_name || "-"}${show.studio_type ? " · " + show.studio_type : ""}`);
+  r.row("Rating", String(film.rating || "-"));
+  r.row("Durasi", `${film.duration_min || 0} mnt`);
+  r.hr("-");
+
+  r.align("center").bold(true).size("dbl").line(`KURSI ${ticket.seat || "-"}`)
+   .size("normal").bold(false).feed();
+
+  if (ticket.code) {
+    r.align("center").qr(String(ticket.code), 8, 1).feed();
+    r.align("center").size("normal").bold(true).line(String(ticket.code)).bold(false).feed();
+  }
+
+  r.align("left").hr("-");
+  r.row("Harga tiket", fIDR(ticket.price || 0));
+  if (Array.isArray(payload.bundles) && payload.bundles.length > 0) {
+    r.line("F&B Combo:");
+    for (const b of payload.bundles) {
+      r.row(`  ${b.qty || 1}x ${b.bundle_name || b.name || "-"}`, fIDR((b.qty || 1) * (b.price || 0)));
+    }
+  }
+  if (payload.total != null) {
+    r.size("dblH").bold(true).row("TOTAL", fIDR(payload.total)).size("normal").bold(false);
+  }
+  r.hr("=");
+
+  r.align("center")
+   .line("Tunjukkan QR di pintu studio")
+   .line("E-ticket berlaku 1x masuk").feed();
+
+  if (payload.purchase_id) {
+    r.line(`Purchase #${payload.purchase_id}`);
+  }
+  r.line(new Date().toLocaleString("id-ID", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" }))
+   .feed(2);
+
+  r.cut();
+  return r.done();
+}
+
+module.exports = { buildKitchenTicket, buildCustomerReceipt, buildCinemaTicket, Receipt };

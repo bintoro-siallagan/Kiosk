@@ -21,6 +21,8 @@
 const express = require('express');
 const Database = require('better-sqlite3');
 const path = require('path');
+const net = require('net');
+const { buildCinemaTicket } = require('./escpos');
 let _emailMod = null;
 function getEmail() {
   if (_emailMod) return _emailMod;
@@ -439,6 +441,10 @@ function setupCinema(app, opts = {}) {
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN payment_status TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN paid_at INTEGER"); } catch {}
   try { db.exec("CREATE INDEX IF NOT EXISTS idx_cinema_ticket_paystatus ON cinema_tickets(payment_status)"); } catch {}
+  // Auto-trigger promo: unlock saat daily sales / tickets reach threshold
+  try { db.exec("ALTER TABLE cinema_promotions ADD COLUMN trigger_type TEXT DEFAULT 'code'"); } catch {}
+  try { db.exec("ALTER TABLE cinema_promotions ADD COLUMN trigger_threshold INTEGER DEFAULT 0"); } catch {}
+  try { db.exec("ALTER TABLE cinema_promotions ADD COLUMN trigger_scope TEXT DEFAULT 'global'"); } catch {}
   // In-studio QR-order — payment audit trail (QRIS Midtrans/Xendit ref + paid_at)
   try { db.exec("ALTER TABLE cinema_in_studio_orders ADD COLUMN payment_ref TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_in_studio_orders ADD COLUMN payment_method TEXT"); } catch {}
@@ -1854,6 +1860,82 @@ function setupCinema(app, opts = {}) {
       console.error('[printer]', e.message);
       res.status(502).json({ ok: false, error: `Printer error: ${e.message}`, printer_url: printerUrl });
     }
+  });
+
+  // Direct LAN/TCP printer helper — connect ke port 9100 Epson TM-T82 / generic ESC/POS
+  function tcpPrintDirect(host, port, bytes) {
+    if (typeof opts.tcpPrint === 'function') return opts.tcpPrint(host, port, bytes);
+    return new Promise((resolve, reject) => {
+      const client = new net.Socket();
+      const t = setTimeout(() => { client.destroy(); reject(new Error('Printer timeout')); }, 5000);
+      client.connect(port, host, () => { client.write(Buffer.from(bytes)); clearTimeout(t); client.end(); resolve(true); });
+      client.on('error', e => { clearTimeout(t); reject(e); });
+    });
+  }
+  // Resolve printer endpoint per-outlet — pos_config keys:
+  //   CINEMA_PRINTER_HOST:OUTLET (per-outlet) atau CINEMA_PRINTER_HOST_DEFAULT
+  //   CINEMA_PRINTER_PORT (default 9100)
+  // Fallback ke env: CINEMA_PRINTER_IP / CINEMA_PRINTER_PORT.
+  function resolvePrinter(outlet) {
+    const out = String(outlet || '').trim().toUpperCase();
+    const readCfg = (key) => {
+      try {
+        const row = db.prepare(`SELECT value FROM pos_config WHERE key = ?`).get(key);
+        if (row?.value) return JSON.parse(row.value);
+      } catch {}
+      return null;
+    };
+    let host = (out && readCfg(`CINEMA_PRINTER_HOST:${out}`)) || readCfg('CINEMA_PRINTER_HOST_DEFAULT') || process.env.CINEMA_PRINTER_IP || null;
+    let port = (out && readCfg(`CINEMA_PRINTER_PORT:${out}`)) || readCfg('CINEMA_PRINTER_PORT_DEFAULT') || process.env.CINEMA_PRINTER_PORT || 9100;
+    return host ? { host, port: parseInt(port, 10) || 9100 } : null;
+  }
+
+  // Auto-print bulk: cetak SEMUA tiket dari 1 purchase ke thermal printer (LAN/USB)
+  // Dipanggil otomatis dari kiosk setelah pembayaran sukses — customer tidak perlu pencet apa-apa.
+  // Body: { outlet? } (per-outlet printer routing)
+  router.post('/purchases/:pid/print', async (req, res) => {
+    const pid = String(req.params.pid || '').trim();
+    if (!pid) return res.status(400).json({ ok: false, error: 'purchase_id wajib' });
+    const outlet = String(req.body?.outlet || req.query?.outlet || '').trim().toUpperCase();
+    const printer = resolvePrinter(outlet);
+    if (!printer) {
+      return res.status(503).json({
+        ok: false,
+        error: 'Printer belum di-set. Set pos_config CINEMA_PRINTER_HOST_DEFAULT atau env CINEMA_PRINTER_IP.',
+      });
+    }
+    const tickets = db.prepare(`
+      SELECT t.*, s.show_date, s.start_time, s.format,
+             f.title AS film_title, f.rating, f.duration_min,
+             st.name AS studio_name, st.type AS studio_type, st.outlet
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE t.purchase_id = ?
+      ORDER BY t.seat
+    `).all(pid);
+    if (!tickets.length) return res.status(404).json({ ok: false, error: 'Tiket purchase tidak ditemukan' });
+
+    const results = [];
+    for (const t of tickets) {
+      try {
+        const bytes = buildCinemaTicket({
+          purchase_id: pid,
+          film: { title: t.film_title, rating: t.rating, duration_min: t.duration_min },
+          show: { show_date: t.show_date, start_time: t.start_time, studio_name: t.studio_name, studio_type: t.studio_type },
+          ticket: { code: t.code, seat: t.seat, price: t.price },
+          total: t.price,
+        });
+        await tcpPrintDirect(printer.host, printer.port, bytes);
+        results.push({ ticket_id: t.id, seat: t.seat, code: t.code, ok: true });
+      } catch (e) {
+        console.error('[cinema-print]', t.id, e.message);
+        results.push({ ticket_id: t.id, seat: t.seat, code: t.code, ok: false, error: e.message });
+      }
+    }
+    const okCount = results.filter(r => r.ok).length;
+    res.json({ ok: okCount > 0, printer, printed: okCount, total: tickets.length, results });
   });
 
   // GET /tickets/lookup/:code — public read-only ticket info (untuk digital ticket page)
@@ -3284,8 +3366,9 @@ function setupCinema(app, opts = {}) {
     const info = db.prepare(`INSERT INTO cinema_promotions
       (code, name, description, promo_type, discount_type, discount_value,
        min_purchase, max_discount, applies_to_film_id, applies_to_bundle_id,
-       bank_name, valid_from, valid_to, max_redemptions, is_active)
-      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+       bank_name, valid_from, valid_to, max_redemptions, is_active,
+       trigger_type, trigger_threshold, trigger_scope)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
       .run(b.code ? String(b.code).toUpperCase() : null, b.name, b.description || '',
            b.promo_type || 'all', b.discount_type || 'percentage', parseFloat(b.discount_value) || 0,
            parseInt(b.min_purchase, 10) || 0, b.max_discount ? parseInt(b.max_discount, 10) : null,
@@ -3293,7 +3376,10 @@ function setupCinema(app, opts = {}) {
            b.applies_to_bundle_id ? parseInt(b.applies_to_bundle_id, 10) : null,
            b.bank_name || '', b.valid_from || null, b.valid_to || null,
            b.max_redemptions ? parseInt(b.max_redemptions, 10) : null,
-           b.is_active === false ? 0 : 1);
+           b.is_active === false ? 0 : 1,
+           b.trigger_type || 'code',
+           parseInt(b.trigger_threshold, 10) || 0,
+           b.trigger_scope || 'global');
     res.json({ ok: true, id: info.lastInsertRowid });
   });
   router.patch('/promotions/:id', (req, res) => {
@@ -3301,12 +3387,13 @@ function setupCinema(app, opts = {}) {
     const fields = []; const args = [];
     for (const k of ['code', 'name', 'description', 'promo_type', 'discount_type', 'discount_value',
                      'min_purchase', 'max_discount', 'applies_to_film_id', 'applies_to_bundle_id',
-                     'bank_name', 'valid_from', 'valid_to', 'max_redemptions', 'is_active']) {
+                     'bank_name', 'valid_from', 'valid_to', 'max_redemptions', 'is_active',
+                     'trigger_type', 'trigger_threshold', 'trigger_scope']) {
       if (k in b) {
         fields.push(`${k} = ?`);
         if (k === 'is_active') args.push(b[k] ? 1 : 0);
         else if (['discount_value'].includes(k)) args.push(parseFloat(b[k]) || 0);
-        else if (['min_purchase', 'max_discount', 'applies_to_film_id', 'applies_to_bundle_id', 'max_redemptions'].includes(k)) {
+        else if (['min_purchase', 'max_discount', 'applies_to_film_id', 'applies_to_bundle_id', 'max_redemptions', 'trigger_threshold'].includes(k)) {
           args.push(b[k] == null || b[k] === '' ? null : parseInt(b[k], 10));
         } else if (k === 'code') args.push(b[k] ? String(b[k]).toUpperCase() : null);
         else args.push(b[k]);
@@ -3349,6 +3436,55 @@ function setupCinema(app, opts = {}) {
       : Math.min(p.discount_value || 0, subtotal);
     if (p.max_discount && discount > p.max_discount) discount = p.max_discount;
     res.json({ ok: true, promo: p, discount, subtotal, total_after: subtotal - discount });
+  });
+
+  // Auto-trigger promos: unlock saat omzet/tiket harian capai threshold.
+  // Dipakai kiosk untuk auto-apply diskon tanpa customer ketik kode.
+  // Query opsional: ?outlet=JKT01 (default global only)
+  router.get('/auto-promos', (req, res) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const outlet = String(req.query.outlet || '').trim().toUpperCase();
+    const promos = db.prepare(`
+      SELECT * FROM cinema_promotions
+      WHERE is_active = 1
+        AND trigger_type IN ('auto_daily_sales','auto_daily_tickets')
+        AND (valid_from IS NULL OR valid_from <= ?)
+        AND (valid_to IS NULL OR valid_to >= ?)
+        AND (max_redemptions IS NULL OR redemption_count < max_redemptions)
+    `).all(today, today);
+    // Hitung progress: total sales / tickets hari ini (paid only, global)
+    // Outlet-level accounting belum diimplementasi (showtimes belum punya outlet_code)
+    // jadi MVP pakai global counter — admin bisa set scope='global' atau outlet code yg match
+    const row = db.prepare(`
+      SELECT COALESCE(SUM(price),0) AS sales, COUNT(id) AS tickets
+      FROM cinema_tickets
+      WHERE date(sold_at,'unixepoch','localtime') = ?
+        AND (payment_status IS NULL OR payment_status IN ('paid','settled','success'))
+    `).get(today);
+    const salesToday = row?.sales || 0; const ticketsToday = row?.tickets || 0;
+    const result = promos
+      // Scope filter: 'global' (default) berlaku di semua outlet,
+      // selain itu hanya match kalau outlet kiosk = trigger_scope
+      .filter(p => {
+        const scope = String(p.trigger_scope || 'global').toLowerCase();
+        if (scope === 'global') return true;
+        if (!outlet) return false; // promo per-outlet butuh outlet param
+        return scope === outlet.toLowerCase();
+      })
+      .map(p => {
+        const target = p.trigger_threshold || 0;
+        const current = p.trigger_type === 'auto_daily_sales' ? salesToday : ticketsToday;
+        const unlocked = current >= target;
+        return {
+          id: p.id, name: p.name, description: p.description,
+          discount_type: p.discount_type, discount_value: p.discount_value,
+          max_discount: p.max_discount, min_purchase: p.min_purchase,
+          applies_to_film_id: p.applies_to_film_id,
+          trigger_type: p.trigger_type, trigger_threshold: target, trigger_scope: p.trigger_scope,
+          progress: { current, target, unlocked, percent: target > 0 ? Math.min(100, Math.floor(current / target * 100)) : 0 },
+        };
+      });
+    res.json({ promos: result, today, outlet: outlet || null, sales_today: salesToday, tickets_today: ticketsToday });
   });
 
   // ── POST-SHOW FEEDBACK (multi-aspect: movie/audio/cleanliness/comfort) ─
