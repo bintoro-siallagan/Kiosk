@@ -676,10 +676,9 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
               <section key={c} style={K.editorialSection}>
                 <header style={K.editorialHeader}>
                   <h2 style={K.editorialTitle}>{c}</h2>
-                  <span style={K.editorialSub}>{rowItems.length} {rowItems.length===1?"item":"items"} <span style={{opacity:.5,marginLeft:4}}>→</span></span>
+                  <span style={K.editorialSub}>{rowItems.length} {rowItems.length===1?"item":"items"}</span>
                 </header>
-                <div className="editorial-row-wrap" style={K.editorialRowWrap}>
-                <div className="editorial-row" style={K.editorialRow}>
+                <div style={K.editorialGrid}>
                   {rowItems.map((item,i)=>{
                     const inCart=cart.filter(e=>e.item.id===item.id).reduce((a,e)=>a+e.qty,0);
                     return (
@@ -709,7 +708,6 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
                       </div>
                     );
                   })}
-                </div>
                 </div>
               </section>
             );
@@ -935,15 +933,7 @@ const KIOSK_CSS = `
   .order-pill:hover.lg{box-shadow:inset 0 1px 0 rgba(255,255,255,0.32),inset 0 -1px 0 rgba(0,0,0,0.18),inset 0 12px 24px rgba(255,255,255,0.06),inset 0 -16px 24px rgba(0,0,0,0.15),0 14px 34px rgba(0,0,0,0.34),0 40px 90px rgba(0,0,0,0.4)}
   .order-pill:hover.lg-brand{box-shadow:inset 0 1px 0 rgba(255,255,255,0.4),inset 0 -1px 0 rgba(0,0,0,0.22),inset 0 12px 28px rgba(255,255,255,0.18),inset 0 -16px 28px rgba(0,0,0,0.2),0 14px 34px rgba(0,0,0,0.32),0 32px 72px color-mix(in srgb,var(--brand-primary,#FF6B35) 38%,transparent)}
   .order-pill:active{transform:translateY(-1px) scale(0.99)}
-  /* Editorial row edge-fade — hint horizontal scroll affordance */
-  .editorial-row-wrap{position:relative}
-  .editorial-row-wrap::before,.editorial-row-wrap::after{content:"";position:absolute;top:0;bottom:0;width:36px;pointer-events:none;z-index:4}
-  .editorial-row-wrap::before{left:0;background:linear-gradient(90deg,#11131c 0%,rgba(17,19,28,0.6) 50%,transparent 100%)}
-  .editorial-row-wrap::after{right:0;background:linear-gradient(270deg,#11131c 0%,rgba(17,19,28,0.6) 50%,transparent 100%)}
-  /* Hide scrollbar in editorial rows (touch-scroll only) */
-  .editorial-row::-webkit-scrollbar{display:none}
-  .editorial-row{-ms-overflow-style:none;scrollbar-width:none}
-  /* Hero card hover lift */
+  /* Card hover lift */
   .lg:hover{transition:transform .35s cubic-bezier(.2,.8,.2,1)}
   /* Hero specific brand glow tint */
   section[data-hero]>.lg{box-shadow:inset 0 1px 0 rgba(255,255,255,0.18),inset 0 -1px 0 rgba(0,0,0,0.22),inset 0 12px 28px rgba(255,255,255,0.05),inset 0 -16px 28px rgba(0,0,0,0.18),0 18px 40px rgba(0,0,0,0.35),0 30px 80px color-mix(in srgb,var(--brand-primary,#FF6B35) 18%,transparent)}
@@ -1002,8 +992,8 @@ const K = {
   editorialHeader:  {padding:"18px 20px 8px",display:"flex",justifyContent:"space-between",alignItems:"baseline"},
   editorialTitle:   {fontFamily:"'Inter',sans-serif",fontSize:19,fontWeight:600,letterSpacing:"-0.4px",color:"rgba(255,255,255,0.92)",margin:0,lineHeight:1.1,display:"inline-flex",alignItems:"center",gap:6},
   editorialSub:     {fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:400,letterSpacing:0.3,fontFamily:"'Inter',sans-serif",display:"inline-flex",alignItems:"center",gap:4},
-  editorialRow:     {display:"flex",gap:14,overflowX:"auto",padding:"6px 20px 16px",scrollSnapType:"x mandatory",scrollPaddingLeft:20,WebkitOverflowScrolling:"touch"},
-  editorialCard:    {flex:"0 0 220px",scrollSnapAlign:"start",borderRadius:20,display:"flex",flexDirection:"column",position:"relative",cursor:"pointer"},
+  editorialGrid:    {display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:14,padding:"6px 20px 16px"},
+  editorialCard:    {borderRadius:20,display:"flex",flexDirection:"column",position:"relative",cursor:"pointer"},
   editorialCardImg: {height:160,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",borderTopLeftRadius:20,borderTopRightRadius:20,background:"radial-gradient(ellipse 80% 60% at 50% 30%,rgba(255,255,255,0.04),transparent 70%)"},
   editorialCardInfo:{padding:"12px 14px 14px",display:"flex",flexDirection:"column",gap:9},
   editorialCardName:{fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:600,letterSpacing:"-0.3px",color:"rgba(255,255,255,0.95)",lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",minHeight:36},
