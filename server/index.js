@@ -1489,6 +1489,139 @@ app.get("/api/promos", (req, res) => {
   res.json([...promoCodes].sort((a, b) => (b.active - a.active) || (b.usedCount - a.usedCount)));
 });
 
+// ─── MARQUEE AGGREGATOR ─────────────────────────────────────────────────
+// Sumber data "text jalan" untuk Cinema kiosk, POSCDS, POSHome, FlowApp.
+// Items disusun dari: custom msg (admin), Sultan jam ini, F&B promo aktif,
+// Cinema auto-promo (unlocked + progress), film coming soon.
+// Query: ?surface=kiosk|cds|home|flow (filter content per audience)
+app.get("/api/marquee", (req, res) => {
+  const surface = String(req.query.surface || "kiosk").toLowerCase();
+  const items = [];
+
+  // 1) Custom admin messages (pos_config KIOSK_MARQUEE_CUSTOM = JSON array of strings)
+  try {
+    const row = db.rawDb.prepare(`SELECT value FROM pos_config WHERE key='KIOSK_MARQUEE_CUSTOM'`).get();
+    if (row?.value) {
+      const arr = JSON.parse(row.value);
+      if (Array.isArray(arr)) {
+        for (const text of arr) {
+          if (text && String(text).trim()) {
+            items.push({ id: `custom-${items.length}`, icon: "📣", text: String(text).trim(), color: "#a78bfa", kind: "custom" });
+          }
+        }
+      }
+    }
+  } catch {}
+
+  // 2) Sultan jam ini (top 1 dari spend_leaderboard, current hour)
+  try {
+    const hourStart = (() => { const d = new Date(); d.setMinutes(0, 0, 0); return Math.floor(d.getTime() / 1000); })();
+    const top = db.rawDb.prepare(
+      `SELECT name, amount FROM spend_leaderboard WHERE created_at >= ? ORDER BY amount DESC, id ASC LIMIT 1`
+    ).get(hourStart);
+    if (top && top.amount > 0) {
+      const rp = "Rp " + Math.round(top.amount).toLocaleString("id-ID");
+      items.push({
+        id: "sultan-now", icon: "👑",
+        text: `SULTAN jam ini: ${top.name || "Tamu"} (${rp}) — kalah pamor? buruan order!`,
+        color: "#fbbf24", kind: "sultan",
+      });
+    }
+  } catch {}
+
+  // 3) Cinema auto-promo (unlocked = aktif, progress = belum)
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const promos = db.rawDb.prepare(`
+      SELECT * FROM cinema_promotions
+      WHERE is_active = 1 AND trigger_type IN ('auto_daily_sales','auto_daily_tickets')
+        AND (valid_from IS NULL OR valid_from <= ?)
+        AND (valid_to IS NULL OR valid_to >= ?)
+        AND (max_redemptions IS NULL OR redemption_count < max_redemptions)
+    `).all(today, today);
+    if (promos.length) {
+      const todaySum = db.rawDb.prepare(`
+        SELECT COALESCE(SUM(price),0) AS sales, COUNT(id) AS tickets
+        FROM cinema_tickets
+        WHERE date(sold_at,'unixepoch','localtime') = ?
+          AND (payment_status IS NULL OR payment_status IN ('paid','settled','success'))
+      `).get(today) || { sales: 0, tickets: 0 };
+      for (const p of promos) {
+        const current = p.trigger_type === "auto_daily_sales" ? todaySum.sales : todaySum.tickets;
+        const target = p.trigger_threshold || 0;
+        const label = p.discount_type === "percentage"
+          ? `${p.discount_value}% OFF`
+          : `Rp ${(p.discount_value || 0).toLocaleString("id-ID")} OFF`;
+        if (current >= target) {
+          items.push({
+            id: `auto-promo-${p.id}`, icon: "🎉",
+            text: `DISKON OTOMATIS AKTIF: ${p.name} — ${label} (semua tiket hari ini)`,
+            color: "#fbbf24", kind: "auto_promo",
+          });
+        } else {
+          const remaining = Math.max(0, target - current);
+          const unit = p.trigger_type === "auto_daily_sales" ? `Rp ${remaining.toLocaleString("id-ID")} omzet` : `${remaining} tiket`;
+          items.push({
+            id: `progress-${p.id}`, icon: "🔓",
+            text: `Tinggal ${unit} lagi → unlock ${label} (${p.name})`,
+            color: "#c084fc", kind: "promo_progress",
+          });
+        }
+      }
+    }
+  } catch {}
+
+  // 4) Film coming soon (top 3 by license_start)
+  if (surface === "kiosk" || surface === "cds") {
+    try {
+      const films = db.rawDb.prepare(`
+        SELECT title, license_start, genre
+        FROM cinema_films
+        WHERE status = 'coming_soon'
+          AND (license_start IS NULL OR license_start >= date('now'))
+        ORDER BY license_start ASC LIMIT 3
+      `).all();
+      for (const f of films) {
+        const when = f.license_start ? ` (mulai ${f.license_start})` : "";
+        items.push({
+          id: `coming-${f.title}`, icon: "🎬",
+          text: `Coming soon: ${f.title}${when}`,
+          color: "#22d3ee", kind: "coming_soon",
+        });
+      }
+    } catch {}
+  }
+
+  // 5) F&B promo aktif — buat surface home/flow/cds (gak relevan di cinema kiosk)
+  if (surface !== "kiosk") {
+    try {
+      const active = (typeof promoCodes !== "undefined" ? promoCodes : []).filter(p => p.active);
+      for (const p of active.slice(0, 5)) {
+        const valLabel = p.type === "percentage" ? `${p.value}% OFF`
+                      : p.type === "fixed" ? `Rp ${(p.value || 0).toLocaleString("id-ID")} OFF`
+                      : p.type === "bogo" ? "Beli 1 Gratis 1"
+                      : `${p.value || ""}`;
+        items.push({
+          id: `fnb-promo-${p.id}`, icon: "🎁",
+          text: `Promo ${p.code} — ${valLabel}${p.desc ? " · " + p.desc : ""}`,
+          color: "#34d399", kind: "fnb_promo",
+        });
+      }
+    } catch {}
+  }
+
+  // Fallback default kalau kosong (tidak ada data)
+  if (!items.length) {
+    items.push({
+      id: "default-welcome", icon: "🍿",
+      text: "Selamat datang di karyaOS — pesan tiket / makanan dengan mudah!",
+      color: "#a78bfa", kind: "default",
+    });
+  }
+
+  res.json({ items, surface, generated_at: Date.now() });
+});
+
 
 // POST /api/promo — create new promo (admin)
 app.post("/api/promo", (req, res) => {

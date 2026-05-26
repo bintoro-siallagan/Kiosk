@@ -12,6 +12,11 @@ const PROMO_TYPES = [
   ["bank",   "🏦 Bank Promo"],
   ["member", "👥 Member"],
 ];
+const TRIGGER_TYPES = [
+  ["code",                "🔑 Kode manual (customer ketik)"],
+  ["auto_daily_tickets",  "🎫 Auto — capai N tiket hari ini"],
+  ["auto_daily_sales",    "💰 Auto — capai Rp omzet hari ini"],
+];
 const empty = {
   code: "", name: "", description: "",
   promo_type: "all", discount_type: "percentage", discount_value: 10,
@@ -19,6 +24,7 @@ const empty = {
   applies_to_film_id: "", applies_to_bundle_id: "",
   bank_name: "", valid_from: "", valid_to: "",
   max_redemptions: null, is_active: 1,
+  trigger_type: "code", trigger_threshold: 0, trigger_scope: "global",
 };
 
 export default function CinemaPromotion({ apiBase = "" }) {
@@ -121,6 +127,29 @@ export default function CinemaPromotion({ apiBase = "" }) {
             <Field label="Sampai"><input type="date" value={form.valid_to || ""} onChange={e => setForm({ ...form, valid_to: e.target.value })} style={inp} /></Field>
             <Field label="Max redemption"><input type="number" value={form.max_redemptions ?? ""} onChange={e => setForm({ ...form, max_redemptions: e.target.value ? parseInt(e.target.value, 10) : null })} placeholder="kosong = unlimited" style={inp} /></Field>
             <Field label="Deskripsi" wide><input value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} style={inp} /></Field>
+            {/* Auto-trigger fields — milestone-based promo (unlock saat omzet/tiket harian capai threshold) */}
+            <Field label="Trigger" wide>
+              <select value={form.trigger_type || "code"} onChange={e => setForm({ ...form, trigger_type: e.target.value })} style={inp}>
+                {TRIGGER_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </Field>
+            {form.trigger_type && form.trigger_type !== "code" && (
+              <>
+                <Field label={form.trigger_type === "auto_daily_sales" ? "Threshold (Rp omzet)" : "Threshold (jumlah tiket)"}>
+                  <input type="number" min="0" value={form.trigger_threshold ?? 0}
+                    onChange={e => setForm({ ...form, trigger_threshold: parseInt(e.target.value, 10) || 0 })}
+                    placeholder={form.trigger_type === "auto_daily_sales" ? "5000000" : "50"} style={inp} />
+                </Field>
+                <Field label="Scope (outlet)">
+                  <input value={form.trigger_scope || "global"}
+                    onChange={e => setForm({ ...form, trigger_scope: e.target.value || "global" })}
+                    placeholder="global atau JKT01" style={inp} />
+                </Field>
+                <div style={{ gridColumn: "span 3", padding: "8px 12px", background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.18)", borderRadius: 8, fontSize: 12, color: "#c084fc" }}>
+                  💡 Promo ini <b>otomatis aktif</b> di kiosk tanpa customer ketik kode — begitu {form.trigger_type === "auto_daily_sales" ? "omzet" : "jumlah tiket"} harian capai threshold. Banner muncul + auto-apply di checkout.
+                </div>
+              </>
+            )}
             <Field label="Status">
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
                 <input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Aktif
@@ -148,11 +177,21 @@ export default function CinemaPromotion({ apiBase = "" }) {
         {rows.length === 0 ? <div style={{ padding: 22, textAlign: "center", color: C.sub, fontSize: 13 }}>Belum ada promo.</div> :
           rows.map(r => (
             <div key={r.id} style={{ display: "flex", padding: "11px 14px", borderBottom: `1px solid ${C.border}`, gap: 10, alignItems: "center" }}>
-              <span style={{ width: 110, fontFamily: "'Geist Mono',monospace", color: "#fbbf24", letterSpacing: 1.5, fontSize: 12, fontWeight: 700 }}>{r.code || "—"}</span>
+              <span style={{ width: 110, fontFamily: "'Geist Mono',monospace", color: "#fbbf24", letterSpacing: 1.5, fontSize: 12, fontWeight: 700 }}>
+                {r.trigger_type && r.trigger_type !== "code"
+                  ? <span title="Auto-trigger promo (tidak butuh kode)" style={{ color: "#c084fc" }}>🎯 AUTO</span>
+                  : (r.code || "—")}
+              </span>
               <span style={{ flex: 1.4, fontSize: 13 }}>
                 <div style={{ fontWeight: 700 }}>{r.name}</div>
                 {r.description && <div style={{ fontSize: 11, color: C.sub }}>{r.description}</div>}
                 {r.bank_name && <div style={{ fontSize: 11, color: "#22d3ee" }}>🏦 {r.bank_name}</div>}
+                {r.trigger_type === "auto_daily_tickets" && (
+                  <div style={{ fontSize: 11, color: "#c084fc", marginTop: 2 }}>🎫 Unlock setelah {r.trigger_threshold} tiket hari ini ({r.trigger_scope || "global"})</div>
+                )}
+                {r.trigger_type === "auto_daily_sales" && (
+                  <div style={{ fontSize: 11, color: "#c084fc", marginTop: 2 }}>💰 Unlock setelah {rp(r.trigger_threshold)} omzet hari ini ({r.trigger_scope || "global"})</div>
+                )}
               </span>
               <span style={{ width: 100, fontSize: 11.5, color: C.sub }}>{PROMO_TYPES.find(([v]) => v === r.promo_type)?.[1] || r.promo_type}</span>
               <span style={{ width: 120, textAlign: "right", fontFamily: "'Geist Mono',monospace", color: "#10b981", fontWeight: 700 }}>

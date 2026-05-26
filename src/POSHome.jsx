@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import POSOrderHistory from "./POSOrderHistory.jsx";
 import POSMergeTabsModal from "./POSMergeTabsModal.jsx";
 import UpsellTicker from "./components/UpsellTicker.jsx";
+import MarqueeTicker from "./components/MarqueeTicker.jsx";
+import PromoStrip from "./components/PromoStrip.jsx";
 import TouchNumpad from "./components/TouchNumpad.jsx";
 import API_HOST from "./apiBase.js";
 const API_BASE = API_HOST;
@@ -154,6 +156,12 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
 
   return (
     <div style={S.root}>
+      {/* Text jalan — promo aktif / Sultan / coming soon / custom admin msg */}
+      <MarqueeTicker surface="home" apiBase={API_BASE} variant="dark" height={36} speed={55} label="KARYA·LIVE" />
+      {/* Promo banner — daftar promo F&B aktif, kasir info-only (untuk dikomunikasikan ke customer) */}
+      <div style={{ padding: "10px 14px 0" }}>
+        <PromoStrip apiBase={API_BASE} variant="dark" maxItems={6} compact />
+      </div>
       {mergeTab && (
         <POSMergeTabsModal
           sourceTab={mergeTab}

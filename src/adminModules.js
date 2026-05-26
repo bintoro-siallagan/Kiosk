@@ -55,6 +55,7 @@ export const TABS = [
   { id: "cinema_campaign", label: "🎉 Cinema Campaign", color: "#ec4899" },
   { id: "cinema_inventory", label: "🍿 Cinema Inventory", color: "#10b981" },
   { id: "signage", label: "📺 Digital Signage", color: "#9333ea" },
+  { id: "marquee", label: "📣 Text Jalan / Marquee", color: "#fbbf24" },
   { id: "demand_forecast", label: "📈 Demand Forecast", color: "#0284c7" },
   { id: "asset_maintenance", label: "🔧 Asset & Maintenance", color: "#78716c" },
   { id: "shift_roster", label: "📆 Shift Roster", color: "#059669" },
@@ -210,6 +211,6 @@ export const GROUPS = [
   { name: "Commerce", icon: "🛒", module: "pos", ids: ["master", "menu_builder", "payment", "conv_fee", "aggregator", "loyalty", "broadcast", "sales_pipeline", "b2b_customer", "quotation", "sales_order", "delivery_order", "sales_invoice", "sales_return"] },
   { name: "Finance", icon: "💰", module: "finance", ids: ["coa", "general_ledger", "journal", "settlement", "reconciliation", "release_payment", "ar", "ap_aging", "finance", "fin_statements", "cash_flow", "finance_center", "finance_alert", "budget", "budget_plan", "period_closing", "consolidation", "core_tax", "franchise"] },
   { name: "HRIS & Reward", icon: "👥", module: "hr", ids: ["hris", "shift_roster", "payroll", "talenta", "reward", "reward_benefit", "motivation", "hr_command"] },
-  { name: "Customer & Marketing", icon: "🎯", module: "marketing", ids: ["customer_intel", "mkt_behavior", "clv_churn", "feedback_segment", "geo_engage", "loyalty_promo", "campaign", "signage", "helpdesk"] },
+  { name: "Customer & Marketing", icon: "🎯", module: "marketing", ids: ["customer_intel", "mkt_behavior", "clv_churn", "feedback_segment", "geo_engage", "loyalty_promo", "campaign", "signage", "marquee", "helpdesk"] },
   { name: "Security & Admin", icon: "🔐", module: "rbac", ids: ["rbac", "role_dash", "approval", "device_session", "security", "contract", "risk", "internal_audit", "anti_fraud", "self_audit"] },
 ];

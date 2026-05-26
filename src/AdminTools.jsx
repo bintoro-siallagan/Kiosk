@@ -90,6 +90,7 @@ const CinemaEventBooking          = lazy(() => import("./Admin/CinemaEventBookin
 const CinemaPriceList             = lazy(() => import("./Admin/CinemaPriceList.jsx"));
 const CinemaCommandCenter         = lazy(() => import("./Admin/CinemaCommandCenter.jsx"));
 const CinemaPromotion             = lazy(() => import("./Admin/CinemaPromotion.jsx"));
+const AdminMarquee                = lazy(() => import("./Admin/AdminMarquee.jsx"));
 const CinemaHolidays              = lazy(() => import("./Admin/CinemaHolidays.jsx"));
 const CinemaSeatTypes             = lazy(() => import("./Admin/CinemaSeatTypes.jsx"));
 const CinemaCRM                   = lazy(() => import("./Admin/CinemaCRM.jsx"));
@@ -308,6 +309,7 @@ export default function AdminTools({ initialTab }) {
         {tab === "user_kpi" && <UserKpiDashboard apiBase={API} />}
         {tab === "email_config" && <EmailConfig apiBase={API} />}
         {tab === "cinema_promotion" && <CinemaPromotion apiBase={API} />}
+        {tab === "marquee" && <AdminMarquee apiBase={API} />}
         {tab === "cinema_holidays" && <CinemaHolidays apiBase={API} />}
         {tab === "cinema_seat_types" && <CinemaSeatTypes apiBase={API} />}
         {tab === "cinema_crm" && <CinemaCRM apiBase={API} />}

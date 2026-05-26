@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useMenu } from "./MenuContext.jsx";
 import PromoBroadcastBanner from "./PromoBroadcastBanner.jsx";
+import MarqueeTicker from "./components/MarqueeTicker.jsx";
 import API_HOST from "./apiBase.js";
 
 const API_BASE = API_HOST;
@@ -244,6 +245,10 @@ export default function POSCDS() {
       {mode === "qris" && <CDSQR state={state} />}
       {mode === "success" && <CDSSuccess state={state} />}
       {mode === "track-qr" && <CDSTrackQR state={state} pubConfig={pubConfig} />}
+      </div>
+      {/* Marquee text jalan — fixed footer di CDS, gak ganggu content utama */}
+      <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 10 }}>
+        <MarqueeTicker surface="cds" apiBase={API_BASE} variant="dark" height={44} speed={60} label="KARYA·LIVE" />
       </div>
     </>
   );

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import API_HOST from "../apiBase.js";
+import MarqueeTicker from "../components/MarqueeTicker.jsx";
+import PromoStrip from "../components/PromoStrip.jsx";
 
 const API = API_HOST;
 
@@ -41,10 +43,17 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
 
   return (
     <div style={S.container}>
+      {/* Text jalan — promo/sultan/coming soon/custom message */}
+      <div style={{ margin: "0 -16px 4px" }}>
+        <MarqueeTicker surface="flow" apiBase={API} variant="dark" height={34} speed={50} label="LIVE" />
+      </div>
       <header style={S.header}>
         <div style={S.logo}>KaryaOS</div>
         <button onClick={onLogout} style={S.logoutBtn}>Logout</button>
       </header>
+
+      {/* Promo banner — daftar promo F&B aktif, customer tap untuk salin kode */}
+      <PromoStrip apiBase={API} variant="dark" maxItems={5} compact />
 
       <div style={S.profile}>
         <div style={S.greeting}>Halo, {profile?.name || session.name}! 👋</div>
