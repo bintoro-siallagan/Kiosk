@@ -710,7 +710,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
               <section key={c} style={K.editorialSection}>
                 <header style={K.editorialHeader}>
                   <h2 style={K.editorialTitle}>{c}</h2>
-                  <span style={K.editorialSub}>{rowItems.length} {rowItems.length===1?"item":"items"}</span>
+                  <span style={K.editorialSub}>{rowItems.length} {rowItems.length===1?"item":"items"} <span style={{opacity:.5,marginLeft:4}}>→</span></span>
                 </header>
                 <div className="editorial-row-wrap" style={K.editorialRowWrap}>
                 <div className="editorial-row" style={K.editorialRow}>
@@ -1017,33 +1017,33 @@ const K = {
   splitRight:{flex:"0 0 40%",display:"flex",flexDirection:"column",background:"linear-gradient(180deg,rgba(13,17,23,0.6),rgba(8,9,10,0.85))",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderLeft:BORDER_DEFAULT},
   splitMenuScroll:{flex:1,overflowY:"auto",padding:"6px 0 0"},
 
-  // ── FEATURED HERO ──
-  heroSection:      {padding:"14px 18px 4px"},
-  heroCard:         {display:"flex",borderRadius:24,overflow:"hidden",cursor:"pointer",minHeight:220},
-  heroImg:          {flex:"0 0 48%",position:"relative",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(ellipse 80% 60% at 40% 35%,color-mix(in srgb,var(--brand-primary,#FF6B35) 18%,transparent),transparent 70%)",overflow:"hidden"},
-  heroImgGloss:     {position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(255,255,255,0.06) 0%,transparent 50%)",pointerEvents:"none"},
-  heroInfo:         {flex:1,padding:"22px 24px",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:14},
-  heroBadge:        {display:"inline-flex",alignItems:"center",gap:7,fontSize:10,letterSpacing:2.5,fontWeight:600,color:"rgba(255,255,255,0.65)",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",alignSelf:"flex-start"},
-  heroName:         {fontFamily:"'Inter',sans-serif",fontSize:28,fontWeight:600,letterSpacing:"-0.9px",color:"#fff",lineHeight:1.15,marginTop:4},
-  heroDesc:         {fontSize:13,color:"rgba(255,255,255,0.55)",lineHeight:1.5,fontWeight:400,marginTop:-8},
-  heroBottom:       {display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginTop:8},
-  heroPrice:        {fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:600,color:"#fff",letterSpacing:"-0.5px",fontVariantNumeric:"tabular-nums"},
-  heroAddBtn:       {padding:"12px 20px",borderRadius:14,border:"none",fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:600,letterSpacing:"-0.2px",color:"#fff",cursor:"pointer"},
+  // ── FEATURED HERO — big, dominant, dramatic ──
+  heroSection:      {padding:"18px 18px 8px"},
+  heroCard:         {display:"flex",borderRadius:28,overflow:"hidden",cursor:"pointer",minHeight:320},
+  heroImg:          {flex:"0 0 52%",position:"relative",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(ellipse 90% 70% at 40% 35%,color-mix(in srgb,var(--brand-primary,#FF6B35) 24%,transparent),transparent 75%)",overflow:"hidden"},
+  heroImgGloss:     {position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(255,255,255,0.08) 0%,transparent 50%)",pointerEvents:"none"},
+  heroInfo:         {flex:1,padding:"28px 30px",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:14},
+  heroBadge:        {display:"inline-flex",alignItems:"center",gap:8,fontSize:10,letterSpacing:2.8,fontWeight:600,color:"rgba(255,255,255,0.7)",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",alignSelf:"flex-start",padding:"6px 11px",borderRadius:999,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.07)"},
+  heroName:         {fontFamily:"'Inter',sans-serif",fontSize:34,fontWeight:600,letterSpacing:"-1.2px",color:"#fff",lineHeight:1.1,marginTop:8},
+  heroDesc:         {fontSize:14,color:"rgba(255,255,255,0.55)",lineHeight:1.55,fontWeight:400,marginTop:-6,maxWidth:380},
+  heroBottom:       {display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginTop:12},
+  heroPrice:        {fontFamily:"'Inter',sans-serif",fontSize:30,fontWeight:600,color:"#fff",letterSpacing:"-0.8px",fontVariantNumeric:"tabular-nums"},
+  heroAddBtn:       {padding:"13px 22px",borderRadius:14,border:"none",fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:600,letterSpacing:"-0.2px",color:"#fff",cursor:"pointer"},
 
   // ── EDITORIAL ROWS (Netflix-style horizontal scroll per category) ──
   editorialRowWrap: {position:"relative"},
-  editorialSection: {marginBottom:18},
-  editorialHeader:  {padding:"14px 18px 10px",display:"flex",justifyContent:"space-between",alignItems:"baseline"},
-  editorialTitle:   {fontFamily:"'Inter',sans-serif",fontSize:21,fontWeight:600,letterSpacing:"-0.5px",color:"rgba(255,255,255,0.95)",margin:0,lineHeight:1.1},
-  editorialSub:     {fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:400,letterSpacing:0.3,fontFamily:"'Inter',sans-serif"},
-  editorialRow:     {display:"flex",gap:14,overflowX:"auto",padding:"6px 18px 14px",scrollSnapType:"x mandatory",scrollPaddingLeft:18,WebkitOverflowScrolling:"touch"},
-  editorialCard:    {flex:"0 0 220px",scrollSnapAlign:"start",borderRadius:22,display:"flex",flexDirection:"column",position:"relative",cursor:"pointer"},
-  editorialCardImg: {height:170,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",borderTopLeftRadius:22,borderTopRightRadius:22,background:"radial-gradient(ellipse 80% 60% at 50% 30%,rgba(255,255,255,0.04),transparent 70%)"},
-  editorialCardInfo:{padding:"12px 14px 14px",display:"flex",flexDirection:"column",gap:8},
-  editorialCardName:{fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:600,letterSpacing:"-0.3px",color:"rgba(255,255,255,0.95)",lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",minHeight:36},
-  editorialCardBottom:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10},
-  editorialCardPrice:{fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:600,color:"#fff",letterSpacing:"-0.2px",fontVariantNumeric:"tabular-nums"},
-  editorialAddBtn:  {width:34,height:34,minWidth:34,borderRadius:"50%",border:"none",background:"linear-gradient(180deg,var(--brand-primary,#FF6B35) 0%,var(--brand-secondary,#E55A2B) 100%)",color:"#fff",fontSize:18,fontWeight:700,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.3),0 4px 14px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent)",fontFamily:"'Inter',sans-serif"},
+  editorialSection: {marginBottom:14},
+  editorialHeader:  {padding:"18px 20px 8px",display:"flex",justifyContent:"space-between",alignItems:"baseline"},
+  editorialTitle:   {fontFamily:"'Inter',sans-serif",fontSize:19,fontWeight:600,letterSpacing:"-0.4px",color:"rgba(255,255,255,0.92)",margin:0,lineHeight:1.1,display:"inline-flex",alignItems:"center",gap:6},
+  editorialSub:     {fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:400,letterSpacing:0.3,fontFamily:"'Inter',sans-serif",display:"inline-flex",alignItems:"center",gap:4},
+  editorialRow:     {display:"flex",gap:12,overflowX:"auto",padding:"4px 20px 14px",scrollSnapType:"x mandatory",scrollPaddingLeft:20,WebkitOverflowScrolling:"touch"},
+  editorialCard:    {flex:"0 0 180px",scrollSnapAlign:"start",borderRadius:18,display:"flex",flexDirection:"column",position:"relative",cursor:"pointer"},
+  editorialCardImg: {height:130,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",borderTopLeftRadius:18,borderTopRightRadius:18,background:"radial-gradient(ellipse 80% 60% at 50% 30%,rgba(255,255,255,0.04),transparent 70%)"},
+  editorialCardInfo:{padding:"10px 12px 12px",display:"flex",flexDirection:"column",gap:8},
+  editorialCardName:{fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:600,letterSpacing:"-0.2px",color:"rgba(255,255,255,0.95)",lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",minHeight:34},
+  editorialCardBottom:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8},
+  editorialCardPrice:{fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:600,color:"#fff",letterSpacing:"-0.2px",fontVariantNumeric:"tabular-nums"},
+  editorialAddBtn:  {width:30,height:30,minWidth:30,borderRadius:"50%",border:"none",background:"linear-gradient(180deg,var(--brand-primary,#FF6B35) 0%,var(--brand-secondary,#E55A2B) 100%)",color:"#fff",fontSize:16,fontWeight:700,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.3),0 4px 12px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent)",fontFamily:"'Inter',sans-serif"},
 
   // ── CART PANEL ──
   cartPanelHeader:{padding:"20px 22px 16px",borderBottom:BORDER_DEFAULT,flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-end",gap:12},
