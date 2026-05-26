@@ -431,82 +431,156 @@ export default function AdminTools({ initialTab }) {
 // ═══════════════════════════════════════════════════════════════════
 // STAFF TAB
 // ═══════════════════════════════════════════════════════════════════
+// Available staff roles dengan icon + warna — mapped ke RBAC role IDs
+const ROLE_OPTIONS = [
+  { id: "owner",          label: "Owner / Director",    icon: "💼", color: "#a855f7" },
+  { id: "manager",        label: "Outlet Manager",      icon: "👑", color: "#F59E0B" },
+  { id: "supervisor",     label: "Supervisor",          icon: "🧭", color: "#06b6d4" },
+  { id: "kasir",          label: "Kasir / Crew",        icon: "🧾", color: "#3B82F6" },
+  { id: "kitchen",        label: "Kitchen / Dapur",     icon: "👨‍🍳", color: "#10b981" },
+  { id: "warehouse",      label: "Warehouse / Gudang",  icon: "📦", color: "#78716c" },
+  { id: "finance",        label: "Finance Staff",       icon: "💰", color: "#fbbf24" },
+  { id: "hr",             label: "HR Staff",            icon: "👥", color: "#ec4899" },
+  { id: "marketing",      label: "Marketing",           icon: "🎯", color: "#f97316" },
+  { id: "auditor",        label: "Auditor",             icon: "🔍", color: "#94a3b8" },
+];
+
 function StaffTab({ showToast }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ name: "", pin: "", role: "kasir" });
   const [editId, setEditId] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
 
   const load = useCallback(async () => {
-    setLoading(true);
-    const data = await api("/api/auth/users");
-    setUsers(Array.isArray(data) ? data : []);
+    setLoading(true); setErr("");
+    try {
+      const data = await api("/api/auth/users");
+      setUsers(Array.isArray(data) ? data : []);
+    } catch (e) { setErr("Gagal load: " + e.message); }
     setLoading(false);
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
   const handleSubmit = async () => {
-    if (!form.name || !form.pin) return;
-    if (editId) {
-      await apiPatch(`/api/auth/users/${editId}`, form);
-      showToast(`✓ ${form.name} updated`);
-    } else {
-      await apiPost("/api/auth/users", form);
-      showToast(`✓ ${form.name} added`);
-    }
-    setForm({ name: "", pin: "", role: "kasir" });
-    setEditId(null);
-    load();
+    setErr("");
+    if (!form.name.trim()) { setErr("Nama wajib diisi"); return; }
+    if (!editId && !/^\d{6}$/.test(form.pin)) { setErr("PIN harus 6 digit angka"); return; }
+    if (editId && form.pin && !/^\d{6}$/.test(form.pin)) { setErr("PIN harus 6 digit angka (kosongkan kalau gak mau ubah)"); return; }
+    setBusy(true);
+    try {
+      if (editId) {
+        const payload = { name: form.name, role: form.role };
+        if (form.pin) payload.pin = form.pin;
+        const r = await apiPatch(`/api/auth/users/${editId}`, payload);
+        if (r?.error) throw new Error(r.error);
+        showToast(`✓ ${form.name} updated`);
+      } else {
+        const r = await apiPost("/api/auth/users", form);
+        if (r?.error) throw new Error(r.error);
+        showToast(`✓ ${form.name} added — PIN: ${form.pin}`);
+      }
+      setForm({ name: "", pin: "", role: "kasir" });
+      setEditId(null);
+      load();
+    } catch (e) { setErr(e.message); }
+    setBusy(false);
   };
 
   const handleEdit = (u) => {
     setEditId(u.id);
-    setForm({ name: u.name, pin: u.pin || "", role: u.role });
+    setForm({ name: u.name, pin: "", role: u.role }); // PIN kosong = jangan ubah
+    setErr("");
+    window.scrollTo(0, 0);
   };
+
+  const handleDelete = async (u) => {
+    if (!confirm(`Hapus user "${u.name}"? Tindakan ini tidak bisa di-undo.`)) return;
+    setBusy(true); setErr("");
+    try {
+      const r = await api(`/api/auth/users/${u.id}`, { method: "DELETE" });
+      if (r?.error) throw new Error(r.error);
+      showToast(`✓ ${u.name} dihapus`);
+      load();
+    } catch (e) { setErr("⚠ " + e.message); }
+    setBusy(false);
+  };
+
+  const handleToggleActive = async (u) => {
+    setBusy(true); setErr("");
+    try {
+      const r = await apiPatch(`/api/auth/users/${u.id}`, { active: !u.active });
+      if (r?.error) throw new Error(r.error);
+      showToast(u.active ? `⊘ ${u.name} dinonaktifkan` : `✓ ${u.name} diaktifkan`);
+      load();
+    } catch (e) { setErr("⚠ " + e.message); }
+    setBusy(false);
+  };
+
+  const genRandomPin = () => {
+    const pin = String(Math.floor(100000 + Math.random() * 900000));
+    setForm(f => ({ ...f, pin }));
+  };
+
+  const roleInfo = (roleId) => ROLE_OPTIONS.find(r => r.id === roleId) || { icon: "👤", color: "#94a3b8", label: roleId || "—" };
 
   return (
     <div>
       <div style={S.card}>
-        <div style={S.label}>{editId ? "Edit Staff" : "Tambah Staff Baru"}</div>
-        <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
-          <div style={{ flex: 2, minWidth: 150 }}>
-            <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Nama</div>
-            <input style={S.input} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Nama staff..." />
+        <div style={S.label}>{editId ? `Edit Staff: ${users.find(u => u.id === editId)?.name || ""}` : "Tambah Staff Baru"}</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Nama *</div>
+            <input style={S.input} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="cth: Andre Wijaya" />
           </div>
-          <div style={{ flex: 1, minWidth: 100 }}>
-            <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>PIN (6 digit)</div>
-            <input style={S.input} type="password" value={form.pin} onChange={e => setForm(f => ({ ...f, pin: e.target.value }))} placeholder="••••••" maxLength={6} />
+          <div>
+            <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>PIN 6 digit {editId ? "(kosongkan = tidak ubah)" : "*"}</div>
+            <div style={{ display: "flex", gap: 4 }}>
+              <input style={{ ...S.input, flex: 1 }} value={form.pin} onChange={e => setForm(f => ({ ...f, pin: e.target.value.replace(/[^0-9]/g, "").slice(0, 6) }))} placeholder={editId ? "Kosongkan kalau gak diubah" : "Cth: 123456"} maxLength={6} inputMode="numeric" />
+              <button onClick={genRandomPin} title="Generate random PIN" style={{ padding: "8px 10px", background: "#A855F722", border: "1px solid #A855F744", borderRadius: 6, color: "#A855F7", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>🎲</button>
+            </div>
           </div>
-          <div style={{ flex: 1, minWidth: 100 }}>
-            <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Role</div>
+          <div>
+            <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Role *</div>
             <select style={{ ...S.input, cursor: "pointer" }} value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))}>
-              <option value="kasir">Kasir</option>
-              <option value="manager">Manager</option>
+              {ROLE_OPTIONS.map(r => <option key={r.id} value={r.id}>{r.icon} {r.label}</option>)}
             </select>
           </div>
-          <button onClick={handleSubmit} style={S.btn()}>{editId ? "💾 Update" : "➕ Tambah"}</button>
-          {editId && <button onClick={() => { setEditId(null); setForm({ name: "", pin: "", role: "kasir" }); }} style={S.btnDanger}>Batal</button>}
+        </div>
+        {err && <div style={{ padding: "8px 12px", background: "#F8717115", border: "1px solid #F8717144", borderRadius: 6, color: "#FCA5A5", fontSize: 12, marginBottom: 10 }}>⚠ {err}</div>}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={handleSubmit} disabled={busy} style={{ ...S.btn(), opacity: busy ? 0.5 : 1 }}>{busy ? "⏳ Memproses…" : (editId ? "💾 Update" : "➕ Tambah Staff")}</button>
+          {editId && <button onClick={() => { setEditId(null); setForm({ name: "", pin: "", role: "kasir" }); setErr(""); }} style={S.btnDanger}>Batal</button>}
         </div>
       </div>
 
       <div style={S.card}>
         <div style={S.label}>Daftar Staff ({users.length})</div>
         {loading ? <div style={{ color: "#555" }}>Loading...</div> :
-          users.map((u, i) => (
-            <div key={u.id || i} style={S.row}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 8, background: u.role === "manager" ? "#F59E0B22" : "#3B82F622", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
-                  {u.role === "manager" ? "👑" : "👤"}
+          users.length === 0 ? <div style={{ padding: 20, textAlign: "center", color: "#555" }}>Belum ada staff. Tambah pertama di atas ↑</div> :
+          users.map((u, i) => {
+            const ri = roleInfo(u.role);
+            return (
+              <div key={u.id || i} style={{ ...S.row, opacity: u.active ? 1 : 0.5 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 8, background: ri.color + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+                    {ri.icon}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 15, fontWeight: 600 }}>{u.name}{!u.active && <span style={{ marginLeft: 8, fontSize: 10, color: "#94a3b8" }}>⊘ NONAKTIF</span>}</div>
+                    <div style={{ fontSize: 11, color: "#555" }}>PIN: ••••• · <span style={S.badge(ri.color)}>{ri.label}</span>{u.is_locked && <span style={{ marginLeft: 6, color: "#F87171" }}>🔒 LOCKED</span>}</div>
+                  </div>
                 </div>
-                <div>
-                  <div style={{ fontSize: 15, fontWeight: 600 }}>{u.name}</div>
-                  <div style={{ fontSize: 11, color: "#555" }}>PIN: {u.pin} · <span style={S.badge(u.role === "manager" ? "#F59E0B" : "#3B82F6")}>{u.role}</span></div>
+                <div style={{ display: "flex", gap: 4 }}>
+                  <button onClick={() => handleEdit(u)} disabled={busy} title="Edit" style={S.btn("#3B82F6")}>✏️</button>
+                  <button onClick={() => handleToggleActive(u)} disabled={busy} title={u.active ? "Nonaktifkan" : "Aktifkan"} style={S.btn(u.active ? "#64748b" : "#10B981")}>{u.active ? "⊘" : "✓"}</button>
+                  <button onClick={() => handleDelete(u)} disabled={busy} title="Hapus" style={S.btn("#EF4444")}>🗑️</button>
                 </div>
               </div>
-              <button onClick={() => handleEdit(u)} style={S.btn("#3B82F6")}>✏️ Edit</button>
-            </div>
-          ))
+            );
+          })
         }
       </div>
     </div>
