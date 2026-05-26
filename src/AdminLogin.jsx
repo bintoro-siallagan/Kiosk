@@ -182,6 +182,7 @@ export default function AdminLogin({ onLogin }) {
           {mode === "password" ? "↺ Switch ke PIN mode (kasir POS)" : "↺ Switch ke username/password (admin)"}
         </button>
 
+        {/* Signup CTA — disabled. Re-enable saat public launch.
         <div style={{ marginTop: 18, padding: 14, background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 10, textAlign: "center" }}>
           <div style={{ fontSize: 12, color: "#cbd5e1", marginBottom: 8 }}>Belum punya akun karyaOS?</div>
           <a href="/?signup" style={{
@@ -191,6 +192,7 @@ export default function AdminLogin({ onLogin }) {
             textDecoration: "none", letterSpacing: 0.3,
           }}>🚀 Daftar Tenant Baru — Trial 14 Hari Gratis</a>
         </div>
+        */}
 
         <div style={L.footer}>
           🛡️ Enterprise auth · scrypt password hash · lockout 5× fail · session 12h
