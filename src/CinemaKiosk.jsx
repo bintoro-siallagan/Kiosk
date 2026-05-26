@@ -435,7 +435,8 @@ export default function CinemaKiosk({ apiBase }) {
       <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", gap: 12, padding: "18px 24px", borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(8,9,15,0.72)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", flexShrink: 0 }}>
         {step !== "films" && step !== "done" && (
           <button onClick={async () => {
-            if (step === "bundles") setStep("seats");
+            if (step === "payment") setStep("bundles");
+            else if (step === "bundles") setStep("seats");
             else if (step === "seats") { await releaseHolds(); setStep("showtimes"); }
             else setStep("films");
           }}
@@ -679,6 +680,71 @@ export default function CinemaKiosk({ apiBase }) {
           </>
         )}
 
+        {/* STEP: payment — konfirmasi order + bayar di kasir */}
+        {step === "payment" && (
+          <div style={{ paddingTop: 20, animation: "karyaKioskFadeUp 0.4s ease-out", maxWidth: 600, margin: "0 auto" }}>
+            <div style={{ textAlign: "center", marginBottom: 22 }}>
+              <div style={{ fontSize: 50 }}>🧾</div>
+              <div style={{ fontSize: 24, fontWeight: 900, marginTop: 8, letterSpacing: -0.5 }}>Konfirmasi Pesanan</div>
+              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", marginTop: 6 }}>
+                Cek pesanan Anda. Klik <b>Bayar di Kasir</b> untuk lanjut.
+              </div>
+            </div>
+
+            <div style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 22, marginBottom: 18 }}>
+              <div style={{ fontSize: 11, color: "#a855f7", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 12 }}>🎬 FILM</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{film?.title}</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>
+                {show && new Date(show.starts_at * 1000).toLocaleString("id-ID", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 2 }}>Kursi: <b style={{ color: "#fbbf24" }}>{[...seats].sort().join(", ")}</b> · {seats.size} tiket</div>
+
+              {cartItems.length > 0 && (
+                <>
+                  <div style={{ fontSize: 11, color: "#a855f7", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginTop: 18, marginBottom: 10 }}>🍿 F&B BUNDLE</div>
+                  {cartItems.map(it => (
+                    <div key={it.bundle_id} style={{ display: "flex", justifyContent: "space-between", fontSize: 13, color: "#cbd5e1", marginBottom: 4 }}>
+                      <span>{it.name} × {it.qty}</span>
+                      <span style={{ fontFamily: "'Geist Mono',monospace" }}>{rp((it.price || 0) * it.qty)}</span>
+                    </div>
+                  ))}
+                </>
+              )}
+
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: 16, paddingTop: 14, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", fontWeight: 700, letterSpacing: 0.5 }}>TOTAL</span>
+                <span style={{ fontSize: 28, fontWeight: 900, color: "#10b981", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5 }}>
+                  {rp(Math.max(0, grandTotal - (promoApplied?.discount || 0)))}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ padding: 14, background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 12, marginBottom: 18, fontSize: 12.5, color: "#fde68a", lineHeight: 1.55 }}>
+              💳 <b>Cara Bayar:</b> Klik tombol di bawah → sistem cetak <b>Order ID</b>. Bawa Order ID ke kasir untuk menyelesaikan pembayaran (Tunai / QRIS / EDC). Kasir akan terbitkan tiket fisik setelah lunas.
+            </div>
+
+            {msg && <div style={{ padding: 10, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, color: "#fca5a5", fontSize: 13, marginBottom: 14 }}>{msg}</div>}
+
+            <button onClick={() => buy(cartItems)} style={{
+              width: "100%", padding: "18px 24px",
+              background: "linear-gradient(135deg,#10b981,#34d399)",
+              border: "none", borderRadius: 14, color: "#04130c",
+              fontSize: 17, fontWeight: 900, fontFamily: "inherit",
+              cursor: "pointer", letterSpacing: 0.5,
+              boxShadow: "0 8px 24px rgba(16,185,129,0.35), inset 0 1px 0 rgba(255,255,255,0.2)",
+            }}>
+              💳 Konfirmasi · Bayar di Kasir
+            </button>
+
+            <button onClick={() => setStep("bundles")} style={{
+              width: "100%", padding: "12px 20px", marginTop: 10,
+              background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+              borderRadius: 12, color: "rgba(255,255,255,0.65)", fontSize: 13, fontWeight: 600,
+              fontFamily: "inherit", cursor: "pointer",
+            }}>← Kembali edit F&B</button>
+          </div>
+        )}
+
         {/* STEP: done */}
         {step === "done" && done && (
           <div style={{ textAlign: "center", paddingTop: 30, animation: "karyaKioskFadeUp 0.5s ease-out" }}>
@@ -871,16 +937,16 @@ export default function CinemaKiosk({ apiBase }) {
             )}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <button onClick={() => buy([])} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 22px", color: "rgba(255,255,255,0.65)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "background 0.15s ease" }}
+            <button onClick={() => { setCart({}); setStep("payment"); }} style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "12px 22px", color: "rgba(255,255,255,0.65)", fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", transition: "background 0.15s ease" }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}>
               Lewati F&amp;B
             </button>
-            <button onClick={() => buy(cartItems)}
+            <button onClick={() => setStep("payment")}
               style={{ background: "linear-gradient(135deg,#10b981,#34d399)", border: "none", borderRadius: 12, padding: "13px 28px", color: "#04130c", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(16,185,129,0.3), inset 0 1px 0 rgba(255,255,255,0.2)", letterSpacing: 0.3, transition: "transform 0.15s ease, filter 0.15s ease" }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.filter = "brightness(1.08)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.filter = "none"; }}>
-              Bayar {rp(Math.max(0, grandTotal - (promoApplied?.discount || 0)))}
+              Lanjut ke Pembayaran · {rp(Math.max(0, grandTotal - (promoApplied?.discount || 0)))}
             </button>
           </div>
         </div>
