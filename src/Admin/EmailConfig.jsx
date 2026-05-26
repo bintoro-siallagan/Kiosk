@@ -90,18 +90,60 @@ export default function EmailConfig({ apiBase = "" }) {
         <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>SMTP untuk Forgot Password, invoice, notifikasi. Multi-company ready (per-tenant config bisa di-extend nanti).</div>
       </header>
 
-      {/* Status banner */}
-      <div style={{ padding: 14, background: form.enabled ? "rgba(16,185,129,0.08)" : "rgba(245,158,11,0.08)", border: `1px solid ${form.enabled ? GREEN : AMBER}`, borderRadius: 12, marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-        <div>
-          <div style={{ fontSize: 11, color: form.enabled ? GREEN : AMBER, fontWeight: 800, letterSpacing: 1 }}>{form.enabled ? "✓ EMAIL AKTIF" : "⚠ EMAIL DISABLED"}</div>
+      {/* Status banner with proper toggle switch */}
+      <div style={{ padding: 16, background: form.enabled ? "rgba(16,185,129,0.08)" : "rgba(245,158,11,0.08)", border: `1px solid ${form.enabled ? GREEN : AMBER}`, borderRadius: 12, marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <div style={{ fontSize: 11, color: form.enabled ? GREEN : AMBER, fontWeight: 800, letterSpacing: 1 }}>{form.enabled ? "✓ EMAIL AKTIF" : "⚠ EMAIL BELUM AKTIF"}</div>
           <div style={{ fontSize: 13, color: "#cbd5e1", marginTop: 4 }}>
-            {form.enabled ? `Sending via ${form.smtpHost}:${form.smtpPort} (user: ${form.smtpUser})` : "Forgot Password & notifikasi belum bisa kirim email."}
+            {form.enabled
+              ? `Sending via ${form.smtpHost}:${form.smtpPort} (user: ${form.smtpUser})`
+              : "Tap tombol kanan untuk aktifkan setelah isi credentials di bawah."}
           </div>
         </div>
-        <label style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 14px", background: "rgba(0,0,0,0.3)", borderRadius: 10, cursor: "pointer", fontWeight: 700 }}>
-          <input type="checkbox" checked={!!form.enabled} onChange={e => apply("enabled", e.target.checked)} />
-          {form.enabled ? "Enabled" : "Disabled"}
-        </label>
+        {/* Big toggle switch */}
+        <button onClick={async () => {
+          const newEnabled = !form.enabled;
+          // Validate kalau mau enable
+          if (newEnabled && (!form.smtpUser || !form.smtpPass)) {
+            alert("Isi USERNAME dan PASSWORD dulu sebelum enable, lalu Save.");
+            return;
+          }
+          const next = { ...form, enabled: newEnabled };
+          setForm(next);
+          // Auto-save toggle change
+          setBusy(true);
+          try {
+            const r = await fetch(`${API}/api/admin/email-config`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json", Authorization: token ? `Bearer ${token}` : undefined },
+              body: JSON.stringify(next),
+            });
+            const j = await r.json();
+            if (!r.ok) throw new Error(j?.error);
+            setInfo(newEnabled ? "✓ Email AKTIF — sekarang bisa kirim test." : "⏸ Email di-pause.");
+            setTimeout(() => setInfo(""), 4000);
+          } catch (e) {
+            setForm(f => ({ ...f, enabled: !newEnabled })); // rollback
+            setErr(e);
+          }
+          setBusy(false);
+        }} style={{
+          position: "relative", width: 86, height: 40,
+          background: form.enabled ? `linear-gradient(135deg,${GREEN},#059669)` : "rgba(0,0,0,0.4)",
+          border: `2px solid ${form.enabled ? GREEN : "rgba(255,255,255,0.2)"}`,
+          borderRadius: 22, cursor: busy ? "wait" : "pointer", padding: 0,
+          transition: "all 0.2s ease",
+          boxShadow: form.enabled ? "0 4px 14px rgba(16,185,129,0.35)" : "none",
+        }}>
+          <div style={{
+            position: "absolute", top: 3, left: form.enabled ? 50 : 3,
+            width: 28, height: 28, borderRadius: "50%",
+            background: "#fff", transition: "left 0.2s ease",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, color: form.enabled ? GREEN : "#64748b", fontWeight: 800,
+          }}>{form.enabled ? "✓" : "✕"}</div>
+        </button>
       </div>
 
       {info && <div style={{ padding: "10px 14px", background: "rgba(16,185,129,0.1)", border: `1px solid ${GREEN}55`, borderRadius: 10, color: "#86efac", fontSize: 13, marginBottom: 12 }}>{info}</div>}
