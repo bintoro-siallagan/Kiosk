@@ -679,13 +679,16 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
             return (
               <section style={K.heroSection}>
                 <div className="lg" style={K.heroCard} onClick={()=>{audio.playTap();(hero.freeToppings>0?setToppingItem(hero):setAddonItem(hero));}}>
+                  {/* Background image — full bleed */}
                   <div style={K.heroImg}>
-                    <FoodImage item={hero} size={280}/>
-                    <div style={K.heroImgGloss}/>
+                    <div style={{fontSize:240,filter:"drop-shadow(0 24px 60px rgba(0,0,0,0.55))",transform:"translateY(-20px)"}}>{hero.emoji || "🍦"}</div>
                   </div>
+                  {/* Dark gradient overlay for text readability */}
+                  <div style={K.heroImgGloss}/>
+                  {/* Text content overlay at bottom */}
                   <div style={K.heroInfo}>
                     <div style={K.heroBadge}>
-                      <span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:"var(--brand-primary,#FF6B35)",boxShadow:"0 0 8px var(--brand-primary,#FF6B35)"}}/>
+                      <span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:"#fff",boxShadow:"0 0 8px rgba(255,255,255,0.7)"}}/>
                       <span>{hero.tag || "TODAY'S PICK"}</span>
                     </div>
                     <div style={K.heroName}>{hero.name}</div>
@@ -1017,18 +1020,18 @@ const K = {
   splitRight:{flex:"0 0 40%",display:"flex",flexDirection:"column",background:"linear-gradient(180deg,rgba(13,17,23,0.6),rgba(8,9,10,0.85))",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderLeft:BORDER_DEFAULT},
   splitMenuScroll:{flex:1,overflowY:"auto",padding:"6px 0 0"},
 
-  // ── FEATURED HERO — big, dominant, dramatic ──
-  heroSection:      {padding:"18px 18px 8px"},
-  heroCard:         {display:"flex",borderRadius:28,overflow:"hidden",cursor:"pointer",minHeight:320},
-  heroImg:          {flex:"0 0 52%",position:"relative",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(ellipse 90% 70% at 40% 35%,color-mix(in srgb,var(--brand-primary,#FF6B35) 24%,transparent),transparent 75%)",overflow:"hidden"},
-  heroImgGloss:     {position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(255,255,255,0.08) 0%,transparent 50%)",pointerEvents:"none"},
-  heroInfo:         {flex:1,padding:"28px 30px",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:14},
-  heroBadge:        {display:"inline-flex",alignItems:"center",gap:8,fontSize:10,letterSpacing:2.8,fontWeight:600,color:"rgba(255,255,255,0.7)",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",alignSelf:"flex-start",padding:"6px 11px",borderRadius:999,background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.07)"},
-  heroName:         {fontFamily:"'Inter',sans-serif",fontSize:34,fontWeight:600,letterSpacing:"-1.2px",color:"#fff",lineHeight:1.1,marginTop:8},
-  heroDesc:         {fontSize:14,color:"rgba(255,255,255,0.55)",lineHeight:1.55,fontWeight:400,marginTop:-6,maxWidth:380},
-  heroBottom:       {display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginTop:12},
-  heroPrice:        {fontFamily:"'Inter',sans-serif",fontSize:30,fontWeight:600,color:"#fff",letterSpacing:"-0.8px",fontVariantNumeric:"tabular-nums"},
-  heroAddBtn:       {padding:"13px 22px",borderRadius:14,border:"none",fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:600,letterSpacing:"-0.2px",color:"#fff",cursor:"pointer"},
+  // ── FEATURED HERO — full-bleed image with text overlay (movie-poster style) ──
+  heroSection:      {padding:"18px 18px 12px"},
+  heroCard:         {position:"relative",borderRadius:28,overflow:"hidden",cursor:"pointer",height:460,display:"flex",alignItems:"flex-end"},
+  heroImg:          {position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(ellipse 70% 55% at 35% 38%,color-mix(in srgb,var(--brand-primary,#FF6B35) 32%,transparent),transparent 75%)",overflow:"hidden"},
+  heroImgGloss:     {position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,0) 35%,rgba(0,0,0,0.55) 75%,rgba(0,0,0,0.85) 100%)",pointerEvents:"none",zIndex:2},
+  heroInfo:         {position:"relative",zIndex:3,padding:"32px 36px 30px",display:"flex",flexDirection:"column",gap:10,width:"100%"},
+  heroBadge:        {display:"inline-flex",alignItems:"center",gap:8,fontSize:10,letterSpacing:2.8,fontWeight:600,color:"#fff",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",alignSelf:"flex-start",padding:"6px 12px",borderRadius:999,background:"color-mix(in srgb,var(--brand-primary,#FF6B35) 24%,rgba(0,0,0,0.4))",border:"1px solid color-mix(in srgb,var(--brand-primary,#FF6B35) 45%,transparent)",backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)"},
+  heroName:         {fontFamily:"'Inter',sans-serif",fontSize:46,fontWeight:600,letterSpacing:"-1.8px",color:"#fff",lineHeight:1,marginTop:6,textShadow:"0 4px 24px rgba(0,0,0,0.5)"},
+  heroDesc:         {fontSize:15,color:"rgba(255,255,255,0.78)",lineHeight:1.5,fontWeight:400,marginTop:2,maxWidth:520,textShadow:"0 2px 12px rgba(0,0,0,0.4)"},
+  heroBottom:       {display:"flex",alignItems:"center",justifyContent:"space-between",gap:14,marginTop:14},
+  heroPrice:        {fontFamily:"'Inter',sans-serif",fontSize:36,fontWeight:600,color:"#fff",letterSpacing:"-1px",fontVariantNumeric:"tabular-nums",textShadow:"0 4px 16px rgba(0,0,0,0.45)"},
+  heroAddBtn:       {padding:"15px 26px",borderRadius:16,border:"none",fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:600,letterSpacing:"-0.2px",color:"#fff",cursor:"pointer"},
 
   // ── EDITORIAL ROWS (Netflix-style horizontal scroll per category) ──
   editorialRowWrap: {position:"relative"},
