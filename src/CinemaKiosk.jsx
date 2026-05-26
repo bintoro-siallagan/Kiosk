@@ -971,7 +971,7 @@ function CinemaQRISPayment({ film, show, seats, cartItems, total, base, buy, msg
   const [qrData, setQrData] = useState(null);    // { transactionId, qrUrl, midtransOrderId, expiryTime }
   const [creating, setCreating] = useState(false);
   const [polling, setPolling] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(900); // 15 min
+  const [secondsLeft, setSecondsLeft] = useState(300); // 5 menit max
   const [paid, setPaid] = useState(false);
   const pollTimerRef = useRef(null);
   const tickTimerRef = useRef(null);
@@ -995,11 +995,11 @@ function CinemaQRISPayment({ film, show, seats, cartItems, total, base, buy, msg
         if (!mounted) return;
         if (d.error || !d.ok) { setMsg("⚠ " + (d.error || "Gagal generate QR")); return; }
         setQrData(d);
-        // Calc expiry seconds
+        // Calc expiry — cap di 5 menit (300s) walaupun Midtrans return 15 menit
         if (d.expiryTime) {
           const exp = new Date(d.expiryTime).getTime();
           const left = Math.max(0, Math.floor((exp - Date.now()) / 1000));
-          setSecondsLeft(Math.min(left, 900));
+          setSecondsLeft(Math.min(left, 300));
         }
         setPolling(true);
       })
@@ -1067,20 +1067,36 @@ function CinemaQRISPayment({ film, show, seats, cartItems, total, base, buy, msg
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>Buka e-wallet (GoPay/OVO/DANA/ShopeePay) → scan QR</div>
       </div>
 
-      {/* QR Code box */}
+      {/* QR Code box — generate via api.qrserver.com (Midtrans qrUrl auth-only, gak bisa direct img) */}
       <div style={{ background: "#fff", padding: 18, borderRadius: 16, marginBottom: 14, boxShadow: "0 16px 48px rgba(245,158,11,0.25), 0 0 0 4px rgba(245,158,11,0.15)" }}>
         {creating ? (
           <div style={{ aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center", color: "#666", fontSize: 14 }}>
             ⏳ Generating QR Code…
           </div>
-        ) : qrData?.qrUrl ? (
-          <img src={qrData.qrUrl} alt="QRIS" style={{ width: "100%", aspectRatio: "1", objectFit: "contain", display: "block", borderRadius: 8 }} />
+        ) : (qrData?.deeplinkUrl || qrData?.qrString) ? (
+          <img
+            src={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=12&data=${encodeURIComponent(qrData.deeplinkUrl || qrData.qrString)}`}
+            alt="QRIS Payment"
+            style={{ width: "100%", aspectRatio: "1", objectFit: "contain", display: "block", borderRadius: 8 }}
+          />
         ) : (
           <div style={{ aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444", fontSize: 13, padding: 20, textAlign: "center" }}>
             {msg || "QR Code tidak tersedia"}
           </div>
         )}
       </div>
+
+      {/* Sandbox helper: kalau di sandbox mode, tampil link manual simulator */}
+      {qrData?.deeplinkUrl && qrData.deeplinkUrl.includes("sandbox") && (
+        <a href={qrData.deeplinkUrl} target="_blank" rel="noopener noreferrer" style={{
+          display: "block", padding: "10px 16px", marginBottom: 14,
+          background: "rgba(168,85,247,0.08)", border: "1px dashed rgba(168,85,247,0.4)",
+          borderRadius: 10, color: "#c084fc", fontSize: 12, textAlign: "center",
+          textDecoration: "none", fontWeight: 700,
+        }}>
+          🧪 SANDBOX MODE — Klik untuk simulasi bayar (production akan pakai QR e-wallet real)
+        </a>
+      )}
 
       {/* Total + countdown */}
       <div style={{ background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: 16, marginBottom: 14, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
