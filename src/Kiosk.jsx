@@ -464,15 +464,22 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
       <div className="aurora-blob aurora-3"/>
       <div style={K.welcomeInner}>
         <div style={K.logoWrap}>
-          {/* Soft floating accent dot — replaces rigid logo box */}
-          <div style={{position:"relative",display:"inline-block",marginBottom:18}} className="logo-float"
-               onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}}>
+          <div style={{position:"relative",display:"inline-block",width:200,height:200,marginBottom:8}} className="logo-float">
             <div className="logo-halo"/>
-            <div style={{
-              position:"relative",zIndex:1,width:18,height:18,borderRadius:"50%",cursor:"pointer",
-              background:`radial-gradient(circle at 30% 30%,#fff 0%,var(--brand-primary,#FF6B35) 55%,var(--brand-secondary,#E55A2B) 100%)`,
-              boxShadow:`0 0 0 6px color-mix(in srgb,var(--brand-primary,#FF6B35) 12%,transparent),0 8px 24px color-mix(in srgb,var(--brand-primary,#FF6B35) 45%,transparent),inset 0 1px 2px rgba(255,255,255,0.5)`,
-            }}/>
+            <div className="lg lg-orb" style={{
+              width:200,height:200,borderRadius:"50%",
+              display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",
+            }} onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}}>
+              {/* Big typographic monogram — gradient brand color, lives inside the glass not on top */}
+              <span style={{
+                fontFamily:"'Inter',sans-serif",fontSize:140,fontWeight:700,lineHeight:1,letterSpacing:"-6px",
+                background:`linear-gradient(180deg,#fff 0%,var(--brand-primary,#FF6B35) 55%,var(--brand-secondary,#E55A2B) 100%)`,
+                WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text",
+                filter:"drop-shadow(0 4px 16px rgba(0,0,0,0.4))",
+                userSelect:"none",
+                transform:"translateY(-4px)",
+              }}>{isCustomBrand && tenantBrand.name ? tenantBrand.name.charAt(0).toUpperCase() : "K"}</span>
+            </div>
           </div>
           <h1 style={K.brand}>{isCustomBrand ? (tenantBrand.name) : (<>karya<span style={{fontWeight:400,letterSpacing:"-1px",opacity:.55}}>OS</span></>)}</h1>
           <p style={K.tagline}>Crafted with love · Ordered with ease</p>
