@@ -176,7 +176,7 @@ export default function AdminAggregator({ apiBase = '' }) {
           </div>
 
           {/* Orders list */}
-          <h3 style={styles.sectionTitle}>Order Aktif</h3>
+          <h3 style={styles.sectionTitle}>Order Active</h3>
           {activeOrders.length === 0 ? (
             <div style={styles.empty}>None order pending. Klik "+ Test Order" buat simulasi.</div>
           ) : (
@@ -223,8 +223,8 @@ export default function AdminAggregator({ apiBase = '' }) {
           <div style={styles.kpiRow}>
             <KpiCard label="Total Order" value={reconcile.total.total_orders} sub={`${reconcile.total.completed} completed`} />
             <KpiCard label="Gross Revenue" value={fmtIDR(reconcile.total.gross_revenue)} color="#f97316" big />
-            <KpiCard label="Total Komisi" value={fmtIDR(reconcile.total.total_commission)} color="#ef4444" sub="dibayar ke platform" />
-            <KpiCard label="Net Revenue" value={fmtIDR(reconcile.total.net_revenue)} color="#4ade80" big sub="masuk ke kios" />
+            <KpiCard label="Total Komisi" value={fmtIDR(reconcile.total.total_commission)} color="#ef4444" sub="dibayar to platform" />
+            <KpiCard label="Net Revenue" value={fmtIDR(reconcile.total.net_revenue)} color="#4ade80" big sub="masuk to kios" />
           </div>
 
           <h3 style={styles.sectionTitle}>Breakdown per Provider</h3>
@@ -277,7 +277,7 @@ export default function AdminAggregator({ apiBase = '' }) {
           {syncLog.length === 0 ? <div style={styles.empty}>No sync activity</div> : (
             <table style={styles.table}>
               <thead><tr>
-                <th style={styles.th}>Tanggal</th>
+                <th style={styles.th}>Date</th>
                 <th style={styles.th}>Provider</th>
                 <th style={styles.th}>Action</th>
                 <th style={styles.th}>Menu</th>
@@ -482,7 +482,7 @@ function ManualEntry({ providers, apiBase, onSaved }) {
         </div>
         <div style={styles.formGroup}>
           <label style={styles.label}>Notes</label>
-          <input value={notes} onChange={e => setNotes(e.target.value)} style={styles.input} placeholder="Catatan order" />
+          <input value={notes} onChange={e => setNotes(e.target.value)} style={styles.input} placeholder="Notes order" />
         </div>
       </div>
 

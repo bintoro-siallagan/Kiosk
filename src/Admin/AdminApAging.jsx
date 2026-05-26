@@ -95,7 +95,7 @@ export default function AdminApAging({ apiBase = "" }) {
                 <td style={S.td}><span style={{ fontSize: 9, fontWeight: 700, color: BUCKET_C[p.bucket], fontFamily: "'Geist Mono',monospace" }}>{p.bucket}</span></td>
                 <td style={S.td}>
                   <div style={{ display: "flex", gap: 4, alignItems: "center", justifyContent: "flex-end" }}>
-                    <button onClick={() => pay(p)} style={S.btn}>Bayar</button>
+                    <button onClick={() => pay(p)} style={S.btn}>Pay</button>
                     <button onClick={() => setEditing({ ...p })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
                     <button onClick={() => remove(p)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
                   </div>

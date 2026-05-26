@@ -55,11 +55,11 @@ export default function CinemaCommandCenter({ apiBase = "" }) {
 
       {/* Revenue strip */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 16 }}>
-        <Stat label="Revenue total hari ini" value={rp(t.total)} color="#10b981" big />
+        <Stat label="Revenue total day ini" value={rp(t.total)} color="#10b981" big />
         <Stat label="Tiket" value={rp(t.tickets)} sub={`${t.tickets_count || 0} transaksi`} color="#22d3ee" />
         <Stat label="F&B Bundle" value={rp(t.bundles)} color="#f59e0b" />
         <Stat label="In-Studio Order" value={rp(t.in_studio)} color="#a855f7" />
-        <Stat label="Void 24 jam" value={data.void_count_24h || 0} color={data.void_count_24h ? "#ef4444" : "#6b7280"} />
+        <Stat label="Void 24 hr" value={data.void_count_24h || 0} color={data.void_count_24h ? "#ef4444" : "#6b7280"} />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 14 }}>
@@ -69,7 +69,7 @@ export default function CinemaCommandCenter({ apiBase = "" }) {
             {running.length === 0 ? <Empty>None jadwal yang sedang berlangsung.</Empty> : running.map(s => <ShowRow key={s.id} s={s} />)}
           </Section>
           <Section title={`⏰ JADWAL BERIKUTNYA (${upcoming.length})`}>
-            {upcoming.length === 0 ? <Empty>None jadwal yang akan datang hari ini.</Empty> : upcoming.slice(0, 8).map(s => <ShowRow key={s.id} s={s} />)}
+            {upcoming.length === 0 ? <Empty>None jadwal yang akan datang day ini.</Empty> : upcoming.slice(0, 8).map(s => <ShowRow key={s.id} s={s} />)}
           </Section>
           {completed.length > 0 && (
             <Section title={`✓ SUDAH SELESAI (${completed.length})`}>
@@ -108,7 +108,7 @@ export default function CinemaCommandCenter({ apiBase = "" }) {
           </Section>
 
           <Section title="⭐ FEEDBACK TERBARU">
-            {data.feedback.length === 0 ? <Empty>No feedback hari ini.</Empty> :
+            {data.feedback.length === 0 ? <Empty>No feedback day ini.</Empty> :
               data.feedback.map(f => (
                 <div key={f.id} style={{ padding: "10px 14px", borderBottom: `1px solid ${C.border}`, fontSize: 12 }}>
                   <div style={{ fontWeight: 700, marginBottom: 3 }}>{f.film_title || "—"}</div>

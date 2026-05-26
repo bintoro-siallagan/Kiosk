@@ -37,7 +37,7 @@ export default function AdminConvenienceFee({ apiBase = "" }) {
   };
 
   const remove = async () => {
-    const ok = await confirm({ title: `Reset konfigurasi Convenience Fee?`, message: "Fee akan dimatikan & nilai direset ke 0. Bisa diaktifkan kembali nanti.", danger: true, okLabel: "Reset" });
+    const ok = await confirm({ title: `Reset konfigurasi Convenience Fee?`, message: "Fee akan dimatikan & nilai direset to 0. Bisa diaktifkan kembali nanti.", danger: true, okLabel: "Reset" });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/convenience-fee/1`, { method: "DELETE" });
     const j = await r.json();
@@ -51,7 +51,7 @@ export default function AdminConvenienceFee({ apiBase = "" }) {
     <div>
       <div style={S.intro}>
         🧾 <b style={{ color: "#fb923c" }}>CONVENIENCE FEE</b> — biaya layanan buat transaksi <b>digital
-        (QRIS / e-wallet / gateway)</b> untuk nutup biaya MDR. <b>Tunai bebas fee.</b> Fee otomatis
+        (QRIS / e-wallet / gateway)</b> for nutup biaya MDR. <b>Tunai bebas fee.</b> Fee otomatis
         nempel di checkout kiosk/QR &amp; tampil jelas di struk customer.
       </div>
 
@@ -81,7 +81,7 @@ export default function AdminConvenienceFee({ apiBase = "" }) {
           <span style={{ color: "#fb923c", fontFamily: "'Geist Mono',monospace" }}>
             🧾 {cfg.label || "Biaya Layanan"} &nbsp; +{fmtRp(cfg.amount)}
           </span>
-          <div style={{ marginTop: 4, color: "#5b6470" }}>💵 Transaksi tunai → tanpa fee</div>
+          <div style={{ marginTop: 4, color: "#5b6470" }}>💵 Transaction tunai → tanpa fee</div>
         </div>
 
         <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
@@ -99,8 +99,8 @@ export default function AdminConvenienceFee({ apiBase = "" }) {
             <div style={{ display: "grid", gap: 10 }}>
               <label style={{ fontSize: 11, color: "#9ca3af" }}>Status
                 <select value={editing.enabled ? 1 : 0} onChange={e => setEditing({ ...editing, enabled: Number(e.target.value) })} style={modalInp}>
-                  <option value={1}>Aktif</option>
-                  <option value={0}>Nonaktif</option>
+                  <option value={1}>Active</option>
+                  <option value={0}>Inactive</option>
                 </select>
               </label>
               <label style={{ fontSize: 11, color: "#9ca3af" }}>Jumlah Fee (Rp)

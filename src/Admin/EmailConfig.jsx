@@ -13,7 +13,7 @@ const PRESETS = [
   { name: "Gmail", host: "smtp.gmail.com", port: 587, secure: false, note: "Pakai App Password (16 digit) — bukan password Gmail biasa." },
   { name: "Outlook / Office 365", host: "smtp.office365.com", port: 587, secure: false, note: "Pakai App Password kalau 2FA aktif." },
   { name: "SendGrid", host: "smtp.sendgrid.net", port: 587, secure: false, note: "User = 'apikey', Password = SendGrid API key." },
-  { name: "Mailgun", host: "smtp.mailgun.org", port: 587, secure: false, note: "User dari dashboard Mailgun." },
+  { name: "Mailgun", host: "smtp.mailgun.org", port: 587, secure: false, note: "User from dashboard Mailgun." },
   { name: "Amazon SES", host: "email-smtp.ap-southeast-1.amazonaws.com", port: 587, secure: false, note: "Region adjust sesuai SES Anda." },
 ];
 
@@ -48,7 +48,7 @@ export default function EmailConfig({ apiBase = "" }) {
     // Cek apakah password masked (artinya user belum re-type, jadi backend skip)
     const passIsMasked = form.smtpPass && form.smtpPass.includes("•");
     if (!form.smtpPass?.trim() && !passIsMasked) {
-      alert("PASSWORD / API KEY required.\n\nUntuk Gmail: generate App Password 16-char dari myaccount.google.com/apppasswords (BUKAN password Gmail biasa).");
+      alert("PASSWORD / API KEY required.\n\nUntuk Gmail: generate App Password 16-char from myaccount.google.com/apppasswords (BUKAN password Gmail biasa).");
       return;
     }
     setBusy(true);
@@ -62,7 +62,7 @@ export default function EmailConfig({ apiBase = "" }) {
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j?.error);
-      setInfo(`✓ Konfigurasi tersimpan — ${form.enabled ? "email aktif, bisa kirim test sekarang" : "tap toggle untuk aktifkan"}`);
+      setInfo(`✓ Configuration tersimpan — ${form.enabled ? "email aktif, bisa kirim test sekarang" : "tap toggle for aktifkan"}`);
       setTimeout(() => setInfo(""), 6000);
       load();
     } catch (e) { setErr(e); }
@@ -80,7 +80,7 @@ export default function EmailConfig({ apiBase = "" }) {
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j?.error);
-      setInfo(`✓ Test email dikirim ke ${testTo}. Cek inbox dalam 1-2 menit.`);
+      setInfo(`✓ Test email dikirim to ${testTo}. Cek inbox dalam 1-2 min.`);
     } catch (e) { setErr(e); }
     setBusy(false);
   };
@@ -100,7 +100,7 @@ export default function EmailConfig({ apiBase = "" }) {
       <header style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 2.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>karyaOS / SETTINGS / EMAIL</div>
         <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", marginTop: 4, letterSpacing: -0.5 }}>📧 Email / SMTP Config</div>
-        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>SMTP untuk Forgot Password, invoice, notifikasi. Multi-company ready (per-tenant config bisa di-extend nanti).</div>
+        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>SMTP for Forgot Password, invoice, notifikasi. Multi-company ready (per-tenant config bisa di-extend nanti).</div>
       </header>
 
       {/* Status banner with proper toggle switch */}
@@ -110,7 +110,7 @@ export default function EmailConfig({ apiBase = "" }) {
           <div style={{ fontSize: 13, color: "#cbd5e1", marginTop: 4 }}>
             {form.enabled
               ? `Sending via ${form.smtpHost}:${form.smtpPort} (user: ${form.smtpUser})`
-              : "Tap tombol kanan untuk aktifkan setelah isi credentials di bawah."}
+              : "Tap tombol kanan for aktifkan setelah isi credentials di bawah."}
           </div>
         </div>
         {/* Big toggle switch */}
@@ -118,7 +118,7 @@ export default function EmailConfig({ apiBase = "" }) {
           const newEnabled = !form.enabled;
           // Validate kalau mau enable
           if (newEnabled && (!form.smtpUser || !form.smtpPass)) {
-            alert("Isi USERNAME dan PASSWORD dulu sebelum enable, lalu Save.");
+            alert("Isi USERNAME and PASSWORD dulu sebelum enable, lalu Save.");
             return;
           }
           const next = { ...form, enabled: newEnabled };
@@ -218,11 +218,11 @@ export default function EmailConfig({ apiBase = "" }) {
             <div style={{ padding: "10px 12px", background: "rgba(0,0,0,0.35)", border: `1px solid ${form.smtpSecure ? "rgba(168,85,247,0.4)" : "rgba(34,211,238,0.4)"}`, borderRadius: 8, fontSize: 12, color: form.smtpSecure ? "#c084fc" : "#22d3ee", textAlign: "center", fontWeight: 700, fontFamily: "'Geist Mono',monospace" }}>
               {form.smtpSecure ? "🔒 SSL/TLS" : "🔓 STARTTLS"}
             </div>
-            <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4 }}>Auto dari port</div>
+            <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4 }}>Auto from port</div>
           </Field>
         </div>
 
-        <Field label="👤 USERNAME / EMAIL"><input value={form.smtpUser || ""} onChange={e => apply("smtpUser", e.target.value)} placeholder="bintorosiallagan@gmail.com atau 'apikey' untuk SendGrid" style={inp} /></Field>
+        <Field label="👤 USERNAME / EMAIL"><input value={form.smtpUser || ""} onChange={e => apply("smtpUser", e.target.value)} placeholder="bintorosiallagan@gmail.com or 'apikey' for SendGrid" style={inp} /></Field>
         <Field label="🔒 PASSWORD / API KEY">
           <input type="password" value={form.smtpPass || ""} onChange={e => apply("smtpPass", e.target.value)} placeholder="App Password (Gmail: 16 chars, no spaces)" style={inp} />
           <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4, lineHeight: 1.5 }}>
@@ -242,7 +242,7 @@ export default function EmailConfig({ apiBase = "" }) {
           fontSize: 13, fontWeight: 800, fontFamily: "inherit",
           cursor: busy ? "not-allowed" : "pointer",
           opacity: busy ? 0.6 : 1,
-        }}>{busy ? "⏳ Menyimpan…" : "💾 Simpan Konfigurasi"}</button>
+        }}>{busy ? "⏳ Menyimpan…" : "💾 Simpan Configuration"}</button>
       </div>
 
       {/* Test send */}
@@ -255,7 +255,7 @@ export default function EmailConfig({ apiBase = "" }) {
             border: "none", borderRadius: 8, color: form.enabled && testTo ? "#001620" : "rgba(255,255,255,0.3)",
             fontSize: 13, fontWeight: 800, fontFamily: "inherit",
             cursor: form.enabled && testTo && !busy ? "pointer" : "not-allowed",
-          }}>📤 Kirim Test</button>
+          }}>📤 Send Test</button>
         </div>
         {!form.enabled && <div style={{ fontSize: 11, color: AMBER, marginTop: 6 }}>⚠ Enable email dulu (toggle di atas) sebelum test.</div>}
       </div>
@@ -264,17 +264,17 @@ export default function EmailConfig({ apiBase = "" }) {
       <div style={{ padding: 14, background: "rgba(168,85,247,0.05)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 10, fontSize: 12, color: "#cbd5e1", lineHeight: 1.6 }}>
         <div style={{ fontWeight: 800, color: PURPLE, marginBottom: 6 }}>💡 Setup Gmail (paling umum)</div>
         <ol style={{ margin: 0, paddingLeft: 20, lineHeight: 1.7 }}>
-          <li>Buka <a href="https://myaccount.google.com/security" target="_blank" rel="noopener noreferrer" style={{ color: CYAN }}>myaccount.google.com/security</a> → aktifkan <b>2-Step Verification</b> kalau belum.</li>
-          <li>Buka <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" style={{ color: CYAN }}>myaccount.google.com/apppasswords</a> → buat app password baru (App: "Mail", Device: "Other → karyaOS").</li>
+          <li>Open <a href="https://myaccount.google.com/security" target="_blank" rel="noopener noreferrer" style={{ color: CYAN }}>myaccount.google.com/security</a> → aktifkan <b>2-Step Verification</b> kalau belum.</li>
+          <li>Open <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener noreferrer" style={{ color: CYAN }}>myaccount.google.com/apppasswords</a> → buat app password baru (App: "Mail", Device: "Other → karyaOS").</li>
           <li>Copy 16-digit kode yang muncul (tanpa spasi).</li>
           <li>Di form atas: <b>Quick Preset → Gmail</b>, isi USERNAME = email Gmail Anda, PASSWORD = paste 16-digit tadi.</li>
           <li>From Email = email Gmail Anda, From Name = brand outlet/PT Anda.</li>
-          <li>Toggle <b>Enabled</b> ke ON di banner atas → Save → Test kirim email.</li>
+          <li>Toggle <b>Enabled</b> to ON di banner atas → Save → Test kirim email.</li>
         </ol>
       </div>
 
       <div style={{ marginTop: 14, padding: 12, background: "rgba(34,211,238,0.05)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 10, fontSize: 11, color: "#94a3b8", lineHeight: 1.55 }}>
-        <b style={{ color: CYAN }}>🏢 Multi-Company Roadmap:</b> Saat ini single config global. Saat upgrade ke multi-tenant, table <code>email_configs</code> akan extend dengan <code>company_id</code> column — setiap tenant manage SMTP sendiri tanpa override yang lain.
+        <b style={{ color: CYAN }}>🏢 Multi-Company Roadmap:</b> Saat ini single config global. Saat upgrade to multi-tenant, table <code>email_configs</code> akan extend with <code>company_id</code> column — setiap tenant manage SMTP sendiri tanpa override yang lain.
       </div>
     </div>
   );

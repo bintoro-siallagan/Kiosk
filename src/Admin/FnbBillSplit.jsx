@@ -48,7 +48,7 @@ export default function FnbBillSplit({ apiBase = "" }) {
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🧾 Bill Split &amp; Merge</div>
-        <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Bagi 1 order ke beberapa pembayaran (per-person / per-payment-method).</div>
+        <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Bagi 1 order to beberapa pembayaran (per-person / per-payment-method).</div>
       </div>
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12, marginBottom: 14, display: "grid", gridTemplateColumns: "150px 1fr auto auto", gap: 8, alignItems: "flex-end" }}>
         <Field label="Order ID"><input type="number" value={orderId} onChange={e => setOrderId(e.target.value)} placeholder="123" style={inp} /></Field>
@@ -93,7 +93,7 @@ export default function FnbBillSplit({ apiBase = "" }) {
                 <span style={{ width: 130, fontFamily: "'Geist Mono',monospace", color: "#10b981", fontWeight: 700 }}>{rp(s.subtotal)}</span>
                 <span style={{ width: 130, fontSize: 12 }}>{s.payment_status === "paid" ? <span style={{ color: "#10b981" }}>✓ Paid</span> : <span style={{ color: "#f59e0b" }}>⏳ Pending</span>}</span>
                 <span style={{ width: 130, display: "flex", gap: 4, justifyContent: "flex-end" }}>
-                  {s.payment_status !== "paid" && <button onClick={() => markPaid(s.id)} style={Ba("#10b981")}>Bayar</button>}
+                  {s.payment_status !== "paid" && <button onClick={() => markPaid(s.id)} style={Ba("#10b981")}>Pay</button>}
                   <button onClick={() => remove(s.id)} style={Ba("#ef4444")}>×</button>
                 </span>
               </div>

@@ -11,8 +11,8 @@ const fmtTs = (s) => s ? new Date(s * 1000).toLocaleString("id-ID", { hour12: fa
 const PERIODS = [
   { id: "today",     label: "Hari ini" },
   { id: "yesterday", label: "Kemarin" },
-  { id: "week",      label: "7 hari" },
-  { id: "month",     label: "30 hari" },
+  { id: "week",      label: "7 day" },
+  { id: "month",     label: "30 day" },
 ];
 
 function periodRange(p) {

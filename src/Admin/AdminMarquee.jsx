@@ -117,7 +117,7 @@ export default function AdminMarquee({ apiBase = "" }) {
         <div style={{ fontSize: 11, color: scope === "global" ? "#22d3ee" : "#fbbf24", flex: 1 }}>
           {scope === "global"
             ? "Pesan akan tampil di SEMUA outlet (default)."
-            : `Pesan akan OVERRIDE global untuk outlet ${scope}. Outlet lain tetap pakai global.`}
+            : `Pesan akan OVERRIDE global for outlet ${scope}. Outlet lain tetap pakai global.`}
         </div>
       </div>
 
@@ -140,7 +140,7 @@ export default function AdminMarquee({ apiBase = "" }) {
               <div key={i} style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 <div style={{ fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace", width: 24 }}>{String(i + 1).padStart(2, "0")}</div>
                 <input value={line} onChange={e => updateLine(i, e.target.value)}
-                  placeholder="Mis: Buka 10:00–22:00 · Free popcorn Sabtu · Bayar pakai BCA diskon 20%"
+                  placeholder="Mis: Open 10:00–22:00 · Free popcorn Sabtu · Pay pakai BCA diskon 20%"
                   style={inp} />
                 <button onClick={() => removeLine(i)} style={B.del}>×</button>
               </div>
@@ -149,7 +149,7 @@ export default function AdminMarquee({ apiBase = "" }) {
         )}
         <div style={{ display: "flex", gap: 10, marginTop: 14, alignItems: "center" }}>
           <button onClick={save} disabled={saving || loading} style={{ ...B.save, opacity: saving || loading ? 0.5 : 1 }}>
-            {saving ? "Menyimpan…" : "💾 Simpan ke semua kiosk"}
+            {saving ? "Menyimpan…" : "💾 Simpan to semua kiosk"}
           </button>
           <div style={{ fontSize: 11, color: C.sub }}>
             Berlaku langsung — kiosk refresh setiap 60 detik.

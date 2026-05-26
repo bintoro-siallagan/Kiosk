@@ -32,10 +32,10 @@ const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRad
 const RATINGS = ["SU", "13+", "17+", "D21"];
 const RATING_COLOR = { "SU": "#10b981", "13+": "#22d3ee", "17+": "#f59e0b", "D21": "#ef4444" };
 const RATING_NAME  = { "SU": "Semua Umur", "13+": "Remaja 13+", "17+": "Remaja 17+", "D21": "Dewasa 21+" };
-const STATUSES = [["now_showing", "Tayang"], ["coming_soon", "Segera"], ["archived", "Arsip"]];
+const STATUSES = [["now_showing", "Showing"], ["coming_soon", "Segera"], ["archived", "Arsip"]];
 const STUDIO_TYPES = ["Regular", "IMAX", "Premiere", "4DX"];
 const FORMATS = ["2D", "3D", "IMAX", "4DX"];
-const TABS = [["film", "🎬 Film"], ["studio", "🏛️ Studio"], ["showtime", "🗓️ Jadwal Tayang"], ["templates", "🔁 Recurring Templates"], ["branding", "🎨 Branding CDS"]];
+const TABS = [["film", "🎬 Film"], ["studio", "🏛️ Studio"], ["showtime", "🗓️ Schedule Showing"], ["templates", "🔁 Recurring Templates"], ["branding", "🎨 Branding CDS"]];
 const DAYS_OF_WEEK = [["0", "Min"], ["1", "Sen"], ["2", "Sel"], ["3", "Rab"], ["4", "Kam"], ["5", "Jum"], ["6", "Sab"]];
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const statusLabel = (s) => (STATUSES.find(x => x[0] === s) || [s, s])[1];
@@ -82,7 +82,7 @@ function CinemaOpsInner({ apiBase }) {
   useEffect(() => { reload(); /* eslint-disable-next-line */ }, [apiBase, showArchived]);
 
   const archiveOld = async (days) => {
-    if (!confirm(`Archive semua showtime > ${days} hari lewat?`)) return;
+    if (!confirm(`Archive semua showtime > ${days} day lewat?`)) return;
     try {
       const r = await fetch(`${base}/showtimes/archive-old?days=${days}`, { method: "POST" });
       const d = await r.json();
@@ -168,7 +168,7 @@ function CinemaOpsInner({ apiBase }) {
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <Stat label="Film tayang" value={summary ? summary.films_now_showing : "—"} color="#10b981" />
           <Stat label="Studio" value={summary ? summary.studios : "—"} color="#a855f7" />
-          <Stat label="Jadwal hari ini" value={summary ? summary.showtimes_today : "—"} color="#22d3ee" />
+          <Stat label="Schedule day ini" value={summary ? summary.showtimes_today : "—"} color="#22d3ee" />
           <button onClick={() => setWizardOpen(true)} style={{
             background: "linear-gradient(135deg,#a855f7,#c084fc)", border: "none", borderRadius: 10,
             padding: "10px 18px", color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer",
@@ -285,25 +285,25 @@ function CinemaOpsInner({ apiBase }) {
               {FORMATS.map(fm => <option key={fm} value={fm}>{fm}</option>)}
             </select>
             <input style={{ ...inp, width: 96 }} type="number" placeholder="Harga (auto)" value={f("price")} onChange={set("price")}
-              title="Kosongkan → harga auto-resolve per outlet × studio_type × weekday/weekend/holiday dari Cinema Price List" />
-            {btn("+ Jadwalkan", () => add("showtimes", { film_id: f("film_id"), studio_id: f("studio_id"), show_date: f("show_date"), start_time: f("start_time"), format: f("format") || "2D", price: f("price") || 0 }))}
+              title="Kosongkan → harga auto-resolve per outlet × studio_type × weekday/weekend/holiday from Cinema Price List" />
+            {btn("+ Schedulekan", () => add("showtimes", { film_id: f("film_id"), studio_id: f("studio_id"), show_date: f("show_date"), start_time: f("start_time"), format: f("format") || "2D", price: f("price") || 0 }))}
           </Form>
           <div style={{ fontSize: 11, color: "#5b6470", marginTop: -6, marginBottom: 10, padding: "0 4px", display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            💡 <b style={{ color: "#22d3ee" }}>Tip pricing:</b> <span>Kosongkan field <b>Harga</b> → backend auto-resolve per outlet × studio_type × weekday/weekend/holiday dari <b style={{ color: "#fbbf24" }}>Cinema Price List</b>. Cocok untuk multi-outlet push.</span>
+            💡 <b style={{ color: "#22d3ee" }}>Tip pricing:</b> <span>Kosongkan field <b>Harga</b> → backend auto-resolve per outlet × studio_type × weekday/weekend/holiday from <b style={{ color: "#fbbf24" }}>Cinema Price List</b>. Cocok for multi-outlet push.</span>
           </div>
 
           {/* Auto-suggest available slots — multi-select untuk bulk create */}
           <ShowtimeSlotSuggest
             base={base} filmId={f("film_id")} studioId={f("studio_id")} date={f("show_date")}
             pickedTime={f("start_time")}
-            onPick={(time) => { setForm(p => ({ ...p, start_time: time })); setMsg(`🕐 Jam ${time} terpilih — klik "+ Jadwalkan" untuk konfirmasi`); }}
+            onPick={(time) => { setForm(p => ({ ...p, start_time: time })); setMsg(`🕐 Jam ${time} terpilih — klik "+ Schedulekan" for konfirmasi`); }}
             onBulkCreate={async (times) => {
               // Guard dengan setMsg explicit (jangan silent return)
               if (!f("film_id")) { setMsg("⚠ Film belum dipilih"); return; }
               if (!f("studio_id")) { setMsg("⚠ Studio belum dipilih"); return; }
-              if (!f("show_date")) { setMsg("⚠ Tanggal belum dipilih"); return; }
-              if (!times || times.length === 0) { setMsg("⚠ No jam dipilih"); return; }
-              setMsg(`🚀 Membuat ${times.length} jam tayang…`);
+              if (!f("show_date")) { setMsg("⚠ Date belum dipilih"); return; }
+              if (!times || times.length === 0) { setMsg("⚠ No hr dipilih"); return; }
+              setMsg(`🚀 Membuat ${times.length} hr tayang…`);
               const results = { ok: [], fail: [] };
               for (const t of times) {
                 try {
@@ -401,7 +401,7 @@ function CinemaOpsInner({ apiBase }) {
                 </button>
                 <button onClick={async () => {
                   if (selectedOutlets.size === 0) { setMsg("Centang minimal 1 outlet"); return; }
-                  if (!f("film_id") || !f("show_date") || !f("start_time")) { setMsg("Film, tanggal, dan jam required di form atas"); return; }
+                  if (!f("film_id") || !f("show_date") || !f("start_time")) { setMsg("Film, tanggal, and hr required di form atas"); return; }
                   setBulkBusy(true); setMsg(""); setBulkResult(null);
                   try {
                     const r = await fetch(`${base}/showtimes/bulk`, {
@@ -496,8 +496,8 @@ function CinemaOpsInner({ apiBase }) {
                   <Badge color={DS_COLOR[ds] || "#5b6470"}>{DS_LABEL[ds] || ds}</Badge>
                   <div style={{ fontSize: 12, fontFamily: "'Geist Mono',monospace", color: "#10b981", width: 80, textAlign: "right" }}>{rp(x.price)}</div>
                   {isClosedManual
-                    ? btn("🔓 Buka lagi", () => reopenShow(x.id), "#10b981")
-                    : btn("🔒 Tutup", () => closeShow(x.id), "#f59e0b")}
+                    ? btn("🔓 Open lagi", () => reopenShow(x.id), "#10b981")
+                    : btn("🔒 Close", () => closeShow(x.id), "#f59e0b")}
                   {editBtn("showtime", x)}
                   {delBtnAsk(x, `showtimes/${x.id}`, `${x.film_title || ""} ${x.show_date} ${x.start_time}`)}
                 </Row>
@@ -529,7 +529,7 @@ function CinemaOpsInner({ apiBase }) {
                     <input style={{ ...modalInp, flex: 1 }} value={editing.data.title || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, title: e.target.value } })} />
                     <button onClick={async () => {
                       const q = editing.data.title?.trim();
-                      if (!q) { setMsg("Isi judul dulu untuk lookup TMDB"); return; }
+                      if (!q) { setMsg("Isi judul dulu for lookup TMDB"); return; }
                       setTmdbModal({ query: q, loading: true, results: [] });
                       try {
                         const r = await fetch(`${base}/tmdb/search?q=${encodeURIComponent(q)}`);
@@ -562,7 +562,7 @@ function CinemaOpsInner({ apiBase }) {
                 <Field label="Poster URL">
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     {editing.data.poster_url && <img src={editing.data.poster_url} alt="poster" style={{ width: 40, height: 60, objectFit: "cover", borderRadius: 4, border: "1px solid #30363d" }} />}
-                    <input style={{ ...modalInp, flex: 1 }} placeholder="URL atau upload file" value={editing.data.poster_url || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, poster_url: e.target.value } })} />
+                    <input style={{ ...modalInp, flex: 1 }} placeholder="URL or upload file" value={editing.data.poster_url || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, poster_url: e.target.value } })} />
                     <label style={{ background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.3)", color: "#22d3ee", borderRadius: 7, padding: "8px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
                       📤 Upload
                       <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
@@ -580,9 +580,9 @@ function CinemaOpsInner({ apiBase }) {
                     </label>
                   </div>
                 </Field>
-                <Field label="Trailer URL (YouTube atau upload file)">
+                <Field label="Trailer URL (YouTube or upload file)">
                   <div style={{ display: "flex", gap: 8 }}>
-                    <input style={{ ...modalInp, flex: 1 }} placeholder="https://www.youtube.com/watch?v=... atau /uploads/trailer.mp4" value={editing.data.trailer_url || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, trailer_url: e.target.value } })} />
+                    <input style={{ ...modalInp, flex: 1 }} placeholder="https://www.youtube.com/watch?v=... or /uploads/trailer.mp4" value={editing.data.trailer_url || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, trailer_url: e.target.value } })} />
                     <label style={{ background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.3)", color: "#22d3ee", borderRadius: 7, padding: "8px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
                       📤 Upload
                       <input type="file" accept="video/*" style={{ display: "none" }} onChange={async (e) => {
@@ -635,7 +635,7 @@ function CinemaOpsInner({ apiBase }) {
                   </select>
                 </Field>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <Field label="Tanggal"><input type="date" style={modalInp} value={editing.data.show_date || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, show_date: e.target.value } })} /></Field>
+                  <Field label="Date"><input type="date" style={modalInp} value={editing.data.show_date || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, show_date: e.target.value } })} /></Field>
                   <Field label="Jam"><input type="time" style={modalInp} value={editing.data.start_time || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, start_time: e.target.value } })} /></Field>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -847,7 +847,7 @@ function CdsBrandingPanel({ apiBase, outlets }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", letterSpacing: -0.2 }}>🎨 Cinema CDS Branding</div>
-          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Custom background image + idle message untuk layar second display per outlet</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Custom background image + idle message for layar second display per outlet</div>
         </div>
         <select value={selectedOutlet} onChange={e => setSelectedOutlet(e.target.value)}
           style={{ background: "#0a0e16", border: "1px solid #30363d", color: "#fff", borderRadius: 8, padding: "8px 12px", fontSize: 12, fontFamily: "inherit", outline: "none" }}>
@@ -870,7 +870,7 @@ function CdsBrandingPanel({ apiBase, outlets }) {
             <div style={{ fontSize: 48, lineHeight: 1, marginBottom: 8 }}>🎬</div>
             <div style={{ fontSize: 12, color: "#c084fc", letterSpacing: 3, fontFamily: "Geist Mono,monospace", fontWeight: 800 }}>karyaOS CINEMA</div>
             <div style={{ fontSize: 22, fontWeight: 900, marginTop: 4 }}>Selamat Datang</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 4 }}>{idleText || "Silakan pilih film & jadwal di counter"}</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 4 }}>{idleText || "Please pilih film & jadwal di counter"}</div>
           </div>
         </div>
       </div>
@@ -883,7 +883,7 @@ function CdsBrandingPanel({ apiBase, outlets }) {
         </label>
         <input type="text" value={bgUrl} onChange={e => setBgUrl(e.target.value)}
           onBlur={() => saveConfig(cfgKey, bgUrl)}
-          placeholder="atau paste URL https://..." style={{ ...inp, flex: 1, minWidth: 240 }} />
+          placeholder="or paste URL https://..." style={{ ...inp, flex: 1, minWidth: 240 }} />
         {bgUrl && <button onClick={clearBg} style={{ background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", color: "#fca5a5", borderRadius: 7, padding: "8px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>✕ Hapus</button>}
       </div>
 
@@ -912,16 +912,16 @@ function CdsBrandingPanel({ apiBase, outlets }) {
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 10, color: C.sub, marginBottom: 4 }}>FOOTER TEXT (default: "Tunjukkan QR di pintu masuk studio")</div>
+            <div style={{ fontSize: 10, color: C.sub, marginBottom: 4 }}>FOOTER TEXT (default: "Show QR di pintu masuk studio")</div>
             <div style={{ display: "flex", gap: 8 }}>
               <input type="text" value={ticketFooter} onChange={e => setTicketFooter(e.target.value)}
-                placeholder="Datang 15 menit sebelum jam tayang · No refund"
+                placeholder="Datang 15 min sebelum hr tayang · No refund"
                 style={{ ...inp, flex: 1 }} />
               <button onClick={async () => { try { await saveConfig(ticketFooterKey, ticketFooter); setMsg("✓ Footer tersimpan"); } catch (e) { setMsg("⚠ " + e.message); } }} style={{ background: "#22d3ee", border: "none", color: "#04303a", borderRadius: 7, padding: "8px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>💾</button>
             </div>
           </div>
         </div>
-        <div style={{ fontSize: 10, color: C.sub, marginTop: 8 }}>💡 Pakai outlet-specific atau DEFAULT untuk fallback semua outlet. Emoji support 🎬🍿✨</div>
+        <div style={{ fontSize: 10, color: C.sub, marginTop: 8 }}>💡 Pakai outlet-specific or DEFAULT for fallback semua outlet. Emoji support 🎬🍿✨</div>
       </div>
 
       {msg && <div style={{ padding: "8px 12px", background: msg.startsWith("✓") ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)", border: `1px solid ${msg.startsWith("✓") ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`, borderRadius: 8, fontSize: 12, color: msg.startsWith("✓") ? "#10b981" : "#fca5a5" }}>{msg}</div>}
@@ -951,7 +951,7 @@ function ShowtimeTemplatesPanel({ apiBase, films, studios, onChanged }) {
   const startEdit = (t) => { setEditing(t.id); setForm({ ...t, is_active: t.is_active ? 1 : 0, active_from: t.active_from || "", active_until: t.active_until || "" }); };
 
   const save = async () => {
-    if (!form.name || !form.film_id || !form.studio_id || !form.start_time) { setMsg("⚠ Nama, film, studio, jam wajib"); return; }
+    if (!form.name || !form.film_id || !form.studio_id || !form.start_time) { setMsg("⚠ Nama, film, studio, hr wajib"); return; }
     try {
       const method = editing === "new" ? "POST" : "PATCH";
       const url = editing === "new" ? `${base}/showtime-templates` : `${base}/showtime-templates/${editing}`;
@@ -987,7 +987,7 @@ function ShowtimeTemplatesPanel({ apiBase, films, studios, onChanged }) {
       const d = await r.json();
       const tot = d.results.reduce((s, r) => s + (r.created || 0), 0);
       const skip = d.results.reduce((s, r) => s + (r.skipped || 0), 0);
-      setMsg(`✓ ${d.count} templates: ${tot} created, ${skip} skipped (window ${genDays} hari)`);
+      setMsg(`✓ ${d.count} templates: ${tot} created, ${skip} skipped (window ${genDays} day)`);
       onChanged && onChanged();
     } catch (e) { setMsg("⚠ " + e.message); }
     setGenBusy(false);
@@ -1004,7 +1004,7 @@ function ShowtimeTemplatesPanel({ apiBase, films, studios, onChanged }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
         <div>
           <div style={{ fontSize: 15, fontWeight: 800 }}>🔁 Recurring Showtime Templates</div>
-          <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>Buat template jadwal berulang (mis. Sen-Jum 19:00) → auto-generate showtime untuk N hari ke depan.</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>Buat template jadwal berulang (mis. Sen-Jum 19:00) → auto-generate showtime for N day to depan.</div>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <label style={{ fontSize: 11, color: C.sub }}>Generate window:
@@ -1013,7 +1013,7 @@ function ShowtimeTemplatesPanel({ apiBase, films, studios, onChanged }) {
             </select>
           </label>
           <button onClick={generateAll} disabled={genBusy} style={{ background: "linear-gradient(135deg,#a855f7,#c084fc)", border: "none", color: "#fff", borderRadius: 8, padding: "8px 16px", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-            {genBusy ? "⏳ Generating..." : "🚀 Generate All Aktif"}
+            {genBusy ? "⏳ Generating..." : "🚀 Generate All Active"}
           </button>
           {!editing && <button onClick={start} style={{ background: "#f59e0b22", border: "1px solid #f59e0b66", color: "#fbbf24", borderRadius: 8, padding: "8px 14px", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>+ Template baru</button>}
         </div>
@@ -1057,7 +1057,7 @@ function ShowtimeTemplatesPanel({ apiBase, films, studios, onChanged }) {
               </select>
             </Field>
             <Field label="Harga (kosong=auto)"><input type="number" value={form.price || ""} onChange={e => setForm({ ...form, price: parseInt(e.target.value) || 0 })} placeholder="auto outlet pricing" style={inp} /></Field>
-            <Field label="Aktif dari (opsional)"><input type="date" value={form.active_from} onChange={e => setForm({ ...form, active_from: e.target.value })} style={inp} /></Field>
+            <Field label="Active from (opsional)"><input type="date" value={form.active_from} onChange={e => setForm({ ...form, active_from: e.target.value })} style={inp} /></Field>
             <Field label="Sampai (opsional)"><input type="date" value={form.active_until} onChange={e => setForm({ ...form, active_until: e.target.value })} style={inp} /></Field>
           </div>
           <div style={{ marginTop: 10 }}>
@@ -1190,7 +1190,7 @@ function ShowtimeSlotSuggest({ base, filmId, studioId, date, onPick, onBulkCreat
                       key={s.start}
                       type="button"
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleSelect(s.start); }}
-                      title={`Film ${s.start} → selesai ${s.end} · klik untuk pilih/lepas`}
+                      title={`Film ${s.start} → selesai ${s.end} · klik for pilih/lepas`}
                       onMouseEnter={(e) => { if (!isSelected) { e.currentTarget.style.transform = "translateY(-1px) scale(1.05)"; e.currentTarget.style.background = "rgba(16,185,129,0.25)"; } }}
                       onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0) scale(1)"; e.currentTarget.style.background = isSelected ? "#10b981" : "rgba(16,185,129,0.12)"; }}
                       style={{
@@ -1211,7 +1211,7 @@ function ShowtimeSlotSuggest({ base, filmId, studioId, date, onPick, onBulkCreat
               {selectedArr.length > 0 && (
                 <div style={{ marginTop: 10, padding: "10px 14px", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
                   <div style={{ fontSize: 12, color: "#c084fc", fontWeight: 600 }}>
-                    <b style={{ fontFamily: "'Geist Mono',monospace", color: "#fff" }}>{selectedArr.length}</b> jam dipilih: <span style={{ fontFamily: "'Geist Mono',monospace", color: "#10b981" }}>{selectedArr.join(", ")}</span>
+                    <b style={{ fontFamily: "'Geist Mono',monospace", color: "#fff" }}>{selectedArr.length}</b> hr dipilih: <span style={{ fontFamily: "'Geist Mono',monospace", color: "#10b981" }}>{selectedArr.join(", ")}</span>
                   </div>
                   <button type="button" disabled={busy}
                     onClick={async () => {
@@ -1227,7 +1227,7 @@ function ShowtimeSlotSuggest({ base, filmId, studioId, date, onPick, onBulkCreat
                       fontFamily: "inherit", letterSpacing: 0.3,
                       boxShadow: "0 4px 12px rgba(168,85,247,0.35), inset 0 1px 0 rgba(255,255,255,0.2)",
                     }}>
-                    {busy ? "⏳ Membuat…" : `🚀 Buat ${selectedArr.length} Jam Tayang Sekaligus`}
+                    {busy ? "⏳ Membuat…" : `🚀 Buat ${selectedArr.length} Jam Showing Sekaligus`}
                   </button>
                 </div>
               )}

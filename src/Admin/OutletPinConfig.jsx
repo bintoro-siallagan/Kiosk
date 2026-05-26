@@ -89,7 +89,7 @@ export default function OutletPinConfig({ apiBase = "" }) {
       <header style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 2.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>karyaOS / KROC — OUTLET PIN & GEOFENCE</div>
         <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", marginTop: 4, letterSpacing: -0.5 }}>📍 Outlet Pin Config</div>
-        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>Set lokasi outlet di peta, radius geofence, PIN manager, WhatsApp untuk alert. Super-admin (PIN dari admin_users) otomatis bypass geofence di mana saja.</div>
+        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>Set lokasi outlet di peta, radius geofence, PIN manager, WhatsApp for alert. Super-admin (PIN from admin_users) otomatis bypass geofence di mana saja.</div>
       </header>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%, 140px),1fr))", gap: 10, marginBottom: 18 }}>
@@ -100,7 +100,7 @@ export default function OutletPinConfig({ apiBase = "" }) {
       </div>
 
       {info && <div style={{ padding: "10px 14px", background: "rgba(16,185,129,0.1)", border: `1px solid ${GREEN}55`, borderRadius: 10, color: "#86efac", fontSize: 13, marginBottom: 12 }}>{info}</div>}
-      {err && <ErrorInline error={err} onRetry={load} label="Daftar outlet belum dapat dimuat" />}
+      {err && <ErrorInline error={err} onRetry={load} label="List outlet belum dapat dimuat" />}
 
       <div style={{ background: CARD_BG, border: BORDER, borderRadius: 12, overflow: "hidden" }}>
         <div style={{ padding: "12px 16px", borderBottom: BORDER, fontSize: 11, color: "#94a3b8", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700, display: "grid", gridTemplateColumns: "1fr 80px 110px 100px 110px 1fr 110px", gap: 10, alignItems: "center" }}>
@@ -143,7 +143,7 @@ export default function OutletPinConfig({ apiBase = "" }) {
         <PinEditModal
           outlet={editing}
           onClose={() => setEditing(null)}
-          onSaved={() => { setEditing(null); setInfo(`✓ Konfigurasi ${editing.outlet_name} tersimpan`); load(); setTimeout(() => setInfo(""), 4000); }}
+          onSaved={() => { setEditing(null); setInfo(`✓ Configuration ${editing.outlet_name} tersimpan`); load(); setTimeout(() => setInfo(""), 4000); }}
           API={API}
         />
       )}
@@ -151,8 +151,8 @@ export default function OutletPinConfig({ apiBase = "" }) {
       <div style={{ marginTop: 18, padding: 14, background: "rgba(168,85,247,0.05)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 10, fontSize: 12, color: "#cbd5e1", lineHeight: 1.6 }}>
         <div style={{ fontWeight: 800, color: PURPLE, marginBottom: 6 }}>💡 Cara Kerja Geofence</div>
         • <b>Warn-only:</b> system tetap terima submit, tapi mark distance &gt; radius sebagai warning di audit.<br/>
-        • <b>Enforced:</b> system <b>tolak submit</b> kalau lokasi di luar radius (HTTP 403). Manager harus dari area outlet.<br/>
-        • <b>Super-admin bypass:</b> PIN dari <code>admin_users</code> (role super-admin / admin) auto-bypass geofence — bisa submit dari mana saja.<br/>
+        • <b>Enforced:</b> system <b>tolak submit</b> kalau lokasi di luar radius (HTTP 403). Manager harus from area outlet.<br/>
+        • <b>Super-admin bypass:</b> PIN from <code>admin_users</code> (role super-admin / admin) auto-bypass geofence — bisa submit from mana saja.<br/>
         • Radius default 200m. Outlet di mall besar: set 300-500m. Outlet drive-thru kecil: set 100-150m.
       </div>
     </div>
@@ -288,7 +288,7 @@ function PinEditModal({ outlet, onClose, onSaved, API }) {
           <button onClick={onClose} style={{ width: 36, height: 36, borderRadius: 8, background: "rgba(255,255,255,0.06)", border: "none", color: "#fff", fontSize: 20, cursor: "pointer" }}>×</button>
         </div>
 
-        <Field label="🗺️ ALAMAT (untuk search)">
+        <Field label="🗺️ ALAMAT (for search)">
           <div style={{ display: "flex", gap: 6 }}>
             <input value={form.address} onChange={e => setForm({...form, address: e.target.value})} onKeyDown={e => e.key === "Enter" && searchAddress()} placeholder="cth: Plaza Indonesia, Jakarta Pusat" style={inp} />
             <button onClick={searchAddress} disabled={!form.address} style={{ padding: "8px 14px", background: CYAN, border: "none", borderRadius: 8, color: "#001620", fontSize: 12, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}>🔍 Cari</button>
@@ -297,7 +297,7 @@ function PinEditModal({ outlet, onClose, onSaved, API }) {
 
         <div style={{ marginBottom: 12 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-            <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: 0.5, fontWeight: 700 }}>📍 LOKASI DI MAP (klik untuk pin / drag marker)</div>
+            <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: 0.5, fontWeight: 700 }}>📍 LOKASI DI MAP (klik for pin / drag marker)</div>
             <button onClick={useMyLocation} style={{ padding: "4px 10px", background: "rgba(168,85,247,0.15)", border: "1px solid rgba(168,85,247,0.35)", borderRadius: 6, color: PURPLE, fontSize: 10, fontWeight: 700, cursor: "pointer" }}>📡 Pakai Lokasi Saya</button>
           </div>
           <div ref={mapRef} style={{ width: "100%", height: 340, borderRadius: 10, background: "#0f172a", border: BORDER }} />
@@ -323,13 +323,13 @@ function PinEditModal({ outlet, onClose, onSaved, API }) {
 
         <Field label="👤 NAMA MANAGER OUTLET"><input value={form.manager_name} onChange={e => setForm({...form, manager_name: e.target.value})} placeholder="Nama" style={inp} /></Field>
         <Field label={`🔑 PIN MANAGER (kosongkan kalau gak ganti, default 1234)`}><input type="password" value={form.manager_pin} onChange={e => setForm({...form, manager_pin: e.target.value.replace(/\D/g,"").slice(0,6)})} placeholder="4-6 digit" style={{...inp, letterSpacing: 8, textAlign: "center"}} /></Field>
-        <Field label="💬 WHATSAPP MANAGER (untuk anomaly alert)"><input value={form.whatsapp_number} onChange={e => setForm({...form, whatsapp_number: e.target.value})} placeholder="cth: 6281234567890" style={inp} /></Field>
+        <Field label="💬 WHATSAPP MANAGER (for anomaly alert)"><input value={form.whatsapp_number} onChange={e => setForm({...form, whatsapp_number: e.target.value})} placeholder="cth: 6281234567890" style={inp} /></Field>
 
         {err && <div style={{ padding: 10, background: "rgba(239,68,68,0.1)", border: `1px solid ${RED}55`, borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 12 }}>⚠ {err}</div>}
 
         <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
           <button onClick={onClose} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#fff", fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
-          <button onClick={save} disabled={busy} style={{ flex: 2, padding: 12, background: `linear-gradient(135deg,${PURPLE},#7c3aed)`, border: "none", borderRadius: 10, color: "#fff", fontWeight: 800, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>{busy ? "⏳ Menyimpan…" : "💾 Simpan Konfigurasi"}</button>
+          <button onClick={save} disabled={busy} style={{ flex: 2, padding: 12, background: `linear-gradient(135deg,${PURPLE},#7c3aed)`, border: "none", borderRadius: 10, color: "#fff", fontWeight: 800, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>{busy ? "⏳ Menyimpan…" : "💾 Simpan Configuration"}</button>
         </div>
       </div>
     </div>

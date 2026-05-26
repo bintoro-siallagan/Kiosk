@@ -169,7 +169,7 @@ export default function AdminUsers({ apiBase = "" }) {
               ) : !u.active ? (
                 <span style={chip("#64748b")}>Inactive</span>
               ) : (
-                <span style={chip(GREEN)}>Aktif</span>
+                <span style={chip(GREEN)}>Active</span>
               )}
             </div>
             <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>

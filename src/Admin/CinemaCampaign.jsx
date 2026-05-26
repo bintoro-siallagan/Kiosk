@@ -73,7 +73,7 @@ export default function CinemaCampaign({ apiBase = "" }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14, marginBottom: 14 }}>
         <div>
           <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🎉 Cinema Campaign Engine</div>
-          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Premiere · Midnight · Family · Student Day. Quick template untuk launch cepat.</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Premiere · Midnight · Family · Student Day. Quick template for launch cepat.</div>
         </div>
         {!editing && (
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -102,7 +102,7 @@ export default function CinemaCampaign({ apiBase = "" }) {
                 {films.map(f => <option key={f.id} value={f.id}>{f.title}</option>)}
               </select>
             </Field>
-            <Field label="Mulai"><input type="date" value={form.start_date || ""} onChange={e => setForm({ ...form, start_date: e.target.value })} style={inp} /></Field>
+            <Field label="Start"><input type="date" value={form.start_date || ""} onChange={e => setForm({ ...form, start_date: e.target.value })} style={inp} /></Field>
             <Field label="Sampai"><input type="date" value={form.end_date || ""} onChange={e => setForm({ ...form, end_date: e.target.value })} style={inp} /></Field>
             <Field label="Hari berlaku (CSV)"><input value={form.applicable_days || ""} onChange={e => setForm({ ...form, applicable_days: e.target.value })} placeholder="monday,tuesday / weekend" style={inp} /></Field>
             <Field label="Time band mulai">
@@ -123,7 +123,7 @@ export default function CinemaCampaign({ apiBase = "" }) {
                 <input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Aktif
               </label>
             </Field>
-            <Field label="Deskripsi" wide><input value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} style={inp} /></Field>
+            <Field label="Description" wide><input value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} style={inp} /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
             <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>

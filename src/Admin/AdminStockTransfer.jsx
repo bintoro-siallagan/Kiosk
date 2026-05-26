@@ -65,7 +65,7 @@ export default function AdminStockTransfer({ apiBase = "" }) {
       <div style={S.kpiRow}>
         <Kpi label="Total Transfer" v={String(s.total)} c={AC} />
         <Kpi label="Diminta" v={String(s.requested)} c="#f59e0b" />
-        <Kpi label="Dikirim" v={String(s.in_transit)} c="#3b82f6" />
+        <Kpi label="Sent" v={String(s.in_transit)} c="#3b82f6" />
         <Kpi label="Diterima" v={String(s.received)} c="#10b981" />
       </div>
       {msg ? <div style={{ fontSize: 12, margin: "8px 2px", color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
@@ -87,7 +87,7 @@ export default function AdminStockTransfer({ apiBase = "" }) {
                     </div>
                   </div>
                   <span style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}55`, borderRadius: 5, padding: "3px 9px", fontFamily: "'Geist Mono',monospace" }}>{st.l}</span>
-                  {t.status === "requested" && <button onClick={() => act(t, "send", `✓ ${t.transfer_no} dikirim`)} style={S.btn("#3b82f6")}>📤 Kirim</button>}
+                  {t.status === "requested" && <button onClick={() => act(t, "send", `✓ ${t.transfer_no} dikirim`)} style={S.btn("#3b82f6")}>📤 Send</button>}
                   {t.status === "in_transit" && <button onClick={() => act(t, "receive", `✓ ${t.transfer_no} diterima`)} style={S.btn("#10b981")}>📥 Terima</button>}
                   <button onClick={() => setEditing({ ...t })} title="Edit" style={S.btnEdit}>✏️</button>
                   <button onClick={() => remove(t)} title="Delete" style={S.btnDel}>🗑️</button>

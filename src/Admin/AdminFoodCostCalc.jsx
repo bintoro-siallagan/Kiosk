@@ -93,7 +93,7 @@ export default function AdminFoodCostCalc({ apiBase = "" }) {
               {d.ingredients.map(i => <option key={i.sku} value={i.sku}>{i.name} ({fmtRp(i.cost_per_unit)}/{i.unit})</option>)}
             </select>
             <input value={qty} onChange={e => setQty(e.target.value)} placeholder="Qty" type="number" style={S.input} />
-            <button onClick={addRow} style={S.btnGhost}>+ Bahan</button>
+            <button onClick={addRow} style={S.btnGhost}>+ Material</button>
           </div>
           <div style={{ marginTop: 10 }}>
             {rows.length === 0 ? <div style={{ fontSize: 12, color: "#5b6470" }}>No bahan.</div> : rows.map((r, i) => (

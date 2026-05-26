@@ -37,7 +37,7 @@ export default function AdminLoyaltyPromo({ apiBase = "" }) {
       <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 14, marginTop: 14, alignItems: "start" }}>
         {/* Promo performance */}
         <div style={S.card}>
-          <div style={S.kicker}>🏷️ PROMO PERFORMANCE — dari order nyata</div>
+          <div style={S.kicker}>🏷️ PROMO PERFORMANCE — from order nyata</div>
           <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
             <thead>
               <tr style={{ color: "#5b6470", fontSize: 10, textAlign: "left" }}>

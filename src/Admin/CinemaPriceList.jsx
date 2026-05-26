@@ -76,7 +76,7 @@ export default function CinemaPriceList({ apiBase = "" }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14, marginBottom: 14 }}>
         <div>
           <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>💲 Cinema Price List Master</div>
-          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Harga per outlet × studio × format × hari × waktu · Resolution: specificity score (NULL = wildcard).</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Harga per outlet × studio × format × day × waktu · Resolution: specificity score (NULL = wildcard).</div>
         </div>
         {!editing && <button onClick={startNew} style={B.add}>＋ Aturan harga</button>}
       </div>
@@ -119,7 +119,7 @@ export default function CinemaPriceList({ apiBase = "" }) {
               </select>
             </Field>
             <Field label="Harga (Rp)"><input type="number" value={form.price} onChange={e => setForm({ ...form, price: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
-            <Field label="Catatan" wide><input value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} style={inp} /></Field>
+            <Field label="Notes" wide><input value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} style={inp} /></Field>
             <Field label="Status">
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
                 <input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Aktif
@@ -154,8 +154,8 @@ export default function CinemaPriceList({ apiBase = "" }) {
               {FORMATS.map(f => <option key={f} value={f}>{f}</option>)}
             </select>
           </Field>
-          <Field label="Tanggal"><input type="date" value={test.date} onChange={e => setTest({ ...test, date: e.target.value })} style={inp} /></Field>
-          <Field label="Waktu"><input type="time" value={test.time} onChange={e => setTest({ ...test, time: e.target.value })} style={inp} /></Field>
+          <Field label="Date"><input type="date" value={test.date} onChange={e => setTest({ ...test, date: e.target.value })} style={inp} /></Field>
+          <Field label="Time"><input type="time" value={test.time} onChange={e => setTest({ ...test, time: e.target.value })} style={inp} /></Field>
           <button onClick={runResolve} style={{ ...B.save, padding: "8px 16px" }}>Cek →</button>
         </div>
         {testResult && (

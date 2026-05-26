@@ -183,8 +183,8 @@ function ZonesTab({ base, showToast }) {
             <Field label="Per km fee (Rp)"><input type="number" value={form.per_km_fee} onChange={e => setForm({ ...form, per_km_fee: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
             <Field label="Min order (Rp)"><input type="number" value={form.min_order} onChange={e => setForm({ ...form, min_order: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
             <Field label="Free delivery threshold (Rp)"><input type="number" value={form.free_delivery_threshold || ""} onChange={e => setForm({ ...form, free_delivery_threshold: e.target.value })} style={inp} /></Field>
-            <Field label="ETA (menit)"><input type="number" value={form.estimated_minutes} onChange={e => setForm({ ...form, estimated_minutes: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
-            <Field label="Status"><label style={{ display: "flex", gap: 8, fontSize: 13, alignItems: "center" }}><input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Aktif</label></Field>
+            <Field label="ETA (min)"><input type="number" value={form.estimated_minutes} onChange={e => setForm({ ...form, estimated_minutes: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
+            <Field label="Status"><label style={{ display: "flex", gap: 8, fontSize: 13, alignItems: "center" }}><input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Active</label></Field>
             <Field label="Postal codes (CSV)" wide><input value={form.postal_codes} onChange={e => setForm({ ...form, postal_codes: e.target.value })} style={inp} /></Field>
             <Field label="Keyword area (CSV)" wide><input value={form.area_keywords} onChange={e => setForm({ ...form, area_keywords: e.target.value })} placeholder="paskal,sayati,setiabudi" style={inp} /></Field>
           </div>

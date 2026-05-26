@@ -86,7 +86,7 @@ export default function FnbDriverTracking({ apiBase = "" }) {
                   <div>📍 <b>{d.last_lat?.toFixed(6)}, {d.last_lng?.toFixed(6)}</b></div>
                   <div style={{ color: C.dim, marginTop: 3 }}>⏱ Last ping {fmtAge(d.ping_age_sec)}</div>
                   <a href={`https://maps.google.com/?q=${d.last_lat},${d.last_lng}`} target="_blank" rel="noopener noreferrer"
-                     style={{ fontSize: 11, color: "#22d3ee", textDecoration: "none", marginTop: 4, display: "inline-block" }}>🗺️ Buka Google Maps →</a>
+                     style={{ fontSize: 11, color: "#22d3ee", textDecoration: "none", marginTop: 4, display: "inline-block" }}>🗺️ Open Google Maps →</a>
                 </>
               ) : (
                 <div style={{ color: C.dim }}>📍 No ping</div>
@@ -101,7 +101,7 @@ export default function FnbDriverTracking({ apiBase = "" }) {
           </div>
         ))}
       </div>
-      {drivers.length === 0 && <EmptyState icon="🚴" title="No driver aktif" desc="Klik '+ Tambah Driver' untuk mulai." />}
+      {drivers.length === 0 && <EmptyState icon="🚴" title="No driver aktif" desc="Klik '+ Tambah Driver' for mulai." />}
 
       {editing && (
         <Modal title={editing.id ? `Edit Driver — ${editing.name}` : "+ Tambah Driver Baru"} onClose={() => setEditing(null)}>

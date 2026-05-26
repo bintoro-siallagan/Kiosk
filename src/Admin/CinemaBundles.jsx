@@ -86,7 +86,7 @@ export default function CinemaBundles({ apiBase = "" }) {
             <Field label="Harga (Rp)">
               <input type="number" value={form.price} onChange={e => setForm({ ...form, price: parseInt(e.target.value, 10) || 0 })} style={inp} />
             </Field>
-            <Field label="Deskripsi" wide>
+            <Field label="Description" wide>
               <input value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Popcorn medium + Coca-Cola medium" style={inp} />
             </Field>
             <Field label="Urutan tampil">
@@ -95,7 +95,7 @@ export default function CinemaBundles({ apiBase = "" }) {
             <Field label="Status">
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13 }}>
                 <input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} />
-                <span>Aktif (tampil di kiosk)</span>
+                <span>Active (tampil di kiosk)</span>
               </label>
             </Field>
             <Field label="🌐 Outlet (kosong = semua outlet)" wide>
@@ -116,12 +116,12 @@ export default function CinemaBundles({ apiBase = "" }) {
                   );
                 })}
               </div>
-              <div style={{ fontSize: 10, color: C.dim, marginTop: 4 }}>Centang outlet yang menjual bundle ini. Kosongkan untuk global (semua outlet).</div>
+              <div style={{ fontSize: 10, color: C.dim, marginTop: 4 }}>Centang outlet yang menjual bundle ini. Kosongkan for global (semua outlet).</div>
             </Field>
             <Field label="🖼️ Image URL (opsional)" wide>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 {form.image_url && <img src={form.image_url.startsWith("/") ? apiBase + form.image_url : form.image_url} alt="" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 6, border: `1px solid ${C.border}` }} />}
-                <input value={form.image_url || ""} onChange={e => setForm({ ...form, image_url: e.target.value })} placeholder="atau upload via tombol →" style={{ ...inp, flex: 1 }} />
+                <input value={form.image_url || ""} onChange={e => setForm({ ...form, image_url: e.target.value })} placeholder="or upload via tombol →" style={{ ...inp, flex: 1 }} />
                 <label style={{ background: "#22d3ee22", border: "1px solid #22d3ee66", color: "#22d3ee", borderRadius: 8, padding: "8px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" }}>
                   📤 Upload
                   <input type="file" accept="image/*" style={{ display: "none" }} onChange={async (e) => {
@@ -158,7 +158,7 @@ export default function CinemaBundles({ apiBase = "" }) {
           <span style={{ width: 150, textAlign: "right" }}>ACTIONS</span>
         </div>
         {rows.length === 0 ? (
-          <div style={{ padding: "22px 14px", textAlign: "center", color: C.sub, fontSize: 13 }}>No bundle. Klik "Bundle baru" untuk membuat.</div>
+          <div style={{ padding: "22px 14px", textAlign: "center", color: C.sub, fontSize: 13 }}>No bundle. Klik "Bundle baru" for membuat.</div>
         ) : rows.map(b => (
           <div key={b.id} style={{ ...row, padding: "12px 14px", borderBottom: `1px solid ${C.border}` }}>
             <span style={{ width: 50, fontFamily: "'Geist Mono',monospace", fontSize: 12, color: C.dim }}>{b.id}</span>

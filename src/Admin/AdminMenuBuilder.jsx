@@ -290,7 +290,7 @@ function PackageForm({initial, onClose}) {
           <b style={{color: savings > 0 ? '#34d399' : '#f87171'}}>
             Savings {fmtIDR(savings)} ({savingsPct.toFixed(1)}%)
           </b>
-          {savings < 0 && <div style={{color:'#f87171', fontSize:12, marginTop:4}}>⚠️ Package price LEBIH MAHAL dari individual!</div>}
+          {savings < 0 && <div style={{color:'#f87171', fontSize:12, marginTop:4}}>⚠️ Package price LEBIH MAHAL from individual!</div>}
         </div>
 
         <div style={{marginTop:16}}>
@@ -300,7 +300,7 @@ function PackageForm({initial, onClose}) {
         </div>
 
         <div style={{marginTop:16, padding:12, background:'#0a1422', borderRadius:8, fontSize:12, color:'#93c5fd'}}>
-          <b>Cara kerja:</b> Pas package terjual, sistem auto-expand → consume BOM dari setiap menu items × qty. Stock di warehouse otomatis berkurang sesuai recipe gabungan. <code>is_swappable</code> reserved untuk fitur masa depan (customer ganti item dengan kategori sama).
+          <b>Cara kerja:</b> Pas package terjual, sistem auto-expand → consume BOM from setiap menu items × qty. Stock di warehouse otomatis berkurang sesuai recipe gabungan. <code>is_swappable</code> reserved untuk fitur masa depan (customer ganti item dengan kategori sama).
         </div>
       </div>
     </div>

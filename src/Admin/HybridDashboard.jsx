@@ -60,7 +60,7 @@ export default function HybridDashboard({ apiBase = "", onNavigate }) {
           <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 22, fontWeight: 800, letterSpacing: -0.5 }}>🔀 Hybrid Dashboard</div>
           <span style={{ padding: "3px 10px", background: "rgba(34,211,238,0.12)", border: "1px solid rgba(34,211,238,0.3)", borderRadius: 999, fontSize: 11, color: PALETTE.cyan, fontWeight: 800, letterSpacing: 1 }}>F&B + CINEMA</span>
         </div>
-        <div style={{ fontSize: 12, color: PALETTE.sub, marginBottom: 14 }}>Company dengan dual vertical — switch view atau lihat combined.</div>
+        <div style={{ fontSize: 12, color: PALETTE.sub, marginBottom: 14 }}>Company with dual vertical — switch view or lihat combined.</div>
         <div style={{ display: "inline-flex", gap: 4, background: "rgba(255,255,255,0.04)", border: `1px solid ${PALETTE.border}`, borderRadius: 12, padding: 3 }}>
           {[
             { v: "combined", l: "📊 Combined", c: PALETTE.cyan },
@@ -111,7 +111,7 @@ function CombinedView({ loading, data }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 12, marginBottom: 20 }}>
         <KPI label="💰 Revenue Hari Ini" value={rp(totalRevToday)} color={PALETTE.green} sub="F&B + Cinema" />
         <KPI label="📈 Revenue 30 Hari" value={rp(totalRevMonth)} color={PALETTE.cyan} sub="combined" />
-        <KPI label="🛒 Transaksi Hari Ini" value={totalTxToday} color={PALETTE.purple} sub="F&B + Cinema" />
+        <KPI label="🛒 Transaction Hari Ini" value={totalTxToday} color={PALETTE.purple} sub="F&B + Cinema" />
         <KPI label="🍔 vs 🎬" value={`${fnbPct}% / ${cinemaPct}%`} color={PALETTE.amber} sub="F&B vs Cinema split" />
       </div>
 

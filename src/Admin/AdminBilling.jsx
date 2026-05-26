@@ -27,7 +27,7 @@ const FEATURE_GROUPS = [
   { name: "🏆 Loyalty & Promo",   codes: ["loyalty","promo","reward","membership","customer_intel"], desc: "Membership tier + Promo Code + Reward + CRM" },
   { name: "📦 Inventory & Stock", codes: ["inventory","item_master","stock_opname","goods_received","goods_delivery","supplier","procurement","auto_reorder","batch_tracking","production"], desc: "Stock Opname + Item Master + Auto-Reorder + Supplier" },
   { name: "💰 Finance & Accounting", codes: ["finance","finance_center","ar","ap","journal","gl","coa","budget","tax","cash_flow","reconciliation","fin_statements","period_closing","food_cost"], desc: "GL + AR/AP + Budget + Tax + Reconciliation + Statements" },
-  { name: "👥 HR & Payroll",      codes: ["hr","hris","payroll","shift_roster","attendance","talenta","motivation"], desc: "Karyawan + Payroll + Shift + Talenta sync" },
+  { name: "👥 HR & Payroll",      codes: ["hr","hris","payroll","shift_roster","attendance","talenta","motivation"], desc: "Employee + Payroll + Shift + Talenta sync" },
   { name: "🎯 Marketing & CRM",   codes: ["marketing","campaign","crm","broadcast","geo_engagement","clv_churn"], desc: "Kampanye + Broadcast + Geo Engagement + Churn Analysis" },
   { name: "🏪 Multi-Outlet & Field Ops", codes: ["multi_outlet","remote_ops","launch","service_visit","incidents"], desc: "Multi-outlet + KROC + KOLR + Service Visit + Incidents" },
   { name: "🎬 Cinema Suite",      codes: ["cinema_all"], desc: "Cinema POS + Showtime + Loyalty + Subscription + Party + Pajak Hiburan" },
@@ -318,7 +318,7 @@ function PlansCatalog({ plans, currentPlan, onUpgrade }) {
             <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 14 }}>{p.description}</div>
 
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", fontFamily: "'Geist Mono',monospace" }}>{fmtIDR(p.monthly_price_idr)}<span style={{ fontSize: 12, color: "#64748b", fontWeight: 400 }}> / bulan</span></div>
+              <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", fontFamily: "'Geist Mono',monospace" }}>{fmtIDR(p.monthly_price_idr)}<span style={{ fontSize: 12, color: "#64748b", fontWeight: 400 }}> / month</span></div>
               <div style={{ fontSize: 11, color: GREEN, marginTop: 2 }}>atau {fmtIDR(p.annual_price_idr)}/tahun (hemat 2 bulan)</div>
             </div>
 
@@ -407,7 +407,7 @@ function TenantView({ my, plans, API }) {
           </div>
           <div style={{ textAlign: "right" }}>
             <div style={{ fontSize: 32, fontWeight: 900, color: "#fff", fontFamily: "'Geist Mono',monospace" }}>{fmtIDR(t.amount_idr)}</div>
-            <div style={{ fontSize: 11, color: "#94a3b8" }}>per {t.billing_cycle === "annual" ? "tahun" : "bulan"}</div>
+            <div style={{ fontSize: 11, color: "#94a3b8" }}>per {t.billing_cycle === "annual" ? "year" : "month"}</div>
           </div>
         </div>
 
@@ -554,7 +554,7 @@ function EditTenantModal({ tenant, plans, onClose, onSaved, API }) {
         <Field label="🔄 BILLING CYCLE">
           <select value={cycle} onChange={e => setCycle(e.target.value)} style={inp}>
             <option value="monthly">Monthly</option>
-            <option value="annual">Annual (hemat 2 bulan)</option>
+            <option value="annual">Annual (hemat 2 month)</option>
           </select>
         </Field>
         <Field label="📊 STATUS">

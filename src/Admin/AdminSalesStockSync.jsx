@@ -10,7 +10,7 @@ const ago = (ts) => {
   if (m < 1) return "baru saja";
   if (m < 60) return m + " mnt lalu";
   const h = Math.floor(m / 60);
-  return h < 24 ? h + " jam lalu" : Math.floor(h / 24) + " hari lalu";
+  return h < 24 ? h + " hr lalu" : Math.floor(h / 24) + " day lalu";
 };
 
 export default function AdminSalesStockSync({ apiBase = "" }) {

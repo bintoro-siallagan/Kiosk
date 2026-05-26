@@ -32,7 +32,7 @@ export default function FnbRecipe({ apiBase = "" }) {
     showToast("Recipe diupdate"); setEditing(null); load();
   };
   const remove = async (r) => {
-    if (!(await confirm({ title: `Hapus ingredient "${r.ingredient_name}"?`, message: `dari recipe "${r.menu_item_name}"`, danger: true, okLabel: "Delete" }))) return;
+    if (!(await confirm({ title: `Hapus ingredient "${r.ingredient_name}"?`, message: `from recipe "${r.menu_item_name}"`, danger: true, okLabel: "Delete" }))) return;
     await fetch(`${base}/recipes/${r.id}`, { method: "DELETE" }); load();
     undoToast(`Ingredient "${r.ingredient_name}" dihapus`, async () => {
       await fetch(`${base}/recipes`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(r) });
@@ -49,7 +49,7 @@ export default function FnbRecipe({ apiBase = "" }) {
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🍱 F&B Recipe BOM</div>
-        <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Ingredient + qty per menu item · saat menu terjual → POS panggil /recipes/deduct → auto-log ke ingredient_movements.</div>
+        <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Ingredient + qty per menu item · saat menu terjual → POS panggil /recipes/deduct → auto-log to ingredient_movements.</div>
       </div>
       <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
         {[["recipes", "🧪 Recipes"], ["movements", "📜 Movements"]].map(([id, l]) => (
@@ -66,7 +66,7 @@ export default function FnbRecipe({ apiBase = "" }) {
               <Field label="Ingredient"><input value={form.ingredient_name} onChange={e => setForm({ ...form, ingredient_name: e.target.value })} placeholder="Beras" style={inp} /></Field>
               <Field label="Qty / porsi"><input type="number" step="0.001" value={form.qty} onChange={e => setForm({ ...form, qty: e.target.value })} style={inp} /></Field>
               <Field label="Unit"><input value={form.unit} onChange={e => setForm({ ...form, unit: e.target.value })} placeholder="kg" style={inp} /></Field>
-              <Field label="Catatan"><input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} style={inp} /></Field>
+              <Field label="Notes"><input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} style={inp} /></Field>
               <button onClick={add} style={B.save}>+</button>
             </div>
           </div>
@@ -128,7 +128,7 @@ export default function FnbRecipe({ apiBase = "" }) {
               <Field label="Unit"><input value={editing.unit || ""} onChange={e => setEditing({ ...editing, unit: e.target.value })} style={inp} /></Field>
             </div>
             <div style={{ marginTop: 8 }}>
-              <Field label="Catatan"><input value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} style={inp} /></Field>
+              <Field label="Notes"><input value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} style={inp} /></Field>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
               <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>

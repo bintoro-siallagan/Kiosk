@@ -41,7 +41,7 @@ export default function FnbCombo({ apiBase = "" }) {
       <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <div>
           <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🍔 F&B Combo / Set Meal</div>
-          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Bundle item: main + side + drink dengan harga combo. Optional swappable.</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Bundle item: main + side + drink with harga combo. Optional swappable.</div>
         </div>
         {!editing && <button onClick={() => { setEditing("new"); setForm(empty); }} style={B.add}>＋ Combo baru</button>}
       </div>
@@ -56,8 +56,8 @@ export default function FnbCombo({ apiBase = "" }) {
             <Field label="Sampai"><input type="time" value={form.available_to} onChange={e => setForm({ ...form, available_to: e.target.value })} style={inp} /></Field>
             <Field label="Hari berlaku"><input value={form.applicable_days} onChange={e => setForm({ ...form, applicable_days: e.target.value })} placeholder="kosong = semua" style={inp} /></Field>
             <Field label="Image URL" wide><input value={form.image_url} onChange={e => setForm({ ...form, image_url: e.target.value })} style={inp} /></Field>
-            <Field label="Deskripsi" wide><textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2} style={{ ...inp, resize: "vertical" }} /></Field>
-            <Field label="Status"><label style={{ display: "flex", gap: 8, fontSize: 13, alignItems: "center" }}><input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Aktif</label></Field>
+            <Field label="Description" wide><textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={2} style={{ ...inp, resize: "vertical" }} /></Field>
+            <Field label="Status"><label style={{ display: "flex", gap: 8, fontSize: 13, alignItems: "center" }}><input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Active</label></Field>
           </div>
           <div style={{ marginTop: 14, paddingTop: 10, borderTop: `1px solid ${C.border}` }}>
             <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>ITEMS DALAM COMBO</div>
@@ -86,7 +86,7 @@ export default function FnbCombo({ apiBase = "" }) {
         </div>
       )}
       {rows.length === 0 ? (
-        <EmptyState icon="🍔" title="No combo" desc="Buat combo (set meal) untuk menggabungkan beberapa item jadi 1 harga bundle. Mis: Paket Nasi Goreng = main + drink + dessert."
+        <EmptyState icon="🍔" title="No combo" desc="Buat combo (set meal) for menggabungkan beberapa item jadi 1 harga bundle. Mis: Paket Nasi Goreng = main + drink + dessert."
           action={!editing ? { label: "＋ Buat combo pertama", onClick: () => { setEditing("new"); setForm(empty); }, color: "#f59e0b" } : null} />
       ) : (
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(320px,1fr))", gap: 12 }}>

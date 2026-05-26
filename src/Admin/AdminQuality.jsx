@@ -81,7 +81,7 @@ export default function AdminQuality({ apiBase = "" }) {
           <input value={form.score} onChange={e => setForm({ ...form, score: e.target.value })} placeholder="Skor 0-100" type="number" style={S.input} />
           <button onClick={add} style={S.btn}>+ Inspeksi</button>
         </div>
-        <input value={form.findings} onChange={e => setForm({ ...form, findings: e.target.value })} placeholder="Temuan (pisah dengan enter / koma — opsional)" style={{ ...S.input, width: "100%", marginTop: 8 }} />
+        <input value={form.findings} onChange={e => setForm({ ...form, findings: e.target.value })} placeholder="Temuan (pisah with enter / koma — opsional)" style={{ ...S.input, width: "100%", marginTop: 8 }} />
         {msg ? <div style={{ fontSize: 12, marginTop: 8, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
       </div>
 

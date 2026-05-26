@@ -128,7 +128,7 @@ export default function AdminBudget({ apiBase = "" }) {
               </label>
               <label style={{ fontSize: 11, color: "#9ca3af" }}>
                 Catatan
-                <textarea value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} placeholder="Catatan opsional" rows={2} style={{ ...modalInp, marginTop: 4, resize: "vertical", fontFamily: "inherit" }} />
+                <textarea value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} placeholder="Notes opsional" rows={2} style={{ ...modalInp, marginTop: 4, resize: "vertical", fontFamily: "inherit" }} />
               </label>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>

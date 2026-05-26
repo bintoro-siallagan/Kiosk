@@ -35,7 +35,7 @@ export default function AdminMarketingBehavior({ apiBase = "" }) {
         <Kpi label="Total Order" v={s.total_orders.toLocaleString("id-ID")} c={AC} />
         <Kpi label="Avg Spending" v={fmtRp(s.avg_spending)} c="#fbbf24" />
         <Kpi label="Upsell Rate" v={s.upsell_rate + "%"} c="#10b981" sub="order pakai add-on" />
-        <Kpi label="Peak" v={`${String(s.peak_hour).padStart(2, "0")}:00`} c="#f59e0b" sub={`hari ${s.peak_day}`} />
+        <Kpi label="Peak" v={`${String(s.peak_hour).padStart(2, "0")}:00`} c="#f59e0b" sub={`day ${s.peak_day}`} />
       </div>
 
       {/* Jam favorit */}

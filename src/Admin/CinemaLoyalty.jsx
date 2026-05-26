@@ -30,7 +30,7 @@ export default function CinemaLoyalty({ apiBase = "" }) {
 
   const lookup = useCallback(async (phoneInput) => {
     const phone = String(phoneInput || searchPhone).replace(/[^0-9]/g, "");
-    if (!phone) { showMsg("Masukkan nomor HP", "err"); return; }
+    if (!phone) { showMsg("Enter nomor HP", "err"); return; }
     setLoading(true);
     try {
       const r = await fetch(`${base}/loyalty/${phone}`);
@@ -138,14 +138,14 @@ export default function CinemaLoyalty({ apiBase = "" }) {
             placeholder="No. HP member (08...)" style={{ ...inp, flex: 1, minWidth: 200 }}
             onKeyDown={e => e.key === "Enter" && lookup()} />
           <button onClick={() => lookup()} style={B.lookup}>🔍 Cari Member</button>
-          <button onClick={() => { setMember(null); setSearchPhone(""); setForm({ customer_phone: searchPhone }); }} style={B.add}>＋ Daftar Baru</button>
+          <button onClick={() => { setMember(null); setSearchPhone(""); setForm({ customer_phone: searchPhone }); }} style={B.add}>＋ List Baru</button>
         </div>
       </div>
 
       {/* Register form */}
       {!member && form.customer_phone && (
         <div style={{ background: C.card, border: `1px solid #10b98166`, borderRadius: 14, padding: 16, marginBottom: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#10b981", marginBottom: 10 }}>＋ Daftar Member Baru</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "#10b981", marginBottom: 10 }}>＋ List Member Baru</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <Field label="No. HP*"><input value={form.customer_phone || ""} onChange={e => setForm({ ...form, customer_phone: e.target.value })} style={inp} /></Field>
             <Field label="Nama*"><input value={form.customer_name || ""} onChange={e => setForm({ ...form, customer_name: e.target.value })} style={inp} /></Field>

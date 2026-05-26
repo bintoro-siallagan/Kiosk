@@ -31,7 +31,7 @@ export default function CinemaClosingReport({ apiBase = "" }) {
 
   const emailHQ = async () => {
     if (!data) return;
-    const email = prompt("Email HQ untuk kirim Z-report:", "owner@example.com");
+    const email = prompt("Email HQ for kirim Z-report:", "owner@example.com");
     if (!email) return;
     try {
       const r = await fetch(`${apiBase}/api/notification/email`, {
@@ -42,7 +42,7 @@ export default function CinemaClosingReport({ apiBase = "" }) {
           html: buildHtmlReport(data),
         }),
       });
-      if (r.ok) alert("✓ Email dikirim ke " + email);
+      if (r.ok) alert("✓ Email dikirim to " + email);
       else alert("⚠ Gagal kirim email (cek SMTP config admin)");
     } catch (e) { alert("⚠ " + e.message); }
   };

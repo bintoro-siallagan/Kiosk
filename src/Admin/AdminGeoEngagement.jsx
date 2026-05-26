@@ -88,7 +88,7 @@ export default function AdminGeoEngagement({ apiBase = "" }) {
             <Stat label="Self-Service" v={e.self_service_rate + "%"} c="#a855f7" />
             <Stat label="QR Engagement" v={e.qr_rate + "%"} c="#10b981" />
             <Stat label="Feedback Diterima" v={String(e.feedback_count)} c="#eab308" />
-            <Stat label="Member Aktif" v={String(e.members)} c="#3b82f6" />
+            <Stat label="Member Active" v={String(e.members)} c="#3b82f6" />
           </div>
         </div>
       </div>

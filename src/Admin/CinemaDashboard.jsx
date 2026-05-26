@@ -84,7 +84,7 @@ export default function CinemaDashboard({ apiBase }) {
         <KpiCard label="REVENUE" value={rp(k.revenue)} sub={`${k.tickets} tiket`} color="#10b981" icon="💰" />
         <KpiCard label="TIKET TERJUAL" value={k.tickets || 0} sub={`${k.purchases} transaksi`} color="#fbbf24" icon="🎟️" />
         <KpiCard label="HARGA RATA-RATA" value={rp(k.avg_ticket_price)} sub="per tiket" color="#22d3ee" icon="📊" />
-        <KpiCard label="SHOWTIME AKTIF" value={k.active_showtimes || 0} sub={period === "today" ? "hari ini" : `${period}`} color="#a855f7" icon="🗓️" />
+        <KpiCard label="SHOWTIME AKTIF" value={k.active_showtimes || 0} sub={period === "today" ? "day ini" : `${period}`} color="#a855f7" icon="🗓️" />
       </div>
 
       {/* Two-column: by_outlet + top_films */}
@@ -172,7 +172,7 @@ export default function CinemaDashboard({ apiBase }) {
         </Panel>
 
         {/* Payment Method */}
-        <Panel title="💳 Metode Bayar" color="#a855f7">
+        <Panel title="💳 Metode Pay" color="#a855f7">
           {data.by_payment_method?.length > 0 ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {data.by_payment_method.map(m => {

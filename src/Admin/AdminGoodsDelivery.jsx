@@ -49,7 +49,7 @@ export default function AdminGoodsDelivery({ apiBase = "" }) {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ to_outlet: toOutlet, po_ref: poRef, shipped_by: "Warehouse", items: lines }),
     }).then(r => r.json()).then(j => {
-      if (j.ok) { setMsg("✓ " + j.gd_number + " dikirim ke " + toOutlet); setLines([]); setToOutlet(""); setPoRef(""); load(); }
+      if (j.ok) { setMsg("✓ " + j.gd_number + " dikirim to " + toOutlet); setLines([]); setToOutlet(""); setPoRef(""); load(); }
       else setMsg(j.error || "gagal mengirim");
     }).catch(e => setMsg(String(e)));
   };
@@ -150,7 +150,7 @@ export default function AdminGoodsDelivery({ apiBase = "" }) {
             ))}
           </div>
         )}
-        <button onClick={ship} style={{ ...S.btnPrimary, marginTop: 10 }}>🚚 Kirim ke Outlet</button>
+        <button onClick={ship} style={{ ...S.btnPrimary, marginTop: 10 }}>🚚 Send to Outlet</button>
       </div>
 
       {/* TERIMA */}
@@ -174,12 +174,12 @@ export default function AdminGoodsDelivery({ apiBase = "" }) {
                 <input type="number" placeholder={"terima (" + it.qty_delivered + ")"}
                   value={(recv[gd.id] && recv[gd.id][it.id] && recv[gd.id][it.id].qty) ?? ""}
                   onChange={e => setRF(gd.id, it.id, "qty", e.target.value)} style={S.inputSm} />
-                <input type="date" title="Tanggal expired barang"
+                <input type="date" title="Date expired barang"
                   value={(recv[gd.id] && recv[gd.id][it.id] && recv[gd.id][it.id].exp) || ""}
                   onChange={e => setRF(gd.id, it.id, "exp", e.target.value)} style={S.inputSm} />
               </div>
             ))}
-            <button onClick={() => receive(gd)} style={{ ...S.btnReceive, marginTop: 6 }}>✓ Terima Barang — Stok Naik</button>
+            <button onClick={() => receive(gd)} style={{ ...S.btnReceive, marginTop: 6 }}>✓ Terima Barang — Stock Naik</button>
           </div>
         ))}
       </div>
@@ -196,7 +196,7 @@ export default function AdminGoodsDelivery({ apiBase = "" }) {
                   ? <span style={{ color: "#5b6470", fontWeight: 700, fontFamily: "'Geist Mono',monospace", fontSize: 11 }}>🔒 DITUTUP</span>
                   : <>
                       <span style={{ color: "#10b981" }}>✓ diterima {fmtDate(gd.received_at)}</span>
-                      <button onClick={() => closeGd(gd)} style={S.btnClose}>🔒 Tutup GD</button>
+                      <button onClick={() => closeGd(gd)} style={S.btnClose}>🔒 Close GD</button>
                     </>}
                 <button onClick={() => setEditing({ ...gd })} title="Edit" style={S.btnEdit}>✏️</button>
                 <button onClick={() => remove(gd)} title="Delete" style={S.btnDel}>🗑️</button>

@@ -27,7 +27,7 @@ export default function AdminAutoReorder({ apiBase = "" }) {
     setBusy(true); setMsg("");
     fetch(`${apiBase}/api/auto-reorder/generate`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })
       .then(r => r.json()).then(j => {
-        if (j.ok) setMsg(`✓ ${j.pr_number} dibuat — ${j.items} item · ${fmtRp(j.total_estimated)}. Masuk ke chain Procurement.`);
+        if (j.ok) setMsg(`✓ ${j.pr_number} dibuat — ${j.items} item · ${fmtRp(j.total_estimated)}. Masuk to chain Procurement.`);
         else setMsg(j.error || "gagal");
         load();
       }).catch(e => setMsg(String(e))).finally(() => setBusy(false));

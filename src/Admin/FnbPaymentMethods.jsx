@@ -18,7 +18,7 @@ export default function FnbPaymentMethods({ apiBase = "" }) {
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>💳 Payment Methods Master</div>
-        <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Edit payment buttons · push ke outlet · kategori (Cash/Card/Comp/FOC/Diskon Karyawan/dst).</div>
+        <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Edit payment buttons · push to outlet · kategori (Cash/Card/Comp/FOC/Diskon Employee/dst).</div>
       </div>
       <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
         {[["methods", "💳 Methods"], ["categories", "📂 Categories"]].map(([id, l]) => (
@@ -53,14 +53,14 @@ function MethodsTab({ base, showToast }) {
     showToast(editing === "new" ? "Method dibuat" : "Method diperbarui"); setEditing(null); setForm(emptyM); load();
   };
   const { confirm } = useUiKit();
-  const remove = async (r) => { if (!(await confirm({ title: `Hapus method "${r.name}"?`, message: "Method ini akan hilang dari semua outlet.", danger: true, okLabel: "Delete" }))) return; await fetch(`${base}/payment-methods/${r.id}`, { method: "DELETE" }); load(); };
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus method "${r.name}"?`, message: "Method ini akan hilang from semua outlet.", danger: true, okLabel: "Delete" }))) return; await fetch(`${base}/payment-methods/${r.id}`, { method: "DELETE" }); load(); };
   const toggleSelect = (id) => setSelected(p => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
   const pushSelected = async () => {
     if (!selected.size) { showToast("Pilih method dulu", "err"); return; }
     const outlets = pushOutlets === "all" ? [] : pushOutlets.split(",").map(s => s.trim()).filter(Boolean);
     const r = await fetch(`${base}/payment-methods/bulk-push`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ids: [...selected], outlets }) });
     const d = await r.json(); if (!d.ok) { showToast(d.error, "err"); return; }
-    showToast(`${d.count} method di-push ke ${pushOutlets}`); setSelected(new Set()); load();
+    showToast(`${d.count} method di-push to ${pushOutlets}`); setSelected(new Set()); load();
   };
   const filtered = filterCat ? rows.filter(r => r.category === filterCat) : rows;
   return (
@@ -75,7 +75,7 @@ function MethodsTab({ base, showToast }) {
         <div style={{ flex: 1 }} />
         {selected.size > 0 && (
           <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
-            <Field label="Push ke (outlet CSV, kosong = all)">
+            <Field label="Push to (outlet CSV, kosong = all)">
               <input value={pushOutlets} onChange={e => setPushOutlets(e.target.value)} placeholder="all / paskal,trans-studio" style={{ ...inp, width: 240 }} />
             </Field>
             <button onClick={pushSelected} style={B.push}>📤 Push {selected.size} method</button>
@@ -88,7 +88,7 @@ function MethodsTab({ base, showToast }) {
           <div style={{ fontSize: 13, fontWeight: 700, color: form.color, marginBottom: 10 }}>{editing === "new" ? "Method baru" : `Edit #${editing}`}</div>
           <div style={{ display: "grid", gridTemplateColumns: "120px 1fr 1fr 1fr 80px", gap: 8 }}>
             <Field label="Code (slug)"><input value={form.code} onChange={e => setForm({ ...form, code: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "_") })} placeholder="staff_discount" style={{ ...inp, fontFamily: "'Geist Mono',monospace" }} /></Field>
-            <Field label="Nama tampilan"><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Diskon Karyawan" style={inp} /></Field>
+            <Field label="Nama tampilan"><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Diskon Employee" style={inp} /></Field>
             <Field label="Kategori">
               <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} style={inp}>
                 {cats.map(c => <option key={c.code} value={c.code}>{c.icon} {c.name}</option>)}
@@ -107,10 +107,10 @@ function MethodsTab({ base, showToast }) {
             <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5 }}><input type="checkbox" checked={!!form.requires_approval} onChange={e => setForm({ ...form, requires_approval: e.target.checked ? 1 : 0 })} /> 🔐 Butuh approval manager (PIN)</label>
             <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5 }}><input type="checkbox" checked={!!form.requires_reason} onChange={e => setForm({ ...form, requires_reason: e.target.checked ? 1 : 0 })} /> 📝 Wajib isi alasan</label>
             <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5 }}><input type="checkbox" checked={!!form.reduces_revenue} onChange={e => setForm({ ...form, reduces_revenue: e.target.checked ? 1 : 0 })} /> 💸 Kurangi revenue (comp/discount, gak hitung pendapatan)</label>
-            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5 }}><input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Aktif</label>
+            <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5 }}><input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Active</label>
           </div>
           <div style={{ marginTop: 10 }}>
-            <Field label="Catatan"><input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} style={inp} /></Field>
+            <Field label="Notes"><input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} style={inp} /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
             <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
@@ -187,7 +187,7 @@ function CategoriesTab({ base, showToast }) {
             <Field label="Urut"><input type="number" value={form.sort_order} onChange={e => setForm({ ...form, sort_order: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
           </div>
           <div style={{ marginTop: 8 }}>
-            <Field label="Deskripsi"><input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={inp} /></Field>
+            <Field label="Description"><input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={inp} /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
             <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>

@@ -37,7 +37,7 @@ export default function PeriodPicker({ onChange, defaultPreset = "30d" }) {
       {PRESETS.map(p => (
         <button key={p.k} onClick={() => pickPreset(p)} style={active === p.k ? pillOn : pill}>{p.label}</button>
       ))}
-      <span style={{ color: "#5b6470", fontSize: 11, margin: "0 4px" }}>atau pilih tanggal:</span>
+      <span style={{ color: "#5b6470", fontSize: 11, margin: "0 4px" }}>or pilih tanggal:</span>
       <input type="date" value={cFrom} onChange={e => setCFrom(e.target.value)} style={inp} />
       <span style={{ color: "#5b6470" }}>→</span>
       <input type="date" value={cTo} onChange={e => setCTo(e.target.value)} style={inp} />

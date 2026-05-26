@@ -195,7 +195,7 @@ export default function AdminRBAC({ apiBase = "" }) {
                   {r.custom ? (
                     <button onClick={() => deleteRole(r)} title="Hapus custom role" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
                   ) : (
-                    <button onClick={() => resetRole(r)} title="Reset semua permission role ke 'none'" style={{ background: "#64748b22", border: "1px solid #64748b44", color: "#94a3b8", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>♻️</button>
+                    <button onClick={() => resetRole(r)} title="Reset semua permission role to 'none'" style={{ background: "#64748b22", border: "1px solid #64748b44", color: "#94a3b8", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>♻️</button>
                   )}
                 </td>
               </tr>

@@ -146,7 +146,7 @@ export default function AdminMasterCategory({ apiBase = "" }) {
                     {d.coa_accounts.cogs.map(a => <option key={a.code} value={a.code}>📉 {a.code} · {a.name}</option>)}
                   </select>
                 </div>
-                <div style={{ fontSize: 10, color: "#7a7b82", marginTop: 6 }}>ℹ️ Mengubah COA di sini juga update semua sub-kategori dalam kategori ini.</div>
+                <div style={{ fontSize: 10, color: "#7a7b82", marginTop: 6 }}>ℹ️ Updating COA di sini juga update semua sub-kategori dalam kategori ini.</div>
               </>
             )}
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>

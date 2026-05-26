@@ -69,7 +69,7 @@ export default function CinemaCashierKPI({ apiBase = "" }) {
       <header style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 2.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>karyaOS / CINEMA / KPI</div>
         <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", marginTop: 4, letterSpacing: -0.5 }}>👤 Cashier KPI Leaderboard</div>
-        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>Customer rating dari mobile feedback page (post-transaksi)</div>
+        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>Customer rating from mobile feedback page (post-transaksi)</div>
       </header>
 
       {/* Controls */}
@@ -89,7 +89,7 @@ export default function CinemaCashierKPI({ apiBase = "" }) {
       {/* Summary cards */}
       {summary && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))", gap: 10, marginBottom: 18 }}>
-          <KPICard icon="⭐" label="AVG RATING" value={summary.weightedAvg.toFixed(2)} sub={`dari ${summary.totalRatings} review`} color={AMBER} />
+          <KPICard icon="⭐" label="AVG RATING" value={summary.weightedAvg.toFixed(2)} sub={`from ${summary.totalRatings} review`} color={AMBER} />
           <KPICard icon="👥" label="KASIR AKTIF" value={summary.count} sub="periode ini" color={CYAN} />
           <KPICard icon="🏆" label="TOP PERFORMER" value={summary.top?.cashier_name || "—"} sub={summary.top ? `${(summary.top.avg_rating || 0).toFixed(2)}★ • ${summary.top.total_ratings}×` : "—"} color={GREEN} />
           <KPICard icon="⚠️" label="LOW PERFORMER" value={summary.lowAlerts.length} sub="butuh training" color={summary.lowAlerts.length ? RED : "#475569"} />
@@ -121,7 +121,7 @@ export default function CinemaCashierKPI({ apiBase = "" }) {
         {!loading && leaders.length === 0 && (
           <div style={{ padding: 32, textAlign: "center", color: "#64748b" }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>📭</div>
-            <div style={{ fontSize: 13 }}>No rating untuk periode ini</div>
+            <div style={{ fontSize: 13 }}>No rating for periode ini</div>
           </div>
         )}
         {!loading && leaders.map((c, i) => (

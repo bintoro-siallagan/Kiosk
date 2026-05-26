@@ -219,7 +219,7 @@ function SupplierForm({ initial, onSave, onCancel }) {
         <label>Phone <input value={f.phone || ''} onChange={update('phone')} /></label>
         <label>Email <input value={f.email || ''} onChange={update('email')} /></label>
         <label>NPWP <input value={f.tax_id || ''} onChange={update('tax_id')} /></label>
-        <label>Payment Terms (hari) <input type="number" value={f.payment_terms} onChange={update('payment_terms')} /></label>
+        <label>Payment Terms (day) <input type="number" value={f.payment_terms} onChange={update('payment_terms')} /></label>
         <label>Bank <input value={f.bank_name || ''} onChange={update('bank_name')} /></label>
         <label>No. Rekening <input value={f.bank_account || ''} onChange={update('bank_account')} /></label>
         <label>Atas Nama <input value={f.bank_holder || ''} onChange={update('bank_holder')} /></label>
@@ -272,7 +272,7 @@ function PurchaseRequests() {
       <table style={tableStyle}>
         <thead>
           <tr>
-            <th>PR Number</th><th>Tanggal</th><th>Requester</th><th>Dept</th>
+            <th>PR Number</th><th>Date</th><th>Requester</th><th>Dept</th>
             <th>Priority</th><th>Total Est.</th><th>Status</th><th></th>
           </tr>
         </thead>
@@ -361,7 +361,7 @@ function PRForm({ onClose }) {
 
       <div style={{ marginTop: 12 }}>
         <button onClick={()=>submit(true)} style={btnSecondary}>Simpan Draft</button>{' '}
-        <button onClick={()=>submit(false)} style={btnPrimary}>Submit untuk Approval</button>{' '}
+        <button onClick={()=>submit(false)} style={btnPrimary}>Submit for Approval</button>{' '}
         <button onClick={onClose} style={btnSecondary}>Cancel</button>
       </div>
     </div>
@@ -439,7 +439,7 @@ function PRDetail({ prId, onClose }) {
 
         <div style={{ marginTop: 16 }}>
           {pr.status === 'draft' && (
-            <button onClick={() => act('/submit')} style={btnPrimary}>Submit untuk Approval</button>
+            <button onClick={() => act('/submit')} style={btnPrimary}>Submit for Approval</button>
           )}
           {pr.status === 'submitted' && (
             <>
@@ -451,13 +451,13 @@ function PRDetail({ prId, onClose }) {
             </>
           )}
           {pr.status === 'approved' && !convertMode && (
-            <button onClick={() => setConvertMode(true)} style={btnPrimary}>Convert ke PO</button>
+            <button onClick={() => setConvertMode(true)} style={btnPrimary}>Convert to PO</button>
           )}
         </div>
 
         {convertMode && (
           <div style={{ marginTop: 16, padding: 12, background: '#f9fafb', borderRadius: 8 }}>
-            <h4>Convert ke PO</h4>
+            <h4>Convert to PO</h4>
             <label>Supplier
               <select value={supplierId} onChange={e=>setSupplierId(e.target.value)} style={{ marginLeft: 8 }}>
                 <option value="">-- Pilih supplier --</option>
@@ -521,7 +521,7 @@ function PurchaseOrders() {
       <table style={tableStyle}>
         <thead>
           <tr>
-            <th>PO Number</th><th>Supplier</th><th>Tanggal Order</th>
+            <th>PO Number</th><th>Supplier</th><th>Date Order</th>
             <th>Expected</th><th>Total</th><th>Status</th><th></th>
           </tr>
         </thead>
@@ -603,7 +603,7 @@ function PODetail({ poId, onClose }) {
         <div style={{ marginTop: 16 }}>
           {po.status === 'draft' && (
             <>
-              <button onClick={() => act('/send')} style={btnPrimary}>Send ke Supplier</button>{' '}
+              <button onClick={() => act('/send')} style={btnPrimary}>Send to Supplier</button>{' '}
               <button onClick={() => act('/cancel')} style={btnSmallDanger}>Cancel</button>
             </>
           )}
@@ -648,7 +648,7 @@ function GRForm({ po, onDone }) {
           expiry_date: toUnixSec(i.expiry_date)
         }))
       }});
-      alert(`GR created: ${result.gr_number}\nPO status: ${result.po_status}\nStok warehouse otomatis ter-update.`);
+      alert(`GR created: ${result.gr_number}\nPO status: ${result.po_status}\nStock warehouse otomatis ter-update.`);
       onDone();
     } catch (e) { alert(e.message); }
   };
@@ -661,7 +661,7 @@ function GRForm({ po, onDone }) {
         <label>No. Surat Jalan <input value={delivery_note} onChange={e=>setDeliveryNote(e.target.value)} /></label>
       </div>
       <table style={tableStyle}>
-        <thead><tr><th>SKU</th><th>Item</th><th>Max</th><th>Diterima</th><th>Ditolak</th><th>Alasan Tolak</th><th>Batch</th><th>Expiry</th></tr></thead>
+        <thead><tr><th>SKU</th><th>Item</th><th>Max</th><th>Diterima</th><th>Rejected</th><th>Alasan Tolak</th><th>Batch</th><th>Expiry</th></tr></thead>
         <tbody>
           {items.map((it, idx) => (
             <tr key={idx}>
@@ -679,7 +679,7 @@ function GRForm({ po, onDone }) {
           ))}
         </tbody>
       </table>
-      <p style={{ fontSize: 12, color: '#059669' }}>⚠️ Submit GR akan otomatis: (1) update stok di audit_warehouse, (2) update qty received di PO, (3) log ke pos_events.</p>
+      <p style={{ fontSize: 12, color: '#059669' }}>⚠️ Submit GR akan otomatis: (1) update stok di audit_warehouse, (2) update qty received di PO, (3) log to pos_events.</p>
       <button onClick={submit} style={btnPrimary}>Submit GR</button>{' '}
       <button onClick={onDone} style={btnSecondary}>Cancel</button>
     </div>
@@ -699,7 +699,7 @@ function GoodsReceipts() {
       <h3 style={{ margin: 0, marginBottom: 12 }}>Goods Receipts</h3>
       {detail && <GRDetail grId={detail} onClose={() => setDetail(null)} />}
       <table style={tableStyle}>
-        <thead><tr><th>GR Number</th><th>PO</th><th>Supplier</th><th>Tanggal</th><th>Penerima</th><th>Discrepancy</th><th></th></tr></thead>
+        <thead><tr><th>GR Number</th><th>PO</th><th>Supplier</th><th>Date</th><th>Penerima</th><th>Discrepancy</th><th></th></tr></thead>
         <tbody>
           {list.map(gr => (
             <tr key={gr.id}>
@@ -732,13 +732,13 @@ function GRDetail({ grId, onClose }) {
         <div style={{ fontSize:13, marginBottom:12 }}>
           <div><b>PO:</b> {gr.po_number}</div>
           <div><b>Supplier:</b> {gr.supplier_name}</div>
-          <div><b>Tanggal:</b> {fmtDateTime(gr.receipt_date)}</div>
+          <div><b>Date:</b> {fmtDateTime(gr.receipt_date)}</div>
           <div><b>Penerima:</b> {gr.received_by}</div>
           <div><b>Surat Jalan:</b> {gr.delivery_note || '-'}</div>
           {gr.notes && <div><b>Notes:</b> {gr.notes}</div>}
         </div>
         <table style={tableStyle}>
-          <thead><tr><th>SKU</th><th>Item</th><th>Diterima</th><th>Ditolak</th><th>Alasan</th><th>Batch</th><th>Expiry</th></tr></thead>
+          <thead><tr><th>SKU</th><th>Item</th><th>Diterima</th><th>Rejected</th><th>Alasan</th><th>Batch</th><th>Expiry</th></tr></thead>
           <tbody>
             {gr.items.map(it => (
               <tr key={it.id}>
@@ -864,7 +864,7 @@ function InvoiceForm({ onClose }) {
           </select>
         </label>
         <label>No. Invoice Supplier <input value={f.supplier_invoice_no} onChange={e=>setF({...f,supplier_invoice_no:e.target.value})} /></label>
-        <label>Tanggal Invoice <input type="date" value={f.invoice_date} onChange={e=>setF({...f,invoice_date:e.target.value})} /></label>
+        <label>Date Invoice <input type="date" value={f.invoice_date} onChange={e=>setF({...f,invoice_date:e.target.value})} /></label>
         <label>Due Date <input type="date" value={f.due_date} onChange={e=>setF({...f,due_date:e.target.value})} /></label>
         <label>Subtotal <input type="number" value={f.subtotal} onChange={e=>setF({...f,subtotal:e.target.value})} /></label>
         <label>Tax <input type="number" value={f.tax_amount} onChange={e=>setF({...f,tax_amount:e.target.value})} /></label>
@@ -913,7 +913,7 @@ function InvoiceDetail({ invId, onClose }) {
           <>
             <h4>Payment History</h4>
             <table style={tableStyle}>
-              <thead><tr><th>No. Payment</th><th>Tanggal</th><th>Jumlah</th><th>Metode</th><th>Reference</th><th>Paid by</th></tr></thead>
+              <thead><tr><th>No. Payment</th><th>Date</th><th>Jumlah</th><th>Metode</th><th>Reference</th><th>Paid by</th></tr></thead>
               <tbody>
                 {inv.payments.map(p => (
                   <tr key={p.id}>
@@ -928,7 +928,7 @@ function InvoiceDetail({ invId, onClose }) {
         )}
 
         {inv.status !== 'paid' && !payMode && (
-          <button onClick={() => setPayMode(true)} style={btnPrimary}>+ Bayar Invoice</button>
+          <button onClick={() => setPayMode(true)} style={btnPrimary}>+ Pay Invoice</button>
         )}
         {payMode && <PaymentForm invoice={inv} onDone={() => { setPayMode(false); load(); }} />}
       </div>
@@ -957,9 +957,9 @@ function PaymentForm({ invoice, onDone }) {
 
   return (
     <div style={{ marginTop: 12, padding: 12, background: '#fef3c7', border:'1px solid #fcd34d', borderRadius: 8 }}>
-      <h4>Bayar Invoice</h4>
+      <h4>Pay Invoice</h4>
       <div style={formGrid}>
-        <label>Tanggal Bayar <input type="date" value={f.payment_date} onChange={e=>setF({...f,payment_date:e.target.value})} /></label>
+        <label>Date Pay <input type="date" value={f.payment_date} onChange={e=>setF({...f,payment_date:e.target.value})} /></label>
         <label>Jumlah (max {fmtIDR(outstanding)}) <input type="number" max={outstanding} value={f.amount} onChange={e=>setF({...f,amount:e.target.value})} /></label>
         <label>Metode
           <select value={f.method} onChange={e=>setF({...f,method:e.target.value})}>
@@ -970,8 +970,8 @@ function PaymentForm({ invoice, onDone }) {
         <label>Paid by* <input value={f.paid_by} onChange={e=>setF({...f,paid_by:e.target.value})} /></label>
         <label style={{gridColumn:'1/-1'}}>Notes <textarea value={f.notes} onChange={e=>setF({...f,notes:e.target.value})} rows={2} /></label>
       </div>
-      <p style={{ fontSize: 12, color: '#92400e' }}>⚠️ Payment akan otomatis tercatat sebagai expense di Finance (COGS - Bahan Baku).</p>
-      <button onClick={submit} style={btnPrimary}>Bayar</button>{' '}
+      <p style={{ fontSize: 12, color: '#92400e' }}>⚠️ Payment akan otomatis tercatat sebagai expense di Finance (COGS - Material Baku).</p>
+      <button onClick={submit} style={btnPrimary}>Pay</button>{' '}
       <button onClick={onDone} style={btnSecondary}>Cancel</button>
     </div>
   );
@@ -990,7 +990,7 @@ function Payments() {
     <div>
       <h3 style={{ margin: 0, marginBottom: 12 }}>Riwayat Pembayaran ({list.length}) — Total {fmtIDR(total)}</h3>
       <table style={tableStyle}>
-        <thead><tr><th>No. Payment</th><th>Tanggal</th><th>Supplier</th><th>Invoice</th><th>Jumlah</th><th>Metode</th><th>Reference</th><th>Paid by</th><th>Expense ID</th></tr></thead>
+        <thead><tr><th>No. Payment</th><th>Date</th><th>Supplier</th><th>Invoice</th><th>Jumlah</th><th>Metode</th><th>Reference</th><th>Paid by</th><th>Expense ID</th></tr></thead>
         <tbody>
           {list.map(p => (
             <tr key={p.id}>

@@ -86,7 +86,7 @@ export default function CinemaSubscriptions({ apiBase = "" }) {
             {form.plan_type === "n_ticket" && (
               <Field label="Ticket quota"><input type="number" value={form.ticket_quota} onChange={e => setForm({ ...form, ticket_quota: parseInt(e.target.value, 10) || 5 })} style={inp} /></Field>
             )}
-            <Field label="Max per hari"><input type="number" value={form.max_per_day} onChange={e => setForm({ ...form, max_per_day: parseInt(e.target.value, 10) || 1 })} style={inp} /></Field>
+            <Field label="Max per day"><input type="number" value={form.max_per_day} onChange={e => setForm({ ...form, max_per_day: parseInt(e.target.value, 10) || 1 })} style={inp} /></Field>
             <Field label="Studio types allowed (comma-sep)">
               <input value={form.studio_types?.join(",") || ""}
                 onChange={e => setForm({ ...form, studio_types: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })}
@@ -133,7 +133,7 @@ export default function CinemaSubscriptions({ apiBase = "" }) {
                   <div>
                     <div style={{ fontSize: 10, color: C.dim }}>Harga</div>
                     <div style={{ fontSize: 24, fontWeight: 900, color: p.plan_type === "unlimited" ? "#c084fc" : "#22d3ee", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5 }}>{rp(p.price)}</div>
-                    <div style={{ fontSize: 11, color: C.sub }}>/{p.duration_days === 30 ? "bulan" : `${p.duration_days}d`}</div>
+                    <div style={{ fontSize: 11, color: C.sub }}>/{p.duration_days === 30 ? "month" : `${p.duration_days}d`}</div>
                   </div>
                   <div style={{ fontSize: 11, color: C.sub, fontFamily: "'Geist Mono',monospace" }}>≈ {rp(p.price / p.duration_days)}/hari</div>
                 </div>

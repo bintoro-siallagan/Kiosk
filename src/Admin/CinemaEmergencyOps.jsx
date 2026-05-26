@@ -27,11 +27,11 @@ export default function CinemaEmergencyOps({ apiBase = "" }) {
   }, [base]);
 
   const TABS = [
-    { id: "incidents", label: "🚨 Incidents Alert", desc: "Live incidents dari outlet (HQ monitoring)" },
-    { id: "close", label: "❌ Emergency Close", desc: "Tutup showtime + auto-refund all tickets" },
+    { id: "incidents", label: "🚨 Incidents Alert", desc: "Live incidents from outlet (HQ monitoring)" },
+    { id: "close", label: "❌ Emergency Close", desc: "Close showtime + auto-refund all tickets" },
     { id: "relocate", label: "🏛️ Relocate Studio", desc: "AC mati / kerusakan → pindah studio" },
     { id: "swap", label: "🔄 Swap Seat", desc: "Pindahkan kursi customer (dispute)" },
-    { id: "manifest", label: "📋 Print Manifest", desc: "Daftar tiket per showtime (backup offline)" },
+    { id: "manifest", label: "📋 Print Manifest", desc: "List tiket per showtime (backup offline)" },
     { id: "checkin", label: "✋ Manual Check-in", desc: "Validasi tiket offline (sistem down)" },
     { id: "conflicts", label: "🗂️ Conflicts Log", desc: "Audit refund / swap / void" },
   ];
@@ -112,7 +112,7 @@ function IncidentsLog({ base, setMsg }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
         <div>
           <div style={{ fontSize: 14, fontWeight: 800 }}>🚨 Live Incident Alerts (HQ Monitoring)</div>
-          <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>Auto-refresh 10 detik + WebSocket push real-time</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 2 }}>Auto-refresh 10 sec + WebSocket push real-time</div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={() => setOnlyOpen(!onlyOpen)} style={{ background: onlyOpen ? "#ef444433" : "rgba(255,255,255,0.04)", border: onlyOpen ? "1px solid #ef4444" : `1px solid ${C.border}`, color: onlyOpen ? "#fca5a5" : "#9ca3af", borderRadius: 7, padding: "6px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{onlyOpen ? "🔴 Only Open" : "📋 Show All"}</button>
@@ -214,7 +214,7 @@ function EmergencyClose({ base, showtimes, setMsg }) {
         </select>
       </Field>
       <Field label="ALASAN (wajib, masuk audit log)">
-        <input value={reason} onChange={e => setReason(e.target.value)} placeholder="Listrik mati outlet jam 19:30, ETA recovery 1 jam" style={inp} />
+        <input value={reason} onChange={e => setReason(e.target.value)} placeholder="Listrik mati outlet hr 19:30, ETA recovery 1 hr" style={inp} />
       </Field>
       <Field label="NAMA MANAGER YANG MEMUTUSKAN (audit)">
         <input value={manager} onChange={e => setManager(e.target.value)} placeholder="John Doe (Store Manager)" style={inp} />
@@ -225,7 +225,7 @@ function EmergencyClose({ base, showtimes, setMsg }) {
       </label>
       <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, marginBottom: 14, padding: "10px 12px", background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 8 }}>
         <input type="checkbox" checked={issueVouchers} onChange={e => setIssueVouchers(e.target.checked)} />
-        <span><b style={{ color: "#c084fc" }}>🎟️ Issue voucher per tiket</b> (90 hari expiry) <span style={{ color: C.dim, fontSize: 11 }}>— customer come back, revenue preserved daripada cash refund</span></span>
+        <span><b style={{ color: "#c084fc" }}>🎟️ Issue voucher per tiket</b> (90 day expiry) <span style={{ color: C.dim, fontSize: 11 }}>— customer come back, revenue preserved daripada cash refund</span></span>
       </label>
       <button onClick={submit} disabled={busy} style={{ background: "linear-gradient(135deg,#ef4444,#dc2626)", border: "none", color: "#fff", borderRadius: 10, padding: "12px 22px", fontSize: 13, fontWeight: 900, cursor: busy ? "wait" : "pointer", fontFamily: "inherit", boxShadow: "0 4px 16px rgba(239,68,68,0.3)" }}>
         {busy ? "⏳ Processing..." : "🚨 EMERGENCY CLOSE & REFUND"}
@@ -235,7 +235,7 @@ function EmergencyClose({ base, showtimes, setMsg }) {
           <div style={{ fontSize: 12, color: "#c084fc", fontWeight: 800, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>🎟️ VOUCHER YANG DI-ISSUE ({result.vouchers_issued.length}) — KIRIM VIA WA</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 320, overflowY: "auto" }}>
             {result.vouchers_issued.map((v, i) => {
-              const waMsg = `🎬 Mohon maaf, jadwal Anda ${result.showtime_id ? `(showtime #${result.showtime_id})` : ""} terpaksa di-cancel karena ${reason}.\n\nSebagai gantinya, voucher tiket Rp ${(v.value || 0).toLocaleString("id-ID")} senilai 1 tiket sudah kami siapkan:\n\n*KODE: ${v.code}*\n\nBerlaku 90 hari. Tukar di counter atau /?cinema saat beli tiket berikutnya. Terima kasih atas pengertiannya 🙏`;
+              const waMsg = `🎬 Mohon maaf, jadwal Anda ${result.showtime_id ? `(showtime #${result.showtime_id})` : ""} terpaksa di-cancel karena ${reason}.\n\nSebagai gantinya, voucher tiket Rp ${(v.value || 0).toLocaleString("id-ID")} senilai 1 tiket sudah kami siapkan:\n\n*KODE: ${v.code}*\n\nBerlaku 90 day. Tukar di counter or /?cinema saat beli tiket berikutnya. Terima kasih atas pengertiannya 🙏`;
               const waLink = v.phone ? `https://wa.me/${v.phone.replace(/^0/, "62").replace(/\D/g, "")}?text=${encodeURIComponent(waMsg)}` : null;
               return (
                 <div key={i} style={{ display: "flex", gap: 10, fontSize: 11.5, padding: "8px 10px", background: "rgba(255,255,255,0.02)", borderRadius: 6, alignItems: "center" }}>
@@ -251,7 +251,7 @@ function EmergencyClose({ base, showtimes, setMsg }) {
               );
             })}
           </div>
-          <div style={{ fontSize: 10, color: C.sub, marginTop: 8 }}>💡 Klik "Send WA" per voucher → WhatsApp buka chat dengan pre-filled message + kode voucher. Customer datang lagi → tukar di kasir / Cinema Kiosk.</div>
+          <div style={{ fontSize: 10, color: C.sub, marginTop: 8 }}>💡 Klik "Send WA" per voucher → WhatsApp buka chat with pre-filled message + kode voucher. Customer datang lagi → tukar di kasir / Cinema Kiosk.</div>
         </div>
       )}
 
@@ -268,7 +268,7 @@ function EmergencyClose({ base, showtimes, setMsg }) {
               </div>
             ))}
           </div>
-          <div style={{ fontSize: 10, color: C.sub, marginTop: 8 }}>💡 Klik nomor WA → buka chat langsung dengan customer. Kasih info refund timeline + apology.</div>
+          <div style={{ fontSize: 10, color: C.sub, marginTop: 8 }}>💡 Klik nomor WA → buka chat langsung with customer. Kasih info refund timeline + apology.</div>
         </div>
       )}
     </div>
@@ -294,7 +294,7 @@ function RelocateStudio({ base, showtimes, setMsg }) {
 
   const submit = async () => {
     if (!showtimeId || !newStudioId || !reason.trim() || !manager.trim()) { setMsg("⚠ Semua field wajib"); return; }
-    if (!confirm(`Pindah showtime ke studio lain?\nSemua tiket akan auto-moved.`)) return;
+    if (!confirm(`Pindah showtime to studio lain?\nSemua tiket akan auto-moved.`)) return;
     setBusy(true); setMsg("");
     try {
       const r = await fetch(`${base}/showtimes/${showtimeId}/relocate`, {
@@ -304,7 +304,7 @@ function RelocateStudio({ base, showtimes, setMsg }) {
       const d = await r.json();
       if (!r.ok || !d.ok) throw new Error(d.error);
       setResult(d);
-      setMsg(`✓ Showtime dipindah ke ${d.to_studio.name} · ${d.tickets_moved} tiket otomatis ikut`);
+      setMsg(`✓ Showtime dipindah to ${d.to_studio.name} · ${d.tickets_moved} tiket otomatis ikut`);
     } catch (e) { setMsg("⚠ " + e.message); }
     setBusy(false);
   };
@@ -339,7 +339,7 @@ function RelocateStudio({ base, showtimes, setMsg }) {
       )}
 
       <Field label="ALASAN (wajib, masuk audit + push HQ alert)">
-        <input value={reason} onChange={e => setReason(e.target.value)} placeholder="AC studio 1 mati jam 19:15, repair ETA 2 jam" style={inp} />
+        <input value={reason} onChange={e => setReason(e.target.value)} placeholder="AC studio 1 mati hr 19:15, repair ETA 2 hr" style={inp} />
       </Field>
       <Field label="NAMA MANAGER">
         <input value={manager} onChange={e => setManager(e.target.value)} placeholder="John Doe (Store Manager)" style={inp} />
@@ -361,7 +361,7 @@ function RelocateStudio({ base, showtimes, setMsg }) {
               </div>
             ))}
           </div>
-          <div style={{ fontSize: 10, color: C.sub, marginTop: 8 }}>💡 Tunjukkan studio baru saat customer datang. Atau notify via WA dulu sebelum mereka sampai.</div>
+          <div style={{ fontSize: 10, color: C.sub, marginTop: 8 }}>💡 Show studio baru saat customer datang. Atau notify via WA dulu sebelum mereka sampai.</div>
         </div>
       )}
     </div>

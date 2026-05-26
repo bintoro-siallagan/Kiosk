@@ -73,8 +73,8 @@ export default function KaryasPlatformView({ apiBase = "" }) {
     return (
       <div style={{ padding: 40, textAlign: "center", color: "#fca5a5", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 14, margin: 20 }}>
         <div style={{ fontSize: 40, marginBottom: 10 }}>🔒</div>
-        <div style={{ fontWeight: 800, fontSize: 16 }}>Akses Ditolak</div>
-        <div style={{ fontSize: 13, marginTop: 6, color: PALETTE.sub }}>Halaman ini cuma untuk karys super-admin (platform-wide). Login dengan user role super-admin.</div>
+        <div style={{ fontWeight: 800, fontSize: 16 }}>Akses Rejected</div>
+        <div style={{ fontSize: 13, marginTop: 6, color: PALETTE.sub }}>Halaman ini cuma for karys super-admin (platform-wide). Login with user role super-admin.</div>
       </div>
     );
   }

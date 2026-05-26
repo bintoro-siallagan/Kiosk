@@ -85,12 +85,12 @@ export default function CinemaPartyPackages({ apiBase = "" }) {
                 {["Regular", "Deluxe", "IMAX", "Premiere"].map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </Field>
-            <Field label="Durasi (jam)"><input type="number" value={form.duration_hours} onChange={e => setForm({ ...form, duration_hours: parseInt(e.target.value, 10) || 3 })} style={inp} /></Field>
+            <Field label="Durasi (hr)"><input type="number" value={form.duration_hours} onChange={e => setForm({ ...form, duration_hours: parseInt(e.target.value, 10) || 3 })} style={inp} /></Field>
             <Field label="Min Pax"><input type="number" value={form.min_pax} onChange={e => setForm({ ...form, min_pax: parseInt(e.target.value, 10) || 10 })} style={inp} /></Field>
             <Field label="Max Pax"><input type="number" value={form.max_pax} onChange={e => setForm({ ...form, max_pax: parseInt(e.target.value, 10) || 30 })} style={inp} /></Field>
             <Field label="Base price (Rp)*"><input type="number" step={100000} value={form.base_price} onChange={e => setForm({ ...form, base_price: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
             <Field label="F&B per pax (Rp)"><input type="number" step={10000} value={form.fnb_bundle_per_pax} onChange={e => setForm({ ...form, fnb_bundle_per_pax: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
-            <Field label="Deskripsi" wide style={{ gridColumn: "span 3" }}><textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={{ ...inp, minHeight: 60, resize: "vertical" }} /></Field>
+            <Field label="Description" wide style={{ gridColumn: "span 3" }}><textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={{ ...inp, minHeight: 60, resize: "vertical" }} /></Field>
           </div>
           <div style={{ display: "flex", gap: 14, marginTop: 12 }}>
             <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12 }}><input type="checkbox" checked={form.includes_decoration} onChange={e => setForm({ ...form, includes_decoration: e.target.checked })} /> 🎈 Dekorasi</label>

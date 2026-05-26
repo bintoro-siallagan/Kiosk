@@ -7,10 +7,10 @@ const TIERS = [
   { id: "critical", label: "Critical", target: 5 * 60, color: "#ef4444", note: "Respons segera",
     channel: "WhatsApp + Telepon",
     chain: [{ role: "Outlet Manager", at: 0 }, { role: "Area Manager", at: 5 * 60 }, { role: "GM / Director", at: 15 * 60 }] },
-  { id: "high", label: "High", target: 30 * 60, color: "#f97316", note: "Respons < 30 menit",
+  { id: "high", label: "High", target: 30 * 60, color: "#f97316", note: "Respons < 30 min",
     channel: "WhatsApp",
     chain: [{ role: "Outlet Manager", at: 0 }, { role: "Area Manager", at: 30 * 60 }, { role: "GM / Director", at: 2 * 3600 }] },
-  { id: "medium", label: "Medium", target: 4 * 3600, color: "#eab308", note: "Respons < 4 jam",
+  { id: "medium", label: "Medium", target: 4 * 3600, color: "#eab308", note: "Respons < 4 hr",
     channel: "Email",
     chain: [{ role: "Shift Lead", at: 0 }, { role: "Outlet Manager", at: 4 * 3600 }, { role: "Area Manager", at: 24 * 3600 }] },
   { id: "low", label: "Low", target: 24 * 3600, color: "#3b82f6", note: "Hari kerja berikutnya",
@@ -24,8 +24,8 @@ function fmtDur(sec) {
   sec = Math.max(0, Math.round(sec));
   if (sec < 60) return `${sec} dtk`;
   if (sec < 3600) return `${Math.floor(sec / 60)} mnt`;
-  if (sec < 86400) return `${Math.floor(sec / 3600)} jam ${Math.floor((sec % 3600) / 60)} mnt`;
-  return `${Math.floor(sec / 86400)} hari ${Math.floor((sec % 86400) / 3600)} jam`;
+  if (sec < 86400) return `${Math.floor(sec / 3600)} hr ${Math.floor((sec % 3600) / 60)} mnt`;
+  return `${Math.floor(sec / 86400)} day ${Math.floor((sec % 86400) / 3600)} hr`;
 }
 // current responder = last chain step whose threshold the elapsed time has passed
 const levelOf = (chain, elapsed) => {

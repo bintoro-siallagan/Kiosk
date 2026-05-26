@@ -43,7 +43,7 @@ export default function CinemaTicketing({ apiBase }) {
     setMsg(`✅ Tiket #${t.id} (kursi ${t.seat}) di-void`); loadSeats(showId);
   };
   const deleteTicket = async (t) => {
-    const ok = await confirm({ title: `Hapus tiket #${t.id}?`, message: `Kursi ${t.seat} · ${rp(t.price)} akan dihapus permanen.\n\nGunakan VOID untuk audit trail. Hapus hanya untuk koreksi data error.`, danger: true, okLabel: "Hapus Permanen" });
+    const ok = await confirm({ title: `Hapus tiket #${t.id}?`, message: `Kursi ${t.seat} · ${rp(t.price)} akan dihapus permanen.\n\nGunakan VOID for audit trail. Hapus hanya for koreksi data error.`, danger: true, okLabel: "Hapus Permanen" });
     if (!ok) return;
     const r = await fetch(`${base}/tickets/${t.id}`, { method: "DELETE" });
     const d = await r.json();
@@ -135,7 +135,7 @@ export default function CinemaTicketing({ apiBase }) {
             </div>
             <div style={{ display: "flex", gap: 16, justifyContent: "center", marginTop: 14, fontSize: 11, color: C.sub, flexWrap: "wrap" }}>
               <Legend color="#1b212c" border="#2a2b30" label="Tersedia" />
-              <Legend color="#10b981" border="#10b981" label="Dipilih" />
+              <Legend color="#10b981" border="#10b981" label="Selected" />
               <Legend color="#ef444433" border="#ef444455" label="Terjual" />
             </div>
           </div>

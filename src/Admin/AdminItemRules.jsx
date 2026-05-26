@@ -120,7 +120,7 @@ export default function AdminItemRules({ apiBase = "" }) {
                 </select>
               </div>
               <div><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>HARGA</div><input type="number" value={editing.price || 0} onChange={e => setEditing({ ...editing, price: Number(e.target.value) })} style={inpR} /></div>
-              <div style={{ gridColumn: "1/-1" }}><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>ITEMS (pisah dengan koma)</div>
+              <div style={{ gridColumn: "1/-1" }}><div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 1, marginBottom: 4 }}>ITEMS (pisah with koma)</div>
                 <input value={editing.items || ""} onChange={e => setEditing({ ...editing, items: e.target.value })} placeholder="Popcorn Large, Cola Reguler, Tiket Reguler" style={inpR} /></div>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>

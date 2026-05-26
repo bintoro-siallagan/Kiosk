@@ -22,7 +22,7 @@ export default function FnbKdsRouting({ apiBase = "" }) {
     showToast("Station disimpan"); setEditing(null); setForm(empty); load();
   };
   const { confirm } = useUiKit();
-  const remove = async (r) => { if (!(await confirm({ title: `Hapus station "${r.name}"?`, message: "Order yang ke station ini akan kembali ke routing default.", danger: true, okLabel: "Delete" }))) return; await fetch(`${base}/kds-stations/${r.id}`, { method: "DELETE" }); load(); };
+  const remove = async (r) => { if (!(await confirm({ title: `Hapus station "${r.name}"?`, message: "Order yang to station ini akan kembali to routing default.", danger: true, okLabel: "Delete" }))) return; await fetch(`${base}/kds-stations/${r.id}`, { method: "DELETE" }); load(); };
   const testRoute = async () => {
     const r = await fetch(`${base}/kds-route?category=${encodeURIComponent(testCat)}`).then(r => r.json());
     setTestResult(r);
@@ -32,7 +32,7 @@ export default function FnbKdsRouting({ apiBase = "" }) {
       <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <div>
           <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🍳 KDS Multi-Station Routing</div>
-          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Hot Kitchen / Cold / Beverage / Dessert · auto-route item ke station sesuai kategori menu.</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Hot Kitchen / Cold / Beverage / Dessert · auto-route item to station sesuai kategori menu.</div>
         </div>
         {!editing && <button onClick={() => { setEditing("new"); setForm(empty); }} style={B.add}>＋ Station baru</button>}
       </div>

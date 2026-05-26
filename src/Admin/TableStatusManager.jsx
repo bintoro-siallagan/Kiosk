@@ -77,7 +77,7 @@ export default function TableStatusManager() {
     <div style={S.root}>
       <div style={S.header}>
         <div>
-          <div style={S.title}>🪑 Status Meja</div>
+          <div style={S.title}>🪑 Status Table</div>
           <div style={S.sub}>
             Auto-release saat order completed · Manual release untuk koreksi
           </div>
@@ -147,7 +147,7 @@ export default function TableStatusManager() {
                         <button
                           onClick={() => {
                             if (isOccupied && tableOrders.length > 0) {
-                              if (!confirm(`Ada ${tableOrders.length} order aktif di ${t.name}. Yakin release manual? Order harus di-complete dulu di POS biar terhitung revenue.`)) return;
+                              if (!confirm(`Ada ${tableOrders.length} order aktif di ${t.name}. Sure release manual? Order harus di-complete dulu di POS biar terhitung revenue.`)) return;
                             }
                             setStatus(t, "available");
                           }}

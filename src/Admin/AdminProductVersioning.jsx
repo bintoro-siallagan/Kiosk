@@ -9,8 +9,8 @@ const ago = (ts) => {
   if (!ts) return "—";
   const h = Math.floor((Date.now() / 1000 - ts) / 3600);
   if (h < 1) return "baru saja";
-  if (h < 24) return h + " jam lalu";
-  return Math.floor(h / 24) + " hari lalu";
+  if (h < 24) return h + " hr lalu";
+  return Math.floor(h / 24) + " day lalu";
 };
 
 export default function AdminProductVersioning({ apiBase = "" }) {

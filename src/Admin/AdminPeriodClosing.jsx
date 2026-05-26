@@ -35,7 +35,7 @@ export default function AdminPeriodClosing({ apiBase = "" }) {
   const remove = async (pr) => {
     const ok = await confirm({
       title: `Hapus periode "${pr.period_name}"?`,
-      message: `${pr.closing_type === "accounting" ? "Akuntansi" : "Stok"}. Hanya periode terbuka (draft) yang bisa dihapus.`,
+      message: `${pr.closing_type === "accounting" ? "Accounttansi" : "Stock"}. Hanya periode terbuka (draft) yang bisa dihapus.`,
       danger: true, okLabel: "Delete",
     });
     if (!ok) return;

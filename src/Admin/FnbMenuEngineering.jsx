@@ -5,9 +5,9 @@ const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" }
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const Q = {
   star:      { label: "⭐ Star",      color: "#10b981", desc: "High popularity + High margin — promosikan, ini bintang menu." },
-  plowhorse: { label: "🐎 Plowhorse", color: "#f59e0b", desc: "High popularity + Low margin — naikkan harga atau turunkan food cost." },
+  plowhorse: { label: "🐎 Plowhorse", color: "#f59e0b", desc: "High popularity + Low margin — naikkan harga or turunkan food cost." },
   puzzle:    { label: "🧩 Puzzle",    color: "#22d3ee", desc: "Low popularity + High margin — promo, pindah posisi menu, rebranding." },
-  sleeper:   { label: "💤 Sleeper",   color: "#94a3b8", desc: "Low popularity + Low margin — review: tingkatkan promo atau pertimbangkan retire." },
+  sleeper:   { label: "💤 Sleeper",   color: "#94a3b8", desc: "Low popularity + Low margin — review: tingkatkan promo or pertimbangkan retire." },
 };
 
 export default function FnbMenuEngineering({ apiBase = "" }) {
@@ -33,7 +33,7 @@ export default function FnbMenuEngineering({ apiBase = "" }) {
           <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Classify menu items: popularity × margin → strategic action.</div>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
-          {[["7d", "7 hari"], ["30d", "30 hari"], ["ytd", "YTD"]].map(([v, l]) => (
+          {[["7d", "7 day"], ["30d", "30 day"], ["ytd", "YTD"]].map(([v, l]) => (
             <button key={v} onClick={() => setPeriod(v)} style={{ background: period === v ? "#a855f72a" : "transparent", border: `1px solid ${period === v ? "#a855f766" : C.border}`, borderRadius: 8, padding: "7px 14px", color: period === v ? "#fff" : C.sub, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{l}</button>
           ))}
         </div>
@@ -49,7 +49,7 @@ export default function FnbMenuEngineering({ apiBase = "" }) {
       </div>
       {(!data.rows || data.rows.length === 0) ? (
         <EmptyState icon="📊" title="Data analisa belum tersedia"
-          desc="Pastikan menu_items + order_items table sudah ada dengan field food_cost & price, dan ada penjualan di periode pilihan." />
+          desc="Pastikan menu_items + order_items table sudah ada with field food_cost & price, and ada penjualan di periode pilihan." />
       ) : (
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden" }}>
           <div style={{ display: "flex", color: C.dim, fontSize: 11, letterSpacing: 1, padding: "8px 14px", borderBottom: `1px solid ${C.border}`, gap: 10 }}>

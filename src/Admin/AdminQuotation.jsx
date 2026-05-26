@@ -7,7 +7,7 @@ import { useUiKit } from "../components/uiKit.jsx";
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#6366f1";
 const STAT = { draft: { c: "#f59e0b", l: "DRAFT" }, sent: { c: "#3b82f6", l: "TERKIRIM" }, accepted: { c: "#10b981", l: "DITERIMA" }, rejected: { c: "#ef4444", l: "DITOLAK" } };
-const NEXT = { draft: ["sent", "Kirim"], sent: ["accepted", "Tandai Diterima"] };
+const NEXT = { draft: ["sent", "Send"], sent: ["accepted", "Tandai Diterima"] };
 
 export default function AdminQuotation({ apiBase = "" }) {
   const { confirm } = useUiKit();

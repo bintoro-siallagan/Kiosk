@@ -43,7 +43,7 @@ export default function UserKpiDashboard({ apiBase = "" }) {
       <header style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 2.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>karyaOS / UNIFIED KPI</div>
         <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", marginTop: 4, letterSpacing: -0.5 }}>📊 User KPI Dashboard</div>
-        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>Composite score per user dari 5 source: customer rating, service ticket, daily audit, launch signoff, POS orders.</div>
+        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>Composite score per user from 5 source: customer rating, service ticket, daily audit, launch signoff, POS orders.</div>
       </header>
 
       {/* Period selector */}

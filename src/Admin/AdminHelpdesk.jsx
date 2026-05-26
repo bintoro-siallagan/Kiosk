@@ -66,7 +66,7 @@ export default function AdminHelpdesk({ apiBase = "" }) {
         <Kpi label="Total Tiket" v={String(s.total)} c={AC} />
         <Kpi label="Terbuka" v={String(s.open)} c={s.open > 0 ? "#f59e0b" : "#10b981"} />
         <Kpi label="SLA Terlanggar" v={String(s.sla_breach)} c={s.sla_breach > 0 ? "#ef4444" : "#10b981"} />
-        <Kpi label="Avg Resolusi" v={s.avg_resolution + " jam"} c="#3b82f6" />
+        <Kpi label="Avg Resolusi" v={s.avg_resolution + " hr"} c="#3b82f6" />
       </div>
 
       {s.sla_breach > 0 && (
@@ -82,7 +82,7 @@ export default function AdminHelpdesk({ apiBase = "" }) {
           <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} style={S.input}>
             {d.categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <input value={form.customer} onChange={e => setForm({ ...form, customer: e.target.value })} placeholder="Pelanggan" style={S.input} />
+          <input value={form.customer} onChange={e => setForm({ ...form, customer: e.target.value })} placeholder="Customer" style={S.input} />
           <input value={form.outlet} onChange={e => setForm({ ...form, outlet: e.target.value })} placeholder="Outlet" style={S.input} />
           <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })} style={S.input}>
             {d.priorities.map(p => <option key={p} value={p}>{p}</option>)}
@@ -150,7 +150,7 @@ export default function AdminHelpdesk({ apiBase = "" }) {
                 {["open", "in_progress", "resolved", "closed"].map(st => <option key={st} value={st}>{st}</option>)}
               </select>
             </Field>
-            <Field label="Pelanggan"><input value={editing.customer || ""} onChange={e => setEditing({ ...editing, customer: e.target.value })} style={modalInp} /></Field>
+            <Field label="Customer"><input value={editing.customer || ""} onChange={e => setEditing({ ...editing, customer: e.target.value })} style={modalInp} /></Field>
             <Field label="Outlet"><input value={editing.outlet || ""} onChange={e => setEditing({ ...editing, outlet: e.target.value })} style={modalInp} /></Field>
             <Field label="Owner (Assigned)"><input value={editing.owner || ""} onChange={e => setEditing({ ...editing, owner: e.target.value })} style={modalInp} /></Field>
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>

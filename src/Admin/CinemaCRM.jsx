@@ -62,7 +62,7 @@ export default function CinemaCRM({ apiBase = "" }) {
             <span style={{ width: 90 }}>LAST</span>
           </div>
           {loading ? <Empty>Memuat…</Empty> :
-            filtered.length === 0 ? <Empty>No customer dengan kontak.</Empty> :
+            filtered.length === 0 ? <Empty>No customer with kontak.</Empty> :
             filtered.map((r, i) => (
               <button key={i} onClick={() => setPicked(r.buyer_phone || r.buyer_email)}
                 style={{ width: "100%", display: "flex", textAlign: "left", padding: "11px 14px", borderBottom: `1px solid ${C.border}`,

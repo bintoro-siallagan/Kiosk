@@ -9,8 +9,8 @@ const ago = (ts) => {
   if (!ts) return "—";
   const h = Math.floor((Date.now() / 1000 - ts) / 3600);
   if (h < 1) return "baru saja";
-  if (h < 24) return h + " jam lalu";
-  return Math.floor(h / 24) + " hari lalu";
+  if (h < 24) return h + " hr lalu";
+  return Math.floor(h / 24) + " day lalu";
 };
 
 export default function AdminCampaign({ apiBase = "" }) {
@@ -34,7 +34,7 @@ export default function AdminCampaign({ apiBase = "" }) {
     fetch(`${apiBase}/api/campaign-impact/launch`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form),
     }).then(r => r.json()).then(j => {
-      if (j.ok) { setMsg("✓ Campaign live — terkirim ke " + j.channels.length + " channel"); setForm({ name: "", message: "", channels: [] }); load(); }
+      if (j.ok) { setMsg("✓ Campaign live — terkirim to " + j.channels.length + " channel"); setForm({ name: "", message: "", channels: [] }); load(); }
       else setMsg(j.error || "gagal");
     }).catch(e => setMsg(String(e)));
   };
@@ -77,9 +77,9 @@ export default function AdminCampaign({ apiBase = "" }) {
 
       <div style={S.kpiRow}>
         <Kpi label="Campaign Live" v={String(s.live_campaigns)} c={AC} sub={`${s.total_campaigns} total`} />
-        <Kpi label="Channel Aktif" v={String(s.channels)} c="#a855f7" sub="touchpoint" />
+        <Kpi label="Channel Active" v={String(s.channels)} c="#a855f7" sub="touchpoint" />
         <Kpi label="Weekend Uplift" v={(im.weekend_uplift > 0 ? "+" : "") + im.weekend_uplift + "%"} c={im.weekend_uplift > 0 ? "#10b981" : "#f59e0b"} sub="vs weekday" />
-        <Kpi label="Payday Uplift" v={im.payday_uplift == null ? "—" : (im.payday_uplift > 0 ? "+" : "") + im.payday_uplift + "%"} c="#3b82f6" sub={im.payday_uplift == null ? "data belum cukup" : "vs hari biasa"} />
+        <Kpi label="Payday Uplift" v={im.payday_uplift == null ? "—" : (im.payday_uplift > 0 ? "+" : "") + im.payday_uplift + "%"} c="#3b82f6" sub={im.payday_uplift == null ? "data belum cukup" : "vs day biasa"} />
       </div>
 
       {/* Event impact */}
@@ -88,10 +88,10 @@ export default function AdminCampaign({ apiBase = "" }) {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 }}>
           <div style={S.sub}>
             <div style={{ fontSize: 12, fontWeight: 700, color: "#e6edf3", marginBottom: 8 }}>📅 Weekend vs Weekday</div>
-            <Row label="Weekend" v={`${im.weekend.orders_per_day} order/hari`} c="#fbbf24" />
-            <Row label="Weekday" v={`${im.weekday.orders_per_day} order/hari`} c="#22d3ee" />
+            <Row label="Weekend" v={`${im.weekend.orders_per_day} order/day`} c="#fbbf24" />
+            <Row label="Weekday" v={`${im.weekday.orders_per_day} order/day`} c="#22d3ee" />
             <div style={{ fontSize: 11, color: "#9da7b3", marginTop: 6, lineHeight: 1.5 }}>
-              {im.weekend_uplift > 5 ? "Weekend ramai — perkuat dengan family campaign."
+              {im.weekend_uplift > 5 ? "Weekend ramai — perkuat with family campaign."
                 : im.weekend_uplift < -5 ? "Weekend justru sepi — peluang weekend promo."
                 : "Weekend ≈ weekday — belum ada pola kuat, bisa didorong campaign."}
             </div>
@@ -102,8 +102,8 @@ export default function AdminCampaign({ apiBase = "" }) {
               <div style={{ fontSize: 12, color: "#5b6470", padding: "6px 0" }}>No transaksi di window payday pada rentang data ini — analisis aktif begitu data bertambah.</div>
             ) : (
               <>
-                <Row label="Payday" v={`${im.payday.orders_per_day} order/hari`} c="#10b981" />
-                <Row label="Hari biasa" v={`${im.normal.orders_per_day} order/hari`} c="#9ca3af" />
+                <Row label="Payday" v={`${im.payday.orders_per_day} order/day`} c="#10b981" />
+                <Row label="Hari biasa" v={`${im.normal.orders_per_day} order/day`} c="#9ca3af" />
               </>
             )}
           </div>

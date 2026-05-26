@@ -32,7 +32,7 @@ export default function AdminGeneralLedger({ apiBase = "" }) {
   const remove = async (m) => {
     const ok = await confirm({
       title: `Hapus jurnal "${m.ref}"?`,
-      message: "⚠️ Audit-sensitive: hanya jurnal <24 jam (anggap draft) yang bisa dihapus. Jika sudah ter-posting, buat jurnal koreksi/balik.",
+      message: "⚠️ Audit-sensitive: hanya jurnal <24 hr (anggap draft) yang bisa dihapus. Jika sudah ter-posting, buat jurnal koreksi/balik.",
       danger: true, okLabel: "Delete",
     });
     if (!ok) return;
@@ -43,7 +43,7 @@ export default function AdminGeneralLedger({ apiBase = "" }) {
   };
 
   const post = () => {
-    if (!form.debit || !form.credit || !(Number(form.amount) > 0)) { setMsg("⚠ Akun debit, kredit & jumlah wajib"); return; }
+    if (!form.debit || !form.credit || !(Number(form.amount) > 0)) { setMsg("⚠ Account debit, kredit & jumlah wajib"); return; }
     fetch(`${apiBase}/api/general-ledger/memorial`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, amount: Number(form.amount), posted_by: "Finance" }),
@@ -65,7 +65,7 @@ export default function AdminGeneralLedger({ apiBase = "" }) {
       </div>
 
       <div style={S.kpiRow}>
-        <Kpi label="Total Akun" v={String(s.accounts)} c={AC} />
+        <Kpi label="Total Account" v={String(s.accounts)} c={AC} />
         <Kpi label="Total Aset" v={fmtRp(s.total_aset)} c="#10b981" />
         <Kpi label="Total Beban" v={fmtRp(s.total_beban)} c="#ef4444" />
         <Kpi label="Jurnal Memorial" v={String(s.memorial_count)} c="#a855f7" />
@@ -97,15 +97,15 @@ export default function AdminGeneralLedger({ apiBase = "" }) {
         <div style={S.kicker}>✍️ POSTING JURNAL MEMORIAL</div>
         <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1.4fr 1fr 1.6fr auto", gap: 8, marginTop: 10 }}>
           <select value={form.debit} onChange={e => setForm({ ...form, debit: e.target.value })} style={S.input}>
-            <option value="">— Akun Debit —</option>
+            <option value="">— Account Debit —</option>
             {allAccounts.map(a => <option key={a.code} value={a.code}>{a.code} {a.name}</option>)}
           </select>
           <select value={form.credit} onChange={e => setForm({ ...form, credit: e.target.value })} style={S.input}>
-            <option value="">— Akun Kredit —</option>
+            <option value="">— Account Credit —</option>
             {allAccounts.map(a => <option key={a.code} value={a.code}>{a.code} {a.name}</option>)}
           </select>
           <input value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} placeholder="Jumlah" type="number" style={S.input} />
-          <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Keterangan" style={S.input} />
+          <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Description" style={S.input} />
           <button onClick={post} style={S.btn}>Posting</button>
         </div>
         {msg ? <div style={{ fontSize: 12, marginTop: 8, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}

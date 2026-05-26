@@ -10,9 +10,9 @@ const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" }) : "—";
 const AGING = {
   current: { c: "#10b981", label: "Belum jatuh tempo" },
-  d30: { c: "#f59e0b", label: "1–30 hari" },
-  d60: { c: "#f97316", label: "31–60 hari" },
-  d60p: { c: "#ef4444", label: "60+ hari" },
+  d30: { c: "#f59e0b", label: "1–30 day" },
+  d60: { c: "#f97316", label: "31–60 day" },
+  d60p: { c: "#ef4444", label: "60+ day" },
   lunas: { c: "#5b6470", label: "Lunas" },
 };
 const TYPE = { corporate: "Korporat", event: "Event", partner: "Partner" };
@@ -62,7 +62,7 @@ export default function AdminAR({ apiBase = "" }) {
     fetch(`${apiBase}/api/ar/${inv.id}/pay`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount: Number(a) }),
     }).then(r => r.json()).then(j => {
-      if (j.ok) { setMsg("✓ Pembayaran dicatat"); load(); } else setMsg(j.error || "gagal");
+      if (j.ok) { setMsg("✓ Payment dicatat"); load(); } else setMsg(j.error || "gagal");
     }).catch(e => setMsg(String(e)));
   };
 
@@ -77,8 +77,8 @@ export default function AdminAR({ apiBase = "" }) {
         event booking &amp; partner. Aging + tracking pembayaran masuk.
       </div>
 
-      <ReportActions title="Accounts Receivable" subtitle="Daftar piutang customer + aging"
-        columns={["Invoice", "Customer", "Tipe", "Jumlah", "Dibayar", "Outstanding", "Jatuh Tempo", "Status"]}
+      <ReportActions title="Accounts Receivable" subtitle="List piutang customer + aging"
+        columns={["Invoice", "Customer", "Tipe", "Jumlah", "Paid", "Outstanding", "Jatuh Tempo", "Status"]}
         rows={d.invoices.map(v => [v.invoice_number, v.customer, v.customer_type, v.amount, v.paid_amount, v.outstanding, fmtDate(v.due_date), v.status])} />
 
       <div style={S.kpiRow}>
@@ -90,7 +90,7 @@ export default function AdminAR({ apiBase = "" }) {
 
       <div style={{ ...S.card, marginTop: 14 }}>
         <div style={S.kicker}>📊 AGING PIUTANG</div>
-        {[["current", "Belum jatuh tempo"], ["d30", "1–30 hari overdue"], ["d60", "31–60 hari overdue"], ["d60p", "60+ hari overdue"]].map(([k, lbl]) => (
+        {[["current", "Belum jatuh tempo"], ["d30", "1–30 day overdue"], ["d60", "31–60 day overdue"], ["d60p", "60+ day overdue"]].map(([k, lbl]) => (
           <div key={k} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}>
             <span style={{ width: 160, fontSize: 12, color: "#9da7b3", flexShrink: 0 }}>{lbl}</span>
             <div style={{ flex: 1, height: 12, background: "#0a0e16", borderRadius: 6, overflow: "hidden" }}>
@@ -108,9 +108,9 @@ export default function AdminAR({ apiBase = "" }) {
           <select value={form.customer_type} onChange={e => setForm({ ...form, customer_type: e.target.value })} style={S.input}>
             {Object.entries(TYPE).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
-          <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Deskripsi" style={S.input} />
+          <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Description" style={S.input} />
           <input value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} placeholder="Jumlah *" type="number" style={S.input} />
-          <input value={form.due_days} onChange={e => setForm({ ...form, due_days: e.target.value })} placeholder="Tempo (hari)" type="number" style={S.input} />
+          <input value={form.due_days} onChange={e => setForm({ ...form, due_days: e.target.value })} placeholder="Tempo (day)" type="number" style={S.input} />
           <button onClick={save} style={S.btnPrimary}>+ Buat</button>
         </div>
         {msg ? <div style={{ fontSize: 12, marginTop: 8, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
@@ -144,7 +144,7 @@ export default function AdminAR({ apiBase = "" }) {
                   <td style={S.td}>
                     <div style={{ display: "flex", gap: 4, alignItems: "center", justifyContent: "flex-end" }}>
                       {inv.status !== "paid"
-                        ? <button onClick={() => pay(inv)} style={S.btnPay}>+ Catat Bayar</button>
+                        ? <button onClick={() => pay(inv)} style={S.btnPay}>+ Catat Pay</button>
                         : <span style={{ color: "#10b981" }}>✓</span>}
                       <button onClick={() => setEditing({ ...inv })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
                       <button onClick={() => remove(inv)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>

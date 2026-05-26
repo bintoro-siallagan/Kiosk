@@ -49,7 +49,7 @@ export default function AdminClvChurn({ apiBase = "" }) {
               <span style={{ width: 30, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{cl.tier_dist[t]}</span>
             </div>
           ))}
-          <div style={{ fontSize: 11, color: "#5b6470", marginTop: 8 }}>Proyeksi 12 bulan: <b style={{ color: AC }}>{fmtRp(cl.summary.projected_total)}</b> kalau pace dipertahankan.</div>
+          <div style={{ fontSize: 11, color: "#5b6470", marginTop: 8 }}>Proyeksi 12 month: <b style={{ color: AC }}>{fmtRp(cl.summary.projected_total)}</b> kalau pace dipertahankan.</div>
         </div>
         {/* Churn stage */}
         <div style={S.card}>
@@ -63,7 +63,7 @@ export default function AdminClvChurn({ apiBase = "" }) {
               <span style={{ width: 30, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 12, color: "#cdd5df" }}>{ch.stage_dist[st]}</span>
             </div>
           ))}
-          <div style={{ fontSize: 11, color: "#5b6470", marginTop: 8 }}>Stage dihitung dari recency vs gap kunjungan normal tiap customer.</div>
+          <div style={{ fontSize: 11, color: "#5b6470", marginTop: 8 }}>Stage dihitung from recency vs gap kunjungan normal tiap customer.</div>
         </div>
       </div>
 

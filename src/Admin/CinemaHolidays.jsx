@@ -18,12 +18,12 @@ export default function CinemaHolidays({ apiBase = "" }) {
   useEffect(() => { load(); }, [load]);
 
   const add = async () => {
-    if (!form.date || !form.name) { showToast("Tanggal + nama wajib", "err"); return; }
+    if (!form.date || !form.name) { showToast("Date + nama wajib", "err"); return; }
     const r = await fetch(`${base}/holidays`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
     const d = await r.json();
     if (!d.ok) { showToast(d.error || "Gagal", "err"); return; }
     setForm({ date: "", name: "", notes: "" });
-    showToast("Tanggal libur ditambahkan"); load();
+    showToast("Date libur ditambahkan"); load();
   };
   const remove = async (r) => {
     if (!window.confirm(`Hapus ${r.name} (${r.date})?`)) return;
@@ -44,7 +44,7 @@ export default function CinemaHolidays({ apiBase = "" }) {
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12, marginBottom: 14, display: "flex", gap: 8, flexWrap: "wrap" }}>
         <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} style={{ ...inp, width: 150 }} />
         <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Nama libur (mis: Lebaran)" style={{ ...inp, flex: 1, minWidth: 200 }} />
-        <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Catatan (opsional)" style={{ ...inp, flex: 1, minWidth: 150 }} />
+        <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Notes (opsional)" style={{ ...inp, flex: 1, minWidth: 150 }} />
         <button onClick={add} style={{ background: "#10b981", border: "none", color: "#04130c", padding: "9px 22px", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>＋ Tambah</button>
       </div>
 

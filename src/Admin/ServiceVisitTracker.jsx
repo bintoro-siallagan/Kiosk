@@ -70,11 +70,11 @@ export default function ServiceVisitTracker({ apiBase = "" }) {
       <header style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 2.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>karyaOS / KFS — FIELD SERVICE</div>
         <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", marginTop: 4, letterSpacing: -0.5 }}>🔧 Service Visit Tracker</div>
-        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>Assignment dept (IT/Maintenance/Supplier/QA) ke outlet dengan checklist + anti-fraud (geofence + selfie).</div>
+        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>Assign department tickets (IT/Maintenance/Supplier/QA) to outlets with checklists + anti-fraud (geofence + selfie).</div>
       </header>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(min(100%, 140px),1fr))", gap: 10, marginBottom: 18 }}>
-        <Kpi icon="🎫" label="TOTAL TIKET"  value={stats.total} color={CYAN} />
+        <Kpi icon="🎫" label="TOTAL TICKETS" value={stats.total} color={CYAN} />
         <Kpi icon="📬" label="OPEN"         value={stats.open} color={AMBER} />
         <Kpi icon="🔨" label="IN PROGRESS"  value={stats.inProgress} color={CYAN} />
         <Kpi icon="✅" label="COMPLETED"    value={stats.completed} color={GREEN} />
@@ -126,7 +126,7 @@ export default function ServiceVisitTracker({ apiBase = "" }) {
             {filtered.length === 0 && !loading && (
               <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "#64748b" }}>
                 <div style={{ fontSize: 36, marginBottom: 8 }}>🎫</div>
-                <div>No tickets yet{filter.status || filter.department ? " sesuai filter" : ""}</div>
+                <div>No tickets{filter.status || filter.department ? " matching filter" : " yet"}</div>
               </div>
             )}
           </div>
@@ -206,7 +206,7 @@ function TicketCard({ ticket, departments, onClick }) {
 }
 
 function DeptKpiPanel({ kpi, departments }) {
-  if (kpi.length === 0) return <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>No data yet KPI (30 hari terakhir)</div>;
+  if (kpi.length === 0) return <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>No data yet KPI (30 day terakhir)</div>;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%, 320px),1fr))", gap: 12 }}>
       {kpi.map(k => {
@@ -349,7 +349,7 @@ function TicketDetailDrawer({ ticket, departments, templates, onClose, onRefresh
 
                 <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
                   <input value={newItem} onChange={e => setNewItem(e.target.value)} onKeyDown={e => e.key === "Enter" && addItem()}
-                    placeholder="Tambah item ke ticket ini…" style={inp} />
+                    placeholder="Tambah item to ticket ini…" style={inp} />
                   <button onClick={() => setNewItemPhoto(p => !p)} title="Wajib foto?" style={{ padding: "8px 10px", background: newItemPhoto ? AMBER + "33" : "transparent", border: `1px solid ${newItemPhoto ? AMBER : "rgba(255,255,255,0.15)"}`, borderRadius: 8, color: newItemPhoto ? AMBER : "#64748b", fontSize: 11, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" }}>📸 {newItemPhoto ? "ON" : "off"}</button>
                   <button onClick={addItem} disabled={busyItem || !newItem.trim()} style={{ padding: "8px 14px", background: CYAN, border: "none", borderRadius: 8, color: "#001620", fontSize: 12, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", opacity: busyItem || !newItem.trim() ? 0.5 : 1 }}>+ Add</button>
                 </div>
@@ -357,13 +357,13 @@ function TicketDetailDrawer({ ticket, departments, templates, onClose, onRefresh
                 {/* Sync template — selalu tampil, list semua template */}
                 <div style={{ display: "flex", gap: 6, marginBottom: 4 }}>
                   <select value={syncTplId} onChange={e => setSyncTplId(e.target.value)} style={inp}>
-                    <option value="">— Pilih template untuk sync —</option>
+                    <option value="">— Pilih template for sync —</option>
                     {deptTemplates.length === 0 && <option disabled>(No template — buat di tab Templates)</option>}
                     {deptTemplates.map(t => <option key={t.id} value={t.id}>[{t.department}] {t.template_name} ({t.items?.length || 0} items)</option>)}
                   </select>
                   <button onClick={syncTemplate} disabled={busyItem || !syncTplId} style={{ padding: "8px 14px", background: PURPLE, border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap", opacity: busyItem || !syncTplId ? 0.5 : 1 }}>🔄 Sync</button>
                 </div>
-                <div style={{ fontSize: 10, color: "#64748b", marginTop: 4 }}>Sync menambah item dari template yang belum ada (match by label). Item langsung muncul di mobile staff (auto-poll 20s).</div>
+                <div style={{ fontSize: 10, color: "#64748b", marginTop: 4 }}>Sync menambah item from template yang belum ada (match by label). Item langsung muncul di mobile staff (auto-poll 20s).</div>
                 {msg && <div style={{ marginTop: 8, fontSize: 11, color: msg.startsWith("✓") ? GREEN : RED, fontWeight: 700 }}>{msg}</div>}
               </div>
             )}
@@ -466,7 +466,7 @@ function CreateTicketModal({ onClose, onCreated, API, departments, outlets, user
               <option value="urgent">Urgent</option>
             </select>
           </Field>
-          <Field label="📅 SLA / DUE (klik untuk buka kalender)">
+          <Field label="📅 SLA / DUE (klik for buka kalender)">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
               <input type="date" readOnly={false}
                 value={(form.due_at_str || "").split("T")[0] || ""}
@@ -497,7 +497,7 @@ function CreateTicketModal({ onClose, onCreated, API, departments, outlets, user
           </Field>
         </div>
         <Field label="👤 ASSIGNED TO">
-          <input list="users-list" value={form.assigned_to_name} onChange={e => setForm({...form, assigned_to_name: e.target.value})} placeholder="Pilih atau ketik nama" style={inp} />
+          <input list="users-list" value={form.assigned_to_name} onChange={e => setForm({...form, assigned_to_name: e.target.value})} placeholder="Pilih or ketik nama" style={inp} />
           <datalist id="users-list">
             {users.map(u => <option key={u.id} value={u.name}>{u.role}</option>)}
           </datalist>
@@ -537,7 +537,7 @@ function TemplateEditModal({ template, departments, onClose, onSaved, API }) {
 
   const submit = async () => {
     setErr("");
-    if (!form.department || !form.template_name || form.items.length === 0) { setErr("Dept, name, dan minimal 1 item wajib"); return; }
+    if (!form.department || !form.template_name || form.items.length === 0) { setErr("Dept, name, and minimal 1 item wajib"); return; }
     setBusy(true);
     try {
       const r = await fetch(`${API}/api/service/templates`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, created_by: "admin" }) });

@@ -363,7 +363,7 @@ function Extras() {
 
   const bulkSetPrice = async () => {
     const price = parseFloat(bulkPrice);
-    if (!price || !confirm(`Set semua ${list.length} extras ke ${fmtIDR(price)}?`)) return;
+    if (!price || !confirm(`Set semua ${list.length} extras to ${fmtIDR(price)}?`)) return;
     await api('/extras/set-price', { method: 'POST', body: { price } });
     setBulkPrice('');
     load();
@@ -600,7 +600,7 @@ function SeedTab() {
   const [result, setResult] = useState(null);
 
   const seedDefault = async () => {
-    if (!confirm('Seed dengan default 21 menu + 17 extras + sample BOM?')) return;
+    if (!confirm('Seed with default 21 menu + 17 extras + sample BOM?')) return;
     try {
       const r = await api('/seed', { method: 'POST', body: {} });
       setResult(r);
@@ -612,7 +612,7 @@ function SeedTab() {
     try { menu = JSON.parse(pasted); }
     catch { return alert('JSON tidak valid'); }
     if (!Array.isArray(menu)) return alert('Harus array');
-    if (!confirm(`Seed ${menu.length} items dari legacy menu? Existing data dihapus.`)) return;
+    if (!confirm(`Seed ${menu.length} items from legacy menu? Existing data dihapus.`)) return;
     try {
       const r = await api('/seed', { method: 'POST', body: { menu, force: true } });
       setResult(r);
@@ -621,19 +621,19 @@ function SeedTab() {
 
   return (
     <div>
-      <h3>Seed / Migrate dari Hardcoded Menu</h3>
-      <p>Jalankan sekali untuk populate database. Setelah itu update via UI di atas.</p>
+      <h3>Seed / Migrate from Hardcoded Menu</h3>
+      <p>Jalankan sekali for populate database. Setelah itu update via UI di atas.</p>
       <div style={{marginBottom:16, padding:12, background:'#eff6ff', borderRadius:8}}>
         <h4 style={{marginTop:0}}>Opsi 1: Seed default (21 items)</h4>
         <button onClick={seedDefault} style={btnPrimary}>Seed Default Menu</button>
       </div>
       <div style={{marginBottom:16, padding:12, background:'#fef3c7', borderRadius:8}}>
-        <h4 style={{marginTop:0}}>Opsi 2: Import dari legacy <code>let menu = [...]</code></h4>
-        <p style={{fontSize:12}}>Paste isi array menu dari index.js (shape: <code>{`{id, cat, emoji, name, desc, price, freeToppings, popular, avail}`}</code>):</p>
+        <h4 style={{marginTop:0}}>Opsi 2: Import from legacy <code>let menu = [...]</code></h4>
+        <p style={{fontSize:12}}>Paste isi array menu from index.js (shape: <code>{`{id, cat, emoji, name, desc, price, freeToppings, popular, avail}`}</code>):</p>
         <textarea value={pasted} onChange={e=>setPasted(e.target.value)} rows={10} style={{width:'100%', fontFamily:'monospace', fontSize:12}}
           placeholder='[{"id":"froyo-original","cat":"froyo","emoji":"🍦","name":"Original",...},...]' />
         <button onClick={seedFromLegacy} style={btnPrimary}>Import Legacy Menu</button>
-        <p style={{fontSize:11, color:'#92400e'}}>⚠️ BOM tidak ada di legacy data — harus diisi manual per menu setelah import.</p>
+        <p style={{fontSize:11, color:'#92400e'}}>⚠️ BOM none di legacy data — harus diisi manual per menu setelah import.</p>
       </div>
       {result && (
         <pre style={{background:'#1f2937', color:'#f9fafb', padding:12, borderRadius:8, fontSize:12, overflow:'auto'}}>

@@ -47,7 +47,7 @@ export default function AdminSimplePurchase({ apiBase = "" }) {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, qty: Number(form.qty), unit_price: Number(form.unit_price), purchased_by: "Admin" }),
     }).then(r => r.json()).then(j => {
-      if (j.ok) { setMsg(`✓ Pembelian dicatat — ${fmtRp(j.total)}`); setForm(EMPTY); load(); }
+      if (j.ok) { setMsg(`✓ Purchases dicatat — ${fmtRp(j.total)}`); setForm(EMPTY); load(); }
       else setMsg(j.error || "gagal");
     }).catch(e => setMsg(String(e)));
   };
@@ -86,7 +86,7 @@ export default function AdminSimplePurchase({ apiBase = "" }) {
           <button onClick={save} style={S.btn}>+ Catat</button>
         </div>
         <div style={{ fontSize: 12, marginTop: 8, color: msg ? (msg.startsWith("✓") ? "#10b981" : "#f87171") : "#5b6470" }}>
-          {msg || (total > 0 ? `Total: ${fmtRp(total)}` : "Total otomatis dihitung dari qty × harga")}
+          {msg || (total > 0 ? `Total: ${fmtRp(total)}` : "Total otomatis dihitung from qty × harga")}
         </div>
       </div>
 

@@ -27,7 +27,7 @@ export default function AdminFranchise({ apiBase = "" }) {
       </div>
 
       <ReportActions title="Franchise Finance" subtitle="Royalty & franchise fee per outlet"
-        columns={["Outlet", "Area", "Tipe", "Revenue", "Royalty", "Franchise Fee", "Income ke HQ"]}
+        columns={["Outlet", "Area", "Tipe", "Revenue", "Royalty", "Franchise Fee", "Income to HQ"]}
         rows={d.outlets.map(o => [o.name, o.area, o.type, o.revenue, o.royalty, o.franchise_fee, o.hq_income])} />
 
       <div style={S.kpiRow}>

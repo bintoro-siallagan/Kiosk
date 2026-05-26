@@ -11,7 +11,7 @@ import API_HOST from "../apiBase.js";
 
 
 const STEPS = [
-  { key: "outlet", label: "Outlet", icon: "🏢", desc: "Daftar cabang baru" },
+  { key: "outlet", label: "Outlet", icon: "🏢", desc: "List cabang baru" },
   { key: "studio", label: "Studio", icon: "🏛️", desc: "Tambah ruang teater" },
   { key: "layout", label: "Layout & Harga", icon: "🪑", desc: "Custom kursi & kategori" },
   { key: "branding", label: "Branding CDS", icon: "🎨", desc: "Background TV + tiket header" },
@@ -49,7 +49,7 @@ export default function CinemaOutletWizard({ apiBase, onClose, onDone }) {
   // ═══════════════════════════════════════════════
   const saveOutlet = async () => {
     const o = data.outlet;
-    if (!o.code || !o.name) { setMsg("⚠ Code dan Name wajib"); return false; }
+    if (!o.code || !o.name) { setMsg("⚠ Code and Name wajib"); return false; }
     setBusy(true); setMsg("");
     try {
       const r = await fetch(`${apiBase}/api/outlet-master`, {
@@ -114,7 +114,7 @@ export default function CinemaOutletWizard({ apiBase, onClose, onDone }) {
 
   const saveShowtime = async () => {
     const s = data.showtime;
-    if (!s.film_id || !s.show_date || !s.start_time) { setMsg("⚠ Film, tanggal, jam wajib"); return false; }
+    if (!s.film_id || !s.show_date || !s.start_time) { setMsg("⚠ Film, tanggal, hr wajib"); return false; }
     if (!savedIds.studioId) { setMsg("⚠ Studio belum di-save"); return false; }
     setBusy(true); setMsg("");
     try {
@@ -166,7 +166,7 @@ export default function CinemaOutletWizard({ apiBase, onClose, onDone }) {
             <div style={{ fontSize: 19, fontWeight: 800, marginTop: 4, letterSpacing: -0.3 }}>{current.icon} {current.label}</div>
             <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 2 }}>{current.desc}</div>
           </div>
-          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#e6edf3", padding: "8px 14px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>✕ Tutup</button>
+          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#e6edf3", padding: "8px 14px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>✕ Close</button>
         </div>
 
         {/* Progress bar */}
@@ -268,7 +268,7 @@ export default function CinemaOutletWizard({ apiBase, onClose, onDone }) {
                     <input type="file" accept="image/*" style={{ display: "none" }} onChange={e => handleUpload(e, "bgUrl")} />
                   </label>
                   <input value={data.branding.bgUrl} onChange={e => update("branding", "bgUrl", e.target.value)}
-                    placeholder="atau paste URL" style={{ ...inp, flex: 1 }} />
+                    placeholder="or paste URL" style={{ ...inp, flex: 1 }} />
                 </div>
               </Field>
               <Field label="IDLE TEXT (welcome message)">
@@ -281,7 +281,7 @@ export default function CinemaOutletWizard({ apiBase, onClose, onDone }) {
               </Field>
               <Field label="FOOTER STRUK TIKET">
                 <input value={data.branding.ticketFooter} onChange={e => update("branding", "ticketFooter", e.target.value)}
-                  placeholder="Datang 15 menit sebelum tayang · No refund" style={inp} />
+                  placeholder="Datang 15 min sebelum tayang · No refund" style={inp} />
               </Field>
               <div style={{ fontSize: 11, color: "#7d8590" }}>Skip semua → pakai default karyaOS branding.</div>
             </div>
@@ -306,7 +306,7 @@ export default function CinemaOutletWizard({ apiBase, onClose, onDone }) {
                   </select>
                 </Field>
               </div>
-              <Field label="HARGA (kosongkan untuk auto dari outlet pricing)">
+              <Field label="HARGA (kosongkan for auto from outlet pricing)">
                 <input type="number" value={data.showtime.price || ""} onChange={e => update("showtime", "price", parseInt(e.target.value) || 0)}
                   placeholder="50000" style={inp} />
               </Field>

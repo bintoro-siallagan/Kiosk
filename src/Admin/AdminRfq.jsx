@@ -132,7 +132,7 @@ export default function AdminRfq({ apiBase = "" }) {
                 </div>
                 {r.status === "awarded"
                   ? <span style={{ fontSize: 10, fontWeight: 700, color: "#10b981", background: "#10b9811f", border: "1px solid #10b98155", borderRadius: 5, padding: "3px 9px", fontFamily: "'Geist Mono',monospace" }}>✓ AWARD: {r.awarded_vendor}</span>
-                  : <button onClick={() => post(`/api/rfq/${r.id}/award`, {}, "✓ RFQ di-award ke penawaran terbaik")} style={S.btn} disabled={!r.best}>🏆 Award Termurah</button>}
+                  : <button onClick={() => post(`/api/rfq/${r.id}/award`, {}, "✓ RFQ di-award to penawaran terbaik")} style={S.btn} disabled={!r.best}>🏆 Award Termurah</button>}
                 <button onClick={() => setEditing({ ...r })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
                 <button onClick={() => remove(r)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
               </div>
@@ -160,7 +160,7 @@ export default function AdminRfq({ apiBase = "" }) {
                 <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr auto", gap: 7, marginTop: 8 }}>
                   <input value={q.vendor || ""} onChange={e => setQuote({ ...quote, [r.id]: { ...q, vendor: e.target.value } })} placeholder="Vendor" style={S.input} />
                   <input value={q.price || ""} onChange={e => setQuote({ ...quote, [r.id]: { ...q, price: e.target.value } })} placeholder="Harga satuan" type="number" style={S.input} />
-                  <input value={q.lead_days || ""} onChange={e => setQuote({ ...quote, [r.id]: { ...q, lead_days: e.target.value } })} placeholder="Lead (hari)" type="number" style={S.input} />
+                  <input value={q.lead_days || ""} onChange={e => setQuote({ ...quote, [r.id]: { ...q, lead_days: e.target.value } })} placeholder="Lead (day)" type="number" style={S.input} />
                   <button onClick={() => addQuote(r)} style={S.btnGhost}>+ Penawaran</button>
                 </div>
               )}

@@ -42,7 +42,7 @@ export default function AdminSettlement({ apiBase = "" }) {
       <PeriodPicker onChange={setRange} defaultPreset="today" />
 
       <ReportActions title="Settlement" subtitle="Laporan settlement transaksi — POS & platform"
-        columns={["Channel", "Grup", "Transaksi", "Bruto", "Fee/Komisi", "Neto", "Settlement"]}
+        columns={["Channel", "Grup", "Transaction", "Bruto", "Fee/Komisi", "Neto", "Settlement"]}
         rows={d.channels.map(c => [c.channel, c.group, c.count, c.gross, c.fee, c.net, c.settle])} />
 
       <div style={S.kpiRow}>

@@ -25,7 +25,7 @@ export default function AdminOutletMaster({ apiBase = "" }) {
     const next = d.statuses[(d.statuses.indexOf(o.status) + 1) % d.statuses.length];
     fetch(`${apiBase}/api/outlet-master/${o.id}/status`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: next }),
-    }).then(r => r.json()).then(j => { if (j.ok) { setMsg(`✓ ${o.name} → ${next}`); load(); } else setMsg(j.error || "gagal"); }).catch(e => setMsg(String(e)));
+    }).then(r => r.json()).then(j => { if (j.ok) { setMsg(`✓ ${o.name} → ${next}`); load(); } else setMsg(j.error || "failed"); }).catch(e => setMsg(String(e)));
   };
 
   const saveEdit = async () => {
@@ -33,28 +33,28 @@ export default function AdminOutletMaster({ apiBase = "" }) {
       method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
     });
     const j = await r.json();
-    if (j.ok) { setMsg(`✓ ${editing.name} disimpan`); setEditing(null); load(); }
-    else setMsg(j.error || "gagal");
+    if (j.ok) { setMsg(`✓ ${editing.name} saved`); setEditing(null); load(); }
+    else setMsg(j.error || "failed");
   };
   const submitAdd = async () => {
-    if (!adding.name?.trim()) { setMsg("⚠ Nama outlet wajib"); return; }
+    if (!adding.name?.trim()) { setMsg("⚠ Outlet name is required"); return; }
     const r = await fetch(`${apiBase}/api/outlet-master`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(adding),
     });
     const j = await r.json();
-    if (j.ok) { setMsg("✓ Outlet ditambah"); setAdding(null); load(); }
-    else setMsg(j.error || "gagal");
+    if (j.ok) { setMsg("✓ Outlet added"); setAdding(null); load(); }
+    else setMsg(j.error || "failed");
   };
   const remove = async (o) => {
     const ok = await confirm({ title: `Delete outlet "${o.name}"?`, message: `Outlet ${o.code} will be permanently deleted. Related transaction data remains in history but outlet reference is lost.\n\nCannot be undone.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/outlet-master/${o.id}`, { method: "DELETE" });
     const j = await r.json();
-    if (j.ok) { setMsg("✓ Outlet dihapus"); load(); }
-    else setMsg(j.error || "gagal");
+    if (j.ok) { setMsg("✓ Outlet deleted"); load(); }
+    else setMsg(j.error || "failed");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Outlet Master…</div>;
+  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Loading Outlet Master…</div>;
   const s = d.summary;
 
   return (
@@ -171,7 +171,7 @@ function OutletForm({ data, isEdit, d, onChange, onClose, onSave }) {
                 const lat = data.lat, lon = data.lon;
                 if (lat && lon) window.open(`https://www.google.com/maps?q=${lat},${lon}`, "_blank");
                 else window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(data.address || data.area || "Indonesia")}`, "_blank");
-              }} style={{ ...mapBtnSmall, background: "rgba(34,211,238,0.12)", border: "1px solid rgba(34,211,238,0.4)", color: "#22d3ee" }}>🗺️ Buka Google Maps</button>
+              }} style={{ ...mapBtnSmall, background: "rgba(34,211,238,0.12)", border: "1px solid rgba(34,211,238,0.4)", color: "#22d3ee" }}>🗺️ Open Google Maps</button>
               <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#9ca3af", marginLeft: "auto" }}>
                 <input type="checkbox" checked={!!data.gps_lock} onChange={e => onChange({ gps_lock: e.target.checked ? 1 : 0 })} />
                 🔒 Strict (anti-bypass)

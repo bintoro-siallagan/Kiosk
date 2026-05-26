@@ -118,17 +118,17 @@ export default function CinemaEventBooking({ apiBase = "" }) {
                 {Object.entries(STATUS).map(([v, { label }]) => <option key={v} value={v}>{label}</option>)}
               </select>
             </Field>
-            <Field label="Nama event" wide><input value={form.event_name || ""} onChange={e => setForm({ ...form, event_name: e.target.value })} placeholder="Ultah Karyawan PT XYZ" style={inp} /></Field>
+            <Field label="Nama event" wide><input value={form.event_name || ""} onChange={e => setForm({ ...form, event_name: e.target.value })} placeholder="Ultah Employee PT XYZ" style={inp} /></Field>
             <Field label="Jumlah tamu"><input type="number" value={form.attendees || 0} onChange={e => setForm({ ...form, attendees: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
-            <Field label="Tanggal"><input type="date" value={form.event_date || ""} onChange={e => setForm({ ...form, event_date: e.target.value })} style={inp} /></Field>
-            <Field label="Mulai"><input type="time" value={form.start_time || ""} onChange={e => setForm({ ...form, start_time: e.target.value })} style={inp} /></Field>
+            <Field label="Date"><input type="date" value={form.event_date || ""} onChange={e => setForm({ ...form, event_date: e.target.value })} style={inp} /></Field>
+            <Field label="Start"><input type="time" value={form.start_time || ""} onChange={e => setForm({ ...form, start_time: e.target.value })} style={inp} /></Field>
             <Field label="Completed"><input type="time" value={form.end_time || ""} onChange={e => setForm({ ...form, end_time: e.target.value })} style={inp} /></Field>
             <Field label="Kontak person"><input value={form.contact_name || ""} onChange={e => setForm({ ...form, contact_name: e.target.value })} style={inp} /></Field>
             <Field label="Telepon"><input value={form.contact_phone || ""} onChange={e => setForm({ ...form, contact_phone: e.target.value })} style={inp} /></Field>
             <Field label="Email"><input value={form.contact_email || ""} onChange={e => setForm({ ...form, contact_email: e.target.value })} style={inp} /></Field>
             <Field label="Total harga (Rp)"><input type="number" value={form.total_price || 0} onChange={e => setForm({ ...form, total_price: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
             <Field label="DP terbayar (Rp)"><input type="number" value={form.deposit_paid || 0} onChange={e => setForm({ ...form, deposit_paid: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
-            <Field label="Catatan"><input value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} style={inp} /></Field>
+            <Field label="Notes"><input value={form.notes || ""} onChange={e => setForm({ ...form, notes: e.target.value })} style={inp} /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
             <button onClick={save} style={B.save}>{editing === "new" ? "Buat booking" : "Save"}</button>
@@ -159,7 +159,7 @@ export default function CinemaEventBooking({ apiBase = "" }) {
                 </div>
                 <div style={{ background: "#0a0e16", borderRadius: 10, padding: "10px 12px", marginBottom: 10, fontSize: 12.5, lineHeight: 1.6 }}>
                   <div><span style={{ color: C.sub }}>Studio</span> <b>{r.studio_name || `#${r.studio_id}`}</b> {r.studio_type ? `· ${r.studio_type}` : ""} {r.capacity ? `· ${r.capacity} kursi` : ""}</div>
-                  <div><span style={{ color: C.sub }}>Tanggal</span> <b>{r.event_date}</b> · {r.start_time}–{r.end_time}</div>
+                  <div><span style={{ color: C.sub }}>Date</span> <b>{r.event_date}</b> · {r.start_time}–{r.end_time}</div>
                   {r.contact_name && <div><span style={{ color: C.sub }}>Kontak</span> {r.contact_name}{r.contact_phone ? " · " + r.contact_phone : ""}{r.contact_email ? " · " + r.contact_email : ""}</div>}
                 </div>
                 {r.notes && <div style={{ fontSize: 12, color: "#fbbf24", background: "#f59e0b15", borderRadius: 8, padding: "6px 10px", marginBottom: 10 }}>📝 {r.notes}</div>}

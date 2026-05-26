@@ -61,7 +61,7 @@ export default function AdminMasterUnit({ apiBase = "" }) {
           <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} style={S.input}>
             {d.all_categories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <input value={form.conversion} onChange={e => setForm({ ...form, conversion: e.target.value })} placeholder="Konversi ke dasar" type="number" style={S.input} />
+          <input value={form.conversion} onChange={e => setForm({ ...form, conversion: e.target.value })} placeholder="Konversi to dasar" type="number" style={S.input} />
           <button onClick={add} style={S.btn}>+ Satuan</button>
         </div>
         {msg ? <div style={{ fontSize: 12, marginTop: 8, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}

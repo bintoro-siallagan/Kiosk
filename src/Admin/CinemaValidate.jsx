@@ -29,7 +29,7 @@ export default function CinemaValidate({ apiBase = "" }) {
       for (const c of (d.codes || [])) map[c.code] = c;
       localStorage.setItem(LS_CACHE, JSON.stringify(map));
       setOfflineCache(map);
-      alert(`✓ ${d.count} kode tiket di-cache untuk ${precachingDate}`);
+      alert(`✓ ${d.count} kode tiket di-cache for ${precachingDate}`);
     } catch (e) { alert("⚠ Gagal cache: " + e.message); }
   }
 
@@ -41,7 +41,7 @@ export default function CinemaValidate({ apiBase = "" }) {
         body: JSON.stringify({ entries: pendingQueue }),
       });
       const d = await r.json();
-      alert(`✓ ${d.synced || 0} scan tersinkron ke server. Sisa: ${pendingQueue.length - (d.synced || 0)}.`);
+      alert(`✓ ${d.synced || 0} scan tersinkron to server. Sisa: ${pendingQueue.length - (d.synced || 0)}.`);
       localStorage.setItem(LS_QUEUE, "[]"); setPendingQueue([]);
     } catch (e) { alert("⚠ Gagal sync: " + e.message); }
   }
@@ -55,7 +55,7 @@ export default function CinemaValidate({ apiBase = "" }) {
       // Offline: validate against local cache
       const cached = offlineCache[c];
       if (!cached) {
-        entry = { ok: false, status: "invalid", error: "Kode tidak ada di cache offline", code: c, t: Date.now(), offline: true };
+        entry = { ok: false, status: "invalid", error: "Kode none di cache offline", code: c, t: Date.now(), offline: true };
       } else if (cached.checked_in_at) {
         entry = { ok: false, status: "used", error: "Sudah pernah di-check-in", code: c, t: Date.now(), offline: true, ticket: cached };
       } else {
@@ -104,7 +104,7 @@ export default function CinemaValidate({ apiBase = "" }) {
   return (
     <div style={S.root}>
       <h2 style={S.title}>🎟️ Validasi Tiket Cinema</h2>
-      <p style={S.sub}>Scan QR atau ketik kode tiket, lalu tekan Enter. Cocok untuk scanner USB tipe keyboard-wedge.</p>
+      <p style={S.sub}>Scan QR or ketik kode tiket, lalu tekan Enter. Cocok for scanner USB tipe keyboard-wedge.</p>
 
       {/* Offline mode panel */}
       <div style={{ background: offlineMode ? "#f59e0b15" : "#0d1117", border: `1px solid ${offlineMode ? "#f59e0b66" : "#1b212c"}`, borderRadius: 12, padding: 12, marginBottom: 14, display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
@@ -146,7 +146,7 @@ export default function CinemaValidate({ apiBase = "" }) {
             <div style={S.ticketBox}>
               <Row k="Film"    v={ticket.film_title || "—"} />
               <Row k="Studio"  v={ticket.studio_name || "—"} />
-              <Row k="Jadwal"  v={`${ticket.show_date || "—"} · ${ticket.show_time || ""}`} />
+              <Row k="Schedule"  v={`${ticket.show_date || "—"} · ${ticket.show_time || ""}`} />
               <Row k="Kursi"   v={<b style={{ fontSize: 18 }}>{ticket.seat}</b>} />
               {status === "used" && (
                 <Row k="Dipakai" v={<b style={{ color: "#f59e0b" }}>{new Date((last.usedAt || ticket.checked_in_at) * 1000).toLocaleString("id-ID")}</b>} />
@@ -172,7 +172,7 @@ export default function CinemaValidate({ apiBase = "" }) {
 
       {history.length > 0 && (
         <div style={{ marginTop: 28 }}>
-          <div style={S.histTitle}>Riwayat Validasi (10 terakhir)</div>
+          <div style={S.histTitle}>History Validasi (10 terakhir)</div>
           {history.map((h, i) => {
             const c = h.status === "valid" ? "#10b981" : h.status === "used" ? "#f59e0b" : "#ef4444";
             const lbl = h.status === "valid" ? "✓ valid" : h.status === "used" ? "⚠ sudah dipakai" : "✕ invalid";

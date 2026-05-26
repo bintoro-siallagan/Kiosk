@@ -71,7 +71,7 @@ export default function FnbTipPool({ apiBase = "" }) {
       <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12, alignItems: "flex-end" }}>
         <div>
           <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>💵 Tip Pool Distribution</div>
-          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Pool tips → distribusi proporsional ke staff berdasarkan jam kerja.</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Pool tips → distribusi proporsional to staff berdasarkan hr kerja.</div>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <label style={{ fontSize: 11, color: C.dim, letterSpacing: 1 }}>TANGGAL</label>
@@ -82,7 +82,7 @@ export default function FnbTipPool({ apiBase = "" }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 10, marginBottom: 14 }}>
         <Stat label="Pool tips" value={rp(poolData.pool_total)} color="#fbbf24" />
         <Stat label="Individual tips" value={rp(individualTotal)} color="#22d3ee" />
-        <Stat label="Total tips hari ini" value={rp(individualTotal + poolTipsAmount)} color="#10b981" />
+        <Stat label="Total tips day ini" value={rp(individualTotal + poolTipsAmount)} color="#10b981" />
         <Stat label="Sudah didistribusi" value={rp(totalDistributed)} color="#a855f7" />
       </div>
 
@@ -94,7 +94,7 @@ export default function FnbTipPool({ apiBase = "" }) {
           <select value={newTip.tip_type} onChange={e => setNewTip({ ...newTip, tip_type: e.target.value })} style={inp}>
             <option value="individual">Individual</option><option value="pool">Pool</option>
           </select>
-          <input value={newTip.notes} onChange={e => setNewTip({ ...newTip, notes: e.target.value })} placeholder="Catatan" style={inp} />
+          <input value={newTip.notes} onChange={e => setNewTip({ ...newTip, notes: e.target.value })} placeholder="Notes" style={inp} />
           <button onClick={addTip} style={B.save}>+ Tip</button>
         </div>
       </div>

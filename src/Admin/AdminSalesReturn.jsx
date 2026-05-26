@@ -6,7 +6,7 @@ import { useUiKit } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#7e22ce";
-const REASON_C = { Rusak: "#ef4444", "Kualitas Buruk": "#a855f7", "Salah Kirim": "#3b82f6", "Tidak Sesuai Pesanan": "#f59e0b" };
+const REASON_C = { Rusak: "#ef4444", "Kualitas Buruk": "#a855f7", "Salah Send": "#3b82f6", "Tidak Sesuai Order": "#f59e0b" };
 
 export default function AdminSalesReturn({ apiBase = "" }) {
   const { confirm } = useUiKit();

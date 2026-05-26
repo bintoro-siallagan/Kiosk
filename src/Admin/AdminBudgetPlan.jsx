@@ -88,7 +88,7 @@ export default function AdminBudgetPlan({ apiBase = "" }) {
 
       <div style={S.kpiRow}>
         <Kpi label="Periode Budget" v={String(s.periods)} c={AC} />
-        <Kpi label="Total Plan Aktif" v={fmtRp(s.active_total)} c="#10b981" />
+        <Kpi label="Total Plan Active" v={fmtRp(s.active_total)} c="#10b981" />
         <Kpi label="Total Revisi" v={String(s.revisions)} c="#f59e0b" />
         <Kpi label="Net Revisi" v={(s.net_revision >= 0 ? "+" : "") + fmtRp(s.net_revision)} c={s.net_revision >= 0 ? "#10b981" : "#ef4444"} />
       </div>

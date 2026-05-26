@@ -32,8 +32,8 @@ export default function AdminStockList({ apiBase = "" }) {
       <div style={S.kpiRow}>
         <Kpi label="Total Item" v={String(s.total_items)} c={AC} />
         <Kpi label="Nilai Inventory" v={fmtRp(s.total_value)} c="#10b981" />
-        <Kpi label="Stok Menipis" v={String(s.low)} c={s.low > 0 ? "#f59e0b" : "#10b981"} />
-        <Kpi label="Stok Habis" v={String(s.out)} c={s.out > 0 ? "#ef4444" : "#10b981"} />
+        <Kpi label="Stock Menipis" v={String(s.low)} c={s.low > 0 ? "#f59e0b" : "#10b981"} />
+        <Kpi label="Stock Habis" v={String(s.out)} c={s.out > 0 ? "#ef4444" : "#10b981"} />
       </div>
 
       <div style={{ ...S.card, marginTop: 14 }}>

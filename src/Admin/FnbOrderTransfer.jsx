@@ -25,7 +25,7 @@ export default function FnbOrderTransfer({ apiBase = "" }) {
     showToast("Transfer diupdate"); setEditing(null); load();
   };
   const remove = async (r) => {
-    const ok = await confirm({ title: "Hapus log transfer?", message: `Transfer order #${r.order_id} dari ${r.from_table || "—"} → ${r.to_table} akan dihapus permanen.`, danger: true, okLabel: "Delete" });
+    const ok = await confirm({ title: "Hapus log transfer?", message: `Transfer order #${r.order_id} from ${r.from_table || "—"} → ${r.to_table} akan dihapus permanen.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     await fetch(`${base}/order-transfers/${r.id}`, { method: "DELETE" });
     showToast("Log transfer dihapus"); load();
@@ -34,7 +34,7 @@ export default function FnbOrderTransfer({ apiBase = "" }) {
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🔄 Order Transfer Between Tables</div>
-        <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Pindah order dari satu meja ke meja lain (customer pindah / table swap).</div>
+        <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Pindah order from satu meja to meja lain (customer pindah / table swap).</div>
       </div>
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 14 }}>
         <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>+ TRANSFER ORDER</div>
@@ -83,7 +83,7 @@ export default function FnbOrderTransfer({ apiBase = "" }) {
               <Field label="Alasan"><input value={editing.reason || ""} onChange={e => setEditing({ ...editing, reason: e.target.value })} style={inp} /></Field>
             </div>
             <div style={{ marginTop: 8 }}>
-              <Field label="Catatan"><input value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} style={inp} /></Field>
+              <Field label="Notes"><input value={editing.notes || ""} onChange={e => setEditing({ ...editing, notes: e.target.value })} style={inp} /></Field>
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
               <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>

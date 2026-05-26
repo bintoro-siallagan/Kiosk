@@ -30,7 +30,7 @@ export default function FnbDietaryTags({ apiBase = "" }) {
   const { confirm } = useUiKit();
   const showToast = (m, k = "ok") => { setToast({ m, k }); setTimeout(() => setToast(null), 2200); };
   const clearAllTags = async (g) => {
-    const ok = await confirm({ title: `Hapus semua tag untuk "${g.name || g.id}"?`, message: `${g.tags.length} tag akan dihapus permanen.`, danger: true, okLabel: "Hapus Semua" });
+    const ok = await confirm({ title: `Hapus semua tag for "${g.name || g.id}"?`, message: `${g.tags.length} tag akan dihapus permanen.`, danger: true, okLabel: "Hapus Semua" });
     if (!ok) return;
     await fetch(`${base}/dietary-tags/bulk`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ menu_item_id: g.id, menu_item_name: g.name || "", tags: [] }) });
     showToast("Semua tag dihapus"); load();
@@ -48,7 +48,7 @@ export default function FnbDietaryTags({ apiBase = "" }) {
   }, [base, menuItemId]);
   const toggle = (tag) => setSelected(p => { const n = new Set(p); n.has(tag) ? n.delete(tag) : n.add(tag); return n; });
   const save = async () => {
-    if (!menuItemId) { showToast("Masukkan Menu Item ID", "err"); return; }
+    if (!menuItemId) { showToast("Enter Menu Item ID", "err"); return; }
     const r = await fetch(`${base}/dietary-tags/bulk`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ menu_item_id: parseInt(menuItemId, 10), menu_item_name: menuItemName, tags: [...selected] }) });
     const d = await r.json(); if (!d.ok) { showToast(d.error, "err"); return; }
     showToast(`${d.count} tag tersimpan`); load();
@@ -63,13 +63,13 @@ export default function FnbDietaryTags({ apiBase = "" }) {
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🌱 Dietary / Allergen Tags</div>
-        <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Tandai menu dengan info allergen / halal / vegan untuk customer dengan diet preference.</div>
+        <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Tandai menu with info allergen / halal / vegan for customer with diet preference.</div>
       </div>
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 14 }}>
         <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>ASSIGN TAGS KE MENU ITEM</div>
         <div style={{ display: "grid", gridTemplateColumns: "120px 1fr auto", gap: 8, marginBottom: 12 }}>
           <input type="number" value={menuItemId} onChange={e => setMenuItemId(e.target.value)} placeholder="Menu ID" style={inp} />
-          <input value={menuItemName} onChange={e => setMenuItemName(e.target.value)} placeholder="Nama item (untuk display)" style={inp} />
+          <input value={menuItemName} onChange={e => setMenuItemName(e.target.value)} placeholder="Nama item (for display)" style={inp} />
           <button onClick={save} disabled={!menuItemId} style={{ ...B.save, opacity: menuItemId ? 1 : 0.5 }}>💾 Simpan ({selected.size})</button>
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>

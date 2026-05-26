@@ -9,12 +9,12 @@ import { useUiKit } from "../components/uiKit.jsx";
 
 const MONO = "'Geist Mono',monospace";
 const ACCENTS = ["#f97316", "#ef4444", "#10b981", "#3b82f6", "#a855f7", "#eab308"];
-const DURATIONS = [[30, "30 menit"], [60, "1 jam"], [120, "2 jam"], [0, "Sampai distop"]];
+const DURATIONS = [[30, "30 min"], [60, "1 hr"], [120, "2 hr"], [0, "Sampai distop"]];
 const TEMPLATES = [
   { label: "⚡ Flash Sale", title: "FLASH SALE 30 MENIT!", message: "Diskon kilat semua menu — buruan sebelum kehabisan!", code: "FLASH30", accent: "#ef4444" },
-  { label: "🕐 Happy Hour", title: "HAPPY HOUR ⏰", message: "Beli 2 gratis 1 — khusus jam ini aja!", code: "HAPPY", accent: "#f97316" },
+  { label: "🕐 Happy Hour", title: "HAPPY HOUR ⏰", message: "Beli 2 gratis 1 — khusus hr ini aja!", code: "HAPPY", accent: "#f97316" },
   { label: "🌧️ Promo Sepi", title: "Lagi sepi? Rezeki kamu!", message: "Diskon 20% buat 20 pembeli berikutnya", code: "REZEKI20", accent: "#3b82f6" },
-  { label: "🍦 Menu Baru", title: "COBAIN MENU BARU 🍦", message: "Menu baru, harga perkenalan spesial hari ini", code: "", accent: "#a855f7" },
+  { label: "🍦 Menu Baru", title: "COBAIN MENU BARU 🍦", message: "Menu baru, harga perkenalan spesial day ini", code: "", accent: "#a855f7" },
 ];
 
 const S = {
@@ -55,7 +55,7 @@ export default function AdminBroadcast({ apiBase = "" }) {
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok) { alert(d.error || "Gagal push promo"); setBusy(false); return; }
-      alert("🚀 Promo ke-push ke semua layar!");
+      alert("🚀 Promo ke-push to semua layar!");
       reload();
     } catch (e) { alert(e.message); }
     setBusy(false);
@@ -95,7 +95,7 @@ export default function AdminBroadcast({ apiBase = "" }) {
       {/* ACTIVE */}
       {active ? (
         <div style={{ ...S.card, borderLeft: `4px solid ${active.accent || "#f97316"}` }}>
-          <div style={S.label}>🟢 Sedang Tayang</div>
+          <div style={S.label}>🟢 Sedang Showing</div>
           <div style={{ fontSize: 17, fontWeight: 800, color: active.accent || "#f97316" }}>{active.title}</div>
           {active.message && <div style={{ fontSize: 13, color: "#c9d1d9", marginTop: 3 }}>{active.message}</div>}
           {active.code && <div style={{ fontSize: 12, color: "#8b949e", marginTop: 3, fontFamily: MONO }}>Kode: {active.code}</div>}
@@ -150,7 +150,7 @@ export default function AdminBroadcast({ apiBase = "" }) {
           width: "100%", background: busy ? "#374151" : accent, color: "#fff", border: "none",
           borderRadius: 10, padding: "14px", fontSize: 16, fontWeight: 800, cursor: busy ? "default" : "pointer", fontFamily: "inherit",
         }}>
-          {busy ? "Mengirim…" : "🚀 Push ke Semua Layar"}
+          {busy ? "Sending…" : "🚀 Push to Semua Layar"}
         </button>
       </div>
 
@@ -195,8 +195,8 @@ export default function AdminBroadcast({ apiBase = "" }) {
               <div>
                 <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 4 }}>Status</div>
                 <select value={editing.active ? 1 : 0} onChange={e => setEditing({ ...editing, active: Number(e.target.value) })} style={modalInp}>
-                  <option value={1}>Aktif</option>
-                  <option value={0}>Nonaktif</option>
+                  <option value={1}>Active</option>
+                  <option value={0}>Inactive</option>
                 </select>
               </div>
             </div>

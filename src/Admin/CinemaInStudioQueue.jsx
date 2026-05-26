@@ -102,7 +102,7 @@ export default function CinemaInStudioQueue({ apiBase = "" }) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14, marginBottom: 14 }}>
         <div>
           <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🍿 Cinema In-Studio Queue</div>
-          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Pesanan F&amp;B dari customer di kursi · auto-poll 10 detik.</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Order F&amp;B from customer di kursi · auto-poll 10 sec.</div>
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
           <input value={staff} onChange={e => setStaff(e.target.value)} placeholder="Nama staff (audit)" style={{ background: "#0a0e16", border: `1px solid ${C.border}`, borderRadius: 8, padding: "8px 12px", color: "#fff", fontSize: 12, fontFamily: "inherit" }} />
@@ -195,7 +195,7 @@ export default function CinemaInStudioQueue({ apiBase = "" }) {
                 <CSField label="Customer Name"><input style={modalInp} value={creating.buyer_name || ""} onChange={e => setCreating({ ...creating, buyer_name: e.target.value })} /></CSField>
                 <CSField label="No. HP"><input style={modalInp} value={creating.buyer_phone || ""} onChange={e => setCreating({ ...creating, buyer_phone: e.target.value })} /></CSField>
               </div>
-              <CSField label="Catatan"><input style={modalInp} value={creating.notes || ""} onChange={e => setCreating({ ...creating, notes: e.target.value })} /></CSField>
+              <CSField label="Notes"><input style={modalInp} value={creating.notes || ""} onChange={e => setCreating({ ...creating, notes: e.target.value })} /></CSField>
               <CSField label="Status Awal">
                 <select style={modalInp} value={creating.status} onChange={e => setCreating({ ...creating, status: e.target.value })}>
                   <option value="pending">pending (baru)</option>
@@ -209,7 +209,7 @@ export default function CinemaInStudioQueue({ apiBase = "" }) {
                   <div style={{ fontSize: 10, color: "#5b6470", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>ITEMS *</div>
                   <button onClick={addItem} disabled={!menu.length} style={{ background: "#a855f71f", border: "1px solid #a855f755", color: "#a855f7", borderRadius: 6, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: menu.length ? "pointer" : "not-allowed", opacity: menu.length ? 1 : 0.5, fontFamily: "inherit" }}>+ Item</button>
                 </div>
-                {(!creating.items || !creating.items.length) && <div style={{ fontSize: 11, color: C.dim, padding: "8px 0" }}>No item — klik "+ Item" untuk menambah.</div>}
+                {(!creating.items || !creating.items.length) && <div style={{ fontSize: 11, color: C.dim, padding: "8px 0" }}>No item — klik "+ Item" for menambah.</div>}
                 {(creating.items || []).map((it, i) => {
                   const m = menu.find(x => String(x.id) === String(it.bundle_id));
                   return (

@@ -66,7 +66,7 @@ export default function AdminProduction({ apiBase = "" }) {
         <Kpi label="Total Order" v={String(s.total)} c={AC} />
         <Kpi label="Planned" v={String(s.planned)} c="#3b82f6" />
         <Kpi label="In Progress" v={String(s.in_progress)} c="#f59e0b" />
-        <Kpi label="Output Selesai" v={s.output_completed + " unit"} c="#10b981" />
+        <Kpi label="Output Done" v={s.output_completed + " unit"} c="#10b981" />
       </div>
       {msg ? <div style={{ fontSize: 12, margin: "8px 2px", color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
 
@@ -87,8 +87,8 @@ export default function AdminProduction({ apiBase = "" }) {
                     </div>
                   </div>
                   <span style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}55`, borderRadius: 5, padding: "3px 9px", fontFamily: "'Geist Mono',monospace" }}>{st.l}</span>
-                  {o.status === "planned" && <button onClick={() => act(o, "start", () => `✓ ${o.product_name} dimulai`)} style={S.btn("#f59e0b")}>▶ Mulai</button>}
-                  {o.status === "in_progress" && <button onClick={() => act(o, "complete", j => `✓ Produksi selesai — ${j.materials_consumed} bahan terkonsumsi`)} style={S.btn("#10b981")}>✓ Selesai</button>}
+                  {o.status === "planned" && <button onClick={() => act(o, "start", () => `✓ ${o.product_name} dimulai`)} style={S.btn("#f59e0b")}>▶ Start</button>}
+                  {o.status === "in_progress" && <button onClick={() => act(o, "complete", j => `✓ Produksi selesai — ${j.materials_consumed} bahan terkonsumsi`)} style={S.btn("#10b981")}>✓ Done</button>}
                   <button onClick={() => setEditing({ ...o })} title="Edit" style={S.btnEdit}>✏️</button>
                   <button onClick={() => remove(o)} title="Delete" style={S.btnDel}>🗑️</button>
                 </div>

@@ -17,7 +17,7 @@ export default function FnbWhatsApp({ apiBase = "" }) {
   const { confirm } = useUiKit();
   const showToast = (m, k = "ok") => { setToast({ m, k }); setTimeout(() => setToast(null), 2200); };
   const removeMsg = async (m) => {
-    const ok = await confirm({ title: "Hapus log pesan?", message: `Pesan ke ${m.recipient_phone} akan dihapus permanen.`, danger: true, okLabel: "Delete" });
+    const ok = await confirm({ title: "Hapus log pesan?", message: `Pesan to ${m.recipient_phone} akan dihapus permanen.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     await fetch(`${base}/wa-messages/${m.id}`, { method: "DELETE" });
     showToast("Pesan dihapus"); load();
@@ -30,7 +30,7 @@ export default function FnbWhatsApp({ apiBase = "" }) {
     showToast(`${d.deleted || 0} log dihapus`); load();
   };
   const clearFailed = async () => {
-    const ok = await confirm({ title: "Hapus log pesan yang gagal?", message: "Hanya pesan dengan status 'failed' yang dihapus.", danger: true, okLabel: "Hapus Failed" });
+    const ok = await confirm({ title: "Hapus log pesan yang gagal?", message: "Hanya pesan with status 'failed' yang dihapus.", danger: true, okLabel: "Hapus Failed" });
     if (!ok) return;
     const r = await fetch(`${base}/wa-messages?status=failed`, { method: "DELETE" });
     const d = await r.json();
@@ -79,10 +79,10 @@ export default function FnbWhatsApp({ apiBase = "" }) {
             <Field label="Template (opsional)"><input value={send.template_name} onChange={e => setSend({ ...send, template_name: e.target.value })} placeholder="welcome_message" style={inp} /></Field>
           </div>
           <Field label="Pesan">
-            <textarea value={send.message} onChange={e => setSend({ ...send, message: e.target.value })} rows={5} style={{ ...inp, resize: "vertical", fontFamily: "inherit" }} placeholder="Halo {{nama}}! Reservasi Anda CONFIRMED ✅. Tanggal: …" />
+            <textarea value={send.message} onChange={e => setSend({ ...send, message: e.target.value })} rows={5} style={{ ...inp, resize: "vertical", fontFamily: "inherit" }} placeholder="Halo {{nama}}! Reservasi Anda CONFIRMED ✅. Date: …" />
           </Field>
           <div style={{ marginTop: 10 }}>
-            <button onClick={submitSend} style={B.save}>💬 Kirim Pesan</button>
+            <button onClick={submitSend} style={B.save}>💬 Send Pesan</button>
           </div>
         </div>
       )}
@@ -116,7 +116,7 @@ export default function FnbWhatsApp({ apiBase = "" }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
             <Field label="Provider"><select value={cfgEdit.provider || "fonnte"} onChange={e => setCfgEdit({ ...cfgEdit, provider: e.target.value })} style={inp}>{PROVIDERS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
             <Field label="Sender number (628xxx)"><input value={cfgEdit.sender_number || ""} onChange={e => setCfgEdit({ ...cfgEdit, sender_number: e.target.value })} style={inp} /></Field>
-            <Field label="API Key"><input value={cfgEdit.api_key || ""} onChange={e => setCfgEdit({ ...cfgEdit, api_key: e.target.value })} placeholder="masukkan ulang untuk update" style={inp} /></Field>
+            <Field label="API Key"><input value={cfgEdit.api_key || ""} onChange={e => setCfgEdit({ ...cfgEdit, api_key: e.target.value })} placeholder="masukkan ulang for update" style={inp} /></Field>
             <Field label="Business account ID"><input value={cfgEdit.business_account_id || ""} onChange={e => setCfgEdit({ ...cfgEdit, business_account_id: e.target.value })} style={inp} /></Field>
             <Field label="Webhook token"><input value={cfgEdit.webhook_token || ""} onChange={e => setCfgEdit({ ...cfgEdit, webhook_token: e.target.value })} style={inp} /></Field>
             <Field label="Status"><label style={{ display: "flex", gap: 8, fontSize: 13, alignItems: "center" }}><input type="checkbox" checked={!!cfgEdit.is_enabled} onChange={e => setCfgEdit({ ...cfgEdit, is_enabled: e.target.checked ? 1 : 0 })} /> Enabled (kalau off, send disimulasikan)</label></Field>

@@ -49,7 +49,7 @@ export default function AdminBatchTracking({ apiBase = "" }) {
 
       <div style={S.kpiRow}>
         <Kpi label="Total Batch" v={String(s.total)} c={AC} />
-        <Kpi label="Mendekati Expired" v={String(s.expiring)} c={s.expiring > 0 ? "#f59e0b" : "#10b981"} sub="≤ 7 hari" />
+        <Kpi label="Mendekati Expired" v={String(s.expiring)} c={s.expiring > 0 ? "#f59e0b" : "#10b981"} sub="≤ 7 day" />
         <Kpi label="Sudah Kedaluwarsa" v={String(s.expired)} c={s.expired > 0 ? "#ef4444" : "#10b981"} />
         <Kpi label="Fresh" v={String(s.fresh)} c="#10b981" />
       </div>
@@ -81,7 +81,7 @@ export default function AdminBatchTracking({ apiBase = "" }) {
                 <td style={{ ...S.td, color: "#5b6470" }}>{fmtDate(b.received_at)}</td>
                 <td style={{ ...S.td, color: "#9da7b3" }}>{fmtDate(b.expiry_at)}</td>
                 <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: b.color }}>
-                  {b.days < 0 ? `${-b.days} hr lewat` : `${b.days} hari`}
+                  {b.days < 0 ? `${-b.days} hr lewat` : `${b.days} day`}
                 </td>
                 <td style={S.td}>
                   <span style={{ fontSize: 9, fontWeight: 700, color: b.color, background: b.color + "1f", border: `1px solid ${b.color}55`, borderRadius: 5, padding: "2px 7px", fontFamily: "'Geist Mono',monospace" }}>{ST[b.status]}</span>

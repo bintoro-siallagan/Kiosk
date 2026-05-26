@@ -9,8 +9,8 @@ const pct = (n) => `${(Math.round((n || 0) * 100) / 100).toFixed(2)}%`;
 const TABS = [["distributor", "🏢 Distributor"], ["license", "📜 Lisensi per Film"], ["settlement", "💹 Settlement & Recon"]];
 const PERIODS = [
   { id: "today",     label: "Hari ini" },
-  { id: "week",      label: "7 hari" },
-  { id: "month",     label: "30 hari" },
+  { id: "week",      label: "7 day" },
+  { id: "month",     label: "30 day" },
   { id: "ytd",       label: "YTD" },
 ];
 function periodRange(p) {
@@ -194,7 +194,7 @@ function LicenseTab({ base, showToast }) {
     showToast("Tier ditambahkan"); loadTiers();
   };
   const seedStandard = async () => {
-    if (!window.confirm("Reset tiers ke standar Indo: W1 50/50 · W2 60/40 · W3+ 70/30?")) return;
+    if (!window.confirm("Reset tiers to standar Indo: W1 50/50 · W2 60/40 · W3+ 70/30?")) return;
     const r = await fetch(`${base}/films/${picked}/share-tiers/seed-standard`, { method: "POST" });
     const d = await r.json();
     if (!d.ok) { showToast(d.error || "Gagal", "err"); return; }
@@ -244,7 +244,7 @@ function LicenseTab({ base, showToast }) {
                 <Field label="Lisensi akhir"><input type="date" value={filmForm.license_end || ""} onChange={e => setFilmForm({ ...filmForm, license_end: e.target.value })} style={inp} /></Field>
                 <Field label="Min. run days"><input type="number" value={filmForm.min_run_days || 0} onChange={e => setFilmForm({ ...filmForm, min_run_days: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
                 <Field label="Fallback share % (flat — kalau tiers kosong)"><input type="number" step="0.1" value={filmForm.revenue_share_pct || 0} onChange={e => setFilmForm({ ...filmForm, revenue_share_pct: parseFloat(e.target.value) || 0 })} style={inp} /></Field>
-                <Field label="Catatan"><input value={filmForm.distributor_notes || ""} onChange={e => setFilmForm({ ...filmForm, distributor_notes: e.target.value })} style={inp} /></Field>
+                <Field label="Notes"><input value={filmForm.distributor_notes || ""} onChange={e => setFilmForm({ ...filmForm, distributor_notes: e.target.value })} style={inp} /></Field>
               </div>
               <div style={{ marginTop: 12 }}>
                 <button onClick={saveFilmLicense} style={B.save}>Simpan lisensi</button>
@@ -256,7 +256,7 @@ function LicenseTab({ base, showToast }) {
                 <div style={{ fontSize: 12, color: "#fbbf24", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>TIERED REVENUE SHARE</div>
                 <button onClick={seedStandard} style={B.small("#10b981")}>+ Template Standar (W1 50/50 · W2 60/40 · W3+ 70/30)</button>
               </div>
-              {tiers.length === 0 ? <div style={{ padding: "16px 0", color: C.sub, fontSize: 13, textAlign: "center" }}>No tier. Klik "+ Template Standar" atau buat manual.</div> :
+              {tiers.length === 0 ? <div style={{ padding: "16px 0", color: C.sub, fontSize: 13, textAlign: "center" }}>No tier. Klik "+ Template Standar" or buat manual.</div> :
                 <div style={{ marginBottom: 12 }}>
                   <Header cols={["MINGGU", "CINEMA %", "DISTRIBUTOR %", "CATATAN", "AKSI"]} widths={[120, 100, 130, "auto", 70]} />
                   {tiers.map(t => (

@@ -92,7 +92,7 @@ export default function AdminNotificationCenter({ apiBase = "" }) {
               </div>
               <span style={{ fontSize: 9, fontWeight: 700, color: CAT_C[n.category] || "#9ca3af", fontFamily: "'Geist Mono',monospace" }}>{n.category.toUpperCase()}</span>
               <span style={{ fontSize: 9, fontWeight: 700, color: pri.c, background: pri.c + "1f", border: `1px solid ${pri.c}55`, borderRadius: 5, padding: "2px 8px", fontFamily: "'Geist Mono',monospace" }}>{pri.l}</span>
-              <button onClick={() => dismiss(n)} style={S.btn}>✓ Selesai</button>
+              <button onClick={() => dismiss(n)} style={S.btn}>✓ Done</button>
               <button onClick={() => setEditing({ ...n })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
               <button onClick={() => remove(n)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
             </div>

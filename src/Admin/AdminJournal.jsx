@@ -39,8 +39,8 @@ export default function AdminJournal({ apiBase = "" }) {
 
       <PeriodPicker onChange={setRange} defaultPreset="30d" />
 
-      <ReportActions title="Jurnal Akuntansi" subtitle="Jurnal umum — entri double-entry"
-        columns={["Ref", "Deskripsi", "Kode COA", "Akun", "Debit", "Kredit"]}
+      <ReportActions title="Jurnal Accounttansi" subtitle="Jurnal umum — entri double-entry"
+        columns={["Ref", "Description", "Kode COA", "Account", "Debit", "Credit"]}
         rows={d.entries.flatMap(e => e.lines.map(l => [e.ref, e.description, l.coa_code || "—", l.account, l.debit || "", l.credit || ""]))} />
 
       <div style={{ ...S.card, marginBottom: 14, borderColor: t.balanced ? "#10b98155" : "#ef444455", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>

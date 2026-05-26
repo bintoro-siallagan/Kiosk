@@ -120,7 +120,7 @@ function ProviderCard({ apiBase, provider, onSaved, onDelete, showToast }) {
           <div style={S.fieldLabel}>Status</div>
           <button onClick={() => set("is_active", !form.is_active)}
             style={{ ...S.input, cursor: "pointer", textAlign: "left", color: form.is_active ? "#34D399" : "#6b7280" }}>
-            {form.is_active ? "🟢 Aktif — tampil di POS" : "⚪ Nonaktif — sembunyi dari POS"}
+            {form.is_active ? "🟢 Active — tampil di POS" : "⚪ Inactive — sembunyi from POS"}
           </button>
         </div>
       </div>

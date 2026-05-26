@@ -20,7 +20,7 @@ export default function CinemaAnalytics({ apiBase = "" }) {
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>📊 Cinema Analytics</div>
-        <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Movie performance · okupansi per jam &amp; hari · F&amp;B attach rate · AI insights.</div>
+        <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Movie performance · okupansi per hr &amp; day · F&amp;B attach rate · AI insights.</div>
       </div>
       <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
         {TABS.map(([id, label]) => (
@@ -71,7 +71,7 @@ function OccupancyTab({ base }) {
   return (
     <>
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, marginBottom: 14 }}>
-        <div style={{ fontSize: 11, color: C.dim, marginBottom: 10, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>PER TIME-BAND (30 hari)</div>
+        <div style={{ fontSize: 11, color: C.dim, marginBottom: 10, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>PER TIME-BAND (30 day)</div>
         {data.by_time_band.map(r => {
           const occ = r.capacity ? Math.round(r.tickets * 100 / r.capacity) : 0;
           return (
@@ -88,7 +88,7 @@ function OccupancyTab({ base }) {
         })}
       </div>
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14 }}>
-        <div style={{ fontSize: 11, color: C.dim, marginBottom: 10, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>PER HARI (30 hari)</div>
+        <div style={{ fontSize: 11, color: C.dim, marginBottom: 10, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>PER HARI (30 day)</div>
         {data.by_day_of_week.map(r => (
           <div key={r.dow} style={{ display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderBottom: `1px solid #1f2937` }}>
             <span style={{ width: 100, fontSize: 13, fontWeight: 700 }}>{DAY_NAMES[r.dow] || r.dow}</span>

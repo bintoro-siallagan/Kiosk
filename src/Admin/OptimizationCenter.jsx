@@ -47,7 +47,7 @@ export default function OptimizationCenter({ apiBase }) {
         </div>
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <Stat label="Anomali terdeteksi" value={anomalies.length} color={anomalies.length ? "#eab308" : "#10b981"} />
-          <Stat label="Rata-rata harian" value={rp(mean)} color="#22d3ee" />
+          <Stat label="Rata-rata dayan" value={rp(mean)} color="#22d3ee" />
           <Stat label="Peluang optimasi" value={opportunities.length} color={opportunities.length ? "#f97316" : "#10b981"} />
         </div>
       </div>
@@ -67,7 +67,7 @@ export default function OptimizationCenter({ apiBase }) {
               {anomalies.map(a => {
                 const spike = a.dev > 0;
                 return (
-                  <div key={a.date} style={{ background: C.card, border: `1px solid ${spike ? "#10b98144" : "#ef444444"}`, borderRadius: 12, padding: "11px 14px", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+                  <div key={a.date} style={{ background: C.card, border: `1px solid ${spito ? "#10b98144" : "#ef444444"}`, borderRadius: 12, padding: "11px 14px", display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
                     <div style={{ fontSize: 20 }}>{spike ? "📈" : "📉"}</div>
                     <div style={{ flex: 1, minWidth: 150 }}>
                       <div style={{ fontSize: 13, fontWeight: 700 }}>{spike ? "Lonjakan" : "Penurunan"} revenue</div>

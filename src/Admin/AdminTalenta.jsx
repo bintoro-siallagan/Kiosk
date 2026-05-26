@@ -9,10 +9,10 @@ const ago = (ts) => {
   if (!ts) return "belum pernah";
   const m = Math.floor((Date.now() / 1000 - ts) / 60);
   if (m < 1) return "baru saja";
-  if (m < 60) return m + " menit lalu";
+  if (m < 60) return m + " min lalu";
   const h = Math.floor(m / 60);
-  if (h < 24) return h + " jam lalu";
-  return Math.floor(h / 24) + " hari lalu";
+  if (h < 24) return h + " hr lalu";
+  return Math.floor(h / 24) + " day lalu";
 };
 
 export default function AdminTalenta({ apiBase = "" }) {
@@ -48,7 +48,7 @@ export default function AdminTalenta({ apiBase = "" }) {
   };
 
   const remove = async (item) => {
-    const ok = await confirm({ title: `Hapus entitas "${item.name || item.key}"?`, message: "Status sync untuk entitas ini akan dihapus. Tidak bisa dibatalkan.", danger: true, okLabel: "Delete" });
+    const ok = await confirm({ title: `Hapus entitas "${item.name || item.key}"?`, message: "Status sync for entitas ini akan dihapus. Tidak bisa dibatalkan.", danger: true, okLabel: "Delete" });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/talenta/${item.key}`, { method: "DELETE" });
     const j = await r.json();
@@ -64,7 +64,7 @@ export default function AdminTalenta({ apiBase = "" }) {
     <div>
       <div style={S.intro}>
         🔗 <b style={{ color: "#0ea5e9" }}>TALENTA INTEGRATION</b> — sinkronisasi <b>attendance, shift,
-        payroll &amp; incentive</b> dengan <b>Talenta by Mekari</b>. Data HR &amp; payroll konsisten lintas sistem.
+        payroll &amp; incentive</b> with <b>Talenta by Mekari</b>. Data HR &amp; payroll konsisten lintas sistem.
       </div>
 
       {/* Connection */}

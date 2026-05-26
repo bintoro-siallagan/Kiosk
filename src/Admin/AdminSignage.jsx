@@ -67,7 +67,7 @@ export default function AdminSignage({ apiBase = "" }) {
         <Kpi label="Total Layar" v={String(s.screens)} c={AC} />
         <Kpi label="Layar Online" v={`${s.online}/${s.screens}`} c="#10b981" />
         <Kpi label="Total Media" v={String(s.media)} c="#3b82f6" />
-        <Kpi label="Media Aktif" v={String(s.active_media)} c="#10b981" />
+        <Kpi label="Media Active" v={String(s.active_media)} c="#10b981" />
       </div>
       {msg ? <div style={{ fontSize: 12, margin: "8px 2px", color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
 
@@ -152,7 +152,7 @@ export default function AdminSignage({ apiBase = "" }) {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
                 <div>
-                  <label style={modalLbl}>Durasi (detik)</label>
+                  <label style={modalLbl}>Durasi (sec)</label>
                   <input type="number" value={editing.duration_sec ?? 0} onChange={e => setEditing({ ...editing, duration_sec: Number(e.target.value) })} style={modalInp} />
                 </div>
                 <div>

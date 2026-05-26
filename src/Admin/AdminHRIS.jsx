@@ -9,7 +9,7 @@ import { ErrorInline } from "../components/ConnectionError.jsx";
 
 const MONO = "'Geist Mono',monospace";
 const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-const fmtH = (m) => m >= 60 ? (m / 60).toFixed(1) + " jam" : (m || 0) + " mnt";
+const fmtH = (m) => m >= 60 ? (m / 60).toFixed(1) + " hr" : (m || 0) + " mnt";
 const prodCol = (n) => n >= 85 ? "#34D399" : n >= 70 ? "#F59E0B" : "#F87171";
 const rateCol = (n) => n >= 95 ? "#34D399" : n >= 80 ? "#F59E0B" : "#F87171";
 

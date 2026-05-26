@@ -142,7 +142,7 @@ export default function AdminInternalAudit({ apiBase = "" }) {
                 catch { setEditing({ ...editing, findings_json: v }); }
               }} rows={5} style={{ ...modalInp, fontFamily: "'Geist Mono',monospace", fontSize: 11 }} />
             </Field>
-            <div style={{ fontSize: 10, color: "#5b6470", marginBottom: 8 }}>Catatan: audit dengan status <b>completed</b> immutable — server akan menolak edit.</div>
+            <div style={{ fontSize: 10, color: "#5b6470", marginBottom: 8 }}>Notes: audit with status <b>completed</b> immutable — server akan menolak edit.</div>
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               <button onClick={() => setEditing(null)} style={{ ...S.btn, background: "#21262d", color: "#e6edf3", flex: 1 }}>Cancel</button>
               <button onClick={saveEdit} style={{ ...S.btn, flex: 1 }}>Save</button>

@@ -102,7 +102,7 @@ function Dashboard() {
         })}
       </div>
 
-      <h3>Tax Aktif</h3>
+      <h3>Tax Active</h3>
       <table style={tableStyle}>
         <thead><tr><th>Tax</th><th>Rate</th><th>Applies To</th><th>Inclusive</th></tr></thead>
         <tbody>
@@ -114,7 +114,7 @@ function Dashboard() {
 
       <h3 style={{marginTop:20}}>Expense Terbaru</h3>
       <table style={tableStyle}>
-        <thead><tr><th>Doc</th><th>Tanggal</th><th>Kategori</th><th>Vendor</th><th>Amount</th></tr></thead>
+        <thead><tr><th>Doc</th><th>Date</th><th>Kategori</th><th>Vendor</th><th>Amount</th></tr></thead>
         <tbody>
           {data.last_expenses.map(e => (
             <tr key={e.doc_no}><td>{e.doc_no}</td><td>{fmtDate(e.expense_date)}</td><td>{e.category}</td><td>{e.vendor || '-'}</td><td>{fmtIDR(e.amount)}</td></tr>
@@ -164,9 +164,9 @@ function PLReport() {
         <span>→</span>
         <input type="date" value={new Date(to*1000).toISOString().slice(0,10)}
           onChange={e => setTo(Math.floor(new Date(e.target.value).getTime()/1000))} />
-        <button onClick={() => setRange(7)} style={btn}>7 hari</button>
-        <button onClick={() => setRange(30)} style={btn}>30 hari</button>
-        <button onClick={() => setRange(90)} style={btn}>90 hari</button>
+        <button onClick={() => setRange(7)} style={btn}>7 day</button>
+        <button onClick={() => setRange(30)} style={btn}>30 day</button>
+        <button onClick={() => setRange(90)} style={btn}>90 day</button>
         <button onClick={() => { setFrom(yearStart()); setTo(today()); }} style={btn}>YTD</button>
       </div>
 
@@ -341,7 +341,7 @@ function Expenses() {
 
       <table style={tableStyle}>
         <thead><tr>
-          <th>Doc No</th><th>Tanggal</th><th>Kategori</th><th>Vendor</th><th>Description</th><th>Amount</th><th>Tax</th><th>Status</th><th></th>
+          <th>Doc No</th><th>Date</th><th>Kategori</th><th>Vendor</th><th>Description</th><th>Amount</th><th>Tax</th><th>Status</th><th></th>
         </tr></thead>
         <tbody>
           {list.map(e => (
@@ -396,14 +396,14 @@ function ExpenseForm({initial, categories, onClose}) {
           <label>Kategori* <select value={f.category_id} onChange={update('category_id')}>
             {categories.map(c => <option key={c.id} value={c.id}>[{c.type}] {c.name}</option>)}
           </select></label>
-          <label>Tanggal* <input type="date" value={new Date(f.expense_date*1000).toISOString().slice(0,10)} onChange={update('expense_date')} /></label>
+          <label>Date* <input type="date" value={new Date(f.expense_date*1000).toISOString().slice(0,10)} onChange={update('expense_date')} /></label>
           <label>Amount* <input type="number" value={f.amount} onChange={update('amount')} /></label>
           <label>Tax Amount <input type="number" value={f.tax_amount} onChange={update('tax_amount')} /></label>
           <label>Vendor <input value={f.vendor} onChange={update('vendor')} placeholder="e.g. PLN" /></label>
           <label>Payment Method <select value={f.payment_method} onChange={update('payment_method')}>
             <option>cash</option><option>transfer</option><option>card</option><option>e-wallet</option>
           </select></label>
-          <label style={{gridColumn:'1/-1'}}>Description <input value={f.description} onChange={update('description')} placeholder="Deskripsi singkat" /></label>
+          <label style={{gridColumn:'1/-1'}}>Description <input value={f.description} onChange={update('description')} placeholder="Description singkat" /></label>
           <label style={{gridColumn:'1/-1'}}>Notes <textarea value={f.notes} onChange={update('notes')} rows={2} /></label>
         </div>
         <div style={{marginTop:16}}>
@@ -516,7 +516,7 @@ function TaxConfig() {
   const add = async () => {
     const id = prompt('ID (e.g. ppn)?');
     const name = prompt('Nama?');
-    const rate = parseFloat(prompt('Rate (0.11 untuk 11%)?'));
+    const rate = parseFloat(prompt('Rate (0.11 for 11%)?'));
     if (!id || !name || isNaN(rate)) return;
     try { await api('/tax-config', {method:'POST', body:{id, name, rate}}); load(); }
     catch (e) { alert(e.message); }

@@ -158,7 +158,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
 
     return {
       rev: { value: rev, delta: f.revenue?.delta_pct || 0, label: 'Net Revenue', subtext: `${orders} order` },
-      avgTicket: { value: avgTicket, delta: f.avg_ticket_delta || 0, label: 'Avg Ticket', subtext: `dari ${orders} order` },
+      avgTicket: { value: avgTicket, delta: f.avg_ticket_delta || 0, label: 'Avg Ticket', subtext: `from ${orders} order` },
       grossMargin: { value: grossMargin, delta: f.gross_margin_delta || 0, label: 'Gross Margin', subtext: `COGS ${fmtIDRcompact(cogs)}`, isPercent: true },
       cash: { value: cashPosition, label: 'Cash Position', subtext: data.cashFlow ? `arus kas ${cashFlowNet >= 0 ? '+' : ''}${fmtIDRcompact(cashFlowNet)} · ${data.cashFlow.period || 'bln ini'}` : `AP outstanding ${fmtIDRcompact(apOutstanding)}` },
       anomaly: { value: anomalyCount, label: 'Anomali', subtext: anomalyCount > 0 ? 'butuh review' : 'all clear', isCount: true, isAlert: anomalyCount > 0 }
@@ -178,7 +178,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
     if (tax > 0) expItems.push({ name: 'Pajak', amount: tax });
     const expTotal = expItems.reduce((s, e) => s + e.amount, 0);
     return {
-      revenue: { total: revTotal, items: [{ name: 'Penjualan (Net)', amount: revTotal }] },
+      revenue: { total: revTotal, items: [{ name: 'Sales (Net)', amount: revTotal }] },
       expenses: { total: expTotal, items: expItems },
       net_income: revTotal - expTotal
     };
@@ -228,11 +228,11 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
 
       {/* 🆕 QUICK-ACTION BUTTONS ROW */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 14 }}>
-        <button onClick={() => window.open('/?pos=1', '_blank')} style={qaBtn("#10b981", "🧾", "Buka POS Kasir")}>🧾<div><div style={{ fontWeight: 800 }}>POS Kasir</div><div style={{ fontSize: 10, opacity: 0.8 }}>Buka di tab baru</div></div></button>
-        <button onClick={() => window.open('/?kds=1', '_blank')} style={qaBtn("#f97316", "👨‍🍳", "Buka KDS")}>👨‍🍳<div><div style={{ fontWeight: 800 }}>KDS Dapur</div><div style={{ fontSize: 10, opacity: 0.8 }}>{data.kds?.active_now?.queued || 0} antrian</div></div></button>
+        <button onClick={() => window.open('/?pos=1', '_blank')} style={qaBtn("#10b981", "🧾", "Open POS Kasir")}>🧾<div><div style={{ fontWeight: 800 }}>POS Kasir</div><div style={{ fontSize: 10, opacity: 0.8 }}>Open di tab baru</div></div></button>
+        <button onClick={() => window.open('/?kds=1', '_blank')} style={qaBtn("#f97316", "👨‍🍳", "Open KDS")}>👨‍🍳<div><div style={{ fontWeight: 800 }}>KDS Dapur</div><div style={{ fontSize: 10, opacity: 0.8 }}>{data.kds?.active_now?.queued || 0} antrian</div></div></button>
         <button onClick={() => onNavigate?.('cinema_validate')} style={qaBtn("#a855f7", "🎟️", "Cinema Validator")}>🎟️<div><div style={{ fontWeight: 800 }}>Cinema Validator</div><div style={{ fontSize: 10, opacity: 0.8 }}>Scan tiket QR</div></div></button>
-        <button onClick={() => onNavigate?.('shift_roster')} style={qaBtn("#22d3ee", "📊", "Z-Report End Day")}>📊<div><div style={{ fontWeight: 800 }}>End Day / Z-Report</div><div style={{ fontSize: 10, opacity: 0.8 }}>Tutup hari operasional</div></div></button>
-        <button onClick={() => setAlertsOpen(o => !o)} style={qaBtn(data.extras?.alerts?.length > 0 ? "#ef4444" : "#6b7280", "🔔", "Realtime Alerts")}>🔔<div><div style={{ fontWeight: 800 }}>Alerts ({data.extras?.alerts?.length || 0})</div><div style={{ fontSize: 10, opacity: 0.8 }}>Klik untuk live feed</div></div></button>
+        <button onClick={() => onNavigate?.('shift_roster')} style={qaBtn("#22d3ee", "📊", "Z-Report End Day")}>📊<div><div style={{ fontWeight: 800 }}>End Day / Z-Report</div><div style={{ fontSize: 10, opacity: 0.8 }}>Close day operasional</div></div></button>
+        <button onClick={() => setAlertsOpen(o => !o)} style={qaBtn(data.extras?.alerts?.length > 0 ? "#ef4444" : "#6b7280", "🔔", "Realtime Alerts")}>🔔<div><div style={{ fontWeight: 800 }}>Alerts ({data.extras?.alerts?.length || 0})</div><div style={{ fontSize: 10, opacity: 0.8 }}>Klik for live feed</div></div></button>
       </div>
 
       {/* 🆕 TODAY'S COMPARISON */}
@@ -274,7 +274,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
             <div style={{ fontSize: 13, fontWeight: 800, color: "#ef4444", letterSpacing: 1 }}>🔔 REAL-TIME ALERTS FEED ({data.extras.alerts.length})</div>
             <button onClick={() => setAlertsOpen(false)} style={{ background: "transparent", border: "1px solid #2a2b30", color: "#9ca3af", padding: "3px 9px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit", fontSize: 11 }}>× tutup</button>
           </div>
-          {data.extras.alerts.length === 0 ? <div style={{ color: "#10b981", fontSize: 13, textAlign: "center", padding: 14 }}>✓ Semua aman, tidak ada alert.</div> :
+          {data.extras.alerts.length === 0 ? <div style={{ color: "#10b981", fontSize: 13, textAlign: "center", padding: 14 }}>✓ Semua aman, none alert.</div> :
             <div style={{ maxHeight: 320, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
               {data.extras.alerts.map((a, i) => (
                 <div key={i} style={{ display: "flex", gap: 10, padding: "8px 12px", background: a.severity === 'critical' ? "#7f1d1d22" : "#f59e0b15", border: `1px solid ${a.severity === 'critical' ? "#ef444466" : "#f59e0b66"}`, borderRadius: 8, alignItems: "center" }}>
@@ -298,7 +298,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
           <div style={{flex: 1}}>
             <b>{heroKpis.anomaly.value} anomali terdeteksi</b> · refund/cancel/manager-PIN bypass yang butuh review
           </div>
-          <span style={{color: '#fbbf24', fontSize: 12}}>Klik untuk review →</span>
+          <span style={{color: '#fbbf24', fontSize: 12}}>Klik for review →</span>
         </div>
       )}
 
@@ -382,7 +382,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
         <MiniPanel
           title="Loyalty Members"
           value={(data.loyalty?.total_customers || 0).toLocaleString('id-ID')}
-          sub={`${data.loyalty?.new_this_month?.c || 0} bergabung bulan ini`}
+          sub={`${data.loyalty?.new_this_month?.c || 0} bergabung month ini`}
           icon="🏅"
           color="#fbbf24"
           onClick={() => onNavigate?.('loyalty')} />
@@ -462,7 +462,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
                   <div style={{ fontSize: 14, fontWeight: 700 }}>🏪 {o.outlet}</div>
                   {o.studio_issues > 0 ? <span style={{ background: "#ef444422", color: "#ef4444", padding: "2px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700 }}>⚠ {o.studio_issues}</span> : <span style={{ background: "#10b98122", color: "#10b981", padding: "2px 8px", borderRadius: 6, fontSize: 10, fontWeight: 700 }}>✓ OK</span>}
                 </div>
-                <div style={{ fontSize: 12, color: "#9ca3af" }}>Revenue cinema hari ini</div>
+                <div style={{ fontSize: 12, color: "#9ca3af" }}>Revenue cinema day ini</div>
                 <div style={{ fontSize: 17, color: "#10b981", fontWeight: 800, fontFamily: "'Geist Mono',monospace", marginTop: 3 }}>{fmtIDRcompact(o.cinema_rev)}</div>
                 <div style={{ fontSize: 11, color: "#6b7280", marginTop: 3 }}>🎟️ {o.cinema_tickets} tiket terjual</div>
               </div>
@@ -495,7 +495,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
             <Panel title="Tier Distribution" onClick={() => onNavigate?.('loyalty')}>
               <TierDistribution data={data.loyalty.by_tier || []} />
             </Panel>
-            <Panel title="Points Movement (30 hari)" onClick={() => onNavigate?.('loyalty')}>
+            <Panel title="Points Movement (30 day)" onClick={() => onNavigate?.('loyalty')}>
               <div style={{padding: 16}}>
                 <div style={styles.rowFlex}>
                   <span style={{color: '#9ca3af'}}>Earned</span>
@@ -585,7 +585,7 @@ function Panel({ title, onClick, children }) {
     <div style={{...styles.panel, cursor: onClick ? 'pointer' : 'default'}} onClick={onClick}>
       <div style={styles.panelTitle}>
         {title}
-        {onClick && <span style={{fontSize: 10, color: '#6b7280'}}>klik untuk drill-down →</span>}
+        {onClick && <span style={{fontSize: 10, color: '#6b7280'}}>klik for drill-down →</span>}
       </div>
       {children}
     </div>

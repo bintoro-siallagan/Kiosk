@@ -7,7 +7,7 @@ import { useUiKit } from "../components/uiKit.jsx";
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#be123c";
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "—";
-const REASON_C = { Rusak: "#ef4444", Kedaluwarsa: "#f59e0b", "Salah Kirim": "#3b82f6", "Kualitas Buruk": "#a855f7", "Kelebihan Kirim": "#0d9488" };
+const REASON_C = { Rusak: "#ef4444", Kedaluwarsa: "#f59e0b", "Salah Send": "#3b82f6", "Kualitas Buruk": "#a855f7", "Kelebihan Send": "#0d9488" };
 
 export default function AdminPurchaseReturn({ apiBase = "" }) {
   const { confirm } = useUiKit();

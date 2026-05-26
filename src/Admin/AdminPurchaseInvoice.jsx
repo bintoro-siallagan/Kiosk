@@ -20,7 +20,7 @@ const DUE = {
 const CHAIN = [
   { step: "approve", role: "Manager Purchase", byField: "approved_by", atField: "approved_at", reached: ["approved", "authorized", "paid"] },
   { step: "authorize", role: "CFO / Direksi", byField: "authorized_by", atField: "authorized_at", reached: ["authorized", "paid"] },
-  { step: "pay", role: "Finance — Bayar", byField: "paid_by", atField: "paid_at", reached: ["paid"] },
+  { step: "pay", role: "Finance — Pay", byField: "paid_by", atField: "paid_at", reached: ["paid"] },
 ];
 const ACTIVE = { pending: "approve", approved: "authorize", authorized: "pay" };
 
@@ -46,7 +46,7 @@ export default function AdminPurchaseInvoice({ apiBase = "" }) {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ gd_id: gd.id, supplier: f.supplier || gd.to_outlet, supplier_invoice_no: f.inv_no || "", due_days: Number(f.due_days) || 14 }),
     }).then(r => r.json()).then(j => {
-      if (j.ok) { setMsg("✓ Invoice dibuat dari " + gd.gd_number); load(); } else setMsg(j.error || "gagal");
+      if (j.ok) { setMsg("✓ Invoice dibuat from " + gd.gd_number); load(); } else setMsg(j.error || "gagal");
     }).catch(e => setMsg(String(e)));
   };
   const act = (inv, step) => {
@@ -106,7 +106,7 @@ export default function AdminPurchaseInvoice({ apiBase = "" }) {
             <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1.4fr 1fr auto", gap: 7, marginTop: 8 }}>
               <input placeholder="Supplier" value={(form[gd.id] || {}).supplier || ""} onChange={e => setF(gd.id, "supplier", e.target.value)} style={S.input} />
               <input placeholder="No. invoice vendor" value={(form[gd.id] || {}).inv_no || ""} onChange={e => setF(gd.id, "inv_no", e.target.value)} style={S.input} />
-              <input placeholder="Tempo (hari)" type="number" value={(form[gd.id] || {}).due_days || ""} onChange={e => setF(gd.id, "due_days", e.target.value)} style={S.input} />
+              <input placeholder="Tempo (day)" type="number" value={(form[gd.id] || {}).due_days || ""} onChange={e => setF(gd.id, "due_days", e.target.value)} style={S.input} />
               <button onClick={() => createInv(gd)} style={S.btnPrimary}>Buat Invoice</button>
             </div>
           </div>
@@ -133,7 +133,7 @@ export default function AdminPurchaseInvoice({ apiBase = "" }) {
               <div style={{ fontSize: 11, color: "#5b6470", marginTop: 2 }}>
                 {inv.gd_number} · vendor inv: {inv.supplier_invoice_no || "—"} · jatuh tempo {fmtDate(inv.due_date)}
                 {inv.status !== "paid" && inv.days_to_due != null
-                  ? <span style={{ color: due.c }}> ({inv.days_to_due < 0 ? `telat ${-inv.days_to_due} hari` : `${inv.days_to_due} hari lagi`})</span>
+                  ? <span style={{ color: due.c }}> ({inv.days_to_due < 0 ? `telat ${-inv.days_to_due} day` : `${inv.days_to_due} day lagi`})</span>
                   : null}
               </div>
               <div style={{ display: "flex", gap: 16, marginTop: 7, fontSize: 13 }}>
@@ -154,7 +154,7 @@ export default function AdminPurchaseInvoice({ apiBase = "" }) {
                         <div style={{ fontSize: 12, color: "#10b981", marginTop: 3 }}>✓ {inv[c.byField] || "OK"} · {fmtDate(inv[c.atField])}</div>
                       ) : isActive ? (
                         <button onClick={() => act(inv, c.step)} style={{ ...S.btnStep, marginTop: 4 }}>
-                          {c.step === "pay" ? "💰 Bayar Sekarang" : c.step === "authorize" ? "✍ Otorisasi" : "✓ Approve"}
+                          {c.step === "pay" ? "💰 Pay Sekarang" : c.step === "authorize" ? "✍ Otorisasi" : "✓ Approve"}
                         </button>
                       ) : (
                         <div style={{ fontSize: 11, color: "#5b6470", marginTop: 4 }}>menunggu…</div>

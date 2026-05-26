@@ -11,8 +11,8 @@ const ago = (ts) => {
   if (!ts) return "—";
   const h = Math.floor((Date.now() / 1000 - ts) / 3600);
   if (h < 1) return "baru saja";
-  if (h < 24) return h + " jam lalu";
-  return Math.floor(h / 24) + " hari lalu";
+  if (h < 24) return h + " hr lalu";
+  return Math.floor(h / 24) + " day lalu";
 };
 
 export default function AdminPettyCash({ apiBase = "" }) {
@@ -32,18 +32,18 @@ export default function AdminPettyCash({ apiBase = "" }) {
     }).then(r => r.json()).then(j => { if (j.ok) { setMsg(okMsg); load(); } else setMsg(j.error || "gagal"); }).catch(e => setMsg(String(e)));
   };
   const topup = (o) => {
-    const a = window.prompt(`Top-up kas — ${o.outlet}\nSaldo: ${fmtRp(o.balance)}\n\nJumlah top-up:`, "1000000");
+    const a = window.prompt(`Top-up kas — ${o.outlet}\nBalance: ${fmtRp(o.balance)}\n\nJumlah top-up:`, "1000000");
     if (a == null) return;
     act("topup", { outlet: o.outlet, amount: Number(a), by: "Finance" }, `✓ Top-up ${o.outlet} ${fmtRp(Number(a))}`);
   };
   const expense = (o) => {
-    const a = window.prompt(`Pengeluaran kas — ${o.outlet}\nSaldo: ${fmtRp(o.balance)}\n\nJumlah:`, "");
+    const a = window.prompt(`Pengeluaran kas — ${o.outlet}\nBalance: ${fmtRp(o.balance)}\n\nJumlah:`, "");
     if (a == null || !(Number(a) > 0)) return;
-    const desc = window.prompt("Keterangan pengeluaran:", "") || "Pengeluaran";
+    const desc = window.prompt("Description pengeluaran:", "") || "Pengeluaran";
     act("expense", { outlet: o.outlet, amount: Number(a), description: desc, by: "Outlet Manager" }, `✓ Pengeluaran ${o.outlet} dicatat`);
   };
   const setBudget = (o) => {
-    const a = window.prompt(`Set budget bulanan — ${o.outlet}\nSaat ini: ${fmtRp(o.monthly_budget)}\n\nBudget baru:`, String(o.monthly_budget));
+    const a = window.prompt(`Set budget monthan — ${o.outlet}\nSaat ini: ${fmtRp(o.monthly_budget)}\n\nBudget baru:`, String(o.monthly_budget));
     if (a == null) return;
     act("budget", { outlet: o.outlet, monthly_budget: Number(a) }, `✓ Budget ${o.outlet} di-set ${fmtRp(Number(a))}`);
   };
@@ -58,7 +58,7 @@ export default function AdminPettyCash({ apiBase = "" }) {
         by_who: editing.by_who,
       }),
     }).then(r => r.json()).then(j => {
-      if (j.ok) { setMsg("✓ Transaksi diupdate"); setEditing(null); load(); }
+      if (j.ok) { setMsg("✓ Transaction diupdate"); setEditing(null); load(); }
       else setMsg(j.error || "gagal");
     }).catch(e => setMsg(String(e)));
   };
@@ -72,7 +72,7 @@ export default function AdminPettyCash({ apiBase = "" }) {
     if (!ok) return;
     fetch(`${apiBase}/api/petty-cash/${t.id}`, { method: "DELETE" })
       .then(r => r.json()).then(j => {
-        if (j.ok) { setMsg("✓ Transaksi dihapus"); load(); }
+        if (j.ok) { setMsg("✓ Transaction dihapus"); load(); }
         else setMsg(j.error || "gagal");
       }).catch(e => setMsg(String(e)));
   };
@@ -88,7 +88,7 @@ export default function AdminPettyCash({ apiBase = "" }) {
       </div>
 
       <div style={S.kpiRow}>
-        <Kpi label="Total Saldo Kas" v={fmtRp(s.total_balance)} c={AC} />
+        <Kpi label="Total Balance Kas" v={fmtRp(s.total_balance)} c={AC} />
         <Kpi label="Total Budget /Bln" v={fmtRp(s.total_budget)} c="#3b82f6" />
         <Kpi label="Belanja Bulan Ini" v={fmtRp(s.month_expense)} c="#f59e0b" />
         <Kpi label="Over Budget" v={String(s.over_budget)} c={s.over_budget > 0 ? "#ef4444" : "#10b981"} sub="outlet" />

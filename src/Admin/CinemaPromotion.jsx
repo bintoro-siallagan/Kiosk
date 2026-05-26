@@ -14,8 +14,8 @@ const PROMO_TYPES = [
 ];
 const TRIGGER_TYPES = [
   ["code",                "🔑 Kode manual (customer ketik)"],
-  ["auto_daily_tickets",  "🎫 Auto — capai N tiket hari ini"],
-  ["auto_daily_sales",    "💰 Auto — capai Rp omzet hari ini"],
+  ["auto_daily_tickets",  "🎫 Auto — capai N tiket day ini"],
+  ["auto_daily_sales",    "💰 Auto — capai Rp omzet day ini"],
 ];
 const empty = {
   code: "", name: "", description: "",
@@ -126,7 +126,7 @@ export default function CinemaPromotion({ apiBase = "" }) {
             <Field label="Berlaku dari"><input type="date" value={form.valid_from || ""} onChange={e => setForm({ ...form, valid_from: e.target.value })} style={inp} /></Field>
             <Field label="Sampai"><input type="date" value={form.valid_to || ""} onChange={e => setForm({ ...form, valid_to: e.target.value })} style={inp} /></Field>
             <Field label="Max redemption"><input type="number" value={form.max_redemptions ?? ""} onChange={e => setForm({ ...form, max_redemptions: e.target.value ? parseInt(e.target.value, 10) : null })} placeholder="kosong = unlimited" style={inp} /></Field>
-            <Field label="Deskripsi" wide><input value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} style={inp} /></Field>
+            <Field label="Description" wide><input value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} style={inp} /></Field>
             {/* Auto-trigger fields — milestone-based promo (unlock saat omzet/tiket harian capai threshold) */}
             <Field label="Trigger" wide>
               <select value={form.trigger_type || "code"} onChange={e => setForm({ ...form, trigger_type: e.target.value })} style={inp}>
@@ -143,7 +143,7 @@ export default function CinemaPromotion({ apiBase = "" }) {
                 <Field label="Scope (outlet)">
                   <input value={form.trigger_scope || "global"}
                     onChange={e => setForm({ ...form, trigger_scope: e.target.value || "global" })}
-                    placeholder="global atau JKT01" style={inp} />
+                    placeholder="global or JKT01" style={inp} />
                 </Field>
                 <div style={{ gridColumn: "span 3", padding: "8px 12px", background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.18)", borderRadius: 8, fontSize: 12, color: "#c084fc" }}>
                   💡 Promo ini <b>otomatis aktif</b> di kiosk tanpa customer ketik kode — begitu {form.trigger_type === "auto_daily_sales" ? "omzet" : "jumlah tiket"} harian capai threshold. Banner muncul + auto-apply di checkout.

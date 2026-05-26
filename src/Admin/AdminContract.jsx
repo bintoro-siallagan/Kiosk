@@ -46,7 +46,7 @@ export default function AdminContract({ apiBase = "" }) {
   const renew = (c) => {
     fetch(`${apiBase}/api/contract/${c.id}/renew`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ extend_months: 12 }),
-    }).then(r => r.json()).then(j => { if (j.ok) { setMsg(`✓ ${c.title} diperpanjang +12 bulan`); load(); } }).catch(() => {});
+    }).then(r => r.json()).then(j => { if (j.ok) { setMsg(`✓ ${c.title} diperpanjang +12 month`); load(); } }).catch(() => {});
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Contract Management…</div>;
@@ -105,7 +105,7 @@ export default function AdminContract({ apiBase = "" }) {
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 12, color: "#cdd5df", fontFamily: "'Geist Mono',monospace" }}>{c.value > 0 ? fmtRp(c.value) : "—"}</div>
-                  <div style={{ fontSize: 10, color: st.c }}>{c.status === "expired" ? `lewat ${-c.days_left} hari` : `s/d ${fmtDate(c.end_date)}`}</div>
+                  <div style={{ fontSize: 10, color: st.c }}>{c.status === "expired" ? `lewat ${-c.days_left} day` : `s/d ${fmtDate(c.end_date)}`}</div>
                 </div>
                 <span style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}55`, borderRadius: 5, padding: "3px 8px", width: 96, textAlign: "center", fontFamily: "'Geist Mono',monospace" }}>{st.l}</span>
                 <button onClick={() => renew(c)} style={S.btnRenew}>↻ Perpanjang</button>

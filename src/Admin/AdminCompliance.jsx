@@ -33,7 +33,7 @@ export default function AdminCompliance({ apiBase = "" }) {
   const renew = (l) => {
     fetch(`${apiBase}/api/compliance/${l.id}/renew`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ extend_days: 365 }),
-    }).then(r => r.json()).then(j => { if (j.ok) { setMsg(`✓ ${l.name} diperpanjang +1 tahun`); load(); } }).catch(() => {});
+    }).then(r => r.json()).then(j => { if (j.ok) { setMsg(`✓ ${l.name} diperpanjang +1 year`); load(); } }).catch(() => {});
   };
 
   const saveEdit = async () => {
@@ -111,7 +111,7 @@ export default function AdminCompliance({ apiBase = "" }) {
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontSize: 11, color: "#9da7b3" }}>berlaku s/d {fmtDate(l.expiry_date)}</div>
                   <div style={{ fontSize: 10, color: st.c, fontFamily: "'Geist Mono',monospace" }}>
-                    {l.status === "expired" ? `lewat ${-l.days_left} hari` : `${l.days_left} hari lagi`}
+                    {l.status === "expired" ? `lewat ${-l.days_left} day` : `${l.days_left} day lagi`}
                   </div>
                 </div>
                 <span style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}55`, borderRadius: 5, padding: "3px 8px", width: 96, textAlign: "center", fontFamily: "'Geist Mono',monospace" }}>{st.l}</span>

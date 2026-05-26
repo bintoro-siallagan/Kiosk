@@ -79,7 +79,7 @@ function ItemsTab({ base, showToast }) {
     });
     const d = await r.json();
     if (!d.ok) { showToast(d.error || "Gagal", "err"); return; }
-    showToast(`+${qty} ${restocking.unit || ""} ditambahkan ke ${restocking.name}`);
+    showToast(`+${qty} ${restocking.unit || ""} ditambahkan to ${restocking.name}`);
     setRestocking(null); setRestockQty(""); load();
   };
 

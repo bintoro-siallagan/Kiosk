@@ -6,7 +6,7 @@ import { useUiKit } from "../components/uiKit.jsx";
 
 const AC = "#0891b2";
 const STAT = { draft: { c: "#f59e0b", l: "DRAFT" }, shipped: { c: "#3b82f6", l: "DIKIRIM" }, delivered: { c: "#10b981", l: "DITERIMA" } };
-const NEXT = { draft: "📤 Kirim", shipped: "📥 Tandai Sampai" };
+const NEXT = { draft: "📤 Send", shipped: "📥 Tandai Sampai" };
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "—";
 
 export default function AdminDeliveryOrder({ apiBase = "" }) {
@@ -54,7 +54,7 @@ export default function AdminDeliveryOrder({ apiBase = "" }) {
       <div style={S.kpiRow}>
         <Kpi label="Total DO" v={String(s.total)} c={AC} />
         <Kpi label="Draft" v={String(s.draft)} c={s.draft > 0 ? "#f59e0b" : "#10b981"} />
-        <Kpi label="Dikirim" v={String(s.shipped)} c="#3b82f6" />
+        <Kpi label="Sent" v={String(s.shipped)} c="#3b82f6" />
         <Kpi label="Diterima" v={String(s.delivered)} c="#10b981" />
       </div>
       {msg ? <div style={{ fontSize: 12, margin: "8px 2px", color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}

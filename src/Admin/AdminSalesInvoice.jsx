@@ -93,7 +93,7 @@ export default function AdminSalesInvoice({ apiBase = "" }) {
                   </div>
                   <span style={{ fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "#818cf8", width: 120, textAlign: "right" }}>{fmtRp(inv.total)}</span>
                   <span style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}55`, borderRadius: 5, padding: "2px 8px", fontFamily: "'Geist Mono',monospace" }}>{st.l}</span>
-                  {inv.status !== "paid" && <button onClick={() => pay(inv)} style={S.act}>💵 Catat Bayar</button>}
+                  {inv.status !== "paid" && <button onClick={() => pay(inv)} style={S.act}>💵 Catat Pay</button>}
                   <button onClick={() => setOpen(open === inv.id ? null : inv.id)} style={S.btnGhost}>{open === inv.id ? "▲" : "▼ COA"}</button>
                   <button onClick={() => setEditing({ ...inv })} title="Edit" style={S.iconBtn("#f59e0b")}>✏️</button>
                   <button onClick={() => remove(inv)} title="Delete" style={S.iconBtn("#ef4444")}>🗑️</button>

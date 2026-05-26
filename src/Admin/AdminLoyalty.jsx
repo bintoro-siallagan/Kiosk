@@ -245,7 +245,7 @@ export default function AdminLoyalty({ apiBase = '' }) {
             {configForm && [
               ['point_per_amount', '1 poin earned per belanja Rp'],
               ['point_value_idr', 'Nilai 1 poin saat redeem (Rp)'],
-              ['point_expiry_months', 'Point expiry (bulan)'],
+              ['point_expiry_months', 'Point expiry (month)'],
               ['signup_bonus', 'Signup bonus (poin)'],
               ['referral_bonus_referrer', 'Referral bonus — pengajak (poin)'],
               ['referral_bonus_referred', 'Referral bonus — yang diajak (poin)'],
@@ -321,7 +321,7 @@ export default function AdminLoyalty({ apiBase = '' }) {
           <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12}}>
             <h3 style={styles.sectionTitle}>Tier Configuration</h3>
             <button onClick={() => showTierForm ? closeTierForm() : (setEditTierCode(null), setShowTierForm(true))} style={styles.btnPrimary}>
-              {showTierForm ? '× Tutup' : '+ Tambah Tier'}
+              {showTierForm ? '× Close' : '+ Tambah Tier'}
             </button>
           </div>
           <div style={{fontSize: 12, color: '#9ca3af', marginBottom: 14, padding: 10, background: '#0f1a2a', borderRadius: 6}}>
@@ -583,8 +583,8 @@ function AdjustModal({ customer, onSubmit, onCancel }) {
           Current: <b style={{color: '#f97316'}}>{customer.current_points} pt</b>
         </div>
         <div style={styles.formGroup}>
-          <label style={styles.label}>Points (+ atau − untuk add/subtract)</label>
-          <input type="number" value={points} onChange={e => setPoints(e.target.value)} style={styles.input} placeholder="+100 atau -50" />
+          <label style={styles.label}>Points (+ or − for add/subtract)</label>
+          <input type="number" value={points} onChange={e => setPoints(e.target.value)} style={styles.input} placeholder="+100 or -50" />
         </div>
         <div style={styles.formGroup}>
           <label style={styles.label}>Alasan adjust (wajib)</label>

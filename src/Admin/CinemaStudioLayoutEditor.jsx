@@ -225,7 +225,7 @@ export default function CinemaStudioLayoutEditor({ studio, onClose, onSaved }) {
             <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.3 }}>🪑 Edit Layout Studio</div>
             <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 3 }}>{studio?.name} · {rows}×{cols} grid · {stats.totalSeats} kursi</div>
           </div>
-          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#e6edf3", padding: "8px 14px", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>✕ Tutup</button>
+          <button onClick={onClose} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#e6edf3", padding: "8px 14px", fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>✕ Close</button>
         </div>
 
         {/* Controls row */}
@@ -321,7 +321,7 @@ export default function CinemaStudioLayoutEditor({ studio, onClose, onSaved }) {
               <input
                 value={rowLabels[r] || ROW_LETTER(r)}
                 onChange={(e) => updateRowLabel(r, e.target.value)}
-                title="Klik untuk rename label baris"
+                title="Klik for rename label baris"
                 style={{
                   width: 36, height: 28, padding: 0, textAlign: "center",
                   background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.2)",

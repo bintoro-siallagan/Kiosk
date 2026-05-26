@@ -197,7 +197,7 @@ export default function AdminReconciliation({ apiBase = "" }) {
               <span style={{ width: 56, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>{a.account_code}</span>
               <span style={{ flex: 1, color: "#e6edf3" }}>{a.account_name}</span>
               <span style={{ width: 130, textAlign: "right", fontFamily: "'Geist Mono',monospace", color: "#9da7b3" }}>{fmtRp(a.balance)}</span>
-              <button onClick={() => post(`gl-reconcile/${a.account_code}`, null, a.reconciled ? "✓ Dibatalkan" : "✓ Ter-rekonsiliasi")} style={S.btn(a.reconciled ? "#10b981" : "#f59e0b")}>
+              <button onClick={() => post(`gl-reconcile/${a.account_code}`, null, a.reconciled ? "✓ Cancelled" : "✓ Ter-rekonsiliasi")} style={S.btn(a.reconciled ? "#10b981" : "#f59e0b")}>
                 {a.reconciled ? "✓ reconciled" : "○ pending"}
               </button>
             </div>

@@ -11,7 +11,7 @@ export default function AdminSupplierMaster({ apiBase = "" }) {
   const { confirm } = useUiKit();
   const [d, setD] = useState(null);
   const [msg, setMsg] = useState("");
-  const [form, setForm] = useState({ name: "", category: "Bahan Baku", contact: "", phone: "", payment_terms: "NET 30" });
+  const [form, setForm] = useState({ name: "", category: "Material Baku", contact: "", phone: "", payment_terms: "NET 30" });
   const [editing, setEditing] = useState(null);
 
   const load = useCallback(() => {
@@ -41,7 +41,7 @@ export default function AdminSupplierMaster({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
   const remove = async (v) => {
-    const ok = await confirm({ title: `Hapus vendor "${v.name}"?`, message: `Vendor ${v.code} akan dihapus permanen dari registry. Tidak bisa dibatalkan.`, danger: true, okLabel: "Delete" });
+    const ok = await confirm({ title: `Hapus vendor "${v.name}"?`, message: `Vendor ${v.code} akan dihapus permanen from registry. Tidak bisa dibatalkan.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     const r = await fetch(`${apiBase}/api/supplier-master/${v.id}`, { method: "DELETE" });
     const j = await r.json();

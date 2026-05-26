@@ -80,7 +80,7 @@ export default function AdminShiftRoster({ apiBase = "" }) {
           <select value={form.shift_type} onChange={e => setForm({ ...form, shift_type: e.target.value })} style={S.input}>
             {d.shift_types.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
-          <button onClick={add} style={S.btn}>+ Jadwal</button>
+          <button onClick={add} style={S.btn}>+ Schedule</button>
         </div>
         {msg ? <div style={{ fontSize: 12, marginTop: 8, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
       </div>
@@ -113,7 +113,7 @@ export default function AdminShiftRoster({ apiBase = "" }) {
             <Field label="Nama Staff"><input value={editing.staff_name || ""} onChange={e => setEditing({ ...editing, staff_name: e.target.value })} style={modalInp} /></Field>
             <Field label="Role"><input value={editing.role || ""} onChange={e => setEditing({ ...editing, role: e.target.value })} style={modalInp} /></Field>
             <Field label="Outlet"><input value={editing.outlet || ""} onChange={e => setEditing({ ...editing, outlet: e.target.value })} style={modalInp} /></Field>
-            <Field label="Tanggal"><input type="date" value={editing.shift_date || ""} onChange={e => setEditing({ ...editing, shift_date: e.target.value })} style={modalInp} /></Field>
+            <Field label="Date"><input type="date" value={editing.shift_date || ""} onChange={e => setEditing({ ...editing, shift_date: e.target.value })} style={modalInp} /></Field>
             <Field label="Tipe Shift">
               <select value={editing.shift_type || "Pagi"} onChange={e => setEditing({ ...editing, shift_type: e.target.value })} style={modalInp}>
                 {SHIFT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}

@@ -63,7 +63,7 @@ export default function CinemaSeatTypes({ apiBase = "" }) {
     showToast(`${list.length} kursi tersimpan`);
   }
   async function clearAll() {
-    if (!window.confirm("Reset semua kursi ke Regular?")) return;
+    if (!window.confirm("Reset semua kursi to Regular?")) return;
     // Delete each non-regular assignment
     const seats = Object.keys(assignments);
     await Promise.all(seats.map(s => fetch(`${base}/studios/${picked}/seat-types/${s}`, { method: "DELETE" })));

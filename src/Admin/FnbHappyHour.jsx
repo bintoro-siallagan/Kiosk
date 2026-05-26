@@ -32,7 +32,7 @@ export default function FnbHappyHour({ apiBase = "" }) {
       <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <div>
           <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🕐 Happy Hour Pricing</div>
-          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Diskon time-based · auto-active per jam &amp; hari berlaku.</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Diskon time-based · auto-active per hr &amp; day berlaku.</div>
         </div>
         {!editing && <button onClick={() => { setEditing("new"); setForm(empty); }} style={B.add}>＋ Happy Hour</button>}
       </div>
@@ -60,10 +60,10 @@ export default function FnbHappyHour({ apiBase = "" }) {
             <Field label="Hari berlaku"><input value={form.applicable_days} onChange={e => setForm({ ...form, applicable_days: e.target.value })} placeholder="monday,tuesday / weekend" style={inp} /></Field>
             <Field label="Discount %"><input type="number" step="0.1" value={form.discount_pct} onChange={e => setForm({ ...form, discount_pct: parseFloat(e.target.value) || 0 })} style={inp} /></Field>
             <Field label="Harga khusus (Rp)"><input type="number" value={form.special_price} onChange={e => setForm({ ...form, special_price: e.target.value })} placeholder="kosong = pakai %" style={inp} /></Field>
-            <Field label="Status"><label style={{ display: "flex", gap: 8, fontSize: 13, alignItems: "center" }}><input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Aktif</label></Field>
-            <Field label="Mulai berlaku"><input type="date" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} style={inp} /></Field>
+            <Field label="Status"><label style={{ display: "flex", gap: 8, fontSize: 13, alignItems: "center" }}><input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Active</label></Field>
+            <Field label="Start berlaku"><input type="date" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} style={inp} /></Field>
             <Field label="Sampai"><input type="date" value={form.end_date} onChange={e => setForm({ ...form, end_date: e.target.value })} style={inp} /></Field>
-            <Field label="Deskripsi" wide><input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={inp} /></Field>
+            <Field label="Description" wide><input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={inp} /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
             <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
@@ -88,7 +88,7 @@ export default function FnbHappyHour({ apiBase = "" }) {
               {r.outlet && <div style={{ fontSize: 11, color: C.sub }}>🏪 {r.outlet}</div>}
             </span>
             <span style={{ width: 110, fontFamily: "'Geist Mono',monospace", fontSize: 12 }}>{r.start_time}–{r.end_time}</span>
-            <span style={{ width: 130, fontSize: 11.5, color: C.sub }}>{r.applicable_days || "semua hari"}</span>
+            <span style={{ width: 130, fontSize: 11.5, color: C.sub }}>{r.applicable_days || "semua day"}</span>
             <span style={{ width: 110, textAlign: "right", fontFamily: "'Geist Mono',monospace", color: "#10b981", fontWeight: 700 }}>
               {r.special_price ? rp(r.special_price) : `${r.discount_pct}%`}
             </span>

@@ -102,7 +102,7 @@ export default function AdminCashierKPI({ apiBase = "" }) {
       <div class="sub">Periode: ${rangeLabel} &nbsp;·&nbsp; Dicetak: ${new Date().toLocaleString("id-ID")}</div>
       <table><thead><tr>
         <th>#</th><th>Kasir</th><th>KPI</th><th>Rating</th><th>Review</th>
-        <th>Bagus</th><th>Jelek</th><th>Transaksi</th><th>Total Sales</th>
+        <th>Bagus</th><th>Jelek</th><th>Transaction</th><th>Total Sales</th>
       </tr></thead><tbody>${rows}</tbody></table>
       <div class="foot">Avg KPI: <b>${data.summary?.avg_kpi ?? "-"}</b> &nbsp;·&nbsp;
         Total review jelek: <b>${data.summary?.total_bad_reviews ?? 0}</b><br/>
@@ -153,7 +153,7 @@ export default function AdminCashierKPI({ apiBase = "" }) {
         const col = !dt.target ? "#6b7280" : pct >= 100 ? "#34D399" : pct >= 70 ? "#FBBF24" : "#F87171";
         return (
           <div style={{ ...S.card, borderLeft: `4px solid ${col}` }}>
-            <div style={S.label}>🎯 Target Penjualan Hari Ini — KPI Tim</div>
+            <div style={S.label}>🎯 Target Sales Hari Ini — KPI Tim</div>
             {dt.target ? (
               <div style={{ display: "flex", alignItems: "center", gap: 28, flexWrap: "wrap" }}>
                 <div>
@@ -186,7 +186,7 @@ export default function AdminCashierKPI({ apiBase = "" }) {
       {/* Summary */}
       <div style={S.grid4}>
         <div style={{ ...S.card, marginBottom: 0, borderLeft: "4px solid #3B82F6" }}>
-          <div style={S.label}>Kasir Aktif</div>
+          <div style={S.label}>Kasir Active</div>
           <div style={{ fontSize: 26, fontWeight: 700, fontFamily: "'Geist Mono',monospace" }}>{sum.total_cashiers || 0}</div>
         </div>
         <div style={{ ...S.card, marginBottom: 0, borderLeft: "4px solid #34D399" }}>

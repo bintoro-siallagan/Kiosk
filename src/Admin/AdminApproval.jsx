@@ -100,7 +100,7 @@ export default function AdminApproval({ apiBase = "" }) {
             {d.rules.map(r => <option key={r.id} value={r.id}>{r.icon} {r.label}</option>)}
           </select>
           <input value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} placeholder="Nominal (Rp)" type="number" style={{ ...S.input, width: 150 }} />
-          <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Keterangan" style={{ ...S.input, flex: 1, minWidth: 180 }} />
+          <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Description" style={{ ...S.input, flex: 1, minWidth: 180 }} />
           <button onClick={submit} style={S.btn}>Ajukan</button>
         </div>
         {msg ? <div style={{ fontSize: 12, marginTop: 8, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}

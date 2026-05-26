@@ -33,13 +33,13 @@ export default function CinemaBundleRedeem({ apiBase = "" }) {
       } else if (c.startsWith("CP-")) {
         purchaseId = c;
       } else {
-        throw new Error("Format kode tidak dikenal (gunakan CT-xxxx atau CP-xxxx)");
+        throw new Error("Format kode tidak dikenal (gunakan CT-xxxx or CP-xxxx)");
       }
       if (!purchaseId) throw new Error("Tiket ini tidak punya pembelian F&B");
       const r2 = await fetch(`${base}/purchase/${encodeURIComponent(purchaseId)}/bundles`);
       const d2 = await r2.json();
       const bundles = d2.bundles || [];
-      if (!bundles.length) throw new Error("Tiket ini tidak ada combo F&B");
+      if (!bundles.length) throw new Error("Tiket ini none combo F&B");
       setCtx({ code: c, ticket, purchase_id: purchaseId, bundles });
     } catch (e) {
       setErr(e.message || "Gagal lookup");
@@ -73,7 +73,7 @@ export default function CinemaBundleRedeem({ apiBase = "" }) {
   return (
     <div style={S.root}>
       <h2 style={S.title}>🍿 F&amp;B Redemption Counter</h2>
-      <p style={S.sub}>Scan QR tiket cinema customer untuk menukar combo. Bisa juga ketik kode tiket (CT-…) atau kode pembelian (CP-…).</p>
+      <p style={S.sub}>Scan QR tiket cinema customer for menukar combo. Bisa juga ketik kode tiket (CT-…) or kode pembelian (CP-…).</p>
 
       <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 12, marginBottom: 14 }}>
         <input ref={ref} value={code} onChange={(e) => setCode(e.target.value)} onKeyDown={onKey}

@@ -57,9 +57,9 @@ function Dashboard() {
       <div style={{display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:8, marginBottom:20}}>
         {[
           {k:'current', l:'Belum Jatuh Tempo', color:'#10b981'},
-          {k:'b1', l:'0-30 hari', color:'#f59e0b'},
-          {k:'b2', l:'31-60 hari', color:'#f97316'},
-          {k:'b3', l:'61-90 hari', color:'#ef4444'},
+          {k:'b1', l:'0-30 day', color:'#f59e0b'},
+          {k:'b2', l:'31-60 day', color:'#f97316'},
+          {k:'b3', l:'61-90 day', color:'#ef4444'},
           {k:'b4', l:'90+ kritis', color:'#f87171'},
         ].map(b => (
           <div key={b.k} style={{...card, borderTop:`3px solid ${b.color}`}}>
@@ -92,7 +92,7 @@ function Dashboard() {
 
       <h3 style={{marginTop:20}}>Recent Returns</h3>
       <table style={tableStyle}>
-        <thead><tr><th>Doc</th><th>Tanggal</th><th>Supplier</th><th>Reason</th><th>Value</th><th>Status</th></tr></thead>
+        <thead><tr><th>Doc</th><th>Date</th><th>Supplier</th><th>Reason</th><th>Value</th><th>Status</th></tr></thead>
         <tbody>
           {data.recent_returns.map(r => (
             <tr key={r.id}>
@@ -109,7 +109,7 @@ function Dashboard() {
 
       <h3 style={{marginTop:20}}>Pending Advances (DP Belum Habis)</h3>
       <table style={tableStyle}>
-        <thead><tr><th>Doc</th><th>Tanggal</th><th>Supplier</th><th>Amount</th><th>Applied</th><th>Sisa</th><th>Status</th></tr></thead>
+        <thead><tr><th>Doc</th><th>Date</th><th>Supplier</th><th>Amount</th><th>Applied</th><th>Sisa</th><th>Status</th></tr></thead>
         <tbody>
           {data.pending_advances.map(a => (
             <tr key={a.id}>
@@ -143,7 +143,7 @@ function Returns() {
   const finalize = async (id) => {
     const credit = prompt('Credit Note ref (optional)?');
     const refund = prompt('Refund method (credit_note / cash / transfer)?', 'credit_note');
-    if (!window.confirm('Finalize akan reverse stock dari warehouse. Lanjut?')) return;
+    if (!window.confirm('Finalize akan reverse stock from warehouse. Lanjut?')) return;
     try {
       const r = await api(`/returns/${id}/finalize`, {method:'POST', body:{
         finalized_by: 'admin', credit_note_ref: credit || null, refund_method: refund
@@ -177,7 +177,7 @@ function Returns() {
       {msg ? <div style={{ fontSize: 12, margin: "0 0 8px", color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
       {showForm && <ReturnForm onClose={()=>{setShowForm(false); load();}} />}
       <table style={tableStyle}>
-        <thead><tr><th>Doc No</th><th>Tanggal</th><th>Supplier</th><th>Reason</th><th>Items</th><th>Value</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>Doc No</th><th>Date</th><th>Supplier</th><th>Reason</th><th>Items</th><th>Value</th><th>Status</th><th></th></tr></thead>
         <tbody>
           {list.map(r => (
             <tr key={r.id}>
@@ -286,7 +286,7 @@ function ReturnForm({onClose}) {
             <option value="overstock">Overstock</option>
             <option value="other">Other</option>
           </select></label>
-          <label>Tanggal <input type="date" value={new Date(f.return_date*1000).toISOString().slice(0,10)}
+          <label>Date <input type="date" value={new Date(f.return_date*1000).toISOString().slice(0,10)}
             onChange={e=>setF({...f, return_date: Math.floor(new Date(e.target.value).getTime()/1000)})} /></label>
           <label style={{gridColumn:'1/-1'}}>Notes <textarea value={f.notes} onChange={update('notes')} rows={2} /></label>
         </div>
@@ -338,7 +338,7 @@ function Advances() {
   }, [load]);
 
   const applyAdv = async (id, remaining) => {
-    const invoiceId = prompt('Invoice ID untuk apply DP?');
+    const invoiceId = prompt('Invoice ID for apply DP?');
     if (!invoiceId) return;
     const amount = parseFloat(prompt(`Amount to apply (max ${remaining})?`, remaining));
     if (!amount) return;
@@ -380,7 +380,7 @@ function Advances() {
       {msg ? <div style={{ fontSize: 12, margin: "0 0 8px", color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
       {showForm && <AdvanceForm suppliers={suppliers} onClose={()=>{setShowForm(false); load();}} />}
       <table style={tableStyle}>
-        <thead><tr><th>Doc</th><th>Tanggal</th><th>Supplier</th><th>PO Ref</th><th>Amount</th><th>Applied</th><th>Sisa</th><th>Status</th><th></th></tr></thead>
+        <thead><tr><th>Doc</th><th>Date</th><th>Supplier</th><th>PO Ref</th><th>Amount</th><th>Applied</th><th>Sisa</th><th>Status</th><th></th></tr></thead>
         <tbody>
           {list.map(a => (
             <tr key={a.id}>
@@ -459,8 +459,8 @@ function AdvanceForm({suppliers, onClose}) {
             <option value="">-</option>
             {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select></label>
-          <label>PO ID (optional) <input value={f.po_id} onChange={update('po_id')} placeholder="link ke PO" /></label>
-          <label>Tanggal <input type="date" value={new Date(f.advance_date*1000).toISOString().slice(0,10)}
+          <label>PO ID (optional) <input value={f.po_id} onChange={update('po_id')} placeholder="link to PO" /></label>
+          <label>Date <input type="date" value={new Date(f.advance_date*1000).toISOString().slice(0,10)}
             onChange={e=>setF({...f, advance_date: Math.floor(new Date(e.target.value).getTime()/1000)})} /></label>
           <label>Amount* <input type="number" value={f.amount} onChange={update('amount')} /></label>
           <label>Payment Method <select value={f.payment_method} onChange={update('payment_method')}>
@@ -513,7 +513,7 @@ function InvoiceAging() {
         <div key={k} style={{marginBottom:16}}>
           <h4>{data.labels[k]} ({invoices.length})</h4>
           <table style={tableStyle}>
-            <thead><tr><th>Invoice</th><th>Supplier</th><th>Tanggal</th><th>Due Date</th><th>Days Overdue</th><th>Outstanding</th></tr></thead>
+            <thead><tr><th>Invoice</th><th>Supplier</th><th>Date</th><th>Due Date</th><th>Days Overdue</th><th>Outstanding</th></tr></thead>
             <tbody>
               {invoices.map(inv => (
                 <tr key={inv.id}>
@@ -547,13 +547,13 @@ function PRSuggest() {
   useEffect(()=>{ load(); }, [load]);
 
   const generateDraft = async (urgency) => {
-    if (!confirm(`Generate draft PR untuk semua item urgency=${urgency.join('/')}?`)) return;
+    if (!confirm(`Generate draft PR for semua item urgency=${urgency.join('/')}?`)) return;
     try {
       const r = await api('/pr-suggest/generate-draft', {method:'POST', body:{
         urgency_filter: urgency, ...params
       }});
       if (r.items_count === 0) return alert('None urgent items');
-      alert(`Draft PR: ${r.items_count} items siap. ${r.hint}\n\nCopy shape ini ke /api/procurement/pr POST untuk create draft.`);
+      alert(`Draft PR: ${r.items_count} items siap. ${r.hint}\n\nCopy shape ini to /api/procurement/pr POST for create draft.`);
       console.log('Draft PR shape:', r.draft_pr);
     } catch (e) { alert(e.message); }
   };
@@ -565,9 +565,9 @@ function PRSuggest() {
   return (
     <div>
       <div style={{display:'flex', gap:8, marginBottom:16, alignItems:'center', flexWrap:'wrap'}}>
-        <span>Lookback: <input type="number" value={params.lookback_days} onChange={e=>setParams({...params, lookback_days:Number(e.target.value)})} style={{width:60}} /> hari</span>
-        <span>Forecast: <input type="number" value={params.forecast_days} onChange={e=>setParams({...params, forecast_days:Number(e.target.value)})} style={{width:60}} /> hari</span>
-        <span>Safety: <input type="number" value={params.safety_days} onChange={e=>setParams({...params, safety_days:Number(e.target.value)})} style={{width:60}} /> hari</span>
+        <span>Lookback: <input type="number" value={params.lookback_days} onChange={e=>setParams({...params, lookback_days:Number(e.target.value)})} style={{width:60}} /> day</span>
+        <span>Forecast: <input type="number" value={params.forecast_days} onChange={e=>setParams({...params, forecast_days:Number(e.target.value)})} style={{width:60}} /> day</span>
+        <span>Safety: <input type="number" value={params.safety_days} onChange={e=>setParams({...params, safety_days:Number(e.target.value)})} style={{width:60}} /> day</span>
         <button onClick={load} style={btn}>Refresh</button>
         <select value={filter} onChange={e=>setFilter(e.target.value)}>
           <option value="all">Semua urgency</option>

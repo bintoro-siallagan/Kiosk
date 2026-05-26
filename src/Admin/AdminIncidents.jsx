@@ -66,7 +66,7 @@ export default function AdminIncidents({ apiBase = "" }) {
         <Kpi label="Terbuka" v={String(s.open)} c={s.open > 0 ? "#ef4444" : "#10b981"} />
         <Kpi label="Ditangani" v={String(s.in_progress)} c="#f59e0b" />
         <Kpi label="Completed" v={String(s.resolved)} c="#10b981" />
-        <Kpi label="Kritis Aktif" v={String(s.critical)} c={s.critical > 0 ? "#ef4444" : "#10b981"} />
+        <Kpi label="Kritis Active" v={String(s.critical)} c={s.critical > 0 ? "#ef4444" : "#10b981"} />
       </div>
 
       <div style={{ ...S.card, marginTop: 14 }}>
@@ -102,7 +102,7 @@ export default function AdminIncidents({ apiBase = "" }) {
                 <span style={{ fontSize: 9, fontWeight: 700, color: SEV_C[x.severity], fontFamily: "'Geist Mono',monospace" }}>{x.severity.toUpperCase()}</span>
                 <span style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}55`, borderRadius: 5, padding: "3px 8px", fontFamily: "'Geist Mono',monospace" }}>{st.l}</span>
                 {x.status === "open" && <button onClick={() => setStatus(x, "in_progress")} style={S.act("#f59e0b")}>Tangani</button>}
-                {x.status === "in_progress" && <button onClick={() => setStatus(x, "resolved")} style={S.act("#10b981")}>✓ Selesai</button>}
+                {x.status === "in_progress" && <button onClick={() => setStatus(x, "resolved")} style={S.act("#10b981")}>✓ Done</button>}
                 <button onClick={() => setEditing({ ...x })} title="Edit" style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️</button>
                 <button onClick={() => remove(x)} title="Delete" style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 7px", borderRadius: 5, fontSize: 11, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
               </div>
@@ -127,7 +127,7 @@ export default function AdminIncidents({ apiBase = "" }) {
               <select value={editing.status || ""} onChange={e => setEditing({ ...editing, status: e.target.value })} style={modalInp}>
                 {["open", "in_progress", "resolved"].map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <textarea value={editing.description || ""} onChange={e => setEditing({ ...editing, description: e.target.value })} placeholder="Deskripsi" rows={2} style={{ ...modalInp, resize: "vertical", fontFamily: "inherit" }} />
+              <textarea value={editing.description || ""} onChange={e => setEditing({ ...editing, description: e.target.value })} placeholder="Description" rows={2} style={{ ...modalInp, resize: "vertical", fontFamily: "inherit" }} />
               <textarea value={editing.resolution || ""} onChange={e => setEditing({ ...editing, resolution: e.target.value })} placeholder="Resolusi" rows={2} style={{ ...modalInp, resize: "vertical", fontFamily: "inherit" }} />
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>

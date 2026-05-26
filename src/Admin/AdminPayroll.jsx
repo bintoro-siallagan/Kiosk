@@ -26,7 +26,7 @@ export default function AdminPayroll({ apiBase = "" }) {
     fetch(`${apiBase}/api/payroll/process`, {
       method: "POST", headers: { "Content-Type": "application/json" }, body: "{}",
     }).then(r => r.json()).then(j => {
-      if (j.ok) { setMsg("✓ Payroll diproses & diposting ke Finance sebagai beban gaji"); load(); }
+      if (j.ok) { setMsg("✓ Payroll diproses & diposting to Finance sebagai beban gaji"); load(); }
       else setMsg(j.error || "gagal");
     }).catch(e => setMsg(String(e))).finally(() => setBusy(false));
   };
@@ -42,7 +42,7 @@ export default function AdminPayroll({ apiBase = "" }) {
   const remove = async (item) => {
     const ok = await confirm({
       title: `Hapus payroll periode ${item.period}?`,
-      message: "Payroll run akan dihapus permanen. Catatan beban gaji di Finance tetap. Tidak bisa dibatalkan.",
+      message: "Payroll run akan dihapus permanen. Notes beban gaji di Finance tetap. Tidak bisa dibatalkan.",
       danger: true, okLabel: "Delete",
     });
     if (!ok) return;
@@ -87,7 +87,7 @@ export default function AdminPayroll({ apiBase = "" }) {
       ) : (
         <div style={{ ...S.card, marginTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
           <span style={{ fontSize: 13, color: "#9da7b3" }}>Payroller {d.period} belum diproses. Klik untuk hitung final &amp; posting ke Finance.</span>
-          <button onClick={process} disabled={busy} style={S.btnPrimary}>{busy ? "Memproses…" : "⚙ Proses Payroll & Posting ke Finance"}</button>
+          <button onClick={process} disabled={busy} style={S.btnPrimary}>{busy ? "Memproses…" : "⚙ Proses Payroll & Posting to Finance"}</button>
         </div>
       )}
       {msg ? <div style={{ fontSize: 12, marginTop: 8, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
@@ -129,7 +129,7 @@ export default function AdminPayroll({ apiBase = "" }) {
             <Field label="Diproses Oleh"><input value={editing.processed_by || ""} onChange={e => setEditing({ ...editing, processed_by: e.target.value })} style={modalInp} /></Field>
             <Field label="Total Cost"><input value={fmtRp(editing.total_cost)} disabled style={{ ...modalInp, opacity: 0.6 }} /></Field>
             <Field label="Total THP"><input value={fmtRp(editing.total_thp)} disabled style={{ ...modalInp, opacity: 0.6 }} /></Field>
-            <div style={{ fontSize: 10, color: "#5b6470", marginTop: 4, marginBottom: 10 }}>Catatan: angka payroll dihitung otomatis dari HRIS — hanya metadata yang bisa diedit.</div>
+            <div style={{ fontSize: 10, color: "#5b6470", marginTop: 4, marginBottom: 10 }}>Notes: angka payroll dihitung otomatis from HRIS — hanya metadata yang bisa diedit.</div>
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               <button onClick={() => setEditing(null)} style={{ ...S.btnPrimary, background: "#21262d", color: "#e6edf3", flex: 1 }}>Cancel</button>
               <button onClick={saveEdit} style={{ ...S.btnPrimary, flex: 1 }}>Save</button>

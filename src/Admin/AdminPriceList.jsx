@@ -28,13 +28,13 @@ export default function AdminPriceList({ apiBase = "" }) {
     fetch(url, { method: form.id ? "PUT" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
       .then(r => r.json())
       .then(j => {
-        if (j.ok || j.id) { setMsg(form.id ? "✓ Harga diperbarui" : "✓ Harga ditambah ke price list"); setForm(EMPTY); load(); }
+        if (j.ok || j.id) { setMsg(form.id ? "✓ Harga diperbarui" : "✓ Harga ditambah to price list"); setForm(EMPTY); load(); }
         else setMsg(j.error || "gagal menyimpan");
       })
       .catch(e => setMsg(String(e)));
   };
   const edit = (r) => { setMsg(""); setForm({ id: r.id, item_name: r.item_name, sku: r.sku || "", supplier: r.supplier || "", unit: r.unit || "", price: r.price, valid_until: toDateInput(r.valid_until) }); };
-  const del = (id) => { if (!window.confirm("Hapus harga ini dari price list?")) return; fetch(`${apiBase}/api/price-list/${id}`, { method: "DELETE" }).then(() => load()); };
+  const del = (id) => { if (!window.confirm("Hapus harga ini from price list?")) return; fetch(`${apiBase}/api/price-list/${id}`, { method: "DELETE" }).then(() => load()); };
 
   const I = (k, ph, type = "text") => (
     <input value={form[k]} onChange={e => setForm({ ...form, [k]: e.target.value })}
@@ -60,7 +60,7 @@ export default function AdminPriceList({ apiBase = "" }) {
           {I("valid_until", "", "date")}
         </div>
         <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "center" }}>
-          <button onClick={save} style={S.btnPrimary}>{form.id ? "Simpan Perubahan" : "+ Tambah ke Price List"}</button>
+          <button onClick={save} style={S.btnPrimary}>{form.id ? "Simpan Perubahan" : "+ Tambah to Price List"}</button>
           {form.id ? <button onClick={() => { setForm(EMPTY); setMsg(""); }} style={S.btnGhost}>Cancel</button> : null}
           {msg ? <span style={{ fontSize: 12, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</span> : null}
         </div>
@@ -89,7 +89,7 @@ export default function AdminPriceList({ apiBase = "" }) {
                   {r.expired
                     ? <span style={{ color: "#f87171", fontWeight: 700 }}>⚠ Expired</span>
                     : !r.is_active
-                      ? <span style={{ color: "#5b6470" }}>Nonaktif</span>
+                      ? <span style={{ color: "#5b6470" }}>Inactive</span>
                       : <span style={{ color: "#10b981" }}>🔒 Locked</span>}
                 </td>
                 <td style={{ ...S.td, whiteSpace: "nowrap" }}>

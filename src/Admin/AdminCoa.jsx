@@ -42,7 +42,7 @@ export default function AdminCoa({ apiBase = "" }) {
   };
   const add = () => {
     if (!form.code.trim() || !form.name.trim()) { flash("⚠ Kode & nama akun wajib"); return; }
-    post("", form, `✓ Akun ${form.code} ditambah`);
+    post("", form, `✓ Account ${form.code} ditambah`);
     setForm({ code: "", name: "", account_type: "Beban", account_group: "", outlet_scope: "all" });
   };
   const saveEdit = () => {
@@ -53,7 +53,7 @@ export default function AdminCoa({ apiBase = "" }) {
     }).then(r => r.json()).then(j => {
       if (j.ok) {
         // Also update outlet_scope (separate field via direct update if backend allows — skip if not supported)
-        flash(`✓ Akun ${editing.code} diperbarui`);
+        flash(`✓ Account ${editing.code} diperbarui`);
         setEditing(null); load();
       } else flash("⚠ " + (j.error || "gagal"));
     });
@@ -103,10 +103,10 @@ export default function AdminCoa({ apiBase = "" }) {
       </div>
 
       <div style={S.kpiRow}>
-        <Kpi label="Total Akun" v={String(s.total)} c={AC} />
-        <Kpi label="Akun Aktif" v={String(s.active)} c="#10b981" />
+        <Kpi label="Total Account" v={String(s.total)} c={AC} />
+        <Kpi label="Account Active" v={String(s.active)} c="#10b981" />
         <Kpi label="Inactive" v={String(s.inactive)} c={s.inactive > 0 ? "#f59e0b" : "#5b6470"} />
-        <Kpi label="Tipe Akun" v={String(s.by_type.length)} c="#a855f7" />
+        <Kpi label="Tipe Account" v={String(s.by_type.length)} c="#a855f7" />
       </div>
 
       <div style={{ display: "flex", gap: 6, margin: "12px 0 0", flexWrap: "wrap" }}>
@@ -141,8 +141,8 @@ export default function AdminCoa({ apiBase = "" }) {
             {d.types.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
           <input value={form.account_group} onChange={e => setForm({ ...form, account_group: e.target.value })} placeholder="Grup (opsional)" style={S.input} />
-          <input value={form.outlet_scope} onChange={e => setForm({ ...form, outlet_scope: e.target.value })} placeholder="all" style={S.input} title="Outlet scope: all atau CSV outlet IDs" />
-          <button onClick={add} style={S.btn}>+ Akun</button>
+          <input value={form.outlet_scope} onChange={e => setForm({ ...form, outlet_scope: e.target.value })} placeholder="all" style={S.input} title="Outlet scope: all or CSV outlet IDs" />
+          <button onClick={add} style={S.btn}>+ Account</button>
         </div>
         {msg && <div style={{ fontSize: 12, marginTop: 8, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div>}
       </div>
@@ -164,7 +164,7 @@ export default function AdminCoa({ apiBase = "" }) {
               </Field>
               <Field label="Grup"><input value={editing.account_group} onChange={e => setEditing({ ...editing, account_group: e.target.value })} style={S.input} /></Field>
               <Field label="Outlet scope (all / CSV)"><input value={editing.outlet_scope || "all"} onChange={e => setEditing({ ...editing, outlet_scope: e.target.value })} style={S.input} /></Field>
-              <Field label="Deskripsi" wide><textarea value={editing.description || ""} onChange={e => setEditing({ ...editing, description: e.target.value })} rows={2} style={{ ...S.input, resize: "vertical", fontFamily: "inherit" }} /></Field>
+              <Field label="Description" wide><textarea value={editing.description || ""} onChange={e => setEditing({ ...editing, description: e.target.value })} rows={2} style={{ ...S.input, resize: "vertical", fontFamily: "inherit" }} /></Field>
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
               <button onClick={saveEdit} style={S.btn}>💾 Simpan</button>
@@ -182,7 +182,7 @@ export default function AdminCoa({ apiBase = "" }) {
               <div style={{ fontSize: 14, fontWeight: 800, color: "#a855f7" }}>📋 Industry Templates</div>
               <button onClick={() => setModal(null)} style={{ background: "transparent", border: "1px solid #2a2b30", color: "#9ca3af", padding: "3px 9px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit" }}>×</button>
             </div>
-            <div style={{ fontSize: 12, color: "#9ca3af", marginBottom: 12 }}>Apply template untuk seed akun standar per industri. Insert OR ignore — gak overwrite akun custom yang sudah ada.</div>
+            <div style={{ fontSize: 12, color: "#9ca3af", marginBottom: 12 }}>Apply template for seed akun standar per industri. Insert OR ignore — gak overwrite akun custom yang sudah ada.</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
               {templates.map(t => (
                 <button key={t.id} onClick={() => {
@@ -232,7 +232,7 @@ export default function AdminCoa({ apiBase = "" }) {
                       <span style={{ width: 64, fontFamily: "'Geist Mono',monospace", color: TYPE_C[g.type] }}>{a.code}</span>
                       <span style={{ flex: 1, color: a.is_active ? "#e6edf3" : "#5b6470", textDecoration: a.is_active ? "none" : "line-through" }}>{a.name}</span>
                       {showBalances && b && b.balance !== 0 ? (
-                        <span style={{ width: 130, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 11.5, color: b.abnormal ? "#ef4444" : TYPE_C[g.type], fontWeight: 700 }} title={`Debit ${rp(b.debit)} · Kredit ${rp(b.credit)}`}>
+                        <span style={{ width: 130, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontSize: 11.5, color: b.abnormal ? "#ef4444" : TYPE_C[g.type], fontWeight: 700 }} title={`Debit ${rp(b.debit)} · Credit ${rp(b.credit)}`}>
                           {rp(b.balance)}{b.abnormal ? " ⚠" : ""}
                         </span>
                       ) : (showBalances ? <span style={{ width: 130, textAlign: "right", color: "#3a3a3a", fontSize: 11 }}>—</span> : null)}
@@ -277,7 +277,7 @@ function ImportModal({ apiBase, onClose, onDone }) {
     <div style={S.modalBg} onClick={onClose}>
       <div style={{ ...S.modalCard, width: 600 }} onClick={e => e.stopPropagation()}>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: "#f59e0b" }}>📥 Import COA dari CSV</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: "#f59e0b" }}>📥 Import COA from CSV</div>
           <button onClick={onClose} style={{ background: "transparent", border: "1px solid #2a2b30", color: "#9ca3af", padding: "3px 9px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit" }}>×</button>
         </div>
         <div style={{ fontSize: 11.5, color: "#9ca3af", marginBottom: 8 }}>
@@ -320,12 +320,12 @@ function JournalMapModal({ apiBase, map, accounts, onReload, onClose }) {
           Map nama akun yang muncul di journal entry → kode COA. Sistem fallback ke COA_MAP hardcoded di journal-backend.js jika nama tidak di-map di sini.
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr auto", gap: 6, marginBottom: 10 }}>
-          <input value={form.account_name} onChange={e => setForm({ ...form, account_name: e.target.value })} placeholder="Nama akun di journal (mis: Penjualan Tiket Cinema)" style={S.input} />
+          <input value={form.account_name} onChange={e => setForm({ ...form, account_name: e.target.value })} placeholder="Nama akun di journal (mis: Sales Tiket Cinema)" style={S.input} />
           <select value={form.coa_code} onChange={e => setForm({ ...form, coa_code: e.target.value })} style={S.input}>
             <option value="">— Pilih COA code —</option>
             {accounts.map(a => <option key={a.code} value={a.code}>{a.code} — {a.name}</option>)}
           </select>
-          <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Catatan" style={S.input} />
+          <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Notes" style={S.input} />
           <button onClick={add} style={S.btn}>+ Map</button>
         </div>
         <div style={{ maxHeight: 320, overflowY: "auto" }}>

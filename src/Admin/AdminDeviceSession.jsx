@@ -11,9 +11,9 @@ const ago = (ts) => {
   if (!ts) return "—";
   const m = Math.floor((Date.now() / 1000 - ts) / 60);
   if (m < 1) return "baru saja";
-  if (m < 60) return m + " menit lalu";
+  if (m < 60) return m + " min lalu";
   const h = Math.floor(m / 60);
-  return h < 24 ? h + " jam lalu" : Math.floor(h / 24) + " hari lalu";
+  return h < 24 ? h + " hr lalu" : Math.floor(h / 24) + " day lalu";
 };
 const DEV_ICON = { pos: "💳", kiosk: "🛎️", desktop: "🖥️", tablet: "📱", mobile: "📲" };
 
@@ -69,7 +69,7 @@ export default function AdminDeviceSession({ apiBase = "" }) {
       </div>
 
       <div style={S.kpiRow}>
-        <Kpi label="Sesi Aktif" v={String(s.active_sessions)} c={AC} />
+        <Kpi label="Sesi Active" v={String(s.active_sessions)} c={AC} />
         <Kpi label="Device Terotorisasi" v={`${s.authorized_devices}/${s.devices}`} c="#10b981" />
         <Kpi label="Login Mencurigakan" v={String(s.suspicious)} c={s.suspicious > 0 ? "#ef4444" : "#10b981"} />
         <Kpi label="Total Device" v={String(s.devices)} c="#a855f7" />

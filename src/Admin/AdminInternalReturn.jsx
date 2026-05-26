@@ -7,7 +7,7 @@ import { useUiKit } from "../components/uiKit.jsx";
 const AC = "#9f1239";
 const TYPE = { transfer: { c: "#2563eb", l: "TRANSFER RETURN" }, delivery: { c: "#0e7490", l: "DELIVERY RETURN" } };
 const STAT = { draft: { c: "#f59e0b", l: "DRAFT" }, partial: { c: "#3b82f6", l: "PARTIAL" }, completed: { c: "#10b981", l: "SELESAI" } };
-const REASON_C = { Rusak: "#ef4444", Kedaluwarsa: "#f59e0b", "Salah Kirim": "#3b82f6", "Kualitas Buruk": "#a855f7", "Kelebihan Kirim": "#0d9488" };
+const REASON_C = { Rusak: "#ef4444", Kedaluwarsa: "#f59e0b", "Salah Send": "#3b82f6", "Kualitas Buruk": "#a855f7", "Kelebihan Send": "#0d9488" };
 
 export default function AdminInternalReturn({ apiBase = "" }) {
   const { confirm } = useUiKit();
@@ -139,9 +139,9 @@ export default function AdminInternalReturn({ apiBase = "" }) {
                       <select value={it.reason || "Rusak"} onChange={e => { const items = [...editing.items]; items[i] = { ...it, reason: e.target.value }; setEditing({ ...editing, items }); }} style={modalInp}>
                         <option value="Rusak">Rusak</option>
                         <option value="Kedaluwarsa">Kedaluwarsa</option>
-                        <option value="Salah Kirim">Salah Kirim</option>
+                        <option value="Salah Send">Salah Send</option>
                         <option value="Kualitas Buruk">Kualitas Buruk</option>
-                        <option value="Kelebihan Kirim">Kelebihan Kirim</option>
+                        <option value="Kelebihan Send">Kelebihan Send</option>
                       </select>
                     </div>
                   ))}

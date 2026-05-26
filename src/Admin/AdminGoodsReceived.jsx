@@ -9,8 +9,8 @@ const ago = (ts) => {
   if (!ts) return "—";
   const h = Math.floor((Date.now() / 1000 - ts) / 3600);
   if (h < 1) return "baru saja";
-  if (h < 24) return h + " jam lalu";
-  return Math.floor(h / 24) + " hari lalu";
+  if (h < 24) return h + " hr lalu";
+  return Math.floor(h / 24) + " day lalu";
 };
 
 export default function AdminGoodsReceived({ apiBase = "" }) {
@@ -77,7 +77,7 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
 
       <div style={S.kpiRow}>
         <Kpi label="Menunggu Diterima" v={String(s.pending)} c={s.pending > 0 ? "#f59e0b" : "#10b981"} />
-        <Kpi label="⚠ Outlet Lupa GR" v={String(s.overdue || 0)} c={s.overdue > 0 ? "#ef4444" : "#10b981"} sub="pending ≥ 3 hari" />
+        <Kpi label="⚠ Outlet Forgot GR" v={String(s.overdue || 0)} c={s.overdue > 0 ? "#ef4444" : "#10b981"} sub="pending ≥ 3 day" />
         <Kpi label="Ada Selisih" v={String(s.discrepancy)} c={s.discrepancy > 0 ? "#ef4444" : "#5b6470"} />
         <Kpi label="Sudah Diterima" v={String(s.received)} c="#10b981" />
       </div>

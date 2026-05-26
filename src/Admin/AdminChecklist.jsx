@@ -88,15 +88,15 @@ export default function AdminChecklist({ apiBase = "" }) {
   return (
     <div>
       <div style={{ ...S.card, background: "#0a1422", border: "1px solid #15324d" }}>
-        <div style={{ ...S.label, color: "#5fa8d3" }}>✅ Daily Checklist — Buka & Tutup Toko</div>
+        <div style={{ ...S.label, color: "#5fa8d3" }}>✅ Daily Checklist — Open & Close Toko</div>
         <div style={{ fontSize: 13, color: "#8b949e", lineHeight: 1.5 }}>
           Item di sini <b>wajib di-ceklis kasir</b> sebelum mulai shift (opening) & sebelum tutup shift (closing).
           Kasir gak bisa transaksi kalau opening checklist belum kelar.
         </div>
       </div>
 
-      <Section apiBase={apiBase} type="opening" title="🌅 Checklist Buka Toko" accent="#10B981" />
-      <Section apiBase={apiBase} type="closing" title="🌙 Checklist Tutup Toko" accent="#F59E0B" />
+      <Section apiBase={apiBase} type="opening" title="🌅 Checklist Open Toko" accent="#10B981" />
+      <Section apiBase={apiBase} type="closing" title="🌙 Checklist Close Toko" accent="#F59E0B" />
 
       <div style={S.card}>
         <div style={S.label}>Riwayat Checklist ({subs.length})</div>

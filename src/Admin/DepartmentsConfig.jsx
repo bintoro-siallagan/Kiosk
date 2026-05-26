@@ -36,7 +36,7 @@ export default function DepartmentsConfig({ apiBase = "" }) {
 
   const toggleActive = async (dept) => {
     if (dept.active) {
-      if (!confirm(`Nonaktifkan "${dept.label}"? Soft-delete — referensi history tetap aman.`)) return;
+      if (!confirm(`Inactivekan "${dept.label}"? Soft-delete — referensi history tetap aman.`)) return;
       await fetch(`${API}/api/departments/${dept.code}`, { method: "DELETE" });
     } else {
       await fetch(`${API}/api/departments/${dept.code}/restore`, { method: "POST" });
@@ -51,7 +51,7 @@ export default function DepartmentsConfig({ apiBase = "" }) {
       <header style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 2.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>karyaOS / MASTER / DEPARTMENTS</div>
         <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", marginTop: 4, letterSpacing: -0.5 }}>🏢 Departments Master</div>
-        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>CRUD departemen. Dipakai oleh KOLR Launch, Service Visit, dan KPI per dept.</div>
+        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>CRUD departemen. Dipakai oleh KOLR Launch, Service Visit, and KPI per dept.</div>
       </header>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "wrap" }}>

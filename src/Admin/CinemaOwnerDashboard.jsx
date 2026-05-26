@@ -79,7 +79,7 @@ export default function CinemaOwnerDashboard({ apiBase = "", onNavigate }) {
                  spark={(data.sparkline || []).map(s => s.revenue)}
                  wow={data.wow?.revenue} />
             <KPI label="🛒 Purchase" value={data.kpi?.purchases || 0} color={PALETTE.cyan} sub="transaksi" />
-            <KPI label="🎬 Showtime Aktif" value={data.kpi?.active_showtimes || 0} color={PALETTE.purple} />
+            <KPI label="🎬 Showtime Active" value={data.kpi?.active_showtimes || 0} color={PALETTE.purple} />
           </div>
 
           {/* Auto-promo unlock progress */}
@@ -179,7 +179,7 @@ export default function CinemaOwnerDashboard({ apiBase = "", onNavigate }) {
                   <span style={{ fontSize: 12, fontFamily: "'Geist Mono',monospace", color: PALETTE.amber, width: 96, textAlign: "right" }}>{rp(r.amount)}</span>
                 </div>
               ))}
-              {(!sultan?.top || sultan.top.length === 0) && <div style={{ color: PALETTE.dim, fontSize: 12, padding: 14 }}>No transaksi jam ini.</div>}
+              {(!sultan?.top || sultan.top.length === 0) && <div style={{ color: PALETTE.dim, fontSize: 12, padding: 14 }}>No transaksi hr ini.</div>}
             </Section>
           </div>
 

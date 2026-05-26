@@ -36,8 +36,8 @@ export default function CinemaBoxOffice({ apiBase }) {
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
           <Stat label="Total tiket" value={totals.tickets} color="#22d3ee" />
           <Stat label="Total revenue" value={rp(totals.revenue)} color="#10b981" />
-          <Stat label="Tiket hari ini" value={today.tickets} color="#a855f7" />
-          <Stat label="Revenue hari ini" value={rp(today.revenue)} color="#10b981" />
+          <Stat label="Tiket day ini" value={today.tickets} color="#a855f7" />
+          <Stat label="Revenue day ini" value={rp(today.revenue)} color="#10b981" />
         </div>
       </div>
 

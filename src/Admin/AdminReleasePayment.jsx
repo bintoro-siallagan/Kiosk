@@ -61,7 +61,7 @@ export default function AdminReleasePayment({ apiBase = "" }) {
 
       <div style={S.kpiRow}>
         <Kpi label="Pending Release" v={String(s.pending_count)} c={AC} />
-        <Kpi label="Total Harus Dibayar" v={fmtRp(s.pending_total)} c="#f59e0b" />
+        <Kpi label="Total Harus Paid" v={fmtRp(s.pending_total)} c="#f59e0b" />
         <Kpi label="Jatuh Tempo Lewat" v={String(s.overdue)} c={s.overdue > 0 ? "#ef4444" : "#10b981"} />
         <Kpi label="Dicairkan Bln Ini" v={fmtRp(s.released_month)} c="#10b981" />
       </div>

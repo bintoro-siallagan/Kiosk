@@ -61,7 +61,7 @@ export default function OutletLaunchTracker({ apiBase = "" }) {
         <button onClick={load} style={ghostBtn}>{loading ? "⏳" : "↻"} Refresh</button>
       </div>
 
-      {err && <ErrorInline error={err} onRetry={load} label="Daftar proyek belum dapat dimuat" />}
+      {err && <ErrorInline error={err} onRetry={load} label="List proyek belum dapat dimuat" />}
 
       {/* Launch grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%, 300px),1fr))", gap: 12 }}>
@@ -70,7 +70,7 @@ export default function OutletLaunchTracker({ apiBase = "" }) {
           <div style={{ gridColumn: "1/-1", padding: 60, textAlign: "center", color: "#64748b" }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🚀</div>
             <div style={{ fontSize: 14, marginBottom: 16 }}>No outlet launch project tercatat</div>
-            <button onClick={() => setShowCreate(true)} style={{ padding: "10px 18px", background: PURPLE, border: "none", borderRadius: 8, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Mulai Project Pertama</button>
+            <button onClick={() => setShowCreate(true)} style={{ padding: "10px 18px", background: PURPLE, border: "none", borderRadius: 8, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Start Project Pertama</button>
           </div>
         )}
       </div>
@@ -176,7 +176,7 @@ function LaunchDetail({ launch, onClose, onRefresh, API }) {
   };
 
   const doSignoff = async (deptCode) => {
-    const name = prompt(`Nama dept lead untuk sign-off ${deptCode}:`);
+    const name = prompt(`Nama dept lead for sign-off ${deptCode}:`);
     if (!name) return;
     const pin = prompt(`PIN dept lead "${name}":`);
     if (!pin) return;
@@ -196,7 +196,7 @@ function LaunchDetail({ launch, onClose, onRefresh, API }) {
   };
 
   const revokeSignoff = async (deptCode) => {
-    if (!confirm(`Revoke sign-off ${deptCode}? Task bisa di-edit lagi setelahnya.`)) return;
+    if (!confirm(`Revoto sign-off ${deptCode}? Task bisa di-edit lagi setelahnya.`)) return;
     setBusy(true);
     try {
       const r = await fetch(`${API}/api/launch/launches/${launch.id}/signoff/${deptCode}`, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ by: "admin" }) });
@@ -207,7 +207,7 @@ function LaunchDetail({ launch, onClose, onRefresh, API }) {
   };
 
   const goLive = async () => {
-    if (!confirm(`KONFIRMASI: GO LIVE outlet "${launch.outlet_name}"?\n\nIni akan menandai outlet sudah operasional. Tidak bisa di-undo dari sini.`)) return;
+    if (!confirm(`CONFIRM: GO LIVE outlet "${launch.outlet_name}"?\n\nIni akan menandai outlet sudah operasional. Tidak bisa di-undo from sini.`)) return;
     setBusy(true);
     try {
       const r = await fetch(`${API}/api/launch/launches/${launch.id}/go-live`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ went_live_by: "admin" }) });
@@ -565,7 +565,7 @@ function CreateLaunchModal({ onClose, onCreated, API }) {
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 99999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
       <div onClick={e => e.stopPropagation()} style={{ width: "min(520px, 100%)", background: "#0a0f1c", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 22, maxHeight: "90vh", overflowY: "auto" }}>
         <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>karyaOS / KOLR · NEW PROJECT</div>
-        <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", marginTop: 4, marginBottom: 14 }}>🚀 Mulai Project Outlet Baru</div>
+        <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", marginTop: 4, marginBottom: 14 }}>🚀 Start Project Outlet Baru</div>
 
         <Field label="Outlet Code *"><input value={form.outlet_code} onChange={e => setForm({...form, outlet_code: e.target.value.toUpperCase()})} placeholder="cth: KEMANG_02" style={inp} /></Field>
         <Field label="Outlet Name *"><input value={form.outlet_name} onChange={e => setForm({...form, outlet_name: e.target.value})} placeholder="cth: Kemang Plaza 2" style={inp} /></Field>
@@ -579,7 +579,7 @@ function CreateLaunchModal({ onClose, onCreated, API }) {
         <Field label="Target Open Date *"><input type="date" value={form.target_open_date_str} onChange={e => setForm({...form, target_open_date_str: e.target.value})} style={inp} /></Field>
         <Field label="Project Manager"><input value={form.project_manager} onChange={e => setForm({...form, project_manager: e.target.value})} placeholder="Nama PM" style={inp} /></Field>
         <Field label="GM / Owner"><input value={form.gm_name} onChange={e => setForm({...form, gm_name: e.target.value})} placeholder="Nama GM" style={inp} /></Field>
-        <Field label="Catatan"><textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} rows={2} style={{...inp, fontFamily: "inherit", resize: "vertical"}} /></Field>
+        <Field label="Notes"><textarea value={form.notes} onChange={e => setForm({...form, notes: e.target.value})} rows={2} style={{...inp, fontFamily: "inherit", resize: "vertical"}} /></Field>
 
         {err && <div style={{ padding: 10, background: "rgba(239,68,68,0.1)", border: `1px solid ${RED}55`, borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 10 }}>⚠ {err}</div>}
 

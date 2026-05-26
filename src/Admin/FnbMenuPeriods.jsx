@@ -29,7 +29,7 @@ export default function FnbMenuPeriods({ apiBase = "" }) {
       <div style={{ marginBottom: 14, display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <div>
           <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>⏰ Time-Based Menu Periods</div>
-          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Breakfast / Lunch / Tea / Dinner / Late — auto-switch menu sesuai jam.</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Breakfast / Lunch / Tea / Dinner / Late — auto-switch menu sesuai hr.</div>
         </div>
         {!editing && <button onClick={() => { setEditing("new"); setForm(empty); }} style={B.add}>＋ Period baru</button>}
       </div>
@@ -49,12 +49,12 @@ export default function FnbMenuPeriods({ apiBase = "" }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 1fr 1fr", gap: 10 }}>
             <Field label="Nama"><input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Lunch" style={inp} /></Field>
             <Field label="Icon"><input value={form.icon} onChange={e => setForm({ ...form, icon: e.target.value })} placeholder="🍱" style={inp} /></Field>
-            <Field label="Mulai"><input type="time" value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} style={inp} /></Field>
+            <Field label="Start"><input type="time" value={form.start_time} onChange={e => setForm({ ...form, start_time: e.target.value })} style={inp} /></Field>
             <Field label="Completed"><input type="time" value={form.end_time} onChange={e => setForm({ ...form, end_time: e.target.value })} style={inp} /></Field>
-            <Field label="Hari berlaku"><input value={form.applicable_days} onChange={e => setForm({ ...form, applicable_days: e.target.value })} placeholder="kosong = semua hari" style={inp} /></Field>
+            <Field label="Hari berlaku"><input value={form.applicable_days} onChange={e => setForm({ ...form, applicable_days: e.target.value })} placeholder="kosong = semua day" style={inp} /></Field>
             <Field label="Urutan"><input type="number" value={form.sort_order} onChange={e => setForm({ ...form, sort_order: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
-            <Field label="Catatan"><input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} style={inp} /></Field>
-            <Field label="Status"><label style={{ display: "flex", gap: 8, fontSize: 13, alignItems: "center" }}><input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Aktif</label></Field>
+            <Field label="Notes"><input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} style={inp} /></Field>
+            <Field label="Status"><label style={{ display: "flex", gap: 8, fontSize: 13, alignItems: "center" }}><input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Active</label></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
             <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>

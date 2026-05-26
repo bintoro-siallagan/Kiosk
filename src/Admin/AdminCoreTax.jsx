@@ -69,7 +69,7 @@ export default function AdminCoreTax({ apiBase = "" }) {
 
       <div style={S.kpiRow}>
         <Kpi label="Total Kewajiban Pajak" v={fmtRp(s.total_liability)} c={AC} />
-        <Kpi label="PPN Kurang Bayar" v={fmtRp(s.ppn_payable)} c="#f59e0b" />
+        <Kpi label="PPN Kurang Pay" v={fmtRp(s.ppn_payable)} c="#f59e0b" />
         <Kpi label="Total PPh" v={fmtRp(s.pph_total)} c="#3b82f6" />
         <Kpi label="Faktur Pajak Terbit" v={String(s.faktur_issued)} c="#10b981" />
       </div>
@@ -105,7 +105,7 @@ export default function AdminCoreTax({ apiBase = "" }) {
 
       {/* SPT */}
       <div style={{ ...S.card, marginTop: 14 }}>
-        <div style={S.kicker}>📑 SPT MASA — pelaporan pajak bulanan</div>
+        <div style={S.kicker}>📑 SPT MASA — pelaporan pajak monthan</div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(230px,1fr))", gap: 10, marginTop: 10 }}>
           {d.spt.map((x, i) => (
             <div key={i} style={{ background: "#0a0e16", border: "1px solid #161b22", borderTop: `2px solid ${ST[x.status]}`, borderRadius: 9, padding: "10px 12px" }}>

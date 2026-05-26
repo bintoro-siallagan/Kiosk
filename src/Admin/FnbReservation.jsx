@@ -21,11 +21,11 @@ export default function FnbReservation({ apiBase = "" }) {
   }, [base, filter]);
   useEffect(() => { load(); }, [load]);
   const save = async () => {
-    if (!form.customer_name || !form.reservation_date || !form.reservation_time) { showToast("Nama + tgl + jam wajib", "err"); return; }
+    if (!form.customer_name || !form.reservation_date || !form.reservation_time) { showToast("Nama + tgl + hr wajib", "err"); return; }
     const url = editing === "new" ? `${base}/reservations` : `${base}/reservations/${editing}`;
     const r = await fetch(url, { method: editing === "new" ? "POST" : "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form) });
     const d = await r.json(); if (!d.ok) { showToast(d.error, "err"); return; }
-    showToast(editing === "new" ? `Booking dibuat (${d.reservation_code})` : "Diperbarui"); setEditing(null); setForm(empty); load();
+    showToast(editing === "new" ? `Booking dibuat (${d.reservation_code})` : "Updated"); setEditing(null); setForm(empty); load();
   };
   const setStatus = async (r, status) => { await fetch(`${base}/reservations/${r.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) }); showToast(`Status: ${STATUS[status]?.label}`); load(); };
   const { confirm } = useUiKit();
@@ -51,11 +51,11 @@ export default function FnbReservation({ apiBase = "" }) {
             <Field label="Nama tamu"><input value={form.customer_name} onChange={e => setForm({ ...form, customer_name: e.target.value })} style={inp} /></Field>
             <Field label="Phone"><input value={form.customer_phone} onChange={e => setForm({ ...form, customer_phone: e.target.value })} style={inp} /></Field>
             <Field label="Email"><input value={form.customer_email} onChange={e => setForm({ ...form, customer_email: e.target.value })} style={inp} /></Field>
-            <Field label="Tanggal"><input type="date" value={form.reservation_date} onChange={e => setForm({ ...form, reservation_date: e.target.value })} style={inp} /></Field>
+            <Field label="Date"><input type="date" value={form.reservation_date} onChange={e => setForm({ ...form, reservation_date: e.target.value })} style={inp} /></Field>
             <Field label="Jam"><input type="time" value={form.reservation_time} onChange={e => setForm({ ...form, reservation_time: e.target.value })} style={inp} /></Field>
             <Field label="Jumlah tamu"><input type="number" min="1" value={form.party_size} onChange={e => setForm({ ...form, party_size: parseInt(e.target.value, 10) || 1 })} style={inp} /></Field>
             <Field label="Nomor meja (preferensi)"><input value={form.table_number} onChange={e => setForm({ ...form, table_number: e.target.value })} style={inp} /></Field>
-            <Field label="Occasion"><input value={form.occasion} onChange={e => setForm({ ...form, occasion: e.target.value })} placeholder="Ulang tahun / Anniversary" style={inp} /></Field>
+            <Field label="Occasion"><input value={form.occasion} onChange={e => setForm({ ...form, occasion: e.target.value })} placeholder="Ulang year / Anniversary" style={inp} /></Field>
             <Field label="Outlet"><input value={form.outlet} onChange={e => setForm({ ...form, outlet: e.target.value })} style={inp} /></Field>
             <Field label="Deposit (Rp)"><input type="number" value={form.deposit_amount} onChange={e => setForm({ ...form, deposit_amount: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
             <Field label="DP terbayar (Rp)"><input type="number" value={form.deposit_paid} onChange={e => setForm({ ...form, deposit_paid: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>

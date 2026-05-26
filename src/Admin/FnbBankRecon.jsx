@@ -44,7 +44,7 @@ export default function FnbBankRecon({ apiBase = "" }) {
   };
   const { prompt } = useUiKit();
   const match = async (t) => {
-    const sid = await prompt({ title: "Match ke Settlement", label: `Transaksi ${rp(t.amount)} · ${t.txn_date}`, placeholder: "Settlement ID (numeric)", type: "number" });
+    const sid = await prompt({ title: "Match to Settlement", label: `Transaction ${rp(t.amount)} · ${t.txn_date}`, placeholder: "Settlement ID (numeric)", type: "number" });
     if (!sid) return;
     await fetch(`${base}/bank-transactions/${t.id}/match`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ settlement_id: parseInt(sid, 10), confidence: 1.0 }) });
     showToast("Matched"); load();
@@ -55,13 +55,13 @@ export default function FnbBankRecon({ apiBase = "" }) {
   const saveEdit = async () => {
     const r = await fetch(`${base}/bank-transactions/${editing.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing) });
     const d = await r.json(); if (!d.ok) { showToast(d.error || "Gagal", "err"); return; }
-    showToast("Transaksi diupdate"); setEditing(null); load();
+    showToast("Transaction diupdate"); setEditing(null); load();
   };
   const removeTxn = async (t) => {
     const ok = await confirm({ title: "Hapus transaksi bank?", message: `${t.txn_date} · ${rp(t.amount)} · ${t.description || ""}\n\nTidak bisa dibatalkan.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
     await fetch(`${base}/bank-transactions/${t.id}`, { method: "DELETE" });
-    showToast("Transaksi dihapus"); load();
+    showToast("Transaction dihapus"); load();
   };
   return (
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
@@ -121,7 +121,7 @@ export default function FnbBankRecon({ apiBase = "" }) {
       {editing && (
         <div onClick={() => setEditing(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9998, padding: 20 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 520, width: "100%" }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit Transaksi Bank</div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>✏️ Edit Transaction Bank</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               <div><div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, marginBottom: 4 }}>TANGGAL</div><input type="date" value={editing.txn_date || ""} onChange={e => setEditing({ ...editing, txn_date: e.target.value })} style={inp} /></div>
               <div><div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, marginBottom: 4 }}>AMOUNT</div><input type="number" value={editing.amount || ""} onChange={e => setEditing({ ...editing, amount: e.target.value })} style={inp} /></div>

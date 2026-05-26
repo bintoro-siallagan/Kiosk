@@ -7,7 +7,7 @@ import ReportActions from "./ReportActions.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fcColor = (p) => (p > 40 ? "#ef4444" : p >= 35 ? "#f59e0b" : "#10b981");
-const CAT = { froyo: "Froyo", smoothies: "Smoothie", takehome: "Take Home", yogulato: "Yogulato", collab: "Collab" };
+const CAT = { froyo: "Froyo", smoothies: "Smoothie", takehome: "Tato Home", yogulato: "Yogulato", collab: "Collab" };
 
 export default function AdminFoodCost({ apiBase = "" }) {
   const [d, setD] = useState(null);
