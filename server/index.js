@@ -2649,6 +2649,58 @@ app.post("/api/auth/users/unlock-all", (req, res) => {
   res.json({ ok: true, unlocked_count: locked.length, unlocked: locked.map(u => u.name) });
 });
 
+// Emergency unlock — bookmarkable GET endpoint untuk recovery cepat
+// dari browser. Reset semua failed_count + locked_until + ALSO reset
+// password Super Admin ke 'admin123' (kalau ada).
+app.get("/api/auth/emergency-unlock", (req, res) => {
+  try {
+    adminUsers = db.loadAllAdminUsers();
+    const locked = adminUsers.filter(u => u.locked_until || u.failed_login_count > 0);
+    for (const u of locked) {
+      db.insertAdminUser({ ...u, failed_login_count: 0, locked_until: null });
+    }
+    // Reset Super Admin password ke 'admin123'
+    let resetPassword = false;
+    const sa = adminUsers.find(u => u.role === 'super-admin' && u.username === 'admin');
+    if (sa) {
+      const { hash, salt } = hashPassword('admin123');
+      db.insertAdminUser({ ...sa, password_hash: hash, password_salt: salt,
+        password_changed_at: Math.floor(Date.now() / 1000),
+        failed_login_count: 0, locked_until: null, must_change_password: 0 });
+      resetPassword = true;
+    }
+    adminUsers = db.loadAllAdminUsers();
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.send(`<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>karyaOS Emergency Unlock</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  body{margin:0;background:linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%);color:#fff;font-family:'Inter',system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .card{max-width:480px;width:100%;background:rgba(10,15,28,0.7);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:32px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.5)}
+  .icon{font-size:60px;margin-bottom:14px}
+  h1{margin:0 0 10px;font-size:22px}
+  .ok{color:#10b981;font-weight:800}
+  .row{padding:10px 14px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);border-radius:10px;margin:8px 0;text-align:left;font-size:13px;font-family:'Geist Mono',monospace}
+  .cta{display:inline-block;margin-top:20px;padding:14px 28px;background:linear-gradient(135deg,#f59e0b,#f97316);color:#111;border-radius:10px;text-decoration:none;font-weight:800;letter-spacing:0.5px}
+  .muted{color:#94a3b8;font-size:12px;margin-top:14px}
+</style></head><body>
+<div class="card">
+  <div class="icon">🔓</div>
+  <h1 class="ok">Emergency Unlock Selesai</h1>
+  <div class="muted">Reset performed at ${new Date().toLocaleString('id-ID')}</div>
+  <div class="row">✓ ${locked.length} akun terkunci di-unlock</div>
+  ${resetPassword ? '<div class="row">✓ Super Admin password reset ke <b>admin123</b></div>' : ''}
+  <div class="row">→ admin / admin123 — siap login</div>
+  <div class="row">→ PIN 999999 (Super Admin) — siap login</div>
+  <div class="row">→ PIN 123456 (Manager) — siap login</div>
+  <a href="/?admin" class="cta">🔐 Login Sekarang</a>
+  <div class="muted">karyaOS · emergency recovery endpoint</div>
+</div></body></html>`);
+  } catch (e) {
+    res.status(500).send(`<h1>Error</h1><pre>${e.message}</pre>`);
+  }
+});
+
 // ─── TABLE / MEJA MANAGEMENT ─────────────────────────────────────────────────
 let tables = db.loadAllTables();
 if (tables.length === 0) {
