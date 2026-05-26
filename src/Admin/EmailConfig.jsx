@@ -41,16 +41,29 @@ export default function EmailConfig({ apiBase = "" }) {
   const apply = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const save = async () => {
-    setBusy(true); setInfo(""); setErr(null);
+    setInfo(""); setErr(null);
+    // Validation guard — anti-overwrite dengan empty values
+    if (!form.smtpHost?.trim()) { alert("SMTP Host wajib diisi"); return; }
+    if (!form.smtpUser?.trim()) { alert("USERNAME / EMAIL wajib diisi"); return; }
+    // Cek apakah password masked (artinya user belum re-type, jadi backend skip)
+    const passIsMasked = form.smtpPass && form.smtpPass.includes("•");
+    if (!form.smtpPass?.trim() && !passIsMasked) {
+      alert("PASSWORD / API KEY wajib diisi.\n\nUntuk Gmail: generate App Password 16-char dari myaccount.google.com/apppasswords (BUKAN password Gmail biasa).");
+      return;
+    }
+    setBusy(true);
     try {
+      // Normalize email lowercase (Gmail accepts both, tapi safer lowercase)
+      const payload = { ...form, smtpUser: form.smtpUser.trim().toLowerCase(), fromEmail: (form.fromEmail || "").trim().toLowerCase() };
       const r = await fetch(`${API}/api/admin/email-config`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: token ? `Bearer ${token}` : undefined },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j?.error);
-      setInfo(`✓ Konfigurasi tersimpan${form.enabled ? " — email aktif" : " — disabled"}`);
+      setInfo(`✓ Konfigurasi tersimpan — ${form.enabled ? "email aktif, bisa kirim test sekarang" : "tap toggle untuk aktifkan"}`);
+      setTimeout(() => setInfo(""), 6000);
       load();
     } catch (e) { setErr(e); }
     setBusy(false);
