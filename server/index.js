@@ -244,30 +244,73 @@ const path = require('path');
 let orders = db.loadAllOrders();
 
 let menu = [
-  // FROZEN YOGURT
-  { id: 101, cat: 'froyo', emoji: '🖤', name: 'Black Sakura Regular',        desc: 'Charcoal froyo + 2 topping pilihan',           price: 54000,  freeToppings: 2, popular: true, avail: true },
-  { id: 102, cat: 'froyo', emoji: '🖤', name: 'Black Sakura Large',          desc: 'Charcoal froyo + 3 topping pilihan',           price: 69000,  freeToppings: 3, avail: true },
-  { id: 103, cat: 'froyo', emoji: '🤍', name: 'White Skim Regular',          desc: 'Susu skim froyo + 2 topping pilihan',          price: 47000,  freeToppings: 2, popular: true, avail: true },
-  { id: 104, cat: 'froyo', emoji: '🤍', name: 'White Skim Large',            desc: 'Susu skim froyo + 3 topping pilihan',          price: 64000,  freeToppings: 3, avail: true },
-  { id: 105, cat: 'froyo', emoji: '🤍', name: 'Lykone White Skim',           desc: 'White skim cone + 2 topping',                  price: 49000,  freeToppings: 2, avail: true },
-  // SMOOTHIES
-  { id: 201, cat: 'smoothies', emoji: '🍓', name: 'Yogurt Strawberry Smoothie', desc: 'Strawberry, aloe vera, chia seed',          price: 50000,  freeToppings: 0, popular: true, avail: true },
-  { id: 202, cat: 'smoothies', emoji: '🍑', name: 'Yogurt Peach Smoothie',      desc: 'White skim + peach segar',                   price: 50000,  freeToppings: 0, avail: true },
-  { id: 203, cat: 'smoothies', emoji: '🥭', name: 'Collagen Mango',             desc: 'Yogurt kolagen + mangga segar',              price: 50000,  freeToppings: 0, avail: true },
-  { id: 204, cat: 'smoothies', emoji: '🥥', name: 'Sally x Hydrococo',          desc: 'Coconut water + yogurt + saus pisang',       price: 37000,  freeToppings: 0, avail: true },
-  // YOGULATO
-  { id: 301, cat: 'yogulato', emoji: '🍓', name: 'Ichi-Go-Mochi Strawberry',  desc: 'Yogurt gelato 100ml',                          price: 49000,  freeToppings: 0, avail: true },
-  { id: 302, cat: 'yogulato', emoji: '🍪', name: 'Cookie Dough & Raisin',     desc: 'Yogurt gelato 100ml',                          price: 49000,  freeToppings: 0, avail: true },
-  { id: 303, cat: 'yogulato', emoji: '🍵', name: "Bean Missin' U Matcha",     desc: 'Yogurt gelato 100ml',                          price: 49000,  freeToppings: 0, avail: true },
-  { id: 304, cat: 'yogulato', emoji: '🍫', name: 'Ciao Cioccolato',           desc: 'Yogurt gelato 100ml',                          price: 49000,  freeToppings: 0, avail: true },
-  { id: 305, cat: 'yogulato', emoji: '⚪', name: 'Plain Sally',               desc: 'Yogurt gelato 100ml — original',               price: 49000,  freeToppings: 0, avail: true },
-  // TAKE HOME PACK
-  { id: 401, cat: 'takehome', emoji: '🖤', name: 'Take Home Black Sakura 250g', desc: '3 topping crunchy/sauce/fruit',              price: 95000,  freeToppings: 3, avail: true },
-  { id: 402, cat: 'takehome', emoji: '🤍', name: 'Take Home White Skim 250g',   desc: '3 topping crunchy/sauce/fruit',              price: 85000,  freeToppings: 3, avail: true },
-  { id: 403, cat: 'takehome', emoji: '🖤', name: 'Take Home Black Sakura 500g', desc: '6 topping (2 crunchy + 2 sauce + 2 fruit)',  price: 165000, freeToppings: 6, avail: true },
-  { id: 404, cat: 'takehome', emoji: '🤍', name: 'Take Home White Skim 500g',   desc: '6 topping (2 crunchy + 2 sauce + 2 fruit)',  price: 145000, freeToppings: 6, avail: true },
-  // SPECIAL / COLLAB
-  { id: 501, cat: 'collab', emoji: '🎮', name: 'Sour Sally x MLBB',          desc: 'Limited edition collab pack',                   price: 85000,  freeToppings: 2, avail: true },
+  // ─── FROZEN YOGURT (11) ───────────────────────────────────────────
+  { id: 101, cat: 'froyo', emoji: '🖤', name: 'Black Sakura Regular',        desc: 'Charcoal froyo · 2 toppings',                 price: 54000,  freeToppings: 2, popular: true, avail: true, tag: 'BESTSELLER' },
+  { id: 102, cat: 'froyo', emoji: '🖤', name: 'Black Sakura Large',          desc: 'Charcoal froyo · 3 toppings',                 price: 69000,  freeToppings: 3, avail: true },
+  { id: 103, cat: 'froyo', emoji: '🤍', name: 'White Skim Regular',          desc: 'Classic skim milk · 2 toppings',              price: 47000,  freeToppings: 2, popular: true, avail: true, tag: 'BESTSELLER' },
+  { id: 104, cat: 'froyo', emoji: '🤍', name: 'White Skim Large',            desc: 'Classic skim milk · 3 toppings',              price: 64000,  freeToppings: 3, avail: true },
+  { id: 105, cat: 'froyo', emoji: '🤍', name: 'Lykone White Skim',           desc: 'Lykone cone · 2 toppings',                    price: 49000,  freeToppings: 2, avail: true },
+  { id: 106, cat: 'froyo', emoji: '🍓', name: 'Strawberry Bliss',            desc: 'Real strawberry swirl · 2 toppings',          price: 52000,  freeToppings: 2, avail: true, tag: 'NEW' },
+  { id: 107, cat: 'froyo', emoji: '🥭', name: 'Mango Sunrise',               desc: 'Tropical mango pulp · 2 toppings',            price: 52000,  freeToppings: 2, avail: true },
+  { id: 108, cat: 'froyo', emoji: '🍵', name: 'Matcha Garden',               desc: 'Ceremonial matcha · 2 toppings',              price: 56000,  freeToppings: 2, avail: true, tag: 'SIGNATURE' },
+  { id: 109, cat: 'froyo', emoji: '☕', name: 'Coffee Caramel',              desc: 'Espresso swirl + caramel · 2 toppings',       price: 54000,  freeToppings: 2, avail: true },
+  { id: 110, cat: 'froyo', emoji: '💜', name: 'Taro Cloud',                  desc: 'Bandung taro · 2 toppings',                   price: 52000,  freeToppings: 2, avail: true },
+  { id: 111, cat: 'froyo', emoji: '🍯', name: 'Honey Lavender',              desc: 'House-signature floral · 2 toppings',         price: 62000,  freeToppings: 2, avail: true, tag: 'PREMIUM' },
+
+  // ─── SMOOTHIES (9) ───────────────────────────────────────────────
+  { id: 201, cat: 'smoothies', emoji: '🍓', name: 'Yogurt Strawberry',       desc: 'Strawberry · aloe vera · chia seed',           price: 50000,  freeToppings: 0, popular: true, avail: true, tag: 'BESTSELLER' },
+  { id: 202, cat: 'smoothies', emoji: '🍑', name: 'Yogurt Peach',            desc: 'White skim + fresh peach',                     price: 50000,  freeToppings: 0, avail: true },
+  { id: 203, cat: 'smoothies', emoji: '🥭', name: 'Collagen Mango',          desc: 'Collagen yogurt + fresh mango',                price: 50000,  freeToppings: 0, avail: true },
+  { id: 204, cat: 'smoothies', emoji: '🥥', name: 'Sally x Hydrococo',       desc: 'Coconut water + yogurt + banana sauce',        price: 37000,  freeToppings: 0, avail: true },
+  { id: 205, cat: 'smoothies', emoji: '🥑', name: 'Avocado Cream',           desc: 'Avocado + palm sugar swirl',                   price: 52000,  freeToppings: 0, avail: true, tag: 'PREMIUM' },
+  { id: 206, cat: 'smoothies', emoji: '🍌', name: 'Banana Peanut',           desc: 'Banana + peanut butter blend',                 price: 48000,  freeToppings: 0, avail: true },
+  { id: 207, cat: 'smoothies', emoji: '🍍', name: 'Pineapple Mint',          desc: 'Refreshing tropical mint',                     price: 45000,  freeToppings: 0, avail: true, tag: 'NEW' },
+  { id: 208, cat: 'smoothies', emoji: '🥬', name: 'Green Detox',             desc: 'Spinach · apple · lime · ginger',              price: 48000,  freeToppings: 0, avail: true },
+  { id: 209, cat: 'smoothies', emoji: '🍇', name: 'Acai Berry Bowl',         desc: 'Brazilian superfruit + granola',               price: 65000,  freeToppings: 0, avail: true, tag: 'PREMIUM' },
+
+  // ─── YOGULATO (10) ───────────────────────────────────────────────
+  { id: 301, cat: 'yogulato', emoji: '🍓', name: 'Ichi-Go-Mochi Strawberry', desc: 'Yogurt gelato · 100ml',                        price: 49000,  freeToppings: 0, avail: true },
+  { id: 302, cat: 'yogulato', emoji: '🍪', name: 'Cookie Dough & Raisin',    desc: 'Yogurt gelato · 100ml',                        price: 49000,  freeToppings: 0, avail: true },
+  { id: 303, cat: 'yogulato', emoji: '🍵', name: "Bean Missin' U Matcha",    desc: 'Yogurt gelato · 100ml',                        price: 49000,  freeToppings: 0, avail: true, tag: 'BESTSELLER' },
+  { id: 304, cat: 'yogulato', emoji: '🍫', name: 'Ciao Cioccolato',          desc: 'Yogurt gelato · 100ml',                        price: 49000,  freeToppings: 0, avail: true },
+  { id: 305, cat: 'yogulato', emoji: '⚪', name: 'Plain Sally',              desc: 'Yogurt gelato · original',                     price: 49000,  freeToppings: 0, avail: true },
+  { id: 306, cat: 'yogulato', emoji: '🍮', name: 'Salted Caramel',           desc: 'Sweet meets salty · gourmet',                  price: 54000,  freeToppings: 0, avail: true, tag: 'BESTSELLER' },
+  { id: 307, cat: 'yogulato', emoji: '🍰', name: 'Tiramisu',                 desc: 'Mascarpone · espresso · cocoa',                price: 58000,  freeToppings: 0, avail: true, tag: 'PREMIUM' },
+  { id: 308, cat: 'yogulato', emoji: '🥜', name: 'Pistachio',                desc: 'Real Sicilian pistachios',                     price: 65000,  freeToppings: 0, avail: true, tag: 'PREMIUM' },
+  { id: 309, cat: 'yogulato', emoji: '☕', name: 'Mocha Affogato',           desc: 'Espresso poured over vanilla',                 price: 56000,  freeToppings: 0, avail: true, tag: 'NEW' },
+  { id: 310, cat: 'yogulato', emoji: '🌹', name: 'Rose Lychee',              desc: 'Persian rose + lychee pearls',                 price: 58000,  freeToppings: 0, avail: true },
+
+  // ─── TAKE HOME PACK (6) ──────────────────────────────────────────
+  { id: 401, cat: 'takehome', emoji: '🖤', name: 'Take Home Black Sakura 250g', desc: '3 toppings — crunchy/sauce/fruit',         price: 95000,  freeToppings: 3, avail: true },
+  { id: 402, cat: 'takehome', emoji: '🤍', name: 'Take Home White Skim 250g',   desc: '3 toppings — crunchy/sauce/fruit',         price: 85000,  freeToppings: 3, avail: true },
+  { id: 403, cat: 'takehome', emoji: '🖤', name: 'Take Home Black Sakura 500g', desc: '6 toppings (2 crunchy · 2 sauce · 2 fruit)', price: 165000, freeToppings: 6, avail: true },
+  { id: 404, cat: 'takehome', emoji: '🤍', name: 'Take Home White Skim 500g',   desc: '6 toppings (2 crunchy · 2 sauce · 2 fruit)', price: 145000, freeToppings: 6, avail: true },
+  { id: 405, cat: 'takehome', emoji: '🍓', name: 'Take Home Strawberry 250g',   desc: '3 toppings · premium strawberry',           price: 98000,  freeToppings: 3, avail: true, tag: 'NEW' },
+  { id: 406, cat: 'takehome', emoji: '🍵', name: 'Take Home Matcha 500g',       desc: '6 toppings · ceremonial matcha',            price: 175000, freeToppings: 6, avail: true, tag: 'PREMIUM' },
+
+  // ─── SPECIAL / COLLAB (6) ────────────────────────────────────────
+  { id: 501, cat: 'collab', emoji: '🎮', name: 'Sour Sally x MLBB',         desc: 'Limited edition collab pack',                   price: 85000,  freeToppings: 2, avail: true },
+  { id: 502, cat: 'collab', emoji: '🎬', name: 'Movie Night Combo',         desc: 'Froyo + popcorn + drink',                       price: 95000,  freeToppings: 2, avail: true, tag: 'NEW' },
+  { id: 503, cat: 'collab', emoji: '✨', name: 'Boba Yogulato Twist',       desc: 'Brown sugar boba meets froyo',                  price: 62000,  freeToppings: 1, avail: true },
+  { id: 504, cat: 'collab', emoji: '🌸', name: 'Sakura Spring Limited',     desc: 'Seasonal · while supplies last',                price: 78000,  freeToppings: 2, avail: true, tag: 'LIMITED' },
+  { id: 505, cat: 'collab', emoji: '🎂', name: 'Birthday Cake Yogulato',    desc: 'Funfetti + rainbow sprinkles',                  price: 68000,  freeToppings: 0, avail: true },
+  { id: 506, cat: 'collab', emoji: '🍡', name: 'Mochi Crunch Premium',      desc: 'Mochi pieces in matcha froyo',                  price: 72000,  freeToppings: 1, avail: true, tag: 'PREMIUM' },
+
+  // ─── DRINKS (6) — NEW CATEGORY ───────────────────────────────────
+  { id: 601, cat: 'drinks', emoji: '☕', name: 'Iced Latte',               desc: 'Smooth espresso & milk over ice',                price: 32000,  freeToppings: 0, avail: true, popular: true, tag: 'BESTSELLER' },
+  { id: 602, cat: 'drinks', emoji: '🍵', name: 'Matcha Latte',             desc: 'Ceremonial-grade matcha · oat milk',             price: 38000,  freeToppings: 0, avail: true },
+  { id: 603, cat: 'drinks', emoji: '🍑', name: 'Peach Fruit Tea',          desc: 'Cold-brewed black tea + fresh peach',            price: 28000,  freeToppings: 0, avail: true },
+  { id: 604, cat: 'drinks', emoji: '🍹', name: 'Berry Mocktail',           desc: 'Mixed berry sparkler · non-alcoholic',           price: 34000,  freeToppings: 0, avail: true, tag: 'NEW' },
+  { id: 605, cat: 'drinks', emoji: '🥛', name: 'Strawberry Milk',          desc: 'Fresh strawberry · cold milk',                   price: 30000,  freeToppings: 0, avail: true },
+  { id: 606, cat: 'drinks', emoji: '💧', name: 'Sparkling Water 330ml',    desc: 'Chilled · refreshing',                           price: 18000,  freeToppings: 0, avail: true },
+
+  // ─── BITES (6) — NEW CATEGORY ────────────────────────────────────
+  { id: 701, cat: 'bites', emoji: '🧇', name: 'Crispy Waffle',             desc: 'Belgian-style · maple syrup',                    price: 42000,  freeToppings: 0, avail: true, popular: true, tag: 'BESTSELLER' },
+  { id: 702, cat: 'bites', emoji: '🍪', name: 'Soft Choco Cookie',         desc: 'Warm · chocolate chip · gooey',                  price: 18000,  freeToppings: 0, avail: true },
+  { id: 703, cat: 'bites', emoji: '🍫', name: 'Fudge Brownie',             desc: 'Dense · rich · served warm',                     price: 25000,  freeToppings: 0, avail: true },
+  { id: 704, cat: 'bites', emoji: '🥨', name: 'Mini Churros',              desc: 'Cinnamon sugar · chocolate dip',                 price: 32000,  freeToppings: 0, avail: true },
+  { id: 705, cat: 'bites', emoji: '🌸', name: 'French Macarons (3pcs)',    desc: 'Assorted flavors · box of 3',                    price: 45000,  freeToppings: 0, avail: true, tag: 'PREMIUM' },
+  { id: 706, cat: 'bites', emoji: '🍩', name: 'Donut Glazed',              desc: 'Classic glaze · fresh-baked',                    price: 22000,  freeToppings: 0, avail: true },
 ];
 
 // Multi-tenant: tag all legacy hardcoded menu items as BTS (company_id=1).
@@ -314,6 +357,8 @@ const categories = [
   { id: 'froyo',     name: 'Frozen Yogurt', emoji: '🍦', color: '#8B5CF6' },
   { id: 'smoothies', name: 'Smoothies',     emoji: '🥤', color: '#EC4899' },
   { id: 'yogulato',  name: 'Yogulato',      emoji: '🍨', color: '#06B6D4' },
+  { id: 'drinks',    name: 'Drinks',        emoji: '☕', color: '#A78BFA' },
+  { id: 'bites',     name: 'Bites',         emoji: '🍰', color: '#F472B6' },
   { id: 'takehome',  name: 'Take Home',     emoji: '📦', color: '#F59E0B' },
   { id: 'collab',    name: 'Special',       emoji: '✨', color: '#EF4444' },
 ];
