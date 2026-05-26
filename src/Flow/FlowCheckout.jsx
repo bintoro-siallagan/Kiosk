@@ -30,7 +30,7 @@ function isPromoEligible(promo, customer, subtotal) {
   const now = Date.now();
   const validFrom = typeof promo.validFrom === "number" ? promo.validFrom : new Date(promo.validFrom).getTime();
   const validUntil = typeof promo.validUntil === "number" ? promo.validUntil : new Date(promo.validUntil).getTime();
-  if (validFrom && validFrom > now) return { ok: false, reason: "Promo belum mulai" };
+  if (validFrom && validFrom > now) return { ok: false, reason: "Promo not started" };
   if (validUntil && validUntil < now) return { ok: false, reason: "Promo expired" };
   if (promo.usageLimit && promo.usedCount >= promo.usageLimit) return { ok: false, reason: "Kuota promo habis" };
   if (promo.minOrder && subtotal < promo.minOrder) {
@@ -234,7 +234,7 @@ export default function FlowCheckout({
         } else if (st === "deny" || st === "cancel" || st === "expire") {
           if (pollRef.current) clearInterval(pollRef.current);
           setQrStep("error");
-          setError("Pembayaran gagal/expire");
+          setError("Payment failed/expired");
         }
       }
     } catch {}
@@ -346,7 +346,7 @@ export default function FlowCheckout({
           {qrStep === "error" && (<>
             <div style={S.errorIcon}>⚠️</div>
             <div style={S.errorTitle}>Ada Masalah</div>
-            <div style={S.errorMsg}>{error || "Gagal proses pembayaran"}</div>
+            <div style={S.errorMsg}>{error || "Payment processing failed"}</div>
             <button onClick={cancelQR} style={S.errorBtn}>Back</button>
           </>)}
         </div>
@@ -536,7 +536,7 @@ export default function FlowCheckout({
       {error && <div style={S.errorBox}>{error}</div>}
 
       <button onClick={handlePlaceOrder} disabled={submitting || finalTotal <= 0} style={S.payBtn}>
-        {submitting ? "Memproses..." : `Bayar QRIS · ${fIDR(finalTotal)} →`}
+        {submitting ? "Processing..." : `Pay QRIS · ${fIDR(finalTotal)} →`}
       </button>
 
       <div style={S.disclaimer}>
