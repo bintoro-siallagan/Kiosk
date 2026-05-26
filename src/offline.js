@@ -26,9 +26,30 @@ export const queueCount = () => readQ().length;
 export function onOfflineChange(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 
 const isOrderCreate = (url, method) => method === 'POST' && /\/api\/orders(\?.*)?$/.test(url || '');
+// Cinema endpoints — tiket + in-studio F&B order juga safe untuk offline queue
+const isCinemaTicketCreate = (url, method) => method === 'POST' && /\/api\/cinema\/tickets(\?.*)?$/.test(url || '');
+const isCinemaInStudioOrder = (url, method) => method === 'POST' && /\/api\/cinema\/in-studio\/orders(\?.*)?$/.test(url || '');
+const isQueueable = (url, method) => isOrderCreate(url, method) || isCinemaTicketCreate(url, method) || isCinemaInStudioOrder(url, method);
+
 const synthOrder = (body, localId) => ({
   ...body, id: localId, _offline: true, status: body.status || 'waiting', time: Date.now(),
 });
+const synthCinemaTicket = (body, localId) => {
+  // Mirror response shape dari POST /api/cinema/tickets
+  const purchaseId = 'OFF-CP-' + localId.slice(-8);
+  const seats = Array.isArray(body.seats) ? body.seats : [];
+  return {
+    ok: true, _offline: true, purchase_id: purchaseId,
+    tickets: seats.map((seat, i) => ({
+      id: `${localId}-${i}`, seat, code: `OFF-CT-${localId.slice(-6)}-${i}`,
+      price: body.seat_price_default || 50000, purchase_id: purchaseId,
+    })),
+    bundles: body.bundles || [],
+    total: body.total || 0,
+    seats_total: (body.seat_price_default || 50000) * seats.length,
+    bundles_total: 0,
+  };
+};
 
 function enqueue(url, body) {
   const localId = 'OFF-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
@@ -66,20 +87,35 @@ export function installOffline() {
     const url = typeof input === 'string' ? input : (input && input.url) || '';
     const method = ((init && init.method) || (typeof input === 'object' && input && input.method) || 'GET').toUpperCase();
     const orderCreate = isOrderCreate(url, method);
+    const cinemaTicket = isCinemaTicketCreate(url, method);
+    const cinemaInStudio = isCinemaInStudioOrder(url, method);
+    const queueable = orderCreate || cinemaTicket || cinemaInStudio;
 
     // offline duluan → langsung antri, gak usah coba fetch
-    if (orderCreate && !navigator.onLine) {
+    if (queueable && !navigator.onLine) {
       let body = {}; try { body = JSON.parse(init && init.body); } catch {}
-      return new Response(JSON.stringify(synthOrder(body, enqueue(url, body))),
+      const localId = enqueue(url, body);
+      const synthResponse = cinemaTicket
+        ? synthCinemaTicket(body, localId)
+        : cinemaInStudio
+          ? { ok: true, _offline: true, id: localId, status: 'pending', items: body.items || [] }
+          : synthOrder(body, localId);
+      return new Response(JSON.stringify(synthResponse),
         { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
     try {
       return await _origFetch(input, init);
     } catch (e) {
-      // koneksi putus di tengah jalan → transaksi tetap diselamatkan
-      if (orderCreate) {
+      // koneksi putus di tengah jalan → transaksi tetap diselamatkan (cinema + F&B)
+      if (queueable) {
         let body = {}; try { body = JSON.parse(init && init.body); } catch {}
-        return new Response(JSON.stringify(synthOrder(body, enqueue(url, body))),
+        const localId = enqueue(url, body);
+        const synthResponse = cinemaTicket
+          ? synthCinemaTicket(body, localId)
+          : cinemaInStudio
+            ? { ok: true, _offline: true, id: localId, status: 'pending', items: body.items || [] }
+            : synthOrder(body, localId);
+        return new Response(JSON.stringify(synthResponse),
           { status: 200, headers: { 'Content-Type': 'application/json' } });
       }
       throw e;
