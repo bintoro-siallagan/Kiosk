@@ -666,6 +666,40 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
 
         {/* Editorial rows — per category horizontal scroll, Netflix-style */}
         <div style={K.splitMenuScroll}>
+          {/* ── FEATURED HERO ── tag BEST/PROMO/SIGNATURE or fallback to first ── */}
+          {(() => {
+            const hero =
+              menuWithStock.find(m => ["PROMO","BEST","SIGNATURE","FEATURED","🔥","⭐"].some(t => (m.tag||"").toUpperCase().includes(t.toUpperCase()))) ||
+              menuWithStock.find(m => m.avail !== false);
+            if (!hero) return null;
+            const inCart = cart.filter(e=>e.item.id===hero.id).reduce((a,e)=>a+e.qty,0);
+            return (
+              <section style={K.heroSection}>
+                <div className="lg" style={K.heroCard} onClick={()=>{audio.playTap();(hero.freeToppings>0?setToppingItem(hero):setAddonItem(hero));}}>
+                  <div style={K.heroImg}>
+                    <FoodImage item={hero} size={280}/>
+                    <div style={K.heroImgGloss}/>
+                  </div>
+                  <div style={K.heroInfo}>
+                    <div style={K.heroBadge}>
+                      <span style={{display:"inline-block",width:6,height:6,borderRadius:"50%",background:"var(--brand-primary,#FF6B35)",boxShadow:"0 0 8px var(--brand-primary,#FF6B35)"}}/>
+                      <span>{hero.tag || "TODAY'S PICK"}</span>
+                    </div>
+                    <div style={K.heroName}>{hero.name}</div>
+                    {hero.desc && <div style={K.heroDesc}>{hero.desc}</div>}
+                    <div style={K.heroBottom}>
+                      <span style={K.heroPrice}>{fIDR(hero.price)}</span>
+                      <button className="lg lg-brand order-pill" style={K.heroAddBtn}
+                        onClick={(e)=>{e.stopPropagation();audio.playTap();(hero.freeToppings>0?setToppingItem(hero):setAddonItem(hero));}}>
+                        {inCart>0 ? `+ Add more (${inCart})` : "+ Add to order"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </section>
+            );
+          })()}
+
           {CATEGORIES.filter(c=>c!=="All").map(c=>{
             const rowItems = menuWithStock.filter(i=>i.category===c);
             if (rowItems.length===0) return null;
@@ -675,6 +709,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
                   <h2 style={K.editorialTitle}>{c}</h2>
                   <span style={K.editorialSub}>{rowItems.length} {rowItems.length===1?"item":"items"}</span>
                 </header>
+                <div className="editorial-row-wrap" style={K.editorialRowWrap}>
                 <div className="editorial-row" style={K.editorialRow}>
                   {rowItems.map((item,i)=>{
                     const inCart=cart.filter(e=>e.item.id===item.id).reduce((a,e)=>a+e.qty,0);
@@ -705,6 +740,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
                       </div>
                     );
                   })}
+                </div>
                 </div>
               </section>
             );
@@ -926,6 +962,18 @@ const KIOSK_CSS = `
   .order-pill:hover.lg{box-shadow:inset 0 1px 0 rgba(255,255,255,0.32),inset 0 -1px 0 rgba(0,0,0,0.18),inset 0 12px 24px rgba(255,255,255,0.06),inset 0 -16px 24px rgba(0,0,0,0.15),0 14px 34px rgba(0,0,0,0.34),0 40px 90px rgba(0,0,0,0.4)}
   .order-pill:hover.lg-brand{box-shadow:inset 0 1px 0 rgba(255,255,255,0.4),inset 0 -1px 0 rgba(0,0,0,0.22),inset 0 12px 28px rgba(255,255,255,0.18),inset 0 -16px 28px rgba(0,0,0,0.2),0 14px 34px rgba(0,0,0,0.32),0 32px 72px color-mix(in srgb,var(--brand-primary,#FF6B35) 38%,transparent)}
   .order-pill:active{transform:translateY(-1px) scale(0.99)}
+  /* Editorial row edge-fade — hint horizontal scroll affordance */
+  .editorial-row-wrap{position:relative}
+  .editorial-row-wrap::before,.editorial-row-wrap::after{content:"";position:absolute;top:0;bottom:0;width:36px;pointer-events:none;z-index:4}
+  .editorial-row-wrap::before{left:0;background:linear-gradient(90deg,#11131c 0%,rgba(17,19,28,0.6) 50%,transparent 100%)}
+  .editorial-row-wrap::after{right:0;background:linear-gradient(270deg,#11131c 0%,rgba(17,19,28,0.6) 50%,transparent 100%)}
+  /* Hide scrollbar in editorial rows (touch-scroll only) */
+  .editorial-row::-webkit-scrollbar{display:none}
+  .editorial-row{-ms-overflow-style:none;scrollbar-width:none}
+  /* Hero card hover lift */
+  .lg:hover{transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+  /* Hero specific brand glow tint */
+  section[data-hero]>.lg{box-shadow:inset 0 1px 0 rgba(255,255,255,0.18),inset 0 -1px 0 rgba(0,0,0,0.22),inset 0 12px 28px rgba(255,255,255,0.05),inset 0 -16px 28px rgba(0,0,0,0.18),0 18px 40px rgba(0,0,0,0.35),0 30px 80px color-mix(in srgb,var(--brand-primary,#FF6B35) 18%,transparent)}
   .menu-card{animation:fadeIn 0.3s cubic-bezier(0.4,0,0.2,1) forwards;transition:transform 0.25s cubic-bezier(0.4,0,0.2,1),border-color 0.25s ease,box-shadow 0.25s ease}
   .menu-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,0.12)!important;box-shadow:0 1px 2px rgba(0,0,0,0.3),0 12px 40px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)}
   .add-btn{transition:all 0.2s cubic-bezier(0.4,0,0.2,1)}
@@ -962,7 +1010,21 @@ const K = {
   splitRight:{flex:"0 0 40%",display:"flex",flexDirection:"column",background:"linear-gradient(180deg,rgba(13,17,23,0.6),rgba(8,9,10,0.85))",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderLeft:BORDER_DEFAULT},
   splitMenuScroll:{flex:1,overflowY:"auto",padding:"6px 0 0"},
 
+  // ── FEATURED HERO ──
+  heroSection:      {padding:"14px 18px 4px"},
+  heroCard:         {display:"flex",borderRadius:24,overflow:"hidden",cursor:"pointer",minHeight:220},
+  heroImg:          {flex:"0 0 48%",position:"relative",display:"flex",alignItems:"center",justifyContent:"center",background:"radial-gradient(ellipse 80% 60% at 40% 35%,color-mix(in srgb,var(--brand-primary,#FF6B35) 18%,transparent),transparent 70%)",overflow:"hidden"},
+  heroImgGloss:     {position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(255,255,255,0.06) 0%,transparent 50%)",pointerEvents:"none"},
+  heroInfo:         {flex:1,padding:"22px 24px",display:"flex",flexDirection:"column",justifyContent:"space-between",gap:14},
+  heroBadge:        {display:"inline-flex",alignItems:"center",gap:7,fontSize:10,letterSpacing:2.5,fontWeight:600,color:"rgba(255,255,255,0.65)",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",alignSelf:"flex-start"},
+  heroName:         {fontFamily:"'Inter',sans-serif",fontSize:28,fontWeight:600,letterSpacing:"-0.9px",color:"#fff",lineHeight:1.15,marginTop:4},
+  heroDesc:         {fontSize:13,color:"rgba(255,255,255,0.55)",lineHeight:1.5,fontWeight:400,marginTop:-8},
+  heroBottom:       {display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,marginTop:8},
+  heroPrice:        {fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:600,color:"#fff",letterSpacing:"-0.5px",fontVariantNumeric:"tabular-nums"},
+  heroAddBtn:       {padding:"12px 20px",borderRadius:14,border:"none",fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:600,letterSpacing:"-0.2px",color:"#fff",cursor:"pointer"},
+
   // ── EDITORIAL ROWS (Netflix-style horizontal scroll per category) ──
+  editorialRowWrap: {position:"relative"},
   editorialSection: {marginBottom:18},
   editorialHeader:  {padding:"14px 18px 10px",display:"flex",justifyContent:"space-between",alignItems:"baseline"},
   editorialTitle:   {fontFamily:"'Inter',sans-serif",fontSize:21,fontWeight:600,letterSpacing:"-0.5px",color:"rgba(255,255,255,0.95)",margin:0,lineHeight:1.1},
