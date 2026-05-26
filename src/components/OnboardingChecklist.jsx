@@ -4,7 +4,8 @@
 import { useEffect, useState } from "react";
 import API_HOST from "../apiBase.js";
 
-const PURPLE = "#a855f7", GREEN = "#10b981", AMBER = "#f59e0b", CYAN = "#22d3ee";
+const PURPLE = "#a855f7", GREEN = "#10b981", AMBER_COLOR = "#f59e0b", CYAN = "#22d3ee";
+const AMBER = AMBER_COLOR;
 
 export default function OnboardingChecklist({ onNavigate }) {
   const [checks, setChecks] = useState(null);
@@ -41,6 +42,9 @@ export default function OnboardingChecklist({ onNavigate }) {
     return () => { alive = false; };
   }, [dismissed, onNavigate]);
 
+  const [seeding, setSeeding] = useState(false);
+  const [seedMsg, setSeedMsg] = useState("");
+
   if (dismissed || !checks) return null;
   const items = Object.values(checks);
   const doneCount = items.filter(i => i.done).length;
@@ -52,7 +56,22 @@ export default function OnboardingChecklist({ onNavigate }) {
     setDismissed(true);
   };
 
+  const loadSample = async () => {
+    if (!confirm("Load sample data (8 menu + 3 customers)?\nBisa di-reset nanti via Admin → Settings.")) return;
+    setSeeding(true); setSeedMsg("");
+    try {
+      const r = await fetch(`${API_HOST}/api/onboarding/seed-sample`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j?.error || "Gagal");
+      setSeedMsg(`✓ ${j.menu_added} menu + ${j.customers_added} customer ditambah. Refreshing…`);
+      setTimeout(() => window.location.reload(), 1500);
+    } catch (e) { setSeedMsg("⚠ " + e.message); }
+    setSeeding(false);
+  };
+
   const pct = Math.round((doneCount / total) * 100);
+  // Detect fresh tenant (no menu yet) untuk show "Load sample" CTA
+  const noMenu = checks.menu && !checks.menu.done;
 
   return (
     <div style={{
@@ -112,6 +131,23 @@ export default function OnboardingChecklist({ onNavigate }) {
           </button>
         ))}
       </div>
+
+      {/* Sample data CTA — visible kalau tenant baru (no menu yet) */}
+      {noMenu && (
+        <div style={{ marginTop: 12, padding: 12, background: `${AMBER}11`, border: `1px dashed ${AMBER}55`, borderRadius: 10, display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: 12, color: "#fff", fontWeight: 700 }}>🚀 Mau langsung coba?</div>
+            <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>Load 8 menu sample + 3 customer demo, bisa langsung test POS.</div>
+            {seedMsg && <div style={{ fontSize: 11, color: seedMsg.startsWith("✓") ? GREEN : "#fca5a5", marginTop: 4, fontWeight: 700 }}>{seedMsg}</div>}
+          </div>
+          <button onClick={loadSample} disabled={seeding} style={{
+            padding: "8px 16px", background: AMBER, border: "none", borderRadius: 8,
+            color: "#001", fontWeight: 800, fontSize: 12, cursor: seeding ? "not-allowed" : "pointer",
+            fontFamily: "inherit", whiteSpace: "nowrap",
+          }}>{seeding ? "⏳ Loading…" : "📦 Load Sample Pack"}</button>
+        </div>
+      )}
     </div>
   );
 }
+

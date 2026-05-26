@@ -4540,6 +4540,10 @@ setupOwnerDashboardExtras(app, { dbPath: DB_PATH });
 // MUST mount AFTER setupCompanies (depends on companies table for seed orphan-trial assignment)
 const { setupBillingEngine } = require('./billing-engine-backend');
 setupBillingEngine(app, { dbPath: DB_PATH });
+
+// Onboarding sample data starter pack — POST /api/onboarding/seed-sample
+const { setupOnboarding } = require('./onboarding-backend');
+setupOnboarding(app, { dbPath: DB_PATH });
 const bridge          = setupBridge(app,          { dbPath: DB_PATH, mountPath: '/api/bridge' });
 const notifications   = setupNotifications(app, {
   dbPath: DB_PATH,

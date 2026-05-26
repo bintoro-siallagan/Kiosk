@@ -28,7 +28,7 @@ const PLAN_FEATURES_LOCAL = {
 const ENDPOINT_RULES = [
   // ── BASE (semua plan boleh) — skip gating ──
   { match: /^\/api\/(pos|kds|cds|kiosk|menu|orders|outlet-master|departments|customers|reviews)(\/|$|\?)/, feature: null }, // null = no gate
-  { match: /^\/api\/(auth|companies|billing|health|signage|marquee|rbac|notifications|notification-center|self-audit|seed|tools|webhooks|bridge)(\/|$|\?)/, feature: null },
+  { match: /^\/api\/(auth|companies|billing|onboarding|health|signage|marquee|rbac|notifications|notification-center|self-audit|seed|tools|webhooks|bridge)(\/|$|\?)/, feature: null },
   { match: /^\/api\/(item-master|item-pricing|item-config|item-rules|item-intel|master-)/, feature: null },
   { match: /^\/api\/(payment-gateway|aggregator|convenience-fee|refund-cancel|anti-fraud)/, feature: null },
   { match: /^\/api\/(remote-ops|launch|service|outlet-launch|incidents|escalation)/, feature: null }, // KROC features — assume base for multi-outlet, gated separately at module level
