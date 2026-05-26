@@ -356,8 +356,21 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
   };
 
   // ⌘K Command Palette — universal search across all modules + actions
+  // Multi-tenant: filter TABS + surfaces by vertical — fnb tenant tidak liat cinema modules dst
+  const _allowedTabIds = useMemo(() => {
+    const ids = new Set();
+    GROUPS.forEach(g => {
+      (g.ids || []).forEach(id => ids.add(id));
+      (g.categories || []).forEach(cat => (cat.ids || []).forEach(id => ids.add(id)));
+    });
+    return ids;
+  }, []);
+  const _vertOnly = !_adminCtx?.is_super_admin && _adminCtx?.company?.primary_vertical;
+  const _isFnb = _vertOnly === "fnb";
+  const _isCinema = _vertOnly === "cinema";
   const commandItems = useMemo(() => {
-    const tabItems = TABS.map(t => {
+    // TABS sudah dijaga via GROUPS filter — kita pakai _allowedTabIds untuk drop cinema_* dari fnb tenant
+    const tabItems = TABS.filter(t => _allowedTabIds.has(t.id)).map(t => {
       const g = GROUPS.find(gr => gr.ids.includes(t.id));
       return {
         id: "tab:" + t.id,
@@ -368,20 +381,22 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
         onSelect: () => openRight("tools", t.id),
       };
     });
-    const surfaceItems = [
-      { id: "surf:pos",         title: "POS Kasir",            subtitle: "Buka POS terminal di tab baru",        icon: "🧾", kbd: "Open", onSelect: () => openTab("?pos=1&fresh=1") },
-      { id: "surf:pos-cinema",  title: "POS Cinema (Kasir)",   subtitle: "Jual tiket cinema di counter",         icon: "🎟️", kbd: "Open", onSelect: () => openTab("?pos-cinema&fresh=1") },
-      { id: "surf:kds",         title: "KDS Dapur",            subtitle: "Kitchen display untuk staff dapur",    icon: "👨‍🍳", kbd: "Open", onSelect: () => openTab("?kds=1") },
-      { id: "surf:cds",         title: "CDS Customer Display", subtitle: "Layar besar untuk customer",           icon: "📺", kbd: "Open", onSelect: () => openTab("?cds=1") },
-      { id: "surf:kiosk",       title: "Kiosk F&B (Customer)", subtitle: "Customer self-order",                  icon: "🖥️", kbd: "Open", onSelect: () => openTab("?kiosk=1") },
-      { id: "surf:flow",        title: "FlowApp QR-Order",     subtitle: "Customer order via QR meja",           icon: "📱", kbd: "Open", onSelect: () => openTab("?flow") },
-      { id: "surf:cinema",      title: "Cinema Kiosk",         subtitle: "Customer beli tiket cinema",           icon: "🎬", kbd: "Open", onSelect: () => openTab("?cinema") },
-      { id: "surf:cinema-kds",   title: "Cinema KDS (F&B)",     subtitle: "Kitchen display untuk concession + in-studio", icon: "👨‍🍳", kbd: "Open", onSelect: () => openTab("?cinema-kds") },
-      { id: "surf:cinema-cds",   title: "Cinema CDS (Second Display)", subtitle: "Customer-facing display POS Cinema",        icon: "📺", kbd: "Open", onSelect: () => openTab("?cinema-cds") },
-      { id: "surf:cinema-snack", title: "In-Studio Order",     subtitle: "QR snack order mid-movie",             icon: "🍿", kbd: "Open", onSelect: () => openTab("?cinema-snack") },
-      { id: "surf:cinema-board", title: "Cinema Lobby Board",  subtitle: "TV signage di lobby",                  icon: "📺", kbd: "Open", onSelect: () => openTab("?cinema-board") },
+    // Surface entries — tag by vertical, filter for tenant scope
+    const allSurfaces = [
+      { id: "surf:pos",         title: "POS Kasir",            subtitle: "Buka POS terminal di tab baru",        icon: "🧾", kbd: "Open", vertical: "fnb",    onSelect: () => openTab("?pos=1&fresh=1") },
+      { id: "surf:pos-cinema",  title: "POS Cinema (Kasir)",   subtitle: "Jual tiket cinema di counter",         icon: "🎟️", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?pos-cinema&fresh=1") },
+      { id: "surf:kds",         title: "KDS Dapur",            subtitle: "Kitchen display untuk staff dapur",    icon: "👨‍🍳", kbd: "Open", vertical: "fnb",    onSelect: () => openTab("?kds=1") },
+      { id: "surf:cds",         title: "CDS Customer Display", subtitle: "Layar besar untuk customer",           icon: "📺", kbd: "Open", vertical: "fnb",    onSelect: () => openTab("?cds=1") },
+      { id: "surf:kiosk",       title: "Kiosk F&B (Customer)", subtitle: "Customer self-order",                  icon: "🖥️", kbd: "Open", vertical: "fnb",    onSelect: () => openTab("?kiosk=1") },
+      { id: "surf:flow",        title: "FlowApp QR-Order",     subtitle: "Customer order via QR meja",           icon: "📱", kbd: "Open", vertical: "fnb",    onSelect: () => openTab("?flow") },
+      { id: "surf:cinema",      title: "Cinema Kiosk",         subtitle: "Customer beli tiket cinema",           icon: "🎬", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?cinema") },
+      { id: "surf:cinema-kds",  title: "Cinema KDS (F&B)",     subtitle: "Kitchen display untuk concession + in-studio", icon: "👨‍🍳", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?cinema-kds") },
+      { id: "surf:cinema-cds",  title: "Cinema CDS (Second Display)", subtitle: "Customer-facing display POS Cinema",        icon: "📺", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?cinema-cds") },
+      { id: "surf:cinema-snack",title: "In-Studio Order",     subtitle: "QR snack order mid-movie",             icon: "🍿", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?cinema-snack") },
+      { id: "surf:cinema-board",title: "Cinema Lobby Board",  subtitle: "TV signage di lobby",                  icon: "📺", kbd: "Open", vertical: "cinema", onSelect: () => openTab("?cinema-board") },
       { id: "surf:track",       title: "Order Tracking",       subtitle: "Customer cek status pesanan",          icon: "📍", kbd: "Open", onSelect: () => openTab("?track=1") },
     ];
+    const surfaceItems = allSurfaces.filter(s => !s.vertical || _adminCtx?.is_super_admin || _vertOnly === "hybrid" || s.vertical === _vertOnly);
     const actionItems = [
       { id: "act:owner",     title: "Owner Dashboard",   subtitle: "Real-time KPI + alerts",            icon: "📊", onSelect: () => openRight("tools", "dashboard") },
       { id: "act:command",   title: "Command Center",    subtitle: "Real-time operations monitoring",  icon: "🛰️", onSelect: () => openRight("command") },
@@ -539,7 +554,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "Push Notif", icon: "🔔", c: "#a855f7", on: () => openRight("esb-notif") },
       { label: "Tools", icon: "🛠️", c: "#f59e0b", searchable: true,
         getSub: (q) => q.trim()
-          ? TABS.filter(t => t.label.toLowerCase().includes(q.trim().toLowerCase()) && canSee(moduleOf(t.id)))
+          ? TABS.filter(t => _allowedTabIds.has(t.id) && t.label.toLowerCase().includes(q.trim().toLowerCase()) && canSee(moduleOf(t.id)))
               .map(t => ({ _k: "m:" + t.id, label: t.label, on: () => openRight("tools", t.id) }))
           : toolsSub },
       { label: "Management", icon: "📊", c: "#3b82f6", on: () => openRight("command") },
