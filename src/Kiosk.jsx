@@ -400,12 +400,18 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
   const total      = afterDisc + serviceCharge;
   const tax        = Math.round(total * 11 / 111);
 
+  const [toast, setToast] = useState(null); // {name, emoji}
+  const _toastTimer = useRef(null);
   const addToCart = (item, addons, note, addonTotal) => {
     const addonLabels = getAddonLabels(addons, item.category);
     const addonBreakdown = (addons?.toppings || []).map(t => ({ name: t.name, price: t.price || 0 }));
     setCart(c=>[...c,{item,addons,addonLabels,addonBreakdown,note,addonTotal,qty:1,uid:Date.now()}]);
     audio.playAddToCart();
     setAddonItem(null);
+    // Show success toast
+    setToast({ name: item.name, emoji: item.emoji });
+    clearTimeout(_toastTimer.current);
+    _toastTimer.current = setTimeout(() => setToast(null), 1800);
   };
   const changeQty = (uid, delta) => {
     audio.playClick();
@@ -690,7 +696,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
                   )}
                   {inCart>0 && <div style={K.inCartBadge}>{inCart}</div>}
                   <div style={K.editorialCardImg}>
-                    <FoodImage item={item} size={200}/>
+                    <div className="card-emoji"><FoodImage item={item} size={200}/></div>
                   </div>
                   <div style={K.editorialCardInfo}>
                     <div style={K.editorialCardName}>{item.name}</div>
@@ -721,7 +727,9 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
         <div style={K.cartPanelHeader}>
           <div>
             <h2 style={K.cartPanelTitle}>Your order</h2>
-            <div style={K.cartPanelSub}>{cartCount>0 ? `${cartCount} item${cartCount===1?"":"s"}` : "No items yet"}</div>
+            <div key={cartCount} className={cartCount>0?"cart-bump":""} style={K.cartPanelSub}>
+              {cartCount>0 ? `${cartCount} item${cartCount===1?"":"s"}` : "No items yet"}
+            </div>
           </div>
           {cart.length>0 && (
             <button onClick={clearCart} style={K.clearAllBtn}>Clear</button>
@@ -813,6 +821,18 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           )}
         </div>
       </div>
+
+      {/* ── ADD-TO-CART TOAST ── */}
+      {toast && (
+        <div className="lg" style={K.toast} onClick={()=>setToast(null)}>
+          <span style={K.toastIcon}>{toast.emoji || "🍦"}</span>
+          <div style={{display:"flex",flexDirection:"column",gap:1}}>
+            <span style={K.toastTitle}>Added to cart</span>
+            <span style={K.toastName}>{toast.name}</span>
+          </div>
+          <span style={K.toastCheck}>✓</span>
+        </div>
+      )}
 
       {/* ── MODALS ── */}
       {addonItem && (
@@ -934,6 +954,23 @@ const KIOSK_CSS = `
   .order-pill:active{transform:translateY(-1px) scale(0.99)}
   /* Card hover lift */
   .lg:hover{transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+  /* Category tab transition flicker — items fade in when filter changes */
+  @keyframes catEnter{from{opacity:0;transform:translateY(8px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+  .menu-card{animation:catEnter .35s cubic-bezier(.2,.8,.2,1) both!important}
+  /* Card emoji lift on hover */
+  .menu-card{transition:transform .35s cubic-bezier(.2,.8,.2,1)!important}
+  .menu-card:hover{transform:translateY(-3px) scale(1.015)}
+  .menu-card:hover .card-emoji{transform:scale(1.08) translateY(-2px)}
+  .card-emoji{transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+  /* Add-button micro-bounce */
+  @keyframes btnPop{0%{transform:scale(1)}40%{transform:scale(.88)}80%{transform:scale(1.1)}100%{transform:scale(1)}}
+  .add-btn:active{animation:btnPop .35s ease}
+  /* Toast slide */
+  @keyframes toastIn{from{opacity:0;transform:translateY(-12px) scale(.92)}to{opacity:1;transform:translateY(0) scale(1)}}
+  @keyframes toastOut{to{opacity:0;transform:translateY(-12px) scale(.95)}}
+  .cart-bump{animation:catEnter .4s cubic-bezier(.2,.8,.2,1)}
+  /* Active cat indicator line */
+  .cat-active-ind{position:absolute;bottom:-1px;left:20%;right:20%;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--brand-primary,#FF6B35),transparent);opacity:0;transition:opacity .25s ease}
   /* Hero specific brand glow tint */
   section[data-hero]>.lg{box-shadow:inset 0 1px 0 rgba(255,255,255,0.18),inset 0 -1px 0 rgba(0,0,0,0.22),inset 0 12px 28px rgba(255,255,255,0.05),inset 0 -16px 28px rgba(0,0,0,0.18),0 18px 40px rgba(0,0,0,0.35),0 30px 80px color-mix(in srgb,var(--brand-primary,#FF6B35) 18%,transparent)}
   .menu-card{animation:fadeIn 0.3s cubic-bezier(0.4,0,0.2,1) forwards;transition:transform 0.25s cubic-bezier(0.4,0,0.2,1),border-color 0.25s ease,box-shadow 0.25s ease}
@@ -1098,6 +1135,12 @@ const K = {
   // ── STAFF CALL ──
   // .lg class handles glass treatment; this just adds position + brand tint
   staffCallBtn:{position:"fixed",bottom:24,right:24,borderRadius:999,padding:"11px 18px",color:"rgba(255,255,255,0.92)",fontSize:13,fontWeight:600,zIndex:50,display:"flex",alignItems:"center",cursor:"pointer",fontFamily:"'Inter',sans-serif",letterSpacing:"-0.2px"},
+  // Add-to-cart toast — floating top-center
+  toast:      {position:"fixed",top:24,left:"50%",transform:"translateX(-50%)",borderRadius:18,padding:"12px 20px 12px 16px",display:"flex",alignItems:"center",gap:12,minWidth:280,maxWidth:420,zIndex:200,cursor:"pointer",animation:"toastIn 0.35s cubic-bezier(.2,.8,.2,1)",fontFamily:"'Inter',sans-serif"},
+  toastIcon:  {fontSize:30,filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.3))",flexShrink:0},
+  toastTitle: {fontSize:11,color:"rgba(255,255,255,0.55)",letterSpacing:0.2,fontWeight:500,textTransform:"uppercase"},
+  toastName:  {fontSize:14,color:"rgba(255,255,255,0.95)",fontWeight:600,letterSpacing:"-0.2px",lineHeight:1.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:280},
+  toastCheck: {marginLeft:6,width:24,height:24,borderRadius:"50%",background:"linear-gradient(180deg,#34D399,#10b981)",color:"#fff",fontSize:13,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.3),0 4px 12px rgba(52,211,153,0.35)",flexShrink:0},
 
   // ── CONFIRM SCREEN ──
   confirmHeader:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 24px",background:"rgba(13,17,23,0.7)",backdropFilter:"blur(20px) saturate(180%)",WebkitBackdropFilter:"blur(20px) saturate(180%)",borderBottom:BORDER_DEFAULT,position:"sticky",top:0,zIndex:10,gap:12},
