@@ -280,6 +280,16 @@ function setupBillingEngine(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // Unsuspend tenant (super-admin override — bypass billing)
+  router.post('/tenant/:companyId/unsuspend', (req, res) => {
+    const scope = req.companyScope || { is_super_admin: true };
+    if (!scope.is_super_admin) return res.status(403).json({ error: 'Super-admin only' });
+    db.prepare(`UPDATE tenant_billing SET status='active', notes=? WHERE company_id=?`)
+      .run('Unsuspended by super-admin at ' + new Date().toISOString(), req.params.companyId);
+    db.prepare(`UPDATE companies SET status='active' WHERE id=?`).run(req.params.companyId);
+    res.json({ ok: true });
+  });
+
   router.post('/invoices/:id/void', (req, res) => {
     const scope = req.companyScope || { is_super_admin: true };
     if (!scope.is_super_admin) return res.status(403).json({ error: 'Super-admin only' });
@@ -408,7 +418,8 @@ function setupBillingEngine(app, opts = {}) {
 
   app.use(opts.mountPath || '/api/billing', router);
 
-  // Auto-cron: cek setiap 6 jam, generate invoice yang due + flag overdue
+  // Auto-cron: cek setiap 6 jam, generate invoice yang due + flag overdue + trial expiry
+  const GRACE_DAYS = 3; // grace period setelah trial expired sebelum suspend
   const runCron = () => {
     try {
       const now = nowSec();
@@ -427,7 +438,39 @@ function setupBillingEngine(app, opts = {}) {
         gen++;
       }
       const ov = db.prepare(`UPDATE billing_invoices SET status='overdue' WHERE status='open' AND due_at < ?`).run(now);
-      if (gen > 0 || ov.changes > 0) console.log(`[billing] cron: ${gen} invoice generated, ${ov.changes} flagged overdue`);
+
+      // Trial expiry: tenant on TRIAL with trial_until + grace expired → suspend
+      const expiredTrials = db.prepare(`
+        SELECT tb.*, c.name as company_name FROM tenant_billing tb
+        JOIN companies c ON c.id = tb.company_id
+        WHERE tb.plan_code='TRIAL' AND tb.status='active'
+          AND tb.trial_until IS NOT NULL AND tb.trial_until + ? < ?
+      `).all(GRACE_DAYS * DAY, now);
+      for (const t of expiredTrials) {
+        db.prepare(`UPDATE tenant_billing SET status='paused', notes=?, updated_at=? WHERE id=?`)
+          .run(`Trial expired ${new Date(t.trial_until * 1000).toISOString()} + ${GRACE_DAYS}d grace`, now, t.id);
+        // Suspend company access (req.companyScope.suspended → 402)
+        db.prepare(`UPDATE companies SET status='suspended' WHERE id=?`).run(t.company_id);
+        console.log(`[billing] suspended company_id=${t.company_id} (${t.company_name}) — trial expired`);
+      }
+
+      // Overdue invoice → suspend tenant if >7 days overdue
+      const longOverdue = db.prepare(`
+        SELECT DISTINCT i.company_id FROM billing_invoices i
+        WHERE i.status='overdue' AND i.due_at + ? < ?
+      `).all(7 * DAY, now);
+      for (const o of longOverdue) {
+        const r = db.prepare(`UPDATE tenant_billing SET status='paused', notes=? WHERE company_id=? AND status='active'`)
+          .run('Suspended — invoice unpaid > 7 days', o.company_id);
+        if (r.changes > 0) {
+          db.prepare(`UPDATE companies SET status='suspended' WHERE id=?`).run(o.company_id);
+          console.log(`[billing] suspended company_id=${o.company_id} — invoice >7d overdue`);
+        }
+      }
+
+      if (gen > 0 || ov.changes > 0 || expiredTrials.length > 0 || longOverdue.length > 0) {
+        console.log(`[billing] cron: ${gen} invoice generated, ${ov.changes} overdue, ${expiredTrials.length} trial expired, ${longOverdue.length} long-overdue suspensions`);
+      }
     } catch (e) { console.error('[billing] cron error', e.message); }
   };
   setTimeout(runCron, 10_000); // run once on boot (after DB warm)

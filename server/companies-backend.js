@@ -67,6 +67,15 @@ const COMPANY_INDEX_MIGRATIONS = [
   `CREATE INDEX IF NOT EXISTS idx_lb_company ON spend_leaderboard(company_id)`,
 ];
 
+// Slugify company name → 3-letter code (e.g. "Kopi Kenangan" → "KPK")
+function generateCompanyCode(name) {
+  const words = String(name || '').trim().toUpperCase().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return 'CO' + Math.floor(Math.random() * 1000);
+  if (words.length === 1) return words[0].replace(/[^A-Z]/g, '').slice(0, 3) || 'CO' + Math.floor(Math.random() * 1000);
+  // First letter of each word, max 4
+  return words.map(w => w[0]).join('').replace(/[^A-Z]/g, '').slice(0, 4) || 'CO' + Math.floor(Math.random() * 1000);
+}
+
 function setupCompanies(app, opts = {}) {
   const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
   db.pragma('journal_mode = WAL');
@@ -192,6 +201,89 @@ function setupCompanies(app, opts = {}) {
       res.json({ ok: true, id: r.lastInsertRowid });
     } catch (e) {
       if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({ error: 'code already exists' });
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // ─── PUBLIC SIGNUP — no auth required ───
+  // POST /api/companies/signup
+  // Body: { company_name, vertical, owner_name, owner_phone, owner_email, owner_pin }
+  // Effect: create company + admin_user + TRIAL billing + default outlet
+  // Returns: { ok, company_id, login_pin, signup_token }
+  router.post('/signup', (req, res) => {
+    const b = req.body || {};
+    const required = ['company_name', 'owner_name', 'owner_phone'];
+    for (const k of required) {
+      if (!b[k] || !String(b[k]).trim()) return res.status(400).json({ error: `${k} wajib diisi` });
+    }
+    const vertical = ['fnb', 'cinema', 'hybrid'].includes(b.vertical) ? b.vertical : 'fnb';
+    const pin = (b.owner_pin && /^\d{4,6}$/.test(b.owner_pin))
+      ? b.owner_pin
+      : String(Math.floor(1000 + Math.random() * 9000)); // auto-gen 4 digit kalau gak provide
+    const code = (b.code || generateCompanyCode(b.company_name)).toUpperCase().slice(0, 10);
+
+    // Check duplicate phone (1 phone = 1 owner = 1 company)
+    const dupPhone = db.prepare(`SELECT u.id, c.name as company_name FROM admin_users u JOIN companies c ON c.id=u.company_id WHERE u.name LIKE ? AND u.role='owner'`).get('%' + b.owner_phone + '%');
+    if (dupPhone) return res.status(409).json({ error: `Nomor sudah terdaftar di ${dupPhone.company_name}` });
+
+    try {
+      const now = Math.floor(Date.now() / 1000);
+      // 1. Create company
+      const companyR = db.prepare(`INSERT INTO companies (code, name, primary_vertical, brand_color, contact_phone, contact_email, status)
+        VALUES (?,?,?,?,?,?,?)`).run(
+          code, String(b.company_name).trim(), vertical,
+          vertical === 'cinema' ? '#a855f7' : vertical === 'hybrid' ? '#22d3ee' : '#f97316',
+          b.owner_phone, b.owner_email || null, 'active');
+      const companyId = companyR.lastInsertRowid;
+
+      // 2. Create owner admin_user
+      const userId = `usr_${companyId}_${now}_${Math.floor(Math.random() * 1000)}`;
+      const userName = `${b.owner_name} (${b.owner_phone})`;
+      db.prepare(`INSERT INTO admin_users (id, name, pin, role, active, created_at, company_id) VALUES (?,?,?,?,?,?,?)`)
+        .run(userId, userName, pin, 'owner', 1, now, companyId);
+
+      // 3. Create default outlet (sample data — biar tenant langsung bisa explore)
+      const outletCode = `${code}-001`;
+      try {
+        db.prepare(`INSERT INTO outlet_master (code, name, area, address, phone, manager, outlet_type, status, seat_capacity, opening_date, vertical, company_id)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+          outletCode, `${b.company_name} - Outlet 1`, '-', '-', b.owner_phone, b.owner_name,
+          'Dine-in', 'onboarding', 20, now, vertical, companyId);
+      } catch (e) { console.warn('[signup] outlet seed warn:', e.message); }
+
+      // 4. Auto-assign TRIAL billing (14 hari)
+      const trialEnd = now + 14 * 86400;
+      try {
+        db.prepare(`INSERT INTO tenant_billing (company_id, plan_code, billing_cycle, amount_idr, next_due_at, trial_until, status)
+          VALUES (?,?,?,?,?,?,?)`).run(companyId, 'TRIAL', 'monthly', 0, trialEnd, trialEnd, 'active');
+      } catch (e) { console.warn('[signup] trial billing warn:', e.message); }
+
+      const signupToken = `signup_${companyId}_${now}_${Math.random().toString(36).slice(2, 10)}`;
+
+      console.log(`[signup] new tenant — company_id=${companyId} code=${code} vertical=${vertical} owner=${b.owner_phone}`);
+      res.json({
+        ok: true,
+        company_id: companyId,
+        company_code: code,
+        company_name: b.company_name,
+        vertical,
+        owner_name: b.owner_name,
+        owner_phone: b.owner_phone,
+        login_pin: pin,
+        outlet_code: outletCode,
+        trial_until: trialEnd,
+        trial_days: 14,
+        signup_token: signupToken,
+        next_steps: [
+          'Login ke admin pakai PIN ' + pin,
+          'Set lokasi outlet di Outlet Master → Maps picker',
+          'Upload menu / item master',
+          'Invite team via Admin Users',
+        ],
+      });
+    } catch (e) {
+      if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({ error: 'Code/PIN sudah terpakai, coba lagi' });
+      console.error('[signup] error', e);
       res.status(500).json({ error: e.message });
     }
   });

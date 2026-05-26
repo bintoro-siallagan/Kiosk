@@ -30,6 +30,7 @@ function _computeGROUPS() {
 }
 import { CommandPalette } from "./components/uiKit.jsx";
 import IncidentAlertBanner from "./components/IncidentAlertBanner.jsx";
+import TrialBanner from "./components/TrialBanner.jsx";
 import API_HOST from "./apiBase.js";
 import { LocaleSwitcher as KaryaLocaleSwitcher } from "./i18n";
 
@@ -598,6 +599,9 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
 
       {/* Global incident alert — listen WS + toast + persistent badge */}
       <IncidentAlertBanner onOpenPanel={(toolId) => openRight("tools", toolId)} />
+
+      {/* Trial expiry + unpaid invoice banner — non-blocking, opens Billing tab */}
+      <TrialBanner onUpgrade={() => openRight("tools", "billing")} />
 
       {/* Impersonation banner — super-admin sedang drill-down ke company tertentu */}
       {_adminCtx?._impersonating && (

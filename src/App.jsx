@@ -39,6 +39,7 @@ const CinemaCDS              = lazy(() => import("./Cinema/CinemaCDS.jsx"));
 const CinemaFeedback         = lazy(() => import("./Cinema/CinemaFeedback.jsx"));
 const CinemaDigitalTicket    = lazy(() => import("./Cinema/CinemaDigitalTicket.jsx"));
 const SignagePlayer          = lazy(() => import("./SignagePlayer.jsx"));
+const TenantSignup           = lazy(() => import("./TenantSignup.jsx"));
 const OutletAudit            = lazy(() => import("./RemoteOps/OutletAudit.jsx"));
 const OutletVisit            = lazy(() => import("./RemoteOps/OutletVisit.jsx"));
 const LaunchFieldWorker      = lazy(() => import("./RemoteOps/LaunchFieldWorker.jsx"));
@@ -87,6 +88,7 @@ function getScene() {
   if (new URLSearchParams(q).has("service")) return "service-staff";
   if (new URLSearchParams(q).get("ticket")) return "cinema-digital-ticket";
   if (new URLSearchParams(q).has("signage")) return "signage";
+  if (new URLSearchParams(q).has("signup")) return "signup";
   if (q.includes("cinema-snack")) return "cinema-snack";
   if (q.includes("cinema-board")) return "cinema-board";
   if (q.includes("cinema")) return "cinema";
@@ -210,6 +212,8 @@ export default function App() {
     node = <CinemaBoard apiBase={API_HOST} />;
   } else if (scene === "signage") {
     node = <SignagePlayer />;
+  } else if (scene === "signup") {
+    node = <TenantSignup />;
   } else if (scene === "cinema-kds") {
     node = <CinemaKDS />;
   } else if (scene === "cinema-cds") {
