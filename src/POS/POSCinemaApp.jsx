@@ -46,7 +46,7 @@ async function openCinemaCDSOnSecondScreen() {
   const features = `${position},toolbar=no,menubar=no,location=no,status=no,scrollbars=yes`;
   cinemaCdsWindowRef = window.open(cdsUrl, "KaryaOSCinemaCDS", features);
   if (!cinemaCdsWindowRef) {
-    alert("Popup diblok! Allow popup untuk kiosk.karys.tech di browser settings, lalu coba lagi.");
+    alert(`Popup diblok! Allow popup untuk ${window.location.hostname} di browser settings, lalu coba lagi.`);
     return null;
   }
   cinemaCdsWindowRef.focus();

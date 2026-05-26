@@ -550,7 +550,7 @@ export default function CommandCenter(){
 
     {/* ═══ FOOTER ═══ */}
     <div style={{marginTop:24,padding:"12px 0",borderTop:"1px solid #161b22",textAlign:"center",fontSize:11,color:"#222",fontFamily:"var(--m)",letterSpacing:1}}>
-      BITES & CO. COMMAND CENTER v4 · 12 RULES · REALTIME · LANDSCAPE
+      karyaOS COMMAND CENTER v4 · 12 RULES · REALTIME · LANDSCAPE
     </div>
   </div>);
 }

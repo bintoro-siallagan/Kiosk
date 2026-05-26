@@ -2881,7 +2881,7 @@ function setupCinema(app, opts = {}) {
           <div style="margin-top:18px;font-size:12px;color:#6b7280">Selamat menonton 🍿</div>
         </td></tr>
         <tr><td style="padding:16px 28px;background:#f9fafb;color:#9ca3af;font-size:11px;text-align:center">
-          KaryaOS · sistem operasi karys.tech · Konfirmasi otomatis.
+          karyaOS · operations platform · Konfirmasi otomatis.
         </td></tr>
       </table>
     </td></tr>

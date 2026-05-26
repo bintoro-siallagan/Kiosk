@@ -170,7 +170,7 @@ function buildReceipt(orders, reportType, dateRange, printerWidth=32) {
   p.dline(W)
    .align("C")
    .text("Terima kasih!").newline()
-   .text("www.karys.tech").newline()
+   .text("Powered by karyaOS").newline()
    .newline(3)
    .cut().beep();
 
@@ -323,7 +323,7 @@ export default function Report({ onBack }) {
         <hr/>
         <table>${body}</table>
         <hr/>
-        <p class="foot">Terima kasih!<br/>www.karys.tech</p>
+        <p class="foot">Terima kasih!<br/>Powered by karyaOS</p>
       </body></html>
     `);
     w.document.close();

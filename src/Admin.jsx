@@ -1021,7 +1021,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                   <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
                     <div>
                       <div style={{fontSize:11,color:"#888",marginBottom:6,fontWeight:600}}>SMTP USER (EMAIL)</div>
-                      <input type="email" placeholder="kiosk@karys.tech" value={emailConfig.smtpUser||""}
+                      <input type="email" placeholder="kiosk@yourbrand.com" value={emailConfig.smtpUser||""}
                         onChange={e=>setEmailConfig({...emailConfig, smtpUser: e.target.value})}
                         onBlur={e=>updateEmailConfig({smtpUser: e.target.value})}
                         style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13}}/>
@@ -1047,7 +1047,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                     </div>
                     <div>
                       <div style={{fontSize:11,color:"#888",marginBottom:6,fontWeight:600}}>FROM EMAIL (optional, default = SMTP user)</div>
-                      <input type="email" placeholder="noreply@karys.tech" value={emailConfig.fromEmail||""}
+                      <input type="email" placeholder="noreply@yourbrand.com" value={emailConfig.fromEmail||""}
                         onChange={e=>setEmailConfig({...emailConfig, fromEmail: e.target.value})}
                         onBlur={e=>updateEmailConfig({fromEmail: e.target.value})}
                         style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13}}/>
@@ -1055,7 +1055,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                   </div>
                   <div style={{marginBottom:14}}>
                     <div style={{fontSize:11,color:"#888",marginBottom:6,fontWeight:600}}>DEFAULT RECIPIENTS (pisah koma)</div>
-                    <input type="text" placeholder="owner@karys.tech, manager@karys.tech"
+                    <input type="text" placeholder="owner@yourbrand.com, manager@yourbrand.com"
                       value={(emailConfig.recipients||[]).join(", ")}
                       onChange={e=>setEmailConfig({...emailConfig, recipients: e.target.value.split(",").map(x=>x.trim()).filter(Boolean)})}
                       onBlur={e=>updateEmailConfig({recipients: e.target.value.split(",").map(x=>x.trim()).filter(Boolean)})}
