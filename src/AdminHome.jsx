@@ -49,7 +49,7 @@ function PanelLoading() {
       letterSpacing: 1, textTransform: "uppercase",
     }}>
       <span className="karyaos-spinner" aria-hidden="true">⏳</span>
-      <span style={{ marginLeft: 10 }}>Memuat panel…</span>
+      <span style={{ marginLeft: 10 }}>Loading panel…</span>
     </div>
   );
 }
@@ -61,9 +61,9 @@ const ago = (t) => { const s = Math.floor((Date.now() - t) / 60000); return s < 
 const DAY = 864e5;
 
 const QUEUE = [
-  { key: "waiting", label: "Menunggu", c: "#f59e0b" },
-  { key: "preparing", label: "Diproses", c: "#3b82f6" },
-  { key: "ready", label: "Siap Ambil", c: "#10b981" },
+  { key: "waiting",   label: "Waiting",   c: "#f59e0b" },
+  { key: "preparing", label: "Preparing", c: "#3b82f6" },
+  { key: "ready",     label: "Ready",     c: "#10b981" },
 ];
 const PERIODS = [{ k: "today", l: "Today", d: 1 }, { k: "7d", l: "7 Days", d: 7 }, { k: "30d", l: "30 Days", d: 30 }];
 
@@ -933,10 +933,10 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
           </div>
 
           {/* Performa outlet */}
-          <Section label="PERFORMA OUTLET — HARI INI" accent="#22d3ee" mt={14}
-            right={<button onClick={() => openRight("tools", "outlet_master")} style={S.linkBtn}>kelola outlet →</button>} />
+          <Section label="OUTLET PERFORMANCE — TODAY" accent="#22d3ee" mt={14}
+            right={<button onClick={() => openRight("tools", "outlet_master")} style={S.linkBtn}>manage outlets →</button>} />
           <div className="card" style={{ ...S.bigCard, padding: "10px 14px 12px" }}>
-            {outletRank.length === 0 ? <div style={{ fontSize: 11, color: "#5b6470" }}>Memuat data outlet…</div>
+            {outletRank.length === 0 ? <div style={{ fontSize: 11, color: "#5b6470" }}>Loading outlet data…</div>
               : outletRank.map((o, i) => (
                 <div key={o.id} style={{ display: "flex", alignItems: "center", gap: 11, padding: "7px 0", borderTop: i ? "1px solid #161b22" : "none" }}>
                   <span style={{ width: 18, fontSize: 11, fontWeight: 800, color: i === 0 ? "#f59e0b" : "#5b6470", fontFamily: "'Geist Mono',monospace" }}>#{i + 1}</span>
@@ -1078,7 +1078,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
                         <span style={{ fontSize: 11, fontWeight: 700, color: q.c }}>● {q.label}</span>
                         <span style={{ fontSize: 14, fontWeight: 800, color: q.c, fontFamily: "'Geist Mono',monospace" }}>{list.length}</span>
                       </div>
-                      {list.length === 0 ? <div style={{ fontSize: 10.5, color: "#5b6470", padding: "4px 0" }}>Tidak ada order</div>
+                      {list.length === 0 ? <div style={{ fontSize: 10.5, color: "#5b6470", padding: "4px 0" }}>No orders</div>
                         : <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
                             {list.slice(0, 4).map(o => (
                               <div key={o.id} style={S.orderChip}>
@@ -1133,10 +1133,10 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
                 </div>}
           </div>
 
-          {/* Menu terlaris */}
-          <Section label="MENU TERLARIS" mt={14} />
+          {/* Top selling menu */}
+          <Section label="TOP-SELLING MENU" mt={14} />
           <div className="card" style={{ ...S.bigCard, padding: "12px 16px" }}>
-            {topItems.length === 0 ? <div style={{ fontSize: 11, color: "#5b6470" }}>Belum ada data penjualan</div>
+            {topItems.length === 0 ? <div style={{ fontSize: 11, color: "#5b6470" }}>No sales data yet</div>
               : <div style={S.topGrid}>
                   {topItems.map(([n, d], i) => (
                     <div key={n} style={{ display: "flex", alignItems: "center", gap: 9 }}>
