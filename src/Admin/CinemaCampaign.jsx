@@ -126,7 +126,7 @@ export default function CinemaCampaign({ apiBase = "" }) {
             <Field label="Description" wide><input value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} style={inp} /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Create" : "Save"}</button>
             <button onClick={cancel} style={B.cancel}>Cancel</button>
           </div>
         </div>

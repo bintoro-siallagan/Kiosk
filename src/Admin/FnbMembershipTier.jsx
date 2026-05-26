@@ -48,7 +48,7 @@ export default function FnbMembershipTier({ apiBase = "" }) {
             <Field label="Perks" wide><textarea value={form.perks_description || ""} onChange={e => setForm({ ...form, perks_description: e.target.value })} rows={2} style={{ ...inp, resize: "vertical" }} /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Create" : "Save"}</button>
             <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Cancel</button>
           </div>
         </div>

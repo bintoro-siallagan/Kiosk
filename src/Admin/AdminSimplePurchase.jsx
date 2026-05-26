@@ -66,7 +66,7 @@ export default function AdminSimplePurchase({ apiBase = "" }) {
       <div style={S.kpiRow}>
         <Kpi label="Total Purchases" v={String(s.total_purchases)} c={AC} />
         <Kpi label="Belanja Bulan Ini" v={fmtRp(s.month_spend)} c="#f59e0b" />
-        <Kpi label="Total Belanja" v={fmtRp(s.total_spend)} c="#3b82f6" />
+        <Kpi label="Subtotal" v={fmtRp(s.total_spend)} c="#3b82f6" />
         <Kpi label="Via Petty Cash" v={fmtRp((s.by_payment.find(p => p.method === "Petty Cash") || {}).total)} c="#fb923c" />
       </div>
 

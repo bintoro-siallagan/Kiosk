@@ -581,7 +581,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
                 )}
                 <div style={S.breakdownDivider} />
                 <div style={S.breakdownTotalRow}>
-                  <span style={S.breakdownTotalLabel}>Total Bayar</span>
+                  <span style={S.breakdownTotalLabel}>Total Due</span>
                   <span style={S.breakdownTotalAmount}>Rp {fmt(finalTotal)}</span>
                 </div>
               </div>
@@ -625,13 +625,13 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
         {/* Cash counter — only when CASH selected and total > 0 (Step 4A) */}
         {!isOpenTab && finalTotal > 0 && payMethod === "CASH" && (
           <div style={S.payCard}>
-            <div style={S.payTitle}>Uang Diterima</div>
+            <div style={S.payTitle}>Cash Received</div>
             <div style={S.cashDisplay}>
               <div style={S.cashReceivedAmount}>Rp {fmt(cashReceived)}</div>
               {cashReceived > 0 && (
                 cashSufficient ? (
                   <div style={S.cashChangeRow}>
-                    Kembalian: <strong>Rp {fmt(cashChange)}</strong>
+                    Change: <strong>Rp {fmt(cashChange)}</strong>
                   </div>
                 ) : (
                   <div style={S.cashShortRow}>
@@ -866,7 +866,7 @@ function POSQRISFlow({ cart, subtotal, order, onCancel, onPaid }) {
         {status === "paid" && (
           <>
             <div style={{fontSize:120, marginBottom:16}}>✅</div>
-            <h2 style={{fontSize:28, color:"#10B981", marginBottom:8}}>Pembayaran Berhasil!</h2>
+            <h2 style={{fontSize:28, color:"#10B981", marginBottom:8}}>Payment Successful!</h2>
             <p style={{color:"#888"}}>Menyimpan order...</p>
           </>
         )}

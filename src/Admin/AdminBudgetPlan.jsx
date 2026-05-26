@@ -41,7 +41,7 @@ export default function AdminBudgetPlan({ apiBase = "" }) {
     setForm({ category: "", allocated: "" });
   };
   const revise = (line, type) => {
-    const a = window.prompt(`${type === "increase" ? "Tambah" : "Kurangi"} budget — ${line.category}\nAlokasi saat ini: ${fmtRp(line.allocated)}\n\nQuantity:`, "");
+    const a = window.prompt(`${type === "increase" ? "Add" : "Kurangi"} budget — ${line.category}\nAlokasi saat ini: ${fmtRp(line.allocated)}\n\nQuantity:`, "");
     if (a == null || !(Number(a) > 0)) return;
     const reason = window.prompt("Alasan revisi:", "") || "Revisi budget";
     post("revise", { line_id: line.id, rev_type: type, amount: Number(a), reason, by: "Finance" },

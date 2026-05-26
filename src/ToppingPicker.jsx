@@ -6,7 +6,7 @@ import { useMenu } from './MenuContext.jsx';
  * ToppingPicker — fullscreen overlay untuk pilih topping froyo.
  *
  * Muncul saat customer klik item yang punya freeToppings > 0.
- * Setelah pilih topping → klik "Tambah" → callback onConfirm dipanggil.
+ * Setelah pilih topping → klik "Add" → callback onConfirm dipanggil.
  *
  * Props:
  *   item      : menu item object dari menuData.js { id, name, emoji, price, freeToppings, desc }

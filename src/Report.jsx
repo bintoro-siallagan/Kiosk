@@ -458,7 +458,7 @@ export default function Report({ onBack }) {
                 <span style={{width:70}}>Waktu</span>
                 <span style={{flex:1}}>Item</span>
                 <span style={{width:80}}>Tipe</span>
-                <span style={{width:80}}>Bayar</span>
+                <span style={{width:80}}>Pay</span>
                 <span style={{width:100,textAlign:"right"}}>Total</span>
                 <span style={{width:80,textAlign:"center"}}>Status</span>
               </div>
@@ -475,7 +475,7 @@ export default function Report({ onBack }) {
                       fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:20,
                       background: o.status==="completed"?"rgba(0,200,150,0.12)":o.status==="cancelled"?"rgba(255,59,48,0.12)":"rgba(255,184,0,0.12)",
                       color:      o.status==="completed"?"#00C896":o.status==="cancelled"?"#FF3B30":"#FFB800",
-                    }}>{o.status==="completed"?"Done":o.status==="cancelled"?"Batal":"Proses"}</span>
+                    }}>{o.status==="completed"?"Done":o.status==="cancelled"?"Cancel":"Proses"}</span>
                   </span>
                 </div>
               ))}

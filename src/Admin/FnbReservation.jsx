@@ -63,7 +63,7 @@ export default function FnbReservation({ apiBase = "" }) {
             <Field label="Special request" wide><textarea value={form.special_requests} onChange={e => setForm({ ...form, special_requests: e.target.value })} rows={2} style={{ ...inp, resize: "vertical" }} placeholder="High chair, alergi, dll" /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Create" : "Save"}</button>
             <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Cancel</button>
           </div>
         </div>

@@ -289,7 +289,7 @@ function FnbPickupQueue({ data }) {
       <div style={{ fontSize: 16, color: "#10b981", letterSpacing: 6, fontFamily: "'Geist Mono',monospace", marginBottom: 24 }}>🛒 SIAP DIAMBIL · {data.outlet}</div>
       <div style={{ flex: 1, display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 24, alignContent: "start" }}>
         {ready.length === 0 ? (
-          <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 60, color: "rgba(255,255,255,0.5)", fontSize: 32 }}>Tidak ada pesanan siap saat ini</div>
+          <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 60, color: "rgba(255,255,255,0.5)", fontSize: 32 }}>No orders siap saat ini</div>
         ) : ready.map(o => (
           <div key={o.id} style={{ background: "rgba(16,185,129,0.15)", border: "2px solid rgba(16,185,129,0.45)", borderRadius: 18, padding: 30, textAlign: "center" }}>
             <div style={{ fontSize: 18, color: "#10b981", letterSpacing: 3, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>ORDER</div>

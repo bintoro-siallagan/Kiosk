@@ -76,7 +76,7 @@ export default function CommandCustomer() {
         <div style={S.card}>
           <div style={S.kicker}>🏆 LEADERBOARD — RATING KASIR</div>
           {d.leaderboard.length === 0 ? (
-            <div style={{ color: "#555", fontSize: 13, padding: 8 }}>Belum ada data</div>
+            <div style={{ color: "#555", fontSize: 13, padding: 8 }}>No data yet</div>
           ) : d.leaderboard.map((c, i) => (
             <div key={c.cashier} style={S.lbRow}>
               <span style={{ fontFamily: MONO, color: "#666", width: 24 }}>#{i + 1}</span>

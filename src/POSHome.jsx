@@ -132,7 +132,7 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
   };
 
   async function handleCloseDay() {
-    if (!window.confirm("TUTUP HARI?\n\nShift aktif ikut ditutup, dan TIDAK ADA yang bisa order sampai Manager 'Buka Hari'. Summary transaksi today akan dicetak" + " (& dikirim email bila email aktif).")) return;
+    if (!window.confirm("TUTUP HARI?\n\nShift aktif ikut ditutup, dan TIDAK ADA yang bisa order sampai Manager 'Open Day'. Summary transaksi today akan dicetak" + " (& dikirim email bila email aktif).")) return;
     try {
       const r = await fetch(`${API_BASE}/api/day/close`, {
         method: "POST",
@@ -143,7 +143,7 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
       if (data.reportHtml) {
         const w = window.open("", "_blank", "width=640,height=820");
         if (w) {
-          w.document.write(`<html><head><title>Tutup Hari — KaryaOS</title></head><body style="margin:24px" onload="setTimeout(function(){window.print()},300)">${data.reportHtml}</body></html>`);
+          w.document.write(`<html><head><title>Close Day — KaryaOS</title></head><body style="margin:24px" onload="setTimeout(function(){window.print()},300)">${data.reportHtml}</body></html>`);
           w.document.close();
         }
       }
@@ -230,13 +230,13 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
           {onCloseShift && (
             <button onClick={onCloseShift}
               style={{...S.logout, background: '#f9731622', border: '1px solid #f9731655', color: '#f97316'}}>
-              🔒 Tutup Shift
+              🔒 Close Shift
             </button>
           )}
           {role === "manager" && (
             <button onClick={handleCloseDay}
               style={{...S.logout, background: '#7c3aed22', border: '1px solid #7c3aed66', color: '#a78bfa'}}>
-              🌙 Tutup Hari
+              🌙 Close Day
             </button>
           )}
           <button onClick={onLogout} style={S.logout}>Logout</button>

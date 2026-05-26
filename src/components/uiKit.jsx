@@ -614,7 +614,7 @@ export function useCrud({ apiBase = "", path, onChange, labelKey = "name", idKey
       title: opts.title || `Delete "${label}"?`,
       message: opts.message || "Akan dihapus permanen. Tidak bisa dibatalkan.",
       danger: true,
-      okLabel: opts.okLabel || "Hapus",
+      okLabel: opts.okLabel || "Delete",
     });
     if (!ok) return false;
     const res = await fetch(`${apiBase}${path}/${row[idKey]}`, { method: "DELETE" });

@@ -158,12 +158,12 @@ export default function FlowHistory({ session, addToCart, setScreen }) {
           <div style={{ width: 1, background: BORDER }} />
           <div style={{ textAlign: "center", flex: 1 }}>
             <div style={{ fontSize: 26, fontWeight: 700, color: stats.active > 0 ? "#3B82F6" : SUB, fontFamily: "'Inter', sans-serif", lineHeight: 1 }}>{stats.active}</div>
-            <div style={{ fontSize: 11, color: SUB, marginTop: 4 }}>Aktif</div>
+            <div style={{ fontSize: 11, color: SUB, marginTop: 4 }}>Active</div>
           </div>
           <div style={{ width: 1, background: BORDER }} />
           <div style={{ textAlign: "center", flex: 1.4 }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: "#10B981", lineHeight: 1 }}>{rupiah(stats.spend)}</div>
-            <div style={{ fontSize: 11, color: SUB, marginTop: 4 }}>Total Belanja</div>
+            <div style={{ fontSize: 11, color: SUB, marginTop: 4 }}>Subtotal</div>
           </div>
         </div>
       </div>
@@ -206,7 +206,7 @@ export default function FlowHistory({ session, addToCart, setScreen }) {
             <div style={{ fontSize: 60, marginBottom: 16 }}>📦</div>
             <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6, color: TEXT }}>
               {filter === "all" ? "Belum ada pesanan" :
-               filter === "active" ? "Tidak ada pesanan aktif" : "Belum ada pesanan selesai"}
+               filter === "active" ? "No orders aktif" : "Belum ada pesanan selesai"}
             </div>
             <div style={{ fontSize: 13 }}>Yuk mulai pesan!</div>
             {filter === "all" && (
@@ -382,7 +382,7 @@ export default function FlowHistory({ session, addToCart, setScreen }) {
               <button onClick={() => setDetail(null)} style={{
                 flex: 1, background: "transparent", border: `1px solid ${BORDER}`,
                 color: TEXT, padding: "14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer"
-              }}>Tutup</button>
+              }}>Close</button>
               {detail.status === "completed" && (
                 <button onClick={() => handleReorder(detail)} style={{
                   flex: 2, background: BRAND, border: "none",

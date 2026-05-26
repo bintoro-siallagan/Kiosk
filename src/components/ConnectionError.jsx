@@ -268,7 +268,7 @@ function PulseRing() {
  * Full-screen loading shell — graceful while initial fetch in-flight.
  * Use as the "Loading menu…" replacement.
  */
-export function LoadingScreen({ label = "Memuat sistem", sub = "Tunggu sebentar…" }) {
+export function LoadingScreen({ label = "Memuat sistem", sub = "Please wait…" }) {
   return (
     <div style={{
       position: "fixed", inset: 0, background: COLORS.bg,

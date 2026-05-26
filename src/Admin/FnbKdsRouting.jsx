@@ -59,7 +59,7 @@ export default function FnbKdsRouting({ apiBase = "" }) {
             <Field label="Urut"><input type="number" value={form.sort_order} onChange={e => setForm({ ...form, sort_order: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Create" : "Save"}</button>
             <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Cancel</button>
             <label style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto", fontSize: 13 }}>
               <input type="checkbox" checked={!!form.is_active} onChange={e => setForm({ ...form, is_active: e.target.checked ? 1 : 0 })} /> Aktif

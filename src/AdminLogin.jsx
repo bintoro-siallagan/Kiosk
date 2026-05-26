@@ -436,7 +436,7 @@ export function ResetPasswordPage() {
 
 function parseError(e) {
   if (e?.response) try { return e.response.error || e.message; } catch { return e.message; }
-  return e?.message || "Login gagal";
+  return e?.message || "Login failed";
 }
 
 const CSS = `

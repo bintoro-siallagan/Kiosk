@@ -113,7 +113,7 @@ function MethodsTab({ base, showToast }) {
             <Field label="Notes"><input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} style={inp} /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Create" : "Save"}</button>
             <button onClick={() => { setEditing(null); setForm(emptyM); }} style={B.cancel}>Cancel</button>
           </div>
         </div>
@@ -190,7 +190,7 @@ function CategoriesTab({ base, showToast }) {
             <Field label="Description"><input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={inp} /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Create" : "Save"}</button>
             <button onClick={() => { setEditing(null); setForm(emptyC); }} style={B.cancel}>Cancel</button>
           </div>
         </div>

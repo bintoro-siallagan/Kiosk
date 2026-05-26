@@ -263,7 +263,7 @@ export default function POSPaymentGateway({ orderRef, amount, customerName, cust
         {step === 'paid' && intent && (
           <div style={{textAlign: 'center', padding: 30}}>
             <div style={{fontSize: 64, marginBottom: 12}}>✅</div>
-            <h2 style={{color: '#4ade80', marginBottom: 8}}>Pembayaran Berhasil</h2>
+            <h2 style={{color: '#4ade80', marginBottom: 8}}>Payment Successful</h2>
             <div style={{fontSize: 32, fontWeight: 700, color: '#fff', marginBottom: 8}}>{fmtIDR(amount)}</div>
             <div style={{fontSize: 12, color: '#9ca3af'}}>via {selectedMethod} · {selectedProvider}</div>
             <div style={{fontSize: 11, color: '#6b7280', marginTop: 16}}>Ref: {intent.external_id || intent.doc_no}</div>

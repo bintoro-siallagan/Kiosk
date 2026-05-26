@@ -16,7 +16,7 @@ const STATUS = {
   preparing: {label:"Diproses",  short:"PROSES",  color:"#38BDF8", bg:"rgba(56,189,248,0.1)",  ring:"rgba(56,189,248,0.3)",  icon:"👨‍🍳"},
   ready:     {label:"Siap",      short:"SIAP",    color:"#34D399", bg:"rgba(52,211,153,0.1)",  ring:"rgba(52,211,153,0.3)",  icon:"✅"},
   completed: {label:"Done",   short:"SELESAI", color:"#6B7280", bg:"rgba(107,114,128,0.08)",ring:"rgba(107,114,128,0.2)", icon:"🏁"},
-  cancelled: {label:"Batal",     short:"BATAL",   color:"#F87171", bg:"rgba(248,113,113,0.1)", ring:"rgba(248,113,113,0.3)", icon:"✕"},
+  cancelled: {label:"Cancel",     short:"BATAL",   color:"#F87171", bg:"rgba(248,113,113,0.1)", ring:"rgba(248,113,113,0.3)", icon:"✕"},
   refunded:  {label:"Refund",    short:"REFUND",  color:"#8B5CF6", bg:"rgba(139,92,246,0.1)",  ring:"rgba(139,92,246,0.3)",  icon:"↩"},
   partial_refund: {label:"Refund Sebagian", short:"PARTIAL", color:"#A78BFA", bg:"rgba(167,139,250,0.1)", ring:"rgba(167,139,250,0.3)", icon:"½"},
 };
@@ -678,7 +678,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                         )}
                         <button style={{background:item.avail?"rgba(248,113,113,0.1)":"rgba(52,211,153,0.1)",border:`1px solid ${item.avail?"#F8717133":"#34D39933"}`,borderRadius:8,padding:"5px 12px",color:item.avail?"#F87171":"#34D399",cursor:"pointer",fontSize:11,fontWeight:700}}
                           onClick={()=>toggleMenu(item.id)}>
-                          {item.avail?"Nonaktif":"Aktifkan"}
+                          {item.avail?"Inactive":"Activate"}
                         </button>
                       </div>
                     </div>

@@ -284,7 +284,7 @@ export default function CommandCenter(){
                 </div>
               </div>
             );
-          }):<div style={{color:"#333",fontSize:14}}>Belum ada data pembayaran</div>}
+          }):<div style={{color:"#333",fontSize:14}}>No data yet pembayaran</div>}
         </Card>
 
         {/* WS Feed */}
@@ -309,7 +309,7 @@ export default function CommandCenter(){
           )}
         </div>
         {kpiCashiers.length===0?(
-          <div style={{color:"#333",fontSize:14}}>Belum ada data kasir</div>
+          <div style={{color:"#333",fontSize:14}}>No data yet kasir</div>
         ):kpiCashiers.map(c=>{
           const col=c.kpi_score==null?"#6b7280":c.kpi_score>=80?"#10b981":c.kpi_score>=60?"#f59e0b":"#ef4444";
           const issue=c.bad_count>0||(c.kpi_score!=null&&c.kpi_score<60);
@@ -337,7 +337,7 @@ export default function CommandCenter(){
       {/* ═══ PERILAKU KASIR — deteksi main-main tombol POS ═══ */}
       <Card style={{marginTop:16}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-          <Label>🎮 Perilaku Kasir — Hapus Item Sebelum Bayar</Label>
+          <Label>🎮 Perilaku Kasir — Remove Item Sebelum Bayar</Label>
           {(posBeh?.flagged_count||0)>0&&(
             <span style={{fontSize:12,fontFamily:"var(--m)",padding:"3px 10px",borderRadius:6,background:"#450a0a",border:"1px solid #dc262666",color:"#fca5a5",fontWeight:700}}>
               ⚠️ {posBeh.flagged_count} kasir kebanyakan hapus
@@ -380,7 +380,7 @@ export default function CommandCenter(){
                 <div style={{fontSize:12,color:"#444",fontFamily:"var(--m)",marginTop:2}}>{fR(it.revenue||0)}</div>
               </div>
             </div>
-          )):<div style={{color:"#333",fontSize:14,padding:20,textAlign:"center"}}>Belum ada data</div>}
+          )):<div style={{color:"#333",fontSize:14,padding:20,textAlign:"center"}}>No data yet</div>}
         </Card>
 
         {/* Revenue Heatmap */}

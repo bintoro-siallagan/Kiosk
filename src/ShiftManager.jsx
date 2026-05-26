@@ -196,7 +196,7 @@ export default function ShiftManager({ onBack }) {
                     <div style={{fontSize:20,fontWeight:700}}>{shift.kasirName}</div>
                     <div style={{fontSize:12,color:"#888",marginTop:2}}>Dibuka {fTime(shift.openAt)} · {elapsed(shift.openAt)}</div>
                   </div>
-                  <button style={S.closeShiftBtn} onClick={()=>{ setCloseCash(String(shift?.expectedCash||0)); setCloseForm(true); }}>🔴 Tutup Shift</button>
+                  <button style={S.closeShiftBtn} onClick={()=>{ setCloseCash(String(shift?.expectedCash||0)); setCloseForm(true); }}>🔴 Close Shift</button>
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
                   {[
@@ -328,7 +328,7 @@ export default function ShiftManager({ onBack }) {
       {openForm && (
         <div style={S.overlay} onClick={()=>setOpenForm(false)}>
           <div style={S.modal} onClick={e=>e.stopPropagation()}>
-            <div style={S.modalTitle}>🟢 Buka Shift Baru</div>
+            <div style={S.modalTitle}>🟢 Open Shift Baru</div>
             <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
               <div>
                 <label style={S.label}>Nama Kasir</label>
@@ -340,7 +340,7 @@ export default function ShiftManager({ onBack }) {
               </div>
             </div>
             <div style={{display:"flex",gap:10}}>
-              <button style={S.cancelBtn} onClick={()=>setOpenForm(false)}>Batal</button>
+              <button style={S.cancelBtn} onClick={()=>setOpenForm(false)}>Cancel</button>
               <button style={S.confirmBtn} onClick={handleOpenShift}>BUKA SHIFT</button>
             </div>
           </div>
@@ -351,7 +351,7 @@ export default function ShiftManager({ onBack }) {
       {closeForm && (
         <div style={S.overlay} onClick={()=>setCloseForm(false)}>
           <div style={S.modal} onClick={e=>e.stopPropagation()}>
-            <div style={S.modalTitle}>🔴 Tutup Shift</div>
+            <div style={S.modalTitle}>🔴 Close Shift</div>
             {shift && (
               <div style={{background:"#080c10",borderRadius:10,padding:"12px",marginBottom:14}}>
                 <div style={S.shiftRow}>
@@ -386,7 +386,7 @@ export default function ShiftManager({ onBack }) {
             )}
             <div style={{display:"flex",flexDirection:"column",gap:12,marginBottom:16}}>
               <div>
-                <label style={S.label}>Uang Tunai Akhir (Rp)</label>
+                <label style={S.label}>Cash Tendered Akhir (Rp)</label>
                 <div style={{display:"flex",gap:8}}>
                   <input style={{...S.input,flex:1}} type="number" value={closeCash} onChange={e=>setCloseCash(e.target.value)} placeholder="0"/>
                   <button type="button" onClick={()=>setCloseCash(String(shift?.expectedCash||0))}
@@ -413,7 +413,7 @@ export default function ShiftManager({ onBack }) {
               </div>
             </div>
             <div style={{display:"flex",gap:10}}>
-              <button style={S.cancelBtn} onClick={()=>setCloseForm(false)}>Batal</button>
+              <button style={S.cancelBtn} onClick={()=>setCloseForm(false)}>Cancel</button>
               <button style={{...S.confirmBtn,background:"linear-gradient(90deg,#F87171,#EF4444)"}} onClick={handleCloseShift}>TUTUP SHIFT</button>
             </div>
           </div>
@@ -439,7 +439,7 @@ export default function ShiftManager({ onBack }) {
               ))}
             </div>
             <div style={{display:"flex",gap:10}}>
-              <button style={S.cancelBtn} onClick={()=>setAddTable(false)}>Batal</button>
+              <button style={S.cancelBtn} onClick={()=>setAddTable(false)}>Cancel</button>
               <button style={S.confirmBtn} onClick={handleAddTable}>TAMBAH</button>
             </div>
           </div>
@@ -470,7 +470,7 @@ export default function ShiftManager({ onBack }) {
               </div>
             </div>
             <div style={{display:"flex",gap:10}}>
-              <button style={S.cancelBtn} onClick={()=>setAddUser(false)}>Batal</button>
+              <button style={S.cancelBtn} onClick={()=>setAddUser(false)}>Cancel</button>
               <button style={S.confirmBtn} onClick={handleAddUser}>TAMBAH USER</button>
             </div>
           </div>

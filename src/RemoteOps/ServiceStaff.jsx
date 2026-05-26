@@ -574,7 +574,7 @@ function SignaturePad({ ticketId, itemId, initial, onSaved }) {
         onTouchStart={startDraw} onTouchMove={draw} onTouchEnd={endDraw}
       />
       <div style={{ display: "flex", gap: 6, marginTop: 6, justifyContent: "flex-end" }}>
-        <button onClick={() => setOpen(false)} style={{ padding: "5px 10px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#94a3b8", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+        <button onClick={() => setOpen(false)} style={{ padding: "5px 10px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#94a3b8", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
         <button onClick={saveSignature} disabled={saving || empty}
           style={{ padding: "5px 14px", background: saving || empty ? "rgba(168,85,247,0.3)" : "linear-gradient(135deg,#a855f7,#c084fc)", border: "none", borderRadius: 6, color: "#fff", fontSize: 11, fontWeight: 800, cursor: saving || empty ? "not-allowed" : "pointer", fontFamily: "inherit" }}>{saving ? "⏳" : "💾 Simpan Tanda Tangan"}</button>
       </div>
@@ -606,10 +606,10 @@ function NoteEditor({ itemId, initial, onSave }) {
       <div style={{ display: "flex", gap: 6, marginTop: 6, justifyContent: "flex-end" }}>
         {initial && !text.trim() && (
           <button onClick={async () => { setSaving(true); await onSave(""); setSaving(false); setOpen(false); }}
-            style={{ padding: "5px 10px", background: "transparent", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 6, color: "#fca5a5", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Hapus</button>
+            style={{ padding: "5px 10px", background: "transparent", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 6, color: "#fca5a5", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Delete</button>
         )}
         <button onClick={() => { setText(initial || ""); if (!initial) setOpen(false); }}
-          style={{ padding: "5px 10px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#94a3b8", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+          style={{ padding: "5px 10px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#94a3b8", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
         <button onClick={async () => { setSaving(true); await onSave(text); setSaving(false); }} disabled={saving || text === (initial || "")}
           style={{ padding: "5px 14px", background: saving || text === (initial || "") ? "rgba(34,211,238,0.3)" : "#22d3ee", border: "none", borderRadius: 6, color: "#04303a", fontSize: 11, fontWeight: 800, cursor: saving || text === (initial || "") ? "not-allowed" : "pointer", fontFamily: "inherit" }}>{saving ? "⏳" : "💾 Simpan"}</button>
       </div>

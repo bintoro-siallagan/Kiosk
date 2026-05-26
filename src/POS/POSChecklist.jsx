@@ -12,7 +12,7 @@ import React, { useState, useEffect } from 'react';
 
 const COPY = {
   opening: { kicker: 'CHECKLIST BUKA TOKO', title: 'Sebelum Mulai Shift', cta: 'Mulai Shift →', accent: '#10b981' },
-  closing: { kicker: 'CHECKLIST TUTUP TOKO', title: 'Sebelum Tutup Shift', cta: 'Lanjut Tutup Shift →', accent: '#f97316' },
+  closing: { kicker: 'CHECKLIST TUTUP TOKO', title: 'Sebelum Close Shift', cta: 'Lanjut Close Shift →', accent: '#f97316' },
 };
 
 const MOODS = [
@@ -86,7 +86,7 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
         {loading ? (
           <div style={S.muted}>Memuat checklist…</div>
         ) : items.length === 0 ? (
-          <div style={S.muted}>Belum ada item checklist. Hubungi admin buat nambahin.</div>
+          <div style={S.muted}>No items yet checklist. Hubungi admin buat nambahin.</div>
         ) : (
           <div style={{ margin: '18px 0' }}>
             {items.map(i => (

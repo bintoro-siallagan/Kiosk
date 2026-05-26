@@ -222,7 +222,7 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
         </div>
 
         <div style={styles.totalBox}>
-          <div style={styles.totalLabel}>{loyaltyDiscount > 0 ? 'Total Bayar' : 'Total Order'}</div>
+          <div style={styles.totalLabel}>{loyaltyDiscount > 0 ? 'Total Due' : 'Total Order'}</div>
           <div style={styles.totalAmount}>{fmtIDR(orderDue)}</div>
           {loyaltyDiscount > 0 && (
             <div style={{ fontSize: 13, opacity: 0.9, marginTop: 2 }}>
@@ -372,7 +372,7 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
 
         <button onClick={finalize} disabled={!canFinalize}
           style={{ ...styles.finalizeBtn, ...(canFinalize ? {} : styles.finalizeBtnDisabled) }}>
-          {submitting ? 'Memproses...' : `✓ Selesaikan Pembayaran ${totals.change > 0 ? `(Kembalian ${fmtIDR(totals.change)})` : ''}`}
+          {submitting ? 'Memproses...' : `✓ Selesaikan Pembayaran ${totals.change > 0 ? `(Change ${fmtIDR(totals.change)})` : ''}`}
         </button>
       </div>
 

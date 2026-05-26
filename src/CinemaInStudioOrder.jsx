@@ -212,7 +212,7 @@ export default function CinemaInStudioOrder({ apiBase }) {
               ? `✓ Pesanan sudah diantar ke kursi ${done.seat}. Selamat menikmati! 🍿`
               : trackStatus?.status === "preparing"
               ? `🍳 Staff sedang menyiapkan pesanan. Akan diantar ke kursi ${done.seat}.`
-              : `✓ Sudah dibayar via QRIS — antrian staff. Antar ke kursi ${done.seat}.`}
+              : `✓ Paid via QRIS — antrian staff. Antar ke kursi ${done.seat}.`}
           </div>
           <button onClick={reset} style={{ marginTop: 6, background: "linear-gradient(135deg,#a855f7,#c084fc)", border: "none", borderRadius: 12, padding: "14px 32px", color: "#fff", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(168,85,247,0.35), inset 0 1px 0 rgba(255,255,255,0.2)", letterSpacing: 0.3, transition: "transform 0.15s ease, filter 0.15s ease" }}
             onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.filter = "brightness(1.08)"; }}

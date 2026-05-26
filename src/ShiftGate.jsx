@@ -59,7 +59,7 @@ export default function ShiftGate({ children, cashier, onSwitchCashier, customer
   if (shift === undefined) return <div style={S.loading}>☕ Memuat…</div>;
   // Day closed → show informational screen
   if (dayState?.closed) {
-    // CUSTOMER mode: no "Buka Hari" button — customer gak boleh buka hari
+    // CUSTOMER mode: no "Open Day" button — customer gak boleh buka hari
     if (customerMode) {
       return (
         <div style={S.overlay}>
@@ -73,7 +73,7 @@ export default function ShiftGate({ children, cashier, onSwitchCashier, customer
         </div>
       );
     }
-    // STAFF/ADMIN mode: show Buka Hari button
+    // STAFF/ADMIN mode: show Open Day button
     return (
       <div style={S.overlay}>
         <div style={S.icon}>🌙</div>
@@ -83,7 +83,7 @@ export default function ShiftGate({ children, cashier, onSwitchCashier, customer
           <br/>Manager harus membuka hari sebelum kasir bisa start day.
         </p>
         {err && <div style={S.err}>⚠ {err}</div>}
-        <button onClick={openDay} disabled={busy} style={S.btnPrimary}>{busy ? "⏳ Membuka…" : "🌅 Buka Hari"}</button>
+        <button onClick={openDay} disabled={busy} style={S.btnPrimary}>{busy ? "⏳ Membuka…" : "🌅 Open Day"}</button>
         <div style={S.hint}>Auto-check setiap 20 detik · <span style={{ color: "#aaa", cursor: "pointer" }} onClick={check}>refresh manual</span></div>
       </div>
     );

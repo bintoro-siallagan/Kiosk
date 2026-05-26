@@ -339,7 +339,7 @@ export default function FlowCheckout({
 
           {qrStep === "paid" && (<>
             <div style={S.successIcon}>✅</div>
-            <div style={S.successTitle}>Pembayaran Berhasil!</div>
+            <div style={S.successTitle}>Payment Successful!</div>
             <div style={S.successSub}>Menyimpan pesanan...</div>
           </>)}
 
@@ -347,7 +347,7 @@ export default function FlowCheckout({
             <div style={S.errorIcon}>⚠️</div>
             <div style={S.errorTitle}>Ada Masalah</div>
             <div style={S.errorMsg}>{error || "Gagal proses pembayaran"}</div>
-            <button onClick={cancelQR} style={S.errorBtn}>Kembali</button>
+            <button onClick={cancelQR} style={S.errorBtn}>Back</button>
           </>)}
         </div>
       </div>
@@ -476,7 +476,7 @@ export default function FlowCheckout({
                     </button>
                   ))}
                   {(pointsInput > 0 || actualPoints > 0) && (
-                    <button onClick={() => setPointsInput(0)} style={{ ...S.quickPickBtn, color: "#F87171" }}>Hapus</button>
+                    <button onClick={() => setPointsInput(0)} style={{ ...S.quickPickBtn, color: "#F87171" }}>Delete</button>
                   )}
                 </div>
                 {actualPoints > 0 && (

@@ -836,7 +836,7 @@ function CDSSuccess({ state }) {
   return (
     <div style={S.center}>
       <div style={S.successCheck}>✅</div>
-      <div style={S.successTitle}>Pembayaran Berhasil!</div>
+      <div style={S.successTitle}>Payment Successful!</div>
       <div style={S.successOrderId}>Order #{order.id || ""}</div>
       <div style={S.successAmount}>{fmt(order.total || 0)}</div>
       <div style={{

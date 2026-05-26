@@ -182,7 +182,7 @@ export default function CinemaCDS() {
           )}
           {method === "cash" && (
             <div style={{ marginTop: 14, padding: "10px 22px", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 12, fontSize: 14, color: "#10b981" }}>
-              Bayar tunai di kasir. Kembalian akan diberikan kasir.
+              Bayar tunai di kasir. Change akan diberikan kasir.
             </div>
           )}
           {method === "debit" && (

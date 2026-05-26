@@ -169,7 +169,7 @@ export default function POSLoyaltyRedeem({ phone, orderTotal, orderRef, onApplie
                 <b>−{fmtIDR(discount)}</b>
               </div>
               <div style={{...styles.row, fontSize: 18, fontWeight: 700, color: '#f97316', borderTop: '1px solid #2a2a2a', paddingTop: 8, marginTop: 8}}>
-                <span>Total Bayar</span>
+                <span>Total Due</span>
                 <span>{fmtIDR(Math.max(0, orderTotal - discount))}</span>
               </div>
               <div style={{...styles.row, fontSize: 11, color: '#9ca3af', marginTop: 8}}>

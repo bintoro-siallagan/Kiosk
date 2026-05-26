@@ -449,7 +449,7 @@ export default function ZReport({ onClose }) {
                 <thead><tr><th style={S.th}>Metode</th><th style={{...S.th, textAlign:"right"}}>Transaksi</th><th style={{...S.th, textAlign:"right"}}>Total</th></tr></thead>
                 <tbody>
                   {Object.keys(report.payments).length === 0
-                    ? <tr><td colSpan={3} style={{...S.td, textAlign:"center", color:"#666"}}>Tidak ada transaksi</td></tr>
+                    ? <tr><td colSpan={3} style={{...S.td, textAlign:"center", color:"#666"}}>No transactions</td></tr>
                     : Object.entries(report.payments).map(([m, info]) => (
                         <tr key={m}>
                           <td style={S.td}>{m === "CASH" ? "💵 Tunai" : m === "QRIS" ? "📱 QRIS / GoPay" : m}</td>
@@ -491,7 +491,7 @@ export default function ZReport({ onClose }) {
                 <thead><tr><th style={S.th}>#</th><th style={S.th}>Item</th><th style={{...S.th, textAlign:"right"}}>Qty</th><th style={{...S.th, textAlign:"right"}}>Revenue</th></tr></thead>
                 <tbody>
                   {report.topItems.length === 0
-                    ? <tr><td colSpan={4} style={{...S.td, textAlign:"center", color:"#666"}}>Tidak ada item terjual</td></tr>
+                    ? <tr><td colSpan={4} style={{...S.td, textAlign:"center", color:"#666"}}>No items terjual</td></tr>
                     : report.topItems.map((it, i) => (
                         <tr key={i}>
                           <td style={{...S.td, color:"#888"}}>{i + 1}</td>
@@ -525,7 +525,7 @@ export default function ZReport({ onClose }) {
 
             {report.shift && (
               <section style={S.card}>
-                <div style={S.cardTitle}>🕐 Shift Aktif</div>
+                <div style={S.cardTitle}>🕐 Active Shift</div>
                 <div style={{fontSize:13, color:"#888"}}>
                   Dibuka oleh <strong style={{color:"#fff"}}>{report.shift.openedBy || "—"}</strong>
                   {report.shift.openedAt && ` · ${new Date(report.shift.openedAt).toLocaleString("id-ID")}`}

@@ -68,7 +68,7 @@ export default function AdminAutoReorder({ apiBase = "" }) {
       </div>
 
       <div style={S.kpiRow}>
-        <Kpi label="Total Item Gudang" v={String(s.total_items)} c="#a5b4fc" />
+        <Kpi label="Total Items Gudang" v={String(s.total_items)} c="#a5b4fc" />
         <Kpi label="Perlu Reorder" v={String(s.needs_reorder)} c={s.needs_reorder > 0 ? "#ef4444" : "#10b981"} />
         <Kpi label="Estimasi Biaya Reorder" v={fmtRp(s.est_reorder_cost)} c="#f59e0b" />
         <Kpi label="PR Ter-generate" v={String(s.prs_generated)} c="#10b981" />

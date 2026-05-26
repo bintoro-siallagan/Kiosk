@@ -103,7 +103,7 @@ export default function POSShiftClose({ shiftId, onClose, onCompleted, apiBase =
   );
   if (!shift) return (
     <div style={styles.overlay}><div style={styles.box}>
-      Shift {shiftId} not found <button onClick={onClose} style={styles.btn}>Tutup</button>
+      Shift {shiftId} not found <button onClick={onClose} style={styles.btn}>Close</button>
     </div></div>
   );
 
@@ -163,7 +163,7 @@ export default function POSShiftClose({ shiftId, onClose, onCompleted, apiBase =
       <div style={styles.box}>
         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16}}>
           <div>
-            <h2 style={{margin: 0, color: '#fff', fontSize: 18}}>Tutup Shift</h2>
+            <h2 style={{margin: 0, color: '#fff', fontSize: 18}}>Close Shift</h2>
             <div style={{color: '#9ca3af', fontSize: 12, marginTop: 4}}>{shift.doc_no} · {shift.staff_name}</div>
           </div>
           <button onClick={onClose} style={styles.closeBtn}><i className="ti ti-x" style={{fontSize: 18}} /></button>
@@ -250,10 +250,10 @@ export default function POSShiftClose({ shiftId, onClose, onCompleted, apiBase =
         {error && <div style={styles.errorBox}>{error}</div>}
 
         <div style={{display: 'flex', gap: 8, marginTop: 16}}>
-          <button onClick={onClose} style={{...styles.btn, flex: 1}}>Batal</button>
+          <button onClick={onClose} style={{...styles.btn, flex: 1}}>Cancel</button>
           <button onClick={submit} disabled={submitting} style={{...styles.btnPrimary, flex: 2,
             opacity: submitting ? 0.5 : 1}}>
-            {submitting ? 'Memproses...' : 'Konfirmasi Tutup Shift'}
+            {submitting ? 'Memproses...' : 'Konfirmasi Close Shift'}
           </button>
         </div>
       </div>

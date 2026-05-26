@@ -32,7 +32,7 @@ export default function AdminItemMaster({ apiBase = "" }) {
       </div>
 
       <div style={S.kpiRow}>
-        <Kpi label="Total Item" v={String(s.total)} c={AC} />
+        <Kpi label="Total Items" v={String(s.total)} c={AC} />
         <Kpi label="Finished Goods" v={String(s.finished_goods)} c="#10b981" sub="item jual" />
         <Kpi label="Raw Material" v={String(s.raw_material)} c="#f59e0b" sub="bahan baku" />
         <Kpi label="Item Active" v={String(s.active)} c="#3b82f6" />

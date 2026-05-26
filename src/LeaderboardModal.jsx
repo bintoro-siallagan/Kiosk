@@ -44,7 +44,7 @@ export default function LeaderboardModal({ onClose }) {
             <div style={S.list}>
               {(d.top || []).length === 0 ? (
                 <div style={{ color: "#6b7280", textAlign: "center", padding: 18, fontSize: 13 }}>
-                  Belum ada transaksi jam ini — jadi Sultan pertama! 🚀
+                  No transactions yet jam ini — jadi Sultan pertama! 🚀
                 </div>
               ) : d.top.map(r => (
                 <div key={r.rank} style={S.row}>
@@ -59,7 +59,7 @@ export default function LeaderboardModal({ onClose }) {
         )}
 
         <div style={S.hint}>📸 Belanja terbanyak jam ini = Sultan! Screenshot & pamerin ke story 🔥</div>
-        <button onClick={onClose} style={S.cta}>Tutup</button>
+        <button onClick={onClose} style={S.cta}>Close</button>
       </div>
     </div>
   );

@@ -552,7 +552,7 @@ function StaffTab({ showToast }) {
         {err && <div style={{ padding: "8px 12px", background: "#F8717115", border: "1px solid #F8717144", borderRadius: 6, color: "#FCA5A5", fontSize: 12, marginBottom: 10 }}>⚠ {err}</div>}
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={handleSubmit} disabled={busy} style={{ ...S.btn(), opacity: busy ? 0.5 : 1 }}>{busy ? "⏳ Memproses…" : (editId ? "💾 Update" : "➕ Tambah Staff")}</button>
-          {editId && <button onClick={() => { setEditId(null); setForm({ name: "", pin: "", role: "kasir" }); setErr(""); }} style={S.btnDanger}>Batal</button>}
+          {editId && <button onClick={() => { setEditId(null); setForm({ name: "", pin: "", role: "kasir" }); setErr(""); }} style={S.btnDanger}>Cancel</button>}
         </div>
       </div>
 
@@ -575,8 +575,8 @@ function StaffTab({ showToast }) {
                 </div>
                 <div style={{ display: "flex", gap: 4 }}>
                   <button onClick={() => handleEdit(u)} disabled={busy} title="Edit" style={S.btn("#3B82F6")}>✏️</button>
-                  <button onClick={() => handleToggleActive(u)} disabled={busy} title={u.active ? "Nonaktifkan" : "Aktifkan"} style={S.btn(u.active ? "#64748b" : "#10B981")}>{u.active ? "⊘" : "✓"}</button>
-                  <button onClick={() => handleDelete(u)} disabled={busy} title="Hapus" style={S.btn("#EF4444")}>🗑️</button>
+                  <button onClick={() => handleToggleActive(u)} disabled={busy} title={u.active ? "Deactivate" : "Activate"} style={S.btn(u.active ? "#64748b" : "#10B981")}>{u.active ? "⊘" : "✓"}</button>
+                  <button onClick={() => handleDelete(u)} disabled={busy} title="Delete" style={S.btn("#EF4444")}>🗑️</button>
                 </div>
               </div>
             );
@@ -1041,7 +1041,7 @@ function MasterItemTab({ showToast }) {
   return (
     <div>
       <div style={S.card}>
-        <div style={S.label}>{editId ? "Edit Item" : "Tambah Item Baru"}</div>
+        <div style={S.label}>{editId ? "Edit Item" : "Add Item Baru"}</div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 2fr",gap:10,marginBottom:10}}>
           <div>
             <div style={{fontSize:11,color:"#666",marginBottom:4}}>Kategori</div>
@@ -1099,12 +1099,12 @@ function MasterItemTab({ showToast }) {
                     </div>
                   </div>
                   <span style={{fontSize:15,fontWeight:700,color:"#F59E0B",fontFamily:"'Geist Mono',monospace",minWidth:90}}>{fR(item.price)}</span>
-                  <span style={S.badge(item.avail?"#34D399":"#F87171")}>{item.avail?"Aktif":"Off"}</span>
+                  <span style={S.badge(item.avail?"#34D399":"#F87171")}>{item.avail?"Active":"Off"}</span>
                   {item.freeToppings>0&&<span style={{fontSize:11,color:"#888"}}>+{item.freeToppings} topping</span>}
                   <div style={{display:"flex",gap:4}}>
                     <button onClick={()=>handleToggle(item)} style={S.btn(item.avail?"#F87171":"#34D399")}>{item.avail?"Off":"On"}</button>
                     <button onClick={()=>handleEdit(item)} style={S.btn("#3B82F6")}>Edit</button>
-                    <button onClick={()=>handleDelete(item.id,item.name)} style={S.btnDanger}>Hapus</button>
+                    <button onClick={()=>handleDelete(item.id,item.name)} style={S.btnDanger}>Delete</button>
                   </div>
                 </div>
               ))}
@@ -1183,7 +1183,7 @@ function FinanceTab({ showToast }) {
             <div style={{fontSize:11,color:"#666",marginBottom:4}}>Amount (Rp)</div>
             <input style={S.input} type="number" value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))} placeholder="250000"/>
           </div>
-          <button onClick={handleSubmit} style={S.btn("#10B981")}>Simpan</button>
+          <button onClick={handleSubmit} style={S.btn("#10B981")}>Save</button>
         </div>
       </div>
 

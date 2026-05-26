@@ -68,7 +68,7 @@ export default function CommandReorderModal({ item, apiBase = "", onClose, onDon
               Masuk ke modul Procurement, prioritas{" "}
               <b style={{ color: priority === "urgent" ? "#ef4444" : "#f59e0b" }}>{priority.toUpperCase()}</b>.
             </div>
-            <button onClick={onClose} style={S.cta}>Selesai</button>
+            <button onClick={onClose} style={S.cta}>Done</button>
           </div>
         ) : (
           <>
@@ -111,7 +111,7 @@ export default function CommandReorderModal({ item, apiBase = "", onClose, onDon
             <button onClick={submit} disabled={saving || qty <= 0} style={{ ...S.cta, opacity: saving || qty <= 0 ? 0.55 : 1 }}>
               {saving ? "Memproses…" : "🛒 Buat Permintaan Restock"}
             </button>
-            <button onClick={onClose} style={S.cancel}>Batal</button>
+            <button onClick={onClose} style={S.cancel}>Cancel</button>
           </>
         )}
       </div>

@@ -121,7 +121,7 @@ function DriversTab({ base, showToast }) {
             <Field label="Status"><select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} style={inp}>{Object.entries(DRIVER_STATUS).map(([v, s]) => <option key={v} value={v}>{s.label}</option>)}</select></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Create" : "Save"}</button>
             <button onClick={() => setEditing(null)} style={B.cancel}>Cancel</button>
           </div>
         </div>
@@ -189,7 +189,7 @@ function ZonesTab({ base, showToast }) {
             <Field label="Keyword area (CSV)" wide><input value={form.area_keywords} onChange={e => setForm({ ...form, area_keywords: e.target.value })} placeholder="paskal,sayati,setiabudi" style={inp} /></Field>
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button onClick={save} style={B.save}>{editing === "new" ? "Buat" : "Save"}</button>
+            <button onClick={save} style={B.save}>{editing === "new" ? "Create" : "Save"}</button>
             <button onClick={() => { setEditing(null); setForm(empty); }} style={B.cancel}>Cancel</button>
           </div>
         </div>

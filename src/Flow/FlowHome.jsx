@@ -70,7 +70,7 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
             <div style={{...S.statBadge, color: tierColor}}>{tier}</div>
           </div>
           <div style={S.statBox}>
-            <div style={S.statLabel}>Total Belanja</div>
+            <div style={S.statLabel}>Subtotal</div>
             <div style={S.statValue}>
               {totalSpend >= 1000000 ? `${(totalSpend / 1000000).toFixed(1)}` : Math.floor(totalSpend / 1000)}
               <span style={S.statUnit}>{totalSpend >= 1000000 ? "jt" : "rb"}</span>
@@ -93,7 +93,7 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
         <button className="flow-cart-floater" onClick={() => onNavigate("menu")} style={S.cartFloater}>
           <div style={S.cartFloaterLeft}>
             <span style={S.cartCount}>{cartCount}</span>
-            <span>Lanjutkan Pesan</span>
+            <span>Continue Pesan</span>
           </div>
           <span style={S.cartFloaterTotal}>{fIDR(cartTotal)} →</span>
         </button>

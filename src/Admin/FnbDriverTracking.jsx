@@ -123,7 +123,7 @@ export default function FnbDriverTracking({ apiBase = "" }) {
           </label>
           <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
             <button onClick={() => setEditing(null)} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
-            <button onClick={save} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>{editing.id ? "Save" : "Tambah"}</button>
+            <button onClick={save} style={{ background: "#10b981", color: "#04130c", border: "none", padding: "8px 18px", borderRadius: 7, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>{editing.id ? "Save" : "Add"}</button>
           </div>
         </Modal>
       )}

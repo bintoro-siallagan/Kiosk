@@ -256,7 +256,7 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
           <div style={{fontSize:72, marginBottom:12}}>🌙</div>
           <div style={{fontSize:26, fontWeight:800, color:'#f59e0b', letterSpacing:1, marginBottom:10}}>HARI DITUTUP</div>
           <div style={{fontSize:14, color:'#9ca3af', lineHeight:1.6, marginBottom:30}}>Operasional today sudah ditutup Manager.<br/>Open day dulu untuk mulai melayani lagi.</div>
-          <button onClick={handleOpenDay} style={{background:'#f59e0b', color:'#111', border:'none', borderRadius:14, padding:'16px 40px', fontSize:16, fontWeight:800, cursor:'pointer'}}>☀️ Buka Hari</button>
+          <button onClick={handleOpenDay} style={{background:'#f59e0b', color:'#111', border:'none', borderRadius:14, padding:'16px 40px', fontSize:16, fontWeight:800, cursor:'pointer'}}>☀️ Open Day</button>
         </div>
       ) : (
       <>
@@ -359,7 +359,7 @@ function StaffCard({ staff, activeShift, onClick }) {
         background: isActive ? '#f97316' : '#2a2a2a',
         color: isActive ? '#1a1a1a' : '#f97316'
       }}>
-        {isManager ? '🔒 Masukkan PIN' : isActive ? 'Lanjutkan Shift' : 'Buka Shift'}
+        {isManager ? '🔒 Masukkan PIN' : isActive ? 'Continue Shift' : 'Open Shift'}
       </div>
     </button>
   );
@@ -431,7 +431,7 @@ function PinModal({ staff, onCancel, onSuccess, verifyPin }) {
                   fontWeight: 600, marginBottom: 8, opacity: (!pin || verifying) ? 0.5 : 1}}>
           Masuk
         </button>
-        <button onClick={onCancel} style={styles.cancelBtn}>Batal</button>
+        <button onClick={onCancel} style={styles.cancelBtn}>Cancel</button>
       </div>
     </div>
   );

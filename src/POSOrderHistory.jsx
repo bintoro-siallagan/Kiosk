@@ -6,7 +6,7 @@ const API = API_HOST;
 
 const STATUS_LABELS = {
   completed:      { label: "Done",          color: "#6B7280", bg: "rgba(107,114,128,0.15)", icon: "🏁" },
-  cancelled:      { label: "Batal",            color: "#F87171", bg: "rgba(248,113,113,0.15)", icon: "✕" },
+  cancelled:      { label: "Cancel",            color: "#F87171", bg: "rgba(248,113,113,0.15)", icon: "✕" },
   refunded:       { label: "Refund Penuh",     color: "#8B5CF6", bg: "rgba(139,92,246,0.15)", icon: "↩" },
   partial_refund: { label: "Refund Sebagian",  color: "#A78BFA", bg: "rgba(167,139,250,0.15)", icon: "½" },
   tab_open:       { label: "Tab Aktif",        color: "#10B981", bg: "rgba(16,185,129,0.15)", icon: "🟢" },
@@ -116,9 +116,9 @@ export default function POSOrderHistory({ onClose, kasir = "Manager" }) {
           <div style={S.filterTabs}>
             {[
               { key: "all", label: "Semua" },
-              { key: "active", label: "Aktif" },
+              { key: "active", label: "Active" },
               { key: "completed", label: "Done" },
-              { key: "cancelled", label: "Batal" },
+              { key: "cancelled", label: "Cancel" },
               { key: "refunded", label: "Refund" },
             ].map(t => (
               <button

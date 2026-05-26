@@ -160,7 +160,7 @@ export default function ESBNotif({ onBack }) {
                   <div>
                     <div style={{ fontSize:13, fontWeight:600 }}>Push Notifikasi</div>
                     <div style={{ fontSize:11, color: config.enabled?"#FF6B35":"#555" }}>
-                      {config.enabled ? "Aktif — setiap order dikirim ke ESB" : "Nonaktif"}
+                      {config.enabled ? "Aktif — setiap order dikirim ke ESB" : "Inactive"}
                     </div>
                   </div>
                 </div>
@@ -319,7 +319,7 @@ export default function ESBNotif({ onBack }) {
             {/* Recent orders */}
             <div style={N.card}>
               <div style={N.cardTitle}>📋 Transaksi Terbaru</div>
-              {recentOrders.length === 0 && <div style={{ color:"#444", fontSize:13, textAlign:"center", padding:20 }}>Belum ada transaksi</div>}
+              {recentOrders.length === 0 && <div style={{ color:"#444", fontSize:13, textAlign:"center", padding:20 }}>No transactions yet</div>}
               {recentOrders.map(o => {
                 const log = notifLog.find(l => l.orderId === o.id);
                 return (

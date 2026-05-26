@@ -385,7 +385,7 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
                 </div>
               </div>
               <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={closeDetail} style={{ flex: 1, padding: "12px", borderRadius: 10, background: "transparent", border: `1px solid ${BORDER}`, color: TEXT, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Batal</button>
+                <button onClick={closeDetail} style={{ flex: 1, padding: "12px", borderRadius: 10, background: "transparent", border: `1px solid ${BORDER}`, color: TEXT, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
                 <button onClick={handleAdd} style={{ flex: 2, padding: "12px", borderRadius: 10, background: BRAND, border: "none", color: "#000", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>+ Tambah ke Cart</button>
               </div>
             </div>

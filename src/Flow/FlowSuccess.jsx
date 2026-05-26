@@ -87,7 +87,7 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
           {currentStep >= 3 ? "🎉" : currentStep >= 2 ? "🛎️" : currentStep >= 1 ? "👨‍🍳" : "✅"}
         </div>
         <div style={{...S.title, color: currentStep >= 3 ? "#FF6B35" : "#10B981"}}>
-          {currentStep >= 3 && "Pesanan Selesai!"}
+          {currentStep >= 3 && "Order Complete!"}
           {currentStep === 2 && "Pesanan Siap Diambil!"}
           {currentStep === 1 && "Sedang Disiapkan"}
           {currentStep === 0 && "Pesanan Diterima!"}

@@ -276,7 +276,7 @@ export default function FlowPromos({ customer, setActivePromo, setScreen }) {
                    usedUp ? "✕ Habis" :
                    !eligible ? "🔒 Member only" :
                    dLeft != null ? (dLeft === 0 ? "⏰ Habis today!" : dLeft <= 7 ? `⏰ ${dLeft} hari lagi` : `📅 ${dLeft} hari lagi`) :
-                   "Aktif"}
+                   "Active"}
                 </span>
                 {p.usageLimit && (
                   <span style={{ fontSize: 10, color: SUB }}>
@@ -397,7 +397,7 @@ export default function FlowPromos({ customer, setActivePromo, setScreen }) {
               <button onClick={() => setDetail(null)} style={{
                 flex: 1, background: "transparent", border: `1px solid ${BORDER}`,
                 color: TEXT, padding: "14px", borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: "pointer"
-              }}>Tutup</button>
+              }}>Close</button>
               <button
                 onClick={() => usePromo(detail)}
                 disabled={!isAvailable(detail) || !isEligible(detail, customer)}

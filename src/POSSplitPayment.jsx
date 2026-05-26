@@ -305,7 +305,7 @@ export default function POSSplitPayment({ order, kasir, onClose, onSuccess }) {
             {qrisStep === "paid" && (
               <>
                 <div style={{fontSize: 72, marginBottom: 16}}>✅</div>
-                <div style={{fontSize: 18, color: "#10B981", fontWeight: 700}}>Pembayaran Berhasil!</div>
+                <div style={{fontSize: 18, color: "#10B981", fontWeight: 700}}>Payment Successful!</div>
                 <div style={{fontSize: 13, color: "#9CA3AF", marginTop: 8}}>Menyimpan order...</div>
               </>
             )}
@@ -434,7 +434,7 @@ export default function POSSplitPayment({ order, kasir, onClose, onSuccess }) {
         {error && <div style={S.error}>{error}</div>}
 
         <div style={S.footer}>
-          <button onClick={onClose} style={S.btnSecondary} disabled={submitting}>Batal</button>
+          <button onClick={onClose} style={S.btnSecondary} disabled={submitting}>Cancel</button>
           <button
             onClick={handleSettle}
             style={{

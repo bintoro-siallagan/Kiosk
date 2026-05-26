@@ -786,7 +786,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
                 <div style={{fontSize:56,marginBottom:12}}>✅</div>
                 <div style={{fontFamily:"'Inter',sans-serif",fontSize:24,letterSpacing:3,color:"#34D399",marginBottom:8}}>STAFF DIPANGGIL!</div>
                 <div style={{fontSize:13,color:"#888",marginBottom:20}}>Please wait sebentar.</div>
-                <button style={{...K.proceedBtn,background:"#1a1a2e",color:"#888"}} onClick={()=>setStaffCall(false)}>Tutup</button>
+                <button style={{...K.proceedBtn,background:"#1a1a2e",color:"#888"}} onClick={()=>setStaffCall(false)}>Close</button>
               </>
             ) : (
               <>
@@ -804,7 +804,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
                   ))}
                 </div>
                 <div style={{display:"flex",gap:10}}>
-                  <button style={{flex:1,background:"#1a1a2e",border:"1px solid #21262d",borderRadius:12,padding:"14px",color:"#666",fontSize:13}} onClick={()=>setStaffCall(false)}>Batal</button>
+                  <button style={{flex:1,background:"#1a1a2e",border:"1px solid #21262d",borderRadius:12,padding:"14px",color:"#666",fontSize:13}} onClick={()=>setStaffCall(false)}>Cancel</button>
                   <button style={{flex:2,background:"linear-gradient(90deg,#F59E0B,#F97316)",border:"none",borderRadius:12,padding:"14px",color:"#050810",fontWeight:700,fontSize:14,fontFamily:"'Inter',sans-serif",letterSpacing:1,opacity:!callReason?0.4:1}}
                     disabled={!callReason}
                     onClick={async()=>{await api.staffCall({tableId:tableInfo?.id,reason:callReason}).catch(()=>{});setCallSent(true);}}>

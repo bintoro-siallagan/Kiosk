@@ -18,9 +18,9 @@ const BOGO_MODES = [
 ];
 
 const TAG_CFG = {
-  active:  { bg:"rgba(52,211,153,0.12)", color:"#34D399", label:"Aktif" },
+  active:  { bg:"rgba(52,211,153,0.12)", color:"#34D399", label:"Active" },
   expired: { bg:"rgba(248,113,113,0.12)", color:"#F87171", label:"Kadaluarsa" },
-  inactive:{ bg:"rgba(107,114,128,0.1)",  color:"#6B7280", label:"Nonaktif" },
+  inactive:{ bg:"rgba(107,114,128,0.1)",  color:"#6B7280", label:"Inactive" },
   full:    { bg:"rgba(245,158,11,0.12)",  color:"#F59E0B", label:"Habis" },
 };
 
@@ -219,7 +219,7 @@ export default function PromoManager({ onBack }) {
         <div style={M.statsRow}>
           {[
             {icon:"🏷️", label:"Total Promo",   val:stats.total,        color:"#fff"},
-            {icon:"✅", label:"Aktif",           val:stats.active,       color:"#34D399"},
+            {icon:"✅", label:"Active",           val:stats.active,       color:"#34D399"},
             {icon:"📊", label:"Total Dipakai",   val:stats.totalUsage,   color:"#F59E0B"},
             {icon:"💰", label:"Total Hemat",     val:fIDR(stats.totalSaved||0), color:"#38BDF8"},
           ].map((s,i)=>(
@@ -305,7 +305,7 @@ export default function PromoManager({ onBack }) {
                       border:`1px solid ${p.active?"#F8717133":"#34D39933"}`,
                       color:p.active?"#F87171":"#34D399",
                     }} onClick={()=>toggleActive(p)}>
-                      {p.active?"Nonaktifkan":"Aktifkan"}
+                      {p.active?"Deactivate":"Activate"}
                     </button>
                     <button style={M.delBtn} onClick={()=>handleDelete(p.id)}>🗑️</button>
                   </div>
@@ -508,7 +508,7 @@ export default function PromoManager({ onBack }) {
             </div>
 
             <div style={M.formFooter}>
-              <button style={M.cancelBtn} onClick={()=>setForm(false)}>Batal</button>
+              <button style={M.cancelBtn} onClick={()=>setForm(false)}>Cancel</button>
               <button style={{...M.saveBtn,opacity:saving?0.6:1}} disabled={saving} onClick={handleSave}>
                 {saving?"⏳ Menyimpan...":(editing?"SIMPAN PERUBAHAN":"BUAT PROMO")}
               </button>

@@ -11,7 +11,7 @@ const BG = "#050810";
 // Cinematic gradient + radial mesh (amber + purple over deep black)
 const BG_GRADIENT = "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)";
 const BG_MESH = "radial-gradient(800px 600px at 20% 10%, rgba(168,85,247,0.06), transparent 70%), radial-gradient(600px 400px at 80% 80%, rgba(245,158,11,0.05), transparent 70%)";
-const STATUS_LABEL = { scheduled: "", running: "Berlangsung", closed: "Tutup", sold_out: "Sold Out", cancelled: "Batal" };
+const STATUS_LABEL = { scheduled: "", running: "Berlangsung", closed: "Close", sold_out: "Sold Out", cancelled: "Cancel" };
 const STATUS_COLOR = { running: "#f59e0b", closed: "#6b7280", sold_out: "#ef4444", cancelled: "#dc2626" };
 // LSF Indonesia age classification
 const RATING_COLOR = { "SU": "#10b981", "13+": "#22d3ee", "17+": "#f59e0b", "D21": "#ef4444", "21+": "#ef4444" };
@@ -1028,7 +1028,7 @@ export default function CinemaKiosk({ apiBase }) {
               Pastikan usia Anda sesuai sebelum melanjutkan pembelian.
             </div>
             <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={cancelAgeGate} style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.65)", padding: "12px 18px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+              <button onClick={cancelAgeGate} style={{ flex: 1, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.65)", padding: "12px 18px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
               <button onClick={confirmAgeGate} style={{ flex: 2, background: RATING_COLOR[ageGate.rating] || "#ef4444", border: "none", color: "#fff", padding: "12px 18px", borderRadius: 10, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: `0 4px 12px ${(RATING_COLOR[ageGate.rating] || "#ef4444")}55, inset 0 1px 0 rgba(255,255,255,0.2)`, letterSpacing: 0.3 }}>
                 ✓ Usia saya cukup
               </button>
@@ -1318,7 +1318,7 @@ function CinemaQRISPayment({ film, show, seats, cartItems, total, base, buy, msg
         gap: 14, padding: 24,
       }}>
         <div style={{ fontSize: 88, lineHeight: 1, filter: "drop-shadow(0 0 32px rgba(16,185,129,0.55))", animation: "karyaPaidPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)" }}>✅</div>
-        <div style={{ fontSize: 30, fontWeight: 900, color: "#10b981", letterSpacing: -0.5, textAlign: "center", lineHeight: 1.1 }}>Pembayaran Berhasil!</div>
+        <div style={{ fontSize: 30, fontWeight: 900, color: "#10b981", letterSpacing: -0.5, textAlign: "center", lineHeight: 1.1 }}>Payment Successful!</div>
         <div style={{ fontSize: 13, color: "rgba(255,255,255,0.6)", textAlign: "center", maxWidth: 340 }}>Memproses tiket Anda…</div>
         <style>{`@keyframes karyaPaidPop { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }`}</style>
       </div>
