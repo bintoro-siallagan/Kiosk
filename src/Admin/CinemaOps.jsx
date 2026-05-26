@@ -291,7 +291,8 @@ function CinemaOpsInner({ apiBase }) {
           {/* Auto-suggest available slots — biar HO programmer gak bentrok waktu film */}
           <ShowtimeSlotSuggest
             base={base} filmId={f("film_id")} studioId={f("studio_id")} date={f("show_date")}
-            onPick={(time) => setForm(p => ({ ...p, start_time: time }))}
+            pickedTime={f("start_time")}
+            onPick={(time) => { setForm(p => ({ ...p, start_time: time })); setMsg(`🕐 Jam ${time} terpilih — klik "+ Jadwalkan" untuk konfirmasi`); }}
           />
 
           {/* BULK MULTI-OUTLET PUSH */}
@@ -999,10 +1000,10 @@ function ShowtimeTemplatesPanel({ apiBase, films, studios, onChanged }) {
 // ─── ShowtimeSlotSuggest ───────────────────────────────────────────────
 // Helper: tampilkan available slots untuk film+studio+date yang dipilih.
 // Klik slot → auto-fill start_time di form parent.
-function ShowtimeSlotSuggest({ base, filmId, studioId, date, onPick }) {
+function ShowtimeSlotSuggest({ base, filmId, studioId, date, onPick, pickedTime }) {
   const [slots, setSlots] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
 
   useEffect(() => {
     if (!filmId || !studioId || !date) { setSlots(null); return; }
@@ -1039,18 +1040,34 @@ function ShowtimeSlotSuggest({ base, filmId, studioId, date, onPick }) {
           {loading && <div style={{ fontSize: 11, color: "#9ca3af", padding: 6 }}>Memuat slot…</div>}
           {slots?.error && <div style={{ fontSize: 11, color: "#fca5a5", padding: 6 }}>{slots.error}</div>}
           {available.length > 0 && (
-            <div style={{ marginBottom: 6 }}>
-              <div style={{ fontSize: 10, color: "#10b981", letterSpacing: 1, marginBottom: 4, fontFamily: "'Geist Mono',monospace" }}>✅ TERSEDIA ({available.length})</div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                {available.map(s => (
-                  <button key={s.start} onClick={() => onPick?.(s.start)}
-                    title={`Film ${s.start} → selesai ${s.end}`}
-                    style={{
-                      background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.35)",
-                      color: "#10b981", padding: "5px 10px", borderRadius: 6, fontSize: 11,
-                      fontFamily: "'Geist Mono',monospace", fontWeight: 700, cursor: "pointer",
-                    }}>{s.start}</button>
-                ))}
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 10, color: "#10b981", letterSpacing: 1, marginBottom: 6, fontFamily: "'Geist Mono',monospace" }}>
+                ✅ TERSEDIA ({available.length}) — klik jam untuk auto-fill form
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {available.map(s => {
+                  const isPicked = pickedTime === s.start;
+                  return (
+                    <button
+                      key={s.start}
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPick?.(s.start); }}
+                      title={`Film ${s.start} → selesai ${s.end} · klik untuk pilih`}
+                      onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px) scale(1.05)"; e.currentTarget.style.background = "rgba(16,185,129,0.25)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0) scale(1)"; e.currentTarget.style.background = isPicked ? "#10b981" : "rgba(16,185,129,0.12)"; }}
+                      style={{
+                        background: isPicked ? "#10b981" : "rgba(16,185,129,0.12)",
+                        border: `1px solid ${isPicked ? "#10b981" : "rgba(16,185,129,0.45)"}`,
+                        color: isPicked ? "#fff" : "#10b981",
+                        padding: "8px 14px", borderRadius: 8,
+                        fontSize: 12, fontFamily: "'Geist Mono',monospace", fontWeight: 800,
+                        cursor: "pointer", transition: "all 0.15s ease",
+                        boxShadow: isPicked ? "0 4px 12px rgba(16,185,129,0.35)" : "none",
+                      }}>
+                      {isPicked ? "✓ " : ""}{s.start}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
