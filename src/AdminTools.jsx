@@ -77,6 +77,7 @@ const OutletPinConfig             = lazy(() => import("./Admin/OutletPinConfig.j
 const ServiceVisitTracker         = lazy(() => import("./Admin/ServiceVisitTracker.jsx"));
 const DepartmentsConfig           = lazy(() => import("./Admin/DepartmentsConfig.jsx"));
 const UserKpiDashboard            = lazy(() => import("./Admin/UserKpiDashboard.jsx"));
+const EmailConfig                 = lazy(() => import("./Admin/EmailConfig.jsx"));
 const CinemaTicketing             = lazy(() => import("./Admin/CinemaTicketing.jsx"));
 const CinemaBoxOffice             = lazy(() => import("./Admin/CinemaBoxOffice.jsx"));
 const CinemaValidate              = lazy(() => import("./Admin/CinemaValidate.jsx"));
