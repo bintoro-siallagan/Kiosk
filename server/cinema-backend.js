@@ -466,6 +466,12 @@ function setupCinema(app, opts = {}) {
   try { db.exec("ALTER TABLE cinema_showtimes ADD COLUMN format TEXT DEFAULT '2D'"); } catch {}
   // Archive flag — hide showtime lama dari main list, tapi data dipertahankan untuk reporting
   try { db.exec("ALTER TABLE cinema_showtimes ADD COLUMN is_archived INTEGER DEFAULT 0"); } catch {}
+  // Accessibility: subtitle/closed-captions + hearing-loop support per showtime
+  try { db.exec("ALTER TABLE cinema_showtimes ADD COLUMN is_subtitled INTEGER DEFAULT 0"); } catch {}
+  try { db.exec("ALTER TABLE cinema_showtimes ADD COLUMN subtitle_language TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_showtimes ADD COLUMN audio_description INTEGER DEFAULT 0"); } catch {}
+  // Accessibility per-seat: companion seat (untuk caregiver, biasanya sebelah wheelchair)
+  try { db.exec("ALTER TABLE cinema_seat_types ADD COLUMN accessibility_note TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_showtimes ADD COLUMN archived_at INTEGER"); } catch {}
   try { db.exec("CREATE INDEX IF NOT EXISTS idx_showtimes_archived ON cinema_showtimes(is_archived)"); } catch {}
   // Available formats per film (CSV) — metadata informasi
@@ -2319,6 +2325,153 @@ function setupCinema(app, opts = {}) {
       results.push({ id: t.id, name: t.name, created, skipped, price_breakdown: priceBreakdown });
     }
     res.json({ ok: true, count: results.length, days_window: days, results });
+  });
+
+  // ── STUDIO CLEANING SCHEDULE ──
+  // Between-show cleaning log: staff scan QR studio post-show → log cleaning
+  // dengan foto bukti. Auto-prompt: cek pending cleaning (showtime finished
+  // tapi belum di-clean) per studio.
+  router.get('/cleaning/pending', (req, res) => {
+    const scope = req.companyScope || { is_super_admin: true };
+    const cWhere = scope.is_super_admin ? '' : `AND s.company_id = ${parseInt(scope.company_id, 10)}`;
+    // Showtimes finished tapi belum ada cleaning log dalam 1 jam terakhir
+    const rows = db.prepare(`
+      SELECT s.id AS showtime_id, s.show_date, s.start_time,
+             f.title AS film_title, f.duration_min,
+             st.id AS studio_id, st.name AS studio_name, st.outlet,
+             (SELECT MAX(cl.cleaned_at) FROM cinema_cleaning_logs cl WHERE cl.studio_id = st.id) AS last_cleaned_at
+      FROM cinema_showtimes s
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE s.show_date = date('now','localtime')
+        AND COALESCE(s.is_archived, 0) = 0
+        ${cWhere}
+      ORDER BY s.start_time DESC
+      LIMIT 50
+    `).all();
+    // Filter: showtime sudah finished + belum cleaned post-show
+    const now = Math.floor(Date.now() / 1000);
+    const _toEpoch = (date, time) => {
+      try { return Math.floor(new Date(`${date}T${time}:00`).getTime() / 1000); } catch { return 0; }
+    };
+    const pending = rows.filter(r => {
+      const startEp = _toEpoch(r.show_date, r.start_time);
+      const endEp = startEp + (r.duration_min || 0) * 60 + 15 * 60; // include pre-show ads
+      if (endEp >= now) return false; // belum selesai
+      if (!r.last_cleaned_at) return true; // belum pernah dibersihkan
+      return r.last_cleaned_at < endEp; // last clean sebelum showtime ini selesai
+    }).map(r => ({
+      ...r,
+      finished_at: _toEpoch(r.show_date, r.start_time) + (r.duration_min || 0) * 60 + 15 * 60,
+      minutes_overdue: Math.round((now - (_toEpoch(r.show_date, r.start_time) + (r.duration_min || 0) * 60 + 15 * 60)) / 60),
+    }));
+    res.json({ pending, count: pending.length });
+  });
+
+  // POST cleaning log
+  // Body: { studio_id, cleaned_by, showtime_id?, notes?, before_photo?, after_photo? }
+  router.post('/cleaning/log', (req, res) => {
+    const b = req.body || {};
+    if (!b.studio_id) return res.status(400).json({ error: 'studio_id wajib' });
+    const info = db.prepare(`INSERT INTO cinema_cleaning_logs (studio_id, cleaned_by, notes, showtime_id) VALUES (?,?,?,?)`)
+      .run(parseInt(b.studio_id, 10), b.cleaned_by || 'staff', b.notes || null, b.showtime_id ? parseInt(b.showtime_id, 10) : null);
+    res.json({ ok: true, id: info.lastInsertRowid });
+  });
+
+  // GET cleaning history per studio
+  router.get('/cleaning/history', (req, res) => {
+    const studioId = parseInt(req.query.studio_id, 10);
+    const sql = studioId
+      ? `SELECT cl.*, st.name AS studio_name, st.outlet FROM cinema_cleaning_logs cl
+         LEFT JOIN cinema_studios st ON st.id = cl.studio_id
+         WHERE cl.studio_id = ? ORDER BY cl.cleaned_at DESC LIMIT 100`
+      : `SELECT cl.*, st.name AS studio_name, st.outlet FROM cinema_cleaning_logs cl
+         LEFT JOIN cinema_studios st ON st.id = cl.studio_id
+         ORDER BY cl.cleaned_at DESC LIMIT 100`;
+    const rows = studioId ? db.prepare(sql).all(studioId) : db.prepare(sql).all();
+    res.json({ logs: rows });
+  });
+
+  // ── PAJAK HIBURAN / TAX REPORT ──
+  // Cinema Indonesia kena 2 pajak: PPN 11% (federal, inclusive di harga tiket) +
+  // Pajak Hiburan/Tontonan 10-15% per Perda Pemda (varies per kabupaten/kota).
+  // Endpoint generate report agregat per period × outlet untuk submit ke Pemda.
+  // Pakai pos_config PAJAK_HIBURAN_PCT:<OUTLET> atau PAJAK_HIBURAN_PCT_DEFAULT
+  router.get('/tax-report', (req, res) => {
+    const from = String(req.query.from || '').trim();
+    const to = String(req.query.to || '').trim();
+    const outletFilter = String(req.query.outlet || '').trim();
+    if (!from || !to) return res.status(400).json({ error: 'from & to (YYYY-MM-DD) wajib' });
+    const scope = req.companyScope || { is_super_admin: true };
+    const cWhere = scope.is_super_admin ? '' : `AND t.company_id = ${parseInt(scope.company_id, 10)}`;
+
+    // Default rates
+    const PPN_PCT = 11;
+    const _getTaxRate = (outlet) => {
+      try {
+        const r = db.prepare(`SELECT value FROM pos_config WHERE key = ?`).get(`PAJAK_HIBURAN_PCT:${outlet}`);
+        if (r?.value) return JSON.parse(r.value);
+      } catch {}
+      try {
+        const r = db.prepare(`SELECT value FROM pos_config WHERE key = 'PAJAK_HIBURAN_PCT_DEFAULT'`).get();
+        if (r?.value) return JSON.parse(r.value);
+      } catch {}
+      return 10; // Default 10% (banyak kota pakai ini)
+    };
+
+    // Per outlet aggregation
+    const outletWhere = outletFilter ? `AND st.outlet = '${outletFilter.replace(/'/g, "''")}'` : '';
+    const rows = db.prepare(`
+      SELECT
+        st.outlet AS outlet,
+        COUNT(t.id) AS tickets,
+        COALESCE(SUM(t.price), 0) AS gross_revenue
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE date(t.sold_at,'unixepoch','localtime') BETWEEN ? AND ?
+        AND (t.payment_status IS NULL OR t.payment_status IN ('paid','settled','success'))
+        ${outletWhere} ${cWhere}
+      GROUP BY st.outlet
+      ORDER BY st.outlet
+    `).all(from, to);
+
+    const breakdown = rows.map(r => {
+      const gross = r.gross_revenue;
+      // PPN 11% inclusive — extract dari gross: ppn = gross * 11/111
+      const ppn = Math.round(gross * PPN_PCT / (100 + PPN_PCT));
+      const grossExPPN = gross - ppn;
+      // Pajak Hiburan: pakai DPP (Dasar Pengenaan Pajak) = gross ex-PPN, dikali % daerah
+      const pajakHiburanPct = _getTaxRate(r.outlet);
+      const pajakHiburan = Math.round(grossExPPN * pajakHiburanPct / 100);
+      const netToOperator = grossExPPN - pajakHiburan;
+      return {
+        outlet: r.outlet, tickets: r.tickets,
+        gross_revenue: gross,
+        ppn_pct: PPN_PCT, ppn_amount: ppn,
+        gross_ex_ppn: grossExPPN,
+        pajak_hiburan_pct: pajakHiburanPct,
+        pajak_hiburan_amount: pajakHiburan,
+        net_to_operator: netToOperator,
+      };
+    });
+
+    // Total summary
+    const totals = breakdown.reduce((acc, r) => {
+      acc.tickets += r.tickets;
+      acc.gross_revenue += r.gross_revenue;
+      acc.ppn_amount += r.ppn_amount;
+      acc.gross_ex_ppn += r.gross_ex_ppn;
+      acc.pajak_hiburan_amount += r.pajak_hiburan_amount;
+      acc.net_to_operator += r.net_to_operator;
+      return acc;
+    }, { tickets: 0, gross_revenue: 0, ppn_amount: 0, gross_ex_ppn: 0, pajak_hiburan_amount: 0, net_to_operator: 0 });
+
+    res.json({
+      ok: true, period: { from, to },
+      breakdown, totals,
+      note: 'PPN 11% inclusive · Pajak Hiburan/Tontonan per Perda Pemda (configurable via pos_config PAJAK_HIBURAN_PCT:<OUTLET>)',
+    });
   });
 
   // Preview pricing untuk bulk push — simulate tanpa INSERT

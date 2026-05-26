@@ -682,7 +682,15 @@ export default function CinemaKiosk({ apiBase }) {
                     style={{ ...card(), opacity: locked ? 0.55 : 1, cursor: locked ? "not-allowed" : "pointer", position: "relative", boxShadow: locked ? "none" : "0 4px 12px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
                       <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 24, fontWeight: 800, letterSpacing: -0.5 }}>{s.start_time}</div>
-                      <span style={{ fontSize: 10, fontWeight: 800, color: "#a78bfa", background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 5, padding: "3px 8px", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace" }}>{s.format || "2D"}</span>
+                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                        <span style={{ fontSize: 10, fontWeight: 800, color: "#a78bfa", background: "rgba(168,85,247,0.12)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 5, padding: "3px 8px", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace" }}>{s.format || "2D"}</span>
+                        {s.is_subtitled === 1 && (
+                          <span title={`Subtitled ${s.subtitle_language || ""}`} style={{ fontSize: 10, fontWeight: 800, color: "#22d3ee", background: "rgba(34,211,238,0.12)", border: "1px solid rgba(34,211,238,0.3)", borderRadius: 5, padding: "3px 6px", letterSpacing: 0.5 }}>📝 SUB</span>
+                        )}
+                        {s.audio_description === 1 && (
+                          <span title="Audio description tersedia" style={{ fontSize: 10, fontWeight: 800, color: "#10b981", background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 5, padding: "3px 6px" }}>🔊 AD</span>
+                        )}
+                      </div>
                     </div>
                     <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.55)", marginTop: 4 }}>{s.show_date}</div>
                     <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.55)" }}>{s.studio_name} · {s.studio_type}</div>
@@ -1565,8 +1573,9 @@ function SeatGrid({ seatData, seats, onToggle }) {
                   color: sold ? "#ef4444" : heldOther ? "#eab308" : sel ? "#111" : baseColor,
                   boxShadow: sel ? "0 0 0 1px rgba(245,158,11,0.4), 0 6px 18px rgba(245,158,11,0.25)" : "none",
                   cursor: unavail ? "not-allowed" : "pointer",
+                  position: "relative",
                 }}>
-                {ci + 1}
+                {type === "disabled" ? "♿" : type === "companion" ? "👥" : ci + 1}
               </button>
             );
           })}
