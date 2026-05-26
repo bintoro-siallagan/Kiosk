@@ -160,7 +160,29 @@ export default function EmailConfig({ apiBase = "" }) {
       </div>
 
       {info && <div style={{ padding: "10px 14px", background: "rgba(16,185,129,0.1)", border: `1px solid ${GREEN}55`, borderRadius: 10, color: "#86efac", fontSize: 13, marginBottom: 12 }}>{info}</div>}
-      {err && <ErrorInline error={err} />}
+      {/* RAW error display — tampilin SMTP error langsung agar user bisa debug */}
+      {err && (
+        <div style={{ padding: 14, background: "rgba(239,68,68,0.08)", border: `1px solid ${RED}55`, borderRadius: 10, marginBottom: 12 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: RED, fontWeight: 800, letterSpacing: 0.5, marginBottom: 6 }}>⚠ ERROR</div>
+              <div style={{ fontSize: 13, color: "#fca5a5", lineHeight: 1.5, wordBreak: "break-word" }}>{err?.message || String(err)}</div>
+              {/* Hint based on error pattern */}
+              {/535|auth|invalid.*login|password.*not.*accepted/i.test(err?.message || "") && (
+                <div style={{ marginTop: 8, padding: 10, background: "rgba(245,158,11,0.08)", border: `1px solid ${AMBER}55`, borderRadius: 6, fontSize: 11, color: "#fde68a", lineHeight: 1.55 }}>
+                  💡 <b>Hint:</b> Gmail authentication gagal. Pastikan password yang dipakai adalah <b>App Password 16-char</b> dari myaccount.google.com/apppasswords, BUKAN password Gmail biasa. 2FA juga harus aktif.
+                </div>
+              )}
+              {/timeout|ETIMEDOUT|ECONN/i.test(err?.message || "") && (
+                <div style={{ marginTop: 8, padding: 10, background: "rgba(245,158,11,0.08)", border: `1px solid ${AMBER}55`, borderRadius: 6, fontSize: 11, color: "#fde68a", lineHeight: 1.55 }}>
+                  💡 <b>Hint:</b> Connection timeout ke SMTP. Cek firewall / network outlet yang block port 587.
+                </div>
+              )}
+            </div>
+            <button onClick={() => setErr(null)} style={{ background: "transparent", border: "none", color: "#fca5a5", fontSize: 18, cursor: "pointer", padding: "0 8px" }}>×</button>
+          </div>
+        </div>
+      )}
 
       {/* Preset chips */}
       <div style={{ marginBottom: 14 }}>
