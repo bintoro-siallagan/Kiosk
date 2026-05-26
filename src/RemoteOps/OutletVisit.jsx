@@ -3,6 +3,7 @@
 // OP Head / QA / Owner: visit outlet → GPS check-in + selfie arrival photo.
 // Anti-fraud: GPS validated against outlet pin (haversine, 200m radius).
 import { useEffect, useState } from "react";
+import CameraCapture from "../components/CameraCapture.jsx";
 
 const API_HOST = import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
 const CYAN = "#22d3ee", GREEN = "#10b981", AMBER = "#f59e0b", RED = "#ef4444";
@@ -43,11 +44,8 @@ export default function OutletVisit() {
 
   useEffect(grabGps, []);
 
-  const onPhoto = async (file) => {
-    if (!file) return;
-    try { setPhoto(await resizeImage(file, 1024, 0.7)); }
-    catch (e) { alert("Foto error: " + e.message); }
-  };
+  // Photo now comes from live camera (CameraCapture component) — dataUrl direct
+  const onPhoto = (dataUrl) => setPhoto(dataUrl);
 
   const submit = async () => {
     setError("");
@@ -125,26 +123,32 @@ export default function OutletVisit() {
               </div>
             ) : (
               <>
-                <div style={{ fontSize: 13, color: AMBER }}>{gpsErr || "⏳ Mengambil GPS…"}</div>
-                <button onClick={grabGps} style={{ marginTop: 8, padding: "8px 14px", background: AMBER, border: "none", borderRadius: 8, color: "#000", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>📡 Coba lagi</button>
+                <div style={{ fontSize: 13, color: gpsErr ? RED : AMBER, fontWeight: 700, marginBottom: 6 }}>
+                  {gpsErr ? "📍 Izin lokasi belum diberikan" : "⏳ Mengambil GPS…"}
+                </div>
+                {gpsErr && (
+                  <div style={{ fontSize: 11, color: "#cbd5e1", lineHeight: 1.55, marginBottom: 8 }}>
+                    GPS wajib untuk verifikasi visit. Mohon aktifkan:<br/>
+                    <b>iPhone:</b> Pengaturan → Safari → Lokasi → <b>Tanya</b><br/>
+                    <b>Android:</b> Tap ikon 🔒 di address bar → Izinkan Lokasi<br/>
+                    Setelah itu refresh halaman.
+                  </div>
+                )}
+                <button onClick={grabGps} style={{ padding: "8px 14px", background: AMBER, border: "none", borderRadius: 8, color: "#000", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>📡 Aktifkan GPS</button>
               </>
             )}
           </div>
         </Field>
 
-        <Field label="📸 SELFIE ARRIVAL">
+        <Field label="📸 SELFIE ARRIVAL (KAMERA LANGSUNG)">
           {photo ? (
             <div style={{ position: "relative" }}>
               <img src={photo} alt="" style={{ width: "100%", borderRadius: 10, display: "block" }} />
               <button onClick={() => setPhoto(null)} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.7)", border: "none", color: "#fff", width: 32, height: 32, borderRadius: 16, fontSize: 18, cursor: "pointer" }}>×</button>
+              <div style={{ position: "absolute", bottom: 8, left: 8, padding: "4px 10px", background: "rgba(0,0,0,0.7)", borderRadius: 6, fontSize: 10, color: GREEN, fontWeight: 700, fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5 }}>✓ KAMERA LIVE</div>
             </div>
           ) : (
-            <label style={{ display: "block", padding: 24, border: "2px dashed rgba(255,255,255,0.2)", borderRadius: 10, textAlign: "center", cursor: "pointer", color: "#94a3b8" }}>
-              <input type="file" accept="image/*" capture="user" style={{ display: "none" }} onChange={e => onPhoto(e.target.files?.[0])} />
-              <div style={{ fontSize: 40 }}>🤳</div>
-              <div style={{ fontSize: 13, marginTop: 6 }}>Tap untuk selfie</div>
-              <div style={{ fontSize: 11, marginTop: 2, color: "#64748b" }}>(kamera depan)</div>
-            </label>
+            <CameraCapture facingMode="user" label="Tap untuk Ambil Selfie" onCapture={onPhoto} />
           )}
         </Field>
 

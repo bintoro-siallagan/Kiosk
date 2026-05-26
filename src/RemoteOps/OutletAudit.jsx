@@ -3,6 +3,7 @@
 // Outlet manager: login (outlet code + PIN) → checklist with photo + GPS → submit.
 // Anti-fraud: PIN sha256, GPS auto-tagged, timestamp embed, one submission per day.
 import { useEffect, useRef, useState } from "react";
+import CameraCapture from "../components/CameraCapture.jsx";
 
 const API_HOST = import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
 const PURPLE = "#a855f7", GREEN = "#10b981", AMBER = "#f59e0b", RED = "#ef4444";
@@ -19,6 +20,7 @@ export default function OutletAudit() {
   const [templates, setTemplates] = useState([]);
   const [items, setItems] = useState({}); // { code: { rating, photo_b64, note } }
   const [gps, setGps] = useState(null);
+  const [gpsErr, setGpsErr] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [notes, setNotes] = useState("");
@@ -37,16 +39,17 @@ export default function OutletAudit() {
       .catch(() => setOutlets([]));
   }, []);
 
-  // GPS auto
-  useEffect(() => {
-    if (step !== "fill") return;
-    if (!navigator.geolocation) return;
+  // GPS auto — show clear error & retry instruction if denied
+  const grabGps = () => {
+    setGpsErr("");
+    if (!navigator.geolocation) { setGpsErr("Browser belum mendukung GPS."); return; }
     navigator.geolocation.getCurrentPosition(
-      p => setGps({ lat: p.coords.latitude, lon: p.coords.longitude, acc: Math.round(p.coords.accuracy) }),
-      e => console.warn("GPS denied", e),
-      { enableHighAccuracy: true, timeout: 8000 }
+      p => { setGps({ lat: p.coords.latitude, lon: p.coords.longitude, acc: Math.round(p.coords.accuracy) }); setGpsErr(""); },
+      e => setGpsErr(e?.code === 1 ? "Izin lokasi belum diberikan" : "GPS belum bisa diakses (sinyal lemah)"),
+      { enableHighAccuracy: true, timeout: 10000 }
     );
-  }, [step]);
+  };
+  useEffect(() => { if (step === "fill") grabGps(); }, [step]);
 
   const startAudit = async () => {
     if (!outletCode || !pin) { setError("Pilih outlet + isi PIN"); return; }
@@ -79,14 +82,8 @@ export default function OutletAudit() {
 
   const updateItem = (code, patch) => setItems(prev => ({ ...prev, [code]: { ...prev[code], ...patch } }));
 
-  // Photo: capture via input[capture=environment] → resize → base64
-  const onPhoto = async (code, file) => {
-    if (!file) return;
-    try {
-      const dataUrl = await resizeImage(file, 1280, 0.7);
-      updateItem(code, { photo_b64: dataUrl });
-    } catch (e) { console.error(e); alert("Gagal proses foto: " + e.message); }
-  };
+  // Photo: live camera only (via CameraCapture component) — no gallery upload.
+  const onPhoto = (code, dataUrl) => updateItem(code, { photo_b64: dataUrl });
 
   const completion = (() => {
     const total = templates.length;
@@ -143,7 +140,7 @@ export default function OutletAudit() {
         <FillStep
           outletName={outletName} managerName={managerName}
           templates={templates} items={items} updateItem={updateItem} onPhoto={onPhoto}
-          gps={gps} completion={completion} notes={notes} setNotes={setNotes}
+          gps={gps} gpsErr={gpsErr} grabGps={grabGps} completion={completion} notes={notes} setNotes={setNotes}
           alreadySubmitted={alreadySubmitted}
           error={error} submitting={submitting} onSubmit={submit}
           onBack={() => setStep("login")}
@@ -207,7 +204,7 @@ function LoginStep({ outlets, outletCode, setOutletCode, outletName, setOutletNa
   );
 }
 
-function FillStep({ outletName, managerName, templates, items, updateItem, onPhoto, gps, completion, notes, setNotes, alreadySubmitted, error, submitting, onSubmit, onBack }) {
+function FillStep({ outletName, managerName, templates, items, updateItem, onPhoto, gps, gpsErr, grabGps, completion, notes, setNotes, alreadySubmitted, error, submitting, onSubmit, onBack }) {
   // Group by category
   const groups = templates.reduce((acc, t) => { (acc[t.category || "Lain"] = acc[t.category || "Lain"] || []).push(t); return acc; }, {});
   return (
@@ -222,10 +219,21 @@ function FillStep({ outletName, managerName, templates, items, updateItem, onPho
       <div style={{ padding: 12, background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 12, marginBottom: 14 }}>
         <div style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>🏪 {outletName}</div>
         <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>Manager: {managerName || "—"}</div>
-        <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap", fontSize: 11, color: "#cbd5e1" }}>
-          {gps ? <span>📍 GPS terkunci ({gps.acc}m)</span> : <span style={{ color: AMBER }}>📍 GPS belum tersedia…</span>}
+        <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap", fontSize: 11, color: "#cbd5e1", alignItems: "center" }}>
+          {gps ? <span style={{ color: GREEN }}>📍 GPS terkunci ({gps.acc}m)</span> : (
+            <button onClick={grabGps} style={{ padding: "4px 10px", background: RED, border: "none", borderRadius: 6, color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>
+              📍 {gpsErr || "GPS belum tersedia"} — Tap aktifkan
+            </button>
+          )}
           {alreadySubmitted && <span style={{ color: AMBER }}>⚠ Sudah submit hari ini, submission akan replace</span>}
         </div>
+        {gpsErr && !gps && (
+          <div style={{ marginTop: 8, padding: 10, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, fontSize: 11, color: "#fca5a5", lineHeight: 1.55 }}>
+            <b>iPhone:</b> Pengaturan → Safari → Lokasi → <b>Tanya</b><br/>
+            <b>Android:</b> Tap ikon 🔒 di address bar → Izinkan Lokasi<br/>
+            Lalu refresh halaman atau tap tombol di atas.
+          </div>
+        )}
       </div>
 
       {/* Completion progress */}
@@ -268,13 +276,10 @@ function FillStep({ outletName, managerName, templates, items, updateItem, onPho
                           <img src={it.photo_b64} alt="" style={{ width: "100%", borderRadius: 8, display: "block" }} />
                         )}
                         <button onClick={() => updateItem(t.code, { photo_b64: null })} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.7)", border: "none", color: "#fff", width: 32, height: 32, borderRadius: 16, fontSize: 18, cursor: "pointer" }}>×</button>
+                        <div style={{ position: "absolute", bottom: 6, left: 6, padding: "3px 8px", background: "rgba(0,0,0,0.7)", borderRadius: 4, fontSize: 9, color: GREEN, fontWeight: 700, fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5 }}>✓ LIVE</div>
                       </div>
                     ) : (
-                      <label style={{ display: "block", padding: 16, border: "2px dashed rgba(255,255,255,0.2)", borderRadius: 10, textAlign: "center", cursor: "pointer", color: "#94a3b8" }}>
-                        <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={e => onPhoto(t.code, e.target.files?.[0])} />
-                        <div style={{ fontSize: 32 }}>📸</div>
-                        <div style={{ fontSize: 12, marginTop: 4 }}>Tap untuk ambil foto</div>
-                      </label>
+                      <CameraCapture facingMode="environment" label="Tap untuk Ambil Foto" onCapture={(dataUrl) => onPhoto(t.code, dataUrl)} />
                     )}
                   </div>
                 )}
