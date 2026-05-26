@@ -898,7 +898,8 @@ const KIOSK_CSS = `
   }
   @keyframes bootFadeIn{0%{opacity:0;filter:brightness(0)}55%{opacity:.85}100%{opacity:1}}
   .boot-logo{animation:bootFadeIn 1.8s cubic-bezier(.4,0,.2,1) forwards,bootGlow 5.5s ease-in-out 1.8s infinite;will-change:filter,opacity}
-  .boot-stage{background:radial-gradient(ellipse 70% 55% at 50% 42%,#0a0b10 0%,#030306 65%,#000 100%)!important}
+  /* Match AdminHome background — deep navy charcoal, not pure black */
+  .boot-stage{background:radial-gradient(ellipse 70% 55% at 50% 38%,rgba(40,44,58,0.5) 0%,transparent 70%),linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)!important;background-attachment:fixed!important}
   .boot-stage > div{padding-top:6vh!important}
   .aurora-blob{position:absolute;border-radius:50%;filter:blur(100px);pointer-events:none;will-change:transform}
   .aurora-1{top:-15%;left:-15%;width:65%;height:65%;background:radial-gradient(circle,var(--brand-primary,#FF6B35) 0%,transparent 70%);opacity:.22;animation:aurora 22s ease-in-out infinite}
