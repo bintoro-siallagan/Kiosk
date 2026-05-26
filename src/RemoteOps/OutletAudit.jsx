@@ -24,6 +24,17 @@ export default function OutletAudit() {
   const [error, setError] = useState("");
   const [notes, setNotes] = useState("");
   const [alreadySubmitted, setAlreadySubmitted] = useState(null); // existing audit
+  const [submitterSelfie, setSubmitterSelfie] = useState(null); // anti-nitip-PIN
+  // Device ID — disimpan di localStorage, anti-pakai-PIN-orang-lain (kalau PIN sama
+  // dipakai dari device baru, backend log anomaly).
+  const [deviceId] = useState(() => {
+    let id = localStorage.getItem("ro_device_id");
+    if (!id) {
+      id = "dev_" + Math.random().toString(36).slice(2, 11) + Date.now().toString(36);
+      localStorage.setItem("ro_device_id", id);
+    }
+    return id;
+  });
 
   // Reset root width
   useEffect(() => {
@@ -97,6 +108,7 @@ export default function OutletAudit() {
     if (missing.length > 0) { setError(`${missing.length} item belum di-rating`); return; }
     const missingPhoto = templates.filter(t => t.requires_photo && !items[t.code]?.photo_b64);
     if (missingPhoto.length > 0) { setError(`${missingPhoto.length} item wajib foto: ${missingPhoto.map(t=>t.label.replace(/^.\s/, "")).slice(0,3).join(", ")}…`); return; }
+    if (!submitterSelfie) { setError("Selfie kerja wajib diisi sebelum submit (anti-nitip-PIN)."); return; }
     setSubmitting(true);
     try {
       const payload = {
@@ -107,6 +119,8 @@ export default function OutletAudit() {
         manager_pin: pin,
         gps_lat: gps?.lat, gps_lon: gps?.lon,
         device_info: navigator.userAgent.slice(0, 200),
+        device_id: deviceId,
+        submitter_selfie_b64: submitterSelfie,
         notes: notes.trim() || null,
         items: templates.map(t => ({
           code: t.code, label: t.label, rating: items[t.code].rating,
@@ -140,6 +154,7 @@ export default function OutletAudit() {
           outletName={outletName} managerName={managerName}
           templates={templates} items={items} updateItem={updateItem} onPhoto={onPhoto}
           gps={gps} gpsErr={gpsErr} grabGps={grabGps} completion={completion} notes={notes} setNotes={setNotes}
+          submitterSelfie={submitterSelfie} setSubmitterSelfie={setSubmitterSelfie}
           alreadySubmitted={alreadySubmitted}
           error={error} submitting={submitting} onSubmit={submit}
           onBack={() => setStep("login")}
@@ -203,7 +218,7 @@ function LoginStep({ outlets, outletCode, setOutletCode, outletName, setOutletNa
   );
 }
 
-function FillStep({ outletName, managerName, templates, items, updateItem, onPhoto, gps, gpsErr, grabGps, completion, notes, setNotes, alreadySubmitted, error, submitting, onSubmit, onBack }) {
+function FillStep({ outletName, managerName, templates, items, updateItem, onPhoto, gps, gpsErr, grabGps, completion, notes, setNotes, alreadySubmitted, error, submitting, onSubmit, onBack, submitterSelfie, setSubmitterSelfie }) {
   // Group by category
   const groups = templates.reduce((acc, t) => { (acc[t.category || "Lain"] = acc[t.category || "Lain"] || []).push(t); return acc; }, {});
   return (
@@ -291,6 +306,23 @@ function FillStep({ outletName, managerName, templates, items, updateItem, onPho
         </div>
       ))}
 
+      {/* Selfie Kerja — anti-nitip-PIN */}
+      <div style={{ marginBottom: 14, padding: 12, background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 12 }}>
+        <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 6 }}>🤳 SELFIE KERJA (WAJIB)</div>
+        <div style={{ fontSize: 11, color: "#cbd5e1", marginBottom: 10, lineHeight: 1.55 }}>
+          Anti-nitip-PIN. Selfie ini menjadi bukti bahwa <b>Anda sendiri</b> yang submit audit, bukan dititipkan ke orang lain.
+        </div>
+        {submitterSelfie ? (
+          <div style={{ position: "relative" }}>
+            <img src={submitterSelfie} alt="" style={{ width: "100%", borderRadius: 10, display: "block", maxHeight: 280, objectFit: "cover" }} />
+            <button onClick={() => setSubmitterSelfie(null)} style={{ position: "absolute", top: 8, right: 8, background: "rgba(0,0,0,0.7)", border: "none", color: "#fff", width: 32, height: 32, borderRadius: 16, fontSize: 18, cursor: "pointer" }}>×</button>
+            <div style={{ position: "absolute", bottom: 6, left: 6, padding: "3px 8px", background: "rgba(0,0,0,0.7)", borderRadius: 4, fontSize: 9, color: GREEN, fontWeight: 700, fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5 }}>✓ SELFIE LIVE</div>
+          </div>
+        ) : (
+          <CameraCapture facingMode="user" label="🤳 Ambil Selfie Kerja Sekarang" onCapture={setSubmitterSelfie} />
+        )}
+      </div>
+
       {/* Final notes */}
       <div style={{ marginBottom: 14 }}>
         <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 6 }}>CATATAN UMUM (opsional)</div>
@@ -302,8 +334,11 @@ function FillStep({ outletName, managerName, templates, items, updateItem, onPho
 
       {/* Fixed submit bar */}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: 14, background: "linear-gradient(180deg, rgba(10,15,28,0) 0%, rgba(10,15,28,0.95) 30%)", display: "flex", justifyContent: "center" }}>
-        <button onClick={onSubmit} disabled={submitting || completion.pct < 100} style={{...primaryBtn(!submitting && completion.pct === 100), maxWidth: 460, width: "100%"}}>
-          {submitting ? "⏳ Submitting…" : completion.pct < 100 ? `Lengkapi dulu (${completion.done}/${completion.total})` : `✓ Submit Audit`}
+        <button onClick={onSubmit} disabled={submitting || completion.pct < 100 || !submitterSelfie} style={{...primaryBtn(!submitting && completion.pct === 100 && !!submitterSelfie), maxWidth: 460, width: "100%"}}>
+          {submitting ? "⏳ Submitting…"
+           : !submitterSelfie ? "🤳 Selfie kerja wajib"
+           : completion.pct < 100 ? `Lengkapi dulu (${completion.done}/${completion.total})`
+           : `✓ Submit Audit`}
         </button>
       </div>
     </div>

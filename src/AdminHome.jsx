@@ -477,6 +477,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "🛰️ Command Center",        icon: "🛰️", c: "#a855f7", on: () => openRight("tools", "remote_ops_command") },
       { label: "📋 Submit Daily Audit",    icon: "📋", c: "#10b981", on: () => openTab("?audit") },
       { label: "📍 Visit Check-in (Mobile)", icon: "📍", c: "#22d3ee", on: () => openTab("?visit") },
+      { label: "📍 Outlet Pin & Geofence", icon: "📍", c: "#a855f7", on: () => openRight("tools", "outlet_pin_config") },
     ] },
     // 🚀 KOLR — outlet launch readiness
     { title: "🚀 Outlet Launch Readiness (KOLR)", accent: "#a855f7", items: [

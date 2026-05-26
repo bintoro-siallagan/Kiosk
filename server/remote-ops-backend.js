@@ -57,7 +57,10 @@ CREATE TABLE IF NOT EXISTS outlet_audits (
   audit_date TEXT NOT NULL,              -- YYYY-MM-DD
   submitted_at INTEGER NOT NULL,
   gps_lat REAL, gps_lon REAL,
+  gps_distance_m INTEGER,                -- distance from outlet pin (anti-rumah-checkin)
   device_info TEXT,
+  device_id TEXT,                        -- localStorage UUID, anti-nitip-PIN tracker
+  submitter_selfie TEXT,                 -- filename selfie kerja (live camera)
   overall_score INTEGER,                 -- 0-100 average of item ratings × 20
   total_items INTEGER, pass_items INTEGER,
   notes TEXT
@@ -145,11 +148,24 @@ CREATE TABLE IF NOT EXISTS outlet_pins (
   vertical TEXT NOT NULL DEFAULT 'fnb',
   manager_pin_hash TEXT,                 -- sha256 of PIN; PIN = '1234' default
   manager_name TEXT,
-  gps_lat REAL, gps_lon REAL,            -- outlet GPS pin for visit verification
+  gps_lat REAL, gps_lon REAL,            -- outlet GPS pin for geofence verification
+  gps_radius_m INTEGER DEFAULT 200,      -- meters allowed around pin
+  geofence_enforce INTEGER DEFAULT 1,    -- 1=reject submission outside (DEFAULT, anti-rumah-checkin), 0=warn-only
+  address TEXT,                          -- human-readable address
   whatsapp_number TEXT,                  -- target for anomaly alerts
   created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
 `;
+
+// Migration: add missing columns to existing DBs
+const MIGRATIONS = [
+  `ALTER TABLE outlet_pins ADD COLUMN gps_radius_m INTEGER DEFAULT 200`,
+  `ALTER TABLE outlet_pins ADD COLUMN geofence_enforce INTEGER DEFAULT 1`,
+  `ALTER TABLE outlet_pins ADD COLUMN address TEXT`,
+  `ALTER TABLE outlet_audits ADD COLUMN gps_distance_m INTEGER`,
+  `ALTER TABLE outlet_audits ADD COLUMN device_id TEXT`,
+  `ALTER TABLE outlet_audits ADD COLUMN submitter_selfie TEXT`,
+];
 
 // Default checklist templates per vertical
 const DEFAULT_TEMPLATES = [
@@ -193,6 +209,8 @@ function setupRemoteOps(app, opts = {}) {
   const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
+  // Run idempotent migrations (ignore duplicate-column errors)
+  for (const m of MIGRATIONS) { try { db.exec(m); } catch {} }
 
   // Seed templates if empty
   const tplCount = db.prepare(`SELECT COUNT(*) c FROM outlet_audit_templates`).get().c;
@@ -462,12 +480,77 @@ function setupRemoteOps(app, opts = {}) {
       if (!b.outlet_code || !Array.isArray(b.items) || b.items.length === 0) {
         return res.status(400).json({ error: 'outlet_code + items required' });
       }
-      // Verify PIN if outlet has one
-      const pin = db.prepare(`SELECT manager_pin_hash FROM outlet_pins WHERE outlet_code=?`).get(b.outlet_code);
-      if (pin?.manager_pin_hash) {
+      // Super-admin bypass: kalau PIN yang dimasukkan match admin_users
+      // dengan role super-admin/admin → bypass semua check (PIN outlet + geofence)
+      let isSuperAdmin = false;
+      try {
+        const sa = db.prepare(`SELECT id, name, role FROM admin_users WHERE pin=? AND role IN ('super-admin','admin') AND active=1`).get(String(b.manager_pin || ''));
+        if (sa) isSuperAdmin = true;
+      } catch {}
+
+      // Verify outlet PIN if configured (super-admin bypass)
+      const pin = db.prepare(`SELECT manager_pin_hash, gps_lat, gps_lon, gps_radius_m, geofence_enforce FROM outlet_pins WHERE outlet_code=?`).get(b.outlet_code);
+      if (!isSuperAdmin && pin?.manager_pin_hash) {
         if (!b.manager_pin || sha256(String(b.manager_pin)) !== pin.manager_pin_hash) {
-          return res.status(403).json({ error: 'Invalid PIN' });
+          return res.status(403).json({ error: 'PIN salah' });
         }
+      }
+      // Geofence validation — only enforce if outlet has GPS pin + enforce flag (super-admin bypass)
+      let geofenceDistance = null;
+      if (pin?.gps_lat && pin?.gps_lon && b.gps_lat && b.gps_lon) {
+        geofenceDistance = distMeters(pin.gps_lat, pin.gps_lon, b.gps_lat, b.gps_lon);
+        const radius = pin.gps_radius_m || 200;
+        if (geofenceDistance > radius) {
+          // Always log as anomaly — even if not enforced — biar ada trail
+          // untuk pattern abuse (manager rajin checklist dari rumah).
+          try {
+            const dedupe = `${b.outlet_code}|geofence_audit|${new Date().toISOString().slice(0,10)}|${Math.floor(geofenceDistance/100)}`;
+            db.prepare(`INSERT OR IGNORE INTO outlet_anomalies
+              (outlet_code, outlet_name, vertical, anomaly_type, severity, message, metric_value, threshold_value, detected_at, dedupe_key)
+              VALUES (?,?,?,?,?,?,?,?,?,?)`)
+              .run(b.outlet_code, b.outlet_name || null, b.vertical || 'fnb', 'geofence_violation',
+                   geofenceDistance > radius * 5 ? 'critical' : 'warning',
+                   `${b.manager_name || 'Manager'} submit audit dari ${geofenceDistance}m (batas ${radius}m)${isSuperAdmin ? ' — super-admin bypass' : ''}`,
+                   geofenceDistance, radius, nowSec(), dedupe);
+          } catch {}
+          if (!isSuperAdmin && pin.geofence_enforce) {
+            return res.status(403).json({
+              error: `Lokasi Anda ${geofenceDistance}m dari outlet (batas ${radius}m). Audit wajib dari area outlet.`,
+              distance_m: geofenceDistance, radius_m: radius,
+            });
+          }
+        }
+      }
+
+      // Selfie required (anti-nitip-PIN) — kecuali super-admin
+      if (!isSuperAdmin && (!b.submitter_selfie_b64 || b.submitter_selfie_b64.length < 100)) {
+        return res.status(400).json({ error: 'Selfie kerja wajib disertakan. Anti nitip PIN ke orang lain.' });
+      }
+      // Save selfie
+      let selfieFn = null;
+      if (b.submitter_selfie_b64) {
+        const mime = (b.submitter_selfie_b64.match(/^data:image\/(\w+);base64,/) || [null, 'jpg'])[1];
+        const data = b.submitter_selfie_b64.replace(/^data:image\/\w+;base64,/, '');
+        selfieFn = `selfie_${b.outlet_code}_${nowSec()}.${mime}`;
+        try { fs.writeFileSync(path.join(UPLOAD_DIR, selfieFn), Buffer.from(data, 'base64')); }
+        catch (e) { console.error('[remote-ops] selfie save fail', e.message); selfieFn = null; }
+      }
+
+      // Device tracking — anomaly kalau PIN dipakai dari banyak device
+      if (b.device_id && pin?.manager_pin_hash) {
+        try {
+          const recent = db.prepare(`SELECT DISTINCT device_id FROM outlet_audits WHERE outlet_code=? AND submitted_at>=? AND device_id IS NOT NULL`).all(b.outlet_code, nowSec() - 30 * 86400);
+          const distinctDevices = recent.map(r => r.device_id).filter(Boolean);
+          if (distinctDevices.length > 0 && !distinctDevices.includes(b.device_id)) {
+            const dedupe = `${b.outlet_code}|new_device|${new Date().toISOString().slice(0,10)}|${b.device_id.slice(0,8)}`;
+            db.prepare(`INSERT OR IGNORE INTO outlet_anomalies
+              (outlet_code, outlet_name, vertical, anomaly_type, severity, message, metric_value, threshold_value, detected_at, dedupe_key)
+              VALUES (?,?,?,?,?,?,?,?,?,?)`)
+              .run(b.outlet_code, b.outlet_name || null, b.vertical || 'fnb', 'pin_new_device', 'warning',
+                   `${b.manager_name || 'Manager'} pakai PIN dari device baru (sebelumnya ${distinctDevices.length} device). Cek nitip PIN.`,
+                   distinctDevices.length + 1, 1, nowSec(), dedupe);
+          }
+        } catch {}
       }
 
       const today = new Date().toISOString().slice(0, 10);
@@ -480,15 +563,16 @@ function setupRemoteOps(app, opts = {}) {
       const existing = db.prepare(`SELECT id FROM outlet_audits WHERE outlet_code=? AND audit_date=?`).get(b.outlet_code, today);
       let auditId;
       if (existing) {
-        db.prepare(`UPDATE outlet_audits SET submitted_at=?, gps_lat=?, gps_lon=?, overall_score=?, total_items=?, pass_items=?, notes=?, manager_name=? WHERE id=?`)
-          .run(now, b.gps_lat || null, b.gps_lon || null, overall, totalItems, passItems, b.notes || null, b.manager_name || null, existing.id);
+        db.prepare(`UPDATE outlet_audits SET submitted_at=?, gps_lat=?, gps_lon=?, gps_distance_m=?, device_id=?, submitter_selfie=?, overall_score=?, total_items=?, pass_items=?, notes=?, manager_name=? WHERE id=?`)
+          .run(now, b.gps_lat || null, b.gps_lon || null, geofenceDistance, b.device_id || null, selfieFn, overall, totalItems, passItems, b.notes || null, b.manager_name || null, existing.id);
         db.prepare(`DELETE FROM outlet_audit_items WHERE audit_id=?`).run(existing.id);
         auditId = existing.id;
       } else {
-        const r = db.prepare(`INSERT INTO outlet_audits (outlet_code, outlet_name, vertical, manager_name, audit_date, submitted_at, gps_lat, gps_lon, device_info, overall_score, total_items, pass_items, notes)
-          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+        const r = db.prepare(`INSERT INTO outlet_audits (outlet_code, outlet_name, vertical, manager_name, audit_date, submitted_at, gps_lat, gps_lon, gps_distance_m, device_info, device_id, submitter_selfie, overall_score, total_items, pass_items, notes)
+          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
             b.outlet_code, b.outlet_name || null, b.vertical || 'fnb', b.manager_name || null,
-            today, now, b.gps_lat || null, b.gps_lon || null, b.device_info || null,
+            today, now, b.gps_lat || null, b.gps_lon || null, geofenceDistance,
+            b.device_info || null, b.device_id || null, selfieFn,
             overall, totalItems, passItems, b.notes || null
           );
         auditId = r.lastInsertRowid;
@@ -590,24 +674,37 @@ function setupRemoteOps(app, opts = {}) {
     res.json({ ok: true });
   });
 
-  // Outlet pin config (PIN, WhatsApp number, GPS)
+  // Outlet pin config (PIN, WhatsApp number, GPS + geofence)
   router.get('/outlet-pins', (req, res) => {
-    const rows = db.prepare(`SELECT outlet_code, outlet_name, vertical, manager_name, gps_lat, gps_lon, whatsapp_number FROM outlet_pins`).all();
+    const rows = db.prepare(`SELECT outlet_code, outlet_name, vertical, manager_name, gps_lat, gps_lon, gps_radius_m, geofence_enforce, address, whatsapp_number, manager_pin_hash IS NOT NULL as has_pin FROM outlet_pins`).all();
     res.json({ data: rows });
+  });
+
+  router.get('/outlet-pins/:code', (req, res) => {
+    const row = db.prepare(`SELECT outlet_code, outlet_name, vertical, manager_name, gps_lat, gps_lon, gps_radius_m, geofence_enforce, address, whatsapp_number, manager_pin_hash IS NOT NULL as has_pin FROM outlet_pins WHERE outlet_code=?`).get(req.params.code);
+    if (!row) return res.status(404).json({ error: 'Outlet pin not configured' });
+    res.json(row);
   });
 
   router.post('/outlet-pins', (req, res) => {
     const b = req.body || {};
     if (!b.outlet_code || !b.outlet_name) return res.status(400).json({ error: 'outlet_code + outlet_name required' });
     const pinHash = b.manager_pin ? sha256(String(b.manager_pin)) : undefined;
+    const radius = b.gps_radius_m != null ? Math.max(50, Math.min(5000, parseInt(b.gps_radius_m, 10) || 200)) : 200;
+    const enforce = b.geofence_enforce ? 1 : 0;
     const existing = db.prepare(`SELECT outlet_code FROM outlet_pins WHERE outlet_code=?`).get(b.outlet_code);
     if (existing) {
-      db.prepare(`UPDATE outlet_pins SET outlet_name=?, vertical=?, manager_name=?, gps_lat=?, gps_lon=?, whatsapp_number=?${pinHash ? ', manager_pin_hash=?' : ''} WHERE outlet_code=?`)
-        .run(...[b.outlet_name, b.vertical || 'fnb', b.manager_name || null, b.gps_lat || null, b.gps_lon || null, b.whatsapp_number || null, ...(pinHash ? [pinHash] : []), b.outlet_code]);
+      db.prepare(`UPDATE outlet_pins SET outlet_name=?, vertical=?, manager_name=?, gps_lat=?, gps_lon=?, gps_radius_m=?, geofence_enforce=?, address=?, whatsapp_number=?${pinHash ? ', manager_pin_hash=?' : ''} WHERE outlet_code=?`)
+        .run(...[b.outlet_name, b.vertical || 'fnb', b.manager_name || null, b.gps_lat || null, b.gps_lon || null, radius, enforce, b.address || null, b.whatsapp_number || null, ...(pinHash ? [pinHash] : []), b.outlet_code]);
     } else {
-      db.prepare(`INSERT INTO outlet_pins (outlet_code, outlet_name, vertical, manager_name, gps_lat, gps_lon, whatsapp_number, manager_pin_hash) VALUES (?,?,?,?,?,?,?,?)`)
-        .run(b.outlet_code, b.outlet_name, b.vertical || 'fnb', b.manager_name || null, b.gps_lat || null, b.gps_lon || null, b.whatsapp_number || null, pinHash || sha256('1234'));
+      db.prepare(`INSERT INTO outlet_pins (outlet_code, outlet_name, vertical, manager_name, gps_lat, gps_lon, gps_radius_m, geofence_enforce, address, whatsapp_number, manager_pin_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?)`)
+        .run(b.outlet_code, b.outlet_name, b.vertical || 'fnb', b.manager_name || null, b.gps_lat || null, b.gps_lon || null, radius, enforce, b.address || null, b.whatsapp_number || null, pinHash || sha256('1234'));
     }
+    res.json({ ok: true });
+  });
+
+  router.delete('/outlet-pins/:code', (req, res) => {
+    db.prepare(`DELETE FROM outlet_pins WHERE outlet_code=?`).run(req.params.code);
     res.json({ ok: true });
   });
 
@@ -624,8 +721,29 @@ function setupRemoteOps(app, opts = {}) {
     try {
       const b = req.body || {};
       if (!b.visitor_name || !b.outlet_code || !b.gps_lat || !b.gps_lon) return res.status(400).json({ error: 'visitor_name, outlet_code, gps required' });
-      const pin = db.prepare(`SELECT outlet_name, gps_lat, gps_lon FROM outlet_pins WHERE outlet_code=?`).get(b.outlet_code);
+
+      // Super-admin bypass via PIN
+      let isSuperAdmin = false;
+      if (b.bypass_pin) {
+        try {
+          const sa = db.prepare(`SELECT id FROM admin_users WHERE pin=? AND role IN ('super-admin','admin') AND active=1`).get(String(b.bypass_pin));
+          if (sa) isSuperAdmin = true;
+        } catch {}
+      }
+
+      const pin = db.prepare(`SELECT outlet_name, gps_lat, gps_lon, gps_radius_m, geofence_enforce FROM outlet_pins WHERE outlet_code=?`).get(b.outlet_code);
       const distance = pin?.gps_lat ? distMeters(pin.gps_lat, pin.gps_lon, b.gps_lat, b.gps_lon) : null;
+
+      // Geofence enforce — super-admin bypass
+      if (!isSuperAdmin && pin?.geofence_enforce && distance != null) {
+        const radius = pin.gps_radius_m || 200;
+        if (distance > radius) {
+          return res.status(403).json({
+            error: `Lokasi Anda ${distance}m dari outlet (batas ${radius}m). Visit check-in harus dari area outlet.`,
+            distance_m: distance, radius_m: radius,
+          });
+        }
+      }
 
       // Save photo
       let photoFn = null;

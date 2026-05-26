@@ -310,10 +310,19 @@ function LaunchDetail({ launch, onClose, onRefresh, API }) {
                   </button>
                 );
               })}
+              <button onClick={() => setActiveDept("__audit__")} style={{
+                padding: "10px 12px", border: "none", background: "transparent",
+                borderBottom: activeDept === "__audit__" ? `2px solid #cbd5e1` : "2px solid transparent",
+                color: activeDept === "__audit__" ? "#fff" : "#94a3b8",
+                fontSize: 12, fontWeight: 700, fontFamily: "inherit", cursor: "pointer",
+                whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 6, marginLeft: "auto",
+              }}>📜 Audit Trail</button>
             </div>
 
             {/* Dept content */}
-            {activeDept && (
+            {activeDept === "__audit__" ? (
+              <AuditTrailPanel launchId={launch.id} API={API} />
+            ) : activeDept && (
               <DeptPanel
                 dept={detail.departments.find(d => d.code === activeDept)}
                 tasks={detail.tasks.filter(t => t.department === activeDept)}
@@ -458,6 +467,70 @@ function TaskRow({ task, onUpdate, disabled, API, onRefresh }) {
             </label>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function AuditTrailPanel({ launchId, API }) {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(null);
+
+  useEffect(() => {
+    setErr(null); setLoading(true);
+    fetch(`${API}/api/launch/launches/${launchId}/audit`)
+      .then(r => r.ok ? r.json() : r.json().then(j => { throw new Error(j?.error); }))
+      .then(j => setEvents(j?.data || []))
+      .catch(setErr).finally(() => setLoading(false));
+  }, [launchId, API]);
+
+  const eventMeta = (type) => {
+    if (type === "created")              return { icon: "🚀", color: PURPLE, label: "Project Dibuat" };
+    if (type === "task_updated")         return { icon: "✏️", color: AMBER,  label: "Task Update" };
+    if (type === "evidence_uploaded")    return { icon: "📸", color: CYAN,   label: "Foto Bukti Upload" };
+    if (type === "signed_off")           return { icon: "🔏", color: GREEN,  label: "Dept Sign-Off" };
+    if (type === "signoff_revoked")      return { icon: "↩️", color: RED,    label: "Sign-Off Revoke" };
+    if (type === "go_live")              return { icon: "🎉", color: GREEN,  label: "GO LIVE" };
+    if (type === "waiver")               return { icon: "⚠️", color: RED,    label: "GM Waiver" };
+    return { icon: "·", color: "#94a3b8", label: type };
+  };
+
+  if (loading) return <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>⏳ Loading audit trail…</div>;
+  if (err) return <ErrorInline error={err} />;
+  if (events.length === 0) return <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>Belum ada activity log</div>;
+
+  return (
+    <div>
+      <div style={{ padding: 12, background: CARD_BG, border: BORDER, borderRadius: 10, marginBottom: 14, fontSize: 12, color: "#cbd5e1", lineHeight: 1.5 }}>
+        📜 <b>Audit Trail Permanent</b> — semua perubahan tercatat untuk accountability. Total {events.length} event tercatat.
+      </div>
+      <div style={{ position: "relative", paddingLeft: 22 }}>
+        {/* Vertical line */}
+        <div style={{ position: "absolute", left: 8, top: 8, bottom: 8, width: 1, background: "rgba(255,255,255,0.08)" }} />
+        {events.map((e, i) => {
+          const m = eventMeta(e.event_type);
+          return (
+            <div key={e.id} style={{ position: "relative", paddingBottom: 14 }}>
+              <div style={{ position: "absolute", left: -22, top: 6, width: 17, height: 17, borderRadius: 9, background: m.color + "33", border: `2px solid ${m.color}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9 }}>{m.icon}</div>
+              <div style={{ background: CARD_BG, border: BORDER, borderRadius: 8, padding: "10px 12px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4, flexWrap: "wrap", gap: 6 }}>
+                  <div style={{ fontSize: 11, color: m.color, fontWeight: 800, letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{m.label}</div>
+                  <div style={{ fontSize: 10, color: "#64748b", fontFamily: "'Geist Mono',monospace" }}>{new Date(e.created_at * 1000).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "medium" })}</div>
+                </div>
+                <div style={{ fontSize: 12, color: "#cbd5e1" }}>
+                  {e.actor && <><b style={{ color: "#fff" }}>{e.actor}</b></>}
+                  {e.department && <span style={{ marginLeft: 6, padding: "2px 6px", background: "rgba(255,255,255,0.05)", borderRadius: 4, fontSize: 10, fontFamily: "'Geist Mono',monospace" }}>{e.department}</span>}
+                  {e.detail?.task_id && <span style={{ marginLeft: 6, fontSize: 10, color: "#94a3b8" }}>· task #{e.detail.task_id}</span>}
+                </div>
+                {e.detail?.status && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4 }}>Status → <b style={{ color: "#fff" }}>{e.detail.status}</b></div>}
+                {e.detail?.comment && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 4, fontStyle: "italic" }}>"{e.detail.comment}"</div>}
+                {e.detail?.reason && <div style={{ fontSize: 11, color: "#fca5a5", marginTop: 4 }}>Alasan: {e.detail.reason}</div>}
+                {e.detail?.waived_departments && <div style={{ fontSize: 11, color: "#fca5a5", marginTop: 4 }}>Dept waived: {(e.detail.waived_departments || []).join(", ")}</div>}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

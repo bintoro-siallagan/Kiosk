@@ -73,6 +73,7 @@ const CinemaCashierKPI            = lazy(() => import("./Admin/CinemaCashierKPI.
 const RemoteOpsCommand            = lazy(() => import("./Admin/RemoteOpsCommand.jsx"));
 const AdminUsers                  = lazy(() => import("./Admin/AdminUsers.jsx"));
 const OutletLaunchTracker         = lazy(() => import("./Admin/OutletLaunchTracker.jsx"));
+const OutletPinConfig             = lazy(() => import("./Admin/OutletPinConfig.jsx"));
 const CinemaTicketing             = lazy(() => import("./Admin/CinemaTicketing.jsx"));
 const CinemaBoxOffice             = lazy(() => import("./Admin/CinemaBoxOffice.jsx"));
 const CinemaValidate              = lazy(() => import("./Admin/CinemaValidate.jsx"));
@@ -293,6 +294,7 @@ export default function AdminTools({ initialTab }) {
         {tab === "remote_ops_command" && <RemoteOpsCommand apiBase={API} />}
         {tab === "admin_users" && <AdminUsers apiBase={API} />}
         {tab === "outlet_launch" && <OutletLaunchTracker apiBase={API} />}
+        {tab === "outlet_pin_config" && <OutletPinConfig apiBase={API} />}
         {tab === "cinema_promotion" && <CinemaPromotion apiBase={API} />}
         {tab === "cinema_holidays" && <CinemaHolidays apiBase={API} />}
         {tab === "cinema_seat_types" && <CinemaSeatTypes apiBase={API} />}
