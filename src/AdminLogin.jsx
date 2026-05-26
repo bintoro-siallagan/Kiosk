@@ -187,6 +187,11 @@ function ForceChangePassword({ session, onDone }) {
     } catch (e) { setError(parseError(e)); }
     setBusy(false);
   };
+  // Escape route — kalau user yakin gak perlu ganti, skip ke dashboard
+  const skip = () => {
+    if (!confirm("Skip ganti password? Sistem akan tetap menyimpan password lama. Anda bisa ganti nanti via Manajemen Pengguna.")) return;
+    onDone({ token: session.token, name: session.user.name, role: session.user.role });
+  };
   return (
     <div style={L.root}>
       <style>{CSS}</style>
@@ -194,7 +199,7 @@ function ForceChangePassword({ session, onDone }) {
         <div style={{ fontSize: 50, marginBottom: 6 }}>🔐</div>
         <div style={L.brand}>karya<span style={{ color: "#fff" }}>OS</span></div>
         <div style={L.title}>FORCE CHANGE PASSWORD</div>
-        <div style={L.sub}>Hi <b style={{ color: "#fff" }}>{session.user.name}</b> — ini login pertama Anda. Mohon ganti password sebelum melanjutkan.</div>
+        <div style={L.sub}>Hi <b style={{ color: "#fff" }}>{session.user.name}</b> — sistem merekomendasikan ganti password. Atau skip kalau Anda sudah yakin password aman.</div>
 
         {error && <div style={L.error}>⚠ {error}</div>}
 
@@ -219,6 +224,9 @@ function ForceChangePassword({ session, onDone }) {
 
           <button type="submit" disabled={busy} style={{ ...L.primaryBtn, marginTop: 18 }}>
             {busy ? "Menyimpan…" : "💾 Simpan & Lanjut"}
+          </button>
+          <button type="button" onClick={skip} style={{ ...L.modeToggle, marginTop: 12, cursor: "pointer" }}>
+            Skip — Lanjut tanpa ganti password
           </button>
         </form>
       </div>
