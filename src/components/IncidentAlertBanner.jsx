@@ -1,7 +1,7 @@
 // karyaOS — Global Incident Alert Banner
 // Listen WS event 'cinema:incident' → toast notification + persistent badge.
 // Owner / HQ admin tau setiap operational issue realtime, gak nunggu refresh manual.
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import API_HOST from "../apiBase.js";
 
 
@@ -22,11 +22,37 @@ const TYPE_LABEL = {
   seat_swap: "Seat Swap",
 };
 
+// Web Audio API beep — no file needed. Anti 404 alert-bell.mp3.
+// Generate 2-tone alert (880Hz → 660Hz, 200ms total). Need user gesture first
+// untuk AudioContext start; gracefully fail kalau browser block.
+function playIncidentBeep() {
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    if (ctx.state === "suspended") ctx.resume();
+    const playTone = (freq, startSec, durSec, gain = 0.25) => {
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gainNode.gain.setValueAtTime(0, ctx.currentTime + startSec);
+      gainNode.gain.linearRampToValueAtTime(gain, ctx.currentTime + startSec + 0.01);
+      gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + startSec + durSec);
+      osc.connect(gainNode); gainNode.connect(ctx.destination);
+      osc.start(ctx.currentTime + startSec);
+      osc.stop(ctx.currentTime + startSec + durSec);
+    };
+    playTone(880, 0, 0.12);    // tinggi
+    playTone(660, 0.13, 0.12); // rendah
+    setTimeout(() => { try { ctx.close(); } catch {} }, 500);
+  } catch {}
+}
+
 export default function IncidentAlertBanner({ onOpenPanel }) {
   const [openIncidents, setOpenIncidents] = useState([]);
   const [toastQueue, setToastQueue] = useState([]); // recent toasts (max 3)
   const [expanded, setExpanded] = useState(false);
-  const audioRef = useRef(null);
 
   // Initial fetch + poll every 30s as safety net
   useEffect(() => {
@@ -53,8 +79,8 @@ export default function IncidentAlertBanner({ onOpenPanel }) {
             setToastQueue(q => [...q.slice(-2), { ...inc, _toastId: Date.now() }]);
             // Reload list
             fetch(`${API_HOST}/api/cinema/incidents?open=1`).then(r => r.json()).then(d => setOpenIncidents(d.incidents || []));
-            // Play sound (best-effort, kalau audio unlock + browser allow)
-            try { audioRef.current?.play().catch(() => {}); } catch {}
+            // Play sound — Web Audio API beep, no file required (anti 404)
+            try { playIncidentBeep(); } catch {}
             // Browser notification (kalau user grant)
             try {
               if ("Notification" in window && Notification.permission === "granted") {
@@ -91,8 +117,7 @@ export default function IncidentAlertBanner({ onOpenPanel }) {
 
   return (
     <>
-      {/* Audio cue */}
-      <audio ref={audioRef} src="/audio/alert-bell.mp3" preload="auto" style={{ display: "none" }} />
+      {/* Audio cue — Web Audio API generated, no file asset required */}
 
       {/* Persistent badge — kalau ada open incident */}
       {totalCount > 0 && (
