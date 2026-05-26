@@ -458,27 +458,34 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
   if (!orderType) return (
     <div style={K.welcome}>
       <style>{FONT_CSS+KIOSK_CSS+BRAND_OVERRIDE_CSS}</style>
+      {/* Ambient aurora background — soft floating blobs, organic feel */}
+      <div className="aurora-blob aurora-1"/>
+      <div className="aurora-blob aurora-2"/>
+      <div className="aurora-blob aurora-3"/>
       <div style={K.welcomeInner}>
         <div style={K.logoWrap}>
-          <img src="/logo.png" alt="KaryaOS" onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}} style={{width:150,height:150,objectFit:"contain",cursor:"pointer"}}/>
-          <h1 style={K.brand}>KaryaOS</h1>
-          <p style={K.tagline}>Crafted with love. Ordered with ease.</p>
+          <div style={{position:"relative",display:"inline-block"}} className="logo-float">
+            <div className="logo-halo"/>
+            <img src="/logo.png" alt={tenantBrand.name || "KaryaOS"} onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}} style={{width:128,height:128,objectFit:"contain",cursor:"pointer",position:"relative",zIndex:1,filter:"drop-shadow(0 8px 24px rgba(0,0,0,0.4))"}}/>
+          </div>
+          <h1 style={K.brand}>{tenantBrand.name || "KaryaOS"}</h1>
+          <p style={K.tagline}>Crafted with love · Ordered with ease</p>
         </div>
         <div style={K.clockDisp}>{time.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</div>
-        <p style={K.welcomeQ}>BAGAIMANA ANDA INGIN MEMESAN?</p>
+        <p style={K.welcomeQ}>How would you like to order?</p>
         <div style={K.orderRow}>
-          <button className="order-btn-premium" style={K.orderBtn} onClick={()=>setOrderType("dine")}>
+          <button className="order-pill" style={K.orderBtn} onClick={()=>setOrderType("dine")}>
             <span style={K.orderBtnIcon}>🪑</span>
-            <span style={K.orderBtnLabel}>Makan di Sini</span>
-            <span style={K.orderBtnSub}>Nikmati di meja Anda</span>
+            <span style={K.orderBtnLabel}>Dine In</span>
+            <span style={K.orderBtnSub}>Enjoy at your table</span>
           </button>
-          <button className="order-btn-premium" style={{...K.orderBtn,...K.orderBtnAlt}} onClick={()=>setOrderType("takeaway")}>
+          <button className="order-pill" style={{...K.orderBtn,...K.orderBtnAlt}} onClick={()=>setOrderType("takeaway")}>
             <span style={K.orderBtnIcon}>🛍️</span>
-            <span style={K.orderBtnLabel}>Bawa Pulang</span>
-            <span style={K.orderBtnSub}>Dibawa pergi</span>
+            <span style={K.orderBtnLabel}>Takeaway</span>
+            <span style={K.orderBtnSub}>To go</span>
           </button>
         </div>
-        <p style={K.tapHint}>KETUK UNTUK MULAI</p>
+        <p style={K.tapHint}>Tap to begin</p>
         <div style={{ marginTop: 22 }}><KioskReviewFeed/></div>
       </div>
     </div>
@@ -875,6 +882,19 @@ const KIOSK_CSS = `
   @keyframes idlePulse{0%,100%{opacity:1}50%{opacity:0.5}}
   @keyframes arrowPulse{0%,100%{opacity:0.3;transform:translateX(0)}50%{opacity:0.8;transform:translateX(-4px)}}
   @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  @keyframes breathe{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:.85;transform:scale(1.04)}}
+  @keyframes aurora{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(3%,-2%) scale(1.06)}66%{transform:translate(-2%,3%) scale(0.96)}}
+  .logo-float{animation:float 6s ease-in-out infinite}
+  .logo-halo{position:absolute;inset:-40px;border-radius:50%;background:radial-gradient(circle,var(--brand-primary,#FF6B35) 0%,transparent 65%);opacity:.18;filter:blur(32px);animation:breathe 5s ease-in-out infinite;pointer-events:none}
+  .aurora-blob{position:absolute;border-radius:50%;filter:blur(80px);pointer-events:none;will-change:transform}
+  .aurora-1{top:-10%;left:-10%;width:55%;height:55%;background:radial-gradient(circle,var(--brand-primary,#FF6B35) 0%,transparent 70%);opacity:.14;animation:aurora 22s ease-in-out infinite}
+  .aurora-2{bottom:-15%;right:-10%;width:60%;height:60%;background:radial-gradient(circle,var(--brand-secondary,#E55A2B) 0%,transparent 70%);opacity:.10;animation:aurora 28s ease-in-out infinite reverse}
+  .aurora-3{top:40%;left:30%;width:35%;height:35%;background:radial-gradient(circle,#a78bfa 0%,transparent 70%);opacity:.06;animation:aurora 32s ease-in-out infinite}
+  .welcome-glass{background:linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.015));backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(255,255,255,0.07);box-shadow:0 1px 0 rgba(255,255,255,0.04) inset,0 30px 80px rgba(0,0,0,0.35),0 8px 24px rgba(0,0,0,0.2)}
+  .order-pill{transition:transform .35s cubic-bezier(.2,.8,.2,1),box-shadow .35s ease,background .25s ease,border-color .25s ease}
+  .order-pill:hover{transform:translateY(-3px) scale(1.012)}
+  .order-pill:active{transform:translateY(-1px) scale(0.99)}
   .menu-card{animation:fadeIn 0.3s cubic-bezier(0.4,0,0.2,1) forwards;transition:transform 0.25s cubic-bezier(0.4,0,0.2,1),border-color 0.25s ease,box-shadow 0.25s ease}
   .menu-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,0.12)!important;box-shadow:0 1px 2px rgba(0,0,0,0.3),0 12px 40px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)}
   .add-btn{transition:all 0.2s cubic-bezier(0.4,0,0.2,1)}
@@ -931,22 +951,22 @@ const K = {
   idleBtn:    {width:"100%",background:"linear-gradient(135deg,#FF6B35,#F59E0B)",border:"none",borderRadius:14,padding:"16px",color:"#fff",fontSize:13,fontWeight:700,letterSpacing:1.5,fontFamily:"'Inter',sans-serif",marginBottom:10,boxShadow:SHADOW_CTA,transition:"all 0.2s cubic-bezier(0.4,0,0.2,1)"},
   idleCancel: {background:"transparent",border:BORDER_DEFAULT,borderRadius:10,padding:"10px 20px",color:"rgba(255,255,255,0.45)",fontSize:12,transition:"all 0.2s ease"},
 
-  // ── WELCOME ──
-  welcome:    {fontFamily:"'Inter',sans-serif",background:PREMIUM_BG,backgroundImage:`${PREMIUM_OVERLAY},${PREMIUM_BG}`,minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",position:"relative"},
-  welcomeInner:{textAlign:"center",padding:"40px 24px",maxWidth:620,width:"100%",position:"relative",zIndex:1},
-  logoWrap:   {marginBottom:28},
+  // ── WELCOME (Apple-feel: aurora bg, glassmorphism, soft typography) ──
+  welcome:    {fontFamily:"'Inter',sans-serif",background:"radial-gradient(ellipse at top,#1a1d29 0%,#0b0c12 55%,#06070b 100%)",minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"},
+  welcomeInner:{textAlign:"center",padding:"56px 36px",maxWidth:660,width:"calc(100% - 32px)",position:"relative",zIndex:1,borderRadius:36,background:"linear-gradient(180deg,rgba(255,255,255,0.035),rgba(255,255,255,0.012))",backdropFilter:"blur(28px) saturate(180%)",WebkitBackdropFilter:"blur(28px) saturate(180%)",border:"1px solid rgba(255,255,255,0.06)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.05),0 30px 80px rgba(0,0,0,0.4),0 8px 24px rgba(0,0,0,0.22)"},
+  logoWrap:   {marginBottom:32},
   logoIcon:   {fontSize:72,lineHeight:1,marginBottom:10,display:"block"},
-  brand:      {fontFamily:"'Inter',sans-serif",fontSize:"min(72px,11vw)",fontWeight:800,letterSpacing:"-1.5px",color:"#FF6B35",lineHeight:1,whiteSpace:"nowrap"},
-  tagline:    {fontSize:13,color:"rgba(255,255,255,0.45)",marginTop:10,letterSpacing:2,fontFamily:"'Geist Mono',monospace",textTransform:"uppercase"},
-  clockDisp:  {fontSize:14,color:"rgba(255,255,255,0.3)",marginBottom:40,letterSpacing:4,fontFamily:"'Geist Mono',monospace",fontVariantNumeric:"tabular-nums"},
-  welcomeQ:   {fontSize:10,letterSpacing:3,color:"rgba(255,255,255,0.4)",marginBottom:24,fontFamily:"'Geist Mono',monospace",textTransform:"uppercase"},
-  orderRow:   {display:"flex",gap:20,justifyContent:"center",marginBottom:40},
-  orderBtn:   {background:CARD_BG,border:BORDER_DEFAULT,backdropFilter:"blur(8px)",WebkitBackdropFilter:"blur(8px)",borderRadius:24,padding:"34px 40px",display:"flex",flexDirection:"column",alignItems:"center",gap:8,flex:1,maxWidth:220,color:"#fff",cursor:"pointer",boxShadow:SHADOW_CARD},
-  orderBtnAlt:{background:"linear-gradient(135deg,#FF6B35,#F59E0B)",border:"1px solid rgba(255,255,255,0.12)",boxShadow:"0 1px 2px rgba(0,0,0,0.3),0 14px 40px rgba(255,107,53,0.3),inset 0 1px 0 rgba(255,255,255,0.18)"},
-  orderBtnIcon:{fontSize:44},
-  orderBtnLabel:{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:750,letterSpacing:"-0.5px"},
-  orderBtnSub:{fontSize:11,color:"rgba(255,255,255,0.55)",fontFamily:"'Geist Mono',monospace",letterSpacing:1,textTransform:"uppercase",marginTop:2},
-  tapHint:    {fontSize:10,letterSpacing:3,color:"rgba(255,255,255,0.2)",fontFamily:"'Geist Mono',monospace",textTransform:"uppercase"},
+  brand:      {fontFamily:"'Inter',sans-serif",fontSize:"min(58px,9vw)",fontWeight:700,letterSpacing:"-2px",color:"#fff",lineHeight:1.05,marginTop:18,background:"linear-gradient(180deg,#fff 0%,rgba(255,255,255,0.72) 100%)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",backgroundClip:"text"},
+  tagline:    {fontSize:14,color:"rgba(255,255,255,0.5)",marginTop:12,letterSpacing:0.2,fontFamily:"'Inter',sans-serif",fontWeight:400},
+  clockDisp:  {fontSize:13,color:"rgba(255,255,255,0.32)",marginBottom:36,letterSpacing:6,fontFamily:"'Inter',sans-serif",fontVariantNumeric:"tabular-nums",fontWeight:500},
+  welcomeQ:   {fontSize:15,letterSpacing:"-0.2px",color:"rgba(255,255,255,0.78)",marginBottom:28,fontFamily:"'Inter',sans-serif",fontWeight:500},
+  orderRow:   {display:"flex",gap:18,justifyContent:"center",marginBottom:36},
+  orderBtn:   {background:"linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))",border:"1px solid rgba(255,255,255,0.08)",backdropFilter:"blur(20px) saturate(160%)",WebkitBackdropFilter:"blur(20px) saturate(160%)",borderRadius:28,padding:"36px 32px",display:"flex",flexDirection:"column",alignItems:"center",gap:10,flex:1,maxWidth:240,color:"#fff",cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.07),0 10px 32px rgba(0,0,0,0.32),0 2px 6px rgba(0,0,0,0.18)"},
+  orderBtnAlt:{background:"linear-gradient(180deg,rgba(255,107,53,0.92),rgba(229,90,43,0.88))",border:"1px solid rgba(255,255,255,0.16)",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.22),0 14px 40px rgba(255,107,53,0.28),0 2px 6px rgba(0,0,0,0.2)"},
+  orderBtnIcon:{fontSize:46,filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.25))"},
+  orderBtnLabel:{fontFamily:"'Inter',sans-serif",fontSize:21,fontWeight:600,letterSpacing:"-0.4px"},
+  orderBtnSub:{fontSize:12,color:"rgba(255,255,255,0.6)",fontFamily:"'Inter',sans-serif",letterSpacing:0.1,marginTop:2,fontWeight:400},
+  tapHint:    {fontSize:11,letterSpacing:3,color:"rgba(255,255,255,0.22)",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",fontWeight:500},
 
   // ── HEADER ──
   header:     {display:"flex",alignItems:"center",justifyContent:"space-between",padding:"14px 18px",background:"rgba(13,17,23,0.6)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderBottom:BORDER_DEFAULT,flexShrink:0},
