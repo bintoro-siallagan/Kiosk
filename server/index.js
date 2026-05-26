@@ -4448,6 +4448,11 @@ const companies = setupCompanies(app, { dbPath: DB_PATH });
 global.resolveCompanyScope = companies.resolveScope;
 const { setupOwnerDashboardExtras } = require('./owner-dashboard-extras');
 setupOwnerDashboardExtras(app, { dbPath: DB_PATH });
+
+// Billing Engine — SaaS subscription + MRR/ARR + invoice generation
+// MUST mount AFTER setupCompanies (depends on companies table for seed orphan-trial assignment)
+const { setupBillingEngine } = require('./billing-engine-backend');
+setupBillingEngine(app, { dbPath: DB_PATH });
 const bridge          = setupBridge(app,          { dbPath: DB_PATH, mountPath: '/api/bridge' });
 const notifications   = setupNotifications(app, {
   dbPath: DB_PATH,
