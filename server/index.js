@@ -1822,6 +1822,11 @@ const WA_TRACKING_BASE = process.env.WA_TRACKING_BASE || "http://localhost:5173"
 app.get("/api/customers", (req, res) => {
   const { q, tag, limit = 100, offset = 0 } = req.query;
   let result = [...customers];
+  // Multi-tenant: tenant cuma lihat customer dari company-nya
+  const sc = req.companyScope || {};
+  if (!sc.is_super_admin) {
+    result = result.filter(c => (c.company_id ?? null) === (sc.company_id ?? null));
+  }
   if (q) {
     const ql = q.toLowerCase();
     result = result.filter(c => c.name.toLowerCase().includes(ql) || c.phone.includes(q));
@@ -1862,6 +1867,8 @@ app.post("/api/customers", (req, res) => {
     if (tags) existing.tags = [...new Set([...(existing.tags||[]), ...tags])];
     return res.json({ ...existing, isNew: false });
   }
+  // Multi-tenant: auto-tag company_id from scope
+  const sc = req.companyScope || {};
   const customer = {
     id:        `C${String(++customerCounter).padStart(3,"0")}`,
     name:      name.trim(),
@@ -1871,6 +1878,7 @@ app.post("/api/customers", (req, res) => {
     createdAt: Date.now(),
     lastVisit: null,
     tags:      tags || ["new"],
+    company_id: sc.company_id ?? null,
   };
   customers.push(customer);
   db.insertCustomer(customer);
@@ -2857,10 +2865,22 @@ app.get("/api/auth/me", (req, res) => {
   res.json({ ...session, pin: undefined, company: companyInfo });
 });
 
+// Helper: resolve scope (super-admin atau tenant) untuk auth endpoints
+function _authScope(req) {
+  // companyScope dipasang oleh setupCompanies middleware
+  const sc = req.companyScope || {};
+  return { isSuperAdmin: !!sc.is_super_admin, companyId: sc.company_id ?? null };
+}
+
 app.get("/api/auth/users", (req, res) => {
+  const { isSuperAdmin, companyId } = _authScope(req);
   adminUsers = db.loadAllAdminUsers();
   const now = Date.now();
-  res.json(adminUsers.map(u => ({
+  // Multi-tenant: tenant only sees own company users. Super-admin sees all.
+  const visible = isSuperAdmin
+    ? adminUsers
+    : adminUsers.filter(u => u.company_id === companyId);
+  res.json(visible.map(u => ({
     ...u, pin: "••••••",
     password_hash: undefined, password_salt: undefined,
     is_locked: !!(u.locked_until && u.locked_until > now),
@@ -2870,42 +2890,83 @@ app.get("/api/auth/users", (req, res) => {
 });
 
 app.post("/api/auth/users", (req, res) => {
+  const { isSuperAdmin, companyId } = _authScope(req);
   const { name, pin, role } = req.body;
   if (!name || !pin || !role) return res.status(400).json({ error: "name, pin, role required" });
   if (pin.length !== 6) return res.status(400).json({ error: "PIN harus 6 digit" });
-  const user = { id: `U${String(adminUsers.length+1).padStart(3,"0")}`, name, pin, role, active: true };
+  // Multi-tenant guard: tenant gak boleh bikin role super-admin
+  if (!isSuperAdmin && (role === "super-admin" || role === "superadmin")) {
+    return res.status(403).json({ error: "Tidak boleh assign role super-admin" });
+  }
+  // Multi-tenant: auto-tag company_id
+  const targetCompanyId = isSuperAdmin
+    ? (req.body.company_id != null ? Number(req.body.company_id) : null)
+    : companyId;
+  const user = { id: `U${String(adminUsers.length+1).padStart(3,"0")}`, name, pin, role, active: true, company_id: targetCompanyId };
   adminUsers.push(user);
   db.insertAdminUser(user);
   res.status(201).json({ ...user, pin: "••••••" });
 });
 
 app.patch("/api/auth/users/:id", (req, res) => {
+  const { isSuperAdmin, companyId } = _authScope(req);
   const idx = adminUsers.findIndex(u => u.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "User not found" });
+  // Multi-tenant guard: tenant cuma boleh edit user dari company sama
+  if (!isSuperAdmin && adminUsers[idx].company_id !== companyId) {
+    return res.status(403).json({ error: "Tidak punya akses user ini" });
+  }
   const { name, pin, role, active } = req.body;
+  // Guard: tenant gak boleh ubah ke super-admin
+  if (!isSuperAdmin && (role === "super-admin" || role === "superadmin")) {
+    return res.status(403).json({ error: "Tidak boleh assign role super-admin" });
+  }
   if (name) adminUsers[idx].name = name;
   if (pin && pin.length === 6) adminUsers[idx].pin = pin;
   if (role) adminUsers[idx].role = role;
   if (active !== undefined) adminUsers[idx].active = Boolean(active);
+  db.insertAdminUser(adminUsers[idx]); // persist
   res.json({ ...adminUsers[idx], pin: "••••••" });
 });
 
+app.delete("/api/auth/users/:id", (req, res) => {
+  const { isSuperAdmin, companyId } = _authScope(req);
+  const user = adminUsers.find(u => u.id === req.params.id);
+  if (!user) return res.status(404).json({ error: "User not found" });
+  if (!isSuperAdmin && user.company_id !== companyId) {
+    return res.status(403).json({ error: "Tidak punya akses user ini" });
+  }
+  // Guard: jangan delete diri sendiri (yang lagi login)
+  const sc = req.companyScope || {};
+  if (sc.user_id === req.params.id) return res.status(400).json({ error: "Tidak boleh delete akun sendiri" });
+  db.deleteAdminUser(req.params.id);
+  adminUsers = adminUsers.filter(u => u.id !== req.params.id);
+  res.json({ ok: true });
+});
+
 // Unlock a locked account — clears failed_login_count + locked_until.
-// Super-admin operation (anti-DoS recovery without SSH).
+// Multi-tenant: tenant scope hanya bisa unlock user-nya sendiri.
 app.post("/api/auth/users/:id/unlock", (req, res) => {
+  const { isSuperAdmin, companyId } = _authScope(req);
   adminUsers = db.loadAllAdminUsers();
   const user = adminUsers.find(u => u.id === req.params.id);
   if (!user) return res.status(404).json({ error: "User not found" });
+  if (!isSuperAdmin && user.company_id !== companyId) {
+    return res.status(403).json({ error: "Tidak punya akses user ini" });
+  }
   db.insertAdminUser({ ...user, failed_login_count: 0, locked_until: null });
   adminUsers = db.loadAllAdminUsers();
   db.logLoginAttempt({ user_id: user.id, username: user.username || user.name, method: "unlock", success: 1, error: "admin unlock" });
   res.json({ ok: true, unlocked: user.id, name: user.name });
 });
 
-// Unlock ALL locked accounts at once — emergency button.
+// Unlock ALL locked accounts — super-admin emergency button (cross-tenant).
+// Tenant scope: scoped to own company.
 app.post("/api/auth/users/unlock-all", (req, res) => {
+  const { isSuperAdmin, companyId } = _authScope(req);
   adminUsers = db.loadAllAdminUsers();
-  const locked = adminUsers.filter(u => u.locked_until || u.failed_login_count > 0);
+  let locked = adminUsers.filter(u => u.locked_until || u.failed_login_count > 0);
+  if (!isSuperAdmin) locked = locked.filter(u => u.company_id === companyId);
   for (const u of locked) {
     db.insertAdminUser({ ...u, failed_login_count: 0, locked_until: null });
   }

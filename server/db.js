@@ -338,9 +338,9 @@ console.log(`📦 SQLite DB ready (${DB_PATH}) — ${getOrderCount()} orders per
 const customerStmts = {
   insert: db.prepare(`
     INSERT OR REPLACE INTO customers (
-      id, name, phone, visits, total_spend, created_at, last_visit, tags, points
+      id, name, phone, visits, total_spend, created_at, last_visit, tags, points, company_id
     ) VALUES (
-      @id, @name, @phone, @visits, @total_spend, @created_at, @last_visit, @tags, @points
+      @id, @name, @phone, @visits, @total_spend, @created_at, @last_visit, @tags, @points, @company_id
     )
   `),
   selectAll: db.prepare(`SELECT * FROM customers ORDER BY last_visit DESC NULLS LAST`),
@@ -359,6 +359,7 @@ function customerToRow(c) {
     last_visit:  c.lastVisit ?? null,
     tags:        JSON.stringify(c.tags || []),
     points:      c.points ?? 0,
+    company_id:  c.company_id ?? null,
   };
 }
 
@@ -373,6 +374,7 @@ function rowToCustomer(r) {
     lastVisit:  r.last_visit,
     tags:       r.tags ? JSON.parse(r.tags) : [],
     points:     r.points || 0,
+    company_id: r.company_id ?? null,
   };
 }
 
