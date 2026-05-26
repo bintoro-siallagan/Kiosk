@@ -108,7 +108,10 @@ export default function CommandCenter(){
   useEffect(()=>{
     let ws,rt;
     function connect(){
-      const wsUrl=API_BASE.replace("http","ws");
+      // Pakai /ws path (wajib di nginx production untuk WS upgrade headers).
+      // Local dev (no nginx) tetap pakai root path.
+      const base = API_BASE.replace(/^http/, "ws");
+      const wsUrl = (API_BASE.includes("localhost") || API_BASE.includes("127.0.0.1")) ? base : base + "/ws";
       ws=new WebSocket(wsUrl);
       ws.onopen=()=>{setFeed(p=>[{t:clk(),x:"🟢 WebSocket connected",k:"sys"},...p].slice(0,100));};
       ws.onmessage=(e)=>{
