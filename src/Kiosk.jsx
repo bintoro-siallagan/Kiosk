@@ -463,14 +463,14 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
         <div style={{display:"flex",justifyContent:"center",marginBottom:40}}>
           <img
             src="/logo.png"
-            alt={isCustomBrand ? tenantBrand.name : "KaryaOS"}
+            alt={isCustomBrand ? tenantBrand.name : "karyaos"}
             className="boot-logo"
             onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}}
             style={{width:140,height:140,objectFit:"contain",cursor:"pointer"}}
           />
         </div>
         <h1 style={K.brand}>
-          {isCustomBrand ? tenantBrand.name : (<>karya<span style={{fontWeight:300,opacity:.5}}>OS</span></>)}
+          {isCustomBrand ? tenantBrand.name : (<>karya<span style={{fontWeight:300,opacity:.5}}>os</span></>)}
         </h1>
         <p style={K.tagline}>Crafted with love · Ordered with ease</p>
         <div style={K.clockDisp}>{time.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</div>
@@ -650,7 +650,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
             <img src="/logo.png" alt="" className="boot-logo" style={{height:32,width:32,objectFit:"contain",animation:"none",filter:"drop-shadow(0 0 8px rgba(255,255,255,0.4)) drop-shadow(0 0 18px var(--brand-primary,#FF6B35))"}}/>
             <div>
               <div style={K.headerBrand}>
-                {isCustomBrand ? tenantBrand.name : (<>karya<span style={{fontWeight:300,opacity:.55}}>OS</span></>)}
+                {isCustomBrand ? tenantBrand.name : (<>karya<span style={{fontWeight:300,opacity:.55}}>os</span></>)}
               </div>
               <div style={K.headerSub}>{orderType==="dine"?"🪑 Dine In":"🛍️ Takeaway"}</div>
             </div>
