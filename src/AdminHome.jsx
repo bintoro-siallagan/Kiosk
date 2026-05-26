@@ -169,7 +169,7 @@ function RailNode({ node, depth, open, onToggle }) {
       {hasSub && isOpen ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 4 }}>
           {node.searchable ? (
-            <input value={q} onChange={e => setQ(e.target.value)} placeholder="🔍 Cari modul…"
+            <input value={q} onChange={e => setQ(e.target.value)} placeholder="🔍 Search modules…"
               style={{ background: "#0a0e16", border: "1px solid #26272b", borderRadius: 8, padding: "7px 10px", color: "#fff", fontSize: 11.5, fontFamily: "inherit", boxSizing: "border-box", outline: "none", marginLeft: 14 }} />
           ) : null}
           {children.map(c => <RailNode key={c._k || c.label} node={c} depth={depth + 1} open={open} onToggle={onToggle} />)}
@@ -737,7 +737,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
               transition: "all .15s",
             }}>
             <span style={{ fontSize: 13 }}>🔍</span>
-            <span>Cari…</span>
+            <span>Search…</span>
             <span style={{
               background: "rgba(255,255,255,0.06)",
               border: "1px solid rgba(255,255,255,0.08)",
@@ -956,7 +956,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
           </div>
 
           {/* ═══ INTRADAY CHART — line + area, hourly bars below ═══ */}
-          <Section label="INTRADAY · PER JAM HARI INI" accent="#22d3ee" mt={14}
+          <Section label="INTRADAY · HOURLY TODAY" accent="#22d3ee" mt={14}
             right={<span style={{ fontSize: 10.5, color: "#5b6470", fontFamily: "'Geist Mono',monospace", display: "flex", alignItems: "center", gap: 8 }}>
               <span className="livedot" style={{ width: 6, height: 6, borderRadius: "50%", background: "#22d3ee", display: "inline-block", boxShadow: "0 0 6px #22d3ee" }} />
               {intradayWindow.reduce((s,b) => s + b.orders, 0)} tx · OHLC {String(intradayWindow[0]?.h ?? 0).padStart(2,"0")}:00–{String((intradayWindow[intradayWindow.length-1]?.h ?? 0)).padStart(2,"0")}:59</span>} />
@@ -1032,7 +1032,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
               <span className="livedot" style={{ width: 7, height: 7, borderRadius: "50%", background: "#10b981", display: "inline-block", boxShadow: "0 0 6px #10b981" }} />
               LIVE · {curOrders.length} tx {periodLabel.toLowerCase()}</span>} />
           <div className="card" style={{ ...S.bigCard, padding: 0, overflow: "hidden" }}>
-            {recentSales.length === 0 ? <div style={{ fontSize: 11, color: "#5b6470", padding: "14px 16px" }}>Belum ada transaksi</div>
+            {recentSales.length === 0 ? <div style={{ fontSize: 11, color: "#5b6470", padding: "14px 16px" }}>No transactions yet</div>
               : (<>
                 <div style={S.tapeHead}>
                   <span style={{ width: 70 }}>TIME</span>
@@ -1067,7 +1067,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
           {/* Antrian + revenue */}
           <div style={S.dataGrid}>
             <div className="card" style={S.bigCard}>
-              <Section label="ANTRIAN ORDER LIVE" accent="#3b82f6" mt={6}
+              <Section label="LIVE ORDER QUEUE" accent="#3b82f6" mt={6}
                 right={<button onClick={() => openRight("tools", "dashboard")} style={S.linkBtn}>dashboard outlet →</button>} />
               <div style={S.queueRow}>
                 {QUEUE.map(q => {
@@ -1095,7 +1095,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
               </div>
             </div>
             <div className="card" style={S.bigCard}>
-              <Section label="REVENUE 7 HARI" accent="#10b981" mt={6}
+              <Section label="REVENUE 7 DAYS" accent="#10b981" mt={6}
                 right={<span style={{ fontSize: 12.5, fontWeight: 800, color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>{fmtRp(dayRev.reduce((s, x) => s + x.rev, 0))}</span>} />
               <div style={S.barRow}>
                 {dayRev.map((x, i) => (
@@ -1111,7 +1111,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
           </div>
 
           {/* Monitoring realtime */}
-          <Section label="MONITORING REALTIME" accent="#ef4444" mt={14}
+          <Section label="REAL-TIME MONITORING" accent="#ef4444" mt={14}
             right={<span style={{ fontSize: 10.5, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>{notifs.length} alert · {crit} mendesak</span>} />
           <div className="card" style={{ ...S.bigCard, padding: "12px 14px" }}>
             {feed.length === 0 ? <div style={{ fontSize: 11, color: "#10b981" }}>✓ Tidak ada alert — semua aman</div>
@@ -1161,11 +1161,11 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
         {onLogout && <button className="tile" style={{ ...S.footBtn, color: "#f87171", borderColor: "#f8717133" }} onClick={onLogout}>Logout</button>}
         <span style={{ flex: 1 }} />
         <KaryaLocaleSwitcher />
-        <span style={S.footNote}>karyaOS · 145+ modul · 🎬 Cinema · 🍽️ F&B · 🛡️ Enterprise · v5 · <kbd style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 4, padding: "1px 5px", fontSize: 9.5, color: "rgba(255,255,255,0.6)", fontFamily: "'Geist Mono',monospace" }}>⌘K</kbd> untuk cari</span>
+        <span style={S.footNote}>karyaOS · 145+ modules · 🎬 Cinema · 🍽️ F&B · 🛡️ Enterprise · v5 · <kbd style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 4, padding: "1px 5px", fontSize: 9.5, color: "rgba(255,255,255,0.6)", fontFamily: "'Geist Mono',monospace" }}>⌘K</kbd> to search</span>
       </div>
 
       {/* ⌘K Universal Command Palette */}
-      <CommandPalette items={commandItems} placeholder="Cari modul, surface, atau action…" />
+      <CommandPalette items={commandItems} placeholder="Search modules, surfaces, or actions…" />
 
       {/* Upgrade Prompt — saat klik modul yang ke-gate plan */}
       {upgradePrompt && (

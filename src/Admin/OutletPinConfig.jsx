@@ -291,7 +291,7 @@ function PinEditModal({ outlet, onClose, onSaved, API }) {
         <Field label="🗺️ ALAMAT (for search)">
           <div style={{ display: "flex", gap: 6 }}>
             <input value={form.address} onChange={e => setForm({...form, address: e.target.value})} onKeyDown={e => e.key === "Enter" && searchAddress()} placeholder="cth: Plaza Indonesia, Jakarta Pusat" style={inp} />
-            <button onClick={searchAddress} disabled={!form.address} style={{ padding: "8px 14px", background: CYAN, border: "none", borderRadius: 8, color: "#001620", fontSize: 12, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}>🔍 Cari</button>
+            <button onClick={searchAddress} disabled={!form.address} style={{ padding: "8px 14px", background: CYAN, border: "none", borderRadius: 8, color: "#001620", fontSize: 12, fontWeight: 800, cursor: "pointer", whiteSpace: "nowrap" }}>🔍 Search</button>
           </div>
         </Field>
 

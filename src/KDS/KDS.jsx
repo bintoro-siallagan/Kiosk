@@ -225,7 +225,7 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
       <div style={styles.body}>
         {/* Status columns */}
         <div style={styles.columns}>
-          <StatusColumn title="ANTRIAN" subtitle="Queued" count={grouped.queued.length} color="#fbbf24">
+          <StatusColumn title="QUEUE" subtitle="Queued" count={grouped.queued.length} color="#fbbf24">
             {grouped.queued.map(t => (
               <TicketCard key={t.id} ticket={t} station={stationMap[t.station_id]} now={now}
                 onAdvance={() => advance(t.id, t.status)} ctaLabel="Mulai Buat →" />

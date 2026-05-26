@@ -137,7 +137,7 @@ export default function CinemaLoyalty({ apiBase = "" }) {
           <input value={searchPhone} onChange={e => setSearchPhone(e.target.value)}
             placeholder="No. HP member (08...)" style={{ ...inp, flex: 1, minWidth: 200 }}
             onKeyDown={e => e.key === "Enter" && lookup()} />
-          <button onClick={() => lookup()} style={B.lookup}>🔍 Cari Member</button>
+          <button onClick={() => lookup()} style={B.lookup}>🔍 Search Member</button>
           <button onClick={() => { setMember(null); setSearchPhone(""); setForm({ customer_phone: searchPhone }); }} style={B.add}>＋ List Baru</button>
         </div>
       </div>

@@ -48,7 +48,7 @@ export default function CinemaCRM({ apiBase = "" }) {
         </div>
       </div>
 
-      <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari phone / email / genre…"
+      <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search phone / email / genre…"
         style={{ width: "100%", padding: "10px 14px", background: "#0a0e16", border: `1px solid ${C.border}`, borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", marginBottom: 12 }} />
 
       <div style={{ display: "grid", gridTemplateColumns: picked ? "2fr 1fr" : "1fr", gap: 14 }}>

@@ -121,7 +121,7 @@ export default function AdminCoa({ apiBase = "" }) {
 
       {/* Toolbar */}
       <div style={{ ...S.card, marginTop: 14, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Cari kode / nama / grup…" style={{ ...S.input, flex: 1, minWidth: 220 }} />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search code / name / group…" style={{ ...S.input, flex: 1, minWidth: 220 }} />
         <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#9ca3af" }}>
           <input type="checkbox" checked={showBalances} onChange={e => setShowBalances(e.target.checked)} /> 💰 Saldo
         </label>

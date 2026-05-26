@@ -686,7 +686,7 @@ function CinemaOpsInner({ apiBase }) {
               </div>
               <button onClick={() => setTmdbModal(null)} style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 7, color: "#e6edf3", padding: "6px 12px", fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
             </div>
-            {tmdbModal.loading && <div style={{ padding: 30, textAlign: "center", color: "#9ca3af" }}>⏳ Mencari di TMDB...</div>}
+            {tmdbModal.loading && <div style={{ padding: 30, textAlign: "center", color: "#9ca3af" }}>⏳ Searching in TMDB...</div>}
             {tmdbModal.error && <div style={{ padding: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, color: "#fca5a5", fontSize: 13 }}>⚠ {tmdbModal.error}<br/><span style={{ fontSize: 11, opacity: 0.7 }}>Pastikan TMDB_API_KEY sudah di-set di server .env (free signup di themoviedb.org)</span></div>}
             {!tmdbModal.loading && !tmdbModal.error && tmdbModal.results.length === 0 && <div style={{ padding: 30, textAlign: "center", color: "#9ca3af" }}>None hasil</div>}
             <div style={{ display: "grid", gap: 8 }}>
