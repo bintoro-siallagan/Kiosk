@@ -478,6 +478,11 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "📋 Submit Daily Audit",    icon: "📋", c: "#10b981", on: () => openTab("?audit") },
       { label: "📍 Visit Check-in (Mobile)", icon: "📍", c: "#22d3ee", on: () => openTab("?visit") },
     ] },
+    // 🚀 KOLR — outlet launch readiness
+    { title: "🚀 Outlet Launch Readiness (KOLR)", accent: "#a855f7", items: [
+      { label: "🚀 Launch Tracker",         icon: "🚀", c: "#a855f7", on: () => openRight("tools", "outlet_launch") },
+      { label: "🔏 Field Worker Sign-off",  icon: "🔏", c: "#10b981", on: () => openTab("?launch") },
+    ] },
     { title: "💼 Manajemen & Data", accent: "#3b82f6", items: [
       { label: "Member & Customer", icon: "👥", c: "#3b82f6", on: () => openRight("members") },
       { label: "Promo Code", icon: "🏷️", c: "#ec4899", on: () => openRight("promo") },
