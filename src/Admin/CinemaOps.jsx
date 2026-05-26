@@ -1059,8 +1059,16 @@ function ShowtimeSlotSuggest({ base, filmId, studioId, date, onPick, onBulkCreat
       if (next.has(time)) next.delete(time); else next.add(time);
       return next;
     });
+    // Sync ke form.start_time biar Button B (push outlet) bisa pakai juga.
+    // Single-pill workflow: click 1 jam → form auto-fill → bisa push outlet langsung.
+    // Multi-pill workflow: setiap click update ke jam terakhir; Button A multi-jam pakai Set.
+    if (typeof onPick === "function") onPick(time);
   };
-  const selectAll = () => setSelected(new Set(available.map(s => s.start)));
+  const selectAll = () => {
+    setSelected(new Set(available.map(s => s.start)));
+    // Auto-fill form ke jam pertama (mostly untuk konsistensi visual)
+    if (typeof onPick === "function" && available[0]) onPick(available[0].start);
+  };
   const clearAll = () => setSelected(new Set());
   const selectedArr = [...selected].sort();
 
