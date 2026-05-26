@@ -954,7 +954,7 @@ const K = {
   root:     {fontFamily:"'Inter',sans-serif",background:PREMIUM_BG,backgroundAttachment:"fixed",color:"#fff",minHeight:"100vh",display:"flex",flexDirection:"column",overflowX:"hidden",position:"relative"},
 
   // ── SPLIT LAYOUT ──
-  splitRoot:{height:"100vh",background:PREMIUM_BG,backgroundImage:`${PREMIUM_OVERLAY},${PREMIUM_BG}`,color:"#fff",display:"flex",overflow:"hidden",fontFamily:"'Inter',sans-serif"},
+  splitRoot:{height:"100vh",background:PREMIUM_BG,backgroundAttachment:"fixed",color:"#fff",display:"flex",overflow:"hidden",fontFamily:"'Inter',sans-serif"},
   splitLeft:{flex:"0 0 60%",display:"flex",flexDirection:"column",borderRight:BORDER_DEFAULT,overflow:"hidden"},
   splitRight:{flex:"0 0 40%",display:"flex",flexDirection:"column",background:"linear-gradient(180deg,rgba(13,17,23,0.6),rgba(8,9,10,0.85))",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderLeft:BORDER_DEFAULT},
   splitMenuScroll:{flex:1,overflowY:"auto",padding:"12px 12px 16px"},
