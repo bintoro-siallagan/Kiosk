@@ -191,6 +191,31 @@ function setupCompanies(app, opts = {}) {
     res.json({ companies: row ? [row] : [], scope: 'self' });
   });
 
+  // GET /branding — MUST come before /:id (else "branding" matches as id param)
+  // Customer-facing endpoint — no auth required, public access.
+  router.get('/branding', (req, res) => {
+    const sc = req.companyScope || {};
+    let companyId = sc.company_id;
+    if (!companyId) {
+      const row = db.prepare(`SELECT id FROM companies WHERE status='active' ORDER BY id LIMIT 1`).get();
+      companyId = row?.id || 1;
+    }
+    const c = db.prepare(`SELECT id, code, name, primary_vertical, brand_color, logo_url FROM companies WHERE id = ?`).get(companyId);
+    if (!c) return res.json({
+      company_id: null, name: 'karyaOS',
+      brand_color: '#FF6B35', brand_secondary: '#E55A2B',
+      logo_url: '/logo.png', vertical: 'fnb',
+    });
+    const brand = c.brand_color || '#FF6B35';
+    res.json({
+      company_id: c.id, company_code: c.code, name: c.name,
+      brand_color: brand,
+      brand_secondary: darkenHex(brand, 0.2),
+      logo_url: c.logo_url || '/logo.png',
+      vertical: c.primary_vertical,
+    });
+  });
+
   router.get('/:id', (req, res) => {
     const row = db.prepare(`SELECT * FROM companies WHERE id = ?`).get(req.params.id);
     if (!row) return res.status(404).json({ error: 'company not found' });
@@ -299,39 +324,6 @@ function setupCompanies(app, opts = {}) {
       console.error('[signup] error', e);
       res.status(500).json({ error: e.message });
     }
-  });
-
-  // GET /branding — return current tenant's brand info untuk kiosk/customer-facing surfaces
-  // Resolve company dari req.companyScope (auto-injected via outlet param atau x-company-id).
-  // No auth required — customer kiosk surface boleh akses.
-  router.get('/branding', (req, res) => {
-    const sc = req.companyScope || {};
-    // Outlet param > x-company-id > fallback default
-    let companyId = sc.company_id;
-    if (!companyId) {
-      // Fallback: default to company_id=1 (BTS / first tenant)
-      const row = db.prepare(`SELECT id FROM companies WHERE status='active' ORDER BY id LIMIT 1`).get();
-      companyId = row?.id || 1;
-    }
-    const c = db.prepare(`SELECT id, code, name, primary_vertical, brand_color, logo_url FROM companies WHERE id = ?`).get(companyId);
-    if (!c) return res.json({
-      company_id: null, name: 'karyaOS',
-      brand_color: '#FF6B35',  // default orange
-      brand_secondary: '#E55A2B',
-      logo_url: '/logo.png',
-      vertical: 'fnb',
-    });
-    // Derive secondary (darker) from primary brand_color
-    const brand = c.brand_color || '#FF6B35';
-    res.json({
-      company_id: c.id,
-      company_code: c.code,
-      name: c.name,
-      brand_color: brand,
-      brand_secondary: darkenHex(brand, 0.2),
-      logo_url: c.logo_url || '/logo.png',
-      vertical: c.primary_vertical,
-    });
   });
 
   // Platform summary (super-admin only) — KPI agregat per company
