@@ -242,8 +242,8 @@ const CSS = `
 `;
 
 const L = {
-  root:    { fontFamily: "'Inter',sans-serif", background: "linear-gradient(160deg,#0a1428 0%,#152348 50%,#1e3a8a 100%)", color: "#fff", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, position: "relative" },
-  wrap:    { position: "relative", zIndex: 1, textAlign: "center", padding: "40px 28px", maxWidth: 400, width: "100%", background: "rgba(10,20,40,0.55)", backdropFilter: "blur(20px) saturate(140%)", WebkitBackdropFilter: "blur(20px) saturate(140%)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 18, boxShadow: "0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)" },
+  root:    { fontFamily: "'Inter',sans-serif", background: "linear-gradient(160deg,#070b16 0%,#0d1424 50%,#121b35 100%)", color: "#fff", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, position: "relative" },
+  wrap:    { position: "relative", zIndex: 1, textAlign: "center", padding: "40px 28px", maxWidth: 400, width: "100%", background: "rgba(10,15,28,0.7)", backdropFilter: "blur(20px) saturate(140%)", WebkitBackdropFilter: "blur(20px) saturate(140%)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 18, boxShadow: "0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)" },
   logoImg: { width: 78, height: 78, objectFit: "contain", marginBottom: 8 },
   brand:   { fontFamily: "'Geist Mono',monospace", fontSize: 26, fontWeight: 800, color: "#F59E0B", letterSpacing: 4, marginBottom: 4 },
   title:   { fontFamily: "'Geist Mono',monospace", fontSize: 11, letterSpacing: 4, color: "#cbd5e1", marginBottom: 4 },
