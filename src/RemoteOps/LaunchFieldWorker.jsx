@@ -109,24 +109,25 @@ function PickStep({ launches, activeDept, setActiveDept, onPick, err, onRefresh 
   ];
 
   return (
-    <div style={{ padding: "30px 22px" }}>
-      <div style={{ textAlign: "center", marginBottom: 26 }}>
-        <div style={{ fontSize: 44, marginBottom: 6 }}>🚀</div>
-        <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 3, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>karyaOS / KOLR</div>
-        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginTop: 4 }}>Outlet Launch — Field Worker</div>
-        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 6, lineHeight: 1.5 }}>Pilih departemen Anda lalu pilih project.</div>
+    <div style={{ padding: "max(20px, env(safe-area-inset-top)) clamp(14px, 4vw, 24px) 30px", boxSizing: "border-box" }}>
+      <div style={{ textAlign: "center", marginBottom: 22 }}>
+        <div style={{ fontSize: 40, marginBottom: 4 }}>🚀</div>
+        <div style={{ fontSize: 10, color: PURPLE, letterSpacing: 2.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>karyaOS / KOLR</div>
+        <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", marginTop: 4, lineHeight: 1.2 }}>Outlet Launch · Field Worker</div>
+        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 6, lineHeight: 1.5 }}>Pilih departemen lalu pilih project.</div>
       </div>
 
       <Field label="🎯 DEPARTEMEN ANDA">
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 145px), 1fr))", gap: 6 }}>
           {DEPTS.map(d => (
             <button key={d.code} onClick={() => setActiveDept(d.code)} style={{
-              padding: "10px 12px",
+              padding: "10px 10px", minHeight: 48,
               background: activeDept === d.code ? PURPLE : "rgba(0,0,0,0.3)",
               border: `1px solid ${activeDept === d.code ? PURPLE : "rgba(255,255,255,0.1)"}`,
               borderRadius: 8, color: activeDept === d.code ? "#fff" : "#cbd5e1",
               fontSize: 11, fontWeight: 700, fontFamily: "inherit",
-              cursor: "pointer", textAlign: "left",
+              cursor: "pointer", textAlign: "left", lineHeight: 1.3,
+              wordBreak: "break-word",
             }}>{d.label}</button>
           ))}
         </div>
@@ -208,9 +209,9 @@ function FillStep({ launch, detail, activeDept, onUpdate, onUpload, onBack, onSi
   const stages = detail.stages.filter(s => tasks.some(t => t.stage === s.code));
 
   return (
-    <div style={{ padding: "20px 18px 100px" }}>
+    <div style={{ padding: "max(16px, env(safe-area-inset-top)) clamp(12px, 4vw, 22px) calc(110px + env(safe-area-inset-bottom))", boxSizing: "border-box" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <button onClick={onBack} style={{ background: "transparent", border: "none", color: "#94a3b8", fontSize: 14, cursor: "pointer" }}>← Ganti project</button>
+        <button onClick={onBack} style={{ background: "transparent", border: "none", color: "#94a3b8", fontSize: 14, cursor: "pointer", padding: "8px 4px" }}>← Ganti project</button>
       </div>
 
       <div style={{ padding: 12, background: `${dept.color}11`, border: `1px solid ${dept.color}44`, borderRadius: 12, marginBottom: 14 }}>
@@ -253,7 +254,12 @@ function FillStep({ launch, detail, activeDept, onUpdate, onUpload, onBack, onSi
       })}
 
       {!signoff && readiness?.can_signoff && (
-        <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: 14, background: "linear-gradient(180deg, transparent, rgba(10,15,28,0.95) 30%)", display: "flex", justifyContent: "center" }}>
+        <div style={{
+          position: "fixed", bottom: 0, left: 0, right: 0,
+          padding: `14px clamp(12px, 4vw, 22px) calc(14px + env(safe-area-inset-bottom))`,
+          background: "linear-gradient(180deg, transparent, rgba(10,15,28,0.95) 30%)",
+          display: "flex", justifyContent: "center", boxSizing: "border-box",
+        }}>
           <button onClick={onSignoff} style={{ maxWidth: 460, width: "100%", padding: "16px 24px", background: `linear-gradient(135deg,${GREEN},#059669)`, border: "none", borderRadius: 12, color: "#fff", fontSize: 15, fontWeight: 900, fontFamily: "inherit", cursor: "pointer", boxShadow: "0 8px 24px rgba(16,185,129,0.4)" }}>
             🔏 Lanjut ke Sign-off
           </button>
@@ -289,21 +295,21 @@ function TaskItem({ task, onUpdate, onUpload, disabled }) {
         ))}
       </div>
 
-      {task.requires_photo === 1 && task.status === "done" && (
-        <>
-          {task.evidence?.length > 0 ? (
-            <div style={{ display: "flex", gap: 4, marginBottom: 6, flexWrap: "wrap" }}>
+      {task.requires_photo === 1 && (
+        <div style={{ marginTop: 8 }}>
+          {task.evidence?.length > 0 && (
+            <div style={{ display: "flex", gap: 4, marginBottom: 8, flexWrap: "wrap" }}>
               {task.evidence.map(fn => (
                 <img key={fn} src={`${API_HOST}/api/launch/evidence/${fn}`} alt="" style={{ width: 60, height: 60, objectFit: "cover", borderRadius: 4, border: "1px solid rgba(255,255,255,0.1)" }} />
               ))}
             </div>
-          ) : (
-            <div style={{ fontSize: 10, color: AMBER, marginBottom: 6 }}>⚠ Foto bukti belum ada</div>
           )}
-          {!disabled && (
-            <CameraCapture facingMode="environment" label="📸 Upload Bukti Foto" onCapture={(dataUrl) => onUpload(task.id, dataUrl)} />
+          {!disabled ? (
+            <CameraCapture facingMode="environment" label={task.evidence?.length > 0 ? "📸 Tambah Foto Lagi" : "📸 Ambil Foto Bukti"} onCapture={(dataUrl) => onUpload(task.id, dataUrl)} />
+          ) : task.evidence?.length === 0 && (
+            <div style={{ fontSize: 11, color: AMBER, padding: "8px 12px", background: "rgba(245,158,11,0.08)", border: `1px solid ${AMBER}33`, borderRadius: 8 }}>⚠ Foto bukti belum di-upload</div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
@@ -389,9 +395,20 @@ function DoneStep({ launch, dept, onAgain }) {
 
 function Shell({ children }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: "linear-gradient(160deg,#050810 0%,#0c0f1a 50%,#08090f 100%)", color: "#e6edf3", fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif", overflowY: "auto" }}>
+    <div style={{
+      position: "fixed", inset: 0,
+      background: "linear-gradient(160deg,#050810 0%,#0c0f1a 50%,#08090f 100%)",
+      color: "#e6edf3", fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif",
+      overflowY: "auto", overflowX: "hidden",
+      WebkitOverflowScrolling: "touch",
+    }}>
       <div aria-hidden style={{ position: "fixed", inset: 0, background: "radial-gradient(700px 500px at 50% 0%, rgba(168,85,247,0.1), transparent 60%)", pointerEvents: "none" }} />
-      <div style={{ position: "relative", width: "min(100%, 560px)", margin: "0 auto" }}>{children}</div>
+      <div style={{
+        position: "relative",
+        width: "min(100%, 560px)",
+        margin: "0 auto",
+        boxSizing: "border-box",
+      }}>{children}</div>
     </div>
   );
 }
