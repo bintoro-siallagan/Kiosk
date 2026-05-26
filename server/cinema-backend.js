@@ -2220,17 +2220,16 @@ function setupCinema(app, opts = {}) {
     const skipped = [];
     const today = new Date(); today.setHours(0, 0, 0, 0);
 
-    // Resolve price kalau 0 — pakai outlet pricing lookup
-    let basePrice = t.price;
-    if (!basePrice) {
-      try {
-        const studio = db.prepare(`SELECT outlet, studio_type FROM cinema_studios WHERE id = ?`).get(t.studio_id);
-        const r = studio?.outlet ? resolveOutletPrice(studio.outlet, studio.studio_type || 'Regular', today.toISOString().slice(0, 10)) : null;
-        basePrice = r?.price || 50000;
-      } catch { basePrice = 50000; }
-    }
+    // Get studio info untuk resolve price per-date
+    const studioInfo = db.prepare(`SELECT outlet, studio_type, company_id FROM cinema_studios WHERE id = ?`).get(t.studio_id);
+    const studioOutlet = studioInfo?.outlet;
+    const studioType = studioInfo?.studio_type || 'Regular';
 
-    const ins = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price, format) VALUES (?,?,?,?,?,?)`);
+    // Multi-tenant: derive company_id (dari studio, fallback ke scope, fallback cinema=2)
+    const scope = req.companyScope || { is_super_admin: true };
+    const companyId = studioInfo?.company_id || (scope.is_super_admin ? 2 : scope.company_id);
+
+    const ins = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price, format, company_id) VALUES (?,?,?,?,?,?,?)`);
     const exists = db.prepare(`SELECT id FROM cinema_showtimes WHERE studio_id = ? AND show_date = ? AND start_time = ?`);
 
     for (let i = 0; i < days; i++) {
@@ -2246,8 +2245,18 @@ function setupCinema(app, opts = {}) {
         skipped.push({ date: dateStr, reason: 'exists' });
         continue;
       }
-      const info = ins.run(t.film_id, t.studio_id, dateStr, t.start_time, basePrice, t.format || '2D');
-      created.push({ date: dateStr, id: info.lastInsertRowid });
+      // Resolve price PER DATE — biar weekday/weekend/holiday rate beda per tanggal
+      let price = t.price;
+      let priceSource = price > 0 ? 'manual_template' : null;
+      if (!price && studioOutlet) {
+        try {
+          const r = resolveOutletPrice(studioOutlet, studioType, dateStr);
+          if (r?.price > 0) { price = r.price; priceSource = r.source; }
+        } catch {}
+      }
+      if (!price) { price = 50000; priceSource = priceSource || 'default'; }
+      const info = ins.run(t.film_id, t.studio_id, dateStr, t.start_time, price, t.format || '2D', companyId);
+      created.push({ date: dateStr, id: info.lastInsertRowid, price, price_source: priceSource });
     }
 
     db.prepare(`UPDATE cinema_showtime_templates SET last_generated_at = ? WHERE id = ?`)
@@ -2261,23 +2270,22 @@ function setupCinema(app, opts = {}) {
     const days = Math.min(60, Math.max(1, parseInt(req.query.days || req.body?.days, 10) || 14));
     const templates = db.prepare(`SELECT * FROM cinema_showtime_templates WHERE is_active = 1`).all();
     const results = [];
-    const ins = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price, format) VALUES (?,?,?,?,?,?)`);
+    const ins = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price, format, company_id) VALUES (?,?,?,?,?,?,?)`);
     const exists = db.prepare(`SELECT id FROM cinema_showtimes WHERE studio_id = ? AND show_date = ? AND start_time = ?`);
     const updLast = db.prepare(`UPDATE cinema_showtime_templates SET last_generated_at = ? WHERE id = ?`);
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const nowSec = Math.floor(Date.now() / 1000);
+    const scope = req.companyScope || { is_super_admin: true };
 
     for (const t of templates) {
       const dowSet = new Set(String(t.days_of_week).split(',').map(d => parseInt(d, 10)));
-      let basePrice = t.price;
-      if (!basePrice) {
-        try {
-          const studio = db.prepare(`SELECT outlet, studio_type FROM cinema_studios WHERE id = ?`).get(t.studio_id);
-          const r = studio?.outlet ? resolveOutletPrice(studio.outlet, studio.studio_type || 'Regular', today.toISOString().slice(0, 10)) : null;
-          basePrice = r?.price || 50000;
-        } catch { basePrice = 50000; }
-      }
-      let created = 0, skipped = 0;
+      // Load studio info untuk per-date price resolution + company tag
+      const studioInfo = db.prepare(`SELECT outlet, studio_type, company_id FROM cinema_studios WHERE id = ?`).get(t.studio_id);
+      const studioOutlet = studioInfo?.outlet;
+      const studioType = studioInfo?.studio_type || 'Regular';
+      const companyId = studioInfo?.company_id || (scope.is_super_admin ? 2 : scope.company_id);
+
+      let created = 0, skipped = 0, priceBreakdown = { weekday: 0, weekend: 0, holiday: 0, manual: 0, default: 0 };
       for (let i = 0; i < days; i++) {
         const d = new Date(today); d.setDate(d.getDate() + i);
         if (!dowSet.has(d.getDay())) continue;
@@ -2285,11 +2293,24 @@ function setupCinema(app, opts = {}) {
         if (t.active_from && dateStr < t.active_from) continue;
         if (t.active_until && dateStr > t.active_until) continue;
         if (exists.get(t.studio_id, dateStr, t.start_time)) { skipped++; continue; }
-        ins.run(t.film_id, t.studio_id, dateStr, t.start_time, basePrice, t.format || '2D');
+
+        // Per-date price resolution: weekday/weekend/holiday otomatis per tanggal
+        let price = t.price;
+        let priceSource = price > 0 ? 'manual' : null;
+        if (!price && studioOutlet) {
+          try {
+            const r = resolveOutletPrice(studioOutlet, studioType, dateStr);
+            if (r?.price > 0) { price = r.price; priceSource = r.source; }
+          } catch {}
+        }
+        if (!price) { price = 50000; priceSource = 'default'; }
+        priceBreakdown[priceSource] = (priceBreakdown[priceSource] || 0) + 1;
+
+        ins.run(t.film_id, t.studio_id, dateStr, t.start_time, price, t.format || '2D', companyId);
         created++;
       }
       updLast.run(nowSec, t.id);
-      results.push({ id: t.id, name: t.name, created, skipped });
+      results.push({ id: t.id, name: t.name, created, skipped, price_breakdown: priceBreakdown });
     }
     res.json({ ok: true, count: results.length, days_window: days, results });
   });
@@ -4818,24 +4839,21 @@ function setupCinema(app, opts = {}) {
       if (archiveR.changes > 0) console.log(`[cinema cron] archived ${archiveR.changes} old showtimes (cutoff: ${cutoffStr})`);
 
       // 2) Auto-generate template aktif untuk 14 hari ke depan
+      // Price PER DATE — weekday/weekend/holiday resolved otomatis per tanggal
       const templates = db.prepare(`SELECT * FROM cinema_showtime_templates WHERE is_active = 1`).all();
       let totalCreated = 0;
       const today = new Date(); today.setHours(0, 0, 0, 0);
-      const ins = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price, format) VALUES (?,?,?,?,?,?)`);
+      const ins = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price, format, company_id) VALUES (?,?,?,?,?,?,?)`);
       const exists = db.prepare(`SELECT id FROM cinema_showtimes WHERE studio_id = ? AND show_date = ? AND start_time = ?`);
       const updLast = db.prepare(`UPDATE cinema_showtime_templates SET last_generated_at = ? WHERE id = ?`);
       const nowSec = Math.floor(Date.now() / 1000);
 
       for (const t of templates) {
         const dowSet = new Set(String(t.days_of_week).split(',').map(d => parseInt(d, 10)));
-        let basePrice = t.price;
-        if (!basePrice) {
-          try {
-            const studio = db.prepare(`SELECT outlet, studio_type FROM cinema_studios WHERE id = ?`).get(t.studio_id);
-            const r = studio?.outlet ? resolveOutletPrice(studio.outlet, studio.studio_type || 'Regular', today.toISOString().slice(0, 10)) : null;
-            basePrice = r?.price || 50000;
-          } catch { basePrice = 50000; }
-        }
+        const studioInfo = db.prepare(`SELECT outlet, studio_type, company_id FROM cinema_studios WHERE id = ?`).get(t.studio_id);
+        const studioOutlet = studioInfo?.outlet;
+        const studioType = studioInfo?.studio_type || 'Regular';
+        const companyId = studioInfo?.company_id || 2;
         for (let i = 0; i < 14; i++) {
           const d = new Date(today); d.setDate(d.getDate() + i);
           if (!dowSet.has(d.getDay())) continue;
@@ -4843,12 +4861,21 @@ function setupCinema(app, opts = {}) {
           if (t.active_from && dateStr < t.active_from) continue;
           if (t.active_until && dateStr > t.active_until) continue;
           if (exists.get(t.studio_id, dateStr, t.start_time)) continue;
-          ins.run(t.film_id, t.studio_id, dateStr, t.start_time, basePrice, t.format || '2D');
+          // Per-date price (weekday/weekend/holiday otomatis)
+          let price = t.price;
+          if (!price && studioOutlet) {
+            try {
+              const r = resolveOutletPrice(studioOutlet, studioType, dateStr);
+              if (r?.price > 0) price = r.price;
+            } catch {}
+          }
+          if (!price) price = 50000;
+          ins.run(t.film_id, t.studio_id, dateStr, t.start_time, price, t.format || '2D', companyId);
           totalCreated++;
         }
         updLast.run(nowSec, t.id);
       }
-      if (totalCreated > 0) console.log(`[cinema cron] auto-generated ${totalCreated} showtimes from ${templates.length} active templates`);
+      if (totalCreated > 0) console.log(`[cinema cron] auto-generated ${totalCreated} showtimes from ${templates.length} active templates (price resolved per date)`);
     } catch (e) {
       console.error('[cinema cron] error:', e.message);
     }
