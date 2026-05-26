@@ -72,7 +72,7 @@ export function UiKitProvider({ children }) {
   const [promptReq, setPromptReq]   = useState(null);     // { title, label, defaultValue, onResolve }
   const [toasts, setToasts]         = useState([]);       // [{id, message, kind, action, ttl}]
 
-  const confirm = useCallback(({ title = "Konfirmasi", message = "Apakah Anda yakin?", danger = false, okLabel = "Lanjut", cancelLabel = "Batal" } = {}) => {
+  const confirm = useCallback(({ title = "Confirm", message = "Are you sure?", danger = false, okLabel = "Continue", cancelLabel = "Cancel" } = {}) => {
     return new Promise((resolve) => setConfirmReq({ title, message, danger, okLabel, cancelLabel, onResolve: resolve }));
   }, []);
 
@@ -184,7 +184,7 @@ export function UiKitProvider({ children }) {
           <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "2px solid #3b82f6", borderRadius: 14, padding: 24, maxWidth: 540, width: "100%", fontFamily: "'Inter',sans-serif", color: "#fff" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
               <div style={{ fontSize: 18, fontWeight: 800 }}>⌨️ Keyboard Shortcuts</div>
-              <button onClick={() => setShortcutsOpen(false)} aria-label="Tutup"
+              <button onClick={() => setShortcutsOpen(false)} aria-label="Close"
                 style={{ background: "transparent", border: "1px solid #2a2b30", color: "#9ca3af", padding: "3px 9px", borderRadius: 6, cursor: "pointer", fontFamily: "inherit" }}>×</button>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "8px 16px", fontSize: 13 }}>
@@ -201,7 +201,7 @@ export function UiKitProvider({ children }) {
               ))}
             </div>
             <div style={{ marginTop: 16, paddingTop: 12, borderTop: "1px solid #2a2b30", fontSize: 11, color: "#6b7280", textAlign: "center" }}>
-              Tip: tekan <kbd style={ckKbd}>?</kbd> kapanpun untuk membuka panel ini
+              Tip: press <kbd style={ckKbd}>?</kbd> anytime to open this panel
             </div>
           </div>
         </div>
@@ -227,7 +227,7 @@ function PromptDialog({ req, onClose }) {
           onKeyDown={e => { if (e.key === "Enter") submit(); }}
           style={{ width: "100%", padding: "10px 14px", background: "#0a0e16", border: "1px solid #2a2b30", borderRadius: 9, color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
         <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-          <button onClick={() => { req.onResolve(null); onClose(); }} style={{ flex: 1, background: "#1b212c", border: "1px solid #2a2b30", color: "#9ca3af", padding: "10px 16px", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+          <button onClick={() => { req.onResolve(null); onClose(); }} style={{ flex: 1, background: "#1b212c", border: "1px solid #2a2b30", color: "#9ca3af", padding: "10px 16px", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
           <button onClick={submit} style={{ flex: 1, background: "#3b82f6", border: "none", color: "#fff", padding: "10px 16px", borderRadius: 9, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>OK</button>
         </div>
       </div>
@@ -292,7 +292,7 @@ export function Help({ text }) {
 // ════════════════════════════════════════════════════════════════════
 // COMPONENT: EmptyState
 // ════════════════════════════════════════════════════════════════════
-export function EmptyState({ icon = "📭", title = "Belum ada data", desc = "", action }) {
+export function EmptyState({ icon = "📭", title = "No data yet", desc = "", action }) {
   return (
     <div style={{
       background: "#0d1117", border: `1px dashed ${C.border}`, borderRadius: 12,
@@ -357,9 +357,9 @@ export function ValidatedInput({ value, onChange, validate, error: extError, ...
 
 // Helper validators
 export const validators = {
-  required: (v) => !v || (typeof v === "string" && !v.trim()) ? "Field ini wajib diisi" : null,
-  email:    (v) => v && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v) ? "Format email tidak valid" : null,
-  phone:    (v) => v && !/^[0-9+\-\s]{8,}$/.test(v) ? "Format nomor telepon tidak valid" : null,
+  required: (v) => !v || (typeof v === "string" && !v.trim()) ? "This field is required" : null,
+  email:    (v) => v && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v) ? "Invalid email format" : null,
+  phone:    (v) => v && !/^[0-9+\-\s]{8,}$/.test(v) ? "Invalid phone number format" : null,
   min:      (n) => (v) => v != null && Number(v) < n ? `Minimum ${n}` : null,
   max:      (n) => (v) => v != null && Number(v) > n ? `Maximum ${n}` : null,
   minLen:   (n) => (v) => v && v.length < n ? `Minimum ${n} karakter` : null,
@@ -434,11 +434,11 @@ export function StatHeader({ stats = [] }) {
 // ════════════════════════════════════════════════════════════════════
 // COMPONENT: SearchBar
 // ════════════════════════════════════════════════════════════════════
-export function SearchBar({ value, onChange, placeholder = "Cari…", shortcut = "/" }) {
+export function SearchBar({ value, onChange, placeholder = "Search…", shortcut = "/" }) {
   const ref = useRef(null);
   useKeyboardShortcut(shortcut, () => ref.current?.focus());
   return (
-    <input ref={ref} value={value} onChange={e => onChange(e.target.value)} placeholder={`🔍 ${placeholder}  (tekan ${shortcut})`}
+    <input ref={ref} value={value} onChange={e => onChange(e.target.value)} placeholder={`🔍 ${placeholder}  (press ${shortcut})`}
       style={{ width: "100%", padding: "10px 14px", background: "#0a0e16", border: `1px solid ${C.border}`, borderRadius: 10, color: "#fff", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }} />
   );
 }
@@ -480,7 +480,7 @@ export function useKeyboardShortcut(key, handler, opts = {}) {
 
 // Drop-in row action buttons: Edit (amber) + Delete (red).
 // Usage:  <CrudButtons onEdit={() => setEditing(row)} onDelete={() => remove(row)} />
-export function CrudButtons({ onEdit, onDelete, editTitle = "Edit", deleteTitle = "Hapus", size = "sm", style = {} }) {
+export function CrudButtons({ onEdit, onDelete, editTitle = "Edit", deleteTitle = "Delete", size = "sm", style = {} }) {
   const padding = size === "sm" ? "3px 7px" : "5px 10px";
   const fontSize = size === "sm" ? 11 : 12;
   return (
@@ -501,7 +501,7 @@ export function CrudButtons({ onEdit, onDelete, editTitle = "Edit", deleteTitle 
 //   [{ key, label, type?: "text|number|select|date|textarea|checkbox", options?, placeholder?, required?, span?: 1|2, readOnly? }]
 // Type "select" uses options as [[value, label], ...].
 // `span: 2` makes the field full-width (default 1 = half-width on 2-col grid).
-export function EditModal({ open, title, data, fields = [], onChange, onClose, onSave, saveLabel = "💾 Simpan", cancelLabel = "Batal", maxWidth = 540, banner = null }) {
+export function EditModal({ open, title, data, fields = [], onChange, onClose, onSave, saveLabel = "💾 Save", cancelLabel = "Cancel", maxWidth = 540, banner = null }) {
   if (!open || !data) return null;
   const set = (k, v) => onChange({ ...data, [k]: v });
   const inp = {
@@ -600,7 +600,7 @@ export function useCrud({ apiBase = "", path, onChange, labelKey = "name", idKey
     });
     const j = await res.json().catch(() => ({}));
     if (j.ok || j.id || res.ok) {
-      toast(isNew ? "Ditambah" : "Disimpan", "success");
+      toast(isNew ? "Added" : "Saved", "success");
       setEditing(null);
       if (onChange) await onChange();
     } else {
@@ -611,7 +611,7 @@ export function useCrud({ apiBase = "", path, onChange, labelKey = "name", idKey
   const remove = async (row, opts = {}) => {
     const label = row[labelKey] || row.title || row.code || `#${row[idKey]}`;
     const ok = await confirm({
-      title: opts.title || `Hapus "${label}"?`,
+      title: opts.title || `Delete "${label}"?`,
       message: opts.message || "Akan dihapus permanen. Tidak bisa dibatalkan.",
       danger: true,
       okLabel: opts.okLabel || "Hapus",
@@ -644,7 +644,7 @@ export function useCrud({ apiBase = "", path, onChange, labelKey = "name", idKey
 //
 // Auto-binds Cmd+K / Ctrl+K to open. Esc closes. ↑↓ navigate. Enter selects.
 // ════════════════════════════════════════════════════════════════════
-export function CommandPalette({ items = [], placeholder = "Cari modul, action, atau ketik perintah…", hotkey = "k", recentKey = "ck-recents" }) {
+export function CommandPalette({ items = [], placeholder = "Search modules, actions, or type a command…", hotkey = "k", recentKey = "ck-recents" }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
@@ -788,7 +788,7 @@ export function CommandPalette({ items = [], placeholder = "Cari modul, action, 
         <div ref={listRef} style={{ maxHeight: "55vh", overflowY: "auto", padding: "6px 0" }}>
           {filtered.length === 0 ? (
             <div style={{ padding: "30px 20px", textAlign: "center", color: "rgba(255,255,255,0.4)", fontSize: 13 }}>
-              Tidak ada hasil untuk <b style={{ color: "rgba(255,255,255,0.7)" }}>"{query}"</b>
+              No results for <b style={{ color: "rgba(255,255,255,0.7)" }}>"{query}"</b>
             </div>
           ) : (
             <>
@@ -835,11 +835,11 @@ export function CommandPalette({ items = [], placeholder = "Cari modul, action, 
           fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5,
         }}>
           <span style={{ display: "flex", gap: 14 }}>
-            <span><kbd style={ckKbdSm}>↑↓</kbd> Navigasi</span>
-            <span><kbd style={ckKbdSm}>↵</kbd> Pilih</span>
-            <span><kbd style={ckKbdSm}>ESC</kbd> Tutup</span>
+            <span><kbd style={ckKbdSm}>↑↓</kbd> Navigate</span>
+            <span><kbd style={ckKbdSm}>↵</kbd> Select</span>
+            <span><kbd style={ckKbdSm}>ESC</kbd> Close</span>
           </span>
-          <span>{filtered.length} hasil</span>
+          <span>{filtered.length} result{filtered.length === 1 ? "" : "s"}</span>
         </div>
 
         <style>{`
