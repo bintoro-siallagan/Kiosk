@@ -435,6 +435,14 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "QR Meja", icon: "🪑", c: "#a855f7", on: () => openRight("admin", "qrgen") },
       { label: "Pengaturan", icon: "⚙️", c: "#7d8590", on: () => openRight("admin", "settings") },
     ] },
+    // 🎬 Cinema parallel "Outlet" column — mirror struktur dari F&B
+    { title: "🏛️ Outlet Cinema", accent: "#a855f7", vertical: "cinema", items: [
+      { label: "Tiket Terjual",   icon: "🎟️", c: "#10b981", on: () => openRight("tools", "cinema_ticketing") },
+      { label: "Films Catalog",   icon: "🎬", c: "#f59e0b", on: () => openRight("tools", "cinema_ops") },
+      { label: "Showtimes",       icon: "📅", c: "#22d3ee", on: () => openRight("tools", "cinema_ops") },
+      { label: "Studios & Seat Editor", icon: "🪑", c: "#a855f7", on: () => openRight("tools", "cinema_seat_types") },
+      { label: "Outlet Master",   icon: "🏛️", c: "#7d8590", on: () => openRight("tools", "outlet_master") },
+    ] },
     { title: "🛰️ Surface Operasional F&B", accent: "#10b981", vertical: "fnb", items: [
       { label: "POS Kasir", icon: "🧾", c: "#10b981", on: () => openTab("?pos=1&fresh=1") },
       { label: "KDS Dapur", icon: "👨‍🍳", c: "#f97316", on: () => openTab("?kds=1") },
@@ -514,9 +522,14 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     ] },
     { title: "💼 Manajemen & Data", accent: "#3b82f6", items: [
       { label: "Member & Customer", icon: "👥", c: "#3b82f6", on: () => openRight("members") },
-      { label: "Promo Code", icon: "🏷️", c: "#ec4899", on: () => openRight("promo") },
-      { label: "Operasional / Shift", icon: "📋", c: "#f59e0b", on: () => openRight("shift") },
-      { label: "Laporan", icon: "📊", c: "#10b981", on: () => openRight("report") },
+      // F&B-specific items
+      { label: "Promo Code (F&B)", icon: "🏷️", c: "#ec4899", vertical: "fnb", on: () => openRight("promo") },
+      { label: "Operasional / Shift", icon: "📋", c: "#f59e0b", vertical: "fnb", on: () => openRight("shift") },
+      { label: "Laporan Z (F&B)", icon: "📊", c: "#10b981", vertical: "fnb", on: () => openRight("report") },
+      // Cinema-specific items (parallel F&B)
+      { label: "Cinema Promotion", icon: "🎁", c: "#ec4899", vertical: "cinema", on: () => openRight("tools", "cinema_promotion") },
+      { label: "Daily Closing Cinema", icon: "🧾", c: "#fbbf24", vertical: "cinema", on: () => openRight("tools", "cinema_closing") },
+      { label: "Cinema Analytics", icon: "📊", c: "#10b981", vertical: "cinema", on: () => openRight("tools", "cinema_analytics") },
       { label: "ESB Sync", icon: "🔗", c: "#22d3ee", on: () => openRight("esb-sync") },
       { label: "Push Notif", icon: "🔔", c: "#a855f7", on: () => openRight("esb-notif") },
       { label: "Tools", icon: "🛠️", c: "#f59e0b", searchable: true,
@@ -530,18 +543,19 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     ] },
   ];
 
-  // Multi-tenant: filter columns by explicit `vertical` tag per kolom
-  // Kolom tanpa `vertical` field = shared (semua role lihat).
-  // - vertical='fnb'    → cuma F&B + hybrid + super-admin
-  // - vertical='cinema' → cuma cinema + hybrid + super-admin
+  // Multi-tenant: filter columns AND items by explicit `vertical` tag
+  // Tag rule: `vertical='fnb'|'cinema'` → restricted, no tag = shared
   const _vertical = _adminCtx?.company?.primary_vertical || null;
   const _isSuperAdmin = !!(_adminCtx?.is_super_admin || _adminCtx?.company_id == null);
-  const filteredColumns = columns.filter(col => {
-    if (!col.vertical) return true;                          // shared
-    if (_isSuperAdmin) return true;                          // super-admin lihat semua
-    if (_vertical === "hybrid") return true;                 // hybrid lihat semua
-    return col.vertical === _vertical;                       // match
-  });
+  const _showAll = _isSuperAdmin || _vertical === "hybrid" || !_vertical;
+  const _matchVertical = (tag) => !tag || _showAll || tag === _vertical;
+  const filteredColumns = columns
+    .filter(col => _matchVertical(col.vertical))                    // hide F&B-only columns dari cinema dst.
+    .map(col => ({                                                   // ALSO filter items inside shared columns
+      ...col,
+      items: (col.items || []).filter(it => _matchVertical(it.vertical)),
+    }))
+    .filter(col => col.items.length > 0);                            // drop column kalau semua item ke-filter
 
   const Section = ({ label, accent = "#f59e0b", right, mt, pill = false }) => (
     <div style={{ ...S.sectionHead, marginTop: mt == null ? 16 : mt }}>
