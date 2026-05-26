@@ -2039,6 +2039,40 @@ function setupCinema(app, opts = {}) {
     if (!b.film_id || !b.studio_id || !b.show_date || !b.start_time) {
       return res.status(400).json({ error: 'film_id, studio_id, show_date, start_time wajib diisi' });
     }
+    // ── SCHEDULING: conflict detection ──
+    // Reject kalau overlap dengan existing showtime di studio sama (cleaning gap 10 menit).
+    // Window: [start - cleaning_gap, end + cleaning_gap]
+    // Pakai film.duration_min + pre-show ads 15min sebagai total occupancy.
+    const film = db.prepare(`SELECT duration_min FROM cinema_films WHERE id = ?`).get(Number(b.film_id));
+    if (!film) return res.status(404).json({ error: 'Film tidak ditemukan' });
+    const PRE_SHOW_MIN = 15, CLEANING_GAP_MIN = 10;
+    const occupancy = (film.duration_min || 0) + PRE_SHOW_MIN + CLEANING_GAP_MIN;
+    if (occupancy <= 0) return res.status(400).json({ error: 'film.duration_min tidak valid' });
+    // Convert start_time HH:MM ke minutes-from-midnight
+    const _toMin = (hhmm) => { const [h, m] = String(hhmm).split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+    const newStart = _toMin(b.start_time);
+    const newEnd = newStart + occupancy;
+    const conflicts = db.prepare(`
+      SELECT s.id, s.start_time, f.title, f.duration_min
+      FROM cinema_showtimes s
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      WHERE s.studio_id = ? AND s.show_date = ?
+        AND COALESCE(s.is_archived, 0) = 0
+        AND COALESCE(s.status, 'scheduled') = 'scheduled'
+    `).all(Number(b.studio_id), String(b.show_date));
+    const overlap = conflicts.find(c => {
+      const cStart = _toMin(c.start_time);
+      const cEnd = cStart + (c.duration_min || 0) + PRE_SHOW_MIN + CLEANING_GAP_MIN;
+      // standard overlap test: starts before existing ends AND ends after existing starts
+      return newStart < cEnd && newEnd > cStart;
+    });
+    if (overlap) {
+      return res.status(409).json({
+        error: `Bentrok dengan "${overlap.title}" jam ${overlap.start_time} (durasi ${overlap.duration_min}min + cleaning). Pilih waktu lain.`,
+        conflict_with: { id: overlap.id, title: overlap.title, start_time: overlap.start_time },
+      });
+    }
+
     // Auto-fill price from cinema_outlet_pricing when not provided
     let price = Number(b.price) || 0;
     let priceSource = price > 0 ? 'manual' : null;
@@ -2057,7 +2091,68 @@ function setupCinema(app, opts = {}) {
     const _shtCompanyId = _shtScope.is_super_admin ? (parseInt(b.company_id, 10) || 2) : _shtScope.company_id;
     const info = db.prepare(`INSERT INTO cinema_showtimes (film_id, studio_id, show_date, start_time, price, format, company_id) VALUES (?,?,?,?,?,?,?)`)
       .run(Number(b.film_id), Number(b.studio_id), String(b.show_date), String(b.start_time), price, b.format || '2D', _shtCompanyId);
-    res.json({ ok: true, id: info.lastInsertRowid, price, price_source: priceSource });
+    res.json({
+      ok: true, id: info.lastInsertRowid, price, price_source: priceSource,
+      end_time: _minToHHMM(newEnd - CLEANING_GAP_MIN), // info: kapan studio bebas (sebelum cleaning)
+      next_available: _minToHHMM(newEnd),              // info: jam earliest slot berikutnya
+    });
+  });
+
+  // Helper: minutes → HH:MM (capped 23:59)
+  function _minToHHMM(m) {
+    const total = Math.min(Math.max(m, 0), 24 * 60 - 1);
+    const h = Math.floor(total / 60), mm = total % 60;
+    return `${String(h).padStart(2, '0')}:${String(mm).padStart(2, '0')}`;
+  }
+
+  // ── SCHEDULER: auto-suggest available slots ──
+  // GET /showtimes/available-slots?film_id=X&studio_id=Y&date=YYYY-MM-DD
+  // Return: [{ start, end, available, blocked_by? }] dengan slot 30min dari 10:00-23:00
+  router.get('/showtimes/available-slots', (req, res) => {
+    const filmId = parseInt(req.query.film_id, 10);
+    const studioId = parseInt(req.query.studio_id, 10);
+    const date = String(req.query.date || '').trim();
+    if (!filmId || !studioId || !date) {
+      return res.status(400).json({ error: 'film_id, studio_id, date wajib' });
+    }
+    const film = db.prepare(`SELECT duration_min FROM cinema_films WHERE id = ?`).get(filmId);
+    if (!film) return res.status(404).json({ error: 'Film tidak ditemukan' });
+    const PRE_SHOW_MIN = 15, CLEANING_GAP_MIN = 10;
+    const occupancy = (film.duration_min || 0) + PRE_SHOW_MIN + CLEANING_GAP_MIN;
+
+    // Existing showtimes hari itu di studio tsb
+    const existing = db.prepare(`
+      SELECT s.id, s.start_time, f.title, f.duration_min
+      FROM cinema_showtimes s
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      WHERE s.studio_id = ? AND s.show_date = ?
+        AND COALESCE(s.is_archived, 0) = 0
+        AND COALESCE(s.status, 'scheduled') = 'scheduled'
+      ORDER BY s.start_time
+    `).all(studioId, date);
+    const _toMin = (hhmm) => { const [h, m] = String(hhmm).split(':').map(Number); return (h || 0) * 60 + (m || 0); };
+    const occupied = existing.map(e => {
+      const start = _toMin(e.start_time);
+      return { id: e.id, start, end: start + (e.duration_min || 0) + PRE_SHOW_MIN + CLEANING_GAP_MIN, title: e.title };
+    });
+
+    // Generate candidate slots 10:00-23:00 step 30min
+    const slots = [];
+    for (let m = 10 * 60; m + occupancy <= 24 * 60; m += 30) {
+      const newEnd = m + occupancy;
+      const conflict = occupied.find(o => m < o.end && newEnd > o.start);
+      slots.push({
+        start: _minToHHMM(m),
+        end: _minToHHMM(newEnd - CLEANING_GAP_MIN), // visible end (film actually ends)
+        available: !conflict,
+        blocked_by: conflict ? conflict.title : null,
+      });
+    }
+    res.json({
+      film_id: filmId, studio_id: studioId, date,
+      film_duration: film.duration_min, pre_show: PRE_SHOW_MIN, cleaning_gap: CLEANING_GAP_MIN,
+      occupancy_min: occupancy, slots,
+    });
   });
   // ── SHOWTIME TEMPLATES — recurring schedule (auto-generate harian/mingguan) ──
   router.get('/showtime-templates', (req, res) => {

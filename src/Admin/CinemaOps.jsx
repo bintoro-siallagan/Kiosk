@@ -288,6 +288,12 @@ function CinemaOpsInner({ apiBase }) {
             {btn("+ Jadwalkan", () => add("showtimes", { film_id: f("film_id"), studio_id: f("studio_id"), show_date: f("show_date"), start_time: f("start_time"), format: f("format") || "2D", price: f("price") || 0 }))}
           </Form>
 
+          {/* Auto-suggest available slots — biar HO programmer gak bentrok waktu film */}
+          <ShowtimeSlotSuggest
+            base={base} filmId={f("film_id")} studioId={f("studio_id")} date={f("show_date")}
+            onPick={(time) => setForm(p => ({ ...p, start_time: time }))}
+          />
+
           {/* BULK MULTI-OUTLET PUSH */}
           {bulkOutlets.length > 0 && (
             <div style={{ marginTop: 10, padding: 14, background: "rgba(168,85,247,0.06)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: 10 }}>
@@ -985,6 +991,88 @@ function ShowtimeTemplatesPanel({ apiBase, films, studios, onChanged }) {
             );
           })}
         </div>
+      )}
+    </div>
+  );
+}
+
+// ─── ShowtimeSlotSuggest ───────────────────────────────────────────────
+// Helper: tampilkan available slots untuk film+studio+date yang dipilih.
+// Klik slot → auto-fill start_time di form parent.
+function ShowtimeSlotSuggest({ base, filmId, studioId, date, onPick }) {
+  const [slots, setSlots] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!filmId || !studioId || !date) { setSlots(null); return; }
+    setLoading(true); setOpen(true);
+    fetch(`${base}/showtimes/available-slots?film_id=${filmId}&studio_id=${studioId}&date=${encodeURIComponent(date)}`)
+      .then(r => r.json()).then(d => setSlots(d))
+      .catch(() => setSlots({ error: "Gagal memuat slot" }))
+      .finally(() => setLoading(false));
+  }, [base, filmId, studioId, date]);
+
+  if (!filmId || !studioId || !date) return null;
+  const available = slots?.slots?.filter(s => s.available) || [];
+  const blocked = slots?.slots?.filter(s => !s.available) || [];
+
+  return (
+    <div style={{ marginTop: 10, padding: 12, background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
+        <div>
+          <div style={{ fontSize: 11, color: "#22d3ee", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>
+            🕐 SARAN SLOT TERSEDIA
+          </div>
+          {slots && !slots.error && (
+            <div style={{ fontSize: 10.5, color: "#9ca3af", marginTop: 2, fontFamily: "'Geist Mono',monospace" }}>
+              Durasi film {slots.film_duration} min · pre-show {slots.pre_show} min · cleaning {slots.cleaning_gap} min · total {slots.occupancy_min} min/slot
+            </div>
+          )}
+        </div>
+        <button onClick={() => setOpen(o => !o)} style={{ background: "transparent", border: "1px solid rgba(34,211,238,0.4)", color: "#22d3ee", borderRadius: 6, padding: "4px 12px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
+          {open ? "Hide" : "Show"}
+        </button>
+      </div>
+      {open && (
+        <>
+          {loading && <div style={{ fontSize: 11, color: "#9ca3af", padding: 6 }}>Memuat slot…</div>}
+          {slots?.error && <div style={{ fontSize: 11, color: "#fca5a5", padding: 6 }}>{slots.error}</div>}
+          {available.length > 0 && (
+            <div style={{ marginBottom: 6 }}>
+              <div style={{ fontSize: 10, color: "#10b981", letterSpacing: 1, marginBottom: 4, fontFamily: "'Geist Mono',monospace" }}>✅ TERSEDIA ({available.length})</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                {available.map(s => (
+                  <button key={s.start} onClick={() => onPick?.(s.start)}
+                    title={`Film ${s.start} → selesai ${s.end}`}
+                    style={{
+                      background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.35)",
+                      color: "#10b981", padding: "5px 10px", borderRadius: 6, fontSize: 11,
+                      fontFamily: "'Geist Mono',monospace", fontWeight: 700, cursor: "pointer",
+                    }}>{s.start}</button>
+                ))}
+              </div>
+            </div>
+          )}
+          {blocked.length > 0 && (
+            <div>
+              <div style={{ fontSize: 10, color: "#fca5a5", letterSpacing: 1, marginBottom: 4, fontFamily: "'Geist Mono',monospace" }}>❌ BENTROK ({blocked.length})</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                {blocked.slice(0, 8).map((s, i) => (
+                  <span key={`${s.start}-${i}`} title={`Diblokir: ${s.blocked_by}`}
+                    style={{
+                      background: "rgba(239,68,68,0.08)", border: "1px dashed rgba(239,68,68,0.3)",
+                      color: "#fca5a5", padding: "5px 10px", borderRadius: 6, fontSize: 11,
+                      fontFamily: "'Geist Mono',monospace", fontWeight: 600,
+                    }}>{s.start}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {!loading && available.length === 0 && blocked.length === 0 && (
+            <div style={{ fontSize: 11, color: "#9ca3af", padding: 6 }}>Belum ada slot — cek lagi film duration.</div>
+          )}
+        </>
       )}
     </div>
   );
