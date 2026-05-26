@@ -90,6 +90,8 @@ const CinemaEventBooking          = lazy(() => import("./Admin/CinemaEventBookin
 const CinemaPriceList             = lazy(() => import("./Admin/CinemaPriceList.jsx"));
 const CinemaCommandCenter         = lazy(() => import("./Admin/CinemaCommandCenter.jsx"));
 const CinemaPromotion             = lazy(() => import("./Admin/CinemaPromotion.jsx"));
+const CinemaLoyalty               = lazy(() => import("./Admin/CinemaLoyalty.jsx"));
+const CinemaPartyPackages         = lazy(() => import("./Admin/CinemaPartyPackages.jsx"));
 const AdminMarquee                = lazy(() => import("./Admin/AdminMarquee.jsx"));
 const CinemaHolidays              = lazy(() => import("./Admin/CinemaHolidays.jsx"));
 const CinemaSeatTypes             = lazy(() => import("./Admin/CinemaSeatTypes.jsx"));
@@ -324,6 +326,8 @@ export default function AdminTools({ initialTab }) {
         {tab === "user_kpi" && <UserKpiDashboard apiBase={API} />}
         {tab === "email_config" && <EmailConfig apiBase={API} />}
         {tab === "cinema_promotion" && <CinemaPromotion apiBase={API} />}
+        {tab === "cinema_loyalty" && <CinemaLoyalty apiBase={API} />}
+        {tab === "cinema_party" && <CinemaPartyPackages apiBase={API} />}
         {tab === "marquee" && <AdminMarquee apiBase={API} />}
         {tab === "platform" && <KaryasPlatformView apiBase={API} />}
         {tab === "cinema_holidays" && <CinemaHolidays apiBase={API} />}
