@@ -53,7 +53,7 @@ function getDateRange(period) {
     return { from: Math.floor(y.getTime()/1000), to: end, label: 'Tahun Berjalan' };
   }
   const from = new Date(today); from.setDate(from.getDate() - period.days);
-  return { from: Math.floor(from.getTime()/1000), to: end, label: `${period.days} Hari` };
+  return { from: Math.floor(from.getTime()/1000), to: end, label: `${period.days} Days` };
 }
 
 export default function OwnerDashboard({ apiBase = '', onNavigate }) {
@@ -228,11 +228,11 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
 
       {/* 🆕 QUICK-ACTION BUTTONS ROW */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10, marginBottom: 14 }}>
-        <button onClick={() => window.open('/?pos=1', '_blank')} style={qaBtn("#10b981", "🧾", "Open POS Kasir")}>🧾<div><div style={{ fontWeight: 800 }}>POS Kasir</div><div style={{ fontSize: 10, opacity: 0.8 }}>Open di tab baru</div></div></button>
-        <button onClick={() => window.open('/?kds=1', '_blank')} style={qaBtn("#f97316", "👨‍🍳", "Open KDS")}>👨‍🍳<div><div style={{ fontWeight: 800 }}>KDS Dapur</div><div style={{ fontSize: 10, opacity: 0.8 }}>{data.kds?.active_now?.queued || 0} antrian</div></div></button>
+        <button onClick={() => window.open('/?pos=1', '_blank')} style={qaBtn("#10b981", "🧾", "Open POS Terminal")}>🧾<div><div style={{ fontWeight: 800 }}>POS Terminal</div><div style={{ fontSize: 10, opacity: 0.8 }}>Open in new tab</div></div></button>
+        <button onClick={() => window.open('/?kds=1', '_blank')} style={qaBtn("#f97316", "👨‍🍳", "Open KDS")}>👨‍🍳<div><div style={{ fontWeight: 800 }}>Kitchen Display</div><div style={{ fontSize: 10, opacity: 0.8 }}>{data.kds?.active_now?.queued || 0} queued</div></div></button>
         <button onClick={() => onNavigate?.('cinema_validate')} style={qaBtn("#a855f7", "🎟️", "Cinema Validator")}>🎟️<div><div style={{ fontWeight: 800 }}>Cinema Validator</div><div style={{ fontSize: 10, opacity: 0.8 }}>Scan tiket QR</div></div></button>
-        <button onClick={() => onNavigate?.('shift_roster')} style={qaBtn("#22d3ee", "📊", "Z-Report End Day")}>📊<div><div style={{ fontWeight: 800 }}>End Day / Z-Report</div><div style={{ fontSize: 10, opacity: 0.8 }}>Close day operasional</div></div></button>
-        <button onClick={() => setAlertsOpen(o => !o)} style={qaBtn(data.extras?.alerts?.length > 0 ? "#ef4444" : "#6b7280", "🔔", "Realtime Alerts")}>🔔<div><div style={{ fontWeight: 800 }}>Alerts ({data.extras?.alerts?.length || 0})</div><div style={{ fontSize: 10, opacity: 0.8 }}>Klik for live feed</div></div></button>
+        <button onClick={() => onNavigate?.('shift_roster')} style={qaBtn("#22d3ee", "📊", "Z-Report End Day")}>📊<div><div style={{ fontWeight: 800 }}>End Day / Z-Report</div><div style={{ fontSize: 10, opacity: 0.8 }}>Close operational day</div></div></button>
+        <button onClick={() => setAlertsOpen(o => !o)} style={qaBtn(data.extras?.alerts?.length > 0 ? "#ef4444" : "#6b7280", "🔔", "Realtime Alerts")}>🔔<div><div style={{ fontWeight: 800 }}>Alerts ({data.extras?.alerts?.length || 0})</div><div style={{ fontSize: 10, opacity: 0.8 }}>Click for live feed</div></div></button>
       </div>
 
       {/* 🆕 TODAY'S COMPARISON */}
@@ -298,7 +298,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
           <div style={{flex: 1}}>
             <b>{heroKpis.anomaly.value} anomali terdeteksi</b> · refund/cancel/manager-PIN bypass yang butuh review
           </div>
-          <span style={{color: '#fbbf24', fontSize: 12}}>Klik for review →</span>
+          <span style={{color: '#fbbf24', fontSize: 12}}>Click for review →</span>
         </div>
       )}
 
@@ -440,7 +440,7 @@ export default function OwnerDashboard({ apiBase = '', onNavigate }) {
             {/* Active promotions */}
             <Panel title="Active Promotions" onClick={() => onNavigate?.('fnb_happy_hour')}>
               <div style={{ padding: 12, fontSize: 11.5, lineHeight: 1.7, color: "#9ca3af" }}>
-                🕐 Happy Hour aktif: <b style={{ color: "#fbbf24" }}>{data.extras.promotions?.happy_hours?.length || 0}</b><br />
+                🕐 Happy Hour active: <b style={{ color: "#fbbf24" }}>{data.extras.promotions?.happy_hours?.length || 0}</b><br />
                 {(data.extras.promotions?.happy_hours || []).slice(0, 2).map(h => <div key={h.id} style={{ fontSize: 11, color: "#fff", paddingLeft: 14 }}>• {h.name} · {h.discount_pct}%</div>)}
                 🎂 Birthday campaign: <b style={{ color: "#ec4899" }}>{data.extras.promotions?.birthday_campaigns?.length || 0}</b> ({data.extras.promotions?.birthday_redemptions_today || 0} redeem hari ini)<br />
                 🎬 Cinema campaign: <b style={{ color: "#a855f7" }}>{data.extras.promotions?.cinema_campaigns?.length || 0}</b><br />
