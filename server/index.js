@@ -70,8 +70,8 @@ const upload = multer({
   storage: uploadStorage,
   limits: { fileSize: 50 * 1024 * 1024 }, // 50MB (poster jpg/png biasanya <5MB, video <50MB)
   fileFilter: (req, file, cb) => {
-    const ok = /\.(jpg|jpeg|png|webp|gif|mp4|mov|webm|m4v)$/i.test(file.originalname);
-    if (!ok) return cb(new Error("File type not allowed (only image/video)"));
+    const ok = /\.(jpg|jpeg|png|webp|gif|mp4|mov|webm|m4v|csv|xlsx|xls)$/i.test(file.originalname);
+    if (!ok) return cb(new Error("File type not allowed (only image/video/CSV/XLSX)"));
     cb(null, true);
   },
 });
