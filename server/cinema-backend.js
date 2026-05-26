@@ -910,14 +910,20 @@ function setupCinema(app, opts = {}) {
 
   // ── STUDIOS ──
   router.get('/studios', (req, res) => {
-    const rows = db.prepare(`SELECT * FROM cinema_studios ORDER BY name`).all();
+    // Multi-tenant: filter by company_id
+    const scope = req.companyScope || { is_super_admin: true };
+    const where = scope.is_super_admin ? '' : `WHERE company_id = ${parseInt(scope.company_id, 10)}`;
+    const rows = db.prepare(`SELECT * FROM cinema_studios ${where} ORDER BY outlet, name`).all();
     res.json({ studios: rows.map(s => ({ ...s, capacity: (s.rows || 0) * (s.cols || 0) })) });
   });
   router.post('/studios', (req, res) => {
     const b = req.body || {};
     if (!b.name || !String(b.name).trim()) return res.status(400).json({ error: 'name wajib diisi' });
-    const info = db.prepare(`INSERT INTO cinema_studios (name, studio_type, rows, cols, outlet) VALUES (?,?,?,?,?)`)
-      .run(String(b.name).trim(), b.studio_type || 'Regular', Number(b.rows) || 8, Number(b.cols) || 12, b.outlet || '');
+    // Multi-tenant: auto-tag company_id
+    const scope = req.companyScope || { is_super_admin: true };
+    const companyId = scope.is_super_admin ? (parseInt(b.company_id, 10) || 2) : scope.company_id;
+    const info = db.prepare(`INSERT INTO cinema_studios (name, studio_type, rows, cols, outlet, company_id) VALUES (?,?,?,?,?,?)`)
+      .run(String(b.name).trim(), b.studio_type || 'Regular', Number(b.rows) || 8, Number(b.cols) || 12, b.outlet || '', companyId);
     res.json({ ok: true, id: info.lastInsertRowid });
   });
   router.delete('/studios/:id', (req, res) => {

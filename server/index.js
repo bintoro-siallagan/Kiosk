@@ -1542,7 +1542,17 @@ app.get("/api/promo", (req, res) => {
 
 // GET /api/promos — alias plural untuk backward-compat
 app.get("/api/promos", (req, res) => {
-  res.json([...promoCodes].sort((a, b) => (b.active - a.active) || (b.usedCount - a.usedCount)));
+  // Multi-tenant: F&B promos belong to company 1 by default. Cinema owner shouldn't see them.
+  // Filter: super-admin sees all, F&B company sees all (legacy promos belong to F&B),
+  // Cinema company (or other) sees empty unless they have promo with matching company_id.
+  const scope = req.companyScope || { is_super_admin: true };
+  let list = [...promoCodes];
+  if (!scope.is_super_admin) {
+    list = list.filter(p => p.companyId == null || p.companyId === scope.company_id);
+    // Default: jika companyId tidak ada di promo (legacy), assume company 1 (F&B). Cinema (2) gak liat.
+    if (scope.company_id !== 1) list = list.filter(p => p.companyId === scope.company_id);
+  }
+  res.json(list.sort((a, b) => (b.active - a.active) || (b.usedCount - a.usedCount)));
 });
 
 // ─── MARQUEE AGGREGATOR ─────────────────────────────────────────────────
