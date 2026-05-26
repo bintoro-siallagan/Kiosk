@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import DelightPopup from "./components/DelightPopup.jsx";
+import CinemaCelebration from "./CinemaCelebration.jsx";
 
 // CinemaKiosk — customer-facing cinema ticket flow.
 // films → showtimes → seats → F&B bundles → confirmation. Uses /api/cinema/*.
@@ -142,6 +143,7 @@ export default function CinemaKiosk({ apiBase }) {
   const [rateValue, setRateValue] = useState(0);
   const [rateComment, setRateComment] = useState("");
   const [rateSent, setRateSent] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false); // Sultan popup after rating
   async function submitRating() {
     if (!rateValue || !done?.film?.id || rateSent) return;
     try {
@@ -154,7 +156,12 @@ export default function CinemaKiosk({ apiBase }) {
         }),
       });
       const d = await r.json();
-      if (d.ok) setRateSent(true);
+      if (d.ok) {
+        setRateSent(true);
+        // Tampilkan Sultan celebration popup setelah rating dikirim — pakai delay kecil
+        // biar customer sempat liat konfirmasi rating dulu
+        setTimeout(() => setShowCelebration(true), 600);
+      }
     } catch {}
   }
 
@@ -340,6 +347,7 @@ export default function CinemaKiosk({ apiBase }) {
     setSeats(new Set()); setCart({}); setEmail(""); setPhone(""); setDone(null); setMsg("");
     setPromoCode(""); setPromoApplied(null); setPromoMsg("");
     setPrintState("idle"); setPrintMsg(""); printTriedRef.current = null;
+    setShowCelebration(false);
     setAutoResetIn(0);
   };
 
@@ -872,6 +880,10 @@ export default function CinemaKiosk({ apiBase }) {
                 <div style={{ textAlign: "center", padding: "10px 0" }}>
                   <div style={{ fontSize: 32, marginBottom: 6, filter: "drop-shadow(0 0 16px rgba(251,191,36,0.45))" }}>✨</div>
                   <div style={{ fontSize: 13, color: "#fbbf24", fontWeight: 700, letterSpacing: 0.3 }}>Terima kasih atas rating Anda</div>
+                  <button onClick={() => setShowCelebration(true)}
+                    style={{ marginTop: 12, background: "linear-gradient(135deg,#a855f7,#c084fc)", border: "none", borderRadius: 10, padding: "9px 18px", color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(168,85,247,0.3), inset 0 1px 0 rgba(255,255,255,0.2)", letterSpacing: 0.4 }}>
+                    👑 Lihat Gelar Sultan Lagi
+                  </button>
                 </div>
               ) : (
                 <>
@@ -888,6 +900,11 @@ export default function CinemaKiosk({ apiBase }) {
                   <button onClick={submitRating} disabled={!rateValue} className={rateValue ? "karya-cta-amber" : undefined}
                     style={{ marginTop: 10, width: "100%", background: rateValue ? "linear-gradient(135deg,#f59e0b,#fbbf24)" : "rgba(255,255,255,0.04)", border: "none", borderRadius: 10, padding: "11px 18px", color: rateValue ? "#111" : "rgba(255,255,255,0.35)", fontSize: 12.5, fontWeight: 800, cursor: rateValue ? "pointer" : "not-allowed", fontFamily: "inherit", boxShadow: rateValue ? "0 4px 12px rgba(245,158,11,0.3), inset 0 1px 0 rgba(255,255,255,0.2)" : "none", letterSpacing: 0.3 }}>
                     Kirim Rating
+                  </button>
+                  {/* Skip rating → tetap muncul Sultan popup biar customer yang gak mau rating gak miss popup */}
+                  <button onClick={() => setShowCelebration(true)}
+                    style={{ marginTop: 8, width: "100%", background: "transparent", border: "1px dashed rgba(255,255,255,0.15)", borderRadius: 10, padding: "9px 18px", color: "rgba(255,255,255,0.55)", fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", letterSpacing: 0.4 }}>
+                    Lewati & Lihat Gelar Sultan →
                   </button>
                 </>
               )}
@@ -943,6 +960,19 @@ export default function CinemaKiosk({ apiBase }) {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Sultan celebration popup — muncul setelah customer kasih rating (atau skip rating) */}
+      {showCelebration && done && (
+        <CinemaCelebration
+          apiBase={apiBase || ""}
+          order={{
+            customerName: (done.email || "").split("@")[0] || done.phone || "Tamu Cinema",
+            total: done.total,
+            filmTitle: done.film?.title,
+          }}
+          onDone={() => { setShowCelebration(false); }}
+        />
       )}
 
       {/* Age verification gate (LSF Indonesia: 17+ / D21 / 21+) */}

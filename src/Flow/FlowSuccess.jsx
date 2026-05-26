@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import API_HOST from "../apiBase.js";
+import POSCelebration from "../POS/POSCelebration.jsx";
 
 const API = API_HOST;
 const fIDR = n => "Rp " + (n || 0).toLocaleString("id-ID");
@@ -26,12 +27,23 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
   const [trackingUrl, setTrackingUrl] = useState("");
   const [currentStatus, setCurrentStatus] = useState(order.status || "waiting");
   const [orderData, setOrderData] = useState(order);
+  // Sultan celebration popup — auto-show 1.2s setelah masuk success screen
+  const [showCelebration, setShowCelebration] = useState(false);
+  const celebrationShown = useRef(false);
   const pollRef = useRef(null);
 
   useEffect(() => {
     const baseUrl = window.location.origin + window.location.pathname;
     setTrackingUrl(`${baseUrl}?trackorder=${order.id}`);
   }, [order]);
+
+  // Auto-show Sultan popup setelah customer liat konfirmasi order (delay ~1.2s)
+  useEffect(() => {
+    if (celebrationShown.current) return;
+    celebrationShown.current = true;
+    const t = setTimeout(() => setShowCelebration(true), 1200);
+    return () => clearTimeout(t);
+  }, []);
 
   // Live status polling every 5s
   useEffect(() => {
@@ -123,10 +135,27 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
         <button onClick={() => window.open(trackingUrl, "_blank")} style={S.btnSecondary}>🔍 Track</button>
       </div>
 
+      <button onClick={() => setShowCelebration(true)} style={{ ...S.btnSecondary, marginTop: 8, background: "linear-gradient(135deg,rgba(251,191,36,0.18),rgba(168,85,247,0.18))", borderColor: "rgba(251,191,36,0.45)", color: "#fbbf24" }}>
+        👑 Lihat Gelar Sultan Jam Ini
+      </button>
+
       <button onClick={onOrderMore} style={S.btnPrimary}>🛒 Pesan Lagi</button>
       <button onClick={onHome} style={S.btnGhost}>← Kembali ke Home</button>
 
       <div style={S.footer}>KaryaOS Flow · Mobile Order Portal</div>
+
+      {/* Sultan celebration popup — gelar customer berdasar total + leaderboard jam ini */}
+      {showCelebration && (
+        <POSCelebration
+          apiBase={API}
+          order={{
+            id: order.id,
+            customerName: session?.name || (session?.phone ? `Tamu ${String(session.phone).slice(-4)}` : "Tamu"),
+            total: orderData.total || order.total,
+          }}
+          onDone={() => setShowCelebration(false)}
+        />
+      )}
     </div>
   );
 }
