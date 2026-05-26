@@ -5,7 +5,7 @@
  * Modules are lazy-loaded via React.lazy so each Admin*.jsx ends up as its
  * own chunk; only the currently-active module is downloaded.
  */
-import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, lazy, Suspense } from "react";
 
 // ── Lazy module imports (each becomes its own chunk via Vite) ────────────
 const AdminMenuBuilder            = lazy(() => import("./Admin/AdminMenuBuilder.jsx"));
@@ -1078,9 +1078,12 @@ function MasterItemTab({ showToast }) {
         </div>
       </div>
 
-      <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap"}}>
+      <div style={{display:"flex",gap:6,marginBottom:14,flexWrap:"wrap",alignItems:"center"}}>
         <button onClick={()=>setFilter("")} style={S.btn(!filter?"#EC4899":"#8b8b95")}>Semua ({items.length})</button>
         {cats.map(c=><button key={c.id} onClick={()=>setFilter(c.id)} style={S.btn(filter===c.id?"#EC4899":"#8b8b95")}>{c.emoji} {c.name}</button>)}
+        <div style={{marginLeft:"auto",display:"flex",gap:6}}>
+          <BulkMenuImport onDone={load} showToast={showToast}/>
+        </div>
       </div>
 
       {loading?<div style={{color:"#555"}}>Loading...</div>:
@@ -1113,6 +1116,53 @@ function MasterItemTab({ showToast }) {
         })
       }
     </div>
+  );
+}
+
+// ─── Bulk CSV menu import — used in Master Item tab ──────────
+function BulkMenuImport({ onDone, showToast }) {
+  const [uploading, setUploading] = useState(false);
+  const [result, setResult] = useState(null);
+  const fileRef = useRef(null);
+
+  async function handleUpload(file) {
+    setUploading(true); setResult(null);
+    const fd = new FormData(); fd.append('file', file);
+    try {
+      const res = await fetch('/api/master/menus/bulk-csv', { method: 'POST', body: fd });
+      const j = await res.json();
+      if (!res.ok) throw new Error(j.error || 'upload failed');
+      setResult(j);
+      showToast?.(`✓ Imported ${j.imported}${j.skipped?`, skipped ${j.skipped}`:''}`);
+      onDone?.();
+    } catch (e) { setResult({ error: e.message }); showToast?.('✗ ' + e.message); }
+    finally { setUploading(false); if (fileRef.current) fileRef.current.value = ''; }
+  }
+
+  const baseBtn = { padding:"7px 14px", borderRadius:8, fontSize:12, fontWeight:600, cursor:"pointer", border:"1px solid rgba(255,255,255,0.12)", fontFamily:"'Inter',sans-serif" };
+
+  return (
+    <>
+      <a href="/api/master/menus/bulk-template" download
+        style={{ ...baseBtn, background:"rgba(255,255,255,0.04)", color:"rgba(255,255,255,0.85)", textDecoration:"none", display:"inline-flex", alignItems:"center", gap:6 }}>
+        📥 Template CSV
+      </a>
+      <button onClick={()=>fileRef.current?.click()} disabled={uploading}
+        style={{ ...baseBtn, background:"linear-gradient(135deg,#3B82F6,#2563EB)", color:"#fff" }}>
+        {uploading ? "⏳ Uploading…" : "📤 Upload CSV"}
+      </button>
+      <input ref={fileRef} type="file" accept=".csv,text/csv" style={{display:"none"}}
+        onChange={(e)=>{ const f=e.target.files?.[0]; if (f) handleUpload(f); }}/>
+      {result?.errors?.length > 0 && (
+        <details style={{ fontSize:11, color:"#F87171", marginLeft:6 }}>
+          <summary style={{ cursor:"pointer" }}>{result.errors.length} errors</summary>
+          <ul style={{ marginTop:4, paddingLeft:18 }}>
+            {result.errors.slice(0,8).map((e,i)=><li key={i}>Row {e.row}: {e.error}</li>)}
+            {result.errors.length>8 && <li>…and {result.errors.length-8} more</li>}
+          </ul>
+        </details>
+      )}
+    </>
   );
 }
 

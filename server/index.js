@@ -820,22 +820,48 @@ app.get("/api/menu/config", (req, res) => {
 
 // Enrich legacy in-memory menu with image_url from pos_menus table (admin-uploaded)
 // Match by id first, fallback to name (case-insensitive) — covers hardcoded numeric vs string SKU mismatch.
-function _enrichMenu(items) {
+function _enrichMenu(items, opts = {}) {
   try {
-    const rows = db.rawDb.prepare(`SELECT id, name, image_url, description FROM pos_menus WHERE image_url IS NOT NULL OR description != ''`).all();
-    if (!rows.length) return items;
-    const byId = new Map(rows.map(r => [String(r.id), r]));
-    const byName = new Map(rows.map(r => [String(r.name || '').toLowerCase().trim(), r]));
-    return items.map(m => {
-      const match = byId.get(String(m.id)) || byName.get(String(m.name || '').toLowerCase().trim());
+    const companyId = opts.companyId || 1;
+    // 1) Pull ALL pos_menus rows for this tenant (not just ones with image)
+    const allRows = db.rawDb.prepare(`SELECT id, category_id, emoji, name, description, price, free_extras, is_popular, is_available, image_url, badge_text FROM pos_menus WHERE company_id = ?`).all(companyId);
+    if (!allRows.length) return items;
+
+    // 2) Enrich existing legacy items with image/desc from matching pos_menus rows
+    const byIdStr = new Map(allRows.map(r => [String(r.id), r]));
+    const byName = new Map(allRows.map(r => [String(r.name || '').toLowerCase().trim(), r]));
+    const enriched = items.map(m => {
+      const match = byIdStr.get(String(m.id)) || byName.get(String(m.name || '').toLowerCase().trim());
       if (!match) return m;
       return {
         ...m,
         image_url: match.image_url || m.image_url || null,
         description: match.description || m.description || m.desc || "",
+        desc: match.description || m.desc || m.description || "",
       };
     });
-  } catch { return items; }
+
+    // 3) Add pos_menus items that DON'T exist in legacy by name (so bulk-uploaded menus appear)
+    const legacyNames = new Set(items.map(m => String(m.name || '').toLowerCase().trim()));
+    const newOnes = allRows
+      .filter(r => !legacyNames.has(String(r.name || '').toLowerCase().trim()))
+      .map(r => ({
+        id: r.id,                         // string id from pos_menus
+        cat: r.category_id,
+        emoji: r.emoji || '',
+        name: r.name,
+        desc: r.description || '',
+        description: r.description || '',
+        price: r.price,
+        freeToppings: r.free_extras || 0,
+        popular: r.is_popular === 1 || r.is_popular === true,
+        avail: r.is_available === 1 || r.is_available === true,
+        image_url: r.image_url || null,
+        tag: r.badge_text || undefined,
+        company_id: companyId,
+      }));
+    return enriched.concat(newOnes);
+  } catch (e) { console.error('[enrichMenu]', e.message); return items; }
 }
 
 app.get("/api/menu", (req, res) => {
