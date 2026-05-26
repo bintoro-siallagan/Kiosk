@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS item_master (
   item_code TEXT UNIQUE, sku TEXT, barcode TEXT,
   name TEXT, short_name TEXT, category TEXT, subcategory TEXT,
   item_type TEXT, base_price REAL DEFAULT 0, uom TEXT DEFAULT 'pcs',
+  image_url TEXT,
   status TEXT DEFAULT 'active', created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
 );
 `;
@@ -30,6 +31,13 @@ function setupItemMaster(app, opts = {}) {
   const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
+  // Migrate: add image_url if missing
+  try {
+    const cols = db.prepare(`PRAGMA table_info(item_master)`).all();
+    if (!cols.some(c => c.name === 'image_url')) {
+      db.exec(`ALTER TABLE item_master ADD COLUMN image_url TEXT`);
+    }
+  } catch (e) { console.warn('[item-master] migrate image_url:', e.message); }
   const many = (s) => { try { return db.prepare(s).all(); } catch { return []; } };
 
   // Seed registry dari pos_menus (finished goods) + audit_warehouse (material)
@@ -115,6 +123,37 @@ function setupItemMaster(app, opts = {}) {
     try {
       const added = syncFromPosMenus();
       res.json({ ok: true, added });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
+  // POST /:itemCode/image — upload/replace image for an item.
+  // Stores file via multer, updates item_master + matching pos_menus (by name) for kiosk consistency.
+  router.post('/:itemCode/image', (req, res) => {
+    const upload = opts.uploadMiddleware;
+    if (!upload) return res.status(500).json({ error: 'upload middleware not configured' });
+    upload.single('image')(req, res, (err) => {
+      if (err) return res.status(400).json({ error: err.message });
+      if (!req.file) return res.status(400).json({ error: 'no image uploaded' });
+      const url = `/uploads/${req.file.filename}`;
+      try {
+        const item = db.prepare(`SELECT name FROM item_master WHERE item_code = ?`).get(req.params.itemCode);
+        if (!item) return res.status(404).json({ error: 'item not found' });
+        db.prepare(`UPDATE item_master SET image_url = ? WHERE item_code = ?`).run(url, req.params.itemCode);
+        // Mirror to pos_menus by name for kiosk visibility
+        try { db.prepare(`UPDATE pos_menus SET image_url = ?, updated_at = strftime('%s','now') WHERE LOWER(TRIM(name)) = ?`).run(url, item.name.toLowerCase().trim()); } catch {}
+        res.json({ ok: true, image_url: url });
+      } catch (e) { res.status(500).json({ error: e.message }); }
+    });
+  });
+
+  // DELETE /:itemCode/image — remove image association
+  router.delete('/:itemCode/image', (req, res) => {
+    try {
+      const item = db.prepare(`SELECT name FROM item_master WHERE item_code = ?`).get(req.params.itemCode);
+      if (!item) return res.status(404).json({ error: 'item not found' });
+      db.prepare(`UPDATE item_master SET image_url = NULL WHERE item_code = ?`).run(req.params.itemCode);
+      try { db.prepare(`UPDATE pos_menus SET image_url = NULL, updated_at = strftime('%s','now') WHERE LOWER(TRIM(name)) = ?`).run(item.name.toLowerCase().trim()); } catch {}
+      res.json({ ok: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
   });
 

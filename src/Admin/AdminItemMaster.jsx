@@ -72,7 +72,7 @@ export default function AdminItemMaster({ apiBase = "" }) {
         <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 10 }}>
           <thead>
             <tr style={{ color: "#5b6470", fontSize: 10, textAlign: "left" }}>
-              {["ITEM CODE", "NAMA", "KATEGORI", "TIPE", "HARGA/COST", "UOM"].map(h => (
+              {["IMG", "ITEM CODE", "NAMA", "KATEGORI", "TIPE", "HARGA/COST", "UOM"].map(h => (
                 <th key={h} style={{ padding: "6px 8px", fontWeight: 600 }}>{h}</th>
               ))}
             </tr>
@@ -80,6 +80,7 @@ export default function AdminItemMaster({ apiBase = "" }) {
           <tbody>
             {items.map((it, i) => (
               <tr key={i} style={{ borderTop: "1px solid #161b22", fontSize: 12 }}>
+                <td style={S.td}><ImageCell item={it} onChange={load}/></td>
                 <td style={{ ...S.td, fontFamily: "'Geist Mono',monospace", color: "#5b6470" }}>{it.item_code}</td>
                 <td style={S.td}>
                   <div style={{ color: "#e6edf3", fontWeight: 600 }}>{it.name}</div>
@@ -98,6 +99,66 @@ export default function AdminItemMaster({ apiBase = "" }) {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+// ── Per-row image upload/replace ──
+function ImageCell({ item, onChange }) {
+  const fileRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+
+  async function handleFile(file) {
+    if (!file) return;
+    setBusy(true);
+    const fd = new FormData(); fd.append('image', file);
+    try {
+      const r = await fetch(`/api/item-master/${encodeURIComponent(item.item_code)}/image`, { method: 'POST', body: fd });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || 'upload failed');
+      onChange?.();
+    } catch (e) { alert('✗ ' + e.message); }
+    finally { setBusy(false); if (fileRef.current) fileRef.current.value = ''; }
+  }
+
+  async function handleRemove(e) {
+    e.stopPropagation();
+    if (!confirm(`Remove image for "${item.name}"?`)) return;
+    try {
+      const r = await fetch(`/api/item-master/${encodeURIComponent(item.item_code)}/image`, { method: 'DELETE' });
+      if (!r.ok) throw new Error('failed');
+      onChange?.();
+    } catch (e) { alert('✗ ' + e.message); }
+  }
+
+  const url = item.image_url;
+  return (
+    <div style={{ position: 'relative', width: 44, height: 44 }}>
+      <button
+        onClick={() => fileRef.current?.click()}
+        disabled={busy}
+        title={url ? 'Replace image' : 'Upload image'}
+        style={{
+          width: 44, height: 44, borderRadius: 8, padding: 0, border: '1px solid #1f2937',
+          background: url ? '#0a0e16' : '#0d1117', cursor: 'pointer', overflow: 'hidden', display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+        }}>
+        {busy ? (
+          <span style={{ color: '#5b6470', fontSize: 14 }}>⏳</span>
+        ) : url ? (
+          <img src={url.startsWith('http') ? url : url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+        ) : (
+          <span style={{ fontSize: 14, color: '#5b6470' }}>📷</span>
+        )}
+      </button>
+      {url && (
+        <button onClick={handleRemove} title="Remove image"
+          style={{ position: 'absolute', top: -4, right: -4, width: 16, height: 16, borderRadius: '50%',
+            background: '#dc2626', color: '#fff', border: '1px solid #7f1d1d', fontSize: 9, lineHeight: 1,
+            cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+      )}
+      <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }}
+        onChange={(e) => handleFile(e.target.files?.[0])}/>
     </div>
   );
 }
