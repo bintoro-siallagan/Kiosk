@@ -195,12 +195,17 @@ function setupBillingEngine(app, opts = {}) {
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
 
-  // Seed plans if empty
-  if (db.prepare(`SELECT COUNT(*) c FROM billing_plans`).get().c === 0) {
-    const ins = db.prepare(`INSERT INTO billing_plans (code, name, vertical, tier, monthly_price_idr, annual_price_idr, max_outlets, max_users, features_json, description, display_order, active) VALUES (?,?,?,?,?,?,?,?,?,?,?,1)`);
-    DEFAULT_PLANS.forEach(p => ins.run(p.code, p.name, p.vertical, p.tier, p.monthly_price_idr, p.annual_price_idr, p.max_outlets, p.max_users, p.features_json, p.description, p.display_order));
-    console.log(`[billing] seeded ${DEFAULT_PLANS.length} default plans`);
-  }
+  // Upsert plans — refresh kalau struktur berubah (idempotent)
+  const upsert = db.prepare(`INSERT INTO billing_plans (code, name, vertical, tier, monthly_price_idr, annual_price_idr, max_outlets, max_users, features_json, description, display_order, active)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,1)
+    ON CONFLICT(code) DO UPDATE SET
+      name=excluded.name, vertical=excluded.vertical, tier=excluded.tier,
+      monthly_price_idr=excluded.monthly_price_idr, annual_price_idr=excluded.annual_price_idr,
+      max_outlets=excluded.max_outlets, max_users=excluded.max_users,
+      features_json=excluded.features_json, description=excluded.description,
+      display_order=excluded.display_order`);
+  DEFAULT_PLANS.forEach(p => upsert.run(p.code, p.name, p.vertical, p.tier, p.monthly_price_idr, p.annual_price_idr, p.max_outlets, p.max_users, p.features_json, p.description, p.display_order));
+  console.log(`[billing] upserted ${DEFAULT_PLANS.length} plans`);
 
   // Auto-assign Trial untuk company yang belum punya tenant_billing record
   const orphans = db.prepare(`
