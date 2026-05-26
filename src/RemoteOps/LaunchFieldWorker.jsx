@@ -23,12 +23,19 @@ export default function LaunchFieldWorker() {
     return () => { if (root) { root.style.maxWidth = ""; root.style.width = ""; root.style.padding = ""; } };
   }, []);
 
-  // Load active launches
-  useEffect(() => {
-    fetch(`${API_HOST}/api/launch/launches?status=in_progress`).then(r => r.json())
+  // Load active launches — initial + auto-refresh while on pick step
+  const loadLaunches = useCallback(() => {
+    setErr("");
+    fetch(`${API_HOST}/api/launch/launches?status=in_progress`).then(r => r.ok ? r.json() : r.json().then(j => { throw new Error(j?.error); }))
       .then(j => setLaunches(j?.data || []))
       .catch(e => setErr(e.message));
   }, []);
+  useEffect(() => { loadLaunches(); }, [loadLaunches]);
+  useEffect(() => {
+    if (step !== "pick") return;
+    const id = setInterval(loadLaunches, 30_000);
+    return () => clearInterval(id);
+  }, [step, loadLaunches]);
 
   const loadDetail = useCallback((id) => {
     setBusy(true); setErr("");
@@ -63,7 +70,7 @@ export default function LaunchFieldWorker() {
           launches={launches}
           activeDept={activeDept} setActiveDept={(d) => { setActiveDept(d); localStorage.setItem("kolr_dept", d); }}
           onPick={(l) => { setSelected(l); loadDetail(l.id); }}
-          err={err}
+          err={err} onRefresh={loadLaunches}
         />
       )}
       {step === "fill" && detail && activeDept && (
@@ -89,7 +96,7 @@ export default function LaunchFieldWorker() {
   );
 }
 
-function PickStep({ launches, activeDept, setActiveDept, onPick, err }) {
+function PickStep({ launches, activeDept, setActiveDept, onPick, err, onRefresh }) {
   const DEPTS = [
     { code: "construction", label: "🏗️ Construction & Fit-Out" },
     { code: "it", label: "💻 IT & Tech" },
@@ -126,8 +133,13 @@ function PickStep({ launches, activeDept, setActiveDept, onPick, err }) {
         </div>
       </Field>
 
-      <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: 1.3, fontFamily: "'Geist Mono',monospace", fontWeight: 700, marginTop: 20, marginBottom: 8 }}>
-        🏪 PROJECT OUTLET AKTIF
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 20, marginBottom: 8 }}>
+        <div style={{ fontSize: 11, color: "#94a3b8", letterSpacing: 1.3, fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>
+          🏪 PROJECT OUTLET AKTIF ({launches.length})
+        </div>
+        <button onClick={onRefresh} style={{ padding: "5px 12px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, color: "#cbd5e1", fontSize: 11, fontWeight: 700, fontFamily: "inherit", cursor: "pointer" }}>
+          ↻ Refresh
+        </button>
       </div>
 
       {err && <div style={{ padding: 10, background: "rgba(239,68,68,0.1)", border: `1px solid ${RED}55`, borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 10 }}>⚠ {err}</div>}
@@ -135,7 +147,14 @@ function PickStep({ launches, activeDept, setActiveDept, onPick, err }) {
       {launches.length === 0 ? (
         <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
           <div style={{ fontSize: 36, marginBottom: 8 }}>📭</div>
-          <div style={{ fontSize: 12 }}>Belum ada project outlet aktif</div>
+          <div style={{ fontSize: 13, marginBottom: 14 }}>Belum ada project outlet aktif</div>
+          <div style={{ fontSize: 11, color: "#475569", marginBottom: 14, lineHeight: 1.5 }}>
+            Project dibuat oleh admin via Launch Tracker.<br/>
+            Sudah dibuat tapi tidak muncul? Tap Refresh.
+          </div>
+          <button onClick={onRefresh} style={{ padding: "10px 18px", background: PURPLE, border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "inherit", cursor: "pointer" }}>
+            ↻ Refresh Sekarang
+          </button>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
