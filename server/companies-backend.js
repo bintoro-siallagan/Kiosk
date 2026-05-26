@@ -101,21 +101,26 @@ function setupCompanies(app, opts = {}) {
     //     outlet assignment ada di outlet_assignments / user.outlet_codes (best-effort)
     //     Simple rule untuk MVP: semua user existing → company 1.
     //     Super-admin (role='super_admin' OR username='admin') → company_id = NULL
-    // Super-admin detection: role contains 'super' OR name contains 'super' / 'admin' (case-insensitive)
-    // Idempotent: re-run akan fix yang previous pass salah-classify
-    const userUpd = db.prepare(`
-      UPDATE admin_users
-      SET company_id = CASE
-        WHEN LOWER(COALESCE(role,'')) LIKE '%super%' THEN NULL
-        WHEN LOWER(COALESCE(name,'')) LIKE '%super%' THEN NULL
-        WHEN LOWER(COALESCE(name,'')) = 'admin' THEN NULL
-        ELSE 1
-      END
-      WHERE role IS NOT NULL
-    `).run();
-    if (userUpd.changes > 0) {
-      const sa = db.prepare(`SELECT id, name, role FROM admin_users WHERE company_id IS NULL`).all();
-      console.log(`[companies] migrated ${userUpd.changes} users — ${sa.length} super-admin(s):`, sa.map(u => `${u.name}(${u.role})`).join(', '));
+    // Super-admin detection: role contains 'super' OR name contains 'super' / 'admin'
+    // IDEMPOTENT GUARD: hanya assign user yang belum di-tag (company_id IS NULL).
+    // Tanpa guard ini, restart akan overwrite manual assignment (mis user yang dipindah ke company 2).
+    // First-pass migration: untuk row baru, klasifikasi default. Existing tag tetap dihormati.
+    const newUsers = db.prepare(`SELECT COUNT(*) c FROM admin_users WHERE company_id IS NULL AND role IS NOT NULL`).get().c;
+    if (newUsers > 0) {
+      const userUpd = db.prepare(`
+        UPDATE admin_users
+        SET company_id = CASE
+          WHEN LOWER(COALESCE(role,'')) LIKE '%super%' THEN NULL
+          WHEN LOWER(COALESCE(name,'')) LIKE '%super%' THEN NULL
+          WHEN LOWER(COALESCE(name,'')) = 'admin' THEN NULL
+          ELSE 1
+        END
+        WHERE role IS NOT NULL AND company_id IS NULL
+      `).run();
+      if (userUpd.changes > 0) {
+        const sa = db.prepare(`SELECT id, name, role FROM admin_users WHERE company_id IS NULL`).all();
+        console.log(`[companies] tagged ${userUpd.changes} new users (existing assignment preserved) — ${sa.length} super-admin(s):`, sa.map(u => `${u.name}(${u.role})`).join(', '));
+      }
     }
 
     // 3c. orders (F&B) → company 1
