@@ -23,7 +23,13 @@ function setupStockList(app, opts = {}) {
   const router = express.Router();
 
   router.get('/', (req, res) => {
-    const rows = many(`SELECT id, name, unit, stock, min_stock, max_stock, daily_use, cost_per_unit, category, reorder_point FROM audit_warehouse ORDER BY category, id`);
+    // Multi-tenant: filter by company_id from req.companyScope
+    const sc = req.companyScope || {};
+    const whereSql = sc.is_super_admin ? '' : 'WHERE company_id = ? OR company_id IS NULL';
+    const args = sc.is_super_admin ? [] : [sc.company_id];
+    const rows = whereSql
+      ? db.prepare(`SELECT id, name, unit, stock, min_stock, max_stock, daily_use, cost_per_unit, category, reorder_point, company_id FROM audit_warehouse ${whereSql} ORDER BY category, id`).all(...args)
+      : many(`SELECT id, name, unit, stock, min_stock, max_stock, daily_use, cost_per_unit, category, reorder_point, company_id FROM audit_warehouse ORDER BY category, id`);
     const items = rows.map(w => {
       const st = statusOf(w);
       return {
@@ -31,6 +37,7 @@ function setupStockList(app, opts = {}) {
         stock: w.stock, min_stock: w.min_stock, reorder_point: w.reorder_point,
         cost_per_unit: w.cost_per_unit || 0, stock_value: Math.round((w.stock || 0) * (w.cost_per_unit || 0)),
         days_left: w.daily_use > 0 ? Math.round(w.stock / w.daily_use * 10) / 10 : null,
+        company_id: w.company_id, // expose untuk scopeFilter middleware
         ...st,
       };
     });

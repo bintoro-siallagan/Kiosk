@@ -262,6 +262,10 @@ let menu = [
   { id: 501, cat: 'collab', emoji: '🎮', name: 'Sour Sally x MLBB',          desc: 'Limited edition collab pack',                   price: 85000,  freeToppings: 2, avail: true },
 ];
 
+// Multi-tenant: tag all legacy hardcoded menu items as BTS (company_id=1).
+// New tenants get empty menu — mereka upload sendiri via Admin → Menu.
+menu = menu.map(m => ({ ...m, company_id: m.company_id ?? 1 }));
+
 // ─── Apply persisted menu avail overrides ───
 const _menuOverrides = db.getMenuOverrides();
 menu.forEach(item => {

@@ -121,12 +121,18 @@ function shouldBypass(pathname) {
   return BYPASS_PATH_PREFIXES.some(p => pathname.startsWith(p));
 }
 
-// Filter array of objects by company_id match
+// Filter array of objects by company_id match.
+// Policy: strict — items WITHOUT company_id field are DROPPED for non-super tenant
+// (kalau legitimately shared, response harus add ke BYPASS_PATH_PREFIXES).
+// Primitive items (string/number) atau objek tanpa company_id pun di-drop kecuali tagged.
 function filterByScope(arr, companyId) {
   return arr.filter(x => {
-    if (x == null || typeof x !== 'object') return true;
+    if (x == null || typeof x !== 'object') return true; // primitives pass (e.g., string lists)
     const cid = x.company_id;
-    return cid == null || cid === companyId;
+    if (cid === companyId) return true;
+    // company_id field absent atau null: dropped untuk safety, kecuali _shared:true marker
+    if (x._shared === true) return true;
+    return false;
   });
 }
 
