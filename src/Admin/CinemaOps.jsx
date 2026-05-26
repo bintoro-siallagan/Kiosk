@@ -288,11 +288,32 @@ function CinemaOpsInner({ apiBase }) {
             {btn("+ Jadwalkan", () => add("showtimes", { film_id: f("film_id"), studio_id: f("studio_id"), show_date: f("show_date"), start_time: f("start_time"), format: f("format") || "2D", price: f("price") || 0 }))}
           </Form>
 
-          {/* Auto-suggest available slots — biar HO programmer gak bentrok waktu film */}
+          {/* Auto-suggest available slots — multi-select untuk bulk create */}
           <ShowtimeSlotSuggest
             base={base} filmId={f("film_id")} studioId={f("studio_id")} date={f("show_date")}
             pickedTime={f("start_time")}
             onPick={(time) => { setForm(p => ({ ...p, start_time: time })); setMsg(`🕐 Jam ${time} terpilih — klik "+ Jadwalkan" untuk konfirmasi`); }}
+            onBulkCreate={async (times) => {
+              if (!f("film_id") || !f("studio_id") || !f("show_date") || times.length === 0) return;
+              setMsg(`🚀 Membuat ${times.length} jam tayang…`);
+              const results = { ok: [], fail: [] };
+              for (const t of times) {
+                try {
+                  const r = await fetch(`${base}/showtimes`, {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      film_id: f("film_id"), studio_id: f("studio_id"),
+                      show_date: f("show_date"), start_time: t,
+                      format: f("format") || "2D", price: f("price") || 0,
+                    }),
+                  });
+                  const d = await r.json();
+                  if (d.ok) results.ok.push(t); else results.fail.push({ time: t, error: d.error });
+                } catch (e) { results.fail.push({ time: t, error: e.message }); }
+              }
+              setMsg(`✅ ${results.ok.length} dibuat${results.fail.length > 0 ? `, ❌ ${results.fail.length} gagal: ${results.fail.map(f => f.time).join(", ")}` : ""}`);
+              reload();
+            }}
           />
 
           {/* BULK MULTI-OUTLET PUSH */}
@@ -999,15 +1020,20 @@ function ShowtimeTemplatesPanel({ apiBase, films, studios, onChanged }) {
 
 // ─── ShowtimeSlotSuggest ───────────────────────────────────────────────
 // Helper: tampilkan available slots untuk film+studio+date yang dipilih.
-// Klik slot → auto-fill start_time di form parent.
-function ShowtimeSlotSuggest({ base, filmId, studioId, date, onPick, pickedTime }) {
+// Mode: multi-select. Click pill → toggle in selection. Button "Buat X
+// showtimes" → loop POST. Single-click pill juga otomatis fill form atas
+// (kalau cuma 1 selected), biar user bisa pakai cara cepat untuk 1 slot.
+function ShowtimeSlotSuggest({ base, filmId, studioId, date, onPick, onBulkCreate, pickedTime }) {
   const [slots, setSlots] = useState(null);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(true);
+  const [selected, setSelected] = useState(() => new Set());
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (!filmId || !studioId || !date) { setSlots(null); return; }
+    if (!filmId || !studioId || !date) { setSlots(null); setSelected(new Set()); return; }
     setLoading(true); setOpen(true);
+    setSelected(new Set());  // reset selection saat ganti film/studio/date
     fetch(`${base}/showtimes/available-slots?film_id=${filmId}&studio_id=${studioId}&date=${encodeURIComponent(date)}`)
       .then(r => r.json()).then(d => setSlots(d))
       .catch(() => setSlots({ error: "Gagal memuat slot" }))
@@ -1017,6 +1043,17 @@ function ShowtimeSlotSuggest({ base, filmId, studioId, date, onPick, pickedTime 
   if (!filmId || !studioId || !date) return null;
   const available = slots?.slots?.filter(s => s.available) || [];
   const blocked = slots?.slots?.filter(s => !s.available) || [];
+
+  const toggleSelect = (time) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(time)) next.delete(time); else next.add(time);
+      return next;
+    });
+  };
+  const selectAll = () => setSelected(new Set(available.map(s => s.start)));
+  const clearAll = () => setSelected(new Set());
+  const selectedArr = [...selected].sort();
 
   return (
     <div style={{ marginTop: 10, padding: 12, background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 10 }}>
@@ -1040,35 +1077,67 @@ function ShowtimeSlotSuggest({ base, filmId, studioId, date, onPick, pickedTime 
           {loading && <div style={{ fontSize: 11, color: "#9ca3af", padding: 6 }}>Memuat slot…</div>}
           {slots?.error && <div style={{ fontSize: 11, color: "#fca5a5", padding: 6 }}>{slots.error}</div>}
           {available.length > 0 && (
-            <div style={{ marginBottom: 8 }}>
-              <div style={{ fontSize: 10, color: "#10b981", letterSpacing: 1, marginBottom: 6, fontFamily: "'Geist Mono',monospace" }}>
-                ✅ TERSEDIA ({available.length}) — klik jam untuk auto-fill form
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
+                <div style={{ fontSize: 10, color: "#10b981", letterSpacing: 1, fontFamily: "'Geist Mono',monospace" }}>
+                  ✅ TERSEDIA ({available.length}) — klik jam untuk pilih (bisa banyak)
+                </div>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button type="button" onClick={selectAll}
+                    style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.3)", color: "#10b981", borderRadius: 6, padding: "4px 10px", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Pilih Semua</button>
+                  <button type="button" onClick={clearAll}
+                    style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: "#9ca3af", borderRadius: 6, padding: "4px 10px", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Kosongkan</button>
+                </div>
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {available.map(s => {
-                  const isPicked = pickedTime === s.start;
+                  const isSelected = selected.has(s.start);
                   return (
                     <button
                       key={s.start}
                       type="button"
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); onPick?.(s.start); }}
-                      title={`Film ${s.start} → selesai ${s.end} · klik untuk pilih`}
-                      onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px) scale(1.05)"; e.currentTarget.style.background = "rgba(16,185,129,0.25)"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0) scale(1)"; e.currentTarget.style.background = isPicked ? "#10b981" : "rgba(16,185,129,0.12)"; }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleSelect(s.start); }}
+                      title={`Film ${s.start} → selesai ${s.end} · klik untuk pilih/lepas`}
+                      onMouseEnter={(e) => { if (!isSelected) { e.currentTarget.style.transform = "translateY(-1px) scale(1.05)"; e.currentTarget.style.background = "rgba(16,185,129,0.25)"; } }}
+                      onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0) scale(1)"; e.currentTarget.style.background = isSelected ? "#10b981" : "rgba(16,185,129,0.12)"; }}
                       style={{
-                        background: isPicked ? "#10b981" : "rgba(16,185,129,0.12)",
-                        border: `1px solid ${isPicked ? "#10b981" : "rgba(16,185,129,0.45)"}`,
-                        color: isPicked ? "#fff" : "#10b981",
+                        background: isSelected ? "#10b981" : "rgba(16,185,129,0.12)",
+                        border: `1px solid ${isSelected ? "#10b981" : "rgba(16,185,129,0.45)"}`,
+                        color: isSelected ? "#fff" : "#10b981",
                         padding: "8px 14px", borderRadius: 8,
                         fontSize: 12, fontFamily: "'Geist Mono',monospace", fontWeight: 800,
                         cursor: "pointer", transition: "all 0.15s ease",
-                        boxShadow: isPicked ? "0 4px 12px rgba(16,185,129,0.35)" : "none",
+                        boxShadow: isSelected ? "0 4px 12px rgba(16,185,129,0.35)" : "none",
                       }}>
-                      {isPicked ? "✓ " : ""}{s.start}
+                      {isSelected ? "✓ " : ""}{s.start}
                     </button>
                   );
                 })}
               </div>
+              {/* Bulk create button — muncul kalau ada slot dipilih */}
+              {selectedArr.length > 0 && (
+                <div style={{ marginTop: 10, padding: "10px 14px", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+                  <div style={{ fontSize: 12, color: "#c084fc", fontWeight: 600 }}>
+                    <b style={{ fontFamily: "'Geist Mono',monospace", color: "#fff" }}>{selectedArr.length}</b> jam dipilih: <span style={{ fontFamily: "'Geist Mono',monospace", color: "#10b981" }}>{selectedArr.join(", ")}</span>
+                  </div>
+                  <button type="button" disabled={busy}
+                    onClick={async () => {
+                      if (typeof onBulkCreate !== "function") return;
+                      setBusy(true);
+                      try { await onBulkCreate(selectedArr); setSelected(new Set()); }
+                      finally { setBusy(false); }
+                    }}
+                    style={{
+                      background: busy ? "rgba(168,85,247,0.4)" : "linear-gradient(135deg,#a855f7,#c084fc)",
+                      border: "none", borderRadius: 10, padding: "10px 22px",
+                      color: "#fff", fontSize: 13, fontWeight: 800, cursor: busy ? "wait" : "pointer",
+                      fontFamily: "inherit", letterSpacing: 0.3,
+                      boxShadow: "0 4px 12px rgba(168,85,247,0.35), inset 0 1px 0 rgba(255,255,255,0.2)",
+                    }}>
+                    {busy ? "⏳ Membuat…" : `🚀 Buat ${selectedArr.length} Jam Tayang Sekaligus`}
+                  </button>
+                </div>
+              )}
             </div>
           )}
           {blocked.length > 0 && (
