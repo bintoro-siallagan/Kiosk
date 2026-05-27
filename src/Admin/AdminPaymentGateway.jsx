@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUiKit } from "../components/uiKit.jsx";
 
-const fR = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fR } from "../lib/currency.js";
 
 const modalInp = { background: "#0a0e16", border: "1px solid #30363d", borderRadius: 7, padding: "8px 11px", color: "#e6edf3", fontSize: 13, fontFamily: "inherit", outline: "none", boxSizing: "border-box", width: "100%" };
 

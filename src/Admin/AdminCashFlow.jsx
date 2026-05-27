@@ -2,8 +2,9 @@
 // Laporan Arus Kas — Cash Flow Statement.
 
 import { useState, useEffect, useCallback } from "react";
+import { fmtMoney } from "../lib/currency.js";
 
-const fmtRp = (n) => (n < 0 ? "−Rp " : "Rp ") + Math.abs(Math.round(n || 0)).toLocaleString("id-ID");
+const fmtRp = (n) => (n < 0 ? "−" : "") + fmtMoney(Math.abs(n || 0));
 const fmtJt = (n) => (n < 0 ? "−" : "") + (Math.abs(n) / 1e6).toFixed(1) + "M";
 const AC = "#0d9488";
 const SEC_C = { Operasi: "#10b981", Investasi: "#3b82f6", Pendanaan: "#a855f7" };

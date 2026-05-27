@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 import ReportActions from "./ReportActions.jsx";
 
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "../lib/currency.js";
 const ST = {
   over: { c: "#ef4444", t: "OVER BUDGET" },
   warning: { c: "#f59e0b", t: "HAMPIR LIMIT" },

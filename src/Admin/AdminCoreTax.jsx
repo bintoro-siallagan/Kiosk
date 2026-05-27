@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUiKit } from "../components/uiKit.jsx";
 
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#b91c1c";
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "—";
 const ST = { draft: "#f59e0b", reported: "#3b82f6", paid: "#10b981", siap: "#10b981", pending: "#f59e0b" };
