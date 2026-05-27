@@ -311,26 +311,413 @@ function FilmsGrid({ outlet, onPickFilm, brandPrimary }) {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// STEP 3: SHOWTIMES (placeholder — implemented next)
+// STEP 3: SHOWTIMES LIST (grouped by date)
 // ════════════════════════════════════════════════════════════════════
+const FORMAT_COLOR = { "2D": "#3b82f6", "3D": "#a855f7", IMAX: "#fbbf24", "4DX": "#ec4899" };
+
+function fmtDate(yyyymmdd) {
+  if (!yyyymmdd) return "";
+  const d = new Date(yyyymmdd + "T00:00:00");
+  return d.toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short" });
+}
+
 function ShowtimesList({ outlet, film, onPickShowtime, brandPrimary }) {
+  const [showtimes, setShowtimes] = useState(null);
+  const [error, setError] = useState(null);
+
+  const load = useCallback(() => {
+    setError(null);
+    fetch(`${API_HOST}/api/cinema/showtimes?outlet=${encodeURIComponent(outlet.code)}`)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then(d => {
+        const filmShowtimes = (d.showtimes || [])
+          .filter(s => s.film_id === film.id)
+          .filter(s => s.derived_status !== "closed" && s.derived_status !== "cancelled")
+          .sort((a, b) => (a.show_date + a.start_time).localeCompare(b.show_date + b.start_time));
+        setShowtimes(filmShowtimes);
+      })
+      .catch(e => setError(e));
+  }, [outlet.code, film.id]);
+  useEffect(() => { load(); }, [load]);
+
+  const byDate = useMemo(() => {
+    if (!showtimes) return {};
+    return showtimes.reduce((acc, s) => {
+      (acc[s.show_date] = acc[s.show_date] || []).push(s);
+      return acc;
+    }, {});
+  }, [showtimes]);
+
+  if (error) return <ErrorInline error={error} label="Gagal memuat jadwal" onRetry={load} />;
+  if (!showtimes) return <LoadingState label="Memuat jadwal…" />;
+
   return (
-    <div style={{ padding: 40, textAlign: "center", color: C.dim }}>
-      <div style={{ fontSize: 48, marginBottom: 12 }}>🎟️</div>
-      <div>Showtimes list — coming next iteration</div>
-      <div style={{ marginTop: 12, fontSize: 12 }}>Film: {film?.title} @ {outlet?.code}</div>
+    <div style={{ padding: "30px 0" }}>
+      {/* Film hero */}
+      <div style={{ display: "flex", gap: 18, marginBottom: 30, padding: 18, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14 }}>
+        {film.poster_url && (
+          <img src={film.poster_url} alt="" style={{ width: 90, aspectRatio: "2/3", objectFit: "cover", borderRadius: 8, flexShrink: 0 }} />
+        )}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.4, margin: 0, marginBottom: 6 }}>{film.title}</h1>
+          <div style={{ fontSize: 12, color: C.sub, marginBottom: 8 }}>{film.genre || "—"} · {film.duration_min || 0} mnt</div>
+          {film.age_rating && (
+            <span style={{ display: "inline-block", padding: "3px 9px", borderRadius: 6, fontSize: 10, fontWeight: 800, fontFamily: "'Geist Mono',monospace", background: (RATING_COLOR[film.age_rating] || "#9ca3af") + "33", color: RATING_COLOR[film.age_rating] || "#9ca3af" }}>{film.age_rating}</span>
+          )}
+        </div>
+      </div>
+
+      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, letterSpacing: -0.3 }}>Pilih Jadwal</h2>
+      {showtimes.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 40, color: C.dim }}>
+          <div style={{ fontSize: 40, marginBottom: 10 }}>📅</div>
+          <div>Tidak ada jadwal tersedia untuk film ini</div>
+        </div>
+      ) : (
+        Object.entries(byDate).map(([date, list]) => (
+          <div key={date} style={{ marginBottom: 24 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, color: C.dim, fontFamily: "'Geist Mono',monospace", marginBottom: 10, textTransform: "uppercase" }}>{fmtDate(date)}</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 170px), 1fr))", gap: 10 }}>
+              {list.map(s => {
+                const remaining = (s.capacity || 0) - (s.sold_count || 0);
+                const lowSeats = remaining <= 10 && remaining > 0;
+                const soldOut = remaining <= 0 || s.derived_status === "sold_out";
+                return (
+                  <button key={s.id} onClick={() => !soldOut && onPickShowtime(s)} disabled={soldOut} style={{
+                    background: soldOut ? "rgba(239,68,68,0.08)" : C.card,
+                    border: `1px solid ${soldOut ? "rgba(239,68,68,0.3)" : C.border}`,
+                    borderRadius: 12, padding: "12px 14px", textAlign: "left",
+                    color: soldOut ? C.dim : C.text, cursor: soldOut ? "not-allowed" : "pointer",
+                    fontFamily: "inherit", transition: "all 0.15s",
+                  }}
+                    onMouseEnter={(e) => { if (!soldOut) { e.currentTarget.style.borderColor = `${brandPrimary}66`; e.currentTarget.style.background = C.cardHover; } }}
+                    onMouseLeave={(e) => { if (!soldOut) { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = C.card; } }}>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
+                      <span style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Geist Mono',monospace" }}>{s.start_time}</span>
+                      <span style={{ fontSize: 10, color: FORMAT_COLOR[s.format] || C.dim, fontWeight: 800, fontFamily: "'Geist Mono',monospace" }}>{s.format || "2D"}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: C.sub, marginBottom: 4 }}>{s.studio_name} · {s.studio_type || "Regular"}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: brandPrimary, fontFamily: "'Geist Mono',monospace" }}>{rp(s.price)}</div>
+                    {soldOut ? (
+                      <div style={{ marginTop: 4, fontSize: 10, color: "#ef4444", fontWeight: 700 }}>SOLD OUT</div>
+                    ) : lowSeats ? (
+                      <div style={{ marginTop: 4, fontSize: 10, color: "#fbbf24", fontWeight: 700 }}>Sisa {remaining} kursi</div>
+                    ) : (
+                      <div style={{ marginTop: 4, fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{remaining}/{s.capacity}</div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))
+      )}
     </div>
   );
 }
 
+// ════════════════════════════════════════════════════════════════════
+// STEP 4: SEAT PICKER
+// ════════════════════════════════════════════════════════════════════
 function SeatPicker({ showtime, film, initialSeats, onConfirm, brandPrimary }) {
-  return <div style={{ padding: 40, textAlign: "center", color: C.dim }}>Seat picker — TBD</div>;
+  const [seatData, setSeatData] = useState(null);
+  const [error, setError] = useState(null);
+  const [selected, setSelected] = useState(new Set(initialSeats || []));
+
+  const load = useCallback(() => {
+    setError(null);
+    fetch(`${API_HOST}/api/cinema/showtimes/${showtime.id}/seats`)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then(setSeatData)
+      .catch(e => setError(e));
+  }, [showtime.id]);
+  useEffect(() => { load(); const iv = setInterval(load, 15000); return () => clearInterval(iv); }, [load]);
+
+  const toggle = (seat) => {
+    if (!seatData) return;
+    if (seatData.sold.includes(seat)) return;
+    if (seatData.held_by_others?.includes(seat)) return;
+    const next = new Set(selected);
+    if (next.has(seat)) next.delete(seat);
+    else next.add(seat);
+    setSelected(next);
+  };
+
+  if (error) return <ErrorInline error={error} label="Gagal memuat peta kursi" onRetry={load} />;
+  if (!seatData) return <LoadingState label="Memuat peta kursi…" />;
+
+  const rows = seatData.rows || 0;
+  const cols = seatData.cols || 0;
+  const total = selected.size * (showtime.price || 0);
+
+  // Generate seat IDs (row letter + col number, e.g. A1, B5)
+  const rowLetters = Array.from({ length: rows }, (_, i) => String.fromCharCode(65 + i));
+
+  return (
+    <div style={{ padding: "30px 0 120px" }}>
+      <div style={{ marginBottom: 20 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.3, margin: 0, marginBottom: 4 }}>Pilih Kursi</h2>
+        <div style={{ fontSize: 12, color: C.sub }}>
+          {showtime.studio_name} · {showtime.start_time} · {showtime.format || "2D"}
+        </div>
+      </div>
+
+      {/* Screen */}
+      <div style={{ textAlign: "center", marginBottom: 28 }}>
+        <div style={{
+          height: 8, maxWidth: 480, margin: "0 auto",
+          background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)",
+          borderRadius: "50%", filter: "blur(2px)",
+        }} />
+        <div style={{ fontSize: 10, color: C.dim, marginTop: 6, letterSpacing: 2, fontFamily: "'Geist Mono',monospace" }}>LAYAR</div>
+      </div>
+
+      {/* Seat grid */}
+      <div style={{ overflowX: "auto", paddingBottom: 10 }}>
+        <div style={{ display: "inline-block", margin: "0 auto", minWidth: "100%" }}>
+          {rowLetters.map(row => (
+            <div key={row} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, justifyContent: "center" }}>
+              <div style={{ width: 18, fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace", textAlign: "right" }}>{row}</div>
+              {Array.from({ length: cols }, (_, i) => i + 1).map(col => {
+                const seat = `${row}${col}`;
+                const isSold = seatData.sold.includes(seat);
+                const isHeldOther = seatData.held_by_others?.includes(seat);
+                const isMine = selected.has(seat);
+                const bg = isSold ? "rgba(239,68,68,0.4)" : isHeldOther ? "rgba(156,163,175,0.4)" : isMine ? brandPrimary : "rgba(255,255,255,0.06)";
+                const border = isMine ? brandPrimary : isSold ? "rgba(239,68,68,0.6)" : isHeldOther ? "rgba(156,163,175,0.4)" : "rgba(255,255,255,0.15)";
+                return (
+                  <button key={seat} onClick={() => toggle(seat)}
+                    disabled={isSold || isHeldOther}
+                    title={isSold ? `${seat} (sold)` : isHeldOther ? `${seat} (held)` : seat}
+                    style={{
+                      width: 26, height: 26, borderRadius: 6,
+                      background: bg, border: `1px solid ${border}`,
+                      color: isMine ? "#fff" : isSold || isHeldOther ? C.dim : C.text,
+                      fontSize: 8, fontWeight: 700, fontFamily: "'Geist Mono',monospace",
+                      cursor: isSold || isHeldOther ? "not-allowed" : "pointer", padding: 0,
+                      flexShrink: 0,
+                    }}>{col}</button>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div style={{ display: "flex", justifyContent: "center", gap: 18, marginTop: 18, fontSize: 11, color: C.sub, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ width: 14, height: 14, borderRadius: 4, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)" }} />
+          <span>Tersedia</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ width: 14, height: 14, borderRadius: 4, background: brandPrimary }} />
+          <span>Dipilih</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ width: 14, height: 14, borderRadius: 4, background: "rgba(239,68,68,0.4)", border: "1px solid rgba(239,68,68,0.6)" }} />
+          <span>Terjual</span>
+        </div>
+      </div>
+
+      {/* Bottom action bar (sticky) */}
+      {selected.size > 0 && (
+        <div style={{
+          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
+          background: "rgba(10,10,15,0.95)", backdropFilter: "blur(20px)",
+          borderTop: `1px solid ${C.border}`, padding: "14px 20px",
+        }}>
+          <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>
+                {selected.size} KURSI · {Array.from(selected).sort().join(", ")}
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: brandPrimary }}>{rp(total)}</div>
+            </div>
+            <button onClick={() => onConfirm(Array.from(selected))} style={{
+              background: brandPrimary, border: "none", color: "#fff",
+              padding: "12px 22px", borderRadius: 10,
+              fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+              boxShadow: `0 8px 20px ${brandPrimary}55`,
+            }}>Lanjut →</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
+// ════════════════════════════════════════════════════════════════════
+// STEP 5: CHECKOUT (customer info + booking submit)
+// ════════════════════════════════════════════════════════════════════
 function Checkout({ outlet, film, showtime, seats, onBooked, brandPrimary }) {
-  return <div style={{ padding: 40, textAlign: "center", color: C.dim }}>Checkout — TBD</div>;
+  const [form, setForm] = useState({ name: "", phone: "", email: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState(null);
+
+  const total = seats.length * (showtime.price || 0);
+  const valid = form.name.trim() && form.phone.trim().match(/^[0-9+\-\s]{8,}$/);
+
+  const submit = async () => {
+    if (!valid) return;
+    setSubmitting(true); setError(null);
+    try {
+      const body = {
+        showtime_id: showtime.id,
+        seats,
+        buyer: form.name.trim(),
+        buyer_phone: form.phone.replace(/[^\d]/g, ""),
+        buyer_email: form.email.trim() || undefined,
+        payment_method: "pending", // Phase 2: integrate Snap → "qris"/"gopay"/etc
+      };
+      const r = await fetch(`${API_HOST}/api/cinema/tickets`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await r.json();
+      if (!r.ok || !data.ok) {
+        throw new Error(data.error || `HTTP ${r.status}`);
+      }
+      onBooked(data);
+    } catch (e) {
+      setError(e);
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div style={{ padding: "30px 0", display: "grid", gridTemplateColumns: "1fr 360px", gap: 24 }}>
+      {/* Left: Customer form */}
+      <div>
+        <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.3, margin: 0, marginBottom: 16 }}>Data Pemesan</h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <Field label="Nama Lengkap *" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="Nama sesuai identitas" />
+          <Field label="No. WhatsApp *" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="08xxxxxxxxxx" type="tel" />
+          <Field label="Email (opsional)" value={form.email} onChange={(v) => setForm({ ...form, email: v })} placeholder="email@domain.com" type="email" />
+          <div style={{ fontSize: 11, color: C.dim, marginTop: 4 }}>
+            ⚡ E-tiket akan dikirim via WhatsApp + Email setelah pembayaran.
+          </div>
+        </div>
+
+        {error && (
+          <div style={{ marginTop: 18 }}>
+            <ErrorInline error={error} label="Gagal membuat booking" onRetry={() => setError(null)} />
+          </div>
+        )}
+
+        <button onClick={submit} disabled={!valid || submitting} style={{
+          marginTop: 24, width: "100%", padding: "14px",
+          background: valid && !submitting ? brandPrimary : "rgba(255,255,255,0.1)",
+          border: "none", color: "#fff", borderRadius: 10,
+          fontSize: 14, fontWeight: 800, cursor: valid && !submitting ? "pointer" : "not-allowed", fontFamily: "inherit",
+          boxShadow: valid && !submitting ? `0 8px 20px ${brandPrimary}55` : "none",
+        }}>{submitting ? "Memproses…" : "Booking Sekarang"}</button>
+      </div>
+
+      {/* Right: Order summary */}
+      <aside>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 18, position: "sticky", top: 80 }}>
+          <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, color: C.dim, fontFamily: "'Geist Mono',monospace", margin: 0, marginBottom: 14, textTransform: "uppercase" }}>Ringkasan</h3>
+          <div style={{ display: "flex", gap: 10, marginBottom: 14, paddingBottom: 14, borderBottom: `1px solid ${C.border}` }}>
+            {film.poster_url && <img src={film.poster_url} alt="" style={{ width: 50, aspectRatio: "2/3", objectFit: "cover", borderRadius: 6 }} />}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, marginBottom: 4 }}>{film.title}</div>
+              <div style={{ fontSize: 11, color: C.sub }}>{film.duration_min}mnt · {film.genre || "—"}</div>
+            </div>
+          </div>
+          <Row label="📍 Lokasi" value={outlet.name?.replace("Karya Cinema ", "") || outlet.code} />
+          <Row label="📅 Jadwal" value={`${fmtDate(showtime.show_date)} · ${showtime.start_time}`} />
+          <Row label="🎬 Studio" value={`${showtime.studio_name} · ${showtime.format || "2D"}`} />
+          <Row label="💺 Kursi" value={`${seats.length} kursi · ${seats.sort().join(", ")}`} />
+          <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+            <span style={{ fontSize: 13, color: C.sub }}>Total</span>
+            <span style={{ fontSize: 22, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: brandPrimary }}>{rp(total)}</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
 }
 
+function Field({ label, value, onChange, placeholder, type = "text" }) {
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <span style={{ fontSize: 11, color: C.dim, fontWeight: 600, letterSpacing: 0.5 }}>{label}</span>
+      <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
+        style={{
+          background: C.card, border: `1px solid ${C.border}`, color: C.text,
+          borderRadius: 10, padding: "11px 13px", fontSize: 14, fontFamily: "inherit", outline: "none",
+        }}
+        onFocus={(e) => e.currentTarget.style.borderColor = "rgba(168,85,247,0.6)"}
+        onBlur={(e) => e.currentTarget.style.borderColor = C.border}
+      />
+    </label>
+  );
+}
+
+function Row({ label, value }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 12, gap: 12 }}>
+      <span style={{ color: C.dim, flexShrink: 0 }}>{label}</span>
+      <span style={{ color: C.text, textAlign: "right" }}>{value}</span>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
+// STEP 6: SUCCESS
+// ════════════════════════════════════════════════════════════════════
 function SuccessPage({ booking, film, showtime, seats, onNewBooking, brandPrimary }) {
-  return <div style={{ padding: 40, textAlign: "center", color: C.dim }}>Success — TBD</div>;
+  const ticketCode = booking?.ticket_code || booking?.code || booking?.order_id || booking?.id;
+  const total = seats.length * (showtime.price || 0);
+
+  return (
+    <div style={{ padding: "40px 0 60px", maxWidth: 540, margin: "0 auto", textAlign: "center" }}>
+      <div style={{
+        width: 80, height: 80, margin: "0 auto 20px",
+        borderRadius: "50%", background: "rgba(16,185,129,0.15)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 40,
+      }}>✓</div>
+      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 8, color: "#10b981" }}>
+        Booking Berhasil!
+      </h1>
+      <p style={{ fontSize: 13, color: C.sub, margin: 0, marginBottom: 24 }}>
+        E-tiket dikirim ke WhatsApp. Tunjukkan di counter atau scan QR di pintu studio.
+      </p>
+
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20, marginBottom: 20, textAlign: "left" }}>
+        <div style={{ fontSize: 10, color: C.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 4 }}>KODE TIKET</div>
+        <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: brandPrimary, marginBottom: 16 }}>{ticketCode}</div>
+
+        <Row label="🎬 Film" value={film.title} />
+        <Row label="📅 Jadwal" value={`${fmtDate(showtime.show_date)} · ${showtime.start_time}`} />
+        <Row label="🎬 Studio" value={`${showtime.studio_name} · ${showtime.format || "2D"}`} />
+        <Row label="💺 Kursi" value={seats.sort().join(", ")} />
+        <Row label="💰 Total" value={rp(total)} />
+      </div>
+
+      <div style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 12, padding: "12px 14px", marginBottom: 20, fontSize: 12, color: "#fbbf24", textAlign: "left" }}>
+        ⏰ <strong>Penting:</strong> Datang minimal 15 menit sebelum jadwal. Pembayaran dilakukan di counter — tunjukkan kode tiket di atas.
+      </div>
+
+      <div style={{ display: "flex", gap: 10 }}>
+        <button onClick={onNewBooking} style={{
+          flex: 1, padding: "12px",
+          background: "transparent", border: `1px solid ${C.border}`, color: C.text,
+          borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+        }}>+ Booking Lagi</button>
+        {ticketCode && (
+          <a href={`/?ticket=${ticketCode}`} target="_blank" rel="noopener noreferrer" style={{
+            flex: 1, padding: "12px",
+            background: brandPrimary, border: "none", color: "#fff",
+            borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+            textDecoration: "none", textAlign: "center",
+            boxShadow: `0 6px 16px ${brandPrimary}55`,
+          }}>🎫 Lihat E-Tiket</a>
+        )}
+      </div>
+    </div>
+  );
 }
