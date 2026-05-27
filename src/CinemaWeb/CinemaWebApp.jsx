@@ -102,9 +102,10 @@ function loadSnapScript() {
   return _snapPromise;
 }
 
+// Netflix-mood: flat dark #141414, no gradient (cinematic streaming standard)
 const C = {
-  bg: "#18181b",
-  bgGrad: "linear-gradient(135deg, #18181b 0%, #1a1a24 50%, #16161e 100%)",
+  bg: "#141414",
+  bgGrad: "#141414",
   card: "rgba(255,255,255,0.04)",
   cardHover: "rgba(255,255,255,0.07)",
   border: "rgba(255,255,255,0.1)",
