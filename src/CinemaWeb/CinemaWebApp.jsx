@@ -14,6 +14,7 @@ import { LoadingState } from "../components/uiKit.jsx";
 import { ErrorInline } from "../components/ConnectionError.jsx";
 import CinemaCelebration from "../CinemaCelebration.jsx";
 import { useTenantTheme } from "../lib/tenantTheme.js";
+import { LocaleSwitcher } from "../i18n";
 
 // ════════════════════════════════════════════════════════════════════
 // PREMIUM SKELETON COMPONENTS
@@ -2106,6 +2107,9 @@ function Footer({ brand, brandPrimary, onAbout, onNav, footerConfig }) {
           </div>
         </div>
 
+        {/* Payment partners row */}
+        <PaymentPartners />
+
         {/* Bottom bar */}
         <div style={{
           paddingTop: S[6], borderTop: `1px solid ${C.borderSubtle}`,
@@ -2120,11 +2124,9 @@ function Footer({ brand, brandPrimary, onAbout, onNav, footerConfig }) {
               Cinema Operational Intelligence
             </span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: S[4] }}>
-            <div style={{ display: "flex", alignItems: "center", gap: S[2] }}>
-              <span style={{ fontSize: T.xs, color: C.dim, fontFamily: T.mono, letterSpacing: T.tracking_wider, textTransform: "uppercase", fontWeight: T.medium }}>Secure Payment</span>
-              <span style={{ fontSize: T.base }}>🔒</span>
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: S[4], flexWrap: "wrap" }}>
+            {/* Language toggle */}
+            <LocaleSwitcher compact />
             <div style={{ display: "flex", alignItems: "center", gap: S[2] }}>
               <span style={{ fontSize: T.xs, color: C.dim, fontFamily: T.sans }}>Powered by</span>
               <span style={{ fontFamily: T.mono, color: brandPrimary, fontWeight: T.semibold, fontSize: T.xs, letterSpacing: T.tracking_wider, textTransform: "uppercase" }}>karya<span style={{ color: C.amber }}>OS</span></span>
@@ -2142,6 +2144,69 @@ function FooterHeading({ children }) {
     fontFamily: T.mono, marginBottom: S[4], textTransform: "uppercase",
     fontWeight: T.semibold,
   }}>{children}</div>;
+}
+
+// Payment partners row — pill-style grayscale badges, Stripe-inspired.
+// Categories: Gateway (Midtrans) · Cards · Banks · E-wallets · QRIS
+const PAYMENT_METHODS = [
+  { label: "Midtrans", group: "gateway" },
+  { label: "Visa", group: "card" },
+  { label: "Mastercard", group: "card" },
+  { label: "JCB", group: "card" },
+  { label: "BCA", group: "bank" },
+  { label: "Mandiri", group: "bank" },
+  { label: "BRI", group: "bank" },
+  { label: "BNI", group: "bank" },
+  { label: "GoPay", group: "ewallet" },
+  { label: "OVO", group: "ewallet" },
+  { label: "DANA", group: "ewallet" },
+  { label: "ShopeePay", group: "ewallet" },
+  { label: "QRIS", group: "qris" },
+];
+
+function PaymentPartners() {
+  return (
+    <div style={{
+      paddingTop: S[5], paddingBottom: S[5],
+      marginBottom: S[5],
+      borderTop: `1px solid ${C.borderSubtle}`,
+      borderBottom: `1px solid ${C.borderSubtle}`,
+      display: "flex", flexDirection: "column", gap: S[3],
+    }}>
+      <div style={{
+        fontSize: T.xs, color: C.meta, fontFamily: T.mono,
+        letterSpacing: T.tracking_wider, textTransform: "uppercase",
+        fontWeight: T.medium,
+        display: "flex", alignItems: "center", gap: S[2],
+      }}>
+        <span style={{ fontSize: T.sm }}>🔒</span>
+        Secure Payment Supported by
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: S[2], alignItems: "center" }}>
+        {PAYMENT_METHODS.map(m => (
+          <span key={m.label} style={{
+            padding: `${S[1]}px ${S[3]}px`,
+            background: C.card,
+            border: `1px solid ${C.borderSubtle}`,
+            borderRadius: 6,
+            fontSize: T.xs,
+            color: C.sub,
+            fontFamily: T.sans,
+            fontWeight: T.medium,
+            letterSpacing: T.tracking_normal,
+            transition: "all 0.15s ease",
+            cursor: "default",
+            userSelect: "none",
+          }}
+            onMouseEnter={(e) => { e.currentTarget.style.color = C.text; e.currentTarget.style.borderColor = C.border; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = C.sub; e.currentTarget.style.borderColor = C.borderSubtle; }}
+          >
+            {m.label}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 const footerLinkStyle = {
