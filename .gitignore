@@ -30,8 +30,10 @@ _*.mjs
 *.bak*
 
 # Env
-.env
-.env.bak*
+.env*
+
+# Secrets
+**/.vapid-keys.json
 
 # Server data
 server/customer-receipts/
