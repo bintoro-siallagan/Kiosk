@@ -51,7 +51,7 @@ const C = {
   red: "#ef4444",
 };
 
-const STEPS = ["outlet", "films", "filmDetail", "showtime", "seats", "bundles", "checkout", "success", "about"];
+const STEPS = ["outlet", "films", "filmDetail", "showtime", "seats", "bundles", "checkout", "success", "about", "history", "movies", "promo", "studio", "locations"];
 
 export default function CinemaWebApp() {
   const [step, setStep] = useState(() => {
@@ -70,6 +70,11 @@ export default function CinemaWebApp() {
   const [seats, setSeats] = useState([]);
   const [bundlesCart, setBundlesCart] = useState({}); // { [bundle_id]: qty }
   const [booking, setBooking] = useState(null); // result from POST /tickets
+  // Signed-in user session (phone-based, persisted)
+  const [session, setSession] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("cinema_web_session") || "null"); } catch { return null; }
+  });
+  const [signInOpen, setSignInOpen] = useState(false);
 
   // Brand theming (auto-load tenant brand for color hint)
   const [brand, setBrand] = useState(null);
@@ -102,6 +107,15 @@ export default function CinemaWebApp() {
     setFilm(null); setShowtime(null); setSeats([]); setBundlesCart({}); setBooking(null);
     setStep(outlet ? "films" : "outlet");
   };
+  const handleSignIn = (sess) => {
+    setSession(sess);
+    try { localStorage.setItem("cinema_web_session", JSON.stringify(sess)); } catch {}
+    setSignInOpen(false);
+  };
+  const handleSignOut = () => {
+    setSession(null);
+    try { localStorage.removeItem("cinema_web_session"); } catch {}
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: C.bgGrad, color: C.text, fontFamily: "'Inter','-apple-system',sans-serif", paddingBottom: 80 }}>
@@ -124,6 +138,11 @@ export default function CinemaWebApp() {
         .cw-section-pad > div::-webkit-scrollbar { display: none; }
 
         /* Mobile responsive overrides */
+        @media (max-width: 900px) {
+          .cw-nav-desktop { display: none !important; }
+          .cw-nav-mobile-toggle { display: inline-flex !important; align-items: center; justify-content: center; }
+          .cw-nav-mobile-menu { display: block !important; }
+        }
         @media (max-width: 768px) {
           .cw-checkout { grid-template-columns: 1fr !important; gap: 16px !important; }
           .cw-checkout aside > div { position: static !important; }
@@ -144,7 +163,13 @@ export default function CinemaWebApp() {
           .cw-seat { width: 18px !important; height: 18px !important; }
         }
       `}</style>
-      <Header outlet={outlet} step={step} onResetOutlet={resetOutlet} onBack={goBack} onHome={goHome} brand={brand} brandPrimary={brandPrimary} />
+      <Header
+        outlet={outlet} step={step}
+        onResetOutlet={resetOutlet} onBack={goBack} onHome={goHome}
+        brand={brand} brandPrimary={brandPrimary}
+        session={session} onSignInClick={() => setSignInOpen(true)} onSignOut={handleSignOut}
+        onNav={(target) => goTo(target)}
+      />
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "0 20px" }}>
         {step === "outlet" && (
           <OutletPicker
@@ -191,14 +216,399 @@ export default function CinemaWebApp() {
         {step === "success" && booking && (
           <SuccessPage booking={booking} film={film} showtime={showtime} seats={seats}
             bundlesCart={bundlesCart}
-            onNewBooking={() => { setFilm(null); setShowtime(null); setSeats([]); setBundlesCart({}); setBooking(null); goTo("films"); }}
+            onNewBooking={() => { setFilm(null); setShowtime(null); setSeats([]); setBundlesCart({}); setBooking(null); setStep("outlet"); }}
             brandPrimary={brandPrimary} />
         )}
         {step === "about" && (
           <AboutPage brand={brand} brandPrimary={brandPrimary} onBack={goHome} />
         )}
+        {step === "history" && (
+          <HistoryPage session={session} brandPrimary={brandPrimary} onSignInClick={() => setSignInOpen(true)} />
+        )}
+        {step === "movies" && (
+          <MoviesPage brandPrimary={brandPrimary} onPick={(f) => { setFilm(f); goTo(outlet ? "filmDetail" : "outlet"); }} />
+        )}
+        {step === "promo" && (
+          <PromoPage brandPrimary={brandPrimary} />
+        )}
+        {step === "studio" && (
+          <StudioPage brandPrimary={brandPrimary} />
+        )}
+        {step === "locations" && (
+          <LocationsPage brandPrimary={brandPrimary} onPick={pickOutlet} />
+        )}
       </main>
-      <Footer brand={brand} brandPrimary={brandPrimary} onAbout={() => goTo("about")} />
+      <Footer brand={brand} brandPrimary={brandPrimary} onAbout={() => goTo("about")} onNav={(t) => goTo(t)} />
+      {signInOpen && <SignInModal onClose={() => setSignInOpen(false)} onSignIn={handleSignIn} brandPrimary={brandPrimary} />}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
+// SIGN-IN MODAL — phone-only auth (lookup loyalty + save session)
+// ════════════════════════════════════════════════════════════════════
+function SignInModal({ onClose, onSignIn, brandPrimary }) {
+  const [phone, setPhone] = useState("");
+  const [name, setName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [step, setStep] = useState("phone"); // 'phone' | 'newuser'
+  const [foundData, setFoundData] = useState(null);
+
+  const submit = async () => {
+    const cleaned = phone.replace(/[^\d]/g, "");
+    if (cleaned.length < 8) { setError("Nomor HP minimal 8 digit"); return; }
+    setBusy(true); setError("");
+    try {
+      const r = await fetch(`${API_HOST}/api/cinema/loyalty-points?phone=${encodeURIComponent(cleaned)}`);
+      const d = await r.json();
+      if (d.found) {
+        // Existing member — sign in directly
+        onSignIn({
+          phone: d.customer.phone, name: d.customer.name, points: d.customer.points,
+          tier: d.customer.tier, lifetime_spend: d.customer.lifetime_spend,
+          total_visits: d.customer.total_visits, signed_in_at: Date.now(),
+        });
+      } else {
+        // New user — ask name then create later (akan auto-create di booking pertama)
+        setFoundData(d);
+        setStep("newuser");
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally { setBusy(false); }
+  };
+
+  const submitNewUser = () => {
+    if (!name.trim()) { setError("Nama wajib"); return; }
+    const cleaned = phone.replace(/[^\d]/g, "");
+    onSignIn({
+      phone: cleaned, name: name.trim(), points: 0, tier: "BRONZE",
+      lifetime_spend: 0, total_visits: 0, new_user: true, signed_in_at: Date.now(),
+    });
+  };
+
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, zIndex: 1000,
+      background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+      animation: "cwFadeIn 0.2s ease",
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: "100%", maxWidth: 420,
+        background: "linear-gradient(180deg, #16161a, #0d0d11)",
+        border: `1px solid ${C.border}`, borderRadius: 18, padding: 28,
+        animation: "cwFadeUp 0.3s ease",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+          <div>
+            <div style={{ fontSize: 11, color: brandPrimary, fontWeight: 800, letterSpacing: 2, fontFamily: "'Geist Mono',monospace" }}>🔐 SIGN IN</div>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", margin: 0, marginTop: 4 }}>
+              {step === "phone" ? "Masuk Akun" : "Daftar Member"}
+            </h2>
+          </div>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: C.dim, fontSize: 24, cursor: "pointer", padding: 0, lineHeight: 1 }}>×</button>
+        </div>
+
+        {step === "phone" ? (
+          <>
+            <p style={{ fontSize: 13, color: C.sub, margin: 0, marginBottom: 18, lineHeight: 1.5 }}>
+              Cukup nomor HP saja. Kalau Anda pernah booking sebelumnya, otomatis kami detect saldo poin Anda.
+            </p>
+            <label style={{ display: "block", marginBottom: 8, fontSize: 11, color: C.dim, fontWeight: 600 }}>No. WhatsApp</label>
+            <input value={phone} onChange={e => { setPhone(e.target.value); setError(""); }} type="tel"
+              onKeyDown={e => { if (e.key === "Enter") submit(); }}
+              placeholder="08xxxxxxxxxx" autoFocus
+              style={{
+                width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                color: C.text, borderRadius: 10, padding: "12px 14px", fontSize: 15,
+                fontFamily: "'Geist Mono',monospace", outline: "none", boxSizing: "border-box",
+                letterSpacing: 1,
+              }} />
+            {error && <div style={{ marginTop: 10, fontSize: 12, color: "#fca5a5" }}>⚠ {error}</div>}
+            <button onClick={submit} disabled={busy || phone.replace(/\D/g, "").length < 8} style={{
+              width: "100%", marginTop: 18, padding: 14,
+              background: phone.replace(/\D/g, "").length >= 8 && !busy ? brandPrimary : "rgba(255,255,255,0.1)",
+              border: "none", color: "#fff", borderRadius: 12,
+              fontSize: 14, fontWeight: 800, cursor: phone.replace(/\D/g, "").length >= 8 && !busy ? "pointer" : "not-allowed",
+              fontFamily: "inherit", boxShadow: phone.replace(/\D/g, "").length >= 8 && !busy ? `0 6px 20px ${brandPrimary}55` : "none",
+            }}>{busy ? "🔍 Cek member…" : "Masuk →"}</button>
+            <div style={{ marginTop: 12, fontSize: 11, color: C.dim, textAlign: "center" }}>
+              Belum punya akun? Otomatis daftar saat input HP baru.
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ background: `${brandPrimary}11`, border: `1px solid ${brandPrimary}44`, borderRadius: 10, padding: 12, marginBottom: 18, fontSize: 12, color: brandPrimary }}>
+              ✨ Selamat datang! HP <strong>{phone}</strong> belum terdaftar. Isi nama untuk daftar member baru.
+            </div>
+            <label style={{ display: "block", marginBottom: 8, fontSize: 11, color: C.dim, fontWeight: 600 }}>Nama Lengkap</label>
+            <input value={name} onChange={e => { setName(e.target.value); setError(""); }}
+              onKeyDown={e => { if (e.key === "Enter") submitNewUser(); }}
+              placeholder="Nama Anda" autoFocus
+              style={{
+                width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                color: C.text, borderRadius: 10, padding: "12px 14px", fontSize: 14,
+                fontFamily: "inherit", outline: "none", boxSizing: "border-box",
+              }} />
+            {error && <div style={{ marginTop: 10, fontSize: 12, color: "#fca5a5" }}>⚠ {error}</div>}
+            <button onClick={submitNewUser} style={{
+              width: "100%", marginTop: 18, padding: 14, background: brandPrimary, border: "none", color: "#fff",
+              borderRadius: 12, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+              boxShadow: `0 6px 20px ${brandPrimary}55`,
+            }}>🎉 Daftar & Masuk</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
+// HISTORY / MOVIES / PROMO / STUDIO / LOCATIONS PAGES (MVP stubs)
+// ════════════════════════════════════════════════════════════════════
+function HistoryPage({ session, brandPrimary, onSignInClick }) {
+  const [bookings, setBookings] = useState(null);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!session?.phone) return;
+    fetch(`${API_HOST}/api/cinema/tickets?phone=${encodeURIComponent(session.phone)}`)
+      .then(r => r.json())
+      .then(d => {
+        const list = Array.isArray(d.tickets) ? d.tickets : Array.isArray(d) ? d : [];
+        // Group by purchase_id
+        const grouped = list.reduce((acc, t) => {
+          const pid = t.purchase_id || `single-${t.id}`;
+          if (!acc[pid]) acc[pid] = { purchase_id: pid, tickets: [], film_title: t.film_title, show_date: t.show_date, start_time: t.start_time, total: 0 };
+          acc[pid].tickets.push(t);
+          acc[pid].total += (t.price || 0);
+          return acc;
+        }, {});
+        setBookings(Object.values(grouped).sort((a, b) => (b.tickets[0]?.sold_at || 0) - (a.tickets[0]?.sold_at || 0)));
+      })
+      .catch(e => setError(e.message));
+  }, [session?.phone]);
+
+  if (!session) return (
+    <div style={{ padding: "60px 0", textAlign: "center", maxWidth: 480, margin: "0 auto" }}>
+      <div style={{ fontSize: 64, marginBottom: 18 }}>🔐</div>
+      <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 10 }}>Sign In Dulu</h2>
+      <p style={{ fontSize: 13, color: C.sub, marginBottom: 20 }}>Untuk lihat history booking Anda, masuk dengan nomor HP yang dipakai sebelumnya.</p>
+      <button onClick={onSignInClick} style={{ padding: "12px 24px", background: brandPrimary, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>🔐 Sign In</button>
+    </div>
+  );
+
+  return (
+    <div style={{ padding: "30px 0 60px" }}>
+      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 6 }}>📋 History Pembelian</h1>
+      <p style={{ fontSize: 13, color: C.sub, margin: 0, marginBottom: 24 }}>Booking masa lalu untuk <strong style={{ color: brandPrimary }}>{session.phone}</strong></p>
+      {error && <ErrorInline error={new Error(error)} label="Gagal load history" />}
+      {!bookings ? <LoadingState label="Memuat history…" /> : bookings.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 60, color: C.dim, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14 }}>
+          <div style={{ fontSize: 48, marginBottom: 14 }}>🎬</div>
+          <div style={{ fontSize: 15, marginBottom: 4 }}>Belum ada booking</div>
+          <div style={{ fontSize: 12 }}>Mulai pesan tiket pertama Anda!</div>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {bookings.map(b => (
+            <a key={b.purchase_id} href={`/?purchase=${b.purchase_id}`} target="_blank" rel="noopener noreferrer" style={{
+              display: "block", background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16,
+              textDecoration: "none", color: "inherit", transition: "all 0.15s",
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${brandPrimary}66`; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.border; }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{b.film_title || "Booking"}</div>
+                <div style={{ fontSize: 11, color: brandPrimary, fontFamily: "'Geist Mono',monospace" }}>{b.purchase_id}</div>
+              </div>
+              <div style={{ fontSize: 12, color: C.sub, marginBottom: 6 }}>📅 {b.show_date} · {b.start_time} · {b.tickets.length} kursi</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+                <div style={{ fontSize: 11, color: C.dim }}>{b.tickets.map(t => t.seat).join(", ")}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: brandPrimary, fontFamily: "'Geist Mono',monospace" }}>{rp(b.total)}</div>
+              </div>
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MoviesPage({ brandPrimary, onPick }) {
+  const [films, setFilms] = useState(null);
+  useEffect(() => {
+    fetch(`${API_HOST}/api/cinema/films`).then(r => r.json()).then(d => setFilms(d.films || [])).catch(() => setFilms([]));
+  }, []);
+  if (!films) return <LoadingState label="Memuat film…" />;
+  const nowShowing = films.filter(f => f.status === "now_showing" || !f.status);
+  const comingSoon = films.filter(f => f.status === "coming_soon");
+  return (
+    <div style={{ padding: "30px 0 60px" }}>
+      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 6 }}>🎬 Movies</h1>
+      <p style={{ fontSize: 13, color: C.sub, margin: 0, marginBottom: 24 }}>{films.length} film · {nowShowing.length} now showing · {comingSoon.length} coming soon</p>
+      <FilmGroup title="🎥 Now Showing" films={nowShowing} onPick={onPick} brandPrimary={brandPrimary} />
+      {comingSoon.length > 0 && <FilmGroup title="🔜 Coming Soon" films={comingSoon} onPick={onPick} brandPrimary={brandPrimary} />}
+    </div>
+  );
+}
+
+function FilmGroup({ title, films, onPick, brandPrimary }) {
+  return (
+    <div style={{ marginBottom: 28 }}>
+      <h2 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 14 }}>{title}</h2>
+      <div className="cw-films-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 180px), 1fr))", gap: 14 }}>
+        {films.map(f => (
+          <button key={f.id} onClick={() => onPick(f)} style={{
+            background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, overflow: "hidden",
+            padding: 0, textAlign: "left", cursor: "pointer", color: C.text, fontFamily: "inherit", transition: "all 0.15s",
+          }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${brandPrimary}66`; e.currentTarget.style.transform = "translateY(-2px)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.transform = "translateY(0)"; }}>
+            <div style={{
+              aspectRatio: "2/3", background: f.poster_url ? `url(${f.poster_url}) center/cover` : "#1a1a22",
+              display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, opacity: f.poster_url ? 1 : 0.3,
+            }}>{!f.poster_url && "🎬"}</div>
+            <div style={{ padding: "10px 12px 12px" }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 4 }}>{f.title}</div>
+              <div style={{ fontSize: 11, color: C.dim }}>{f.genre || "—"} · {f.duration_min || 0}mnt</div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PromoPage({ brandPrimary }) {
+  const [promos, setPromos] = useState(null);
+  useEffect(() => {
+    fetch(`${API_HOST}/api/cinema/promotions/active`).then(r => r.json()).then(d => setPromos(d.promotions || d || []))
+      .catch(() => setPromos([]));
+  }, []);
+  if (!promos) return <LoadingState label="Memuat promo…" />;
+  return (
+    <div style={{ padding: "30px 0 60px" }}>
+      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 6 }}>🎟 Promo & Event</h1>
+      <p style={{ fontSize: 13, color: C.sub, margin: 0, marginBottom: 24 }}>{promos.length} promo aktif · pakai kode saat checkout</p>
+      {promos.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 60, color: C.dim, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14 }}>
+          <div style={{ fontSize: 48, marginBottom: 14 }}>🎟</div>
+          <div style={{ fontSize: 15 }}>Belum ada promo aktif saat ini</div>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))", gap: 14 }}>
+          {promos.map(p => (
+            <div key={p.id || p.code} style={{
+              background: `linear-gradient(135deg, ${brandPrimary}22, ${brandPrimary}08)`,
+              border: `1px solid ${brandPrimary}44`, borderRadius: 14, padding: 18,
+            }}>
+              <div style={{ fontSize: 11, color: brandPrimary, fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 4, textTransform: "uppercase" }}>{p.discount_type === "percentage" ? `${p.discount_value}% OFF` : `Rp ${(p.discount_value || 0).toLocaleString("id-ID")} OFF`}</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 6 }}>{p.name || p.code}</div>
+              {p.description && <div style={{ fontSize: 12, color: C.sub, marginBottom: 10, lineHeight: 1.5 }}>{p.description}</div>}
+              <div style={{ background: "rgba(0,0,0,0.4)", border: `1px dashed ${brandPrimary}66`, borderRadius: 8, padding: "8px 12px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: brandPrimary, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>{p.code}</span>
+                <button onClick={() => navigator.clipboard?.writeText(p.code)} style={{ background: "transparent", border: "none", color: C.sub, fontSize: 11, cursor: "pointer", fontFamily: "inherit" }}>📋 Copy</button>
+              </div>
+              {(p.min_purchase > 0 || p.valid_to) && (
+                <div style={{ marginTop: 10, fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>
+                  {p.min_purchase > 0 && <span>MIN Rp {p.min_purchase.toLocaleString("id-ID")}</span>}
+                  {p.valid_to && <span> · BERLAKU SAMPAI {p.valid_to}</span>}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StudioPage({ brandPrimary }) {
+  const [packages, setPackages] = useState(null);
+  useEffect(() => {
+    fetch(`${API_HOST}/api/cinema/party-packages`).then(r => r.ok ? r.json() : { packages: [] })
+      .then(d => setPackages(d.packages || d || []))
+      .catch(() => setPackages([]));
+  }, []);
+  if (!packages) return <LoadingState label="Memuat paket studio…" />;
+  return (
+    <div style={{ padding: "30px 0 60px" }}>
+      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 6 }}>🎉 Booking Studio</h1>
+      <p style={{ fontSize: 13, color: C.sub, margin: 0, marginBottom: 24 }}>Sewa studio cinema untuk private event, ulang tahun, gathering — Anda nonton, kami fasilitasi.</p>
+      {packages.length === 0 ? (
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 32, textAlign: "center", color: C.dim }}>
+          <div style={{ fontSize: 48, marginBottom: 14 }}>🎉</div>
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 6 }}>Hubungi Kami untuk Booking Studio</div>
+          <div style={{ fontSize: 12, marginBottom: 20 }}>Custom event, ulang tahun anak, gathering kantor, screening privat — semua bisa kami atur.</div>
+          <a href="https://wa.me/6285190062368?text=Halo,%20saya%20mau%20tanya%20booking%20studio%20cinema" target="_blank" rel="noopener noreferrer" style={{
+            display: "inline-block", padding: "12px 24px", background: "#25D366", color: "#fff",
+            borderRadius: 10, fontSize: 14, fontWeight: 800, textDecoration: "none", fontFamily: "inherit",
+          }}>📱 Chat WhatsApp</a>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))", gap: 14 }}>
+          {packages.map(p => (
+            <div key={p.id} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 18 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", marginBottom: 6 }}>{p.name}</div>
+              {p.description && <div style={{ fontSize: 12, color: C.sub, marginBottom: 10, lineHeight: 1.5 }}>{p.description}</div>}
+              <div style={{ fontSize: 18, fontWeight: 800, color: brandPrimary, fontFamily: "'Geist Mono',monospace", marginBottom: 10 }}>{rp(p.price || 0)}</div>
+              <div style={{ fontSize: 11, color: C.dim }}>{p.duration_hours} jam · max {p.max_pax} pax</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LocationsPage({ brandPrimary, onPick }) {
+  const [outlets, setOutlets] = useState(null);
+  useEffect(() => {
+    fetch(`${API_HOST}/api/outlet-master`).then(r => r.json()).then(d => {
+      const list = Array.isArray(d) ? d : (d.outlets || d.data || []);
+      setOutlets(list.filter(o => (o.primary_vertical === "cinema" || o.vertical === "cinema") && o.status !== "inactive"));
+    }).catch(() => setOutlets([]));
+  }, []);
+  if (!outlets) return <LoadingState label="Memuat lokasi…" />;
+  return (
+    <div style={{ padding: "30px 0 60px" }}>
+      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 6 }}>📍 Lokasi Cinema</h1>
+      <p style={{ fontSize: 13, color: C.sub, margin: 0, marginBottom: 24 }}>{outlets.length} outlet di seluruh Indonesia</p>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: 14 }}>
+        {outlets.map(o => {
+          const visual = getCityVisual(o);
+          const city = o.area || o.name?.replace("Karya Cinema ", "") || o.code;
+          const mapsUrl = o.address ? `https://maps.google.com/?q=${encodeURIComponent(o.address)}` : null;
+          return (
+            <div key={o.code} style={{
+              background: visual.url ? `linear-gradient(180deg, rgba(0,0,0,0.1), rgba(0,0,0,0.95)), url(${visual.url}) center/cover` : DEFAULT_CITY_GRADIENT,
+              border: `1px solid ${C.border}`, borderRadius: 16, padding: 0, overflow: "hidden",
+              minHeight: 220, display: "flex", flexDirection: "column", justifyContent: "flex-end",
+            }}>
+              <div style={{ padding: "16px 18px" }}>
+                <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", textShadow: "0 2px 12px rgba(0,0,0,0.8)" }}>{visual.emoji} {city}</div>
+                {o.name && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", marginBottom: 6 }}>{o.name}</div>}
+                {o.address && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", marginBottom: 10 }}>📍 {o.address}</div>}
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button onClick={() => onPick(o)} style={{
+                    flex: 1, padding: "8px 12px", background: brandPrimary, color: "#fff", border: "none",
+                    borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                  }}>Lihat Jadwal</button>
+                  {mapsUrl && (
+                    <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{
+                      padding: "8px 12px", background: "rgba(0,0,0,0.5)", color: "#fff", border: `1px solid rgba(255,255,255,0.2)`,
+                      borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: "none", fontFamily: "inherit",
+                    }}>🗺️ Maps</a>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -384,26 +794,38 @@ function Footer({ brand, brandPrimary, onAbout }) {
 // ════════════════════════════════════════════════════════════════════
 // HEADER
 // ════════════════════════════════════════════════════════════════════
-function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrimary }) {
+const NAV_ITEMS = [
+  { key: "outlet",    label: "Beranda" },
+  { key: "movies",    label: "Movies" },
+  { key: "promo",     label: "Promo" },
+  { key: "studio",    label: "Studio" },
+  { key: "locations", label: "Lokasi" },
+  { key: "about",     label: "About" },
+];
+
+function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrimary, session, onSignInClick, onSignOut, onNav }) {
   const brandName = brand?.brand_short || brand?.name || "karyaOS";
-  const showBack = step !== "outlet" && step !== "success";
+  const showBack = !["outlet", "success", "movies", "promo", "studio", "locations", "about", "history"].includes(step);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+
   return (
     <header style={{
       position: "sticky", top: 0, zIndex: 50,
       background: "rgba(10,10,15,0.85)", backdropFilter: "blur(20px) saturate(180%)",
       borderBottom: `1px solid ${C.border}`,
-      padding: "14px 20px",
+      padding: "12px 20px",
     }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", gap: 12 }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", alignItems: "center", gap: 14 }}>
         {showBack && (
           <button onClick={onBack} title="Kembali" style={{
             background: "transparent", border: `1px solid ${C.border}`, color: C.text,
-            borderRadius: 8, width: 36, height: 36, fontSize: 16, cursor: "pointer", fontFamily: "inherit",
+            borderRadius: 8, width: 34, height: 34, fontSize: 15, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
           }}>←</button>
         )}
         <button onClick={onHome} title="Beranda" style={{
-          display: "flex", alignItems: "center", gap: 8, flex: 1, background: "transparent", border: "none",
-          color: C.text, cursor: "pointer", fontFamily: "inherit", padding: 0, textAlign: "left",
+          display: "flex", alignItems: "center", gap: 8, background: "transparent", border: "none",
+          color: C.text, cursor: "pointer", fontFamily: "inherit", padding: 0, textAlign: "left", flexShrink: 0,
         }}>
           {brand?.logo_url && <img src={brand.logo_url} alt="" style={{ height: 28, objectFit: "contain" }} />}
           <div>
@@ -411,21 +833,107 @@ function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrima
             <div style={{ fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>CINEMA · ONLINE BOOKING</div>
           </div>
         </button>
+
+        {/* Desktop nav */}
+        <nav className="cw-nav-desktop" style={{ display: "flex", gap: 4, marginLeft: 16, flex: 1 }}>
+          {NAV_ITEMS.map(item => {
+            const active = step === item.key || (item.key === "outlet" && ["outlet", "films", "filmDetail", "showtime", "seats", "bundles", "checkout"].includes(step));
+            return (
+              <button key={item.key} onClick={() => onNav?.(item.key)} style={{
+                background: active ? `${brandPrimary}22` : "transparent",
+                border: "none", color: active ? brandPrimary : C.sub,
+                borderRadius: 8, padding: "8px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                transition: "all 0.15s",
+              }}
+                onMouseEnter={(e) => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = C.text; } }}
+                onMouseLeave={(e) => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = C.sub; } }}>
+                {item.label}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Mobile menu toggle */}
+        <button className="cw-nav-mobile-toggle" onClick={() => setMenuOpen(o => !o)} style={{
+          display: "none", background: "transparent", border: `1px solid ${C.border}`, color: C.text,
+          borderRadius: 8, width: 34, height: 34, fontSize: 16, cursor: "pointer", fontFamily: "inherit",
+        }}>☰</button>
+
+        {/* Outlet pill */}
         {outlet && step !== "outlet" && (
-          <button onClick={onResetOutlet} className="cw-outlet-pill" style={{
+          <button onClick={onResetOutlet} className="cw-outlet-pill" title="Ganti lokasi" style={{
             background: `${brandPrimary}22`, border: `1px solid ${brandPrimary}55`, color: brandPrimary,
-            borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-            display: "flex", alignItems: "center", gap: 6,
+            borderRadius: 8, padding: "6px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+            display: "flex", alignItems: "center", gap: 5, flexShrink: 0,
           }}>
             <span>📍</span>
             <span>{outlet.name?.replace("Karya Cinema ", "") || outlet.code}</span>
-            <span style={{ fontSize: 9, opacity: 0.7 }}>▾</span>
           </button>
         )}
+
+        {/* Sign in / Profile */}
+        {session ? (
+          <div style={{ position: "relative" }}>
+            <button onClick={() => setProfileOpen(o => !o)} style={{
+              display: "flex", alignItems: "center", gap: 8, background: `${brandPrimary}22`,
+              border: `1px solid ${brandPrimary}55`, color: brandPrimary,
+              borderRadius: 999, padding: "6px 6px 6px 12px", fontSize: 12, fontWeight: 700,
+              cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
+            }}>
+              <span style={{ maxWidth: 100, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{session.name || "Member"}</span>
+              <span style={{ background: brandPrimary, color: "#fff", borderRadius: "50%", width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800 }}>{(session.name || "U")[0].toUpperCase()}</span>
+            </button>
+            {profileOpen && (
+              <div style={{
+                position: "absolute", top: "calc(100% + 8px)", right: 0, minWidth: 220, zIndex: 100,
+                background: "#111", border: `1px solid ${C.border}`, borderRadius: 12, padding: 8,
+                boxShadow: "0 12px 36px rgba(0,0,0,0.6)",
+              }}>
+                <div style={{ padding: "10px 12px", borderBottom: `1px solid ${C.border}`, marginBottom: 6 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{session.name}</div>
+                  <div style={{ fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{session.phone}</div>
+                  <div style={{ fontSize: 11, color: brandPrimary, marginTop: 4, fontWeight: 700 }}>⭐ {session.points || 0} poin</div>
+                </div>
+                <button onClick={() => { setProfileOpen(false); onNav?.("history"); }} style={menuBtnStyle}>📋 History Pembelian</button>
+                <button onClick={() => { setProfileOpen(false); onSignOut(); }} style={{ ...menuBtnStyle, color: "#fca5a5" }}>↪ Sign Out</button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button onClick={onSignInClick} style={{
+            background: brandPrimary, border: "none", color: "#fff",
+            borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 800,
+            cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
+            boxShadow: `0 4px 14px ${brandPrimary}55`,
+          }}>Sign In</button>
+        )}
       </div>
+
+      {/* Mobile menu drawer */}
+      {menuOpen && (
+        <div className="cw-nav-mobile-menu" style={{
+          display: "none", marginTop: 10, padding: "10px 0",
+          borderTop: `1px solid ${C.border}`,
+        }}>
+          {NAV_ITEMS.map(item => (
+            <button key={item.key} onClick={() => { setMenuOpen(false); onNav?.(item.key); }} style={{
+              width: "100%", textAlign: "left", padding: "10px 16px",
+              background: "transparent", border: "none", color: C.text,
+              fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+            }}>{item.label}</button>
+          ))}
+        </div>
+      )}
     </header>
   );
 }
+
+const menuBtnStyle = {
+  width: "100%", textAlign: "left", padding: "8px 12px",
+  background: "transparent", border: "none", color: "#e6edf3",
+  fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+  borderRadius: 6,
+};
 
 // ════════════════════════════════════════════════════════════════════
 // CINEMA HERO — full-bleed slideshow, "berasa di dalam area cinema"
