@@ -133,6 +133,7 @@ export default function App() {
     const name  = localStorage.getItem("adminName");
     return token ? { token, role, name } : null;
   });
+  const [forcePinChange, setForcePinChange] = useState(false);
   const [checkoutData, setCheckout] = useState(null);
   const [customerData, setCustomer] = useState(null);
   const [tableData,    setTable]    = useState(null);
@@ -165,6 +166,7 @@ export default function App() {
 
   function handleAdminLogin(session) {
     setAdmin(session);
+    if (session?.force_pin_change) setForcePinChange(true);
     const _target = getScene(); setScene(_target === "admin-login" ? "home" : (_target || "home"));
   }
 
@@ -338,6 +340,110 @@ export default function App() {
         {node}
         {PWA_PROMPT_SCENES.has(scene) && <PWAInstallPrompt />}
       </Suspense>
+      {forcePinChange && adminSession?.token && (
+        <ForcePinChangeModal token={adminSession.token} onDone={() => setForcePinChange(false)} />
+      )}
     </>
+  );
+}
+
+// Blocker modal: tampil setelah login kalau PIN user masih weak
+function ForcePinChangeModal({ token, onDone }) {
+  const [currentPin, setCurrentPin] = useState("");
+  const [newPin, setNewPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const submit = async () => {
+    setErr("");
+    if (newPin !== confirmPin) { setErr("PIN baru & konfirmasi tidak cocok"); return; }
+    if (!/^\d{6}$/.test(newPin)) { setErr("PIN baru harus 6 digit angka"); return; }
+    setBusy(true);
+    try {
+      const r = await fetch("/api/auth/change-pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ current_pin: currentPin, new_pin: newPin }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      alert("✓ PIN berhasil di-ganti");
+      onDone();
+    } catch (e) { setErr(e.message); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <div style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.9)", backdropFilter: "blur(12px)",
+      display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: 20,
+    }}>
+      <div style={{
+        background: "#0f172a", border: "2px solid #ef4444", borderRadius: 16, padding: 32,
+        maxWidth: 460, width: "100%", color: "#e5e7eb", fontFamily: "'Inter',sans-serif",
+        boxShadow: "0 24px 60px rgba(239,68,68,0.3)",
+      }}>
+        <div style={{ textAlign: "center", marginBottom: 20 }}>
+          <div style={{ fontSize: 56, marginBottom: 12 }}>🔐</div>
+          <h2 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: "#ef4444", marginBottom: 8 }}>WAJIB GANTI PIN</h2>
+          <p style={{ margin: 0, fontSize: 13.5, color: "#fca5a5", lineHeight: 1.6 }}>
+            PIN Anda terdeteksi <strong>lemah</strong> (default / sequential / pengulangan).
+            Untuk keamanan, ganti PIN sekarang sebelum lanjut.
+          </p>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <PinField label="PIN Lama (saat ini)" value={currentPin} onChange={setCurrentPin} placeholder="6 digit PIN sekarang" />
+          <PinField label="PIN Baru" value={newPin} onChange={setNewPin} placeholder="6 digit, gak boleh sequential/pattern" />
+          <PinField label="Konfirmasi PIN Baru" value={confirmPin} onChange={setConfirmPin} placeholder="Ulang PIN baru" />
+        </div>
+
+        <div style={{ marginTop: 12, padding: 12, background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 8, fontSize: 11.5, color: "rgba(255,255,255,0.85)", lineHeight: 1.6 }}>
+          💡 <strong>Hindari</strong>: 999999, 123456, 111111, 121212, sequential atau berulang.<br/>
+          <strong>Bagus</strong>: 847263, 593102, kombinasi acak yg gampang Anda ingat.
+        </div>
+
+        {err && (
+          <div style={{ marginTop: 12, padding: 10, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 8, color: "#fca5a5", fontSize: 12.5 }}>
+            ⚠️ {err}
+          </div>
+        )}
+
+        <button onClick={submit} disabled={busy || !currentPin || !newPin || !confirmPin} style={{
+          marginTop: 20, width: "100%", padding: "14px 0",
+          background: (busy || !currentPin || !newPin || !confirmPin) ? "#6b7280" : "#ef4444",
+          color: "#fff", border: "none", borderRadius: 10,
+          fontSize: 15, fontWeight: 800, cursor: busy ? "wait" : "pointer", fontFamily: "inherit",
+          opacity: busy ? 0.6 : 1,
+        }}>
+          {busy ? "Mengganti…" : "💾 Ganti PIN Sekarang"}
+        </button>
+
+        <div style={{ marginTop: 10, textAlign: "center", fontSize: 11, color: "#6b7280" }}>
+          🛡️ Tidak bisa di-skip — proteksi platform.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PinField({ label, value, onChange, placeholder }) {
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, textTransform: "uppercase" }}>{label}</span>
+      <input
+        type="password"
+        value={value}
+        onChange={e => onChange(e.target.value.replace(/\D/g, "").slice(0, 6))}
+        placeholder={placeholder}
+        autoComplete="new-password"
+        style={{
+          padding: "12px 14px", background: "#1e293b", border: "1px solid rgba(255,255,255,0.1)",
+          borderRadius: 8, color: "#fff", fontSize: 16, fontFamily: "'JetBrains Mono',monospace",
+          letterSpacing: 6, textAlign: "center", outline: "none",
+        }}
+      />
+    </label>
   );
 }

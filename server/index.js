@@ -3399,6 +3399,7 @@ app.post("/api/auth/login-password", (req, res) => {
   console.log(`🔐 Enterprise login: ${user.name} (@${user.username}, ${user.role}, company=${companyInfo?.code || 'KARYS'}) from ${ip}`);
   res.json({
     ok: true, token,
+    force_pin_change: isWeakPin(user.pin),  // SECURITY: force ganti kalau PIN weak
     user: { id: user.id, name: user.name, username: user.username, email: user.email, role: user.role,
             must_change_password: !!user.must_change_password, last_login_at: user.last_login_at,
             company_id: user.company_id ?? null, is_super_admin: user.company_id == null },
@@ -3531,6 +3532,7 @@ app.post("/api/auth/login", (req, res) => {
   res.json({
     ok: true, token, name: user.name, role: user.role,
     must_change_password: !!user.must_change_password,
+    force_pin_change: isWeakPin(user.pin),  // SECURITY: force ganti kalau PIN weak
     user: { id: user.id, name: user.name, role: user.role,
             company_id: user.company_id ?? null, is_super_admin: user.company_id == null },
     company: companyInfo,
@@ -3623,6 +3625,31 @@ app.patch("/api/auth/users/:id", (req, res) => {
   if (active !== undefined) adminUsers[idx].active = Boolean(active);
   db.insertAdminUser(adminUsers[idx]); // persist
   res.json({ ...adminUsers[idx], pin: "••••••" });
+});
+
+// POST /api/auth/change-pin — user ganti PIN sendiri (force-change flow)
+// Body: { current_pin, new_pin } — verify current sebelum set new
+app.post("/api/auth/change-pin", (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+  const session = token && adminSessions.get(token);
+  if (!session) return res.status(401).json({ error: "Not authenticated" });
+  const { current_pin, new_pin } = req.body || {};
+  if (!current_pin || !new_pin) return res.status(400).json({ error: "current_pin & new_pin wajib" });
+  if (!/^\d{6}$/.test(new_pin)) return res.status(400).json({ error: "PIN baru harus 6 digit angka" });
+  if (isWeakPin(new_pin)) return res.status(400).json({ error: "PIN terlalu lemah — hindari pengulangan, sequential, atau pattern umum" });
+
+  adminUsers = db.loadAllAdminUsers();
+  const idx = adminUsers.findIndex(u => u.id === session.userId);
+  if (idx === -1) return res.status(404).json({ error: "User not found" });
+  // Verify current PIN
+  if (adminUsers[idx].pin !== current_pin) {
+    return res.status(403).json({ error: "PIN lama salah" });
+  }
+  if (current_pin === new_pin) return res.status(400).json({ error: "PIN baru harus beda dari yg lama" });
+  adminUsers[idx].pin = new_pin;
+  db.insertAdminUser(adminUsers[idx]);
+  console.log(`🔐 PIN changed for ${adminUsers[idx].name} (${adminUsers[idx].id})`);
+  res.json({ ok: true });
 });
 
 // PIN weakness check — block common bad PINs

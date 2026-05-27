@@ -66,7 +66,7 @@ export default function AdminLogin({ onLogin }) {
         });
       } catch {}
       // Force Change Password modal DISABLED — user bisa ganti via User Management.
-      onLogin({ token: res.token, name: res.user.name, role: res.user.role, company: res.company });
+      onLogin({ token: res.token, name: res.user.name, role: res.user.role, company: res.company, force_pin_change: !!res.force_pin_change });
     } catch (e) {
       setError(parseError(e));
       setShake(true); setTimeout(() => setShake(false), 500);
@@ -92,8 +92,8 @@ export default function AdminLogin({ onLogin }) {
           user: res.user || { name: res.name, role: res.role },
         });
       } catch {}
-      // Force Change Password modal DISABLED (sama dengan password path)
-      onLogin(res);
+      // Pass force_pin_change flag ke parent
+      onLogin({ ...res, force_pin_change: !!res.force_pin_change });
     } catch (e) {
       setError("Incorrect PIN");
       setPin(""); setShake(true); setTimeout(() => setShake(false), 500);
