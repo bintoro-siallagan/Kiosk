@@ -1,7 +1,13 @@
 // client/src/Admin/AdminFinance.jsx
 // Finance tab: Dashboard (P&L), Expenses CRUD, Tax Config, COGS Detail, Reports
 import React, { useState, useEffect, useCallback } from 'react';
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit, EmptyState } from "../components/uiKit.jsx";
+
+const EmptyRow = ({ cols, icon, title, desc }) => (
+  <tr><td colSpan={cols} style={{ padding: 0, background: 'transparent' }}>
+    <EmptyState icon={icon} title={title} desc={desc} />
+  </td></tr>
+);
 
 const API = '/api/finance';
 
@@ -106,6 +112,7 @@ function Dashboard() {
       <table style={tableStyle}>
         <thead><tr><th>Tax</th><th>Rate</th><th>Applies To</th><th>Inclusive</th></tr></thead>
         <tbody>
+          {data.tax_config.length === 0 && <EmptyRow cols={4} icon="🧮" title="Belum ada tax config" desc="Setup pajak di tab Tax Config untuk muncul di sini." />}
           {data.tax_config.map(t => (
             <tr key={t.id}><td><b>{t.name}</b></td><td>{(t.rate*100).toFixed(1)}%</td><td>{t.applies_to}</td><td>{t.inclusive ? '✓' : '-'}</td></tr>
           ))}
@@ -116,6 +123,7 @@ function Dashboard() {
       <table style={tableStyle}>
         <thead><tr><th>Doc</th><th>Date</th><th>Kategori</th><th>Vendor</th><th>Amount</th></tr></thead>
         <tbody>
+          {data.last_expenses.length === 0 && <EmptyRow cols={5} icon="💳" title="Belum ada expense" desc="Catat pengeluaran di tab Expenses untuk lihat aktivitas terbaru." />}
           {data.last_expenses.map(e => (
             <tr key={e.doc_no}><td>{e.doc_no}</td><td>{fmtDate(e.expense_date)}</td><td>{e.category}</td><td>{e.vendor || '-'}</td><td>{fmtIDR(e.amount)}</td></tr>
           ))}
@@ -218,6 +226,7 @@ function PLReport() {
       <table style={tableStyle}>
         <thead><tr><th>Category</th><th>Type</th><th>Entries</th><th>Total</th><th>% of Revenue</th></tr></thead>
         <tbody>
+          {pl.expenses.by_category.length === 0 && <EmptyRow cols={5} icon="📊" title="Belum ada expense periode ini" desc="Belum ada pengeluaran tercatat di rentang tanggal ini." />}
           {pl.expenses.by_category.map(c => (
             <tr key={c.id}>
               <td><b>{c.name}</b></td>
@@ -344,6 +353,7 @@ function Expenses() {
           <th>Doc No</th><th>Date</th><th>Kategori</th><th>Vendor</th><th>Description</th><th>Amount</th><th>Tax</th><th>Status</th><th></th>
         </tr></thead>
         <tbody>
+          {list.length === 0 && <EmptyRow cols={9} icon="💸" title="Belum ada expense" desc="Klik '+ Buat Expense' di atas untuk catat pengeluaran pertama." />}
           {list.map(e => (
             <tr key={e.id} style={{opacity: e.status==='voided' ? 0.5 : 1}}>
               <td style={{fontSize:11, color:'#6b7280'}}>{e.doc_no}</td>
@@ -441,6 +451,7 @@ function CategoryAdmin() {
       <table style={tableStyle}>
         <thead><tr><th>ID</th><th>Nama</th><th>Type</th><th>Order</th></tr></thead>
         <tbody>
+          {list.length === 0 && <EmptyRow cols={4} icon="🗂️" title="Belum ada kategori" desc="Tambah kategori untuk grouping expense (mis. Sewa, Gaji, Bahan Baku)." />}
           {list.map(c => (
             <tr key={c.id}>
               <td style={{fontSize:11, color:'#6b7280'}}>{c.id}</td>
@@ -485,6 +496,7 @@ function COGSDetail() {
       <table style={tableStyle}>
         <thead><tr><th>SKU</th><th>Total Qty</th><th>Total Cost</th><th>Transactions</th><th>% of total</th></tr></thead>
         <tbody>
+          {data.by_sku.length === 0 && <EmptyRow cols={5} icon="📦" title="Belum ada COGS detail" desc="COGS per SKU akan muncul setelah ada penjualan + stock movement." />}
           {data.by_sku.map(d => (
             <tr key={d.sku}>
               <td><b>{d.sku}</b></td>
@@ -536,6 +548,7 @@ function TaxConfig() {
       <table style={tableStyle}>
         <thead><tr><th>ID</th><th>Nama</th><th>Rate</th><th>Applies To</th><th>Active</th><th>Separately</th><th>Inclusive</th></tr></thead>
         <tbody>
+          {list.length === 0 && <EmptyRow cols={7} icon="🧾" title="Belum ada tax" desc="Tambah konfigurasi pajak (PPN, service charge, dll.)." />}
           {list.map(t => (
             <tr key={t.id}>
               <td>{t.id}</td>

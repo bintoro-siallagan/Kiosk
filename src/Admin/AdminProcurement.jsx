@@ -1,6 +1,13 @@
 // client/src/Admin/AdminProcurement.jsx
 // Procurement tab for AdminTools — Dashboard / Suppliers / PR / PO / GR / Invoices / Payments
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { EmptyState } from '../components/uiKit.jsx';
+
+const EmptyRow = ({ cols, icon, title, desc }) => (
+  <tr><td colSpan={cols} style={{ padding: 0, background: 'transparent' }}>
+    <EmptyState icon={icon} title={title} desc={desc} />
+  </td></tr>
+);
 
 const API = '/api/procurement';
 
@@ -181,6 +188,7 @@ function Suppliers() {
           </tr>
         </thead>
         <tbody>
+          {list.length === 0 && <EmptyRow cols={8} icon="🏭" title="Belum ada supplier" desc="Tambah vendor pertama untuk mulai membuat Purchase Order." />}
           {list.map(s => (
             <tr key={s.id}>
               <td>{s.code}</td>
@@ -277,6 +285,7 @@ function PurchaseRequests() {
           </tr>
         </thead>
         <tbody>
+          {list.length === 0 && <EmptyRow cols={8} icon="📋" title="Belum ada Purchase Request" desc="PR baru akan muncul di sini setelah dibuat. Klik tombol '+ Buat PR' di atas." />}
           {list.map(pr => (
             <tr key={pr.id}>
               <td><b>{pr.pr_number}</b></td>
@@ -526,6 +535,7 @@ function PurchaseOrders() {
           </tr>
         </thead>
         <tbody>
+          {list.length === 0 && <EmptyRow cols={8} icon="📑" title="Belum ada Purchase Order" desc="Approve PR yang ada untuk auto-generate PO ke supplier." />}
           {list.map(po => (
             <tr key={po.id}>
               <td><b>{po.po_number}</b></td>
@@ -701,6 +711,7 @@ function GoodsReceipts() {
       <table style={tableStyle}>
         <thead><tr><th>GR Number</th><th>PO</th><th>Supplier</th><th>Date</th><th>Penerima</th><th>Discrepancy</th><th></th></tr></thead>
         <tbody>
+          {list.length === 0 && <EmptyRow cols={7} icon="📦" title="Belum ada Goods Receipt" desc="Catat penerimaan barang dari PO untuk membuat GR." />}
           {list.map(gr => (
             <tr key={gr.id}>
               <td><b>{gr.gr_number}</b></td>
@@ -799,6 +810,7 @@ function Invoices() {
           </tr>
         </thead>
         <tbody>
+          {list.length === 0 && <EmptyRow cols={9} icon="🧾" title="Belum ada Invoice" desc="Invoice dari supplier akan muncul di sini setelah dicatat dari GR." />}
           {list.map(inv => {
             const outstanding = inv.total - (inv.paid_amount || 0);
             const overdue = inv.status !== 'paid' && inv.due_date < Math.floor(Date.now()/1000);
@@ -992,6 +1004,7 @@ function Payments() {
       <table style={tableStyle}>
         <thead><tr><th>No. Payment</th><th>Date</th><th>Supplier</th><th>Invoice</th><th>Quantity</th><th>Metode</th><th>Reference</th><th>Paid by</th><th>Expense ID</th></tr></thead>
         <tbody>
+          {list.length === 0 && <EmptyRow cols={9} icon="💸" title="Belum ada Payment" desc="Catat pembayaran ke supplier dari invoice yang outstanding." />}
           {list.map(p => (
             <tr key={p.id}>
               <td><b>{p.payment_number}</b></td>

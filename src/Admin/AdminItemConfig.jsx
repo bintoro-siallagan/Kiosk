@@ -2,7 +2,7 @@
 // Item Config — Inventory Config + Modifier System (CRUD lengkap).
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit , LoadingState} from "../components/uiKit.jsx";
+import { useUiKit , LoadingState, EmptyState } from "../components/uiKit.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#0d9488";
@@ -76,6 +76,9 @@ export default function AdminItemConfig({ apiBase = "" }) {
           <button onClick={() => setEditing({ ...emptyGroup, options: [{ name: "", price: 0 }] })} style={{ background: AC, color: "#fff", border: "none", padding: "6px 12px", borderRadius: 7, fontSize: 11.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>+ Group Baru</button>
         </div>
         {msg ? <div style={{ fontSize: 12, marginTop: 8, color: msg.startsWith("✓") ? "#10b981" : "#f87171" }}>{msg}</div> : null}
+        {d.modifiers.length === 0 ? (
+          <EmptyState icon="🎛️" title="Belum ada modifier group" desc="Klik '+ Group Baru' untuk tambah modifier (mis. Size, Topping, Sugar Level)." />
+        ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 10, marginTop: 10 }}>
           {d.modifiers.map(g => (
             <div key={g.id} style={{ background: "#0a0e16", border: "1px solid #161b22", borderRadius: 9, padding: "11px 13px" }}>
@@ -96,6 +99,7 @@ export default function AdminItemConfig({ apiBase = "" }) {
             </div>
           ))}
         </div>
+        )}
       </div>
 
       {editing && (
@@ -147,6 +151,11 @@ export default function AdminItemConfig({ apiBase = "" }) {
             </tr>
           </thead>
           <tbody>
+            {inv.length === 0 && (
+              <tr><td colSpan={6} style={{ padding: 0, background: 'transparent' }}>
+                <EmptyState icon="📦" title="Belum ada item inventory" desc="Tambah item baru dari Master Item untuk muncul di sini." />
+              </td></tr>
+            )}
             {inv.map(it => (
               <tr key={it.item_code} style={{ borderTop: "1px solid #161b22", fontSize: 12 }}>
                 <td style={S.td}>

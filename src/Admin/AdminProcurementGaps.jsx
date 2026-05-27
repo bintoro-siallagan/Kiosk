@@ -2,8 +2,14 @@
 // Procurement Wave 2 admin UI — Returns + Advances + Invoice Aging + PR Suggest.
 // Pasangkan ke AdminProcurement.jsx existing sebagai tab tambahan, atau standalone.
 import React, { useState, useEffect, useCallback } from 'react';
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit, EmptyState } from "../components/uiKit.jsx";
 import API_HOST from "../apiBase.js";
+
+const EmptyRow = ({ cols, icon, title, desc }) => (
+  <tr><td colSpan={cols} style={{ padding: 0, background: 'transparent' }}>
+    <EmptyState icon={icon} title={title} desc={desc} />
+  </td></tr>
+);
 
 const API = API_HOST + '/api/procurement';
 const fmtIDR = (n) => new Intl.NumberFormat('id-ID', { style:'currency', currency:'IDR', maximumFractionDigits:0 }).format(Math.round(n||0));
@@ -77,6 +83,7 @@ function Dashboard() {
         <table style={tableStyle}>
           <thead><tr><th>SKU</th><th>Current</th><th>Avg/Day</th><th>Suggested</th><th>Reasoning</th></tr></thead>
           <tbody>
+            {data.urgent_pr_suggestions.length === 0 && <EmptyRow cols={5} icon="✅" title="Tidak ada urgent reorder" desc="Semua SKU masih dalam batas aman stok." />}
             {data.urgent_pr_suggestions.map(s => (
               <tr key={s.sku} style={{background:'#2a1214'}}>
                 <td><b>{s.sku}</b><br/><span style={{fontSize:11, color:'#8b8b95'}}>{s.name}</span></td>
@@ -94,6 +101,7 @@ function Dashboard() {
       <table style={tableStyle}>
         <thead><tr><th>Doc</th><th>Date</th><th>Supplier</th><th>Reason</th><th>Value</th><th>Status</th></tr></thead>
         <tbody>
+          {data.recent_returns.length === 0 && <EmptyRow cols={6} icon="↩️" title="Belum ada return" desc="Return ke supplier akan muncul di sini setelah dicatat." />}
           {data.recent_returns.map(r => (
             <tr key={r.id}>
               <td>{r.doc_no}</td>
@@ -111,6 +119,7 @@ function Dashboard() {
       <table style={tableStyle}>
         <thead><tr><th>Doc</th><th>Date</th><th>Supplier</th><th>Amount</th><th>Applied</th><th>Sisa</th><th>Status</th></tr></thead>
         <tbody>
+          {data.pending_advances.length === 0 && <EmptyRow cols={7} icon="💰" title="Tidak ada advance pending" desc="DP / advance payment yang belum di-apply ke invoice." />}
           {data.pending_advances.map(a => (
             <tr key={a.id}>
               <td>{a.doc_no}</td>
@@ -179,6 +188,7 @@ function Returns() {
       <table style={tableStyle}>
         <thead><tr><th>Doc No</th><th>Date</th><th>Supplier</th><th>Reason</th><th>Items</th><th>Value</th><th>Status</th><th></th></tr></thead>
         <tbody>
+          {list.length === 0 && <EmptyRow cols={8} icon="↩️" title="Belum ada return" desc="Catat return ke supplier dari menu di atas." />}
           {list.map(r => (
             <tr key={r.id}>
               <td>{r.doc_no}</td>
@@ -382,6 +392,7 @@ function Advances() {
       <table style={tableStyle}>
         <thead><tr><th>Doc</th><th>Date</th><th>Supplier</th><th>PO Ref</th><th>Amount</th><th>Applied</th><th>Sisa</th><th>Status</th><th></th></tr></thead>
         <tbody>
+          {list.length === 0 && <EmptyRow cols={9} icon="💰" title="Belum ada advance" desc="Catat DP / advance payment ke supplier dari menu di atas." />}
           {list.map(a => (
             <tr key={a.id}>
               <td>{a.doc_no}</td>
@@ -494,6 +505,7 @@ function InvoiceAging() {
       <table style={tableStyle}>
         <thead><tr><th>Supplier</th><th>Current</th><th>0-30</th><th>31-60</th><th>61-90</th><th>90+</th><th>Total</th></tr></thead>
         <tbody>
+          {data.by_supplier.length === 0 && <EmptyRow cols={7} icon="✅" title="Tidak ada outstanding" desc="Semua invoice sudah lunas — tidak ada aging." />}
           {data.by_supplier.map(s => (
             <tr key={s.id} style={{background: s.b4 > 0 ? '#2a1214' : 'transparent'}}>
               <td><b>{s.name}</b></td>
