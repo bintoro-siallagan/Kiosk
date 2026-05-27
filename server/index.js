@@ -483,9 +483,18 @@ app.get("/api/orders", (req, res) => {
 });
 
 // GET single order
+// SECURITY: Order GET dgn scope filter — prevent IDOR (insecure direct object ref)
+// Tanpa scope check, user A bisa GET order user B di tenant lain dgn guess ID.
 app.get("/api/orders/:id", (req, res) => {
   const order = orders.find(o => o.id === req.params.id);
   if (!order) return res.status(404).json({ error: "Order not found" });
+  // Authenticated tenant: blokir akses cross-company. Return 404 (jangan leak existence)
+  const sc = req.companyScope || {};
+  if (sc.company_id != null && !sc.is_super_admin) {
+    if (order.company_id != null && order.company_id !== sc.company_id) {
+      return res.status(404).json({ error: "Order not found" });
+    }
+  }
   res.json(order);
 });
 
@@ -549,7 +558,10 @@ app.post("/api/orders", (req, res) => {
 
   // Inclusive pricing: menu prices are gross (already include 11% PPN)
   const subtotal = items.reduce((s, i) => s + (i.p * i.q) + (i.addonTotal || 0), 0);
-  const promoDisc = req.body.promoDiscount || 0;
+  // SECURITY: cap promoDiscount — gak boleh negative atau > subtotal
+  // (sebelumnya trust frontend → bug hunter pass discount 9999999)
+  let promoDisc = Math.max(0, parseInt(req.body.promoDiscount, 10) || 0);
+  promoDisc = Math.min(promoDisc, subtotal);  // discount tidak boleh > subtotal
 
   // Loyalty redeem: strict trust frontend (customer's explicit choice), backend caps defensively
   // NOTE: actual customer.points mutation + DB writes happen inside transaction below (rollback-safe)
@@ -2036,18 +2048,23 @@ app.get("/api/promo/:id", (req, res) => {
   res.json(promo);
 });
 
-// PATCH /api/promo/:id — update promo
+// PATCH /api/promo/:id — update promo (SECURITY: whitelist fields)
 app.patch("/api/promo/:id", (req, res) => {
   const idx = promoCodes.findIndex(p => p.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Promo not found" });
-  // Guard duplicate code (parity with POST handler)
-  const updates = { ...req.body };
+  const ALLOWED = ['code', 'name', 'description', 'discount_type', 'discount_value', 'min_purchase', 'max_discount', 'valid_from', 'valid_to', 'usage_limit', 'is_active'];
+  const updates = {};
+  for (const k of ALLOWED) if (req.body[k] !== undefined) updates[k] = req.body[k];
   if (updates.code) {
-    updates.code = updates.code.trim().toUpperCase();
+    updates.code = String(updates.code).trim().toUpperCase();
     const conflict = promoCodes.find(p => p.id !== req.params.id && p.code.toUpperCase() === updates.code);
     if (conflict) return res.status(409).json({ error: `Kode "${updates.code}" sudah dipakai promo ${conflict.id}` });
   }
-  promoCodes[idx] = { ...promoCodes[idx], ...updates, id: promoCodes[idx].id };
+  // Defensive caps
+  if (updates.discount_value != null) updates.discount_value = Math.max(0, Math.min(1_000_000, parseInt(updates.discount_value, 10) || 0));
+  if (updates.discount_type && !['percentage', 'fixed'].includes(updates.discount_type)) delete updates.discount_type;
+  if (updates.discount_type === 'percentage' && updates.discount_value > 100) updates.discount_value = 100;
+  promoCodes[idx] = { ...promoCodes[idx], ...updates };
   db.insertPromo(promoCodes[idx]);
   res.json(promoCodes[idx]);
 });
@@ -2249,13 +2266,28 @@ app.post("/api/customers/import", (req, res) => {
   res.json({ ok: true, mode, dedup_strategy: dedup, company_id: companyId, summary });
 });
 
+// SECURITY: WHITELIST fields — sebelumnya {...req.body} → mass assignment risk.
+// Bug hunter bisa set company_id, role, premium_until, dll via PATCH.
 app.patch("/api/customers/:id", (req, res) => {
   const idx = customers.findIndex(c => c.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Customer not found" });
-  // Merge changes — protect id from override
-  const merged = { ...customers[idx], ...req.body, id: customers[idx].id };
+  // Scope check: tenant cuma boleh edit customer own company
+  const sc = req.companyScope || {};
+  const existing = customers[idx];
+  if (sc.company_id != null && !sc.is_super_admin && existing.company_id != null && existing.company_id !== sc.company_id) {
+    return res.status(404).json({ error: "Customer not found" });
+  }
+  // Whitelist fields editable
+  const ALLOWED = ['name', 'phone', 'tags', 'visits', 'totalSpend', 'points', 'lastVisit', 'notes'];
+  const updates = {};
+  for (const k of ALLOWED) if (req.body[k] !== undefined) updates[k] = req.body[k];
+  // Defensive caps
+  if (updates.points != null) updates.points = Math.max(0, Math.min(10_000_000, parseInt(updates.points, 10) || 0));
+  if (updates.totalSpend != null) updates.totalSpend = Math.max(0, parseInt(updates.totalSpend, 10) || 0);
+  if (updates.visits != null) updates.visits = Math.max(0, parseInt(updates.visits, 10) || 0);
+  if (updates.tags != null && !Array.isArray(updates.tags)) delete updates.tags;
+  const merged = { ...existing, ...updates };
   customers[idx] = merged;
-  // PERSIST to DB (sebelumnya cuma in-memory → lost on restart)
   try { db.insertCustomer(merged); } catch (e) { console.error('[customer patch] db persist:', e.message); }
   res.json(merged);
 });
@@ -3230,6 +3262,18 @@ if (!adminUsers.find(u => u.username === "admin")) {
   adminUsers = db.loadAllAdminUsers();
   console.log(`🔐 Seeded enterprise admin → username='admin' password='admin123' (MUST CHANGE on first login)`);
 }
+
+// SECURITY WARNING: cek super-admin user yg masih pakai PIN/password default
+try {
+  const weakDefaults = adminUsers.filter(u =>
+    (u.role === 'super-admin' || u.username === 'admin') &&
+    (u.pin === '999999' || u.pin === '000000' || u.pin === '123456')
+  );
+  if (weakDefaults.length > 0) {
+    console.warn(`⚠️  SECURITY WARNING: ${weakDefaults.length} super-admin user(s) masih pakai PIN default. Wajib ganti via Admin > User Management:`);
+    weakDefaults.forEach(u => console.warn(`   - ${u.name} (${u.username || u.id}) PIN: ${u.pin}`));
+  }
+} catch {}
 // Legacy PIN seeds for backward compatibility (POS kasir quick-login)
 if (adminUsers.filter(u => u.pin && !u.username).length === 0 && adminUsers.length <= 1) {
   const legacy = [
@@ -3566,12 +3610,39 @@ app.patch("/api/auth/users/:id", (req, res) => {
     return res.status(403).json({ error: "Tidak boleh assign role super-admin" });
   }
   if (name) adminUsers[idx].name = name;
-  if (pin && pin.length === 6) adminUsers[idx].pin = pin;
+  if (pin) {
+    if (pin.length !== 6 || !/^\d{6}$/.test(pin)) {
+      return res.status(400).json({ error: "PIN harus 6 digit angka" });
+    }
+    if (isWeakPin(pin)) {
+      return res.status(400).json({ error: "PIN terlalu lemah (hindari 999999, 123456, sequential, atau pengulangan)" });
+    }
+    adminUsers[idx].pin = pin;
+  }
   if (role) adminUsers[idx].role = role;
   if (active !== undefined) adminUsers[idx].active = Boolean(active);
   db.insertAdminUser(adminUsers[idx]); // persist
   res.json({ ...adminUsers[idx], pin: "••••••" });
 });
+
+// PIN weakness check — block common bad PINs
+function isWeakPin(pin) {
+  if (!pin || pin.length !== 6) return true;
+  const WEAK_LIST = ['000000','111111','222222','333333','444444','555555','666666','777777','888888','999999',
+                     '123456','234567','345678','456789','567890','654321','987654','012345','098765',
+                     '121212','123123','456456','789789','111222','222333'];
+  if (WEAK_LIST.includes(pin)) return true;
+  // All same digit
+  if (/^(.)\1+$/.test(pin)) return true;
+  // Sequential ascending/descending
+  let asc = true, desc = true;
+  for (let i = 1; i < pin.length; i++) {
+    if (parseInt(pin[i]) !== parseInt(pin[i-1]) + 1) asc = false;
+    if (parseInt(pin[i]) !== parseInt(pin[i-1]) - 1) desc = false;
+  }
+  if (asc || desc) return true;
+  return false;
+}
 
 app.delete("/api/auth/users/:id", (req, res) => {
   const { isSuperAdmin, companyId } = _authScope(req);
@@ -3756,7 +3827,13 @@ app.get("/api/tables/:id", (req, res) => {
 app.patch("/api/tables/:id", (req, res) => {
   const idx = tables.findIndex(t => t.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Table not found" });
-  tables[idx] = { ...tables[idx], ...req.body, id: tables[idx].id };
+  // SECURITY: whitelist fields
+  const ALLOWED = ['name', 'zone', 'capacity', 'status', 'qrCode'];
+  const updates = {};
+  for (const k of ALLOWED) if (req.body[k] !== undefined) updates[k] = req.body[k];
+  if (updates.capacity != null) updates.capacity = Math.max(1, Math.min(50, parseInt(updates.capacity, 10) || 1));
+  if (updates.status && !['available', 'occupied', 'reserved', 'cleaning'].includes(updates.status)) delete updates.status;
+  tables[idx] = { ...tables[idx], ...updates };
   db.insertTable(tables[idx]);
   broadcast("table:updated", tables[idx]);
   res.json(tables[idx]);
