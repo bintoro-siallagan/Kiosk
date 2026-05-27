@@ -1,5 +1,5 @@
 import { useState, useEffect, Component } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit, EmptyState } from "../components/uiKit.jsx";
 import CinemaStudioLayoutEditor from "./CinemaStudioLayoutEditor.jsx";
 import CinemaOutletWizard from "./CinemaOutletWizard.jsx";
 
@@ -754,7 +754,7 @@ function Form({ children }) {
   return <div style={{ display: "flex", gap: 7, flexWrap: "wrap", alignItems: "center", background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 12, marginBottom: 12 }}>{children}</div>;
 }
 function List({ children, empty, emptyText }) {
-  if (empty) return <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "24px 18px", textAlign: "center", color: C.sub, fontSize: 13 }}>{emptyText}</div>;
+  if (empty) return <EmptyState icon="📭" title={emptyText || "Belum ada data"} />;
   return <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "4px 14px" }}>{children}</div>;
 }
 function Row({ children }) {

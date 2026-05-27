@@ -2,6 +2,7 @@
 // Admin: create service tickets, manage templates, monitor KPI per dept.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorInline } from "../components/ConnectionError.jsx";
+import { EmptyState } from "../components/uiKit.jsx";
 
 const PURPLE = "#a855f7", GREEN = "#10b981", AMBER = "#f59e0b", RED = "#ef4444", CYAN = "#22d3ee", PINK = "#ec4899";
 const CARD_BG = "rgba(255,255,255,0.04)";
@@ -124,9 +125,8 @@ export default function ServiceVisitTracker({ apiBase = "" }) {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%, 340px),1fr))", gap: 10 }}>
             {filtered.map(t => <TicketCard key={t.id} ticket={t} departments={departments} onClick={() => setSelected(t)} />)}
             {filtered.length === 0 && !loading && (
-              <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "#64748b" }}>
-                <div style={{ fontSize: 36, marginBottom: 8 }}>🎫</div>
-                <div>No tickets{filter.status || filter.department ? " matching filter" : " yet"}</div>
+              <div style={{ gridColumn: "1/-1" }}>
+                <EmptyState icon="🎫" title={filter.status || filter.department ? "Belum ada ticket sesuai filter" : "Belum ada service ticket"} desc={filter.status || filter.department ? "Reset filter atau pilih kombinasi lain." : "Service ticket dari field worker akan muncul di sini setelah dibuat."} />
               </div>
             )}
           </div>
@@ -136,6 +136,11 @@ export default function ServiceVisitTracker({ apiBase = "" }) {
       {/* TEMPLATES VIEW */}
       {view === "templates" && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%, 320px),1fr))", gap: 10 }}>
+          {templates.length === 0 && (
+            <div style={{ gridColumn: "1/-1" }}>
+              <EmptyState icon="📋" title="Belum ada template" desc="Bikin template checklist per dept (mis. HVAC, Plumbing, IT) untuk standardize field service." />
+            </div>
+          )}
           {templates.map(tpl => (
             <div key={tpl.id} style={{ padding: 14, background: CARD_BG, border: BORDER, borderRadius: 12 }}>
               <div style={{ fontSize: 10, color: deptColor(departments, tpl.department), fontFamily: "'Geist Mono',monospace", fontWeight: 700, letterSpacing: 1 }}>
