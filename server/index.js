@@ -276,6 +276,7 @@ app.post("/api/cinema/cds/state", (req, res) => {
 app.get("/api/cinema/cds/state", (_req, res) => res.json(cinemaCdsState));
 
 const db = require('./db');
+const rbac = require('./rbac');
 const wa = require('./whatsapp');
 const loyalty = require('./loyalty');
 const midtrans = require("./midtrans");
@@ -915,6 +916,13 @@ app.patch("/api/orders/:id/status", (req, res) => {
 
 // DELETE cancel order
 app.delete("/api/orders/:id", (req, res) => {
+  // RBAC: cuma Manager+ atau Finance Manager bisa cancel/delete order
+  const token = req.headers.authorization?.replace("Bearer ", "");
+  const session = token && adminSessions.get(token);
+  if (!session) return res.status(401).json({ error: "Not authenticated" });
+  if (!rbac.canDo(session.role, 'orders', 'delete') && !rbac.canDo(session.role, 'finance', 'approve')) {
+    return res.status(403).json({ error: `Role "${session.role}" tidak boleh batalkan order (butuh Manager / Finance Manager)` });
+  }
   const idx = orders.findIndex(o => o.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Order not found" });
   orders[idx] = { ...orders[idx], status: "cancelled", updatedAt: Date.now() };
@@ -2069,8 +2077,14 @@ app.patch("/api/promo/:id", (req, res) => {
   res.json(promoCodes[idx]);
 });
 
-// DELETE /api/promo/:id — delete promo
+// DELETE /api/promo/:id — delete promo (RBAC: Marketing Manager / Manager+)
 app.delete("/api/promo/:id", (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+  const session = token && adminSessions.get(token);
+  if (!session) return res.status(401).json({ error: "Not authenticated" });
+  if (!rbac.canDo(session.role, 'promo', 'delete')) {
+    return res.status(403).json({ error: `Role "${session.role}" tidak boleh hapus promo (butuh Marketing Manager / Manager)` });
+  }
   promoCodes = promoCodes.filter(p => p.id !== req.params.id);
   db.deletePromo(req.params.id);
   res.json({ ok: true });
@@ -2292,8 +2306,14 @@ app.patch("/api/customers/:id", (req, res) => {
   res.json(merged);
 });
 
-// DELETE customer
+// DELETE customer — REQUIRE Manager+ level (canDo: customers.delete)
 app.delete("/api/customers/:id", (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+  const session = token && adminSessions.get(token);
+  if (!session) return res.status(401).json({ error: "Not authenticated" });
+  if (!rbac.canDo(session.role, 'customers', 'delete')) {
+    return res.status(403).json({ error: `Role "${session.role}" tidak boleh hapus customer (butuh Manager+)` });
+  }
   const id = req.params.id;
   customers = customers.filter(c => c.id !== id);
   try { db.deleteCustomer(id); } catch (e) { console.error('[customer delete] db:', e.message); }

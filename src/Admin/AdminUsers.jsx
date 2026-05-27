@@ -2,6 +2,7 @@
 // Super-admin only: list users, unlock locked accounts, set new password,
 // flip active flag. Built around /api/auth/users endpoints.
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { ROLE_LIST } from "../lib/rbac.js";
 import { ErrorInline } from "../components/ConnectionError.jsx";
 
 const PURPLE = "#a855f7", GREEN = "#10b981", AMBER = "#f59e0b", RED = "#ef4444", CYAN = "#22d3ee";
@@ -349,7 +350,7 @@ function CreateUserModal({ API, token, roles, onClose, onCreated }) {
           <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>ROLE *</div>
           <select value={role} onChange={e => setRole(e.target.value)}
             style={{ width: "100%", padding: 10, background: "rgba(0,0,0,0.4)", border: BORDER, borderRadius: 8, color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box", outline: "none", cursor: "pointer" }}>
-            {(roles && roles.length > 0 ? roles : [
+            {(roles && roles.length > 0 ? roles : ROLE_LIST.length > 0 ? ROLE_LIST : [
               { id: "owner", name: "Owner / Director", icon: "💼" },
               { id: "manager", name: "Outlet Manager", icon: "👑" },
               { id: "supervisor", name: "Supervisor", icon: "🧭" },

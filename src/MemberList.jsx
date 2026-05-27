@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "./api.js";
 import { validateCustomerName } from "./lib/nameValidator.js";
+import { canDelete, canEdit } from "./lib/rbac.js";
 
 import { fmtMoney as fIDR } from "./lib/currency.js";
 import { LoadingState } from "./components/uiKit.jsx";
@@ -26,6 +27,11 @@ export default function MemberList({ onBack }) {
   const [sortBy,    setSortBy]      = useState("lastVisit"); // lastVisit | visits | totalSpend | createdAt
   const [toast,     setToast]       = useState(null);
   const [editing,   setEditing]     = useState(null);  // customer being edited
+
+  // RBAC: cek role dari localStorage adminRole
+  const role = (typeof window !== "undefined") ? localStorage.getItem("adminRole") : null;
+  const allowEdit = canEdit(role, "customers");
+  const allowDelete = canDelete(role, "customers");
 
   async function saveEdit(updated) {
     try {
@@ -221,12 +227,16 @@ export default function MemberList({ onBack }) {
                   <span style={{width:110,textAlign:"right",fontSize:12,fontWeight:600}}>{fIDR(c.totalSpend)}</span>
                   <span style={{width:90,textAlign:"center",fontSize:11,color:"#555"}}>{fAgo(c.lastVisit)}</span>
                   <span style={{width:110,textAlign:"center",display:"flex",gap:4,justifyContent:"center"}}>
-                    <button style={M.editIconBtn} title="Edit customer" onClick={e=>{e.stopPropagation();setEditing(c);}}>✏️</button>
-                    <button style={M.waIconBtn} disabled={waSending===c.id}
+                    {allowEdit && (
+                      <button style={M.editIconBtn} title="Edit customer" onClick={e=>{e.stopPropagation();setEditing(c);}}>✏️</button>
+                    )}
+                    <button style={M.waIconBtn} disabled={waSending===c.id} title="Kirim WA"
                       onClick={e=>{e.stopPropagation();handleSendWA(c);}}>
                       {waSending===c.id?"⏳":"💬"}
                     </button>
-                    <button style={M.delIconBtn} onClick={e=>{e.stopPropagation();handleDelete(c.id);}}>🗑️</button>
+                    {allowDelete && (
+                      <button style={M.delIconBtn} title="Hapus customer" onClick={e=>{e.stopPropagation();handleDelete(c.id);}}>🗑️</button>
+                    )}
                   </span>
                 </div>
               ))}
