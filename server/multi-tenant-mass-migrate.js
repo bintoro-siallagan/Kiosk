@@ -101,6 +101,12 @@ const BYPASS_PATH_PREFIXES = [
   '/api/cinema/films',           // already filtered by cinema-backend
   '/api/cinema/showtimes',
   '/api/cinema/studios',
+  // White-label P4 — modules self-scope via SQL WHERE company_id = ?
+  '/api/webhooks',               // tenant-webhooks.js
+  '/api/api-keys',               // tenant-api-keys.js
+  '/api/public/',                // public API auth'd by key, scope-locked at auth
+  '/api/announcements',          // tenant announcement feed (kind=changelog public)
+  '/api/admin/announcements',    // super-admin only
 ];
 
 const ARRAY_KEYS_TO_SCAN = [

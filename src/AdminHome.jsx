@@ -20,6 +20,11 @@ const AdminIntegrations = lazy(() => import("./Admin/AdminIntegrations.jsx"));
 const AdminQueueSettings= lazy(() => import("./Admin/AdminQueueSettings.jsx"));
 const AdminDataExport   = lazy(() => import("./Admin/AdminDataExport.jsx"));
 const AdminAuditLog     = lazy(() => import("./Admin/AdminAuditLog.jsx"));
+const Admin2FA          = lazy(() => import("./Admin/Admin2FA.jsx"));
+const AdminWebhooks     = lazy(() => import("./Admin/AdminWebhooks.jsx"));
+const AdminApiKeys      = lazy(() => import("./Admin/AdminApiKeys.jsx"));
+const AdminCustomDomain = lazy(() => import("./Admin/AdminCustomDomain.jsx"));
+const AdminAnnouncements = lazy(() => import("./Admin/AdminAnnouncements.jsx"));
 import { TABS, GROUPS as _RAW_GROUPS, filterGroupsForVertical, filterGroupsByFeatures, getModuleFeature, isModuleLocked, requiredPlanFor } from "./adminModules.js";
 
 // Multi-tenant: helper baca company ctx (dipakai oleh AdminHome di runtime, BUKAN module-load).
@@ -44,6 +49,7 @@ import IncidentAlertBanner from "./components/IncidentAlertBanner.jsx";
 import TrialBanner from "./components/TrialBanner.jsx";
 import UpgradePrompt from "./components/UpgradePrompt.jsx";
 import OnboardingChecklist from "./components/OnboardingChecklist.jsx";
+import AnnouncementBanner from "./components/AnnouncementBanner.jsx";
 import API_HOST from "./apiBase.js";
 import { LocaleSwitcher as KaryaLocaleSwitcher } from "./i18n";
 
@@ -622,6 +628,11 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "Queue Number",       icon: "🔢", c: "#34d399", on: () => openRight("queue-settings") },
       { label: "Data Export (GDPR)", icon: "📦", c: "#a855f7", on: () => openRight("data-export") },
       { label: "Audit Log",          icon: "📋", c: "#f87171", on: () => openRight("audit-log") },
+      { label: "2FA Security",       icon: "🔐", c: "#86efac", on: () => openRight("2fa") },
+      { label: "Webhooks",           icon: "🔗", c: "#a5b4fc", on: () => openRight("webhooks") },
+      { label: "API Keys",           icon: "🗝️", c: "#fbbf24", on: () => openRight("api-keys") },
+      { label: "Custom Domain",      icon: "🌐", c: "#60a5fa", on: () => openRight("custom-domain") },
+      { label: "Announcements",      icon: "📣", c: "#f472b6", on: () => openRight("announcements") },
       { label: "All Modules",        icon: "🛠️", c: "#f59e0b", searchable: true,
         getSub: (q) => q.trim()
           ? TABS.filter(t => _allowedTabIds.has(t.id) && t.label.toLowerCase().includes(q.trim().toLowerCase()) && canSee(moduleOf(t.id)))
@@ -682,6 +693,9 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
   return (
     <div style={S.root}>
       <style>{CSS}</style>
+
+      {/* P4D — karyaOS announcements from super-admin (above all other banners) */}
+      <AnnouncementBanner />
 
       {/* Global incident alert — listen WS + toast + persistent badge */}
       <IncidentAlertBanner onOpenPanel={(toolId) => openRight("tools", toolId)} />
@@ -838,6 +852,11 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
                 {rightView === "queue-settings" && <AdminQueueSettings onBack={closeRight} />}
                 {rightView === "data-export" && <AdminDataExport onBack={closeRight} />}
                 {rightView === "audit-log" && <AdminAuditLog onBack={closeRight} />}
+                {rightView === "2fa" && <Admin2FA onBack={closeRight} />}
+                {rightView === "webhooks" && <AdminWebhooks onBack={closeRight} />}
+                {rightView === "api-keys" && <AdminApiKeys onBack={closeRight} />}
+                {rightView === "custom-domain" && <AdminCustomDomain onBack={closeRight} />}
+                {rightView === "announcements" && <AdminAnnouncements onBack={closeRight} />}
                 </Suspense>
               </div>
             </div>

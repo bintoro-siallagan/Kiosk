@@ -103,7 +103,13 @@ function setupCompanies(app, opts = {}) {
     'ALTER TABLE companies ADD COLUMN wa_signature TEXT',       // signature appended to WA notifications
     'ALTER TABLE companies ADD COLUMN email_signature TEXT',    // signature for email
     'ALTER TABLE companies ADD COLUMN brand_short TEXT',        // short display name (POS header)
+    "ALTER TABLE companies ADD COLUMN currency_code TEXT DEFAULT 'IDR'", // P3B multi-currency
+    "ALTER TABLE companies ADD COLUMN locale TEXT DEFAULT 'id-ID'",       // P3B locale for number formatting
+    'ALTER TABLE companies ADD COLUMN custom_domain TEXT',                // P4C — tenant CNAME (e.g. order.brand.com)
+    'ALTER TABLE companies ADD COLUMN custom_domain_verified INTEGER DEFAULT 0',
+    'ALTER TABLE companies ADD COLUMN custom_domain_token TEXT',          // DNS-TXT verification token
   ]) { try { db.exec(col); } catch {} }
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_companies_custom_domain ON companies(custom_domain) WHERE custom_domain IS NOT NULL`); } catch {}
 
   // 2) Bootstrap default companies kalau kosong
   const count = db.prepare(`SELECT COUNT(*) c FROM companies`).get().c;
@@ -210,7 +216,8 @@ function setupCompanies(app, opts = {}) {
     }
     const c = db.prepare(`SELECT id, code, name, primary_vertical, brand_color, logo_url,
                                   contact_email, contact_phone, address,
-                                  receipt_footer, wa_signature, email_signature, brand_short
+                                  receipt_footer, wa_signature, email_signature, brand_short,
+                                  currency_code, locale
                           FROM companies WHERE id = ?`).get(companyId);
     if (!c) return res.json({
       company_id: null, name: 'karyaOS',
@@ -231,6 +238,8 @@ function setupCompanies(app, opts = {}) {
       receipt_footer: c.receipt_footer || null,
       wa_signature: c.wa_signature || null,
       email_signature: c.email_signature || null,
+      currency_code: c.currency_code || 'IDR',
+      locale: c.locale || 'id-ID',
     });
   });
 
@@ -276,7 +285,7 @@ function setupCompanies(app, opts = {}) {
     if (!companyId) return res.status(400).json({ error: 'no company scope' });
     const b = req.body || {};
     const sets = [], params = [];
-    const allowed = ['brand_color', 'name', 'brand_short', 'contact_email', 'contact_phone', 'address', 'receipt_footer', 'wa_signature', 'email_signature'];
+    const allowed = ['brand_color', 'name', 'brand_short', 'contact_email', 'contact_phone', 'address', 'receipt_footer', 'wa_signature', 'email_signature', 'currency_code', 'locale'];
     for (const k of allowed) {
       if (b[k] !== undefined) { sets.push(`${k} = ?`); params.push(b[k]); }
     }
@@ -285,6 +294,69 @@ function setupCompanies(app, opts = {}) {
     db.prepare(`UPDATE companies SET ${sets.join(', ')} WHERE id = ?`).run(...params);
     if (typeof global.logAudit === 'function') global.logAudit(req, { action: 'branding.update', entity: 'company', entity_id: companyId, payload: b });
     res.json({ ok: true, company_id: companyId });
+  });
+
+  // ─── P4C — Custom domain management (MUST come BEFORE /:id) ────────
+  router.get('/custom-domain', (req, res) => {
+    const cid = parseInt(req.headers['x-company-id'], 10);
+    if (!cid) return res.status(401).json({ error: 'company scope required' });
+    const row = db.prepare(`SELECT custom_domain, custom_domain_verified, custom_domain_token
+      FROM companies WHERE id = ?`).get(cid);
+    res.json({
+      domain: row?.custom_domain || null,
+      verified: !!row?.custom_domain_verified,
+      verification_token: row?.custom_domain_token || null,
+      dns_target: 'karyaos-app.com',
+      txt_record_name: row?.custom_domain ? `_karyaos.${row.custom_domain}` : null,
+      txt_record_value: row?.custom_domain_token ? `karyaos-verify=${row.custom_domain_token}` : null,
+    });
+  });
+
+  router.put('/custom-domain', (req, res) => {
+    const cid = parseInt(req.headers['x-company-id'], 10);
+    if (!cid) return res.status(401).json({ error: 'company scope required' });
+    const raw = String(req.body?.domain || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    if (!raw) {
+      db.prepare(`UPDATE companies SET custom_domain = NULL, custom_domain_verified = 0, custom_domain_token = NULL WHERE id = ?`).run(cid);
+      return res.json({ ok: true, cleared: true });
+    }
+    if (!/^[a-z0-9.-]+\.[a-z]{2,}$/.test(raw)) {
+      return res.status(400).json({ error: 'Invalid domain format' });
+    }
+    const taken = db.prepare(`SELECT id FROM companies WHERE LOWER(custom_domain) = ? AND id <> ?`).get(raw, cid);
+    if (taken) return res.status(409).json({ error: 'Domain already in use by another tenant' });
+
+    const token = require('crypto').randomBytes(12).toString('hex');
+    db.prepare(`UPDATE companies SET custom_domain = ?, custom_domain_verified = 0, custom_domain_token = ? WHERE id = ?`)
+      .run(raw, token, cid);
+    if (typeof global.logAudit === 'function') {
+      try { global.logAudit(req, { action: 'custom_domain.set', entity: 'company', entity_id: cid, payload: { domain: raw } }); } catch {}
+    }
+    res.json({ ok: true, domain: raw, verification_token: token });
+  });
+
+  router.post('/custom-domain/verify', async (req, res) => {
+    const cid = parseInt(req.headers['x-company-id'], 10);
+    if (!cid) return res.status(401).json({ error: 'company scope required' });
+    const row = db.prepare(`SELECT custom_domain, custom_domain_token FROM companies WHERE id = ?`).get(cid);
+    if (!row?.custom_domain || !row?.custom_domain_token) return res.status(400).json({ error: 'No pending domain' });
+    try {
+      const dns = require('dns').promises;
+      const records = await dns.resolveTxt(`_karyaos.${row.custom_domain}`).catch(() => []);
+      const flat = records.flat().map(s => String(s));
+      const expected = `karyaos-verify=${row.custom_domain_token}`;
+      const found = flat.some(v => v === expected);
+      if (!found) {
+        return res.status(400).json({ verified: false, error: 'TXT record not found yet (DNS propagation up to 24h)', expected, found_records: flat });
+      }
+      db.prepare(`UPDATE companies SET custom_domain_verified = 1 WHERE id = ?`).run(cid);
+      if (typeof global.logAudit === 'function') {
+        try { global.logAudit(req, { action: 'custom_domain.verify', entity: 'company', entity_id: cid }); } catch {}
+      }
+      res.json({ verified: true, domain: row.custom_domain });
+    } catch (e) {
+      res.status(500).json({ error: 'DNS lookup failed: ' + e.message });
+    }
   });
 
   router.get('/:id', (req, res) => {
@@ -466,14 +538,26 @@ function setupCompanies(app, opts = {}) {
 
   // Helper: resolve scope dari request (untuk dipake module lain)
   // Returns { company_id, is_super_admin, scope_filter_sql, scope_filter_params }
+  // P4C — also resolve by Host header (custom_domain CNAME) when no header set
   function resolveScope(req) {
     const cid = parseInt(req.headers['x-company-id'], 10);
     const isSuperAdmin = String(req.headers['x-super-admin'] || '') === 'true';
-    if (isSuperAdmin || !cid) {
-      // No filter — super-admin sees everything
+    if (cid) {
+      return { company_id: cid, is_super_admin: false, filter_sql: 'company_id = ?', filter_params: [cid] };
+    }
+    if (isSuperAdmin) {
       return { company_id: null, is_super_admin: true, filter_sql: '1=1', filter_params: [] };
     }
-    return { company_id: cid, is_super_admin: false, filter_sql: 'company_id = ?', filter_params: [cid] };
+    // No header — try host-based lookup (custom_domain CNAME)
+    const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(':')[0].toLowerCase();
+    if (host) {
+      try {
+        const row = db.prepare(`SELECT id FROM companies WHERE LOWER(custom_domain) = ? AND custom_domain_verified = 1 LIMIT 1`).get(host);
+        if (row) return { company_id: row.id, is_super_admin: false, filter_sql: 'company_id = ?', filter_params: [row.id] };
+      } catch {}
+    }
+    // Fallback — treat as super-admin (no scope) for backward compat
+    return { company_id: null, is_super_admin: true, filter_sql: '1=1', filter_params: [] };
   }
 
   return { router, db, resolveScope };

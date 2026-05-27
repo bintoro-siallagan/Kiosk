@@ -12,6 +12,7 @@ export default function AdminBranding({ onBack }) {
     brand_color: "", name: "", brand_short: "",
     contact_email: "", contact_phone: "", address: "",
     receipt_footer: "", wa_signature: "", email_signature: "",
+    currency_code: "IDR", locale: "id-ID",
   });
   const fileRef = useRef(null);
   const setF = (k) => (e) => setForm(s => ({ ...s, [k]: e.target.value }));
@@ -31,6 +32,8 @@ export default function AdminBranding({ onBack }) {
           receipt_footer: b?.receipt_footer || "",
           wa_signature: b?.wa_signature || "",
           email_signature: b?.email_signature || "",
+          currency_code: b?.currency_code || "IDR",
+          locale: b?.locale || "id-ID",
         });
       });
   }, []);
@@ -136,6 +139,42 @@ export default function AdminBranding({ onBack }) {
             <input type="text" value={form.brand_short} onChange={setF("brand_short")}
               placeholder="e.g. Sour Sally" style={{ ...S.input, width: "100%" }}/>
             <div style={S.hint}>Compact display name for POS header, WA sender. Defaults to brand name long.</div>
+          </div>
+        </div>
+      </section>
+
+      {/* CURRENCY & LOCALE (P3B) */}
+      <section style={S.card}>
+        <div style={S.cardTitle}>Currency &amp; locale</div>
+        <div style={{ display: "grid", gap: 14, gridTemplateColumns: "1fr 1fr" }}>
+          <div>
+            <label style={S.label}>Currency</label>
+            <select value={form.currency_code} onChange={setF("currency_code")} style={{ ...S.input, width: "100%" }}>
+              <option value="IDR">IDR · Indonesian Rupiah (Rp)</option>
+              <option value="USD">USD · US Dollar ($)</option>
+              <option value="SGD">SGD · Singapore Dollar (S$)</option>
+              <option value="MYR">MYR · Malaysian Ringgit (RM)</option>
+              <option value="THB">THB · Thai Baht (฿)</option>
+              <option value="PHP">PHP · Philippine Peso (₱)</option>
+              <option value="VND">VND · Vietnamese Dong (₫)</option>
+              <option value="EUR">EUR · Euro (€)</option>
+              <option value="GBP">GBP · Pound Sterling (£)</option>
+            </select>
+            <div style={S.hint}>Used for prices on kiosk, POS, receipts.</div>
+          </div>
+          <div>
+            <label style={S.label}>Locale</label>
+            <select value={form.locale} onChange={setF("locale")} style={{ ...S.input, width: "100%" }}>
+              <option value="id-ID">id-ID (Indonesian)</option>
+              <option value="en-US">en-US (English US)</option>
+              <option value="en-SG">en-SG (English Singapore)</option>
+              <option value="ms-MY">ms-MY (Malay)</option>
+              <option value="th-TH">th-TH (Thai)</option>
+              <option value="vi-VN">vi-VN (Vietnamese)</option>
+              <option value="de-DE">de-DE (German)</option>
+              <option value="en-GB">en-GB (English UK)</option>
+            </select>
+            <div style={S.hint}>Number/date formatting locale.</div>
           </div>
         </div>
       </section>

@@ -23,6 +23,7 @@ export default function AdminLogin({ onLogin }) {
   const [shake, setShake] = useState(false);
   const [mustChange, setMustChange] = useState(null);     // { token, user } when need to change pwd
   const [showForgot, setShowForgot] = useState(false);
+  const [twoFA, setTwoFA] = useState(null);                // P3D — { otpToken, username } when 2FA required
   const usernameRef = useRef(null);
 
   useEffect(() => {
@@ -44,6 +45,11 @@ export default function AdminLogin({ onLogin }) {
       const res = await api.loginPassword(username.trim(), password);
       if (remember) localStorage.setItem(LS_USERNAME, username.trim());
       else          localStorage.removeItem(LS_USERNAME);
+      // P3D — 2FA gate: backend asks for TOTP code before issuing session token
+      if (res.requires_2fa && res.otp_token) {
+        setTwoFA({ otpToken: res.otp_token, username: username.trim() });
+        return;
+      }
       localStorage.setItem("adminToken", res.token);
       localStorage.setItem("adminRole",  res.user.role);
       localStorage.setItem("adminName",  res.user.name);
@@ -101,6 +107,14 @@ export default function AdminLogin({ onLogin }) {
     if (pin.length < 6) setPin(p => p + k);
   };
 
+  // P3D — 2FA prompt
+  if (twoFA) {
+    return <TwoFAPrompt
+      session={twoFA}
+      onCancel={() => { setTwoFA(null); setError(""); }}
+      onSuccess={onLogin}
+    />;
+  }
   // Forced password change modal
   if (mustChange) {
     return <ForceChangePassword session={mustChange} onDone={onLogin} />;
@@ -196,6 +210,81 @@ export default function AdminLogin({ onLogin }) {
 
         <div style={L.footer}>
           🛡️ Enterprise auth · scrypt password hash · lockout 5× fail · session 12h
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── P3D — 2FA TOTP prompt (after password verified) ─────────────────
+function TwoFAPrompt({ session, onCancel, onSuccess }) {
+  const [code, setCode] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const inputRef = useRef(null);
+
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  async function submit() {
+    const clean = code.replace(/\s/g, "");
+    if (clean.length < 6) { setError("Masukkan kode 6 digit"); return; }
+    setBusy(true); setError("");
+    try {
+      const res = await api.verify2FA(session.otpToken, clean);
+      localStorage.setItem("adminToken", res.token);
+      localStorage.setItem("adminRole", res.user.role);
+      localStorage.setItem("adminName", res.user.name);
+      localStorage.setItem("adminUsername", res.user.username || "");
+      try {
+        const { setCompanyCtx } = await import("./companyAuth.js");
+        setCompanyCtx({
+          token: res.token,
+          company_id: res.user.company_id ?? null,
+          is_super_admin: !!res.user.is_super_admin,
+          company: res.company || null,
+          user: { id: res.user.id, name: res.user.name, role: res.user.role },
+        });
+      } catch {}
+      onSuccess({ token: res.token, name: res.user.name, role: res.user.role, company: res.company });
+    } catch (e) {
+      setError(parseError(e));
+      setCode("");
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <div style={L.root}>
+      <style>{CSS}</style>
+      <div style={{ ...L.wrap, animation: "fadeUp 0.3s ease" }}>
+        <img src="/logo.png" alt="KaryaOS" style={L.logoImg} />
+        <div style={L.title}>VERIFIKASI 2 LANGKAH</div>
+        <div style={L.sub}>Masukkan 6 digit kode dari aplikasi authenticator Anda</div>
+
+        {error && <div style={L.error} role="alert">⚠ {error}</div>}
+
+        <form onSubmit={(e) => { e.preventDefault(); submit(); }} style={L.form}>
+          <label style={L.label}>🔐 KODE 2FA</label>
+          <input ref={inputRef} type="text" inputMode="numeric" pattern="[0-9]*"
+            value={code}
+            onChange={e => setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+            placeholder="000000" autoComplete="one-time-code"
+            style={{ ...L.input, fontSize: 28, letterSpacing: 12, textAlign: "center", fontFamily: "'Geist Mono',monospace" }}
+            disabled={busy}
+          />
+          <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 8, textAlign: "center" }}>
+            Atau gunakan salah satu <b>backup code</b> yang Anda simpan (format XXXX-XXXX-XX)
+          </div>
+
+          <button type="submit" disabled={busy || code.length < 6} style={{ ...L.primaryBtn, marginTop: 18, opacity: (busy || code.length < 6) ? 0.6 : 1 }}>
+            {busy ? <><span style={L.spinner} /> Memverifikasi…</> : "✓ Verifikasi"}
+          </button>
+          <button type="button" onClick={onCancel} style={{ ...L.modeToggle, marginTop: 12 }}>
+            ← Login dengan akun lain
+          </button>
+        </form>
+
+        <div style={L.footer}>
+          🛡️ TOTP RFC 6238 · SHA-1 · 30s · 6 digit
         </div>
       </div>
     </div>

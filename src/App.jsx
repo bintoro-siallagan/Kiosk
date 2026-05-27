@@ -55,6 +55,14 @@ const POSCinemaApp           = lazy(() => import("./POS/POSCinemaApp.jsx"));
 const KDS                    = lazy(() => import("./KDS/KDS.jsx"));
 const FlowApp                = lazy(() => import("./Flow/FlowApp.jsx"));
 const POSSatisfaction        = lazy(() => import("./POS/POSSatisfaction.jsx"));
+const PWAInstallPrompt       = lazy(() => import("./components/PWAInstallPrompt.jsx"));
+
+// White-label P3C — surfaces where a mobile install banner makes sense.
+// Skip standalone surfaces (kiosk, pos, cds, kds, signage) and admin shell.
+const PWA_PROMPT_SCENES = new Set([
+  "flow", "customer-track", "track", "kiosk-feedback",
+  "cinema-digital-ticket", "cinema-feedback", "receipt",
+]);
 
 // Generic scene-loading fallback — quiet, dark-theme aligned.
 function SceneLoading() {
@@ -312,5 +320,10 @@ export default function App() {
     );
   }
 
-  return <Suspense fallback={<SceneLoading />}>{node}</Suspense>;
+  return (
+    <Suspense fallback={<SceneLoading />}>
+      {node}
+      {PWA_PROMPT_SCENES.has(scene) && <PWAInstallPrompt />}
+    </Suspense>
+  );
 }

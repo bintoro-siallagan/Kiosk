@@ -712,6 +712,18 @@ app.post("/api/orders", (req, res) => {
   printKitchenTicket(order).catch(() => {});   // fire-and-forget kitchen print
   printCustomerReceipt(order).catch(() => {}); // fire-and-forget customer struk
   broadcast("order:new", order);
+  // P4A — outbound webhook
+  if (typeof global.emitWebhook === 'function' && order.company_id) {
+    global.emitWebhook(order.company_id, 'order.created', {
+      id: order.id, type: order.type, total: order.total, table: order.table,
+      customer_name: order.customerName, items: order.items, created_at: order.createdAt,
+    });
+    if (order.status === 'waiting' || order.pay) {
+      global.emitWebhook(order.company_id, 'order.paid', {
+        id: order.id, total: order.total, pay: order.pay, paid_at: Date.now(),
+      });
+    }
+  }
 
   // Kitchen Display System — auto-create kitchen tickets from this order
   if (typeof global.createKitchenTickets === 'function') {
@@ -2656,6 +2668,14 @@ app.get("/api/payment/check/:internalOrderId", async (req, res) => {
             orders[orderIdx].paymentMethod = mtStatus.payment_type || "gopay";
           }
           broadcast("payment:confirmed", { orderId: internalOrderId, paid: true });
+          // P4A — webhook
+          const _o = orders.find(o => o.id === internalOrderId);
+          if (typeof global.emitWebhook === 'function' && _o?.company_id) {
+            global.emitWebhook(_o.company_id, 'payment.completed', {
+              order_id: internalOrderId, amount: _o.total, method: mtStatus.payment_type || 'gopay',
+              gateway: 'midtrans', paid_at: Date.now(),
+            });
+          }
           console.log(`✅ Auto-confirmed payment for order ${internalOrderId}`);
           return res.json({ ok: true, paid: true, status: mtStatus.transaction_status, midtransOrderId: mtId });
         }
@@ -2929,6 +2949,7 @@ if (adminUsers.filter(u => u.pin && !u.username).length === 0 && adminUsers.leng
 }
 
 const adminSessions = new Map(); // token → { userId, role, loginAt, expiresAt }
+let twoFA = null;                 // P3D — set later by setup2FA(); login handler reads at request-time
 function genToken() { return crypto.randomBytes(32).toString("hex"); }
 function purgeExpired() {
   const now = Date.now();
@@ -2964,7 +2985,13 @@ app.post("/api/auth/login-password", (req, res) => {
     if (locked) return res.status(423).json({ error: `Akun dikunci 15 menit setelah ${LOCKOUT_THRESHOLD} gagal login.` });
     return res.status(401).json({ error: `Username atau password salah (sisa ${LOCKOUT_THRESHOLD - failed}× sebelum dikunci)` });
   }
-  // Success
+  // Password OK — check 2FA gate (P3D)
+  if (twoFA && twoFA.userHas2FA(user.id)) {
+    const otpToken = twoFA.createPendingToken(user.id);
+    db.logLoginAttempt({ user_id: user.id, username, ip, user_agent: ua, method: "password", success: 1, error: "awaiting_2fa" });
+    return res.json({ ok: true, requires_2fa: true, otp_token: otpToken });
+  }
+  // Success — no 2FA, issue session directly
   const token = genToken();
   const expiresAt = Date.now() + SESSION_TTL_MS;
   // Multi-tenant: resolve company info dari user.company_id
@@ -2983,6 +3010,42 @@ app.post("/api/auth/login-password", (req, res) => {
             must_change_password: !!user.must_change_password, last_login_at: user.last_login_at,
             company_id: user.company_id ?? null, is_super_admin: user.company_id == null },
     company: companyInfo,  // {id, code, name, primary_vertical, brand_color} atau null untuk super-admin
+    expiresAt,
+  });
+});
+
+// ── 2FA verification — exchange otp_token + code for real session ─────
+app.post("/api/auth/verify-2fa", (req, res) => {
+  const { otp_token, code } = req.body || {};
+  const ip = clientIp(req); const ua = req.headers["user-agent"] || "";
+  if (!otp_token || !code) return res.status(400).json({ error: "otp_token dan code wajib diisi" });
+  if (!twoFA) return res.status(500).json({ error: "2FA module not initialized" });
+  const userId = twoFA.consumePendingToken(otp_token);
+  if (!userId) return res.status(401).json({ error: "Sesi 2FA kedaluwarsa, login ulang" });
+  if (!twoFA.verifyForUser(userId, code)) {
+    db.logLoginAttempt({ user_id: userId, ip, user_agent: ua, method: "2fa", success: 0, error: "wrong code" });
+    return res.status(401).json({ error: "Kode 2FA salah" });
+  }
+  adminUsers = db.loadAllAdminUsers();
+  const user = adminUsers.find(u => u.id === userId);
+  if (!user) return res.status(404).json({ error: "User tidak ditemukan" });
+  const token = genToken();
+  const expiresAt = Date.now() + SESSION_TTL_MS;
+  const companyInfo = resolveCompanyForUser(user);
+  adminSessions.set(token, {
+    userId: user.id, name: user.name, role: user.role,
+    company_id: user.company_id ?? null, is_super_admin: user.company_id == null,
+    loginAt: Date.now(), expiresAt, ip,
+  });
+  db.insertAdminUser({ ...user, failed_login_count: 0, locked_until: null, last_login_at: Math.floor(Date.now() / 1000), last_login_ip: ip });
+  db.logLoginAttempt({ user_id: user.id, username: user.username, ip, user_agent: ua, method: "2fa", success: 1 });
+  console.log(`🔐 2FA login: ${user.name} (@${user.username}, ${user.role}) from ${ip}`);
+  res.json({
+    ok: true, token,
+    user: { id: user.id, name: user.name, username: user.username, email: user.email, role: user.role,
+            must_change_password: !!user.must_change_password, last_login_at: user.last_login_at,
+            company_id: user.company_id ?? null, is_super_admin: user.company_id == null },
+    company: companyInfo,
     expiresAt,
   });
 });
@@ -4750,6 +4813,24 @@ setupTenantDataExport(app, { dbPath: DB_PATH });
 const { setupTenantAuditLog, logAudit } = require('./tenant-audit-log');
 setupTenantAuditLog(app, { dbPath: DB_PATH });
 global.logAudit = logAudit; // make available everywhere
+
+// White-label P3D — TOTP 2FA for super-admin / owner / admin
+// `twoFA` was forward-declared near adminSessions so login handler can reference it
+const { setup2FA: _setup2FA } = require('./auth-2fa');
+twoFA = _setup2FA(app, { db, adminSessions, dbPath: DB_PATH });
+
+// White-label P4A — outbound webhooks per tenant
+const { setupTenantWebhooks } = require('./tenant-webhooks');
+const _wh = setupTenantWebhooks(app, { dbPath: DB_PATH });
+global.emitWebhook = _wh.emit;  // call from anywhere: global.emitWebhook(companyId, 'order.created', {...})
+
+// White-label P4B — tenant-facing public REST API + API keys
+const { setupTenantApiKeys } = require('./tenant-api-keys');
+setupTenantApiKeys(app, { dbPath: DB_PATH });
+
+// White-label P4D — in-product announcements + changelog
+const { setupAnnouncements } = require('./announcements');
+setupAnnouncements(app, { dbPath: DB_PATH, adminSessions });
 // Expose resolveScope helper to global (semua endpoint lain bisa pakai untuk filter)
 global.resolveCompanyScope = companies.resolveScope;
 

@@ -102,6 +102,11 @@ export const api = {
   // Auth — enterprise (username/password) + legacy PIN
   login:            (pin)        => req("POST",  "/api/auth/login", { pin }),
   loginPassword:    (username, password) => req("POST", "/api/auth/login-password", { username, password }),
+  verify2FA:        (otp_token, code) => req("POST", "/api/auth/verify-2fa", { otp_token, code }),
+  twoFAStatus:      ()           => req("GET",  "/api/auth/2fa/status"),
+  twoFASetup:       ()           => req("POST", "/api/auth/2fa/setup", {}),
+  twoFAEnable:      (code)       => req("POST", "/api/auth/2fa/enable", { code }),
+  twoFADisable:     (code)       => req("POST", "/api/auth/2fa/disable", { code }),
   changePassword:   (current_password, new_password) => req("POST", "/api/auth/change-password", { current_password, new_password }),
   setUserPassword:  (id, password, force_change=true) => req("POST", `/api/auth/users/${id}/set-password`, { password, force_change }),
   loginAudit:       (limit=100)   => req("GET",   `/api/auth/audit?limit=${limit}`),
