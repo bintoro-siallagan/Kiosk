@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
-
-const API = import.meta.env.VITE_API_URL ||
-  (typeof window !== "undefined" ? `${window.location.protocol}//${window.location.hostname}:3011` : "");
-
+import API_HOST from "../apiBase.js";
 import { fmtMoney as fIDR } from "../lib/currency.js";
+
+// Same-origin in production (HTTPS via nginx), VITE_API_URL only respected on localhost dev
+const API = API_HOST;
 
 const LOYALTY_DEFAULTS = {
   enabled: true, earnRate: 1000, redeemRate: 100,
