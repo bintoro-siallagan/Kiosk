@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const empty = { name: "", description: "", price: 0, is_active: 1, sort_order: 0, outlet_codes: "", image_url: "" };
 
 export default function CinemaBundles({ apiBase = "" }) {

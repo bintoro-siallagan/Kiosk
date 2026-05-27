@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const fmtTs = (s) => s ? new Date(s * 1000).toLocaleTimeString("id-ID", { hour12: false }) : "—";
 const STATUS = {
   pending:    { label: "Baru",       color: "#ef4444" },

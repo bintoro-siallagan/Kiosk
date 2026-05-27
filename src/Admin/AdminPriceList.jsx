@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "../lib/currency.js";
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—";
 const toDateInput = (ts) => ts ? new Date(ts * 1000).toISOString().slice(0, 10) : "";
 const fromDateInput = (s) => s ? Math.floor(new Date(s + "T00:00:00").getTime() / 1000) : null;

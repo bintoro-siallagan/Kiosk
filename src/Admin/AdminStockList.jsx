@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#155e75";
 
 export default function AdminStockList({ apiBase = "" }) {

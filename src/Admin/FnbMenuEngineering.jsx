@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { EmptyState, LoadingSkeleton } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const Q = {
   star:      { label: "⭐ Star",      color: "#10b981", desc: "High popularity + High margin — promosikan, ini bintang menu." },
   plowhorse: { label: "🐎 Plowhorse", color: "#f59e0b", desc: "High popularity + Low margin — naikkan harga or turunkan food cost." },

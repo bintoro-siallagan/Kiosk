@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUiKit } from "../components/uiKit.jsx";
 
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#ea580c";
 const STATION_C = { Bar: "#3b82f6", Kitchen: "#f59e0b", Dessert: "#ec4899", "Cinema Snack": "#a855f7" };
 const COMBO_ICON = { cinema: "🎬", meal: "🍱", family: "👨‍👩‍👧" };

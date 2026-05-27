@@ -8,7 +8,7 @@ const TYPE_C = {
   Aset: "#10b981", Kewajiban: "#f59e0b", Ekuitas: "#a855f7",
   Pendapatan: "#3b82f6", HPP: "#ec4899", Beban: "#ef4444",
 };
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 
 export default function AdminCoa({ apiBase = "" }) {
   const [d, setD] = useState(null);

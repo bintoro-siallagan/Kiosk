@@ -4,7 +4,7 @@ import { useUiKit } from "../components/uiKit.jsx";
 // Cinema Ticketing — pick a showtime, sell seats off a live seat map.
 // karyaOS cinema vertical (admin side). Talks to /api/cinema/*.
 const C = { card: "#0d1117", border: "#1b212c", sub: "#7d8590", dim: "#5b6470" };
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const fmtTs = (s) => s ? new Date(s * 1000).toLocaleString("id-ID", { hour12: false }) : "—";
 const inp = { background: "#0a0e16", border: "1px solid #21262d", borderRadius: 7, padding: "8px 10px", color: "#fff", fontSize: 12.5, fontFamily: "inherit", boxSizing: "border-box", outline: "none" };
 

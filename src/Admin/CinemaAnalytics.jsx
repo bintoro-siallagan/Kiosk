@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const DAY_NAMES = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 const TIME_BAND_LABEL = { morning: "🌅 Pagi <12h", matinee: "☀️ Matinee 12-17h", prime: "🌆 Prime 17-21h", late: "🌙 Late ≥21h" };
 const TABS = [

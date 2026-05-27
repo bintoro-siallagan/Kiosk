@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "../lib/currency.js";
 const fmtJt = (n) => (n / 1e6).toFixed(1) + "M";
 const AC = "#1e40af";
 

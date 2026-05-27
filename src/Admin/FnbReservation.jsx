@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUiKit, TooltipButton } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const STATUS = { pending: { label: "Pending", color: "#f59e0b" }, confirmed: { label: "Confirmed", color: "#10b981" }, seated: { label: "Seated", color: "#22d3ee" }, completed: { label: "Done", color: "#6b7280" }, cancelled: { label: "Cancelled", color: "#ef4444" }, no_show: { label: "No-show", color: "#7f1d1d" } };
 const empty = { customer_name: "", customer_phone: "", customer_email: "", reservation_date: "", reservation_time: "", party_size: 2, table_number: "", occasion: "", special_requests: "", deposit_amount: 0, deposit_paid: 0, status: "pending", outlet: "", notes: "" };
 

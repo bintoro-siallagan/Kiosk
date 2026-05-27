@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 import ReportActions from "./ReportActions.jsx";
 
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "../lib/currency.js";
 const fcColor = (p) => (p > 40 ? "#ef4444" : p >= 35 ? "#f59e0b" : "#10b981");
 const CAT = { froyo: "Froyo", smoothies: "Smoothie", takehome: "Tato Home", yogulato: "Yogulato", collab: "Collab" };
 

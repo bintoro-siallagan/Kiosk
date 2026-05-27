@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 
 // KaryaOS Stage 5 (Optimization) — pattern/anomaly detection + benchmark tracking.
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#7d8590", dim: "#5b6470" };
 
 export default function OptimizationCenter({ apiBase }) {

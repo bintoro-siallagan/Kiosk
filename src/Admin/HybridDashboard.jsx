@@ -9,7 +9,7 @@ import { lazy, Suspense, useEffect, useState } from "react";
 const OwnerDashboard       = lazy(() => import("./OwnerDashboard.jsx"));
 const CinemaOwnerDashboard = lazy(() => import("./CinemaOwnerDashboard.jsx"));
 
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const PALETTE = {
   card: "rgba(255,255,255,0.025)", border: "rgba(255,255,255,0.06)",
   amber: "#fbbf24", purple: "#a855f7", cyan: "#22d3ee", green: "#10b981",

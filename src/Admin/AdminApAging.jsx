@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUiKit, LoadingState } from "../components/uiKit.jsx";
 
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "../lib/currency.js";
 const fmtJt = (n) => (n / 1e6).toFixed(1) + "M";
 const AC = "#dc2626";
 const BUCKET_C = { "Not Due Yet": "#10b981", "1-30 Days": "#f59e0b", "31-60 Days": "#fb7185", ">60 Days": "#ef4444" };

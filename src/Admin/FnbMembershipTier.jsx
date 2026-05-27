@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUiKit, EmptyState, TooltipButton } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const empty = { name: "", min_lifetime_spend: 0, min_visits: 0, points_multiplier: 1, birthday_bonus_pct: 0, free_delivery: 0, priority_queue: 0, perks_description: "", color: "#6b7280", sort_order: 0, is_active: 1 };
 
 export default function FnbMembershipTier({ apiBase = "" }) {

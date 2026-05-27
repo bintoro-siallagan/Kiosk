@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "../lib/currency.js";
 const VISIT = {
   "first-time": { c: "#22d3ee", t: "First-time" },
   repeat: { c: "#3b82f6", t: "Repeat" },

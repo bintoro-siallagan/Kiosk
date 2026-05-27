@@ -2,9 +2,10 @@
 // Public campaigns: Premiere Night / Midnight Sale / Family Package / Student Day.
 // Quick template button untuk 4 jenis standar, plus custom campaign.
 import { useState, useEffect, useCallback } from "react";
+import { fmtMoney } from "../lib/currency.js";
 
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
-const rp = (n) => n ? "Rp " + Math.round(n).toLocaleString("id-ID") : "—";
+const rp = (n) => n ? fmtMoney(n) : "—";
 const TYPE = {
   premiere: { label: "🎬 Premiere Night",   color: "#a855f7" },
   midnight: { label: "🌙 Midnight Sale",    color: "#22d3ee" },

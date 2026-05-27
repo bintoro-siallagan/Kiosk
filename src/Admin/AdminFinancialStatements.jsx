@@ -5,10 +5,11 @@
 import { useState, useEffect, useCallback } from "react";
 import PeriodPicker from "./PeriodPicker.jsx";
 import { ErrorInline } from "../components/ConnectionError.jsx";
+import { fmtMoney } from "../lib/currency.js";
 
 const fmtRp = (n) => {
-  const v = Math.round(Math.abs(n || 0)).toLocaleString("id-ID");
-  return n < 0 ? `(Rp ${v})` : `Rp ${v}`;
+  const v = fmtMoney(Math.abs(n || 0));
+  return n < 0 ? `(${v})` : v;
 };
 
 export default function AdminFinancialStatements({ apiBase = "" }) {

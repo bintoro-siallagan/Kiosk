@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { HelpButton } from "../components/HelpModal.jsx";
 
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const fmtK = (n) => n >= 1e9 ? (n / 1e9).toFixed(1) + "M" : n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "K" : String(Math.round(n));
 const fmtTime = (sec) => sec ? new Date(sec * 1000).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "-";
 const fmtDateTime = (sec) => sec ? new Date(sec * 1000).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "-";

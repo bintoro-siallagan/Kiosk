@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#8b5cf6";
 const TAG_C = { "Best Seller": "#fbbf24", "High Margin": "#10b981", Seasonal: "#a855f7", "Slow Moving": "#f59e0b", "2x Point": "#ec4899" };
 

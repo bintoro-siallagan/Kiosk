@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUiKit, TooltipButton } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const fmtTs = (s) => s ? new Date(s * 1000).toLocaleString("id-ID", { hour12: false }) : "—";
 const DRIVER_STATUS = { available: { label: "Available", color: "#10b981" }, on_delivery: { label: "On Delivery", color: "#f59e0b" }, off_duty: { label: "Off Duty", color: "#6b7280" }, suspended: { label: "Suspended", color: "#ef4444" } };
 const DEL_STATUS = { pending: { label: "Pending", color: "#f59e0b" }, assigned: { label: "Assigned", color: "#22d3ee" }, picked_up: { label: "Picked-up", color: "#a855f7" }, on_the_way: { label: "On the way", color: "#3b82f6" }, delivered: { label: "Delivered", color: "#10b981" }, failed: { label: "Failed", color: "#ef4444" }, cancelled: { label: "Cancelled", color: "#6b7280" } };

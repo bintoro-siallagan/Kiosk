@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470", text: "#e6edf3" };
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const pct = (n) => `${(Math.round((n || 0) * 100) / 100).toFixed(2)}%`;
 const TABS = [["distributor", "🏢 Distributor"], ["license", "📜 Lisensi per Film"], ["settlement", "💹 Settlement & Recon"]];
 const PERIODS = [

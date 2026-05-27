@@ -7,7 +7,7 @@ import ReportActions from "./ReportActions.jsx";
 import PeriodPicker from "./PeriodPicker.jsx";
 import { ErrorInline } from "../components/ConnectionError.jsx";
 
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "../lib/currency.js";
 
 export default function AdminJournal({ apiBase = "" }) {
   const [range, setRange] = useState(() => {

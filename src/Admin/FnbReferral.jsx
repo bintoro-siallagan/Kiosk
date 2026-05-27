@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUiKit, EmptyState, TooltipButton } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const fmtTs = (s) => s ? new Date(s * 1000).toLocaleString("id-ID", { hour12: false }) : "—";
 const STATUS = { pending: { label: "Pending", color: "#f59e0b" }, registered: { label: "Register", color: "#22d3ee" }, first_order: { label: "1st Order", color: "#a855f7" }, rewarded: { label: "Rewarded", color: "#10b981" }, expired: { label: "Expired", color: "#6b7280" } };
 

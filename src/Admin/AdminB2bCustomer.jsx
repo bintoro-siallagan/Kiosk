@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUiKit, LoadingState } from "../components/uiKit.jsx";
 
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#5b21b6";
 const TYPE_C = { "Antar PT": "#3b82f6", "Lintas Brand": "#a855f7", Korporat: "#0d9488", Franchise: "#fbbf24" };
 

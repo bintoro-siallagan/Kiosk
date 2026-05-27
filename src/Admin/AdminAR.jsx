@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import ReportActions from "./ReportActions.jsx";
 import { useUiKit, LoadingState } from "../components/uiKit.jsx";
 
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "../lib/currency.js";
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" }) : "—";
 const AGING = {
   current: { c: "#10b981", label: "Belum jatuh tempo" },

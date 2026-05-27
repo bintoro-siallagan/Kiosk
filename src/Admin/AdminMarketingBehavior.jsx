@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#22d3ee";
 
 export default function AdminMarketingBehavior({ apiBase = "" }) {

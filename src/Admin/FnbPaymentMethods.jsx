@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useUiKit, TooltipButton, BulkActionBar } from "../components/uiKit.jsx";
 
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const emptyM = { code: "", name: "", category: "cash", icon: "💳", color: "#6b7280", requires_approval: 0, requires_reason: 0, reduces_revenue: 0, default_discount_pct: 0, mdr_pct: 0, max_amount: "", outlet_scope: "all", sort_order: 0, is_active: 1, notes: "" };
 const emptyC = { code: "", name: "", icon: "💳", color: "#6b7280", sort_order: 0, description: "" };
 

@@ -37,7 +37,7 @@ const STUDIO_TYPES = ["Regular", "IMAX", "Premiere", "4DX"];
 const FORMATS = ["2D", "3D", "IMAX", "4DX"];
 const TABS = [["film", "🎬 Film"], ["studio", "🏛️ Studio"], ["showtime", "🗓️ Schedule Showing"], ["templates", "🔁 Recurring Templates"], ["branding", "🎨 Branding CDS"]];
 const DAYS_OF_WEEK = [["0", "Min"], ["1", "Sen"], ["2", "Sel"], ["3", "Rab"], ["4", "Kam"], ["5", "Jum"], ["6", "Sab"]];
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const statusLabel = (s) => (STATUSES.find(x => x[0] === s) || [s, s])[1];
 const statusColor = (s) => s === "now_showing" ? "#10b981" : s === "coming_soon" ? "#eab308" : "#5b6470";
 // Derived showtime status (computed from time + sold + manual_closed_at)

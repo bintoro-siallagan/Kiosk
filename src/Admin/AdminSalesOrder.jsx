@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useUiKit } from "../components/uiKit.jsx";
 
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#6d28d9";
 const CT_C = { "Antar PT": "#3b82f6", "Lintas Brand": "#a855f7", Korporat: "#0d9488", Franchise: "#fbbf24" };
 const STAT = { draft: { c: "#f59e0b", l: "DRAFT" }, confirmed: { c: "#3b82f6", l: "CONFIRMED" }, fulfilled: { c: "#0d9488", l: "FULFILLED" }, invoiced: { c: "#10b981", l: "INVOICED" } };

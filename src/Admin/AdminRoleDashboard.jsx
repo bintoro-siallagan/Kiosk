@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "../lib/currency.js";
 const fmtVal = (v, fmt) =>
   fmt === "rp" ? fmtRp(v) : fmt === "rating" ? "★ " + v : Number(v || 0).toLocaleString("id-ID");
 

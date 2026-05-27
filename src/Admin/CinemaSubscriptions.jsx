@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const STATUS_COLOR = { active: "#10b981", expired: "#6b7280", cancelled: "#ef4444", paused: "#fbbf24" };
 
 const emptyPlan = {
