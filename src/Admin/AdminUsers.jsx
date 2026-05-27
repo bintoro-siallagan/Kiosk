@@ -19,7 +19,9 @@ export default function AdminUsers({ apiBase = "" }) {
   const [info, setInfo] = useState("");
   const [creating, setCreating] = useState(false); // open modal create user
   const [editVerticalUser, setEditVerticalUser] = useState(null); // P6: open vertical edit modal
+  const [editingUser, setEditingUser] = useState(null); // open full edit modal (nama+role+vertical)
   const [customRoles, setCustomRoles] = useState([]); // custom roles dari RBAC (selain 15 default)
+  const [search, setSearch] = useState("");
 
   const load = useCallback(() => {
     setErr(null);
@@ -38,12 +40,17 @@ export default function AdminUsers({ apiBase = "" }) {
   }, [API]);
 
   const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
     return users.filter(u => {
-      if (filter === "locked") return u.is_locked;
-      if (filter === "inactive") return !u.active;
+      if (filter === "locked" && !u.is_locked) return false;
+      if (filter === "inactive" && u.active) return false;
+      if (q) {
+        const hay = `${u.name || ""} ${u.username || ""} ${u.email || ""} ${u.role || ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
       return true;
     });
-  }, [users, filter]);
+  }, [users, filter, search]);
 
   const lockedCount = users.filter(u => u.is_locked).length;
 
@@ -120,7 +127,8 @@ export default function AdminUsers({ apiBase = "" }) {
       {/* Action bar */}
       <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "wrap" }}>
         <Pills value={filter} onChange={setFilter} options={[["all","All"],["locked",`🔒 Locked (${lockedCount})`],["inactive","Inactive"]]} />
-        <div style={{ flex: 1 }} />
+        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search nama / username / role…"
+          style={{ flex: 1, minWidth: 220, padding: "8px 12px", background: CARD_BG, border: BORDER, borderRadius: 8, color: "#fff", fontSize: 12, fontFamily: "inherit", outline: "none" }} />
         <button onClick={() => setCreating(true)} style={{ padding: "8px 16px", background: `linear-gradient(135deg, ${PURPLE}, #7c3aed)`, border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", letterSpacing: 0.3 }}>
           ➕ Add User
         </button>
@@ -142,7 +150,7 @@ export default function AdminUsers({ apiBase = "" }) {
 
       {/* User table */}
       <div style={{ background: CARD_BG, border: BORDER, borderRadius: 12, overflow: "hidden", marginTop: 12 }}>
-        <div style={{ padding: "12px 16px", borderBottom: BORDER, fontSize: 11, color: "#94a3b8", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700, display: "grid", gridTemplateColumns: "70px 1fr 1fr 90px 110px 1fr", gap: 10, alignItems: "center" }}>
+        <div style={{ padding: "12px 16px", borderBottom: BORDER, fontSize: 11, color: "#94a3b8", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700, display: "grid", gridTemplateColumns: "60px 1.2fr 1fr 180px 100px 1.5fr", gap: 10, alignItems: "center" }}>
           <div>ID</div><div>NAME</div><div>USERNAME</div><div>ROLE</div><div>STATUS</div><div style={{ textAlign: "right" }}>ACTIONS</div>
         </div>
         {filtered.length === 0 && (
@@ -155,7 +163,7 @@ export default function AdminUsers({ apiBase = "" }) {
           <div key={u.id} style={{
             padding: "14px 16px",
             borderBottom: "1px solid rgba(255,255,255,0.04)",
-            display: "grid", gridTemplateColumns: "70px 1fr 1fr 90px 110px 1fr", gap: 10, alignItems: "center",
+            display: "grid", gridTemplateColumns: "60px 1.2fr 1fr 180px 100px 1.5fr", gap: 10, alignItems: "center",
             background: u.is_locked ? "rgba(239,68,68,0.05)" : "transparent",
           }}>
             <div style={{ fontSize: 11, fontFamily: "'Geist Mono',monospace", color: "#94a3b8" }}>{u.id}</div>
@@ -164,7 +172,7 @@ export default function AdminUsers({ apiBase = "" }) {
               {u.email && <div style={{ fontSize: 11, color: "#94a3b8" }}>{u.email}</div>}
             </div>
             <div style={{ fontSize: 12, color: u.username ? "#cbd5e1" : "#475569", fontFamily: "'Geist Mono',monospace" }}>{u.username || "—"}</div>
-            <div style={{ fontSize: 11, color: roleColor(u.role), fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, fontFamily: "'Geist Mono',monospace" }}>{u.role}</div>
+            <div style={{ fontSize: 12, color: roleColor(u.role), fontWeight: 700, letterSpacing: 0.2 }} title={u.role}>{roleLabel(u.role)}</div>
             <div>
               {u.is_locked ? (
                 <span style={chip(RED)}>🔒 {u.lock_remaining_min}m</span>
@@ -182,6 +190,7 @@ export default function AdminUsers({ apiBase = "" }) {
               {u.is_locked && (
                 <button onClick={() => unlockOne(u)} disabled={busy} style={{...actionBtn, background: RED, color: "#fff", borderColor: RED}}>🔓 Unlock</button>
               )}
+              <button onClick={() => setEditingUser(u)} disabled={busy} title="Edit nama, role, vertical" style={{ ...actionBtn, background: `${PURPLE}15`, borderColor: `${PURPLE}55`, color: PURPLE }}>✏️ Edit</button>
               <button onClick={() => setPassword(u)} disabled={busy} style={actionBtn}>🔑 Password</button>
               <button onClick={() => toggleActive(u)} disabled={busy} style={actionBtn}>{u.active ? "✕ Deactivate" : "✓ Activate"}</button>
               <button onClick={() => deleteUser(u)} disabled={busy} title="Delete user permanently" style={{ ...actionBtn, background: "rgba(239,68,68,0.1)", borderColor: "rgba(239,68,68,0.4)", color: "#fca5a5" }}>🗑️ Delete</button>
@@ -212,6 +221,15 @@ export default function AdminUsers({ apiBase = "" }) {
           API={API} token={token}
           onClose={() => setEditVerticalUser(null)}
           onSaved={(msg) => { setEditVerticalUser(null); setInfo(msg); load(); }}
+        />
+      )}
+
+      {editingUser && (
+        <EditUserModal
+          user={editingUser}
+          API={API} token={token} roles={customRoles}
+          onClose={() => setEditingUser(null)}
+          onSaved={(msg) => { setEditingUser(null); setInfo(msg); load(); }}
         />
       )}
     </div>
@@ -280,6 +298,89 @@ function EditVerticalModal({ user, API, token, onClose, onSaved }) {
           <button onClick={onClose} disabled={busy} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: BORDER, borderRadius: 10, color: "#fff", fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>Cancel</button>
           <button onClick={save} disabled={busy} style={{ flex: 2, padding: 12, background: `linear-gradient(135deg, ${PURPLE}, #7c3aed)`, border: "none", borderRadius: 10, color: "#fff", fontWeight: 800, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
             {busy ? "⏳ Saving…" : "💾 Save"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Edit user: nama, role, vertical (3-in-1, biar gak perlu klik 3 modal terpisah)
+function EditUserModal({ user, API, token, roles, onClose, onSaved }) {
+  const [name, setName] = useState(user.name || "");
+  const [role, setRole] = useState(user.role || "");
+  const [vertical, setVertical] = useState(user.vertical || "");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const save = async () => {
+    setErr("");
+    if (!name.trim()) { setErr("Nama tidak boleh kosong"); return; }
+    if (!role) { setErr("Role wajib dipilih"); return; }
+    setBusy(true);
+    try {
+      const r = await fetch(`${API}/api/auth/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: token ? `Bearer ${token}` : undefined },
+        body: JSON.stringify({ name: name.trim(), role, vertical: vertical || null }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j?.error || "Gagal update user");
+      onSaved(`✓ ${name} updated — role: ${role}${vertical ? `, vertical: ${vertical}` : ""}`);
+    } catch (e) { setErr(e.message); }
+    setBusy(false);
+  };
+
+  const dirty = name.trim() !== (user.name || "") || role !== (user.role || "") || (vertical || "") !== (user.vertical || "");
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20, backdropFilter: "blur(6px)" }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "min(480px, 100%)", background: "rgba(10,15,28,0.96)", border: `1px solid ${PURPLE}55`, borderRadius: 16, padding: 26 }}>
+        <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>EDIT USER</div>
+        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginTop: 6, marginBottom: 4 }}>✏️ Edit: {user.name}</div>
+        <div style={{ fontSize: 11.5, color: "#94a3b8", marginBottom: 16, lineHeight: 1.6 }}>
+          ID #{user.id} · username: <code style={{ color: "#cbd5e1" }}>{user.username || "—"}</code>
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>NAMA *</div>
+          <input value={name} onChange={e => setName(e.target.value)} autoFocus
+            style={{ width: "100%", padding: 10, background: "rgba(0,0,0,0.4)", border: BORDER, borderRadius: 8, color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box", outline: "none" }} />
+        </div>
+
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>ROLE *</div>
+          <select value={role} onChange={e => setRole(e.target.value)}
+            style={{ width: "100%", padding: 10, background: "rgba(0,0,0,0.4)", border: BORDER, borderRadius: 8, color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box", outline: "none", cursor: "pointer" }}>
+            {/* Selalu show current role even kalau gak ada di list, biar gak kosong */}
+            {!(roles?.length || ROLE_LIST.length) ? <option value={user.role}>{user.role}</option> : null}
+            {(roles && roles.length > 0 ? roles : ROLE_LIST).filter(r => r.id !== "customer").map(r => (
+              <option key={r.id} value={r.id}>{r.icon || "👤"} {r.name || r.id}</option>
+            ))}
+            {/* Kalau current role gak ada di list, append biar tetap selectable */}
+            {role && !(roles || ROLE_LIST).find(r => r.id === role) && (
+              <option key={role} value={role}>⚙️ {role} (custom)</option>
+            )}
+          </select>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>VERTICAL ACCESS</div>
+          <select value={vertical} onChange={e => setVertical(e.target.value)}
+            style={{ width: "100%", padding: 10, background: "rgba(0,0,0,0.4)", border: BORDER, borderRadius: 8, color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box", outline: "none", cursor: "pointer" }}>
+            <option value="">⤵ Inherit dari company (default)</option>
+            <option value="fnb">🍔 F&B Only</option>
+            <option value="cinema">🎬 Cinema Only</option>
+            <option value="hybrid">🌐 Hybrid — F&B + Cinema</option>
+          </select>
+        </div>
+
+        {err && <div style={{ padding: "10px 12px", background: "rgba(239,68,68,0.1)", border: `1px solid ${RED}55`, borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 12 }}>⚠ {err}</div>}
+
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={onClose} disabled={busy} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: BORDER, borderRadius: 10, color: "#fff", fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>Cancel</button>
+          <button onClick={save} disabled={busy || !dirty} style={{ flex: 2, padding: 12, background: dirty ? `linear-gradient(135deg, ${PURPLE}, #7c3aed)` : "rgba(255,255,255,0.08)", border: "none", borderRadius: 10, color: dirty ? "#fff" : "#64748b", fontWeight: 800, cursor: busy || !dirty ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
+            {busy ? "⏳ Saving…" : dirty ? "💾 Save Changes" : "No changes"}
           </button>
         </div>
       </div>
@@ -445,7 +546,16 @@ function verticalBadge(v) {
 
 function roleColor(role) {
   if (role === "super-admin") return PURPLE;
-  if (role === "manager") return CYAN;
+  if (role === "manager" || (role || "").endsWith("-manager") || role === "owner") return CYAN;
+  if ((role || "").endsWith("-spv") || role === "supervisor") return "#fbbf24";
   if (role === "kasir") return AMBER;
   return "#94a3b8";
+}
+
+// Friendly label lookup: 'finance-manager' → '💰 Finance Manager'
+function roleLabel(role) {
+  const found = ROLE_LIST.find(r => r.id === role);
+  if (found) return `${found.icon || "👤"} ${found.name}`;
+  // Fallback: title-case slug
+  return (role || "").split("-").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" ") || "—";
 }
