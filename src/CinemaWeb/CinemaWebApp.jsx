@@ -799,7 +799,7 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, brandP
     if (phone.length < 8) { setLoyaltyData(null); setPointsToRedeem(0); return; }
     setLookupBusy(true);
     const t = setTimeout(() => {
-      fetch(`${API_HOST}/api/cinema/loyalty/lookup?phone=${encodeURIComponent(phone)}`)
+      fetch(`${API_HOST}/api/cinema/loyalty-points?phone=${encodeURIComponent(phone)}`)
         .then(r => r.json()).then(d => setLoyaltyData(d.ok ? d : null))
         .catch(() => setLoyaltyData(null))
         .finally(() => setLookupBusy(false));

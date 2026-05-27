@@ -3690,7 +3690,9 @@ function setupCinema(app, opts = {}) {
   });
 
   // ── LOYALTY LOOKUP — cek saldo poin by phone (untuk apply di checkout) ──
-  router.get('/loyalty/lookup', (req, res) => {
+  // Path /loyalty-points (bukan /loyalty/lookup) — hindari conflict dengan
+  // existing /loyalty/:phone yang catch all single-segment.
+  router.get('/loyalty-points', (req, res) => {
     const phone = String(req.query.phone || '').trim();
     if (!phone) return res.status(400).json({ ok: false, error: 'phone required' });
     const customer = db.prepare(`SELECT id, phone, name, current_points, lifetime_points, lifetime_spend, total_visits, current_tier_code FROM loyalty_customers WHERE phone = ?`).get(phone);
