@@ -3587,6 +3587,34 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: true });
   });
 
+  // ── PURCHASE LOOKUP (all tickets + bundles for one purchase) ──
+  // Used by CinemaWeb e-ticket page: customer scans 1 QR di counter,
+  // page shows all N tiket dalam purchase, kasir tinggal klik "Print Semua"
+  // untuk auto-print sejumlah tiket via thermal printer.
+  router.get('/purchase/:pid', (req, res) => {
+    const pid = String(req.params.pid || '').trim().toUpperCase();
+    if (!pid) return res.status(400).json({ ok: false, error: 'purchase_id required' });
+    const tickets = db.prepare(`
+      SELECT t.id, t.code, t.seat, t.price, t.buyer, t.buyer_phone, t.buyer_email,
+             t.payment_method, t.payment_status, t.paid_at, t.checked_in_at,
+             t.purchase_id, t.showtime_id,
+             f.title AS film_title, f.genre, f.duration_min, f.poster_url, f.age_rating,
+             s.show_date, s.start_time, s.format,
+             st.name AS studio_name, st.studio_type,
+             o.name AS outlet_name, o.code AS outlet_code, o.address AS outlet_address
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s   ON s.id  = t.showtime_id
+      LEFT JOIN cinema_films     f   ON f.id  = s.film_id
+      LEFT JOIN cinema_studios   st  ON st.id = s.studio_id
+      LEFT JOIN outlet_master    o   ON o.code = s.outlet
+      WHERE t.purchase_id = ?
+      ORDER BY t.seat
+    `).all(pid);
+    if (!tickets.length) return res.status(404).json({ ok: false, error: 'Purchase tidak ditemukan' });
+    const bundles = db.prepare(`SELECT * FROM cinema_purchase_bundles WHERE purchase_id = ?`).all(pid);
+    res.json({ ok: true, purchase_id: pid, tickets, bundles });
+  });
+
   // ── PURCHASE BUNDLES (lookup + redeem at F&B counter) ──
   router.get('/purchase/:pid/bundles', (req, res) => {
     const rows = db.prepare(`SELECT * FROM cinema_purchase_bundles WHERE purchase_id = ? ORDER BY id`)
@@ -3808,8 +3836,8 @@ function setupCinema(app, opts = {}) {
     if (!code) return res.status(400).json({ ok: false, status: 'invalid', error: 'Code wajib diisi' });
     const t = db.prepare(`
       SELECT t.*,
-        s.show_date, s.show_time, s.price AS showtime_price,
-        f.title AS film_title, f.duration AS film_duration,
+        s.show_date, s.start_time, s.price AS showtime_price,
+        f.title AS film_title, f.duration_min AS film_duration,
         st.name AS studio_name
       FROM cinema_tickets t
       LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id

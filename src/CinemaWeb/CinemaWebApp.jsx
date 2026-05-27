@@ -969,13 +969,18 @@ function SuccessPage({ booking, film, showtime, seats, bundlesCart, onNewBooking
   const [qrSrc, setQrSrc] = useState(null);
 
   // Generate QR code for the ticket URL (link to digital ticket page).
-  // Skip if primaryCode is null (defensive — never QR an invalid code).
+  // Prefer purchase_id URL so single scan di counter → muncul semua tiket
+  // → kasir bisa "Print Semua" sejumlah tiket yang dibeli (multi-seat).
+  // Fallback ke single ticket URL kalau purchase_id tidak ada.
   useEffect(() => {
     if (!primaryCode) { setQrSrc(null); return; }
-    const ticketUrl = `${window.location.origin}/?ticket=${primaryCode}`;
-    QRCode.toDataURL(ticketUrl, { width: 320, margin: 1, color: { dark: "#000", light: "#fff" } })
+    const pid = (booking?.purchase_id && /^CP-/.test(booking.purchase_id)) ? booking.purchase_id : null;
+    const url = pid
+      ? `${window.location.origin}/?purchase=${pid}`
+      : `${window.location.origin}/?ticket=${primaryCode}`;
+    QRCode.toDataURL(url, { width: 320, margin: 1, color: { dark: "#000", light: "#fff" } })
       .then(setQrSrc).catch(() => setQrSrc(null));
-  }, [primaryCode]);
+  }, [primaryCode, booking?.purchase_id]);
 
   const customerName = booking?.buyer || "Sobat Bioskop";
   const waText = encodeURIComponent(`🎬 Tiket bioskop ku: ${film.title}\n📅 ${fmtDate(showtime.show_date)} ${showtime.start_time}\n💺 ${seats.sort().join(", ")}\n🎫 Kode: ${primaryCode}\n\n${window.location.origin}/?ticket=${primaryCode}`);

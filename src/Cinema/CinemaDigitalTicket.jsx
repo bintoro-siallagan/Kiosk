@@ -11,12 +11,16 @@ import { LoadingState } from "../components/uiKit.jsx";
 export default function CinemaDigitalTicket() {
   const params = new URLSearchParams(window.location.search);
   const code = params.get("ticket") || "";
+  const purchaseParam = (params.get("purchase") || "").trim().toUpperCase();
   const autoPrint = params.get("print") === "1";
   const thermal = params.get("thermal") === "1"; // 80mm thermal printer
   const [ticket, setTicket] = useState(null);
+  const [purchase, setPurchase] = useState(null); // { tickets[], bundles[], purchase_id }
   const [error, setError] = useState("");
   const [qrSrc, setQrSrc] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [printingThermal, setPrintingThermal] = useState(false);
+  const [thermalMsg, setThermalMsg] = useState("");
 
   // Auto-print + close window setelah loaded (untuk Chrome --kiosk-printing flag)
   useEffect(() => {
@@ -36,7 +40,26 @@ export default function CinemaDigitalTicket() {
     return () => { if (root) { root.style.maxWidth = ""; root.style.width = ""; root.style.padding = ""; } };
   }, []);
 
+  // PURCHASE MODE — fetch all tickets in purchase (multi-seat booking).
+  // Used by CinemaWeb e-ticket QR: 1 scan di counter → muncul semua tiket
+  // dalam purchase → kasir klik "Print Semua" → thermal printer keluarkan
+  // sejumlah tiket fisik.
   useEffect(() => {
+    if (!purchaseParam) return;
+    fetch(`${API_HOST}/api/cinema/purchase/${encodeURIComponent(purchaseParam)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (!d.ok) { setError(d.error || "Purchase tidak ditemukan"); return; }
+        setPurchase(d);
+        if (d.tickets?.length > 0) setTicket(d.tickets[0]); // primary ticket for QR/header
+      })
+      .catch(() => setError("Gagal memuat data purchase"))
+      .finally(() => setLoading(false));
+  }, [purchaseParam]);
+
+  // SINGLE TICKET MODE — only fire if not in purchase mode
+  useEffect(() => {
+    if (purchaseParam) return;
     if (!code) { setError("Kode tiket tidak valid"); setLoading(false); return; }
     fetch(`${API_HOST}/api/cinema/tickets/lookup/${encodeURIComponent(code)}`)
       .then(r => r.json())
@@ -46,13 +69,34 @@ export default function CinemaDigitalTicket() {
       })
       .catch(() => setError("Tiket sedang dipersiapkan, mohon menunggu sebentar."))
       .finally(() => setLoading(false));
-  }, [code]);
+  }, [code, purchaseParam]);
 
+  // QR generation — purchase QR encodes the lookup URL so re-scan works too
   useEffect(() => {
-    if (!code) return;
-    QRCode.toDataURL(code, { width: 260, margin: 1, errorCorrectionLevel: "M", color: { dark: "#000", light: "#fff" } })
+    const target = purchaseParam || code;
+    if (!target) return;
+    QRCode.toDataURL(target, { width: 260, margin: 1, errorCorrectionLevel: "M", color: { dark: "#000", light: "#fff" } })
       .then(setQrSrc).catch(() => setQrSrc(null));
-  }, [code]);
+  }, [code, purchaseParam]);
+
+  // Thermal print all tickets in purchase (counter use)
+  const printAllThermal = async () => {
+    if (!purchase?.purchase_id) return;
+    setPrintingThermal(true); setThermalMsg("");
+    try {
+      const r = await fetch(`${API_HOST}/api/cinema/purchases/${encodeURIComponent(purchase.purchase_id)}/print`, { method: "POST" });
+      const d = await r.json();
+      if (d.ok) {
+        setThermalMsg(`✓ ${d.printed || purchase.tickets.length} tiket ter-print${d.printer ? " · " + d.printer : ""}`);
+      } else {
+        setThermalMsg(`⚠ ${d.error || "Gagal print"}`);
+      }
+    } catch (e) {
+      setThermalMsg(`⚠ ${e.message}`);
+    } finally {
+      setPrintingThermal(false);
+    }
+  };
 
   if (loading) {
     return <Shell><LoadingState label="Memuat tiket…" /></Shell>;
@@ -93,6 +137,41 @@ export default function CinemaDigitalTicket() {
         }
       `}</style>
       <div className="digital-ticket-print" style={{ padding: "20px 18px" }}>
+        {/* PURCHASE MODE — banner + print-all button */}
+        {purchase && purchase.tickets?.length > 1 && (
+          <div className="no-print" style={{
+            background: "linear-gradient(135deg, rgba(251,191,36,0.15), rgba(245,158,11,0.08))",
+            border: "1px solid rgba(251,191,36,0.4)",
+            borderRadius: 14, padding: "14px 16px", marginBottom: 16,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+              <div>
+                <div style={{ fontSize: 11, color: "#fbbf24", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>📦 PURCHASE</div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", marginTop: 2 }}>{purchase.tickets.length} tiket · {purchase.tickets.map(t => t.seat).join(", ")}</div>
+                <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2, fontFamily: "'Geist Mono',monospace" }}>{purchase.purchase_id}</div>
+              </div>
+              <button onClick={printAllThermal} disabled={printingThermal} style={{
+                background: printingThermal ? "rgba(255,255,255,0.1)" : "linear-gradient(135deg, #fbbf24, #f59e0b)",
+                border: "none", color: "#1a1205", borderRadius: 10, padding: "10px 18px",
+                fontSize: 13, fontWeight: 800, cursor: printingThermal ? "not-allowed" : "pointer",
+                fontFamily: "inherit", boxShadow: "0 4px 14px rgba(251,191,36,0.35)",
+              }}>{printingThermal ? "Mencetak…" : `🖨️ Print Semua (${purchase.tickets.length})`}</button>
+            </div>
+            {thermalMsg && (
+              <div style={{ marginTop: 10, padding: "8px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700,
+                background: thermalMsg.startsWith("✓") ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
+                color: thermalMsg.startsWith("✓") ? "#10b981" : "#fca5a5",
+                border: `1px solid ${thermalMsg.startsWith("✓") ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`,
+              }}>{thermalMsg}</div>
+            )}
+            {purchase.tickets[0]?.outlet_name && (
+              <div style={{ marginTop: 10, fontSize: 11, color: "#9ca3af" }}>
+                📍 {purchase.tickets[0].outlet_name} ({purchase.tickets[0].outlet_code})
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Status banner kalau used/refunded */}
         {isUsed && (
           <div style={{ padding: "10px 14px", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.4)", borderRadius: 10, color: "#10b981", fontSize: 12, fontWeight: 800, textAlign: "center", marginBottom: 14 }}>
@@ -136,6 +215,31 @@ export default function CinemaDigitalTicket() {
           {ticket.duration_min && <Line label="DURASI" value={`${ticket.duration_min} menit`} />}
           <Line label="HARGA" value={<span style={{ color: "#10b981", fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>{rp(ticket.price)}</span>} />
         </div>
+
+        {/* PURCHASE MODE — list semua tiket di purchase */}
+        {purchase && purchase.tickets?.length > 1 && (
+          <div className="no-print" style={{ marginTop: 14, background: "linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0.005))", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: 16 }}>
+            <div style={{ fontSize: 11, color: "#fbbf24", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 10 }}>🎟️ SEMUA TIKET ({purchase.tickets.length})</div>
+            {purchase.tickets.map(t => (
+              <div key={t.code} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", gap: 12 }}>
+                <span className="seat-pill" style={{ fontSize: 14, fontWeight: 900, padding: "4px 12px", borderRadius: 7, background: "linear-gradient(135deg,#f59e0b,#fbbf24)", color: "#1a1205", fontFamily: "'Geist Mono',monospace", flexShrink: 0 }}>{t.seat}</span>
+                <span style={{ flex: 1, fontSize: 11, color: "#9ca3af", fontFamily: "'Geist Mono',monospace" }}>{t.code}</span>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#10b981", fontFamily: "'Geist Mono',monospace" }}>{rp(t.price)}</span>
+              </div>
+            ))}
+            {purchase.bundles?.length > 0 && (
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                <div style={{ fontSize: 10, color: "#7d8590", letterSpacing: 1.2, fontFamily: "'Geist Mono',monospace", marginBottom: 6 }}>🍿 F&B BUNDLES</div>
+                {purchase.bundles.map(b => (
+                  <div key={b.id} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "4px 0", color: "#cbd5e1" }}>
+                    <span>{b.qty}× {b.bundle_name}</span>
+                    <span style={{ fontFamily: "'Geist Mono',monospace", color: "#9ca3af" }}>{rp(b.price * b.qty)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Tips — hidden saat print */}
         <div className="tips-section" style={{ marginTop: 14, padding: 14, background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 10 }}>
