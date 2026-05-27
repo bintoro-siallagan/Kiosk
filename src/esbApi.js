@@ -34,16 +34,25 @@ async function esbRequest(method, path, body) {
 
 // ─── MAPPER: KaryaOS Menu → ESB Format ───────────────────────────────────
 function mapMenuToESB(item) {
+  // image_url is the canonical field (uploaded via /api/master/menus/:id/image).
+  // Fall back to legacy `image` for older items.
+  let imageUrl = item.image_url || item.image || "";
+  // If relative path (e.g. /uploads/xyz.jpg), expand to absolute so ESB can fetch
+  if (imageUrl && imageUrl.startsWith("/")) {
+    imageUrl = (typeof window !== "undefined" ? window.location.origin : "") + imageUrl;
+  }
   return {
     item_code:    String(item.id),
     item_name:    item.name,
     category:     item.cat || item.category || "Uncategorized",
     price:        item.price,
     is_available: item.avail !== false,
-    description:  item.desc || "",
-    image_url:    item.image || "",
-    tags:         item.tag ? [item.tag] : [],
-    modifier_groups: [],   // isi jika ada add-ons
+    description:  item.desc || item.description || "",
+    image_url:    imageUrl,
+    emoji:        item.emoji || item.e || "",
+    tags:         item.tag ? [item.tag] : (Array.isArray(item.tags) ? item.tags : []),
+    free_extras:  item.freeToppings || item.free_extras || 0,
+    modifier_groups: Array.isArray(item.modifier_groups) ? item.modifier_groups : [],
   };
 }
 
@@ -96,20 +105,35 @@ export async function esbGetMenuItem(itemCode) {
 }
 
 /**
- * Mapper: ESB menu response → format KaryaOS Kiosk
+ * Mapper: ESB menu response → format KaryaOS Kiosk.
+ *
+ * Catatan field:
+ *   - image_url: kanonik (uploaded photos). `image` di-keep alias buat backward compat.
+ *   - emoji: ESB boleh isi, kalau gak ada fallback ke 🍽️ (UI nanti bisa override).
+ *   - desc/description: KaryaOS pakai keduanya tergantung surface, isi dua-duanya.
  */
 export function mapESBToLocal(esbItem) {
+  const imageUrl = esbItem.image_url || esbItem.image || esbItem.photo_url || "";
+  const desc     = esbItem.description || esbItem.desc || "";
+  const tags     = Array.isArray(esbItem.tags) ? esbItem.tags
+                  : (esbItem.tag ? [esbItem.tag] : []);
   return {
-    id:    esbItem.item_code || esbItem.id || esbItem.menu_id || String(Math.random()),
-    name:  esbItem.item_name || esbItem.name || esbItem.menu_name || "Unnamed",
-    cat:   esbItem.category  || esbItem.category_name || esbItem.group || "Lainnya",
-    price: parseInt(esbItem.price || esbItem.harga || 0),
-    avail: esbItem.is_available !== false && esbItem.available !== false && esbItem.status !== "unavailable",
-    desc:  esbItem.description || esbItem.desc || "",
-    tag:   esbItem.tags?.[0] || null,
-    e:     "🍽️",   // default emoji, bisa diupdate manual
-    image: esbItem.image_url || esbItem.image || "",
-    _esb:  esbItem, // simpan raw ESB data
+    id:          esbItem.item_code || esbItem.id || esbItem.menu_id || String(Math.random()),
+    name:        esbItem.item_name || esbItem.name || esbItem.menu_name || "Unnamed",
+    cat:         esbItem.category  || esbItem.category_name || esbItem.group || "Lainnya",
+    category:    esbItem.category  || esbItem.category_name || esbItem.group || "Lainnya",
+    price:       parseInt(esbItem.price || esbItem.harga || 0),
+    avail:       esbItem.is_available !== false && esbItem.available !== false && esbItem.status !== "unavailable",
+    desc,
+    description: desc,
+    tag:         tags[0] || null,
+    tags,
+    emoji:       esbItem.emoji || esbItem.icon || "🍽️",
+    e:           esbItem.emoji || esbItem.icon || "🍽️",   // legacy alias
+    image_url:   imageUrl,                                 // canonical
+    image:       imageUrl,                                 // legacy alias
+    freeToppings: esbItem.free_extras || esbItem.free_toppings || 0,
+    _esb:        esbItem,                                  // simpan raw ESB data
   };
 }
 

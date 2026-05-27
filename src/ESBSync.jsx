@@ -105,8 +105,12 @@ export default function ESBSync({ onBack }) {
     log("Mulai GET menu dari ESB...");
     try {
       const items = await esbFetchAndMapMenu();
-      // Attach emoji
-      const withEmoji = items.map(i => ({ ...i, e: guessEmoji(i.cat) }));
+      // Attach emoji only if ESB didn't provide one (preserve incoming emoji from mapESBToLocal)
+      const withEmoji = items.map(i => {
+        const hasEmoji = i.emoji && i.emoji !== "🍽️";
+        const guessed = hasEmoji ? i.emoji : guessEmoji(i.cat);
+        return { ...i, emoji: guessed, e: guessed };
+      });
       setEsbMenu(withEmoji);
       // Extract unique categories
       const cats = [...new Set(withEmoji.map(i => i.cat).filter(Boolean))];
@@ -132,10 +136,16 @@ export default function ESBSync({ onBack }) {
     for (const item of items) {
       try {
         await api.updateMenu(item.id, {
-          name:  item.name,
-          price: item.price,
-          avail: item.avail,
-          cat:   item.cat,
+          name:        item.name,
+          price:       item.price,
+          avail:       item.avail,
+          cat:         item.cat,
+          desc:        item.desc,
+          description: item.description,
+          emoji:       item.emoji,
+          image_url:   item.image_url,
+          freeToppings:item.freeToppings,
+          tag:         item.tag,
         }).catch(() => {}); // backend might not have this item yet
         ok++;
       } catch { fail++; }
