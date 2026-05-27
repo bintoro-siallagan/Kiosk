@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import API_HOST from "../apiBase.js";
 
-const BRAND = "#FF6B35";
+const BRAND = "var(--brand-primary,#FF6B35)";
 const BG = "#0A0A0A";
 const CARD = "#1A1A1A";
 const BORDER = "#2A2A2A";
@@ -96,7 +96,7 @@ export default function FlowRedeem({ session, setPointsToRedeem, setScreen }) {
   const tags = Array.isArray(customer?.tags) ? customer.tags : (Array.isArray(session?.tags) ? session.tags : []);
   const tier = tags.includes("vip") ? "vip" : tags.includes("member") ? "member" : "guest";
   const tierInfo = {
-    vip: { label: "🌟 VIP", color: "#FF6B35" },
+    vip: { label: "🌟 VIP", color: "var(--brand-primary,#FF6B35)" },
     member: { label: "🎫 Member", color: "#10B981" },
     guest: { label: "👤 Guest", color: "#A1A1AA" },
   }[tier];

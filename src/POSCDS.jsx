@@ -11,7 +11,7 @@ const WS_URL = API_BASE.replace(/^http/, "ws") + (API_BASE.includes("localhost")
 
 const STAGES = [
   { key: "waiting",   label: "Diterima",     emoji: "📝", color: "#94A3B8" },
-  { key: "preparing", label: "Preparing",    emoji: "👨‍🍳", color: "#FF6B35" },
+  { key: "preparing", label: "Preparing",    emoji: "👨‍🍳", color: "var(--brand-primary,#FF6B35)" },
   { key: "ready",     label: "Siap Diambil", emoji: "🔔", color: "#10B981" },
   { key: "completed", label: "Done",      emoji: "✅", color: "#22C55E" },
 ];
@@ -255,7 +255,7 @@ export default function POSCDS() {
 }
 
 function ConnIndicator({ status }) {
-  const color = status === "connected" ? "#10B981" : status === "connecting" ? "#FF6B35" : "#FF6B35";
+  const color = status === "connected" ? "#10B981" : status === "connecting" ? "var(--brand-primary,#FF6B35)" : "var(--brand-primary,#FF6B35)";
   return (
     <div style={{...S.conn, color, borderColor: color}}>
       <span style={{...S.connDot, background: color}}/> {status}
@@ -328,7 +328,7 @@ function CDSIdle() {
           {slides.map((_, i) => (
             <div key={i} style={{
               ...S.ssDot,
-              background: i === idx ? "#FF6B35" : "rgba(245,158,11,0.25)",
+              background: i === idx ? "var(--brand-primary,#FF6B35)" : "rgba(245,158,11,0.25)",
               width: i === idx ? 28 : 8
             }}/>
           ))}
@@ -370,7 +370,7 @@ function SlidePromo({ promo }) {
 
   let bigTitle = "";
   let emoji = "🎁";
-  let badgeColor = "#FF6B35";
+  let badgeColor = "var(--brand-primary,#FF6B35)";
 
   if (promo.type === "percent") {
     bigTitle = `DISKON ${promo.value}%`;
@@ -439,8 +439,8 @@ function SlideMember() {
       <div style={S.ssMemberIcon}>🎁</div>
       <div style={S.ssItemName}>Jadi Member KaryaOS</div>
       <div style={S.ssItemDesc}>
-        Dapat <strong style={{color:"#FF6B35"}}>1 poin tiap Rp 1.000</strong> belanja<br/>
-        Tukar <strong style={{color:"#FF6B35"}}>100 poin = Rp 1.000</strong> diskon
+        Dapat <strong style={{color:"var(--brand-primary,#FF6B35)"}}>1 poin tiap Rp 1.000</strong> belanja<br/>
+        Tukar <strong style={{color:"var(--brand-primary,#FF6B35)"}}>100 poin = Rp 1.000</strong> diskon
       </div>
       <div style={{...S.ssHint, fontSize:28, color:"#aaa", letterSpacing:2}}>Sign up free di kasir 👋</div>
     </div>
@@ -557,7 +557,7 @@ function CDSWelcoming({ state }) {
         <div style={{ fontSize: "min(100px,12vh)", lineHeight: 1 }}>📱</div>
 
         <div style={{
-          fontSize: 18, color: "#FF6B35", letterSpacing: 4,
+          fontSize: 18, color: "var(--brand-primary,#FF6B35)", letterSpacing: 4,
           fontWeight: 700, textTransform: "uppercase"
         }}>
           Verifikasi Member
@@ -928,14 +928,14 @@ const S = {
     justifyContent:"center", gap:16, padding:40, textAlign:"center" },
   logo: { fontSize:120, marginBottom:8 },
   logoSmall: { fontSize:32 },
-  brand: { fontSize:96, fontFamily:"'Inter',sans-serif", color:"#FF6B35",
+  brand: { fontSize:96, fontFamily:"'Inter',sans-serif", color:"var(--brand-primary,#FF6B35)",
     letterSpacing:4, marginBottom:24, fontWeight:800 },
-  brandSmall: { fontSize:36, fontFamily:"'Inter',sans-serif", color:"#FF6B35",
+  brandSmall: { fontSize:36, fontFamily:"'Inter',sans-serif", color:"var(--brand-primary,#FF6B35)",
     letterSpacing:4 },
 
   idleTagline: { fontSize:32, color:"#fff", marginBottom:12, fontWeight:300 },
   idleHint: { fontSize:18, color:"#888" },
-  idleBlinker: { marginTop:80, fontSize:24, color:"#FF6B35", letterSpacing:8 },
+  idleBlinker: { marginTop:80, fontSize:24, color:"var(--brand-primary,#FF6B35)", letterSpacing:8 },
 
   /* Screensaver styles */
   ssRoot: { flex:1, position:"relative", display:"flex", flexDirection:"column", minHeight:"100vh",
@@ -946,23 +946,23 @@ const S = {
     textAlign:"center", padding:"60px 80px", maxWidth:"none", width:"100%", gap:20, justifyContent:"space-evenly", minHeight:"100vh" },
 
   ssLogo: { fontSize:"min(240px,22vh)", lineHeight:1, marginBottom:12 },
-  ssBrand: { fontSize:"min(150px,13vh,11vw)", fontFamily:"'Inter',sans-serif", color:"#FF6B35", letterSpacing:4, marginBottom:8, fontWeight:900, lineHeight:1, textShadow:"0 0 80px rgba(255,107,53,0.5)" },
+  ssBrand: { fontSize:"min(150px,13vh,11vw)", fontFamily:"'Inter',sans-serif", color:"var(--brand-primary,#FF6B35)", letterSpacing:4, marginBottom:8, fontWeight:900, lineHeight:1, textShadow:"0 0 80px rgba(255,107,53,0.5)" },
   ssTagline: { fontSize:"min(56px,6vh)", color:"#fff", marginBottom:12, fontWeight:700, letterSpacing:1 },
   ssHint: { fontSize:24, color:"#666", marginTop:8, letterSpacing:4 },
 
   ssBadge: { padding:"8px 24px", background:"rgba(245,158,11,0.15)",
-    color:"#FF6B35", borderRadius:100, fontSize:"min(48px,5vh)", fontWeight:800,
+    color:"var(--brand-primary,#FF6B35)", borderRadius:100, fontSize:"min(48px,5vh)", fontWeight:800,
     letterSpacing:2, marginBottom:0 },
 
   ssItemEmoji: { fontSize:"min(260px,26vh)", lineHeight:1, marginBottom:8, filter:"drop-shadow(0 16px 40px rgba(0,0,0,0.6))" },
   ssItemName: { fontSize:"min(80px,9vh,8vw)", fontWeight:800, marginBottom:8, lineHeight:1.1, color:"#fff" },
   ssItemDesc: { fontSize:30, color:"#ccc", marginBottom:24, lineHeight:1.5, fontWeight:500,
     maxWidth:600 },
-  ssItemPrice: { fontSize:"min(90px,9vh)", fontWeight:900, color:"#FF6B35", fontFamily:"'Inter',sans-serif", letterSpacing:1, marginBottom:4 },
+  ssItemPrice: { fontSize:"min(90px,9vh)", fontWeight:900, color:"var(--brand-primary,#FF6B35)", fontFamily:"'Inter',sans-serif", letterSpacing:1, marginBottom:4 },
   ssItemExtra: { fontSize:22, color:"#34D399", fontWeight:700, padding:"8px 20px", background:"rgba(52,211,153,0.1)", borderRadius:100, letterSpacing:1 },
 
   ssPromoEmoji: { fontSize:"min(100px,12vh)", lineHeight:1, marginBottom:4 },
-  ssPromoBigTitle: { fontSize:"min(148px,13vh,11vw)", fontWeight:900, color:"#FF6B35",
+  ssPromoBigTitle: { fontSize:"min(148px,13vh,11vw)", fontWeight:900, color:"var(--brand-primary,#FF6B35)",
     fontFamily:"'Inter',sans-serif", letterSpacing:2, marginBottom:8,
     lineHeight:1, textShadow:"0 0 60px rgba(255,107,53,0.5), 0 0 120px rgba(255,107,53,0.2)" },
   ssPromoTag: { padding:"10px 24px", background:"rgba(59,130,246,0.2)",
@@ -972,20 +972,20 @@ const S = {
     color:"#34D399", borderRadius:100, fontSize:18, fontWeight:800,
     letterSpacing:2 },
   ssPromoTagMin: { padding:"10px 24px", background:"rgba(255,107,53,0.15)",
-    color:"#FF6B35", borderRadius:100, fontSize:18, fontWeight:800,
+    color:"var(--brand-primary,#FF6B35)", borderRadius:100, fontSize:18, fontWeight:800,
     letterSpacing:2 },
   ssPromoCode: { display:"flex", flexDirection:"column", alignItems:"center",
     marginTop:28, padding:"24px 64px",
-    background:"rgba(255,107,53,0.08)", border:"2px dashed #FF6B35",
+    background:"rgba(255,107,53,0.08)", border:"2px dashed var(--brand-primary,#FF6B35)",
     borderRadius:20, boxShadow:"0 0 40px rgba(255,107,53,0.15)" },
-  ssPromoCodeLabel: { fontSize:16, color:"#FF6B35", letterSpacing:6, fontWeight:700 },
+  ssPromoCodeLabel: { fontSize:16, color:"var(--brand-primary,#FF6B35)", letterSpacing:6, fontWeight:700 },
   ssPromoCodeValue: { fontSize:48, fontFamily:"'Inter',sans-serif",
-    color:"#FF6B35", letterSpacing:8, marginTop:8, fontSize:56 },
+    color:"var(--brand-primary,#FF6B35)", letterSpacing:8, marginTop:8, fontSize:56 },
 
   ssMemberIcon: { fontSize:200, lineHeight:1, marginBottom:24 },
 
   ssThanksIcon: { fontSize:280, lineHeight:1, marginBottom:8 },
-  ssSocial: { marginTop:24, fontSize:28, color:"#FF6B35",
+  ssSocial: { marginTop:24, fontSize:28, color:"var(--brand-primary,#FF6B35)",
     fontWeight:700, letterSpacing:1 },
 
   ssDots: { position:"absolute", bottom:32, left:"50%",
@@ -1044,14 +1044,14 @@ const S = {
   toppingName: { fontSize:14, color:"#fff", fontWeight:500 },
   toppingFree: { fontSize:12, color:"#10B981", fontWeight:700, letterSpacing:0.5,
     background:"rgba(16,185,129,0.1)", padding:"2px 10px", borderRadius:100 },
-  toppingPaid: { fontSize:12, color:"#FF6B35", fontWeight:700,
+  toppingPaid: { fontSize:12, color:"var(--brand-primary,#FF6B35)", fontWeight:700,
     background:"rgba(245,158,11,0.1)", padding:"2px 10px", borderRadius:100 },
   itemAddons: { display:"flex", flexWrap:"wrap", gap:6, marginTop:6 },
   addonTag: { fontSize:12, color:"#10B981", background:"rgba(16,185,129,0.1)",
     padding:"3px 10px", borderRadius:100 },
   itemQty: { fontSize:20, fontWeight:800, color:"#888", width:50, textAlign:"center",
     paddingTop:4 },
-  itemPrice: { fontSize:32, color:"#FF6B35", minWidth:140, textAlign:"right",
+  itemPrice: { fontSize:32, color:"var(--brand-primary,#FF6B35)", minWidth:140, textAlign:"right",
     fontFamily:"'Inter',sans-serif", letterSpacing:2, paddingTop:4 },
 
   summaryInline: { background:"#0a0a0a", border:"1px solid #222",
@@ -1063,7 +1063,7 @@ const S = {
   summaryLabelMuted: { fontSize:13, color:"#666" },
   summaryDivider: { height:1, background:"#222", margin:"12px 0" },
   totalLabel: { fontSize:18, color:"#fff", fontWeight:800, letterSpacing:1 },
-  totalValue: { fontSize:64, fontFamily:"'Inter',sans-serif", color:"#FF6B35",
+  totalValue: { fontSize:64, fontFamily:"'Inter',sans-serif", color:"var(--brand-primary,#FF6B35)",
     letterSpacing:3, fontWeight:600 },
   cartHint: { textAlign:"center", color:"#555", fontSize:13, marginTop:24,
     padding:"12px", letterSpacing:1 },
@@ -1146,15 +1146,15 @@ const S = {
     border:"1px solid rgba(245,158,11,0.3)", borderRadius:14 },
   verifyIcon: { fontSize:28, lineHeight:1 },
   verifyText: { flex:1, fontSize:15, color:"#fff", lineHeight:1.6, fontWeight:500 },
-  verifyEmphasis: { color:"#FF6B35", fontWeight:700 },
+  verifyEmphasis: { color:"var(--brand-primary,#FF6B35)", fontWeight:700 },
   verifyName: { display:"inline-block", padding:"3px 14px", margin:"0 4px",
-    background:"rgba(245,158,11,0.18)", color:"#FF6B35", borderRadius:8,
+    background:"rgba(245,158,11,0.18)", color:"var(--brand-primary,#FF6B35)", borderRadius:8,
     fontWeight:800, letterSpacing:0.5,
     border:"1px solid rgba(245,158,11,0.4)" },
 
   qrMain: { flex:1, display:"flex", flexDirection:"column", alignItems:"center",
     justifyContent:"center", gap:16, padding:40, textAlign:"center" },
-  qrTitle: { fontSize:56, fontFamily:"'Inter',sans-serif", color:"#FF6B35",
+  qrTitle: { fontSize:56, fontFamily:"'Inter',sans-serif", color:"var(--brand-primary,#FF6B35)",
     letterSpacing:4, marginBottom:80 },
   qrFrame: { padding:24, background:"#fff", borderRadius:24,
     boxShadow:"0 0 60px rgba(245,158,11,0.3)" },
@@ -1167,20 +1167,20 @@ const S = {
     background:"#111", border:"2px solid #F59E0B", borderRadius:16,
     display:"flex", flexDirection:"column", alignItems:"center" },
   subLabel: { fontSize:14, color:"#888", letterSpacing:2, fontWeight:600 },
-  qrAmount: { fontSize:72, fontFamily:"'Inter',sans-serif", color:"#FF6B35",
+  qrAmount: { fontSize:72, fontFamily:"'Inter',sans-serif", color:"var(--brand-primary,#FF6B35)",
     letterSpacing:4, marginTop:4 },
 
   successCheck: { fontSize:72, lineHeight:1, marginBottom:4 },
   successTitle: { fontSize:36, fontFamily:"'Inter',sans-serif", color:"#10B981",
     letterSpacing:1, marginBottom:8, lineHeight:1.2, fontWeight:800 },
   successOrderId: { fontSize:18, color:"#888", marginBottom:6, fontFamily:"'Geist Mono',monospace", letterSpacing:1 },
-  successAmount: { fontSize:48, fontFamily:"'Geist Mono',monospace", color:"#FF6B35",
+  successAmount: { fontSize:48, fontFamily:"'Geist Mono',monospace", color:"var(--brand-primary,#FF6B35)",
     letterSpacing:-0.5, marginBottom:14, fontWeight:800, lineHeight:1.1 },
   successThanks: { fontSize:22, color:"#fff", marginBottom:18, lineHeight:1.2 },
 
   trackQrMain: { flex:1, padding:"24px 40px 40px", display:"flex", flexDirection:"column",
     alignItems:"center", textAlign:"center", overflowY:"auto", gap:0 },
-  trackQrTitle: { fontSize:36, fontFamily:"'Inter',sans-serif", color:"#FF6B35",
+  trackQrTitle: { fontSize:36, fontFamily:"'Inter',sans-serif", color:"var(--brand-primary,#FF6B35)",
     letterSpacing:1, marginBottom:6, fontWeight:800, lineHeight:1.1 },
   trackQrSubtitle: { fontSize:16, color:"#cbd5e1", marginBottom:18 },
   trackQrFrame: { padding:16, background:"#fff", borderRadius:18,
@@ -1189,7 +1189,7 @@ const S = {
   trackQrHint: { fontSize:14, color:"#94a3b8", lineHeight:1.5, marginBottom:18,
     maxWidth:380 },
   warnBox: { padding:"14px 20px", background:"rgba(255,107,53,0.1)",
-    border:"1px solid #FF6B35", borderRadius:12, fontSize:13, color:"#FF6B35",
+    border:"1px solid var(--brand-primary,#FF6B35)", borderRadius:12, fontSize:13, color:"var(--brand-primary,#FF6B35)",
     maxWidth:540, marginBottom:16, lineHeight:1.5 },
   urlBox: { fontSize:13, color:"#666", padding:"8px 16px",
     background:"#0a0a0a", border:"1px solid #222", borderRadius:8,
@@ -1198,6 +1198,6 @@ const S = {
     marginTop:16, gap:6, padding:"12px 28px",
     background:"rgba(255,107,53,0.08)", border:"1px solid rgba(255,107,53,0.3)",
     borderRadius:14 },
-  totalBig: { fontSize:42, fontFamily:"'Geist Mono',monospace", color:"#FF6B35",
+  totalBig: { fontSize:42, fontFamily:"'Geist Mono',monospace", color:"var(--brand-primary,#FF6B35)",
     letterSpacing:-0.5, marginTop:2, lineHeight:1.1, fontWeight:800 }
 };

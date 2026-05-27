@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import API_HOST from "../apiBase.js";
 
-const BRAND = "#FF6B35";
+const BRAND = "var(--brand-primary,#FF6B35)";
 const BG = "#0A0A0A";
 const CARD = "#1A1A1A";
 const BORDER = "#2A2A2A";
@@ -57,8 +57,8 @@ const STATUS_META = {
   cancelled: { label: "Dibatalkan", color: "#EF4444", bg: "rgba(239,68,68,0.12)", emoji: "✕" },
   refunded: { label: "Refund Penuh", color: "#F97316", bg: "rgba(249,115,22,0.12)", emoji: "↻" },
   partial_refund: { label: "Refund Sebagian", color: "#F97316", bg: "rgba(249,115,22,0.12)", emoji: "↻" },
-  waiting: { label: "Menunggu", color: "#FF6B35", bg: "rgba(245,158,11,0.12)", emoji: "⏳" },
-  received: { label: "Diterima", color: "#FF6B35", bg: "rgba(245,158,11,0.12)", emoji: "📨" },
+  waiting: { label: "Menunggu", color: "var(--brand-primary,#FF6B35)", bg: "rgba(245,158,11,0.12)", emoji: "⏳" },
+  received: { label: "Diterima", color: "var(--brand-primary,#FF6B35)", bg: "rgba(245,158,11,0.12)", emoji: "📨" },
   preparing: { label: "Preparing", color: "#3B82F6", bg: "rgba(59,130,246,0.12)", emoji: "👨‍🍳" },
   in_progress: { label: "Preparing", color: "#3B82F6", bg: "rgba(59,130,246,0.12)", emoji: "👨‍🍳" },
   ready: { label: "Siap Diambil", color: "#10B981", bg: "rgba(16,185,129,0.12)", emoji: "🎉" },

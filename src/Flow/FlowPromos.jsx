@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import API_HOST from "../apiBase.js";
 
-const BRAND = "#FF6B35";
+const BRAND = "var(--brand-primary,#FF6B35)";
 const BG = "#0A0A0A";
 const CARD = "#1A1A1A";
 const BORDER = "#2A2A2A";

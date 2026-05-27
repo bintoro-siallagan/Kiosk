@@ -7,6 +7,7 @@ export default function POSLogin({ onLogin }) {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [brand, setBrand] = useState({ name: null, code: null });
 
   useEffect(() => {
     fetch(`${API_BASE}/api/auth/users`)
@@ -17,30 +18,48 @@ export default function POSLogin({ onLogin }) {
         setLoading(false);
       })
       .catch(err => { setError(err.message); setLoading(false); });
+    fetch(`${API_BASE}/api/companies/branding`)
+      .then(r => r.json()).then(b => {
+        if (b?.brand_color) {
+          setBrand({ name: b.name, code: b.company_code });
+          document.documentElement.style.setProperty("--brand-primary", b.brand_color);
+          document.documentElement.style.setProperty("--brand-secondary", b.brand_secondary || b.brand_color);
+        }
+      }).catch(() => {});
   }, []);
+
+  const PLATFORM = ["BTS", "CMX", "KARYAOS"];
+  const isPlatform = !brand.code || PLATFORM.includes(brand.code);
+  const brandLabel = isPlatform ? "karyaos" : brand.name;
 
   return (
     <div style={S.root}>
+      <style>{LOGIN_CSS}</style>
       <header style={S.header}>
-        <img src="/logo.png" alt="KaryaOS" style={{ width: 72, height: 72, objectFit: "contain", marginBottom: 8 }} />
-        <h1 style={S.title}>KaryaOS POS</h1>
-        <p style={S.subtitle}>POINT OF SALE TERMINAL</p>
+        <img src="/logo.png" alt="" className="boot-logo-mini"
+          style={{ width: 64, height: 64, objectFit: "contain", marginBottom: 12 }} />
+        <h1 style={S.title}>
+          {isPlatform
+            ? <>karya<span style={{ fontWeight: 300, opacity: 0.55 }}>os</span> <span style={S.titleSub}>POS</span></>
+            : <>{brandLabel} <span style={S.titleSub}>POS</span></>}
+        </h1>
+        <p style={S.subtitle}>Point of Sale Terminal</p>
       </header>
 
       <section style={S.section}>
-        <h2 style={S.sectionTitle}>Pilih Kasir untuk Memulai</h2>
+        <h2 style={S.sectionTitle}>Select cashier to begin</h2>
 
-        {loading && <div style={S.loading}>☕ Memuat...</div>}
+        {loading && <div style={S.loading}>⏳ Loading...</div>}
 
         {error && (
-          <div style={S.error}>⚠ Data petugas belum tersedia. Please try again sebentar.</div>
+          <div className="lg" style={S.error}>⚠ Cashier data unavailable. Please try again.</div>
         )}
 
         {!loading && !error && users.length === 0 && (
-          <div style={S.empty}>
-            <div style={{fontSize: 60, marginBottom: 12}}>👤</div>
-            <p style={{margin: "0 0 4px", fontSize: 16}}>Belum ada kasir terdaftar</p>
-            <p style={S.hint}>Tambah user via <a href="?admin" style={S.link}>Admin → User Admin</a></p>
+          <div className="lg" style={S.empty}>
+            <div style={{ fontSize: 56, marginBottom: 12, opacity: 0.4 }}>👤</div>
+            <p style={{ margin: "0 0 6px", fontSize: 15, color: "rgba(255,255,255,0.8)", fontWeight: 500 }}>No cashier registered</p>
+            <p style={S.hint}>Add a user via <a href="?admin" style={S.link}>Admin → Users</a></p>
           </div>
         )}
 
@@ -52,16 +71,15 @@ export default function POSLogin({ onLogin }) {
                 <button
                   key={u.id}
                   onClick={() => onLogin(u)}
+                  className="lg user-card"
                   style={S.card}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#F59E0B"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#2a2a2a"; e.currentTarget.style.transform = "translateY(0)"; }}
                 >
                   <div style={S.avatar}>👤</div>
                   <div style={S.name}>{u.name || "Unnamed"}</div>
-                  <div style={{...S.role, background: roleColors[role] || roleColors.kasir}}>
-                    {(u.role || "kasir").toUpperCase()}
+                  <div style={{ ...S.role, background: roleColors[role] || roleColors.kasir }}>
+                    {(u.role || "kasir")}
                   </div>
-                  <div style={S.cta}>► PILIH</div>
+                  <div style={S.cta}>Select →</div>
                 </button>
               );
             })}
@@ -70,77 +88,106 @@ export default function POSLogin({ onLogin }) {
       </section>
 
       <footer style={S.footer}>
-        <a href="?" style={S.backLink}>← Kembali ke Kiosk</a>
+        <a href="?" style={S.backLink}>← Back to Kiosk</a>
       </footer>
     </div>
   );
 }
 
 const roleColors = {
-  admin:   "#EF4444",
-  manager: "#A855F7",
-  kasir:   "#3B82F6",
-  staff:   "#10B981"
+  admin: "linear-gradient(180deg,#EF4444,#dc2626)",
+  manager: "linear-gradient(180deg,#A855F7,#9333ea)",
+  kasir: "linear-gradient(180deg,#3B82F6,#2563eb)",
+  staff: "linear-gradient(180deg,#10B981,#059669)"
 };
+
+const LOGIN_CSS = `
+  :root{color-scheme:dark}
+  *{box-sizing:border-box;margin:0;padding:0}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes bootGlow{
+    0%,100%{filter:brightness(0.94) drop-shadow(0 0 6px rgba(255,255,255,0.45)) drop-shadow(0 0 18px rgba(255,255,255,0.22)) drop-shadow(0 0 40px var(--brand-primary,#FF6B35))}
+    50%{filter:brightness(1.02) drop-shadow(0 0 9px rgba(255,255,255,0.6)) drop-shadow(0 0 26px rgba(255,255,255,0.32)) drop-shadow(0 0 60px var(--brand-primary,#FF6B35))}
+  }
+  .boot-logo-mini{animation:bootGlow 5.5s ease-in-out infinite}
+  .lg{
+    position:relative;
+    background:linear-gradient(180deg,rgba(255,255,255,0.06) 0%,rgba(255,255,255,0.02) 60%,rgba(255,255,255,0.008) 100%);
+    backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);
+    border:1px solid rgba(255,255,255,0.07);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.16),inset 0 -1px 0 rgba(0,0,0,0.18),0 8px 24px rgba(0,0,0,0.28),0 24px 60px rgba(0,0,0,0.32);
+    overflow:hidden;
+  }
+  .user-card{transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s ease;animation:fadeIn .4s ease both}
+  .user-card:hover{transform:translateY(-3px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.22),inset 0 -1px 0 rgba(0,0,0,0.18),0 12px 32px rgba(0,0,0,0.34),0 30px 80px color-mix(in srgb,var(--brand-primary,#FF6B35) 22%,transparent)}
+  .user-card:active{transform:translateY(-1px) scale(.99)}
+`;
 
 const S = {
   root: {
-    minHeight: "100vh", background: "#111", color: "#fff",
+    minHeight: "100vh",
+    background: "radial-gradient(ellipse 70% 55% at 50% 38%, rgba(40,44,58,0.5) 0%, transparent 70%), linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)",
+    backgroundAttachment: "fixed",
+    color: "#fff",
     fontFamily: "'Inter',sans-serif",
-    padding: "48px 24px",
+    padding: "56px 24px 32px",
     display: "flex", flexDirection: "column"
   },
   header: { textAlign: "center", marginBottom: 48 },
   title: {
     fontFamily: "'Inter',sans-serif",
-    fontSize: 72, letterSpacing: 5,
-    margin: "0 0 4px", color: "#F59E0B"
+    fontSize: 44, fontWeight: 600, letterSpacing: "-1.5px",
+    margin: "8px 0 8px", color: "#fff",
+    background: "linear-gradient(180deg,#fff 0%,rgba(255,255,255,0.65) 100%)",
+    WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
+    display: "inline-flex", alignItems: "baseline", gap: 14, justifyContent: "center"
   },
-  subtitle: { fontSize: 12, color: "#888", margin: 0, letterSpacing: 4, fontWeight: 600 },
+  titleSub: {
+    fontSize: 18, color: "rgba(255,255,255,0.4)", fontWeight: 500, letterSpacing: 4,
+    WebkitTextFillColor: "rgba(255,255,255,0.4)", textTransform: "uppercase"
+  },
+  subtitle: { fontSize: 12, color: "rgba(255,255,255,0.4)", margin: 0, letterSpacing: 3, fontWeight: 400 },
   section: { maxWidth: 1100, width: "100%", margin: "0 auto", flex: 1 },
   sectionTitle: {
-    fontSize: 18, color: "#aaa", textAlign: "center",
-    marginBottom: 32, fontWeight: 500, letterSpacing: 1
+    fontSize: 14, color: "rgba(255,255,255,0.55)", textAlign: "center",
+    marginBottom: 28, fontWeight: 500, letterSpacing: "-0.2px"
   },
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: 20
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+    gap: 16
   },
   card: {
-    background: "#1a1a1a", border: "2px solid #2a2a2a",
-    borderRadius: 16, padding: "32px 20px",
+    borderRadius: 20, padding: "30px 22px",
     color: "#fff", fontFamily: "inherit",
-    cursor: "pointer", transition: "all 0.2s",
+    cursor: "pointer", border: "none",
     textAlign: "center",
     display: "flex", flexDirection: "column",
     alignItems: "center", gap: 12
   },
-  avatar: { fontSize: 56, opacity: 0.9 },
-  name: { fontSize: 22, fontWeight: 700, color: "#fff" },
+  avatar: { fontSize: 48, opacity: 0.8, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.3))" },
+  name: { fontSize: 18, fontWeight: 600, color: "rgba(255,255,255,0.95)", letterSpacing: "-0.3px" },
   role: {
-    color: "#fff", padding: "4px 14px",
-    borderRadius: 100, fontSize: 11,
-    fontWeight: 700, letterSpacing: 1.5
+    color: "#fff", padding: "4px 12px",
+    borderRadius: 999, fontSize: 10,
+    fontWeight: 600, letterSpacing: 0.5, textTransform: "uppercase",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22)"
   },
   cta: {
-    marginTop: 8, color: "#F59E0B",
-    fontSize: 13, fontWeight: 700, letterSpacing: 1.5
+    marginTop: 6, color: "rgba(255,255,255,0.55)",
+    fontSize: 12, fontWeight: 500, letterSpacing: "-0.1px"
   },
-  loading: { textAlign: "center", color: "#666", padding: 60 },
+  loading: { textAlign: "center", color: "rgba(255,255,255,0.45)", padding: 60, fontSize: 14 },
   error: {
-    background: "#1a1a1a", border: "1px solid #EF4444",
-    color: "#FCA5A5", padding: 16, borderRadius: 10,
-    marginBottom: 20, textAlign: "center"
+    color: "#FCA5A5", padding: "14px 18px", borderRadius: 14,
+    marginBottom: 20, textAlign: "center", fontSize: 13, fontWeight: 500
   },
   empty: {
-    textAlign: "center", color: "#888",
-    padding: "60px 20px",
-    background: "#1a1a1a", borderRadius: 16,
-    border: "1px dashed #2a2a2a"
+    textAlign: "center", color: "rgba(255,255,255,0.6)",
+    padding: "44px 24px", borderRadius: 18
   },
-  hint: { fontSize: 13, color: "#666", marginTop: 8 },
-  link: { color: "#F59E0B", textDecoration: "none" },
-  footer: { textAlign: "center", marginTop: 48 },
-  backLink: { color: "#555", fontSize: 13, textDecoration: "none" }
+  hint: { fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 8 },
+  link: { color: "rgba(255,255,255,0.7)", textDecoration: "underline" },
+  footer: { textAlign: "center", marginTop: 32 },
+  backLink: { color: "rgba(255,255,255,0.35)", fontSize: 12, textDecoration: "none", letterSpacing: "-0.1px" }
 };

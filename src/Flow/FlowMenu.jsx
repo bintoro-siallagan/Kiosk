@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import API_HOST from "../apiBase.js";
 
-const BRAND = "#FF6B35";
+const BRAND = "var(--brand-primary,#FF6B35)";
 const BG = "#0A0A0A";
 const CARD = "#1A1A1A";
 const BORDER = "#2A2A2A";
@@ -425,7 +425,7 @@ function ToppingCounter({ selected, freeQuota, extraPrice, addonTotal }) {
       display: "flex", justifyContent: "space-between", alignItems: "center"
     }}>
       <div>
-        <div style={{ fontSize: 12, fontWeight: 700, color: isOver ? "#FF6B35" : "#10B981" }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: isOver ? "var(--brand-primary,#FF6B35)" : "#10B981" }}>
           {used} / {freeQuota} topping {isOver ? `(+${over} extra)` : `(${remaining} sisa free)`}
         </div>
         <div style={{ fontSize: 10, color: "#A1A1AA", marginTop: 3 }}>
@@ -433,7 +433,7 @@ function ToppingCounter({ selected, freeQuota, extraPrice, addonTotal }) {
         </div>
       </div>
       {addonTotal > 0 && (
-        <div style={{ fontSize: 14, fontWeight: 700, color: "#FF6B35" }}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "var(--brand-primary,#FF6B35)" }}>
           +Rp {addonTotal.toLocaleString("id-ID")}
         </div>
       )}

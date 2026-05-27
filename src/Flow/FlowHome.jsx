@@ -35,7 +35,7 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
   const tags = profile?.tags || ["new"];
 
   let tier = "Guest"; let tierColor = "#9CA3AF";
-  if (tags.includes("vip")) { tier = "VIP ⭐"; tierColor = "#FF6B35"; }
+  if (tags.includes("vip")) { tier = "VIP ⭐"; tierColor = "var(--brand-primary,#FF6B35)"; }
   else if (tags.includes("member")) { tier = "Member 🎫"; tierColor = "#10B981"; }
   else if (tags.includes("new")) { tier = "Baru ✨"; tierColor = "#60A5FA"; }
 
@@ -81,7 +81,7 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
       </div>
 
       <div style={S.actionsGrid}>
-        <ActionCard icon="🍽️" title="Pesan Sekarang" subtitle="Browse menu KaryaOS" accent="#FF6B35" onClick={() => onNavigate("menu")} />
+        <ActionCard icon="🍽️" title="Pesan Sekarang" subtitle="Browse menu KaryaOS" accent="var(--brand-primary,#FF6B35)" onClick={() => onNavigate("menu")} />
         <ActionCard icon="🔁" title="Pesan Ulang" subtitle="Order favorit" accent="#10B981" comingSoon />
         <ActionCard icon="📦" title="Pesanan Aktif" subtitle="Track status pesanan" accent="#3B82F6" comingSoon />
         <ActionCard icon="🎁" title="Tukar Poin" subtitle={points >= 100 ? "Bisa redeem!" : "Min 100 poin"} accent="#8B5CF6" onClick={() => onNavigate("redeem")} />
@@ -118,7 +118,7 @@ function ActionCard({ icon, title, subtitle, accent, comingSoon, onClick }) {
 const S = {
   container: { width: "min(440px, 100%)", minHeight: "100vh", padding: "20px 16px", display: "flex", flexDirection: "column", gap: 20, position: "relative" },
   header: { display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 8 },
-  logo: { fontFamily: "'Inter', sans-serif", fontSize: 26, fontWeight: 800, color: "#FF6B35", letterSpacing: "-0.5px" },
+  logo: { fontFamily: "'Inter', sans-serif", fontSize: 26, fontWeight: 800, color: "var(--brand-primary,#FF6B35)", letterSpacing: "-0.5px" },
   logoutBtn: { padding: "7px 14px", borderRadius: 9, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.55)", fontSize: 11, cursor: "pointer", fontFamily: "'JetBrains Mono', monospace", letterSpacing: 1, textTransform: "uppercase", transition: "all 0.2s ease" },
   profile: {
     background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.005))",
@@ -130,7 +130,7 @@ const S = {
     animation: "fadeUp 0.4s ease",
   },
   greeting: { fontSize: 19, fontWeight: 750, marginBottom: 10, letterSpacing: "-0.4px" },
-  tableBadge: { display: "inline-block", padding: "5px 12px", borderRadius: 16, background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", color: "#FF6B35", fontSize: 11, fontWeight: 700, letterSpacing: 0.5, fontFamily: "'JetBrains Mono', monospace" },
+  tableBadge: { display: "inline-block", padding: "5px 12px", borderRadius: 16, background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", color: "var(--brand-primary,#FF6B35)", fontSize: 11, fontWeight: 700, letterSpacing: 0.5, fontFamily: "'JetBrains Mono', monospace" },
   modeBadge: { display: "inline-block", padding: "5px 12px", borderRadius: 16, background: "rgba(59,130,246,0.12)", border: "1px solid rgba(59,130,246,0.25)", color: "#60A5FA", fontSize: 11, fontWeight: 700, letterSpacing: 0.5, fontFamily: "'JetBrains Mono', monospace" },
   statsRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 18 },
   statBox: {
@@ -141,7 +141,7 @@ const S = {
     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
   },
   statLabel: { fontSize: 9.5, color: "rgba(255,255,255,0.45)", letterSpacing: 1.5, fontWeight: 600, marginBottom: 6, textTransform: "uppercase", fontFamily: "'JetBrains Mono', monospace" },
-  statValue: { fontFamily: "'Inter', sans-serif", fontSize: 28, fontWeight: 800, color: "#FF6B35", lineHeight: 1, letterSpacing: "-1px" },
+  statValue: { fontFamily: "'Inter', sans-serif", fontSize: 28, fontWeight: 800, color: "var(--brand-primary,#FF6B35)", lineHeight: 1, letterSpacing: "-1px" },
   statUnit: { fontSize: 13, color: "rgba(255,255,255,0.4)", marginLeft: 3, fontWeight: 600 },
   statBadge: { fontSize: 10, marginTop: 8, fontWeight: 600, letterSpacing: 0.3 },
   actionsGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
@@ -155,7 +155,7 @@ const S = {
   actionIcon: { width: 42, height: 42, borderRadius: 11, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, marginBottom: 10 },
   actionTitle: { fontSize: 13, fontWeight: 750, letterSpacing: "-0.2px" },
   actionSub: { fontSize: 10, color: "rgba(255,255,255,0.45)", marginTop: 3, lineHeight: 1.4 },
-  soonBadge: { position: "absolute", top: 8, right: 8, padding: "2px 7px", borderRadius: 4, background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.25)", color: "#FF6B35", fontSize: 8, fontWeight: 700, letterSpacing: 1, fontFamily: "'JetBrains Mono', monospace" },
+  soonBadge: { position: "absolute", top: 8, right: 8, padding: "2px 7px", borderRadius: 4, background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.25)", color: "var(--brand-primary,#FF6B35)", fontSize: 8, fontWeight: 700, letterSpacing: 1, fontFamily: "'JetBrains Mono', monospace" },
   footer: { textAlign: "center", fontSize: 9.5, color: "rgba(255,255,255,0.3)", letterSpacing: 2, padding: "14px 0", fontFamily: "'JetBrains Mono', monospace", textTransform: "uppercase" },
   cartFloater: {
     position: "sticky", bottom: 20, marginTop: "auto",
