@@ -75,6 +75,36 @@ export default function AdminBranding({ onBack }) {
     finally { setSaving(false); }
   }
 
+  async function resetAllBranding() {
+    if (!confirm("⚠️ HAPUS SEMUA branding custom? Logo, warna, nama, kontak, signature — semua reset ke default karyaos. Tidak bisa di-undo.")) return;
+    setSaving(true);
+    try {
+      // Reset form fields ke default
+      const reset = {
+        brand_color: "#FF6B35", name: "", brand_short: "",
+        contact_email: "", contact_phone: "", address: "",
+        receipt_footer: "", wa_signature: "", email_signature: "",
+        currency_code: "IDR", locale: "id-ID",
+      };
+      // Save kosong ke server
+      const r = await fetch("/api/companies/branding", {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(reset),
+      });
+      if (!r.ok) throw new Error((await r.json()).error || `HTTP ${r.status}`);
+      // Delete logo juga
+      if (data.logo_url && data.logo_url !== "/logo.png") {
+        await fetch("/api/companies/branding/logo", { method: "DELETE" });
+      }
+      load();
+      alert("✓ Semua branding di-reset ke default");
+    } catch (e) { alert("✗ " + e.message); }
+    finally { setSaving(false); }
+  }
+
+  // Per-field clear helper — kasih X button utk reset 1 field ke kosong
+  const clearF = (k) => () => setForm(s => ({ ...s, [k]: k === "brand_color" ? "#FF6B35" : k === "currency_code" ? "IDR" : k === "locale" ? "id-ID" : "" }));
+
   if (!data) return <div style={S.root}>Loading…</div>;
 
   return (
@@ -130,14 +160,14 @@ export default function AdminBranding({ onBack }) {
           </div>
           <div>
             <label style={S.label}>Brand name (long)</label>
-            <input type="text" value={form.name} onChange={setF("name")}
-              placeholder="e.g. Sour Sally · Demo Pitch Cafe" style={{ ...S.input, width: "100%" }}/>
+            <InputWithClear value={form.name} onChange={setF("name")} onClear={clearF("name")}
+              placeholder="e.g. Sour Sally · Demo Pitch Cafe" S={S} />
             <div style={S.hint}>Shown on receipt header, full reports.</div>
           </div>
           <div>
             <label style={S.label}>Brand short (optional)</label>
-            <input type="text" value={form.brand_short} onChange={setF("brand_short")}
-              placeholder="e.g. Sour Sally" style={{ ...S.input, width: "100%" }}/>
+            <InputWithClear value={form.brand_short} onChange={setF("brand_short")} onClear={clearF("brand_short")}
+              placeholder="e.g. Sour Sally" S={S} />
             <div style={S.hint}>Compact display name for POS header, WA sender. Defaults to brand name long.</div>
           </div>
         </div>
@@ -185,19 +215,19 @@ export default function AdminBranding({ onBack }) {
         <div style={{ display: "grid", gap: 14 }}>
           <div>
             <label style={S.label}>Contact phone</label>
-            <input type="text" value={form.contact_phone} onChange={setF("contact_phone")}
-              placeholder="e.g. +62 812-3456-7890" style={{ ...S.input, width: "100%" }}/>
+            <InputWithClear value={form.contact_phone} onChange={setF("contact_phone")} onClear={clearF("contact_phone")}
+              placeholder="e.g. +62 812-3456-7890" S={S} />
             <div style={S.hint}>Shown on receipt footer; used in WA template &lbrace;brandPhone&rbrace; variable.</div>
           </div>
           <div>
             <label style={S.label}>Contact email</label>
-            <input type="email" value={form.contact_email} onChange={setF("contact_email")}
-              placeholder="hello@yourbrand.com" style={{ ...S.input, width: "100%" }}/>
+            <InputWithClear type="email" value={form.contact_email} onChange={setF("contact_email")} onClear={clearF("contact_email")}
+              placeholder="hello@yourbrand.com" S={S} />
           </div>
           <div>
             <label style={S.label}>Address</label>
-            <textarea value={form.address} onChange={setF("address")} rows={2}
-              placeholder="Jl. Sudirman Kav 1, Jakarta Pusat 10220" style={{ ...S.input, width: "100%", resize: "vertical", fontFamily: "'Inter',sans-serif" }}/>
+            <TextareaWithClear value={form.address} onChange={setF("address")} onClear={clearF("address")}
+              placeholder="Jl. Sudirman Kav 1, Jakarta Pusat 10220" rows={2} S={S} />
           </div>
         </div>
       </section>
@@ -208,25 +238,33 @@ export default function AdminBranding({ onBack }) {
         <div style={{ display: "grid", gap: 14 }}>
           <div>
             <label style={S.label}>Receipt footer</label>
-            <textarea value={form.receipt_footer} onChange={setF("receipt_footer")} rows={2}
-              placeholder="Thank you for your order!" style={{ ...S.input, width: "100%", resize: "vertical", fontFamily: "'Inter',sans-serif" }}/>
+            <TextareaWithClear value={form.receipt_footer} onChange={setF("receipt_footer")} onClear={clearF("receipt_footer")}
+              placeholder="Thank you for your order!" rows={2} S={S} />
             <div style={S.hint}>Custom text at the bottom of receipt (after totals). Brand name auto-included.</div>
           </div>
           <div>
             <label style={S.label}>WhatsApp signature</label>
-            <textarea value={form.wa_signature} onChange={setF("wa_signature")} rows={2}
-              placeholder="— Sour Sally Demo Pitch&#10;📞 +62 812-3456-7890&#10;Jl. Sudirman Kav 1" style={{ ...S.input, width: "100%", resize: "vertical", fontFamily: "'Inter',sans-serif" }}/>
+            <TextareaWithClear value={form.wa_signature} onChange={setF("wa_signature")} onClear={clearF("wa_signature")}
+              placeholder="— Sour Sally Demo Pitch&#10;📞 +62 812-3456-7890&#10;Jl. Sudirman Kav 1" rows={2} S={S} />
             <div style={S.hint}>Appended to every WA notification. Multi-line OK.</div>
           </div>
           <div>
             <label style={S.label}>Email signature</label>
-            <textarea value={form.email_signature} onChange={setF("email_signature")} rows={3}
-              placeholder="Best regards,&#10;Sour Sally Team&#10;hello@soursally.com" style={{ ...S.input, width: "100%", resize: "vertical", fontFamily: "'Inter',sans-serif" }}/>
+            <TextareaWithClear value={form.email_signature} onChange={setF("email_signature")} onClear={clearF("email_signature")}
+              placeholder="Best regards,&#10;Sour Sally Team&#10;hello@soursally.com" rows={3} S={S} />
             <div style={S.hint}>Appended to outgoing emails (formatted as plain or HTML).</div>
           </div>
-          <button onClick={saveBranding} disabled={saving} style={S.saveBtn}>
-            {saving ? "Saving…" : "Save all branding"}
-          </button>
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginTop: 4 }}>
+            <button onClick={saveBranding} disabled={saving} style={S.saveBtn}>
+              {saving ? "Saving…" : "💾 Save all branding"}
+            </button>
+            <button onClick={resetAllBranding} disabled={saving} style={{ ...S.removeBtn, padding: "12px 18px" }}>
+              ⚠️ Reset Semua ke Default
+            </button>
+          </div>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 8, lineHeight: 1.5 }}>
+            "Reset" hapus semua kustomisasi (logo, warna, nama, kontak, signature) — fallback ke default karyaos. Konfirmasi sebelum di-eksekusi.
+          </div>
         </div>
       </section>
 
@@ -246,6 +284,44 @@ export default function AdminBranding({ onBack }) {
           </button>
         </div>
       </section>
+    </div>
+  );
+}
+
+// Input/textarea dgn tombol ✕ inline utk clear field (UX: tampil cuma kalau ada value)
+function InputWithClear({ value, onChange, onClear, placeholder, type = "text", S }) {
+  return (
+    <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+      <input type={type} value={value} onChange={onChange} placeholder={placeholder}
+        style={{ ...S.input, width: "100%", paddingRight: value ? 36 : 14 }} />
+      {value && (
+        <button type="button" onClick={onClear} title="Clear" style={{
+          position: "absolute", right: 6, top: "50%", transform: "translateY(-50%)",
+          width: 26, height: 26, borderRadius: "50%", padding: 0, cursor: "pointer",
+          background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.25)",
+          color: "rgba(248,113,113,0.9)", fontSize: 13, fontWeight: 700,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontFamily: "inherit",
+        }}>✕</button>
+      )}
+    </div>
+  );
+}
+function TextareaWithClear({ value, onChange, onClear, placeholder, rows = 2, S }) {
+  return (
+    <div style={{ position: "relative" }}>
+      <textarea value={value} onChange={onChange} placeholder={placeholder} rows={rows}
+        style={{ ...S.input, width: "100%", resize: "vertical", fontFamily: "'Inter',sans-serif", paddingRight: value ? 36 : 14 }} />
+      {value && (
+        <button type="button" onClick={onClear} title="Clear" style={{
+          position: "absolute", right: 6, top: 6,
+          width: 26, height: 26, borderRadius: "50%", padding: 0, cursor: "pointer",
+          background: "rgba(248,113,113,0.12)", border: "1px solid rgba(248,113,113,0.25)",
+          color: "rgba(248,113,113,0.9)", fontSize: 13, fontWeight: 700,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontFamily: "inherit",
+        }}>✕</button>
+      )}
     </div>
   );
 }
