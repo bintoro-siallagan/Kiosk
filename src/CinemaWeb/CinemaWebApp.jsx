@@ -47,7 +47,7 @@ function FilmGridSkeleton({ count = 6 }) {
 }
 
 // Star rating display (read-only). value 0..5 (decimals ok).
-function Stars({ value = 0, size = 14, color = "#fbbf24", muted = "#3f3f46" }) {
+function Stars({ value = 0, size = 14, color = "#d4af37", muted = "#3f3f46" }) {
   const v = Math.max(0, Math.min(5, Number(value) || 0));
   return (
     <span style={{ position: "relative", display: "inline-block", lineHeight: 1, fontSize: size, letterSpacing: 1, fontFamily: "sans-serif" }} aria-label={`Rating ${v.toFixed(1)} dari 5`}>
@@ -58,7 +58,7 @@ function Stars({ value = 0, size = 14, color = "#fbbf24", muted = "#3f3f46" }) {
 }
 
 // Interactive star picker (1..5). onChange(n) called on click.
-function StarsPicker({ value = 0, onChange, size = 28, color = "#fbbf24" }) {
+function StarsPicker({ value = 0, onChange, size = 28, color = "#d4af37" }) {
   const [hover, setHover] = useState(0);
   const shown = hover || value;
   return (
@@ -653,7 +653,7 @@ function BookingCard({ b, brandPrimary, upcoming, session, onReviewed }) {
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, gap: 8 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.film_title || "Booking"}</div>
           {upcoming && <span style={{ fontSize: 10, fontWeight: 800, color: "#10b981", background: "rgba(16,185,129,0.15)", padding: "2px 8px", borderRadius: 999, flexShrink: 0 }}>AKTIF</span>}
-          {b.reviewed && <span style={{ fontSize: 10, fontWeight: 800, color: "#fbbf24", background: "rgba(251,191,36,0.15)", padding: "2px 8px", borderRadius: 999, flexShrink: 0 }}>✓ REVIEWED</span>}
+          {b.reviewed && <span style={{ fontSize: 10, fontWeight: 800, color: brandPrimary, background: `${brandPrimary}26`, border: `1px solid ${brandPrimary}55`, padding: "2px 8px", borderRadius: 999, flexShrink: 0 }}>✓ REVIEWED</span>}
         </div>
         <div style={{ fontSize: 11, color: C.sub, marginBottom: 4 }}>📅 {b.show_date} · {b.start_time}</div>
         <div style={{ fontSize: 11, color: C.dim, marginBottom: 8, fontFamily: "'Geist Mono',monospace" }}>💺 {b.tickets.map(t => t.seat).join(", ")} · {b.purchase_id}</div>
@@ -666,7 +666,7 @@ function BookingCard({ b, brandPrimary, upcoming, session, onReviewed }) {
             }}>🎫 E-Ticket</a>
             {canReview && (
               <button onClick={() => setShowReview(true)} style={{
-                padding: "5px 10px", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.55)", color: "#fbbf24",
+                padding: "5px 10px", background: `${brandPrimary}26`, border: `1px solid ${brandPrimary}55`, color: brandPrimary,
                 borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
               }}>⭐ Beri Review</button>
             )}
@@ -739,9 +739,9 @@ function ReviewModal({ booking, session, brandPrimary, onClose, onSubmitted }) {
         </div>
         <div style={{ margin: "20px 0 16px", textAlign: "center" }}>
           <div style={{ fontSize: 11, color: C.sub, marginBottom: 10, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>RATING ANDA</div>
-          <StarsPicker value={rating} onChange={setRating} size={36} />
+          <StarsPicker value={rating} onChange={setRating} size={36} color={brandPrimary} />
           {rating > 0 && (
-            <div style={{ marginTop: 10, fontSize: 12, color: "#fbbf24", fontWeight: 700 }}>
+            <div style={{ marginTop: 10, fontSize: 12, color: brandPrimary, fontWeight: 700 }}>
               {["", "Kurang", "Lumayan", "Cukup Baik", "Bagus", "Luar Biasa"][rating]}
             </div>
           )}
@@ -821,7 +821,7 @@ function FilmGroup({ title, films, onPick, brandPrimary }) {
               <div style={{ fontSize: 11, color: C.dim }}>{f.genre || "—"} · {f.duration_min || 0}mnt</div>
               {f.ratings_count > 0 && (
                 <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5 }}>
-                  <Stars value={f.avg_rating || 0} size={10} />
+                  <Stars value={f.avg_rating || 0} size={10} color={brandPrimary} />
                   <span style={{ fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{Number(f.avg_rating || 0).toFixed(1)} ({f.ratings_count})</span>
                 </div>
               )}
@@ -2026,7 +2026,7 @@ function FilmsGrid({ outlet, onPickFilm, brandPrimary }) {
                   <div style={{ fontSize: 11, color: C.dim }}>{f.genre || "—"} · {f.duration_min || 0} mnt</div>
                   {f.ratings_count > 0 && (
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
-                      <Stars value={f.avg_rating || 0} size={11} />
+                      <Stars value={f.avg_rating || 0} size={11} color={brandPrimary} />
                       <span style={{ fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{Number(f.avg_rating || 0).toFixed(1)} ({f.ratings_count})</span>
                     </div>
                   )}
@@ -2100,7 +2100,7 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary }) {
               {film.ratings_count > 0 && <>
                 <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>·</span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                  <Stars value={film.avg_rating || 0} size={13} />
+                  <Stars value={film.avg_rating || 0} size={13} color={brandPrimary} />
                   <span style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", fontFamily: "'Geist Mono',monospace" }}>{Number(film.avg_rating || 0).toFixed(1)} ({film.ratings_count})</span>
                 </span>
               </>}
@@ -2210,7 +2210,7 @@ function ReviewsSection({ filmId, brandPrimary }) {
       <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 24, marginBottom: 18, alignItems: "center" }}>
         <div style={{ textAlign: "center", padding: "0 14px", borderRight: `1px solid ${C.border}` }}>
           <div style={{ fontSize: 42, fontWeight: 900, color: "#fff", lineHeight: 1, fontFamily: "'Geist Mono',monospace" }}>{Number(data.avg || 0).toFixed(1)}</div>
-          <div style={{ marginTop: 6 }}><Stars value={data.avg || 0} size={14} /></div>
+          <div style={{ marginTop: 6 }}><Stars value={data.avg || 0} size={14} color={brandPrimary} /></div>
           <div style={{ fontSize: 10, color: C.dim, marginTop: 4 }}>{data.total} review</div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -2221,7 +2221,7 @@ function ReviewsSection({ filmId, brandPrimary }) {
               <div key={n} style={{ display: "grid", gridTemplateColumns: "20px 1fr 32px", gap: 8, alignItems: "center" }}>
                 <span style={{ fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{n}★</span>
                 <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 4, overflow: "hidden" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", background: "#fbbf24", borderRadius: 4, transition: "width 0.3s" }} />
+                  <div style={{ width: `${pct}%`, height: "100%", background: brandPrimary, borderRadius: 4, transition: "width 0.3s" }} />
                 </div>
                 <span style={{ fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace", textAlign: "right" }}>{count}</span>
               </div>
@@ -2234,7 +2234,7 @@ function ReviewsSection({ filmId, brandPrimary }) {
           <div key={r.id} style={{ borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <Stars value={r.rating} size={12} />
+                <Stars value={r.rating} size={12} color={brandPrimary} />
                 <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>{r.customer_name || "Penonton"}</span>
               </div>
               <span style={{ fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>
