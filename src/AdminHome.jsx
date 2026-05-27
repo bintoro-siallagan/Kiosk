@@ -25,6 +25,7 @@ const AdminWebhooks     = lazy(() => import("./Admin/AdminWebhooks.jsx"));
 const AdminApiKeys      = lazy(() => import("./Admin/AdminApiKeys.jsx"));
 const AdminCustomDomain = lazy(() => import("./Admin/AdminCustomDomain.jsx"));
 const AdminAnnouncements = lazy(() => import("./Admin/AdminAnnouncements.jsx"));
+const AdminNotifPreview = lazy(() => import("./Admin/AdminNotifPreview.jsx"));
 import { TABS, GROUPS as _RAW_GROUPS, filterGroupsForVertical, filterGroupsByFeatures, getModuleFeature, isModuleLocked, requiredPlanFor } from "./adminModules.js";
 
 // Multi-tenant: helper baca company ctx (dipakai oleh AdminHome di runtime, BUKAN module-load).
@@ -633,6 +634,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "API Keys",           icon: "🗝️", c: "#fbbf24", on: () => openRight("api-keys") },
       { label: "Custom Domain",      icon: "🌐", c: "#60a5fa", on: () => openRight("custom-domain") },
       { label: "Announcements",      icon: "📣", c: "#f472b6", on: () => openRight("announcements") },
+      { label: "Notification Preview", icon: "✉️", c: "#fbbf24", on: () => openRight("notif-preview") },
       { label: "All Modules",        icon: "🛠️", c: "#f59e0b", searchable: true,
         getSub: (q) => q.trim()
           ? TABS.filter(t => _allowedTabIds.has(t.id) && t.label.toLowerCase().includes(q.trim().toLowerCase()) && canSee(moduleOf(t.id)))
@@ -857,6 +859,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
                 {rightView === "api-keys" && <AdminApiKeys onBack={closeRight} />}
                 {rightView === "custom-domain" && <AdminCustomDomain onBack={closeRight} />}
                 {rightView === "announcements" && <AdminAnnouncements onBack={closeRight} />}
+                {rightView === "notif-preview" && <AdminNotifPreview onBack={closeRight} />}
                 </Suspense>
               </div>
             </div>
