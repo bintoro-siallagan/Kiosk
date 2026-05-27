@@ -183,8 +183,60 @@ export default function CinemaWebApp() {
     try { localStorage.removeItem("cinema_web_session"); } catch {}
   };
 
+  // ═══ WOW MOMENT: Cinematic splash (sekali per session) ═══
+  const [splash, setSplash] = useState(() => {
+    try { return !sessionStorage.getItem("cw_splash_done"); } catch { return true; }
+  });
+  useEffect(() => {
+    if (!splash) return;
+    const t = setTimeout(() => {
+      setSplash(false);
+      try { sessionStorage.setItem("cw_splash_done", "1"); } catch {}
+    }, 1800);
+    return () => clearTimeout(t);
+  }, [splash]);
+
+  // ═══ WOW MOMENT: Spotlight cursor (follow mouse with soft halo) ═══
+  const rootRef = useRef(null);
+  useEffect(() => {
+    const el = rootRef.current; if (!el) return;
+    let raf = 0, lx = 0, ly = 0;
+    const onMove = (e) => {
+      lx = e.clientX; ly = e.clientY;
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        el.style.setProperty("--mx", `${lx}px`);
+        el.style.setProperty("--my", `${ly}px`);
+        raf = 0;
+      });
+    };
+    window.addEventListener("mousemove", onMove, { passive: true });
+    return () => { window.removeEventListener("mousemove", onMove); if (raf) cancelAnimationFrame(raf); };
+  }, []);
+
   return (
-    <div style={{ minHeight: "100vh", background: C.bgGrad, color: C.text, fontFamily: "'Inter','-apple-system',sans-serif", paddingBottom: 80, ["--brand-primary"]: brandPrimary }}>
+    <div ref={rootRef} style={{ minHeight: "100vh", background: C.bg, color: C.text, fontFamily: "'Inter','-apple-system',sans-serif", paddingBottom: 80, ["--brand-primary"]: brandPrimary, position: "relative" }}>
+      {/* ═══ LIVING AURORA BACKGROUND ═══ */}
+      <div className="cw-aurora" aria-hidden="true">
+        <div className="cw-orb cw-orb-1" style={{ background: `radial-gradient(closest-side, ${brandPrimary}55, transparent 70%)` }} />
+        <div className="cw-orb cw-orb-2" style={{ background: `radial-gradient(closest-side, ${C.brand}55, transparent 70%)` }} />
+        <div className="cw-orb cw-orb-3" style={{ background: `radial-gradient(closest-side, ${C.amber}33, transparent 70%)` }} />
+      </div>
+
+      {/* ═══ SPOTLIGHT CURSOR ═══ (hide on touch via @media in CSS) */}
+      <div className="cw-spotlight" aria-hidden="true" />
+
+      {/* ═══ CINEMATIC INTRO SPLASH ═══ */}
+      {splash && (
+        <div className="cw-splash" aria-hidden="true">
+          <div className="cw-splash-mark" style={{ color: brandPrimary, textShadow: `0 0 60px ${brandPrimary}` }}>
+            {brand?.logo_url && <img src={brand.logo_url} alt="" className="cw-splash-logo" />}
+            <div className="cw-splash-brand">{brand?.brand_short || brand?.name || "KaryaOS"}</div>
+            <div className="cw-splash-tagline">CINEMA · ONLINE BOOKING</div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         /* ═══ PREMIUM TYPOGRAPHY SYSTEM ═══ */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
@@ -215,6 +267,152 @@ export default function CinemaWebApp() {
         @keyframes cwHeroGlow { 0%,100% { filter: drop-shadow(0 0 24px rgba(168,85,247,0.3)); } 50% { filter: drop-shadow(0 0 36px rgba(168,85,247,0.55)); } }
         @keyframes cwPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
         @keyframes cwShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+        /* ═══════════════════════════════════════════════════════════
+           WOW MOMENT 1 — CINEMATIC INTRO SPLASH (1.8s, sekali/session)
+           ═══════════════════════════════════════════════════════════ */
+        @keyframes cwSplashOut {
+          0%   { opacity: 1; backdrop-filter: blur(0px); }
+          70%  { opacity: 1; }
+          100% { opacity: 0; backdrop-filter: blur(20px); pointer-events: none; }
+        }
+        @keyframes cwSplashMark {
+          0%   { opacity: 0; transform: translateY(20px) scale(0.96); letter-spacing: 0.2em; filter: blur(8px); }
+          30%  { opacity: 1; transform: translateY(0)   scale(1);    letter-spacing: 0.5em; filter: blur(0); }
+          75%  { opacity: 1; transform: translateY(0)   scale(1);    letter-spacing: 0.5em; filter: blur(0); }
+          100% { opacity: 0; transform: translateY(-10px) scale(1.04); letter-spacing: 0.6em; filter: blur(4px); }
+        }
+        @keyframes cwSplashLogo {
+          0%   { opacity: 0; transform: scale(0.6) rotate(-8deg); filter: drop-shadow(0 0 0 transparent); }
+          40%  { opacity: 1; transform: scale(1)   rotate(0);   filter: drop-shadow(0 0 24px var(--brand-primary, #f97316)); }
+          80%  { opacity: 1; }
+          100% { opacity: 0; transform: scale(1.1); }
+        }
+        .cw-splash {
+          position: fixed; inset: 0; z-index: 9999;
+          background: radial-gradient(ellipse at center,
+            rgba(20,20,28,1) 0%, rgba(0,0,0,1) 100%);
+          display: flex; align-items: center; justify-content: center;
+          animation: cwSplashOut 1.8s ease forwards;
+        }
+        .cw-splash-mark {
+          text-align: center;
+          animation: cwSplashMark 1.8s ease forwards;
+        }
+        .cw-splash-logo {
+          display: block; margin: 0 auto 24px;
+          height: 64px; object-fit: contain;
+          animation: cwSplashLogo 1.8s ease forwards;
+        }
+        .cw-splash-brand {
+          font-size: clamp(36px, 6vw, 64px); font-weight: 900;
+          letter-spacing: 0.5em; margin-bottom: 14px; color: #fff;
+          font-family: 'Inter', sans-serif;
+        }
+        .cw-splash-tagline {
+          font-size: 11px; letter-spacing: 0.4em; font-weight: 600;
+          color: rgba(255,255,255,0.5);
+          font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           WOW MOMENT 2 — LIVING AURORA BACKGROUND
+           ═══════════════════════════════════════════════════════════ */
+        .cw-aurora {
+          position: fixed; inset: 0; pointer-events: none;
+          z-index: 0; overflow: hidden;
+        }
+        .cw-orb {
+          position: absolute; border-radius: 50%;
+          filter: blur(60px); opacity: 0.8;
+          will-change: transform;
+        }
+        .cw-orb-1 {
+          width: 60vw; height: 60vw; top: -20vw; left: -10vw;
+          animation: cwOrb1 28s ease-in-out infinite alternate,
+                     cwBreathe 10s ease-in-out infinite;
+        }
+        .cw-orb-2 {
+          width: 55vw; height: 55vw; bottom: -20vw; right: -10vw;
+          animation: cwOrb2 32s ease-in-out infinite alternate,
+                     cwBreathe 12s ease-in-out infinite reverse;
+        }
+        .cw-orb-3 {
+          width: 40vw; height: 40vw; top: 30vh; left: 30vw;
+          animation: cwOrb3 24s ease-in-out infinite alternate,
+                     cwBreathe 8s ease-in-out infinite;
+        }
+        @keyframes cwOrb1 {
+          0%   { transform: translate(0,0); }
+          50%  { transform: translate(15vw, 20vh); }
+          100% { transform: translate(-5vw, 25vh); }
+        }
+        @keyframes cwOrb2 {
+          0%   { transform: translate(0,0); }
+          50%  { transform: translate(-20vw, -15vh); }
+          100% { transform: translate(10vw, -25vh); }
+        }
+        @keyframes cwOrb3 {
+          0%   { transform: translate(0,0) scale(1); }
+          50%  { transform: translate(-15vw, 10vh) scale(1.2); }
+          100% { transform: translate(20vw, -10vh) scale(0.9); }
+        }
+        @keyframes cwBreathe {
+          0%,100% { opacity: 0.7; }
+          50%     { opacity: 1; }
+        }
+
+        /* ═══════════════════════════════════════════════════════════
+           WOW MOMENT 3 — SPOTLIGHT CURSOR
+           ═══════════════════════════════════════════════════════════ */
+        .cw-spotlight {
+          position: fixed;
+          top: var(--my, 50%); left: var(--mx, 50%);
+          width: 600px; height: 600px;
+          transform: translate(-50%, -50%);
+          background: radial-gradient(circle,
+            color-mix(in srgb, var(--brand-primary, #f97316) 14%, transparent) 0%,
+            transparent 65%);
+          pointer-events: none;
+          z-index: 5;
+          mix-blend-mode: screen;
+          transition: opacity 0.3s;
+        }
+        @media (pointer: coarse) {
+          .cw-spotlight { display: none; }
+        }
+
+        /* Stacking: aurora 0 → content 2 → spotlight 5 → splash 9999 */
+        main, header, footer { position: relative; z-index: 2; }
+
+        /* ═══════════════════════════════════════════════════════════
+           WOW MOMENT 4 — KEN BURNS ZOOM (apply ke hero slide aktif)
+           ═══════════════════════════════════════════════════════════ */
+        @keyframes cwKenBurns {
+          0%   { transform: scale(1)    translate(0,0); }
+          100% { transform: scale(1.12) translate(-1.5%, 1.5%); }
+        }
+        .cw-ken-burns { animation: cwKenBurns 8s ease-in-out both; }
+
+        /* ═══════════════════════════════════════════════════════════
+           WOW MOMENT 5 — 3D TILT ON CARDS (lewat perspective container)
+           ═══════════════════════════════════════════════════════════ */
+        .cw-films-grid {
+          perspective: 1000px;
+        }
+        .cw-films-grid > button,
+        .cw-films-grid > a {
+          transform-style: preserve-3d;
+          transition: transform 0.4s cubic-bezier(.2,.8,.2,1), box-shadow 0.4s !important;
+        }
+        .cw-films-grid > button:hover,
+        .cw-films-grid > a:hover {
+          transform: perspective(1000px) rotateY(-6deg) rotateX(4deg) translateY(-6px) scale(1.02) !important;
+          box-shadow:
+            -20px 30px 60px rgba(0,0,0,0.5),
+            0 0 40px var(--brand-primary, #f97316),
+            inset 0 1px 0 rgba(255,255,255,0.12) !important;
+        }
 
         /* Premium skeleton shimmer */
         .cw-skeleton {
@@ -1659,15 +1857,18 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
       overflow: "hidden", marginLeft: "calc(-50vw + 50%)", marginRight: "calc(-50vw + 50%)",
       width: "100vw",
     }}>
-      {/* Crossfade slides */}
+      {/* Crossfade slides with Ken Burns zoom */}
       {slides.map((f, i) => (
-        <div key={f.id} aria-hidden={i !== idx} style={{
+        <div key={`${f.id}-${i === idx ? "on" : "off"}`} aria-hidden={i !== idx}
+          className={i === idx ? "cw-ken-burns" : ""}
+          style={{
           position: "absolute", inset: 0,
           backgroundImage: `url(${f.poster_url})`,
           backgroundSize: "cover", backgroundPosition: "center 20%",
           opacity: i === idx ? 1 : 0,
           transition: "opacity 1.2s ease-in-out",
           filter: "blur(0.5px)",
+          transformOrigin: "center",
         }} />
       ))}
 
