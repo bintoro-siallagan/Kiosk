@@ -269,17 +269,49 @@ export default function QRISPayment(props) {
 
 // === STYLES ===
 const S = {
-  page: { minHeight: '100vh', background: '#000', color: '#fff', padding: '40px 24px', fontFamily: 'system-ui, sans-serif' },
-  title: { textAlign: 'center', fontSize: 36, fontWeight: 800, letterSpacing: 1, marginBottom: 8, margin: 0 },
-  subtitle: { textAlign: 'center', color: 'rgba(255,255,255,0.6)', marginBottom: 40 },
-  grid: { display: 'grid', gridTemplateColumns: 'minmax(0, 320px) 1fr', gap: 24, maxWidth: 900, margin: '0 auto' },
-  card: { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 16, padding: 24, display: 'flex', flexDirection: 'column', minHeight: 420 },
-  chip: { padding: '4px 12px', borderRadius: 999, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', fontSize: 12 },
-  label: { fontSize: 11, letterSpacing: 2, color: 'rgba(255,255,255,0.4)', marginBottom: 16 },
-  btn: { padding: '12px 16px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: '#fff', cursor: 'pointer', fontSize: 14 },
-  qrPlaceholder: { width: 220, height: 220, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.4)' },
-  qrImg: { width: 220, height: 220, background: '#fff', borderRadius: 8, padding: 8 },
-  amount: { fontSize: 28, fontWeight: 700, color: '#f97316' },
-  orderId: { fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 12, wordBreak: 'break-all', maxWidth: 300, userSelect: 'all', cursor: 'text' },
-  midtrans: { fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 4 },
+  page: {
+    minHeight: '100vh',
+    background: 'radial-gradient(ellipse 60% 50% at 30% 20%, rgba(70,76,98,0.45) 0%, transparent 65%), radial-gradient(ellipse 55% 45% at 75% 80%, rgba(50,55,72,0.35) 0%, transparent 65%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)',
+    backgroundAttachment: 'fixed',
+    color: '#fff', padding: '40px 24px', fontFamily: "'Inter',sans-serif"
+  },
+  title: { textAlign: 'center', fontSize: 26, fontWeight: 600, letterSpacing: '-0.6px', marginBottom: 6, margin: 0, color: 'rgba(255,255,255,0.95)' },
+  subtitle: { textAlign: 'center', color: 'rgba(255,255,255,0.55)', marginBottom: 28, fontSize: 14, letterSpacing: '-0.1px' },
+  grid: { display: 'grid', gridTemplateColumns: 'minmax(0, 340px) 1fr', gap: 18, maxWidth: 920, margin: '0 auto' },
+  card: {
+    background: 'linear-gradient(180deg,rgba(255,255,255,0.05) 0%,rgba(255,255,255,0.02) 60%,rgba(255,255,255,0.008) 100%)',
+    backdropFilter: 'blur(28px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+    border: '1px solid rgba(255,255,255,0.07)',
+    borderRadius: 20, padding: 22, display: 'flex', flexDirection: 'column', minHeight: 420,
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 8px 24px rgba(0,0,0,0.28)',
+  },
+  chip: {
+    padding: '5px 12px', borderRadius: 999,
+    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+    fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.7)', letterSpacing: '-0.1px',
+  },
+  label: { fontSize: 11, letterSpacing: 1.5, color: 'rgba(255,255,255,0.45)', marginBottom: 14, textTransform: 'uppercase', fontWeight: 500 },
+  btn: {
+    padding: '11px 18px', borderRadius: 999,
+    border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)',
+    color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 13, fontWeight: 500,
+    fontFamily: "'Inter',sans-serif", letterSpacing: '-0.1px',
+  },
+  qrPlaceholder: {
+    width: 220, height: 220, margin: '0 auto',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    color: 'rgba(255,255,255,0.4)', fontSize: 13,
+    background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: 16,
+  },
+  qrImg: {
+    width: 220, height: 220, background: '#fff', borderRadius: 12, padding: 10,
+    boxShadow: '0 8px 24px rgba(0,0,0,0.32), 0 24px 60px color-mix(in srgb, var(--brand-primary,#FF6B35) 18%, transparent)',
+  },
+  amount: {
+    fontSize: 30, fontWeight: 600, color: '#fff',
+    fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.8px',
+  },
+  orderId: { fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 12, wordBreak: 'break-all', maxWidth: 300, userSelect: 'all', cursor: 'text', fontVariantNumeric: 'tabular-nums', letterSpacing: 0.2 },
+  midtrans: { fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4, letterSpacing: 0.3 },
 };
