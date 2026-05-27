@@ -244,71 +244,50 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
       </header>
 
       <main style={S.main}>
+        <style>{POSHOME_CSS}</style>
         <div style={S.welcome}>
-          <h2 style={S.welcomeTitle}>Halo, {cashier.name}! 👋</h2>
-          <p style={S.welcomeSub}>Siap untuk shift today.</p>
+          <h2 style={S.welcomeTitle}>Hi, {cashier.name} 👋</h2>
+          <p style={S.welcomeSub}>Ready for today's shift</p>
         </div>
 
         {/* MAIN ACTION GRID — F&B default, plus Cinema button kalau outlet hybrid */}
         <div style={S.actionGrid}>
-          <button style={S.bigBtn} onClick={onNewOrder}>
+          <button className="ph-card" style={S.bigBtn} onClick={onNewOrder}>
             <div style={S.bigBtnIcon}>🛒</div>
-            <div style={S.bigBtnTitle}>ORDER BARU</div>
-            <div style={S.btnHint}>Mulai pesanan untuk customer</div>
+            <div style={S.bigBtnTitle}>New order</div>
+            <div style={S.btnHint}>Start an order for a customer</div>
           </button>
 
           {onQuickOrder && (
-            <button style={S.bigBtn} onClick={onQuickOrder}>
+            <button className="ph-card" style={S.bigBtn} onClick={onQuickOrder}>
               <div style={S.bigBtnIcon}>⚡</div>
-              <div style={S.bigBtnTitle}>QUICK ORDER</div>
-              <div style={S.btnHint}>Pesanan cepat — menu master</div>
+              <div style={S.bigBtnTitle}>Quick order</div>
+              <div style={S.btnHint}>Fast order — master menu</div>
             </button>
           )}
 
           {/* HYBRID outlet only: F&B + Cinema concession boleh jual ticket */}
           {isHybrid && (
-            <button style={{ ...S.bigBtn, ...S.bigBtnPurple }} onClick={() => {
+            <button className="ph-card" style={{ ...S.bigBtn, ...S.bigBtnPurple }} onClick={() => {
               const outlet = new URLSearchParams(window.location.search).get("outlet") || "";
               window.location.href = `?pos-cinema${outlet ? `&outlet=${outlet}` : ""}`;
             }}>
               <div style={S.bigBtnIcon}>🎬</div>
-              <div style={{ ...S.bigBtnTitle, color: "#c084fc" }}>JUAL TIKET CINEMA</div>
-              <div style={S.btnHint}>Pilih jadwal → kursi → bayar</div>
+              <div style={{ ...S.bigBtnTitle, color: "#c084fc" }}>Sell cinema tickets</div>
+              <div style={S.btnHint}>Pick show → seat → pay</div>
             </button>
           )}
         </div>
 
-        <div
-          onClick={() => setShowHistory(true)}
-          style={{
-            margin: "20px 0 8px",
-            padding: "14px 18px",
-            borderRadius: 12,
-            background: "linear-gradient(135deg, rgba(249,115,22,0.10), rgba(249,115,22,0.04))",
-            border: "1px solid rgba(249,115,22,0.30)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-
+        <div className="ph-card" onClick={() => setShowHistory(true)} style={S.historyCard}>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-
-            <div style={{ fontSize: 30 }}>📋</div>
-
+            <div style={{ fontSize: 26, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.3))" }}>📋</div>
             <div>
-
-              <div style={{ fontSize: 17, fontWeight: 700, color: "#f97316" }}>Riwayat Pesanan</div>
-
-              <div style={{ fontSize: 12, color: "#9CA3AF", marginTop: 2 }}>Cancel, refund, atau cari order sebelumnya</div>
-
+              <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.92)", letterSpacing: "-0.3px" }}>Order history</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 2, letterSpacing: "-0.1px" }}>Cancel, refund, or search past orders</div>
             </div>
-
           </div>
-
-          <div style={{ fontSize: 22, color: "#f97316" }}>›</div>
-
+          <div style={{ fontSize: 18, color: "rgba(255,255,255,0.35)" }}>›</div>
         </div>
 
 
@@ -391,6 +370,13 @@ const roleColors = {
 };
 
 // v3 design language — matches POSKasirLogin (dark #0a0a0a + orange #f97316, system-ui)
+const POSHOME_CSS = `
+  @keyframes phFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .ph-card{animation:phFadeIn .4s cubic-bezier(.2,.8,.2,1) both}
+  .ph-card:hover{transform:translateY(-3px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), inset 0 -1px 0 rgba(0,0,0,0.18), 0 14px 36px rgba(0,0,0,0.36), 0 32px 80px color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent)!important}
+  .ph-card:active{transform:translateY(-1px) scale(.99)}
+`;
+
 const S = {
   // MacBook-premium dark theme — match POSMenuPicker, POSPayment, POS Cinema
   root: {
@@ -428,43 +414,62 @@ const S = {
     transition: "all 0.15s",
   },
   main: { maxWidth: 960, margin: "0 auto", padding: "32px 26px" },
-  welcome: { textAlign: "center", marginBottom: 32 },
+  welcome: { textAlign: "center", marginBottom: 28 },
   welcomeTitle: {
-    fontSize: 32, margin: "0 0 6px", fontWeight: 800, letterSpacing: -0.8, color: "#fff",
+    fontSize: 28, margin: "0 0 6px", fontWeight: 600, letterSpacing: "-0.8px", color: "rgba(255,255,255,0.95)",
   },
   welcomeSub: {
-    color: "rgba(255,255,255,0.45)", margin: 0, fontSize: 13,
-    letterSpacing: 0.3,
+    color: "rgba(255,255,255,0.5)", margin: 0, fontSize: 13,
+    letterSpacing: "-0.1px", fontWeight: 400,
   },
   actionGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
-    gap: 14, marginBottom: 8,
+    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))",
+    gap: 14, marginBottom: 18,
   },
-  // CTA card — gradient amber with multi-layer shadow + glow, MIN-HEIGHT not padding
+  // CTA card — tinted glass (brand 38% + dark) so white text always visible
   bigBtn: {
-    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
-    background: "linear-gradient(135deg, #F59E0B 0%, #fbbf24 100%)",
-    color: "#1a1205",
-    border: "1px solid rgba(255,255,255,0.12)",
-    borderRadius: 16, padding: "22px 16px", minHeight: 160,
-    fontFamily: "inherit", fontWeight: 800, letterSpacing: -0.3,
+    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8,
+    background: "radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, var(--brand-primary,#FF6B35) 60%, transparent) 0%, transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 38%, #1a1d29) 0%, color-mix(in srgb, var(--brand-secondary,#E55A2B) 30%, #0d0f14) 100%)",
+    backdropFilter: "blur(28px) saturate(180%)",
+    WebkitBackdropFilter: "blur(28px) saturate(180%)",
+    color: "#fff",
+    textShadow: "0 1px 3px rgba(0,0,0,0.45)",
+    border: "1px solid rgba(255,255,255,0.16)",
+    borderRadius: 20, padding: "26px 18px", minHeight: 150,
+    fontFamily: "'Inter',sans-serif", fontWeight: 600, letterSpacing: "-0.3px",
     cursor: "pointer",
-    boxShadow: "0 1px 2px rgba(0,0,0,0.4),0 12px 32px rgba(245,158,11,0.35),inset 0 1px 0 rgba(255,255,255,0.25)",
-    transition: "all 0.2s cubic-bezier(0.4,0,0.2,1)",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(0,0,0,0.18), 0 10px 28px rgba(0,0,0,0.32), 0 24px 60px color-mix(in srgb, var(--brand-primary,#FF6B35) 22%, transparent)",
+    transition: "transform 0.3s cubic-bezier(.2,.8,.2,1), box-shadow 0.3s ease",
     textAlign: "center",
   },
-  bigBtnIcon: { fontSize: 36, lineHeight: 1, marginBottom: 4 },
-  bigBtnTitle: { fontSize: 17, fontWeight: 900, letterSpacing: -0.3 },
+  bigBtnIcon: { fontSize: 38, lineHeight: 1, marginBottom: 4, filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.35))" },
+  bigBtnTitle: { fontSize: 18, fontWeight: 600, letterSpacing: "-0.4px", color: "rgba(255,255,255,0.95)" },
+  // Cinema variant — purple-tinted glass instead of brand
   bigBtnPurple: {
-    background: "linear-gradient(135deg, rgba(168,85,247,0.12), rgba(168,85,247,0.04))",
-    borderColor: "rgba(168,85,247,0.4)",
-    color: "#c084fc",
-    boxShadow: "0 1px 2px rgba(0,0,0,0.4),0 12px 32px rgba(168,85,247,0.15),inset 0 1px 0 rgba(255,255,255,0.06)",
+    background: "radial-gradient(ellipse 90% 180% at 50% 100%, rgba(168,85,247,0.55) 0%, transparent 55%), linear-gradient(180deg, rgba(54,28,80,0.85), rgba(20,12,30,0.92))",
+    border: "1px solid rgba(168,85,247,0.32)",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.16), 0 10px 28px rgba(0,0,0,0.32), 0 24px 60px rgba(168,85,247,0.18)",
   },
   btnHint: {
-    fontSize: 11, fontWeight: 600, color: "currentColor",
-    opacity: 0.7, letterSpacing: 0.2, marginTop: 2,
+    fontSize: 12, fontWeight: 400, color: "rgba(255,255,255,0.65)",
+    letterSpacing: "-0.1px", marginTop: 2,
+  },
+  // History entry card — glass treatment
+  historyCard: {
+    marginBottom: 12,
+    padding: "16px 20px",
+    borderRadius: 16,
+    background: "linear-gradient(180deg,rgba(255,255,255,0.05) 0%,rgba(255,255,255,0.02) 60%,rgba(255,255,255,0.008) 100%)",
+    backdropFilter: "blur(28px) saturate(180%)",
+    WebkitBackdropFilter: "blur(28px) saturate(180%)",
+    border: "1px solid rgba(255,255,255,0.07)",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), 0 6px 18px rgba(0,0,0,0.22)",
+    transition: "transform 0.25s cubic-bezier(.2,.8,.2,1), box-shadow 0.25s ease",
   },
   section: { marginTop: 32 },
   sectionTitle: {
