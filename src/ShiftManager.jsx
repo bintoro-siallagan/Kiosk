@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { api, createSocket } from "./api.js";
 import API_HOST from "./apiBase.js";
 
-const fIDR = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
+import { fmtMoney as fIDR } from "./lib/currency.js";
 const fTime = (d) => { if (!d) return "—"; const x = new Date(d); return isNaN(x) ? "—" : x.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"}); };
 const fDate = (d) => { if (!d) return "—"; const x = new Date(d); return isNaN(x) ? "—" : x.toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"}); };
 const elapsed = (from) => {

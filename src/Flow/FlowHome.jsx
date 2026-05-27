@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import API_HOST from "../apiBase.js";
 import MarqueeTicker from "../components/MarqueeTicker.jsx";
 import PromoStrip from "../components/PromoStrip.jsx";
+import { fmtMoney as fIDR } from "../lib/currency.js";
 
 const API = API_HOST;
 
@@ -39,7 +40,7 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
   else if (tags.includes("member")) { tier = "Member 🎫"; tierColor = "#10B981"; }
   else if (tags.includes("new")) { tier = "Baru ✨"; tierColor = "#60A5FA"; }
 
-  const fIDR = n => "Rp " + (n || 0).toLocaleString("id-ID");
+  // fIDR comes from module import below; per-component shim no longer needed
 
   return (
     <div style={S.container}>

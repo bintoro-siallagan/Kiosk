@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import * as audio from "./audio.js";
 import { api } from "./api.js";
 
-const fIDR = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
+import { fmtMoney as fIDR } from "./lib/currency.js";
 
 // ── NUMPAD ────────────────────────────────────────────────────────────────────
 function Numpad({ onKey }) {

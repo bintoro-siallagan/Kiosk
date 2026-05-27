@@ -13,7 +13,7 @@ const STAGES = [
   { key: "completed", label: "Done",      emoji: "✅", color: "#22C55E" },
 ];
 
-const fIDR = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
+import { fmtMoney as fIDR } from "./lib/currency.js";
 
 export default function CustomerTrackingPage({ orderId }) {
   const [order, setOrder]   = useState(null);

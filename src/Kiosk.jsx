@@ -8,7 +8,7 @@ import { api, createSocket } from "./api.js";
 import { useMenu } from "./MenuContext.jsx";
 import { calcServiceCharge, loadServiceChargeConfig } from "./pricing.js";
 
-const fIDR = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
+import { fmtMoney as fIDR } from "./lib/currency.js";
 
 // ─── FOOD IMAGE ───────────────────────────────────────────────────────────────
 function FoodImage({ item, size = 140 }) {

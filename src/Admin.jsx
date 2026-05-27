@@ -7,7 +7,7 @@ import FlowQRGen from "./Flow/FlowQRGen.jsx";
 import TableStatusManager from "./Admin/TableStatusManager.jsx";
 import API_HOST from "./apiBase.js";
 
-const fIDR = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
+import { fmtMoney as fIDR } from "./lib/currency.js";
 const fTime = (d) => new Date(d).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});
 const fAgo  = (d) => { const s=Math.floor((Date.now()-d)/1000); return s<60?`${s}d`:s<3600?`${Math.floor(s/60)}m`:`${Math.floor(s/3600)}j`; };
 

@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef, useMemo } from "react";
 const API = import.meta.env.VITE_API_URL ||
   (typeof window !== "undefined" ? `${window.location.protocol}//${window.location.hostname}:3011` : "");
 
-const fIDR = n => "Rp " + (Number(n) || 0).toLocaleString("id-ID");
+import { fmtMoney as fIDR } from "../lib/currency.js";
 
 const LOYALTY_DEFAULTS = {
   enabled: true, earnRate: 1000, redeemRate: 100,

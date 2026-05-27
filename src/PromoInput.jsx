@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { api } from "./api.js";
 
-const fIDR = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
+import { fmtMoney as fIDR } from "./lib/currency.js";
 
 // ── QWERTY KEYBOARD ───────────────────────────────────────────────────────────
 const ROWS = [

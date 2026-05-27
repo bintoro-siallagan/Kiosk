@@ -15,7 +15,7 @@ const STATUS_LABELS = {
   waiting:        { label: "Menunggu",         color: "#F59E0B", bg: "color-mix(in srgb, var(--brand-primary,#FF6B35) 15%, transparent)", icon: "⏳" },
 };
 
-const fIDR = (n) => "Rp " + (n || 0).toLocaleString("id-ID");
+import { fmtMoney as fIDR } from "./lib/currency.js";
 
 export default function POSOrderHistory({ onClose, kasir = "Manager" }) {
   const [orders, setOrders] = useState([]);

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import API_HOST from "./apiBase.js";
 
 const API = API_HOST;
-const fIDR = (n) => "Rp " + (n || 0).toLocaleString("id-ID");
+import { fmtMoney as fIDR } from "./lib/currency.js";
 
 export default function POSMergeTabsModal({ sourceTab, kasir, onClose, onSuccess }) {
   const [tabs, setTabs] = useState([]);

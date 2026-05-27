@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import API_HOST from "./apiBase.js";
 
 const API = API_HOST;
-const fIDR = (n) => "Rp " + (n || 0).toLocaleString("id-ID");
+import { fmtMoney as fIDR } from "./lib/currency.js";
 
 function cdsCast(event, data) {
   fetch(`${API}/api/pos/broadcast`, {

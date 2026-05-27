@@ -3,7 +3,7 @@ import API_HOST from "../apiBase.js";
 import POSCelebration from "../POS/POSCelebration.jsx";
 
 const API = API_HOST;
-const fIDR = n => "Rp " + (n || 0).toLocaleString("id-ID");
+import { fmtMoney as fIDR } from "../lib/currency.js";
 
 // Map backend status → step index (0 diterima, 1 disiapkan, 2 siap, 3 selesai)
 const STATUS_TO_STEP = {

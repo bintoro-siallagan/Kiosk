@@ -3,7 +3,7 @@ import * as audio from "./audio.js";
 import { api } from "./api.js";
 import QRCode from "qrcode";
 
-const fIDR = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
+import { fmtMoney as fIDR } from "./lib/currency.js";
 
 export default function DigitalReceipt({ orderId, onDone }) {
   const [receipt, setReceipt] = useState(null);
