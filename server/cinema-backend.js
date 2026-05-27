@@ -5654,6 +5654,62 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: true, items: rows.map((r, i) => ({ ...r, rank: i + 1 })), source: 'booking_count', since_days: sinceDays });
   });
 
+  // ── WEB CONFIG (per company) ──────────────────────────────────────────
+  // Phase 1: nav items + footer config editable lewat admin
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cinema_web_config (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      company_id INTEGER NOT NULL UNIQUE,
+      nav_items TEXT,
+      footer_config TEXT,
+      updated_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+      updated_by TEXT
+    );
+  `);
+
+  router.get('/web-config', (req, res) => {
+    // Auto-resolve company_id dari scope, atau dari query param (super admin)
+    const scope = req.companyScope || { is_super_admin: true };
+    const companyId = scope.is_super_admin
+      ? (parseInt(req.query.company_id, 10) || 2)  // default Cinema (id 2)
+      : scope.company_id;
+    const row = db.prepare(`SELECT * FROM cinema_web_config WHERE company_id = ?`).get(companyId);
+    if (!row) {
+      return res.json({ ok: true, config: null, company_id: companyId });
+    }
+    res.json({
+      ok: true,
+      config: {
+        nav_items: row.nav_items ? JSON.parse(row.nav_items) : null,
+        footer_config: row.footer_config ? JSON.parse(row.footer_config) : null,
+      },
+      company_id: companyId,
+      updated_at: row.updated_at,
+      updated_by: row.updated_by,
+    });
+  });
+
+  router.put('/web-config', (req, res) => {
+    const scope = req.companyScope || { is_super_admin: true };
+    const companyId = scope.is_super_admin
+      ? (parseInt(req.body?.company_id, 10) || 2)
+      : scope.company_id;
+    const b = req.body || {};
+    const navJson = b.nav_items ? JSON.stringify(b.nav_items) : null;
+    const footerJson = b.footer_config ? JSON.stringify(b.footer_config) : null;
+    const updatedBy = req.headers['x-admin-user'] || 'unknown';
+    db.prepare(`
+      INSERT INTO cinema_web_config (company_id, nav_items, footer_config, updated_at, updated_by)
+      VALUES (?, ?, ?, strftime('%s','now'), ?)
+      ON CONFLICT(company_id) DO UPDATE SET
+        nav_items = COALESCE(excluded.nav_items, nav_items),
+        footer_config = COALESCE(excluded.footer_config, footer_config),
+        updated_at = excluded.updated_at,
+        updated_by = excluded.updated_by
+    `).run(companyId, navJson, footerJson, updatedBy);
+    res.json({ ok: true, company_id: companyId });
+  });
+
   // ── STUDIO EVENT BOOKING ──────────────────────────────────────────────
   // Booking studio penuh untuk event privat / corporate / wedding / birthday.
   // Conflict check: tidak boleh overlap dengan booking lain di studio/tanggal yang sama.

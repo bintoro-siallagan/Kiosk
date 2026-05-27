@@ -186,6 +186,17 @@ export default function CinemaWebApp() {
   }, []);
   const brandPrimary = brand?.brand_color || "#a855f7";
 
+  // Web config (nav + footer customization per tenant)
+  const [webConfig, setWebConfig] = useState(null);
+  useEffect(() => {
+    fetch(`${API_HOST}/api/cinema/web-config`).then(r => r.json()).then(d => setWebConfig(d.config || {})).catch(() => setWebConfig({}));
+  }, []);
+  // Resolved nav: pakai config kalau ada, fallback default
+  const resolvedNavItems = (webConfig?.nav_items && Array.isArray(webConfig.nav_items) && webConfig.nav_items.length)
+    ? webConfig.nav_items.filter(i => i.visible !== false).sort((a, b) => (a.order || 0) - (b.order || 0))
+    : NAV_ITEMS;
+  const resolvedFooterConfig = webConfig?.footer_config || null;
+
   const pickOutlet = (o) => {
     setOutlet(o);
     try { localStorage.setItem("cinema_web_outlet", JSON.stringify(o)); } catch {}
@@ -488,6 +499,7 @@ export default function CinemaWebApp() {
         session={session} onSignInClick={() => setSignInOpen(true)} onSignOut={handleSignOut}
         onNav={(target) => goTo(target)}
         onPickFilm={(f) => { setFilm(f); goTo(outlet ? "filmDetail" : "outlet"); }}
+        navItems={resolvedNavItems}
       />
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "0 20px" }}>
         {step === "outlet" && (
@@ -565,7 +577,7 @@ export default function CinemaWebApp() {
           <FAQPage brandPrimary={brandPrimary} />
         )}
       </main>
-      <Footer brand={brand} brandPrimary={brandPrimary} onAbout={() => goTo("about")} onNav={(t) => goTo(t)} />
+      <Footer brand={brand} brandPrimary={brandPrimary} onAbout={() => goTo("about")} onNav={(t) => goTo(t)} footerConfig={resolvedFooterConfig} />
       {signInOpen && <SignInModal onClose={() => setSignInOpen(false)} onSignIn={handleSignIn} brandPrimary={brandPrimary} />}
     </div>
   );
@@ -1776,12 +1788,61 @@ function ContactRow({ icon, label, value, link }) {
 // ════════════════════════════════════════════════════════════════════
 // FOOTER
 // ════════════════════════════════════════════════════════════════════
-function Footer({ brand, brandPrimary, onAbout, onNav }) {
+// Default footer config — dipakai kalau tenant belum kustomisasi
+const DEFAULT_FOOTER_CONFIG = {
+  description: "Pengalaman cinema premium di ujung jari Anda. Pesan tiket online, pilih kursi, langsung nonton.",
+  social: [
+    { name: "WA", icon: "💬", url: "https://wa.me/6285190062368" },
+    { name: "IG", icon: "📷", url: "https://instagram.com" },
+    { name: "TT", icon: "🎵", url: "https://tiktok.com" },
+    { name: "YT", icon: "▶", url: "https://youtube.com" },
+  ],
+  nav: [
+    { label: "Beranda", target: "outlet" },
+    { label: "Movies", target: "movies" },
+    { label: "Promo & Event", target: "promo" },
+    { label: "Booking Studio", target: "studio" },
+    { label: "Lokasi", target: "locations" },
+  ],
+  help: [
+    { label: "FAQ", target: "faq" },
+    { label: "Cara Pesan Tiket", target: "faq" },
+    { label: "Kebijakan Refund", target: "faq" },
+    { label: "Loyalty Program", target: "faq" },
+    { label: "Customer Service", url: "https://wa.me/6285190062368" },
+  ],
+  company: [
+    { label: "Tentang Kami", target: "about" },
+    { label: "Karier", target: "about" },
+    { label: "Partnership", target: "about" },
+  ],
+  legal: [
+    { label: "Syarat & Ketentuan", target: "faq" },
+    { label: "Kebijakan Privasi", target: "faq" },
+  ],
+};
+
+function Footer({ brand, brandPrimary, onAbout, onNav, footerConfig }) {
   const brandName = brand?.brand_short || brand?.name || "karyaOS";
   const year = new Date().getFullYear();
+  // Merge tenant config (per-section fallback supaya partial config tetap aman)
+  const cfg = footerConfig || {};
+  const fc = {
+    description: cfg.description || DEFAULT_FOOTER_CONFIG.description,
+    social:  Array.isArray(cfg.social)  && cfg.social.length  ? cfg.social  : DEFAULT_FOOTER_CONFIG.social,
+    nav:     Array.isArray(cfg.nav)     && cfg.nav.length     ? cfg.nav     : DEFAULT_FOOTER_CONFIG.nav,
+    help:    Array.isArray(cfg.help)    && cfg.help.length    ? cfg.help    : DEFAULT_FOOTER_CONFIG.help,
+    company: Array.isArray(cfg.company) && cfg.company.length ? cfg.company : DEFAULT_FOOTER_CONFIG.company,
+    legal:   Array.isArray(cfg.legal)   && cfg.legal.length   ? cfg.legal   : DEFAULT_FOOTER_CONFIG.legal,
+  };
   const FooterLink = ({ children, onClick, href }) => href
     ? <a href={href} target="_blank" rel="noopener noreferrer" style={footerLinkStyle}>{children}</a>
     : <button onClick={onClick} style={{ ...footerLinkStyle, background: "transparent", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}>{children}</button>;
+  const renderLinks = (list) => list.map((l, i) => (
+    l.url
+      ? <FooterLink key={`${l.label}-${i}`} href={l.url}>{l.label}</FooterLink>
+      : <FooterLink key={`${l.label}-${i}`} onClick={() => onNav?.(l.target)}>{l.label}</FooterLink>
+  ));
   return (
     <footer style={{
       marginTop: 100, padding: "56px 24px 28px",
@@ -1808,17 +1869,12 @@ function Footer({ brand, brandPrimary, onAbout, onNav }) {
               </div>
             </div>
             <p style={{ fontSize: 12.5, color: C.dim, lineHeight: 1.7, margin: 0, marginBottom: 16 }}>
-              Pengalaman cinema premium di ujung jari Anda. Pesan tiket online, pilih kursi, langsung nonton.
+              {fc.description}
             </p>
             {/* Social icons */}
             <div style={{ display: "flex", gap: 8 }}>
-              {[
-                { name: "WA", icon: "💬", url: "https://wa.me/6285190062368" },
-                { name: "IG", icon: "📷", url: "https://instagram.com" },
-                { name: "TT", icon: "🎵", url: "https://tiktok.com" },
-                { name: "YT", icon: "▶", url: "https://youtube.com" },
-              ].map(s => (
-                <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer" title={s.name} style={{
+              {fc.social.map(s => (
+                <a key={s.name || s.url} href={s.url} target="_blank" rel="noopener noreferrer" title={s.name} style={{
                   width: 34, height: 34, borderRadius: 8,
                   background: "rgba(255,255,255,0.04)", border: `1px solid ${C.border}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
@@ -1833,33 +1889,26 @@ function Footer({ brand, brandPrimary, onAbout, onNav }) {
           {/* Column 2: Navigation */}
           <div>
             <FooterHeading>Navigasi</FooterHeading>
-            <FooterLink onClick={() => onNav?.("outlet")}>Beranda</FooterLink>
-            <FooterLink onClick={() => onNav?.("movies")}>Movies</FooterLink>
-            <FooterLink onClick={() => onNav?.("promo")}>Promo & Event</FooterLink>
-            <FooterLink onClick={() => onNav?.("studio")}>Booking Studio</FooterLink>
-            <FooterLink onClick={() => onNav?.("locations")}>Lokasi</FooterLink>
+            {renderLinks(fc.nav)}
           </div>
 
           {/* Column 3: Help */}
           <div>
             <FooterHeading>Bantuan</FooterHeading>
-            <FooterLink onClick={() => onNav?.("faq")}>FAQ</FooterLink>
-            <FooterLink onClick={() => onNav?.("faq")}>Cara Pesan Tiket</FooterLink>
-            <FooterLink onClick={() => onNav?.("faq")}>Kebijakan Refund</FooterLink>
-            <FooterLink onClick={() => onNav?.("faq")}>Loyalty Program</FooterLink>
-            <FooterLink href="https://wa.me/6285190062368">Customer Service</FooterLink>
+            {renderLinks(fc.help)}
           </div>
 
           {/* Column 4: Company + Legal */}
           <div>
             <FooterHeading>Perusahaan</FooterHeading>
-            <FooterLink onClick={onAbout}>Tentang {brandName}</FooterLink>
-            <FooterLink>Karier</FooterLink>
-            <FooterLink>Partnership</FooterLink>
-            <div style={{ height: 14 }} />
-            <FooterHeading>Legal</FooterHeading>
-            <FooterLink>Syarat & Ketentuan</FooterLink>
-            <FooterLink>Kebijakan Privasi</FooterLink>
+            {renderLinks(fc.company)}
+            {fc.legal.length > 0 && (
+              <>
+                <div style={{ height: 14 }} />
+                <FooterHeading>Legal</FooterHeading>
+                {renderLinks(fc.legal)}
+              </>
+            )}
           </div>
         </div>
 
@@ -1913,7 +1962,8 @@ const NAV_ITEMS = [
   { key: "about",     label: "About" },
 ];
 
-function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrimary, session, onSignInClick, onSignOut, onNav, onPickFilm }) {
+function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrimary, session, onSignInClick, onSignOut, onNav, onPickFilm, navItems }) {
+  const items = navItems || NAV_ITEMS;
   const brandName = brand?.brand_short || brand?.name || "karyaOS";
   const showBack = !["outlet", "success", "movies", "promo", "studio", "locations", "about", "history"].includes(step);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1962,7 +2012,7 @@ function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrima
 
         {/* Desktop nav */}
         <nav className="cw-nav-desktop" style={{ display: "flex", gap: 4, marginLeft: 16, flex: 1 }}>
-          {NAV_ITEMS.map(item => {
+          {items.map(item => {
             const active = step === item.key || (item.key === "outlet" && ["outlet", "films", "filmDetail", "showtime", "seats", "bundles", "checkout"].includes(step));
             return (
               <button key={item.key} onClick={() => onNav?.(item.key)} style={{
@@ -2048,7 +2098,7 @@ function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrima
           display: "none", marginTop: 10, padding: "10px 0",
           borderTop: `1px solid ${C.border}`,
         }}>
-          {NAV_ITEMS.map(item => (
+          {items.map(item => (
             <button key={item.key} onClick={() => { setMenuOpen(false); onNav?.(item.key); }} style={{
               width: "100%", textAlign: "left", padding: "10px 16px",
               background: "transparent", border: "none", color: C.text,
