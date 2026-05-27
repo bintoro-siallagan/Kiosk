@@ -340,7 +340,7 @@ function DashboardView({ data, filter, setFilter, switchTo }) {
                   </div>
                 </td>
                 <td style={td()}>{verticalPill(t.vertical)}</td>
-                <td style={td()}>{statusPill(t.status)}</td>
+                <td style={td()}><span style={statusPill(t.status)}>{t.status || "active"}</span></td>
                 <td style={td()}>
                   <CompletionBar pct={t.completion_pct} label={t.completion_label} />
                 </td>
