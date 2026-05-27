@@ -387,6 +387,17 @@ export default function CinemaWebApp() {
           .cw-showtimes-grid { grid-template-columns: repeat(3, 1fr) !important; }
           .cw-seat { width: 22px !important; height: 22px !important; font-size: 7px !important; }
           .cw-seat-row { gap: 4px !important; margin-bottom: 4px !important; }
+          /* Netflix billboard hero mobile-friendly */
+          .cw-hero-billboard { min-height: 75vh !important; }
+          .cw-hero-billboard > div { padding: 80px 20px 60px !important; min-height: 75vh !important; }
+          .cw-hero-billboard h1 { font-size: clamp(28px, 9vw, 44px) !important; letter-spacing: -1.2 !important; }
+          .cw-hero-cta { width: 100% !important; justify-content: center !important; }
+          .cw-hero-dots { position: static !important; margin-top: 18px !important; }
+          /* FilmRow chevron always visible di touch */
+          .cw-row-chevron { opacity: 0.85 !important; width: 36px !important; font-size: 22px !important; }
+          .cw-row-card:hover { transform: scale(1) translateY(0) !important; }
+          .cw-row-card:hover .cw-row-card-info { opacity: 0 !important; }
+        }
           .cw-section-pad { padding: 20px 0 !important; }
         }
         @media (max-width: 420px) {
@@ -943,7 +954,7 @@ function FilmRow({ title, films, onPick, brandPrimary, showRating = false }) {
       <h2 style={{ fontSize: 19, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 14, letterSpacing: -0.3 }}>{title}</h2>
       <div style={{ position: "relative" }}>
         {/* Left chevron */}
-        <button onClick={() => scrollBy(-1)} aria-label="Prev" style={{
+        <button className="cw-row-chevron" onClick={() => scrollBy(-1)} aria-label="Prev" style={{
           position: "absolute", left: -2, top: 0, bottom: 0, width: 48, zIndex: 5,
           background: "linear-gradient(90deg, rgba(20,20,20,0.95), transparent)",
           border: "none", color: "#fff", fontSize: 28, cursor: "pointer",
@@ -1007,7 +1018,7 @@ function FilmRow({ title, films, onPick, brandPrimary, showRating = false }) {
           ))}
         </div>
         {/* Right chevron */}
-        <button onClick={() => scrollBy(1)} aria-label="Next" style={{
+        <button className="cw-row-chevron" onClick={() => scrollBy(1)} aria-label="Next" style={{
           position: "absolute", right: -2, top: 0, bottom: 0, width: 48, zIndex: 5,
           background: "linear-gradient(-90deg, rgba(20,20,20,0.95), transparent)",
           border: "none", color: "#fff", fontSize: 28, cursor: "pointer",
@@ -1052,6 +1063,52 @@ function FilmGroup({ title, films, onPick, brandPrimary }) {
   );
 }
 
+// ════════════════════════════════════════════════════════════════════
+// PAGE HERO — compact billboard untuk non-homepage (Promo/Studio/FAQ/dll)
+// ════════════════════════════════════════════════════════════════════
+function PageHero({ tag, title, subtitle, brandPrimary, accent = "🎬", bgImage }) {
+  return (
+    <section style={{
+      position: "relative", width: "100vw", minHeight: "min(40vh, 360px)",
+      marginLeft: "calc(-50vw + 50%)", marginRight: "calc(-50vw + 50%)",
+      overflow: "hidden", marginBottom: 28,
+      background: bgImage
+        ? `linear-gradient(180deg, rgba(20,20,20,0.6) 0%, rgba(20,20,20,0.92) 100%), url(${bgImage}) center/cover`
+        : `radial-gradient(ellipse 80% 70% at 30% 40%, ${brandPrimary}22, transparent 70%), #141414`,
+    }}>
+      <div style={{
+        maxWidth: 1280, margin: "0 auto", padding: "90px 60px 50px",
+        minHeight: "min(40vh, 360px)",
+        display: "flex", flexDirection: "column", justifyContent: "center",
+      }}>
+        <div style={{
+          display: "inline-flex", alignSelf: "flex-start", alignItems: "center", gap: 8, marginBottom: 16,
+          padding: "5px 12px", borderRadius: 4,
+          background: `${brandPrimary}cc`,
+          fontSize: 10, fontWeight: 800, letterSpacing: 2.5, color: "#fff",
+          fontFamily: "'JetBrains Mono',monospace", textTransform: "uppercase",
+        }}>
+          <span>{accent}</span>
+          {tag}
+        </div>
+        <h1 style={{
+          fontSize: "clamp(32px, 5.5vw, 60px)", fontWeight: 900,
+          letterSpacing: -1.8, lineHeight: 1.02,
+          margin: 0, marginBottom: 12, color: "#fff",
+          textShadow: "0 4px 24px rgba(0,0,0,0.7)",
+        }}>{title}</h1>
+        {subtitle && (
+          <p style={{
+            fontSize: "clamp(13px, 1.2vw, 16px)", color: "rgba(255,255,255,0.85)",
+            lineHeight: 1.55, margin: 0, maxWidth: 580,
+            textShadow: "0 2px 8px rgba(0,0,0,0.6)",
+          }}>{subtitle}</p>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function PromoPage({ brandPrimary }) {
   const [promos, setPromos] = useState(null);
   useEffect(() => {
@@ -1060,9 +1117,14 @@ function PromoPage({ brandPrimary }) {
   }, []);
   if (!promos) return <LoadingState label="Memuat promo…" />;
   return (
-    <div style={{ padding: "30px 0 60px" }}>
-      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 6 }}>🎟 Promo & Event</h1>
-      <p style={{ fontSize: 13, color: C.sub, margin: 0, marginBottom: 24 }}>{promos.length} promo aktif · pakai kode saat checkout</p>
+    <div style={{ paddingBottom: 60 }}>
+      <PageHero
+        tag="Promo & Event"
+        title="Hemat Lebih, Nonton Lebih"
+        subtitle={`${promos.length} promo aktif — pakai kode saat checkout untuk diskon langsung di tiket Anda.`}
+        accent="🎟"
+        brandPrimary={brandPrimary}
+      />
       {promos.length === 0 ? (
         <div style={{ textAlign: "center", padding: 60, color: C.dim, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14 }}>
           <div style={{ fontSize: 48, marginBottom: 14 }}>🎟</div>
@@ -1105,9 +1167,14 @@ function StudioPage({ brandPrimary }) {
   }, []);
   if (!packages) return <LoadingState label="Memuat paket studio…" />;
   return (
-    <div style={{ padding: "30px 0 60px" }}>
-      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 6 }}>🎉 Booking Studio</h1>
-      <p style={{ fontSize: 13, color: C.sub, margin: 0, marginBottom: 24 }}>Sewa studio cinema untuk private event, ulang tahun, gathering — Anda nonton, kami fasilitasi.</p>
+    <div style={{ paddingBottom: 60 }}>
+      <PageHero
+        tag="Studio Booking"
+        title="Privat Studio Anda"
+        subtitle="Sewa studio cinema untuk private event — ulang tahun, gathering, screening korporat. Anda nonton, kami fasilitasi."
+        accent="🎉"
+        brandPrimary={brandPrimary}
+      />
       {packages.length === 0 ? (
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 32, textAlign: "center", color: C.dim }}>
           <div style={{ fontSize: 48, marginBottom: 14 }}>🎉</div>
@@ -1144,9 +1211,14 @@ function LocationsPage({ brandPrimary, onPick }) {
   }, []);
   if (!outlets) return <LoadingState label="Memuat lokasi…" />;
   return (
-    <div style={{ padding: "30px 0 60px" }}>
-      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 6 }}>📍 Lokasi Cinema</h1>
-      <p style={{ fontSize: 13, color: C.sub, margin: 0, marginBottom: 24 }}>{outlets.length} outlet di seluruh Indonesia</p>
+    <div style={{ paddingBottom: 60 }}>
+      <PageHero
+        tag="Lokasi"
+        title="Cinema di Setiap Kota"
+        subtitle={`${outlets.length} outlet KaryaOS tersebar di kota-kota besar Indonesia — temukan cinema terdekat dari Anda.`}
+        accent="📍"
+        brandPrimary={brandPrimary}
+      />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: 14 }}>
         {outlets.map(o => {
           const visual = getCityVisual(o);
@@ -1238,18 +1310,15 @@ const FAQ_GROUPS = [
 function FAQPage({ brandPrimary }) {
   const [openKey, setOpenKey] = useState("0-0");  // group 0 item 0 default open
   return (
-    <div style={{ padding: "40px 0 60px", maxWidth: 820, margin: "0 auto" }}>
-      <div style={{
-        textAlign: "center", marginBottom: 36, padding: "32px 20px",
-        background: `linear-gradient(135deg, ${brandPrimary}15, rgba(168,85,247,0.05))`,
-        border: `1px solid ${brandPrimary}33`, borderRadius: 18,
-      }}>
-        <div style={{ fontSize: 11, color: brandPrimary, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 8, textTransform: "uppercase" }}>FAQ · BANTUAN</div>
-        <h1 style={{ fontSize: 30, fontWeight: 900, letterSpacing: -1, margin: 0, marginBottom: 8, color: "#fff" }}>Pertanyaan Umum</h1>
-        <p style={{ fontSize: 13.5, color: C.sub, margin: 0, lineHeight: 1.6 }}>
-          Jawaban cepat untuk pertanyaan paling sering. Tidak menemukan jawaban? <a href="https://wa.me/6285190062368" target="_blank" rel="noopener noreferrer" style={{ color: brandPrimary, fontWeight: 700 }}>Hubungi CS via WhatsApp</a>.
-        </p>
-      </div>
+    <div style={{ paddingBottom: 60 }}>
+      <PageHero
+        tag="FAQ · Bantuan"
+        title="Pertanyaan Umum"
+        subtitle="Jawaban cepat untuk pertanyaan paling sering — pemesanan, pembayaran, refund, loyalty, dan e-tiket."
+        accent="❓"
+        brandPrimary={brandPrimary}
+      />
+      <div style={{ maxWidth: 820, margin: "0 auto" }}>
       {FAQ_GROUPS.map((group, gi) => (
         <div key={gi} style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 12, letterSpacing: -0.3 }}>{group.title}</h2>
@@ -1298,6 +1367,7 @@ function FAQPage({ brandPrimary }) {
           borderRadius: 10, fontSize: 13, fontWeight: 800, boxShadow: `0 6px 18px ${brandPrimary}55`,
         }}>💬 Chat WhatsApp CS</a>
       </div>
+      </div>
     </div>
   );
 }
@@ -1308,21 +1378,15 @@ function FAQPage({ brandPrimary }) {
 function AboutPage({ brand, brandPrimary, onBack }) {
   const name = brand?.brand_short || brand?.name || "KaryaOS";
   return (
-    <div style={{ padding: "40px 0 60px", maxWidth: 800, margin: "0 auto" }}>
-      {/* Hero */}
-      <div style={{
-        textAlign: "center", marginBottom: 40,
-        padding: "40px 24px",
-        background: `linear-gradient(135deg, ${brandPrimary}15, rgba(168,85,247,0.05))`,
-        border: `1px solid ${brandPrimary}33`, borderRadius: 18,
-      }}>
-        {brand?.logo_url && <img src={brand.logo_url} alt="" style={{ height: 56, marginBottom: 16, objectFit: "contain" }} />}
-        <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: -1, margin: 0, marginBottom: 8, color: "#fff" }}>{name}</h1>
-        <p style={{ fontSize: 14, color: C.sub, margin: 0, lineHeight: 1.6 }}>
-          Pengalaman cinema digital untuk Indonesia
-        </p>
-      </div>
-
+    <div style={{ paddingBottom: 60 }}>
+      <PageHero
+        tag="About Us"
+        title={name}
+        subtitle="Pengalaman cinema digital untuk Indonesia — pilih kursi, F&B, dan ambil tiket lewat satu scan QR."
+        accent="🎬"
+        brandPrimary={brandPrimary}
+      />
+      <div style={{ maxWidth: 800, margin: "0 auto" }}>
       {/* Story */}
       <Section title="📖 Tentang Kami">
         <p style={{ margin: 0, marginBottom: 12 }}>
@@ -1374,6 +1438,7 @@ function AboutPage({ brand, brandPrimary, onBack }) {
           border: "none", borderRadius: 12, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
           boxShadow: `0 6px 18px ${brandPrimary}55`,
         }}>🎬 Mulai Booking</button>
+      </div>
       </div>
     </div>
   );
@@ -1563,12 +1628,27 @@ function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrima
   const [profileOpen, setProfileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
+  // Netflix-style: transparent saat di top, solid setelah scroll >60px
+  // Only applies di page yg punya hero (outlet/films). Page lain selalu solid.
+  const hasHero = ["outlet", "films", "movies"].includes(step);
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    if (!hasHero) { setScrolled(true); return; }
+    const onScroll = () => setScrolled(window.scrollY > 60);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [hasHero]);
+
   return (
     <header style={{
       position: "sticky", top: 0, zIndex: 50,
-      background: "rgba(10,10,15,0.85)", backdropFilter: "blur(20px) saturate(180%)",
-      borderBottom: `1px solid ${C.border}`,
+      background: scrolled ? "rgba(20,20,20,0.92)" : "linear-gradient(180deg, rgba(20,20,20,0.85), transparent)",
+      backdropFilter: scrolled ? "blur(20px) saturate(180%)" : "none",
+      WebkitBackdropFilter: scrolled ? "blur(20px) saturate(180%)" : "none",
+      borderBottom: scrolled ? `1px solid ${C.border}` : "1px solid transparent",
       padding: "12px 20px",
+      transition: "background 0.3s ease, border-color 0.3s ease, backdrop-filter 0.3s ease",
     }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", display: "flex", alignItems: "center", gap: 14 }}>
         {showBack && (
@@ -1785,11 +1865,24 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
   const [idx, setIdx] = useState(0);
   useEffect(() => {
     if (slides.length < 2) return;
-    const iv = setInterval(() => setIdx(i => (i + 1) % slides.length), 8000);
+    const iv = setInterval(() => setIdx(i => (i + 1) % slides.length), 12000);
     return () => clearInterval(iv);
   }, [slides.length]);
 
   const current = slides[idx];
+
+  // ═══ Trailer autoplay (Netflix-style: after 3s, fade ke trailer muted) ═══
+  const [trailerPlaying, setTrailerPlaying] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const trailerEmbed = current ? ytEmbedUrl(current.trailer_url) : null;
+  const isTouch = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
+
+  useEffect(() => {
+    setTrailerPlaying(false);
+    if (!trailerEmbed || isTouch) return;
+    const t = setTimeout(() => setTrailerPlaying(true), 3000);
+    return () => clearTimeout(t);
+  }, [trailerEmbed, isTouch, idx]);
 
   if (!current) {
     // Fallback ringan saat film belum loaded — bg gradient brand subtle
@@ -1803,7 +1896,7 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
   }
 
   return (
-    <section style={{
+    <section className="cw-hero-billboard" style={{
       position: "relative", width: "100vw", minHeight: "85vh",
       overflow: "hidden",
       marginLeft: "calc(-50vw + 50%)", marginRight: "calc(-50vw + 50%)",
@@ -1815,10 +1908,47 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
           position: "absolute", inset: 0,
           backgroundImage: `url(${f.poster_url})`,
           backgroundSize: "cover", backgroundPosition: "center 15%",
-          opacity: i === idx ? 1 : 0,
+          opacity: i === idx ? (trailerPlaying ? 0 : 1) : 0,
           transition: "opacity 1.4s ease-in-out",
         }} />
       ))}
+
+      {/* Trailer autoplay overlay (muted, Netflix-style) */}
+      {trailerPlaying && trailerEmbed && (
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+          <iframe
+            src={`${trailerEmbed}&autoplay=1&mute=${muted ? 1 : 0}&controls=0&loop=1&playlist=${trailerEmbed.split("/embed/")[1]?.split("?")[0]}&playsinline=1&modestbranding=1&showinfo=0&rel=0`}
+            title="Trailer"
+            allow="autoplay; encrypted-media"
+            style={{
+              position: "absolute", top: "50%", left: "50%",
+              width: "min(177.77vh, 100vw)", height: "min(56.25vw, 100vh)",
+              minWidth: "100%", minHeight: "100%",
+              transform: "translate(-50%, -50%) scale(1.1)",
+              border: 0, opacity: 0,
+              animation: "cwFadeIn 1.2s ease 0.2s forwards",
+              pointerEvents: "none",
+            }}
+          />
+        </div>
+      )}
+
+      {/* Mute toggle — bottom-right kiri dari dots */}
+      {trailerPlaying && trailerEmbed && (
+        <button onClick={() => setMuted(m => !m)} aria-label={muted ? "Unmute" : "Mute"} style={{
+          position: "absolute", bottom: 60, right: slides.length > 1 ? 200 : 60,
+          zIndex: 11,
+          width: 42, height: 42, borderRadius: "50%",
+          background: "rgba(0,0,0,0.6)", border: "1px solid rgba(255,255,255,0.4)",
+          color: "#fff", fontSize: 18, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          backdropFilter: "blur(8px)", transition: "all 0.2s",
+        }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.85)"; e.currentTarget.style.transform = "scale(1.08)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.6)"; e.currentTarget.style.transform = "scale(1)"; }}>
+          {muted ? "🔇" : "🔊"}
+        </button>
+      )}
 
       {/* Netflix dual gradient mask: dark dari kiri (text legibility) + bottom (fade ke row carousel) */}
       <div style={{ position: "absolute", inset: 0,
@@ -1895,7 +2025,7 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
 
           {/* CTAs Netflix style: Play + Info */}
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <button onClick={() => onPickFilm?.(current)} style={{
+            <button className="cw-hero-cta" onClick={() => onPickFilm?.(current)} style={{
               display: "inline-flex", alignItems: "center", gap: 10,
               padding: "12px 28px",
               background: "#fff", color: "#0a0a0f",
@@ -1908,7 +2038,7 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
               <span style={{ fontSize: 18, lineHeight: 1 }}>▶</span>
               Pesan Tiket
             </button>
-            <button onClick={() => onPickFilm?.(current)} style={{
+            <button className="cw-hero-cta" onClick={() => onPickFilm?.(current)} style={{
               display: "inline-flex", alignItems: "center", gap: 10,
               padding: "12px 24px",
               background: "rgba(109,109,110,0.7)", color: "#fff",
@@ -1927,7 +2057,7 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
 
         {/* Slideshow dots — bottom right Netflix style */}
         {slides.length > 1 && (
-          <div style={{
+          <div className="cw-hero-dots" style={{
             position: "absolute", bottom: 60, right: 60,
             display: "flex", gap: 8, alignItems: "center",
           }}>
