@@ -180,7 +180,7 @@ export default function AdminCompanies({ onBack }) {
                     <EditField label="Code" value={editForm.code} onChange={v => setEditForm(f => ({ ...f, code: v }))} placeholder="UNIQUE-CODE" />
                     <EditField label="Name" value={editForm.name} onChange={v => setEditForm(f => ({ ...f, name: v }))} placeholder="PT Nama Brand" />
                     <EditFieldSelect label="Vertical" value={editForm.primary_vertical} onChange={v => setEditForm(f => ({ ...f, primary_vertical: v }))} options={[["fnb","F&B"],["cinema","Cinema"],["hybrid","Hybrid (both)"]]} />
-                    <EditFieldSelect label="Status" value={editForm.status} onChange={v => setEditForm(f => ({ ...f, status: v }))} options={[["active","Active"],["inactive","Inactive"],["trial","Trial"],["suspended","Suspended"]]} />
+                    <EditFieldSelect label="Status" value={editForm.status} onChange={v => setEditForm(f => ({ ...f, status: v }))} options={[["active","Active"],["suspended","Suspended"],["closed","Closed"]]} />
                     <EditField label="Brand Color" value={editForm.brand_color} onChange={v => setEditForm(f => ({ ...f, brand_color: v }))} placeholder="#FF6B35" />
                     <EditField label="Contact Email" value={editForm.contact_email} onChange={v => setEditForm(f => ({ ...f, contact_email: v }))} placeholder="info@brand.com" />
                     <EditField label="Contact Phone" value={editForm.contact_phone} onChange={v => setEditForm(f => ({ ...f, contact_phone: v }))} placeholder="+62 812..." />
@@ -313,7 +313,7 @@ function pillStyle(vertical) {
   return { padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 800, color, background: bg, border: `1px solid ${color}55`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, textTransform: "uppercase" };
 }
 function statusPill(status) {
-  const colors = { active: ["#10b981", "rgba(16,185,129,0.15)"], trial: ["#fbbf24", "rgba(251,191,36,0.15)"], inactive: ["#ef4444", "rgba(239,68,68,0.15)"], suspended: ["#ef4444", "rgba(239,68,68,0.15)"] };
+  const colors = { active: ["#10b981", "rgba(16,185,129,0.15)"], suspended: ["#fbbf24", "rgba(251,191,36,0.15)"], closed: ["#ef4444", "rgba(239,68,68,0.15)"] };
   const [color, bg] = colors[status] || ["#10b981", "rgba(16,185,129,0.15)"];
   return { padding: "2px 8px", borderRadius: 999, fontSize: 10, fontWeight: 800, color, background: bg, border: `1px solid ${color}55`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, textTransform: "uppercase" };
 }

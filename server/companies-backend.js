@@ -449,7 +449,8 @@ function setupCompanies(app, opts = {}) {
         }
         db.prepare(`DELETE FROM companies WHERE id = ?`).run(id);
       } else {
-        db.prepare(`UPDATE companies SET status = 'inactive' WHERE id = ?`).run(id);
+        // Soft delete: pakai 'closed' (sesuai CHECK constraint active|suspended|closed)
+        db.prepare(`UPDATE companies SET status = 'closed' WHERE id = ?`).run(id);
       }
       if (typeof global.logAudit === 'function') global.logAudit(req, { action: hard ? 'company.delete_hard' : 'company.deactivate', entity: 'company', entity_id: id });
       res.json({ ok: true, id, mode: hard ? 'hard' : 'soft' });
