@@ -600,28 +600,60 @@ export default function CinemaWebApp() {
 function SignInModal({ onClose, onSignIn, brandPrimary }) {
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
+  const [otp, setOtp] = useState("");
+  const [phoneMasked, setPhoneMasked] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [step, setStep] = useState("phone"); // 'phone' | 'newuser'
-  const [foundData, setFoundData] = useState(null);
+  const [step, setStep] = useState("phone"); // 'phone' | 'otp' | 'newuser'
+  const [resendCountdown, setResendCountdown] = useState(0);
 
-  const submit = async () => {
+  // Resend countdown timer
+  useEffect(() => {
+    if (resendCountdown <= 0) return;
+    const t = setTimeout(() => setResendCountdown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCountdown]);
+
+  const requestOtp = async () => {
     const cleaned = phone.replace(/[^\d]/g, "");
     if (cleaned.length < 8) { setError("Nomor HP minimal 8 digit"); return; }
     setBusy(true); setError("");
     try {
-      const r = await fetch(`${API_HOST}/api/cinema/loyalty-points?phone=${encodeURIComponent(cleaned)}`);
+      const r = await fetch(`${API_HOST}/api/cinema/auth/request-otp`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: cleaned }),
+      });
       const d = await r.json();
-      if (d.found) {
-        // Existing member — sign in directly
+      if (!r.ok || !d.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      setPhoneMasked(d.phone_masked || cleaned);
+      setStep("otp");
+      setResendCountdown(60);
+      setOtp("");
+    } catch (e) {
+      setError(e.message);
+    } finally { setBusy(false); }
+  };
+
+  const verifyOtp = async () => {
+    if (otp.length !== 6) { setError("OTP harus 6 digit"); return; }
+    setBusy(true); setError("");
+    try {
+      const r = await fetch(`${API_HOST}/api/cinema/auth/verify-otp`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: phone.replace(/[^\d]/g, ""), code: otp }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      if (d.customer) {
+        // Existing member — sign in
         onSignIn({
-          phone: d.customer.phone, name: d.customer.name, points: d.customer.points,
+          phone: d.phone, name: d.customer.name, points: d.customer.points,
           tier: d.customer.tier, lifetime_spend: d.customer.lifetime_spend,
           total_visits: d.customer.total_visits, signed_in_at: Date.now(),
+          verified: true,
         });
       } else {
-        // New user — ask name then create later (akan auto-create di booking pertama)
-        setFoundData(d);
+        // New user — ask name
         setStep("newuser");
       }
     } catch (e) {
@@ -635,6 +667,7 @@ function SignInModal({ onClose, onSignIn, brandPrimary }) {
     onSignIn({
       phone: cleaned, name: name.trim(), points: 0, tier: "BRONZE",
       lifetime_spend: 0, total_visits: 0, new_user: true, signed_in_at: Date.now(),
+      verified: true,
     });
   };
 
@@ -653,22 +686,22 @@ function SignInModal({ onClose, onSignIn, brandPrimary }) {
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
           <div>
-            <div style={{ fontSize: 11, color: brandPrimary, fontWeight: 800, letterSpacing: 2, fontFamily: "'Geist Mono',monospace" }}>🔐 SIGN IN</div>
+            <div style={{ fontSize: 11, color: brandPrimary, fontWeight: 800, letterSpacing: 2, fontFamily: "'Geist Mono',monospace" }}>🔐 SIGN IN · OTP WA</div>
             <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", margin: 0, marginTop: 4 }}>
-              {step === "phone" ? "Masuk Akun" : "Daftar Member"}
+              {step === "phone" ? "Masuk Akun" : step === "otp" ? "Verifikasi OTP" : "Daftar Member"}
             </h2>
           </div>
           <button onClick={onClose} style={{ background: "transparent", border: "none", color: C.dim, fontSize: 24, cursor: "pointer", padding: 0, lineHeight: 1 }}>×</button>
         </div>
 
-        {step === "phone" ? (
+        {step === "phone" && (
           <>
             <p style={{ fontSize: 13, color: C.sub, margin: 0, marginBottom: 18, lineHeight: 1.5 }}>
-              Cukup nomor HP saja. Kalau Anda pernah booking sebelumnya, otomatis kami detect saldo poin Anda.
+              Masukkan nomor WhatsApp. Kami kirim <strong style={{ color: brandPrimary }}>kode OTP 6 digit</strong> via WA untuk verifikasi.
             </p>
             <label style={{ display: "block", marginBottom: 8, fontSize: 11, color: C.dim, fontWeight: 600 }}>No. WhatsApp</label>
             <input value={phone} onChange={e => { setPhone(e.target.value); setError(""); }} type="tel"
-              onKeyDown={e => { if (e.key === "Enter") submit(); }}
+              onKeyDown={e => { if (e.key === "Enter") requestOtp(); }}
               placeholder="08xxxxxxxxxx" autoFocus
               style={{
                 width: "100%", background: C.card, border: `1px solid ${C.border}`,
@@ -677,21 +710,63 @@ function SignInModal({ onClose, onSignIn, brandPrimary }) {
                 letterSpacing: 1,
               }} />
             {error && <div style={{ marginTop: 10, fontSize: 12, color: "#fca5a5" }}>⚠ {error}</div>}
-            <button onClick={submit} disabled={busy || phone.replace(/\D/g, "").length < 8} style={{
+            <button onClick={requestOtp} disabled={busy || phone.replace(/\D/g, "").length < 8} style={{
               width: "100%", marginTop: 18, padding: 14,
               background: phone.replace(/\D/g, "").length >= 8 && !busy ? brandPrimary : "rgba(255,255,255,0.1)",
               border: "none", color: "#fff", borderRadius: 12,
               fontSize: 14, fontWeight: 800, cursor: phone.replace(/\D/g, "").length >= 8 && !busy ? "pointer" : "not-allowed",
               fontFamily: "inherit", boxShadow: phone.replace(/\D/g, "").length >= 8 && !busy ? `0 6px 20px ${brandPrimary}55` : "none",
-            }}>{busy ? "🔍 Cek member…" : "Masuk →"}</button>
+            }}>{busy ? "📤 Mengirim OTP…" : "📩 Kirim Kode OTP"}</button>
             <div style={{ marginTop: 12, fontSize: 11, color: C.dim, textAlign: "center" }}>
-              Belum punya akun? Otomatis daftar saat input HP baru.
+              Cek WhatsApp Anda dalam 1-2 menit setelah klik.
             </div>
           </>
-        ) : (
+        )}
+
+        {step === "otp" && (
+          <>
+            <div style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 10, padding: 12, marginBottom: 18, fontSize: 12.5, color: "#10b981" }}>
+              📨 OTP terkirim ke WhatsApp <strong style={{ fontFamily: "'Geist Mono',monospace" }}>{phoneMasked}</strong>. Cek pesan + masukkan 6 digit code.
+            </div>
+            <label style={{ display: "block", marginBottom: 8, fontSize: 11, color: C.dim, fontWeight: 600 }}>Kode OTP (6 digit)</label>
+            <input value={otp} onChange={e => { setOtp(e.target.value.replace(/\D/g, "").slice(0, 6)); setError(""); }}
+              type="text" inputMode="numeric" maxLength={6} autoFocus
+              onKeyDown={e => { if (e.key === "Enter" && otp.length === 6) verifyOtp(); }}
+              placeholder="123456"
+              style={{
+                width: "100%", background: C.card, border: `1px solid ${C.border}`,
+                color: C.text, borderRadius: 10, padding: "14px 16px", fontSize: 24,
+                fontFamily: "'Geist Mono',monospace", outline: "none", boxSizing: "border-box",
+                letterSpacing: 8, textAlign: "center", fontWeight: 800,
+              }} />
+            {error && <div style={{ marginTop: 10, fontSize: 12, color: "#fca5a5" }}>⚠ {error}</div>}
+            <button onClick={verifyOtp} disabled={busy || otp.length !== 6} style={{
+              width: "100%", marginTop: 14, padding: 14,
+              background: otp.length === 6 && !busy ? brandPrimary : "rgba(255,255,255,0.1)",
+              border: "none", color: "#fff", borderRadius: 12,
+              fontSize: 14, fontWeight: 800, cursor: otp.length === 6 && !busy ? "pointer" : "not-allowed",
+              fontFamily: "inherit", boxShadow: otp.length === 6 && !busy ? `0 6px 20px ${brandPrimary}55` : "none",
+            }}>{busy ? "🔐 Verifikasi…" : "✓ Verifikasi & Masuk"}</button>
+
+            <div style={{ marginTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11, color: C.dim }}>
+              <button onClick={() => { setStep("phone"); setOtp(""); setError(""); }} style={{
+                background: "transparent", border: "none", color: C.sub, fontSize: 11, cursor: "pointer", fontFamily: "inherit", padding: 0,
+              }}>← Ganti nomor</button>
+              {resendCountdown > 0 ? (
+                <span>Resend OTP dlm {resendCountdown}s</span>
+              ) : (
+                <button onClick={requestOtp} disabled={busy} style={{
+                  background: "transparent", border: "none", color: brandPrimary, fontSize: 11, cursor: "pointer", fontFamily: "inherit", padding: 0, fontWeight: 700,
+                }}>📩 Kirim ulang</button>
+              )}
+            </div>
+          </>
+        )}
+
+        {step === "newuser" && (
           <>
             <div style={{ background: `${brandPrimary}11`, border: `1px solid ${brandPrimary}44`, borderRadius: 10, padding: 12, marginBottom: 18, fontSize: 12, color: brandPrimary }}>
-              ✨ Selamat datang! HP <strong>{phone}</strong> belum terdaftar. Isi nama untuk daftar member baru.
+              ✅ HP <strong>{phoneMasked}</strong> terverifikasi! Belum ada akun — isi nama untuk daftar member baru.
             </div>
             <label style={{ display: "block", marginBottom: 8, fontSize: 11, color: C.dim, fontWeight: 600 }}>Nama Lengkap</label>
             <input value={name} onChange={e => { setName(e.target.value); setError(""); }}

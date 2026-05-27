@@ -3690,6 +3690,103 @@ function setupCinema(app, opts = {}) {
   });
 
   // ── LOYALTY LOOKUP — cek saldo poin by phone (untuk apply di checkout) ──
+  // ─── OTP AUTH (Phase 7) ─────────────────────────────────────────────
+  // Phone-based login dgn OTP via WhatsApp (Fonnte). Anti-spoofing.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cinema_otp_codes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      phone TEXT NOT NULL,
+      code TEXT NOT NULL,
+      expires_at INTEGER NOT NULL,
+      verify_attempts INTEGER DEFAULT 0,
+      used INTEGER DEFAULT 0,
+      ip TEXT,
+      created_at INTEGER NOT NULL DEFAULT (strftime('%s','now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_otp_phone ON cinema_otp_codes(phone, created_at);
+    CREATE INDEX IF NOT EXISTS idx_otp_exp ON cinema_otp_codes(expires_at);
+  `);
+
+  // Normalize phone: 08xxxx → 628xxxx (Indonesian format)
+  function _normalizePhone(raw) {
+    let p = String(raw || '').replace(/\D/g, '');
+    if (p.startsWith('0')) p = '62' + p.slice(1);
+    if (p.startsWith('8')) p = '62' + p;  // bare "8123..." also → "628123..."
+    return p;
+  }
+
+  // POST /auth/request-otp { phone } → generate + send OTP, rate-limit
+  router.post('/auth/request-otp', async (req, res) => {
+    const phone = _normalizePhone(req.body?.phone);
+    if (!phone || phone.length < 10 || phone.length > 16) {
+      return res.status(400).json({ ok: false, error: 'Nomor HP tidak valid' });
+    }
+    // Rate limit: max 3 OTP request per phone per 10 menit
+    const now = Math.floor(Date.now() / 1000);
+    const recent = db.prepare(`SELECT COUNT(*) c FROM cinema_otp_codes WHERE phone = ? AND created_at > ?`)
+      .get(phone, now - 600).c;
+    if (recent >= 3) {
+      return res.status(429).json({ ok: false, error: 'Terlalu banyak request. Coba lagi 10 menit.' });
+    }
+    // Generate 6-digit OTP
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = now + 300;  // 5 menit
+    db.prepare(`INSERT INTO cinema_otp_codes (phone, code, expires_at, ip) VALUES (?, ?, ?, ?)`)
+      .run(phone, code, expiresAt, (req.headers['x-forwarded-for'] || req.ip || '').split(',')[0].trim());
+    // Send via Fonnte
+    try {
+      const wa = require('./whatsapp');
+      const msg = `🔐 *KaryaOS Cinema*\n\nKode OTP Anda: *${code}*\n\nBerlaku 5 menit. JANGAN bagi kode ini ke siapapun — kami tidak pernah meminta OTP via telp/chat.`;
+      await wa.sendMessage(phone, msg);
+      console.log(`[otp] sent to ${phone}`);
+    } catch (e) {
+      console.error('[otp] send failed:', e.message);
+      // Tetap return ok supaya gak leak whether phone is registered
+    }
+    res.json({ ok: true, expires_in: 300, phone_masked: phone.slice(0, -4) + '****' });
+  });
+
+  // POST /auth/verify-otp { phone, code } → return customer data + sign-in payload
+  router.post('/auth/verify-otp', (req, res) => {
+    const phone = _normalizePhone(req.body?.phone);
+    const code = String(req.body?.code || '').trim();
+    if (!phone || !code) return res.status(400).json({ ok: false, error: 'phone & code wajib' });
+    if (!/^\d{6}$/.test(code)) return res.status(400).json({ ok: false, error: 'Kode OTP harus 6 digit' });
+
+    const now = Math.floor(Date.now() / 1000);
+    // Cari OTP terbaru utk phone ini yg belum expired & belum used
+    const otp = db.prepare(`SELECT * FROM cinema_otp_codes WHERE phone = ? AND used = 0 AND expires_at > ? ORDER BY created_at DESC LIMIT 1`)
+      .get(phone, now);
+    if (!otp) {
+      return res.status(400).json({ ok: false, error: 'OTP expired atau tidak ditemukan. Request ulang.' });
+    }
+    // Max 5 attempts per OTP
+    if (otp.verify_attempts >= 5) {
+      db.prepare(`UPDATE cinema_otp_codes SET used = 1 WHERE id = ?`).run(otp.id);  // burn
+      return res.status(429).json({ ok: false, error: 'Terlalu banyak salah. OTP dihanguskan, request ulang.' });
+    }
+    // Check code
+    if (otp.code !== code) {
+      db.prepare(`UPDATE cinema_otp_codes SET verify_attempts = verify_attempts + 1 WHERE id = ?`).run(otp.id);
+      const remaining = 5 - (otp.verify_attempts + 1);
+      return res.status(403).json({ ok: false, error: `Kode salah. Sisa ${remaining} percobaan.` });
+    }
+    // Success — mark used
+    db.prepare(`UPDATE cinema_otp_codes SET used = 1 WHERE id = ?`).run(otp.id);
+
+    // Fetch customer data
+    let customer = null;
+    try {
+      customer = db.prepare(`SELECT id, phone, name, points, tier, lifetime_spend, total_visits FROM cinema_loyalty WHERE phone = ? LIMIT 1`).get(phone);
+    } catch {}
+
+    res.json({
+      ok: true, phone,
+      customer: customer || null,
+      new_user: !customer,
+    });
+  });
+
   // Path /loyalty-points (bukan /loyalty/lookup) — hindari conflict dengan
   // existing /loyalty/:phone yang catch all single-segment.
   router.get('/loyalty-points', (req, res) => {
