@@ -3598,7 +3598,7 @@ function setupCinema(app, opts = {}) {
       SELECT t.id, t.code, t.seat, t.price, t.buyer, t.buyer_phone, t.buyer_email,
              t.payment_method, t.payment_status, t.paid_at, t.checked_in_at,
              t.purchase_id, t.showtime_id,
-             f.title AS film_title, f.genre, f.duration_min, f.poster_url, f.age_rating,
+             f.title AS film_title, f.genre, f.duration_min, f.poster_url, f.rating AS age_rating,
              s.show_date, s.start_time, s.format,
              st.name AS studio_name, st.studio_type,
              o.name AS outlet_name, o.code AS outlet_code, o.address AS outlet_address
