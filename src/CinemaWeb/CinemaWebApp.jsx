@@ -184,7 +184,7 @@ export default function CinemaWebApp() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bgGrad, color: C.text, fontFamily: "'Inter','-apple-system',sans-serif", paddingBottom: 80 }}>
+    <div style={{ minHeight: "100vh", background: C.bgGrad, color: C.text, fontFamily: "'Inter','-apple-system',sans-serif", paddingBottom: 80, ["--brand-primary"]: brandPrimary }}>
       <style>{`
         /* ═══ PREMIUM TYPOGRAPHY SYSTEM ═══ */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
@@ -228,7 +228,90 @@ export default function CinemaWebApp() {
         footer a, footer button { transition: color 0.15s ease; }
         footer a:hover, footer button:hover { color: #fff !important; }
 
-        /* Premium card hover treatment */
+        /* ═══ PREMIUM GLASS CARD ═══
+           Apply via className="cw-glass" to any card container.
+           Inline style boleh tetap ada utk padding/radius — class hanya handle
+           bg/border/shadow utk glassmorphism layered look. */
+        .cw-glass {
+          background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)) !important;
+          border: 1px solid rgba(255,255,255,0.08) !important;
+          backdrop-filter: blur(16px) saturate(140%);
+          -webkit-backdrop-filter: blur(16px) saturate(140%);
+          box-shadow:
+            0 1px 0 rgba(255,255,255,0.06) inset,                /* top highlight */
+            0 -1px 0 rgba(0,0,0,0.3) inset,                       /* bottom shade */
+            0 8px 24px rgba(0,0,0,0.35),                          /* drop shadow */
+            0 1px 2px rgba(0,0,0,0.25);
+          position: relative;
+          transition: transform 0.25s cubic-bezier(.2,.8,.2,1),
+                      box-shadow 0.25s cubic-bezier(.2,.8,.2,1),
+                      border-color 0.25s;
+        }
+        .cw-glass::before {
+          content: '';
+          position: absolute; inset: 0;
+          border-radius: inherit;
+          padding: 1px;
+          background: linear-gradient(135deg,
+            rgba(255,255,255,0.22) 0%,
+            rgba(255,255,255,0.04) 35%,
+            rgba(255,255,255,0.02) 65%,
+            rgba(255,255,255,0.10) 100%);
+          -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+        }
+        .cw-glass:hover {
+          transform: translateY(-2px);
+          border-color: rgba(255,255,255,0.14) !important;
+          box-shadow:
+            0 1px 0 rgba(255,255,255,0.09) inset,
+            0 -1px 0 rgba(0,0,0,0.3) inset,
+            0 16px 40px rgba(0,0,0,0.45),
+            0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        /* Variant: glass dgn brand glow di top edge (utk featured/hero cards) */
+        .cw-glass-brand::after {
+          content: '';
+          position: absolute;
+          top: 0; left: 12%; right: 12%; height: 1px;
+          background: linear-gradient(90deg,
+            transparent,
+            var(--brand-primary, #f97316) 50%,
+            transparent);
+          opacity: 0.7;
+          pointer-events: none;
+          border-radius: inherit;
+        }
+
+        /* Auto-apply glass treatment ke SEMUA inline-styled card yg pakai
+           background: C.card (rgba(255,255,255,0.04)). Match string yg cukup
+           spesifik biar gak nyangkut element lain. */
+        [style*="background: rgba(255,255,255,0.04)"],
+        [style*="background:rgba(255,255,255,0.04)"] {
+          backdrop-filter: blur(14px) saturate(140%);
+          -webkit-backdrop-filter: blur(14px) saturate(140%);
+          box-shadow:
+            0 1px 0 rgba(255,255,255,0.06) inset,
+            0 -1px 0 rgba(0,0,0,0.25) inset,
+            0 6px 20px rgba(0,0,0,0.32),
+            0 1px 2px rgba(0,0,0,0.2);
+          transition: transform 0.25s cubic-bezier(.2,.8,.2,1),
+                      box-shadow 0.25s cubic-bezier(.2,.8,.2,1),
+                      border-color 0.25s;
+        }
+        [style*="background: rgba(255,255,255,0.04)"]:hover,
+        [style*="background:rgba(255,255,255,0.04)"]:hover {
+          box-shadow:
+            0 1px 0 rgba(255,255,255,0.1) inset,
+            0 -1px 0 rgba(0,0,0,0.3) inset,
+            0 14px 36px rgba(0,0,0,0.45),
+            0 2px 6px rgba(0,0,0,0.28);
+        }
+
+        /* Legacy alias — beberapa file lain mungkin sudah pakai */
         .cw-card-premium {
           transition: transform 0.3s cubic-bezier(.2,.8,.2,1), box-shadow 0.3s cubic-bezier(.2,.8,.2,1), border-color 0.3s;
           position: relative;
