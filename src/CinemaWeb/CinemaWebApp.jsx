@@ -102,18 +102,17 @@ function loadSnapScript() {
   return _snapPromise;
 }
 
-// LIGHT THEME — match karys.tech corporate clean
 const C = {
-  bg: "#ffffff",
-  bgGrad: "radial-gradient(1200px 800px at 20% 0%, rgba(168,85,247,0.04), transparent 60%), radial-gradient(800px 600px at 80% 100%, rgba(249,115,22,0.03), transparent 60%), #ffffff",
-  card: "#ffffff",
-  cardHover: "#fafafa",
-  border: "rgba(0,0,0,0.08)",
-  text: "#0a0a0f",
-  sub: "rgba(10,10,15,0.65)",
-  dim: "rgba(10,10,15,0.45)",
+  bg: "#18181b",
+  bgGrad: "radial-gradient(1200px 800px at 20% 0%, rgba(168,85,247,0.08), transparent 60%), radial-gradient(800px 600px at 80% 100%, rgba(251,191,36,0.05), transparent 60%), #18181b",
+  card: "rgba(255,255,255,0.04)",
+  cardHover: "rgba(255,255,255,0.07)",
+  border: "rgba(255,255,255,0.1)",
+  text: "#fafafa",
+  sub: "rgba(250,250,250,0.7)",
+  dim: "rgba(250,250,250,0.45)",
   brand: "#a855f7",
-  amber: "#f59e0b",
+  amber: "#fbbf24",
   green: "#10b981",
   red: "#ef4444",
 };
@@ -216,7 +215,27 @@ export default function CinemaWebApp() {
   }, []);
 
   return (
-    <div ref={rootRef} style={{ minHeight: "100vh", background: C.bgGrad, color: C.text, fontFamily: "'Inter','-apple-system',sans-serif", paddingBottom: 80, ["--brand-primary"]: brandPrimary, position: "relative" }}>
+    <div ref={rootRef} style={{ minHeight: "100vh", background: C.bg, color: C.text, fontFamily: "'Inter','-apple-system',sans-serif", paddingBottom: 80, ["--brand-primary"]: brandPrimary, position: "relative" }}>
+      {/* ═══ LIVING AURORA BACKGROUND ═══ */}
+      <div className="cw-aurora" aria-hidden="true">
+        <div className="cw-orb cw-orb-1" style={{ background: `radial-gradient(closest-side, ${brandPrimary}55, transparent 70%)` }} />
+        <div className="cw-orb cw-orb-2" style={{ background: `radial-gradient(closest-side, ${C.brand}55, transparent 70%)` }} />
+        <div className="cw-orb cw-orb-3" style={{ background: `radial-gradient(closest-side, ${C.amber}33, transparent 70%)` }} />
+      </div>
+
+      {/* ═══ SPOTLIGHT CURSOR ═══ (hide on touch via @media in CSS) */}
+      <div className="cw-spotlight" aria-hidden="true" />
+
+      {/* ═══ CINEMATIC INTRO SPLASH ═══ */}
+      {splash && (
+        <div className="cw-splash" aria-hidden="true">
+          <div className="cw-splash-mark" style={{ color: brandPrimary, textShadow: `0 0 60px ${brandPrimary}` }}>
+            {brand?.logo_url && <img src={brand.logo_url} alt="" className="cw-splash-logo" />}
+            <div className="cw-splash-brand">{brand?.brand_short || brand?.name || "KaryaOS"}</div>
+            <div className="cw-splash-tagline">CINEMA · ONLINE BOOKING</div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         /* ═══ PREMIUM TYPOGRAPHY SYSTEM ═══ */
@@ -465,53 +484,30 @@ export default function CinemaWebApp() {
           border-radius: inherit;
         }
 
-        /* ═══════════════════════════════════════════════════════════
-           LIGHT THEME OVERRIDE LAYER
-           ═══════════════════════════════════════════════════════════ */
-        /* Body bg jadi putih beneran */
-        body { background: #ffffff; }
-
-        /* Flip white text → dark HANYA kalau di dalam card putih (descendant).
-           Hero overlays di atas gradient dark tetap putih (tidak terkena). */
-        [style*="background: rgba(255,255,255,0.04)"] [style*="color: #fff"],
-        [style*="background: rgba(255,255,255,0.04)"] [style*="color:#fff"],
-        [style*="background: rgba(255,255,255,0.04)"] [style*="color: #fafafa"] {
-          color: #0a0a0f;
-        }
-
-        /* Card style: putih + shadow soft (replace glass dark) */
+        /* Auto-apply glass treatment ke SEMUA inline-styled card yg pakai
+           background: C.card (rgba(255,255,255,0.04)). Match string yg cukup
+           spesifik biar gak nyangkut element lain. */
         [style*="background: rgba(255,255,255,0.04)"],
         [style*="background:rgba(255,255,255,0.04)"] {
-          background: #ffffff !important;
-          border-color: rgba(0,0,0,0.06) !important;
+          backdrop-filter: blur(14px) saturate(140%);
+          -webkit-backdrop-filter: blur(14px) saturate(140%);
           box-shadow:
-            0 1px 2px rgba(0,0,0,0.04),
-            0 4px 12px rgba(0,0,0,0.06),
-            0 1px 0 rgba(255,255,255,0.6) inset;
+            0 1px 0 rgba(255,255,255,0.06) inset,
+            0 -1px 0 rgba(0,0,0,0.25) inset,
+            0 6px 20px rgba(0,0,0,0.32),
+            0 1px 2px rgba(0,0,0,0.2);
           transition: transform 0.25s cubic-bezier(.2,.8,.2,1),
-                      box-shadow 0.25s, border-color 0.25s;
+                      box-shadow 0.25s cubic-bezier(.2,.8,.2,1),
+                      border-color 0.25s;
         }
         [style*="background: rgba(255,255,255,0.04)"]:hover,
         [style*="background:rgba(255,255,255,0.04)"]:hover {
           box-shadow:
-            0 2px 4px rgba(0,0,0,0.05),
-            0 12px 28px rgba(0,0,0,0.08);
-          border-color: rgba(0,0,0,0.1) !important;
-          transform: translateY(-2px);
+            0 1px 0 rgba(255,255,255,0.1) inset,
+            0 -1px 0 rgba(0,0,0,0.3) inset,
+            0 14px 36px rgba(0,0,0,0.45),
+            0 2px 6px rgba(0,0,0,0.28);
         }
-
-        /* Flip rgba(255,255,255,0.1) borders → dark borders */
-        [style*="rgba(255,255,255,0.1)"] {
-          border-color: rgba(0,0,0,0.08);
-        }
-
-        /* Scrollbar light */
-        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.02) !important; }
-        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12) !important; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.2) !important; }
-
-        /* Selection */
-        ::selection { background: rgba(168,85,247,0.2); color: #0a0a0f; }
 
         /* Legacy alias — beberapa file lain mungkin sudah pakai */
         .cw-card-premium {
