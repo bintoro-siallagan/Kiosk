@@ -370,69 +370,171 @@ function SignInModal({ onClose, onSignIn, brandPrimary }) {
 // ════════════════════════════════════════════════════════════════════
 function HistoryPage({ session, brandPrimary, onSignInClick }) {
   const [bookings, setBookings] = useState(null);
+  const [loyalty, setLoyalty] = useState(null);
+  const [promos, setPromos] = useState([]);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (!session?.phone) return;
-    fetch(`${API_HOST}/api/cinema/tickets?phone=${encodeURIComponent(session.phone)}`)
-      .then(r => r.json())
-      .then(d => {
-        const list = Array.isArray(d.tickets) ? d.tickets : Array.isArray(d) ? d : [];
-        // Group by purchase_id
-        const grouped = list.reduce((acc, t) => {
-          const pid = t.purchase_id || `single-${t.id}`;
-          if (!acc[pid]) acc[pid] = { purchase_id: pid, tickets: [], film_title: t.film_title, show_date: t.show_date, start_time: t.start_time, total: 0 };
-          acc[pid].tickets.push(t);
-          acc[pid].total += (t.price || 0);
-          return acc;
-        }, {});
-        setBookings(Object.values(grouped).sort((a, b) => (b.tickets[0]?.sold_at || 0) - (a.tickets[0]?.sold_at || 0)));
-      })
-      .catch(e => setError(e.message));
+    // Load 3 in parallel: bookings, fresh loyalty, active promos
+    Promise.all([
+      fetch(`${API_HOST}/api/cinema/tickets?phone=${encodeURIComponent(session.phone)}`).then(r => r.json()).catch(() => []),
+      fetch(`${API_HOST}/api/cinema/loyalty-points?phone=${encodeURIComponent(session.phone)}`).then(r => r.json()).catch(() => null),
+      fetch(`${API_HOST}/api/cinema/promotions/active`).then(r => r.json()).catch(() => []),
+    ]).then(([t, l, p]) => {
+      const list = Array.isArray(t.tickets) ? t.tickets : Array.isArray(t) ? t : [];
+      const grouped = list.reduce((acc, x) => {
+        const pid = x.purchase_id || `single-${x.id}`;
+        if (!acc[pid]) acc[pid] = { purchase_id: pid, tickets: [], film_title: x.film_title, film_id: x.film_id, showtime_id: x.showtime_id, show_date: x.show_date, start_time: x.start_time, total: 0, sold_at: x.sold_at };
+        acc[pid].tickets.push(x);
+        acc[pid].total += (x.price || 0);
+        return acc;
+      }, {});
+      setBookings(Object.values(grouped).sort((a, b) => (b.sold_at || 0) - (a.sold_at || 0)));
+      setLoyalty(l);
+      setPromos(p.promotions || p || []);
+    }).catch(e => setError(e.message));
   }, [session?.phone]);
 
   if (!session) return (
     <div style={{ padding: "60px 0", textAlign: "center", maxWidth: 480, margin: "0 auto" }}>
       <div style={{ fontSize: 64, marginBottom: 18 }}>🔐</div>
       <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 10 }}>Sign In Dulu</h2>
-      <p style={{ fontSize: 13, color: C.sub, marginBottom: 20 }}>Untuk lihat history booking Anda, masuk dengan nomor HP yang dipakai sebelumnya.</p>
+      <p style={{ fontSize: 13, color: C.sub, marginBottom: 20 }}>Untuk lihat akun Anda (booking, poin, promo), masuk dengan nomor HP.</p>
       <button onClick={onSignInClick} style={{ padding: "12px 24px", background: brandPrimary, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>🔐 Sign In</button>
     </div>
   );
 
+  // Split bookings: upcoming (showtime in future) vs past
+  const now = new Date();
+  const isUpcoming = (b) => {
+    if (!b.show_date) return false;
+    const [Y, M, D] = String(b.show_date).split("-").map(Number);
+    const [h, m] = String(b.start_time || "00:00").split(":").map(Number);
+    return new Date(Y, M - 1, D, h, m, 0) > now;
+  };
+  const upcoming = (bookings || []).filter(isUpcoming);
+  const past = (bookings || []).filter(b => !isUpcoming(b));
+  const points = loyalty?.customer?.points ?? session.points ?? 0;
+  const tier = loyalty?.customer?.tier || session.tier || "BRONZE";
+  const lifetime = loyalty?.customer?.lifetime_spend ?? session.lifetime_spend ?? 0;
+
   return (
     <div style={{ padding: "30px 0 60px" }}>
-      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 6 }}>📋 History Pembelian</h1>
-      <p style={{ fontSize: 13, color: C.sub, margin: 0, marginBottom: 24 }}>Booking masa lalu untuk <strong style={{ color: brandPrimary }}>{session.phone}</strong></p>
-      {error && <ErrorInline error={new Error(error)} label="Gagal load history" />}
-      {!bookings ? <LoadingState label="Memuat history…" /> : bookings.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 60, color: C.dim, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14 }}>
-          <div style={{ fontSize: 48, marginBottom: 14 }}>🎬</div>
-          <div style={{ fontSize: 15, marginBottom: 4 }}>Belum ada booking</div>
-          <div style={{ fontSize: 12 }}>Mulai pesan tiket pertama Anda!</div>
+      {/* Member hero card */}
+      <div style={{
+        background: `linear-gradient(135deg, ${brandPrimary}26, rgba(251,191,36,0.12))`,
+        border: `1px solid ${brandPrimary}55`, borderRadius: 18, padding: 22, marginBottom: 24,
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexWrap: "wrap" }}>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <div style={{ fontSize: 11, color: brandPrimary, fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 4, textTransform: "uppercase" }}>👤 MEMBER {tier}</div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: "#fff", marginBottom: 4 }}>Halo, {session.name}</div>
+            <div style={{ fontSize: 12, color: C.sub }}>📱 {session.phone} · {(bookings || []).length} booking · lifetime {rp(lifetime)}</div>
+          </div>
+          <div style={{ textAlign: "right" }}>
+            <div style={{ fontSize: 11, color: brandPrimary, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>⭐ SALDO POIN</div>
+            <div style={{ fontSize: 36, fontWeight: 900, color: "#fff", fontFamily: "'Geist Mono',monospace", lineHeight: 1 }}>{points}</div>
+            <div style={{ fontSize: 11, color: C.sub, marginTop: 4 }}>≈ Rp {(points * 10).toLocaleString("id-ID")} di booking berikutnya</div>
+          </div>
         </div>
-      ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {bookings.map(b => (
-            <a key={b.purchase_id} href={`/?purchase=${b.purchase_id}`} target="_blank" rel="noopener noreferrer" style={{
-              display: "block", background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 16,
-              textDecoration: "none", color: "inherit", transition: "all 0.15s",
-            }}
-              onMouseEnter={(e) => { e.currentTarget.style.borderColor = `${brandPrimary}66`; }}
-              onMouseLeave={(e) => { e.currentTarget.style.borderColor = C.border; }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{b.film_title || "Booking"}</div>
-                <div style={{ fontSize: 11, color: brandPrimary, fontFamily: "'Geist Mono',monospace" }}>{b.purchase_id}</div>
+      </div>
+
+      {error && <ErrorInline error={new Error(error)} label="Gagal load data" />}
+      {!bookings ? <LoadingState label="Memuat akun Anda…" /> : (
+        <>
+          {/* Upcoming bookings — show QR mini */}
+          {upcoming.length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              <h2 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 12 }}>🎟️ Booking Aktif ({upcoming.length})</h2>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 320px), 1fr))", gap: 12 }}>
+                {upcoming.map(b => <BookingCard key={b.purchase_id} b={b} brandPrimary={brandPrimary} upcoming />)}
               </div>
-              <div style={{ fontSize: 12, color: C.sub, marginBottom: 6 }}>📅 {b.show_date} · {b.start_time} · {b.tickets.length} kursi</div>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <div style={{ fontSize: 11, color: C.dim }}>{b.tickets.map(t => t.seat).join(", ")}</div>
-                <div style={{ fontSize: 14, fontWeight: 800, color: brandPrimary, fontFamily: "'Geist Mono',monospace" }}>{rp(b.total)}</div>
+            </div>
+          )}
+
+          {/* Active promos for member */}
+          {promos.length > 0 && (
+            <div style={{ marginBottom: 28 }}>
+              <h2 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 12 }}>🎟 Promo Tersedia</h2>
+              <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 8, margin: "0 -20px", padding: "0 20px" }}>
+                {promos.slice(0, 6).map(p => (
+                  <div key={p.id || p.code} style={{
+                    flexShrink: 0, minWidth: 220, background: `linear-gradient(135deg, ${brandPrimary}22, ${brandPrimary}08)`,
+                    border: `1px solid ${brandPrimary}44`, borderRadius: 12, padding: 14,
+                  }}>
+                    <div style={{ fontSize: 10, color: brandPrimary, fontFamily: "'Geist Mono',monospace", fontWeight: 800, letterSpacing: 1.2, marginBottom: 4 }}>{p.discount_type === "percentage" ? `${p.discount_value}% OFF` : `Rp ${(p.discount_value || 0).toLocaleString("id-ID")} OFF`}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 6 }}>{p.name || p.code}</div>
+                    <div style={{ background: "rgba(0,0,0,0.4)", border: `1px dashed ${brandPrimary}66`, borderRadius: 6, padding: "5px 10px", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12 }}>
+                      <span style={{ color: brandPrimary, fontFamily: "'Geist Mono',monospace", fontWeight: 700, letterSpacing: 1 }}>{p.code}</span>
+                      <button onClick={() => navigator.clipboard?.writeText(p.code)} style={{ background: "transparent", border: "none", color: C.sub, fontSize: 10, cursor: "pointer" }}>📋</button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </a>
-          ))}
-        </div>
+            </div>
+          )}
+
+          {/* Past bookings — with re-order */}
+          {past.length > 0 ? (
+            <div>
+              <h2 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 12 }}>📜 History Pembelian ({past.length})</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {past.map(b => <BookingCard key={b.purchase_id} b={b} brandPrimary={brandPrimary} />)}
+              </div>
+            </div>
+          ) : upcoming.length === 0 && (
+            <div style={{ textAlign: "center", padding: 60, color: C.dim, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14 }}>
+              <div style={{ fontSize: 48, marginBottom: 14 }}>🎬</div>
+              <div style={{ fontSize: 15, marginBottom: 4 }}>Belum ada booking</div>
+              <div style={{ fontSize: 12 }}>Mulai pesan tiket pertama Anda!</div>
+            </div>
+          )}
+        </>
       )}
+    </div>
+  );
+}
+
+// BookingCard with mini QR + re-order
+function BookingCard({ b, brandPrimary, upcoming }) {
+  const [qrSrc, setQrSrc] = useState(null);
+  useEffect(() => {
+    if (!upcoming || !b.purchase_id) return;
+    QRCode.toDataURL(`${window.location.origin}/?purchase=${b.purchase_id}`, { width: 140, margin: 1, color: { dark: "#000", light: "#fff" } })
+      .then(setQrSrc).catch(() => {});
+  }, [b.purchase_id, upcoming]);
+  const reorderUrl = b.film_id ? `/?movies=1&film=${b.film_id}` : null;
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, display: "flex", gap: 14 }}>
+      {upcoming && qrSrc && (
+        <a href={`/?purchase=${b.purchase_id}`} target="_blank" rel="noopener noreferrer" style={{ flexShrink: 0 }}>
+          <img src={qrSrc} alt="QR" style={{ width: 80, height: 80, borderRadius: 6, background: "#fff", padding: 4 }} />
+        </a>
+      )}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, gap: 8 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.film_title || "Booking"}</div>
+          {upcoming && <span style={{ fontSize: 10, fontWeight: 800, color: "#10b981", background: "rgba(16,185,129,0.15)", padding: "2px 8px", borderRadius: 999, flexShrink: 0 }}>AKTIF</span>}
+        </div>
+        <div style={{ fontSize: 11, color: C.sub, marginBottom: 4 }}>📅 {b.show_date} · {b.start_time}</div>
+        <div style={{ fontSize: 11, color: C.dim, marginBottom: 8, fontFamily: "'Geist Mono',monospace" }}>💺 {b.tickets.map(t => t.seat).join(", ")} · {b.purchase_id}</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: brandPrimary, fontFamily: "'Geist Mono',monospace" }}>{rp(b.total)}</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <a href={`/?purchase=${b.purchase_id}`} target="_blank" rel="noopener noreferrer" style={{
+              padding: "5px 10px", background: brandPrimary + "22", border: `1px solid ${brandPrimary}55`, color: brandPrimary,
+              borderRadius: 6, fontSize: 11, fontWeight: 700, textDecoration: "none", fontFamily: "inherit",
+            }}>🎫 E-Ticket</a>
+            {!upcoming && (
+              <a href="/?movies=1" style={{
+                padding: "5px 10px", background: "rgba(255,255,255,0.06)", border: `1px solid ${C.border}`, color: C.text,
+                borderRadius: 6, fontSize: 11, fontWeight: 700, textDecoration: "none", fontFamily: "inherit",
+              }}>🔁 Pesan Lagi</a>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
