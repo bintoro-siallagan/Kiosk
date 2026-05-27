@@ -110,14 +110,63 @@ const C = {
   card: "rgba(255,255,255,0.04)",
   cardHover: "rgba(255,255,255,0.07)",
   border: "rgba(255,255,255,0.1)",
+  borderSubtle: "rgba(255,255,255,0.06)",
   text: "#fafafa",
   sub: "rgba(250,250,250,0.7)",
   dim: "rgba(250,250,250,0.45)",
+  meta: "rgba(250,250,250,0.55)",
   brand: "#a855f7",
   amber: "#fbbf24",
   green: "#10b981",
   red: "#ef4444",
 };
+
+// ════════════════════════════════════════════════════════════════════
+// DESIGN TOKENS — Stripe/Linear/Vercel inspired scale
+// Single source of truth. NEVER hardcode size/weight/spacing dlm style{}.
+// ════════════════════════════════════════════════════════════════════
+//
+// Typography scale — 7 tier. Skip-fibonacci untuk visual rhythm jelas.
+// Pakai sebagai T.lg, T.bold, T.tracking_wider, T.sans, dst.
+const T = {
+  // Size (px)
+  xs:    11,    // meta, eyebrow, caption, copyright
+  sm:    13,   // body secondary, footer link, table cell
+  base:  14,   // body default, button label
+  md:    16,   // emphasized body, list item primary
+  lg:    18,   // card title, footer brand name
+  xl:    22,   // section heading, modal title
+  '2xl': 28,  // page heading
+  '3xl': 40,  // hero / large display
+  '4xl': 56,  // landing hero only
+
+  // Weight — pakai semibold (600) sebagai default heading, bukan 800.
+  // 800/900 cuma utk hero atau emphasis dramatis. Body 400, never 600+.
+  regular:  400,
+  medium:   500,
+  semibold: 600,
+  bold:     700,
+  black:    800,
+
+  // Line-height (unitless)
+  tight:   1.15,   // > 24px headings — biar gak floppy
+  snug:    1.35,   // 16-22px headings
+  normal:  1.5,    // body text
+  relaxed: 1.65,   // long paragraphs
+
+  // Letter-spacing (em) — Stripe: tight di big headings, wide di eyebrows mono
+  tracking_tight:  '-0.02em',  // > 28px
+  tracking_normal: '0',
+  tracking_wide:   '0.04em',   // small body emphasis
+  tracking_wider:  '0.12em',   // uppercase eyebrow / mono label
+
+  // Font families — Inter utk semuanya, JetBrains Mono khusus meta/numerik/code
+  sans: "'Inter', 'SF Pro Text', system-ui, -apple-system, sans-serif",
+  mono: "'JetBrains Mono', 'SF Mono', Menlo, ui-monospace, monospace",
+};
+
+// Spacing scale (px) — 4px base. S.1=4, S.4=16, S.6=24, dst.
+const S = { 0: 0, 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64, 20: 80, 24: 96 };
 
 // Built-in steps — custom slugs from admin akan auto-allowed via fallback
 const BUILTIN_STEPS = ["outlet", "films", "filmDetail", "showtime", "seats", "bundles", "checkout", "success", "about", "history", "movies", "promo", "studio", "locations", "faq"];
@@ -2000,30 +2049,31 @@ function Footer({ brand, brandPrimary, onAbout, onNav, footerConfig }) {
         opacity: 0.5,
       }} />
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: 36, marginBottom: 40 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: S.10, marginBottom: S.10 }}>
           {/* Column 1: Brand */}
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: S.3, marginBottom: S.4 }}>
               {brand?.logo_url && <img src={brand.logo_url} alt="" style={{ height: 32, objectFit: "contain" }} />}
               <div>
-                <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: -0.3 }}>{brandName}</div>
-                <div style={{ fontSize: 9, color: C.dim, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.5, textTransform: "uppercase" }}>Cinema Booking</div>
+                <div style={{ fontSize: T.lg, fontWeight: T.bold, color: C.text, letterSpacing: T.tracking_tight, lineHeight: T.tight }}>{brandName}</div>
+                <div style={{ fontSize: T.xs, color: C.dim, fontFamily: T.mono, letterSpacing: T.tracking_wider, textTransform: "uppercase", fontWeight: T.medium, marginTop: 2 }}>Cinema Booking</div>
               </div>
             </div>
-            <p style={{ fontSize: 12.5, color: C.dim, lineHeight: 1.7, margin: 0, marginBottom: 16 }}>
+            <p style={{ fontSize: T.sm, color: C.sub, lineHeight: T.relaxed, margin: 0, marginBottom: S.5, fontWeight: T.regular }}>
               {fc.description}
             </p>
             {/* Social icons */}
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: S.2 }}>
               {fc.social.map(s => (
                 <a key={s.name || s.url} href={s.url} target="_blank" rel="noopener noreferrer" title={s.name} style={{
-                  width: 34, height: 34, borderRadius: 8,
-                  background: "rgba(255,255,255,0.04)", border: `1px solid ${C.border}`,
+                  width: 36, height: 36, borderRadius: 8,
+                  background: C.card, border: `1px solid ${C.borderSubtle}`,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  textDecoration: "none", fontSize: 14, transition: "all 0.15s",
+                  textDecoration: "none", fontSize: T.base, transition: "all 0.15s ease",
+                  color: C.sub,
                 }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = `${brandPrimary}22`; e.currentTarget.style.borderColor = `${brandPrimary}66`; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = C.border; }}>{s.icon}</a>
+                  onMouseEnter={(e) => { e.currentTarget.style.background = `${brandPrimary}1a`; e.currentTarget.style.borderColor = `${brandPrimary}55`; e.currentTarget.style.color = C.text; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = C.card; e.currentTarget.style.borderColor = C.borderSubtle; e.currentTarget.style.color = C.sub; }}>{s.icon}</a>
               ))}
             </div>
           </div>
@@ -2056,25 +2106,26 @@ function Footer({ brand, brandPrimary, onAbout, onNav, footerConfig }) {
 
         {/* Bottom bar */}
         <div style={{
-          paddingTop: 22, borderTop: `1px solid ${C.border}`,
-          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, flexWrap: "wrap",
-          fontSize: 11, color: C.dim,
+          paddingTop: S.6, borderTop: `1px solid ${C.borderSubtle}`,
+          display: "flex", justifyContent: "space-between", alignItems: "center", gap: S.4, flexWrap: "wrap",
+          fontSize: T.xs, color: C.dim, fontFamily: T.sans, fontWeight: T.regular,
+          letterSpacing: T.tracking_normal, lineHeight: T.normal,
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: S.4, flexWrap: "wrap" }}>
             <span>© {year} {brandName}. All rights reserved.</span>
-            <span style={{ display: "flex", alignItems: "center", gap: 6, color: C.sub }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px #10b981" }} />
+            <span style={{ display: "flex", alignItems: "center", gap: S.2, color: C.sub, fontFamily: T.mono, letterSpacing: T.tracking_wider, textTransform: "uppercase", fontWeight: T.medium }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.green, boxShadow: `0 0 8px ${C.green}` }} />
               Cinema Operational Intelligence
             </span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, opacity: 0.85 }}>
-              <span style={{ fontSize: 10, color: C.dim, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>SECURE PAYMENT</span>
-              <span style={{ fontSize: 14 }}>🔒</span>
+          <div style={{ display: "flex", alignItems: "center", gap: S.4 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: S.2 }}>
+              <span style={{ fontSize: T.xs, color: C.dim, fontFamily: T.mono, letterSpacing: T.tracking_wider, textTransform: "uppercase", fontWeight: T.medium }}>Secure Payment</span>
+              <span style={{ fontSize: T.base }}>🔒</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 10, color: C.dim }}>Powered by</span>
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", color: brandPrimary, fontWeight: 700, fontSize: 11 }}>karya<span style={{ color: "#fbbf24" }}>OS</span></span>
+            <div style={{ display: "flex", alignItems: "center", gap: S.2 }}>
+              <span style={{ fontSize: T.xs, color: C.dim, fontFamily: T.sans }}>Powered by</span>
+              <span style={{ fontFamily: T.mono, color: brandPrimary, fontWeight: T.semibold, fontSize: T.xs, letterSpacing: T.tracking_wider, textTransform: "uppercase" }}>karya<span style={{ color: C.amber }}>OS</span></span>
             </div>
           </div>
         </div>
@@ -2084,12 +2135,17 @@ function Footer({ brand, brandPrimary, onAbout, onNav, footerConfig }) {
 }
 
 function FooterHeading({ children }) {
-  return <div style={{ fontSize: 10, color: "#fff", letterSpacing: 2, fontFamily: "'JetBrains Mono',monospace", marginBottom: 14, textTransform: "uppercase", fontWeight: 800 }}>{children}</div>;
+  return <div style={{
+    fontSize: T.xs, color: C.text, letterSpacing: T.tracking_wider,
+    fontFamily: T.mono, marginBottom: S.4, textTransform: "uppercase",
+    fontWeight: T.semibold,
+  }}>{children}</div>;
 }
 
 const footerLinkStyle = {
-  display: "block", padding: "4px 0", fontSize: 12.5, color: "rgba(156,163,175,0.85)",
-  textDecoration: "none", transition: "color 0.15s", fontFamily: "inherit",
+  display: "block", padding: `${S.1}px 0`, fontSize: T.sm, color: C.sub,
+  textDecoration: "none", transition: "color 0.15s ease", fontFamily: T.sans,
+  fontWeight: T.regular, lineHeight: T.normal, letterSpacing: T.tracking_normal,
 };
 
 // ════════════════════════════════════════════════════════════════════
