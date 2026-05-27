@@ -2563,11 +2563,11 @@ app.post("/api/payment/cinema-snap", async (req, res) => {
   if (!midtransConfig.serverKey) return res.status(503).json({ error: "Midtrans server key not configured" });
 
   try {
-    const tickets = db.prepare(`SELECT * FROM cinema_tickets WHERE purchase_id = ?`).all(purchase_id);
+    const tickets = db.rawDb.prepare(`SELECT * FROM cinema_tickets WHERE purchase_id = ?`).all(purchase_id);
     if (tickets.length === 0) return res.status(404).json({ error: "purchase tidak ditemukan" });
     if (tickets[0].payment_status === "paid") return res.status(409).json({ error: "purchase sudah dibayar", paid: true });
 
-    const bundles = db.prepare(`SELECT * FROM cinema_purchase_bundles WHERE purchase_id = ?`).all(purchase_id);
+    const bundles = db.rawDb.prepare(`SELECT * FROM cinema_purchase_bundles WHERE purchase_id = ?`).all(purchase_id);
     const t0 = tickets[0];
     const seatsTotal = tickets.reduce((s, t) => s + (t.price || 0), 0);
     const bundlesTotal = bundles.reduce((s, b) => s + (b.price * b.qty), 0);
@@ -2623,7 +2623,7 @@ app.post("/api/payment/cinema-snap", async (req, res) => {
     }
 
     // Persist payment_ref so webhook can match back
-    db.prepare(`UPDATE cinema_tickets SET payment_ref = ?, payment_method = 'snap', payment_status = COALESCE(payment_status, 'pending_payment') WHERE purchase_id = ?`)
+    db.rawDb.prepare(`UPDATE cinema_tickets SET payment_ref = ?, payment_method = 'snap', payment_status = COALESCE(payment_status, 'pending_payment') WHERE purchase_id = ?`)
       .run(orderId, purchase_id);
 
     console.log(`🎬 Snap created for ${purchase_id} → ${orderId} (Rp ${grossAmount.toLocaleString("id-ID")})`);
@@ -2644,7 +2644,7 @@ app.post("/api/payment/cinema-snap", async (req, res) => {
 // Used when Snap popup closes / webhook delayed — confirm payment status
 // independently via DB. Cheap query, safe to call repeatedly.
 app.get("/api/cinema/purchase/:purchase_id/status", (req, res) => {
-  const rows = db.prepare(`SELECT code, payment_status, paid_at, payment_ref FROM cinema_tickets WHERE purchase_id = ?`).all(req.params.purchase_id);
+  const rows = db.rawDb.prepare(`SELECT code, payment_status, paid_at, payment_ref FROM cinema_tickets WHERE purchase_id = ?`).all(req.params.purchase_id);
   if (rows.length === 0) return res.status(404).json({ error: "purchase not found" });
   const allPaid = rows.every(r => r.payment_status === "paid");
   const anyFailed = rows.some(r => r.payment_status === "failed");
@@ -2947,7 +2947,7 @@ app.post("/api/payment/webhook", async (req, res) => {
     try {
       const newStatus = paid ? "paid" : failed ? "failed" : "pending_payment";
       const paidAt = paid ? Math.floor(Date.now() / 1000) : null;
-      const result = db.prepare(`
+      const result = db.rawDb.prepare(`
         UPDATE cinema_tickets
         SET payment_status = ?, paid_at = COALESCE(?, paid_at), payment_method = ?
         WHERE payment_ref = ?
