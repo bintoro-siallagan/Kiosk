@@ -3606,7 +3606,7 @@ function setupCinema(app, opts = {}) {
       LEFT JOIN cinema_showtimes s   ON s.id  = t.showtime_id
       LEFT JOIN cinema_films     f   ON f.id  = s.film_id
       LEFT JOIN cinema_studios   st  ON st.id = s.studio_id
-      LEFT JOIN outlet_master    o   ON o.code = s.outlet
+      LEFT JOIN outlet_master    o   ON o.code = st.outlet
       WHERE t.purchase_id = ?
       ORDER BY t.seat
     `).all(pid);
