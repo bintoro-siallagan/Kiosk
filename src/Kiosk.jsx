@@ -958,10 +958,25 @@ const KIOSK_CSS = `
   .lg::after{content:"";position:absolute;top:0;left:0;right:0;height:55%;border-radius:inherit;background:radial-gradient(ellipse 75% 90% at 30% 0%,rgba(255,255,255,0.18) 0%,rgba(255,255,255,0.04) 45%,transparent 80%);pointer-events:none;z-index:1;mix-blend-mode:screen;opacity:.85}
   /* Variant: orb (circular) — tighter sheen */
   .lg-orb::after{height:60%;background:radial-gradient(ellipse 70% 60% at 30% 18%,rgba(255,255,255,0.32) 0%,rgba(255,255,255,0.06) 50%,transparent 80%)}
-  /* Variant: brand-tinted pill (CTA). Text uses --brand-text (contrast-computed) with shadow fallback */
-  .lg-brand{color:var(--brand-text,#fff)!important;text-shadow:0 1px 2px rgba(0,0,0,0.25);background:linear-gradient(180deg,var(--brand-primary,#FF6B35) 0%,var(--brand-secondary,#E55A2B) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,0.35),inset 0 -1px 0 rgba(0,0,0,0.22),inset 0 12px 28px rgba(255,255,255,0.12),inset 0 -16px 28px rgba(0,0,0,0.18),0 10px 28px rgba(0,0,0,0.28),0 24px 60px color-mix(in srgb,var(--brand-primary,#FF6B35) 28%,transparent)}
+  /* Variant: brand-tinted glass pill (CTA). Mixes brand color w/ dark surface so white text always readable. */
+  .lg-brand{
+    color:#fff!important;
+    text-shadow:0 1px 3px rgba(0,0,0,0.45);
+    background:
+      radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb,var(--brand-primary,#FF6B35) 60%,transparent) 0%, transparent 55%),
+      linear-gradient(180deg, color-mix(in srgb,var(--brand-primary,#FF6B35) 38%,#1a1d29) 0%, color-mix(in srgb,var(--brand-secondary,#E55A2B) 30%,#0d0f14) 100%);
+    backdrop-filter:blur(28px) saturate(180%);
+    -webkit-backdrop-filter:blur(28px) saturate(180%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.22),
+      inset 0 -1px 0 rgba(0,0,0,0.22),
+      inset 0 12px 28px rgba(255,255,255,0.06),
+      inset 0 -16px 28px rgba(0,0,0,0.22),
+      0 10px 28px rgba(0,0,0,0.32),
+      0 24px 60px color-mix(in srgb,var(--brand-primary,#FF6B35) 24%,transparent);
+  }
   .lg-brand *{color:inherit}
-  .lg-brand::before{background:linear-gradient(180deg,rgba(255,255,255,0.65) 0%,rgba(255,255,255,0.18) 35%,rgba(0,0,0,0.06) 60%,rgba(255,255,255,0.18) 100%)}
+  .lg-brand::before{background:linear-gradient(180deg,rgba(255,255,255,0.5) 0%,rgba(255,255,255,0.12) 35%,rgba(0,0,0,0.1) 60%,color-mix(in srgb,var(--brand-primary,#FF6B35) 40%,rgba(255,255,255,0.18)) 100%)}
   /* Content must sit above sheen/border layers */
   .lg > *{position:relative;z-index:3}
   .order-pill{transition:transform .4s cubic-bezier(.2,.8,.2,1),box-shadow .4s ease}

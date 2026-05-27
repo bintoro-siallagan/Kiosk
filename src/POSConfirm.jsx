@@ -989,11 +989,13 @@ const S = {
     letterSpacing: 1, textTransform: "uppercase", outline: "none"
   },
   promoApply: {
-    background: `linear-gradient(180deg, ${BRAND}, ${BRAND_SEC})`,
-    color: "var(--brand-text,#fff)", textShadow: "0 1px 2px rgba(0,0,0,0.22)",
+    background: `radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, ${BRAND} 55%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, ${BRAND} 38%, #1a1d29), color-mix(in srgb, ${BRAND_SEC} 30%, #0d0f14))`,
+    color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.45)",
+    backdropFilter: "blur(28px) saturate(180%)",
+    WebkitBackdropFilter: "blur(28px) saturate(180%)",
     border: "1px solid rgba(255,255,255,0.16)", borderRadius: 12,
     padding: "0 18px", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FONT, letterSpacing: "-0.1px",
-    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 12px color-mix(in srgb, ${BRAND} 28%, transparent)`
+    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 12px color-mix(in srgb, ${BRAND} 24%, transparent)`
   },
   promoApplyDisabled: {
     background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.3)", border: "1px solid rgba(255,255,255,0.06)",
@@ -1091,12 +1093,14 @@ const S = {
   },
 
   confirmBtn: {
-    background: `linear-gradient(180deg, ${BRAND}, ${BRAND_SEC})`,
-    color: "var(--brand-text,#fff)", textShadow: "0 1px 2px rgba(0,0,0,0.22)",
+    background: `radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, ${BRAND} 60%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, ${BRAND} 38%, #1a1d29), color-mix(in srgb, ${BRAND_SEC} 30%, #0d0f14))`,
+    color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.45)",
+    backdropFilter: "blur(28px) saturate(180%)",
+    WebkitBackdropFilter: "blur(28px) saturate(180%)",
     border: "1px solid rgba(255,255,255,0.16)", borderRadius: 16,
     padding: "16px 20px", fontFamily: FONT, fontSize: 15, fontWeight: 600,
     letterSpacing: "-0.2px", cursor: "pointer",
-    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 24px color-mix(in srgb, ${BRAND} 28%, transparent), 0 24px 60px color-mix(in srgb, ${BRAND} 18%, transparent)`,
+    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -16px 28px rgba(0,0,0,0.22), 0 8px 24px rgba(0,0,0,0.32), 0 24px 60px color-mix(in srgb, ${BRAND} 22%, transparent)`,
     marginTop: 6, transition: "all 0.25s cubic-bezier(.2,.8,.2,1)"
   }
 };
