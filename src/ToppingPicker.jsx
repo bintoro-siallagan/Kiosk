@@ -223,6 +223,7 @@ const S = {
     padding: 16,
     fontFamily: FONT,
   },
+  // Inline glass — works in any context (POS/Kiosk/Flow) without depending on .lg class CSS
   panel: {
     width: '100%',
     maxWidth: 720,
@@ -232,6 +233,11 @@ const S = {
     flexDirection: 'column',
     overflow: 'hidden',
     animation: 'tpSlideUp 0.35s cubic-bezier(.2,.8,.2,1)',
+    background: 'linear-gradient(180deg, rgba(40,44,58,0.92) 0%, rgba(20,22,32,0.95) 100%)',
+    backdropFilter: 'blur(40px) saturate(200%)',
+    WebkitBackdropFilter: 'blur(40px) saturate(200%)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 24px 60px rgba(0,0,0,0.45), 0 8px 24px rgba(0,0,0,0.32)',
   },
 
   // Header
@@ -489,16 +495,22 @@ const S = {
     fontVariantNumeric: 'tabular-nums',
     letterSpacing: '-0.6px',
   },
+  // Inline tinted-glass so it works in any context (POS, Kiosk, Flow) without depending on .lg-brand class
   confirmBtn: {
-    padding: '12px 22px',
+    padding: '13px 22px',
     borderRadius: 14,
-    border: 'none',
+    border: '1px solid rgba(255,255,255,0.16)',
+    background: 'radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, var(--brand-primary,#FF6B35) 60%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 38%, #1a1d29), color-mix(in srgb, var(--brand-secondary,#E55A2B) 30%, #0d0f14))',
     color: '#fff',
+    textShadow: '0 1px 3px rgba(0,0,0,0.45)',
     fontSize: 14,
     fontWeight: 600,
     cursor: 'pointer',
     whiteSpace: 'nowrap',
     letterSpacing: '-0.2px',
     fontFamily: FONT,
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 24px color-mix(in srgb, var(--brand-primary,#FF6B35) 22%, transparent)',
+    backdropFilter: 'blur(28px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(28px) saturate(180%)',
   },
 };
