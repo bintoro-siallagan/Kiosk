@@ -21,6 +21,9 @@ const SKIP_TABLES = new Set([
   'password_reset_tokens', 'login_attempts',
   // Companies table itself:
   'companies',
+  // CRITICAL: admin_users — NULL company_id intentional = super-admin
+  // Don't backfill or super-admin role gets demoted to company 1
+  'admin_users',
 ]);
 
 // Tabel yang dimiliki BTS (company_id=1) historis (F&B):
