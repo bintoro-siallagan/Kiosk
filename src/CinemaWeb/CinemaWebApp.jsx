@@ -1664,7 +1664,7 @@ function LocationsPage({ brandPrimary, onPick, heroOverride }) {
   return (
     <div style={{ paddingBottom: 60 }}>
       <PageHero
-        tag={heroOverride?.tag || "Lokasi"}
+        tag={heroOverride?.tag || "Locations"}
         title={heroOverride?.title || "Cari Cinema Terdekat"}
         subtitle={heroOverride?.subtitle || `${outlets.length} outlet KaryaOS siap menyambut Anda di kota-kota besar Indonesia. Klik kota, lihat jadwal, pesan dari sofa.`}
         accent={heroOverride?.accent || "📍"}
@@ -1842,7 +1842,7 @@ function FAQPage({ brandPrimary, customFaqGroups, heroOverride }) {
   return (
     <div style={{ paddingBottom: 60 }}>
       <PageHero
-        tag={heroOverride?.tag || "FAQ · Bantuan"}
+        tag={heroOverride?.tag || "FAQ · Help"}
         title={heroOverride?.title || "Tanya Apa Saja"}
         subtitle={heroOverride?.subtitle || "Dari klasifikasi usia film sampai cara redeem poin — semua jawaban yang Anda butuhkan, dalam satu halaman."}
         accent={heroOverride?.accent || "❓"}
@@ -2061,7 +2061,7 @@ function ContactRow({ icon, label, value, link }) {
 // ════════════════════════════════════════════════════════════════════
 // Default footer config — dipakai kalau tenant belum kustomisasi
 const DEFAULT_FOOTER_CONFIG = {
-  description: "Pengalaman cinema premium di ujung jari Anda. Pesan tiket online, pilih kursi, langsung nonton.",
+  description: "Premium cinema experience at your fingertips. Book tickets online, pick seats, watch instantly.",
   social: [
     { name: "WA", icon: "💬", url: "https://wa.me/6285190062368" },
     { name: "IG", icon: "📷", url: "https://instagram.com" },
@@ -2084,13 +2084,13 @@ const DEFAULT_FOOTER_CONFIG = {
     { label: "Customer Service", url: "https://wa.me/6285190062368" },
   ],
   company: [
-    { label: "Tentang Kami", target: "about" },
-    { label: "Karier", target: "about" },
+    { label: "About Us", target: "about" },
+    { label: "Careers", target: "about" },
     { label: "Partnership", target: "about" },
   ],
   legal: [
-    { label: "Syarat & Ketentuan", target: "faq" },
-    { label: "Kebijakan Privasi", target: "faq" },
+    { label: "Terms & Conditions", target: "faq" },
+    { label: "Privacy Policy", target: "faq" },
   ],
 };
 
@@ -2161,19 +2161,19 @@ function Footer({ brand, brandPrimary, onAbout, onNav, footerConfig }) {
 
           {/* Column 2: Navigation */}
           <div>
-            <FooterHeading>Navigasi</FooterHeading>
+            <FooterHeading>Navigation</FooterHeading>
             {renderLinks(fc.nav)}
           </div>
 
           {/* Column 3: Help */}
           <div>
-            <FooterHeading>Bantuan</FooterHeading>
+            <FooterHeading>Help</FooterHeading>
             {renderLinks(fc.help)}
           </div>
 
           {/* Column 4: Company + Legal */}
           <div>
-            <FooterHeading>Perusahaan</FooterHeading>
+            <FooterHeading>Company</FooterHeading>
             {renderLinks(fc.company)}
             {fc.legal.length > 0 && (
               <>
@@ -2353,7 +2353,7 @@ function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrima
             borderRadius: 8, width: 34, height: 34, fontSize: 15, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
           }}>←</button>
         )}
-        <button onClick={onHome} title="Beranda" style={{
+        <button onClick={onHome} title="Home" style={{
           display: "flex", alignItems: "center", gap: 8, background: "transparent", border: "none",
           color: C.text, cursor: "pointer", fontFamily: "inherit", padding: 0, textAlign: "left", flexShrink: 0,
         }}>
