@@ -943,21 +943,74 @@ app.delete("/api/menu/:id", (req, res) => {
 
 // ── MASTER ITEM: Full edit (all fields) ──
 app.put("/api/menu/:id", (req, res) => {
-  const id = parseInt(req.params.id);
-  const idx = menu.findIndex(m => m.id === id);
-  if (idx === -1) return res.status(404).json({ error: "Item not found" });
+  // Allow both numeric (legacy hardcoded) and string ids (pos_menus / ESB).
+  const id = isNaN(req.params.id) ? req.params.id : parseInt(req.params.id);
+  let idx = menu.findIndex(m => m.id === id);
 
-  const { cat, emoji, name, desc, price, freeToppings, popular, avail } = req.body;
-  if (cat !== undefined) menu[idx].cat = cat;
-  if (emoji !== undefined) menu[idx].emoji = emoji;
-  if (name !== undefined) menu[idx].name = name;
-  if (desc !== undefined) menu[idx].desc = desc;
-  if (price !== undefined) menu[idx].price = Number(price);
-  if (freeToppings !== undefined) menu[idx].freeToppings = Number(freeToppings);
-  if (popular !== undefined) menu[idx].popular = Boolean(popular);
-  if (avail !== undefined) {
-    menu[idx].avail = Boolean(avail);
+  // If not found in legacy in-memory list, upsert to pos_menus (canonical store for new items).
+  if (idx === -1) {
+    const b = req.body || {};
+    if (!b.name || b.price === undefined) {
+      return res.status(404).json({ error: "Item not found and insufficient data to create" });
+    }
+    try {
+      const idStr = String(req.params.id);
+      const cat = b.cat || b.category_id || b.category || 'froyo';
+      db.rawDb.prepare(`INSERT OR REPLACE INTO pos_menus
+        (id, category_id, emoji, name, description, price, free_extras, is_popular, is_available, image_url, badge_text, display_order, created_at, updated_at, company_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE((SELECT created_at FROM pos_menus WHERE id = ?), strftime('%s','now')), strftime('%s','now'), ?)`)
+        .run(
+          idStr, cat, b.emoji || b.e || '',
+          b.name, b.desc || b.description || '',
+          Number(b.price), Number(b.freeToppings || b.free_extras || 0),
+          b.popular ? 1 : 0, b.avail !== false ? 1 : 0,
+          b.image_url || b.image || null,
+          b.tag || (Array.isArray(b.tags) ? b.tags[0] : null),
+          0, idStr, 1
+        );
+      return res.json({ ok: true, upserted: idStr, store: 'pos_menus' });
+    } catch (e) {
+      return res.status(500).json({ error: 'failed to upsert: ' + e.message });
+    }
+  }
+
+  // Existing legacy item — patch in place. Accept canonical + alias fields.
+  const b = req.body || {};
+  if (b.cat !== undefined || b.category !== undefined) menu[idx].cat = b.cat || b.category;
+  if (b.emoji !== undefined) menu[idx].emoji = b.emoji;
+  if (b.e !== undefined) menu[idx].emoji = b.e;
+  if (b.name !== undefined) menu[idx].name = b.name;
+  if (b.desc !== undefined) menu[idx].desc = b.desc;
+  if (b.description !== undefined) menu[idx].desc = b.description;
+  if (b.price !== undefined) menu[idx].price = Number(b.price);
+  if (b.freeToppings !== undefined) menu[idx].freeToppings = Number(b.freeToppings);
+  if (b.free_extras !== undefined) menu[idx].freeToppings = Number(b.free_extras);
+  if (b.popular !== undefined) menu[idx].popular = Boolean(b.popular);
+  if (b.tag !== undefined) menu[idx].tag = b.tag;
+  if (b.image_url !== undefined) menu[idx].image_url = b.image_url;
+  if (b.image !== undefined) menu[idx].image_url = b.image; // alias
+  if (b.avail !== undefined) {
+    menu[idx].avail = Boolean(b.avail);
     db.setMenuOverride(menu[idx].id, menu[idx].avail);
+  }
+  // Persist image/desc to pos_menus (by id or name) so /api/menu enrichment + Item Master sync see it.
+  if (b.image_url !== undefined || b.image !== undefined || b.description !== undefined || b.desc !== undefined) {
+    try {
+      const img = b.image_url || b.image || null;
+      const desc = b.description || b.desc || '';
+      const r = db.rawDb.prepare(`UPDATE pos_menus SET image_url = COALESCE(?, image_url), description = ?, updated_at = strftime('%s','now') WHERE LOWER(TRIM(name)) = ?`)
+        .run(img, desc, String(menu[idx].name || '').toLowerCase().trim());
+      // If no row matched by name, insert it (so future enrichment finds it)
+      if (r.changes === 0 && img !== null) {
+        const idStr = `legacy-${menu[idx].id}`;
+        db.rawDb.prepare(`INSERT OR IGNORE INTO pos_menus
+          (id, category_id, emoji, name, description, price, free_extras, is_popular, is_available, image_url, display_order, company_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+          .run(idStr, menu[idx].cat || 'froyo', menu[idx].emoji || '', menu[idx].name, desc,
+            menu[idx].price, menu[idx].freeToppings || 0, menu[idx].popular ? 1 : 0, menu[idx].avail ? 1 : 0,
+            img, 0, 1);
+      }
+    } catch (e) { console.warn('[menu PUT] pos_menus mirror failed:', e.message); }
   }
 
   broadcast("menu:updated", menu[idx]);

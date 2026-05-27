@@ -171,13 +171,53 @@ export async function esbPushMenuItem(item) {
 }
 
 /**
- * PUSH semua menu sekaligus (bulk)
+ * Build modifier_groups from local topping/extras config.
+ * Pass `toppings` array (group/name/price) to get ESB-shaped modifier_groups:
+ *   [{ group_id, group_name, min, max, options: [{code, name, price}] }]
+ *
+ * Call site:
+ *   const toppings = await fetch('/api/toppings').then(r => r.json());
+ *   const groups = buildModifierGroupsFromToppings(toppings.items, item.freeToppings);
+ *   esbPushMenuItem({ ...item, modifier_groups: groups });
  */
-export async function esbPushAllMenu(menuItems) {
-  const payload = {
-    outlet_id: ESB_CONFIG.outletId,
-    items: menuItems.map(mapMenuToESB),
-  };
+export function buildModifierGroupsFromToppings(toppings = [], freeQuota = 0) {
+  if (!Array.isArray(toppings) || toppings.length === 0) return [];
+  // Cluster by `group` field (Fruits / Crunchies / Sauces / Premium)
+  const byGroup = {};
+  for (const t of toppings) {
+    const g = t.group || 'Topping';
+    if (!byGroup[g]) byGroup[g] = [];
+    byGroup[g].push(t);
+  }
+  return Object.entries(byGroup).map(([groupName, opts], i) => ({
+    group_id:    `MG-${groupName.replace(/[^a-z0-9]+/gi, '').slice(0, 10).toUpperCase()}-${i + 1}`,
+    group_name:  groupName,
+    min:         0,
+    max:         freeQuota > 0 ? freeQuota : opts.length,
+    free_quota:  freeQuota > 0 ? freeQuota : 0,
+    options: opts.map(o => ({
+      code:  String(o.id),
+      name:  o.name,
+      price: Number(o.price) || 0,
+    })),
+  }));
+}
+
+/**
+ * PUSH semua menu sekaligus (bulk).
+ * Kalau caller kasih `toppings` di opts, modifier_groups otomatis di-attach ke item yg freeToppings > 0.
+ */
+export async function esbPushAllMenu(menuItems, opts = {}) {
+  const toppings = opts.toppings || [];
+  const items = menuItems.map(m => {
+    const base = mapMenuToESB(m);
+    // Auto-attach modifier_groups for froyo-style items with free quota
+    if (!base.modifier_groups.length && m.freeToppings > 0) {
+      base.modifier_groups = buildModifierGroupsFromToppings(toppings, m.freeToppings);
+    }
+    return base;
+  });
+  const payload = { outlet_id: ESB_CONFIG.outletId, items };
   return esbRequest("POST", `/outlets/${ESB_CONFIG.outletId}/menus/bulk`, payload);
 }
 

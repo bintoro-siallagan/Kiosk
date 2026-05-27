@@ -181,10 +181,17 @@ export default function ESBSync({ onBack }) {
   async function handlePushAll() {
     applyConfig(); setBulk(LOADING);
     log(`Push semua ${localMenu.length} item ke ESB...`);
+    // Fetch toppings so esbPushAllMenu can attach modifier_groups for items with freeToppings > 0
+    let toppings = [];
+    try {
+      const tr = await fetch("/api/toppings"); const tj = await tr.json();
+      toppings = Array.isArray(tj?.items) ? tj.items : (Array.isArray(tj) ? tj : []);
+      if (toppings.length) log(`Loaded ${toppings.length} toppings buat modifier_groups`);
+    } catch (e) { log(`⚠️ Gagal fetch toppings: ${e.message} (push tetap lanjut tanpa modifier)`, "error"); }
     const loadMap = {}; localMenu.forEach(m => { loadMap[m.id] = LOADING; });
     setPushStat(loadMap);
     try {
-      await esbPushAllMenu(localMenu);
+      await esbPushAllMenu(localMenu, { toppings });
       const okMap = {}; localMenu.forEach(m => { okMap[m.id] = OK; });
       setPushStat(okMap); setBulk(OK);
       log(`✅ Push semua berhasil!`, "ok");
@@ -344,7 +351,7 @@ export default function ESBSync({ onBack }) {
                         <input type="checkbox" checked={selectedGet.has(item.id)}
                           onChange={() => toggleGet(item.id)} style={{cursor:"pointer"}} />
                       </span>
-                      <span style={{width:40,fontSize:22}}>{item.e}</span>
+                      <Thumb item={item}/>
                       <span style={{flex:2}}>
                         <div style={{fontWeight:600,fontSize:14}}>{item.name}</div>
                         {item.desc && <div style={{fontSize:11,color:"#666",marginTop:2}}>{item.desc.slice(0,60)}{item.desc.length>60?"...":""}</div>}
@@ -446,7 +453,7 @@ export default function ESBSync({ onBack }) {
                     <span style={{width:36}}>
                       <input type="checkbox" checked={selectedPush.has(item.id)} onChange={() => togglePush(item.id)} style={{cursor:"pointer"}}/>
                     </span>
-                    <span style={{width:40,fontSize:22}}>{item.e||"🍽️"}</span>
+                    <Thumb item={item}/>
                     <span style={{flex:2,fontWeight:600,fontSize:14}}>{item.name}</span>
                     <span style={{width:110,fontSize:12,color:"#888"}}>{item.cat||item.category}</span>
                     <span style={{width:110,textAlign:"right",color:"#FF6B35",fontWeight:700,fontSize:13}}>{formatIDR(item.price)}</span>
@@ -591,3 +598,18 @@ const S = {
   hint:     { fontSize:11, color:"#444" },
   testBtn:  { background:"linear-gradient(90deg,#FF6B35,#FF3B30)", border:"none", borderRadius:10, padding:"11px 24px", color:"#fff", cursor:"pointer", fontSize:13, fontWeight:700, letterSpacing:1, fontFamily:"'Inter',sans-serif", display:"flex", alignItems:"center", gap:8 },
 };
+
+// ── Thumbnail cell — show image_url if any, otherwise emoji fallback ──
+function Thumb({ item }) {
+  const url = item.image_url || item.image;
+  if (url) {
+    return (
+      <span style={{ width: 40, height: 40, borderRadius: 8, overflow: "hidden", background: "#0a0e16", flexShrink: 0, display: "inline-block" }}>
+        <img src={url} alt={item.name}
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+          onError={(e) => { e.currentTarget.style.display = "none"; }} />
+      </span>
+    );
+  }
+  return <span style={{ width: 40, fontSize: 22, textAlign: "center", flexShrink: 0 }}>{item.emoji || item.e || "🍽️"}</span>;
+}
