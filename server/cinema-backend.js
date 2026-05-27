@@ -3628,7 +3628,66 @@ function setupCinema(app, opts = {}) {
     `).all(pid);
     if (!tickets.length) return res.status(404).json({ ok: false, error: 'Purchase tidak ditemukan' });
     const bundles = db.prepare(`SELECT * FROM cinema_purchase_bundles WHERE purchase_id = ?`).all(pid);
-    res.json({ ok: true, purchase_id: pid, tickets, bundles });
+
+    // Compute totals + lookup discount/loyalty data
+    const tickets_total = tickets.reduce((s, t) => s + (t.price || 0), 0);
+    const bundles_total = bundles.reduce((s, b) => s + (b.price * b.qty), 0);
+    const gross_total = tickets_total + bundles_total;
+
+    // Promo discount (cinema_promo_redemptions linked by purchase_id)
+    let promo_discount = 0;
+    let promo_info = null;
+    try {
+      const rd = db.prepare(`
+        SELECT r.discount_amount, p.name AS promo_name, p.code AS promo_code
+        FROM cinema_promo_redemptions r
+        LEFT JOIN cinema_promotions p ON p.id = r.promo_id
+        WHERE r.purchase_id = ? LIMIT 1
+      `).get(pid);
+      if (rd) {
+        promo_discount = rd.discount_amount || 0;
+        promo_info = { name: rd.promo_name, code: rd.promo_code };
+      }
+    } catch {}
+
+    // Loyalty points redeemed (cinema_loyalty_transactions type='redeem')
+    let points_used = 0;
+    try {
+      const lt = db.prepare(`
+        SELECT SUM(amount) AS amt FROM cinema_loyalty_transactions
+        WHERE ref_purchase_id = ? AND type = 'redeem'
+      `).get(pid);
+      if (lt && lt.amt) points_used = Math.abs(lt.amt);  // amount stored negative for redeem
+    } catch {}
+
+    // Tax (Indonesian PPN 11% — tax inclusive, harga sudah termasuk PPN)
+    // Tampilkan sbg info: dari total, berapa porsi PPN
+    const PPN_RATE = 0.11;
+    const final_total = gross_total - promo_discount;
+    const tax_extracted = Math.round(final_total * PPN_RATE / (1 + PPN_RATE));  // extract PPN dari harga inclusive
+    const base_amount = final_total - tax_extracted;
+
+    res.json({
+      ok: true,
+      purchase_id: pid,
+      tickets,
+      bundles,
+      totals: {
+        tickets_total,
+        bundles_total,
+        gross_total,
+        promo_discount,
+        points_used,
+        final_total,
+        tax_extracted,
+        base_amount,
+        tax_rate_pct: 11,
+        tax_inclusive: true,
+      },
+      promo: promo_info,
+      payment_method: tickets[0]?.payment_method || null,
+      payment_status: tickets[0]?.payment_status || null,
+    });
   });
 
   // ── PURCHASE BUNDLES (lookup + redeem at F&B counter) ──

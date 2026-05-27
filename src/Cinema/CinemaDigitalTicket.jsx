@@ -243,6 +243,49 @@ export default function CinemaDigitalTicket() {
           </div>
         )}
 
+        {/* PURCHASE SUMMARY — subtotal, diskon, points, tax, total, payment method */}
+        {purchase?.totals && (
+          <div style={{ marginTop: 14, background: "linear-gradient(180deg, rgba(168,85,247,0.08), rgba(251,191,36,0.04))", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 14, padding: 16 }}>
+            <div style={{ fontSize: 11, color: "#c084fc", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 10 }}>💰 RINGKASAN PEMBAYARAN</div>
+            <SumRow label={`Tiket (${purchase.tickets.length}×)`} value={rp(purchase.totals.tickets_total)} />
+            {purchase.totals.bundles_total > 0 && <SumRow label="Snack & minuman" value={rp(purchase.totals.bundles_total)} />}
+            <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", margin: "6px 0", paddingTop: 6 }}>
+              <SumRow label="Subtotal" value={rp(purchase.totals.gross_total)} muted />
+            </div>
+            {purchase.totals.promo_discount > 0 && (
+              <SumRow
+                label={`🎟 Diskon promo${purchase.promo?.code ? ` (${purchase.promo.code})` : ""}`}
+                value={`− ${rp(purchase.totals.promo_discount)}`}
+                color="#10b981"
+              />
+            )}
+            {purchase.totals.points_used > 0 && (
+              <SumRow
+                label={`⭐ Poin ditukar (${purchase.totals.points_used} pt)`}
+                value="—"
+                color="#fbbf24"
+              />
+            )}
+            {/* Tax breakdown — tax-inclusive Indonesian style */}
+            <div style={{ marginTop: 8, padding: 8, background: "rgba(0,0,0,0.2)", borderRadius: 8, border: "1px dashed rgba(255,255,255,0.08)" }}>
+              <div style={{ fontSize: 10, color: "#7d8590", letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 4 }}>BREAKDOWN PAJAK (INCL.)</div>
+              <SumRow label="Harga dasar" value={rp(purchase.totals.base_amount)} muted small />
+              <SumRow label={`PPN ${purchase.totals.tax_rate_pct}%`} value={rp(purchase.totals.tax_extracted)} muted small />
+            </div>
+            <div style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: "#e6edf3" }}>TOTAL DIBAYAR</span>
+              <span style={{ fontSize: 22, fontWeight: 900, color: "#c084fc", fontFamily: "'Geist Mono',monospace", letterSpacing: -0.3 }}>{rp(purchase.totals.final_total)}</span>
+            </div>
+            {purchase.payment_method && (
+              <div style={{ marginTop: 6, fontSize: 11, color: "#9ca3af", textAlign: "right", fontFamily: "'Geist Mono',monospace" }}>
+                via {purchase.payment_method === "counter" ? "💵 Bayar di Counter" : purchase.payment_method === "snap" ? "💳 Midtrans Snap" : purchase.payment_method.toUpperCase()}
+                {purchase.payment_status === "paid" && <span style={{ color: "#10b981", fontWeight: 700 }}> · ✓ LUNAS</span>}
+                {(!purchase.payment_status || purchase.payment_status === "pending_payment") && purchase.payment_method !== "counter" && <span style={{ color: "#fbbf24", fontWeight: 700 }}> · ⏳ PENDING</span>}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Tips — hidden saat print */}
         <div className="tips-section" style={{ marginTop: 14, padding: 14, background: "rgba(34,211,238,0.06)", border: "1px solid rgba(34,211,238,0.2)", borderRadius: 10 }}>
           <div style={{ fontSize: 11, color: "#22d3ee", fontWeight: 800, marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.2 }}>💡 TIPS</div>
@@ -272,6 +315,15 @@ function Line({ label, value }) {
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.04)", gap: 14 }}>
       <span style={{ fontSize: 10, color: "#7d8590", letterSpacing: 1.4, fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>{label}</span>
       <span style={{ fontSize: 13, color: "#e6edf3", textAlign: "right", fontWeight: 600 }}>{value}</span>
+    </div>
+  );
+}
+
+function SumRow({ label, value, muted, small, color }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", padding: small ? "2px 0" : "4px 0", gap: 12 }}>
+      <span style={{ fontSize: small ? 11 : 12.5, color: muted ? "#9ca3af" : "#e6edf3", fontWeight: muted ? 500 : 600 }}>{label}</span>
+      <span style={{ fontSize: small ? 11 : 13, fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: color || (muted ? "#9ca3af" : "#e6edf3") }}>{value}</span>
     </div>
   );
 }
