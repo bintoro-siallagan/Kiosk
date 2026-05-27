@@ -5669,6 +5669,9 @@ function setupCinema(app, opts = {}) {
   `);
   // Phase 2 ALTER — idempotent (try/catch karena ALTER ADD COLUMN bisa error kalau already exists)
   try { db.exec("ALTER TABLE cinema_web_config ADD COLUMN faq_groups TEXT"); } catch {}
+  // Phase 3 ALTER — section toggles + page heros
+  try { db.exec("ALTER TABLE cinema_web_config ADD COLUMN section_toggles TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_web_config ADD COLUMN page_heros TEXT"); } catch {}
 
   router.get('/web-config', (req, res) => {
     // Auto-resolve company_id dari scope, atau dari query param (super admin)
@@ -5686,6 +5689,8 @@ function setupCinema(app, opts = {}) {
         nav_items: row.nav_items ? JSON.parse(row.nav_items) : null,
         footer_config: row.footer_config ? JSON.parse(row.footer_config) : null,
         faq_groups: row.faq_groups ? JSON.parse(row.faq_groups) : null,
+        section_toggles: row.section_toggles ? JSON.parse(row.section_toggles) : null,
+        page_heros: row.page_heros ? JSON.parse(row.page_heros) : null,
       },
       company_id: companyId,
       updated_at: row.updated_at,
@@ -5702,17 +5707,21 @@ function setupCinema(app, opts = {}) {
     const navJson = b.nav_items ? JSON.stringify(b.nav_items) : null;
     const footerJson = b.footer_config ? JSON.stringify(b.footer_config) : null;
     const faqJson = b.faq_groups ? JSON.stringify(b.faq_groups) : null;
+    const sectionJson = b.section_toggles ? JSON.stringify(b.section_toggles) : null;
+    const heroJson = b.page_heros ? JSON.stringify(b.page_heros) : null;
     const updatedBy = req.headers['x-admin-user'] || 'unknown';
     db.prepare(`
-      INSERT INTO cinema_web_config (company_id, nav_items, footer_config, faq_groups, updated_at, updated_by)
-      VALUES (?, ?, ?, ?, strftime('%s','now'), ?)
+      INSERT INTO cinema_web_config (company_id, nav_items, footer_config, faq_groups, section_toggles, page_heros, updated_at, updated_by)
+      VALUES (?, ?, ?, ?, ?, ?, strftime('%s','now'), ?)
       ON CONFLICT(company_id) DO UPDATE SET
         nav_items = COALESCE(excluded.nav_items, nav_items),
         footer_config = COALESCE(excluded.footer_config, footer_config),
         faq_groups = COALESCE(excluded.faq_groups, faq_groups),
+        section_toggles = COALESCE(excluded.section_toggles, section_toggles),
+        page_heros = COALESCE(excluded.page_heros, page_heros),
         updated_at = excluded.updated_at,
         updated_by = excluded.updated_by
-    `).run(companyId, navJson, footerJson, faqJson, updatedBy);
+    `).run(companyId, navJson, footerJson, faqJson, sectionJson, heroJson, updatedBy);
     res.json({ ok: true, company_id: companyId });
   });
 

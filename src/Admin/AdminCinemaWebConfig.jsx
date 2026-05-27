@@ -67,15 +67,54 @@ const DEFAULT_FAQ = [
   },
 ];
 
+// Section toggles — semua default ON
+const DEFAULT_SECTION_TOGGLES = {
+  my_list:      true,
+  now_showing:  true,
+  top10:        true,
+  top_picks:    true,
+  coming_soon:  true,
+  by_genre:     true,
+  genre_filter: true,
+};
+const SECTION_META = [
+  { key: "my_list",      label: "📑 My List",            desc: "Row film yg di-bookmark customer (visible kalau user signed-in)" },
+  { key: "now_showing",  label: "🎬 Sedang Tayang",     desc: "Row film yang sedang tayang" },
+  { key: "top10",        label: "🔥 Top 10",             desc: "Row Top 10 dgn numeral besar (booking count)" },
+  { key: "top_picks",    label: "⭐ Top Picks Member",   desc: "Row film rating tinggi (avg ≥4)" },
+  { key: "coming_soon",  label: "🔜 Segera Tayang",     desc: "Row film coming soon (status coming_soon)" },
+  { key: "by_genre",     label: "🎭 Group by Genre",    desc: "Auto-row per genre (Action, Drama, dll)" },
+  { key: "genre_filter", label: "🏷️ Genre Filter Chips", desc: "Chip bar filter genre di atas semua row" },
+];
+
+// Page heros — empty = pakai default hardcode
+const DEFAULT_PAGE_HEROS = {
+  promo:     { tag: "", title: "", subtitle: "", accent: "" },
+  studio:    { tag: "", title: "", subtitle: "", accent: "" },
+  locations: { tag: "", title: "", subtitle: "", accent: "" },
+  about:     { tag: "", title: "", subtitle: "", accent: "" },
+  faq:       { tag: "", title: "", subtitle: "", accent: "" },
+};
+const PAGE_HERO_META = [
+  { key: "promo",     label: "🎟 Promo Page",     placeholder: { tag: "Promo & Event", title: "Nonton Lebih Hemat", subtitle: "...promo aktif menunggu Anda...", accent: "🎟" } },
+  { key: "studio",    label: "🎉 Studio Page",    placeholder: { tag: "Studio Booking", title: "Sewa Bioskop Sendiri", subtitle: "Ulang tahun, anniversary, gathering...", accent: "🎉" } },
+  { key: "locations", label: "📍 Locations Page", placeholder: { tag: "Lokasi", title: "Cari Cinema Terdekat", subtitle: "...outlet KaryaOS siap menyambut...", accent: "📍" } },
+  { key: "about",     label: "🎬 About Page",     placeholder: { tag: "About Us", title: "KaryaOS", subtitle: "Bioskop tanpa antri loket...", accent: "🎬" } },
+  { key: "faq",       label: "❓ FAQ Page",       placeholder: { tag: "FAQ · Bantuan", title: "Tanya Apa Saja", subtitle: "Dari klasifikasi usia film...", accent: "❓" } },
+];
+
 export default function AdminCinemaWebConfig({ onBack }) {
   const [navItems, setNavItems] = useState(DEFAULT_NAV);
   const [footer, setFooter] = useState(DEFAULT_FOOTER);
   const [faqGroups, setFaqGroups] = useState(DEFAULT_FAQ);
+  const [sectionToggles, setSectionToggles] = useState(DEFAULT_SECTION_TOGGLES);
+  const [pageHeros, setPageHeros] = useState(DEFAULT_PAGE_HEROS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
-  const [tab, setTab] = useState("nav");  // "nav" | "footer" | "faq"
-  const [openGroupIdx, setOpenGroupIdx] = useState(0);  // FAQ: which group expanded
+  const [tab, setTab] = useState("nav");
+  const [openGroupIdx, setOpenGroupIdx] = useState(0);
+  const [openHeroKey, setOpenHeroKey] = useState("promo");
 
   useEffect(() => {
     fetch(`${API_HOST}/api/cinema/web-config`)
@@ -84,6 +123,8 @@ export default function AdminCinemaWebConfig({ onBack }) {
         if (d.config?.nav_items?.length) setNavItems(d.config.nav_items);
         if (d.config?.footer_config) setFooter({ ...DEFAULT_FOOTER, ...d.config.footer_config });
         if (d.config?.faq_groups?.length) setFaqGroups(d.config.faq_groups);
+        if (d.config?.section_toggles) setSectionToggles({ ...DEFAULT_SECTION_TOGGLES, ...d.config.section_toggles });
+        if (d.config?.page_heros) setPageHeros({ ...DEFAULT_PAGE_HEROS, ...d.config.page_heros });
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -100,6 +141,8 @@ export default function AdminCinemaWebConfig({ onBack }) {
           nav_items: navItems.map((n, i) => ({ ...n, order: i + 1 })),
           footer_config: footer,
           faq_groups: faqGroups,
+          section_toggles: sectionToggles,
+          page_heros: pageHeros,
         }),
       });
       const d = await res.json();
@@ -118,6 +161,8 @@ export default function AdminCinemaWebConfig({ onBack }) {
     setNavItems(DEFAULT_NAV);
     setFooter(DEFAULT_FOOTER);
     setFaqGroups(DEFAULT_FAQ);
+    setSectionToggles(DEFAULT_SECTION_TOGGLES);
+    setPageHeros(DEFAULT_PAGE_HEROS);
   };
 
   // ───────── FAQ editing ─────────
@@ -240,7 +285,13 @@ export default function AdminCinemaWebConfig({ onBack }) {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-        {[{ k: "nav", l: "🧭 Nav Header" }, { k: "footer", l: "📄 Footer" }, { k: "faq", l: "❓ FAQ" }].map(t => (
+        {[
+          { k: "nav",      l: "🧭 Nav Header" },
+          { k: "footer",   l: "📄 Footer" },
+          { k: "faq",      l: "❓ FAQ" },
+          { k: "sections", l: "🎚️ Sections" },
+          { k: "heros",    l: "🎨 Page Heros" },
+        ].map(t => (
           <button key={t.k} onClick={() => setTab(t.k)} style={{
             padding: "10px 18px", background: "transparent", border: "none",
             color: tab === t.k ? "#fb923c" : "#9ca3af",
@@ -392,11 +443,126 @@ export default function AdminCinemaWebConfig({ onBack }) {
         </div>
       )}
 
+      {tab === "sections" && (
+        <div>
+          <div style={{ marginBottom: 16, fontSize: 12, color: "#9ca3af", lineHeight: 1.6 }}>
+            Toggle show/hide section di <strong style={{ color: "#fff" }}>halaman Movies</strong> cinema web.
+            Section yg di-disable tidak akan dirender — tidak terlihat oleh customer.
+          </div>
+          <div style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, overflow: "hidden" }}>
+            {SECTION_META.map((s, i) => {
+              const enabled = sectionToggles[s.key] !== false;
+              return (
+                <label key={s.key} style={{
+                  display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
+                  borderTop: i > 0 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                  cursor: "pointer", transition: "background 0.15s",
+                }}
+                  onMouseEnter={e => e.currentTarget.style.background = "rgba(255,255,255,0.02)"}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
+                  {/* Toggle switch */}
+                  <input
+                    type="checkbox"
+                    checked={enabled}
+                    onChange={e => setSectionToggles(t => ({ ...t, [s.key]: e.target.checked }))}
+                    style={{ width: 18, height: 18, cursor: "pointer" }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: enabled ? "#fff" : "#6b7280" }}>{s.label}</div>
+                    <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 2 }}>{s.desc}</div>
+                  </div>
+                  <span style={{
+                    padding: "3px 10px", borderRadius: 999, fontSize: 10, fontWeight: 800,
+                    background: enabled ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.1)",
+                    color: enabled ? "#10b981" : "#fca5a5",
+                    border: `1px solid ${enabled ? "rgba(16,185,129,0.3)" : "rgba(239,68,68,0.3)"}`,
+                    fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1,
+                  }}>{enabled ? "ON" : "OFF"}</span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {tab === "heros" && (
+        <div>
+          <div style={{ marginBottom: 16, fontSize: 12, color: "#9ca3af", lineHeight: 1.6 }}>
+            Edit tag, judul, sub-judul untuk hero banner di tiap page (Promo, Studio, Locations, About, FAQ).
+            Kosongkan field utk pakai default (placeholder = default text).
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {PAGE_HERO_META.map(p => {
+              const open = openHeroKey === p.key;
+              const h = pageHeros[p.key] || {};
+              const placeholder = p.placeholder;
+              const isCustomized = !!(h.tag || h.title || h.subtitle || h.accent);
+              return (
+                <div key={p.key} style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, overflow: "hidden" }}>
+                  <button onClick={() => setOpenHeroKey(open ? null : p.key)} style={{
+                    width: "100%", display: "flex", alignItems: "center", padding: "12px 14px", gap: 10,
+                    background: open ? "rgba(251,146,60,0.06)" : "transparent",
+                    border: "none", color: "#fff", fontFamily: "inherit", cursor: "pointer", textAlign: "left",
+                    borderBottom: open ? "1px solid rgba(255,255,255,0.06)" : "none",
+                  }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, flex: 1 }}>{p.label}</span>
+                    {isCustomized && (
+                      <span style={{ padding: "2px 8px", fontSize: 9, fontWeight: 800, color: "#fb923c", background: "rgba(251,146,60,0.15)", border: "1px solid rgba(251,146,60,0.3)", borderRadius: 999, letterSpacing: 1, fontFamily: "'JetBrains Mono',monospace" }}>CUSTOM</span>
+                    )}
+                    <span style={{ color: "#9ca3af", fontSize: 16 }}>{open ? "▲" : "▼"}</span>
+                  </button>
+                  {open && (
+                    <div style={{ padding: "12px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
+                      <Field label="Tag (badge atas)"
+                        value={h.tag || ""}
+                        onChange={v => setPageHeros(ph => ({ ...ph, [p.key]: { ...ph[p.key], tag: v } }))}
+                        placeholder={placeholder.tag} />
+                      <Field label="Title (judul besar)"
+                        value={h.title || ""}
+                        onChange={v => setPageHeros(ph => ({ ...ph, [p.key]: { ...ph[p.key], title: v } }))}
+                        placeholder={placeholder.title} />
+                      <Field label="Subtitle (paragraf)"
+                        value={h.subtitle || ""}
+                        onChange={v => setPageHeros(ph => ({ ...ph, [p.key]: { ...ph[p.key], subtitle: v } }))}
+                        placeholder={placeholder.subtitle}
+                        multiline />
+                      <Field label="Accent (emoji badge)"
+                        value={h.accent || ""}
+                        onChange={v => setPageHeros(ph => ({ ...ph, [p.key]: { ...ph[p.key], accent: v } }))}
+                        placeholder={placeholder.accent}
+                        narrow />
+                      {isCustomized && (
+                        <button onClick={() => setPageHeros(ph => ({ ...ph, [p.key]: { tag: "", title: "", subtitle: "", accent: "" } }))} style={{ alignSelf: "flex-start", ...btnStyle("ghost"), fontSize: 11 }}>
+                          ↺ Clear (pakai default)
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Floating save button */}
       <div style={{ position: "sticky", bottom: 0, marginTop: 30, padding: "14px 0", background: "linear-gradient(to top, #0a0e16 60%, transparent)", display: "flex", justifyContent: "flex-end", gap: 8 }}>
         <button onClick={save} disabled={saving} style={btnStyle("primary", saving)}>{saving ? "Menyimpan…" : "💾 Simpan Perubahan"}</button>
       </div>
     </div>
+  );
+}
+
+function Field({ label, value, onChange, placeholder, multiline, narrow }) {
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 600, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, textTransform: "uppercase" }}>{label}</span>
+      {multiline ? (
+        <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} rows={3} style={{ ...inputStyle, resize: "vertical", minHeight: 64, fontFamily: "inherit", lineHeight: 1.5 }} />
+      ) : (
+        <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} style={{ ...inputStyle, maxWidth: narrow ? 100 : "100%" }} />
+      )}
+    </label>
   );
 }
 

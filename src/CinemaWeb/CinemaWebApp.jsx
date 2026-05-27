@@ -556,25 +556,25 @@ export default function CinemaWebApp() {
             brandPrimary={brandPrimary} />
         )}
         {step === "about" && (
-          <AboutPage brand={brand} brandPrimary={brandPrimary} onBack={goHome} />
+          <AboutPage brand={brand} brandPrimary={brandPrimary} onBack={goHome} heroOverride={webConfig?.page_heros?.about} />
         )}
         {step === "history" && (
           <HistoryPage session={session} brandPrimary={brandPrimary} onSignInClick={() => setSignInOpen(true)} />
         )}
         {step === "movies" && (
-          <MoviesPage brandPrimary={brandPrimary} session={session} onPick={(f) => { setFilm(f); goTo(outlet ? "filmDetail" : "outlet"); }} />
+          <MoviesPage brandPrimary={brandPrimary} session={session} onPick={(f) => { setFilm(f); goTo(outlet ? "filmDetail" : "outlet"); }} sectionToggles={webConfig?.section_toggles} />
         )}
         {step === "promo" && (
-          <PromoPage brandPrimary={brandPrimary} />
+          <PromoPage brandPrimary={brandPrimary} heroOverride={webConfig?.page_heros?.promo} />
         )}
         {step === "studio" && (
-          <StudioPage brandPrimary={brandPrimary} />
+          <StudioPage brandPrimary={brandPrimary} heroOverride={webConfig?.page_heros?.studio} />
         )}
         {step === "locations" && (
-          <LocationsPage brandPrimary={brandPrimary} onPick={pickOutlet} />
+          <LocationsPage brandPrimary={brandPrimary} onPick={pickOutlet} heroOverride={webConfig?.page_heros?.locations} />
         )}
         {step === "faq" && (
-          <FAQPage brandPrimary={brandPrimary} customFaqGroups={webConfig?.faq_groups} />
+          <FAQPage brandPrimary={brandPrimary} customFaqGroups={webConfig?.faq_groups} heroOverride={webConfig?.page_heros?.faq} />
         )}
       </main>
       <Footer brand={brand} brandPrimary={brandPrimary} onAbout={() => goTo("about")} onNav={(t) => goTo(t)} footerConfig={resolvedFooterConfig} />
@@ -1001,7 +1001,19 @@ function filmMatchesGenre(film, genre) {
   return splitGenres(film).some(g => g.toLowerCase() === genre.toLowerCase());
 }
 
-function MoviesPage({ brandPrimary, onPick, session }) {
+// Default section toggles — semua ON
+const DEFAULT_SECTION_TOGGLES = {
+  my_list: true,
+  now_showing: true,
+  top10: true,
+  top_picks: true,
+  coming_soon: true,
+  by_genre: true,
+  genre_filter: true,
+};
+
+function MoviesPage({ brandPrimary, onPick, session, sectionToggles }) {
+  const tg = { ...DEFAULT_SECTION_TOGGLES, ...(sectionToggles || {}) };
   const [films, setFilms] = useState(null);
   const [top10, setTop10] = useState([]);
   const [top10Loading, setTop10Loading] = useState(false);
@@ -1087,16 +1099,18 @@ function MoviesPage({ brandPrimary, onPick, session }) {
           : `${totalFiltered} film bergenre "${genreFilter}"`}
       </p>
 
-      {/* Genre filter chips — horizontal scroll */}
-      <div className="cw-genre-chips" style={{
-        display: "flex", gap: 8, overflowX: "auto", paddingBottom: 12, marginBottom: 22,
-        scrollbarWidth: "none",
-      }}>
-        <GenreChip label="Semua" active={genreFilter === "all"} onClick={() => setGenreFilter("all")} count={films.length} brandPrimary={brandPrimary} />
-        {availableGenres.map(g => (
-          <GenreChip key={g} label={g} active={genreFilter === g} onClick={() => setGenreFilter(g)} count={genreCounts[g]} brandPrimary={brandPrimary} />
-        ))}
-      </div>
+      {/* Genre filter chips — horizontal scroll (toggleable via admin) */}
+      {tg.genre_filter && (
+        <div className="cw-genre-chips" style={{
+          display: "flex", gap: 8, overflowX: "auto", paddingBottom: 12, marginBottom: 22,
+          scrollbarWidth: "none",
+        }}>
+          <GenreChip label="Semua" active={genreFilter === "all"} onClick={() => setGenreFilter("all")} count={films.length} brandPrimary={brandPrimary} />
+          {availableGenres.map(g => (
+            <GenreChip key={g} label={g} active={genreFilter === g} onClick={() => setGenreFilter(g)} count={genreCounts[g]} brandPrimary={brandPrimary} />
+          ))}
+        </div>
+      )}
 
       {totalFiltered === 0 && watchlistFiltered.length === 0 ? (
         <div style={{ textAlign: "center", padding: 60, color: C.dim, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14 }}>
@@ -1109,18 +1123,18 @@ function MoviesPage({ brandPrimary, onPick, session }) {
         </div>
       ) : (
         <>
-          {watchlistFiltered.length > 0 && <FilmRow title="📑 My List" films={watchlistFiltered} onPick={onPick} brandPrimary={brandPrimary} onRemove={removeFromList} />}
-          {nowShowing.length > 0 && <FilmRow title={genreFilter === "all" ? "🎬 Sedang Tayang" : `🎬 Sedang Tayang · ${genreFilter}`} films={nowShowing} onPick={onPick} brandPrimary={brandPrimary} />}
-          {top10Filtered.length > 0 && (
+          {tg.my_list && watchlistFiltered.length > 0 && <FilmRow title="📑 My List" films={watchlistFiltered} onPick={onPick} brandPrimary={brandPrimary} onRemove={removeFromList} />}
+          {tg.now_showing && nowShowing.length > 0 && <FilmRow title={genreFilter === "all" ? "🎬 Sedang Tayang" : `🎬 Sedang Tayang · ${genreFilter}`} films={nowShowing} onPick={onPick} brandPrimary={brandPrimary} />}
+          {tg.top10 && top10Filtered.length > 0 && (
             <FilmRow
               title={`🔥 Top 10 ${top10Period === "week" ? "Minggu Ini" : top10Period === "month" ? "Bulan Ini" : "Sepanjang Waktu"}`}
               titleExtra={<Top10PeriodToggle value={top10Period} onChange={setTop10Period} brandPrimary={brandPrimary} loading={top10Loading} />}
               films={top10Filtered} onPick={onPick} brandPrimary={brandPrimary} numbered
             />
           )}
-          {topRated.length > 0 && <FilmRow title="⭐ Top Picks Member" films={topRated} onPick={onPick} brandPrimary={brandPrimary} showRating />}
-          {comingSoon.length > 0 && <FilmRow title="🔜 Segera Tayang" films={comingSoon} onPick={onPick} brandPrimary={brandPrimary} />}
-          {genreEntries.map(([genre, list]) => (
+          {tg.top_picks && topRated.length > 0 && <FilmRow title="⭐ Top Picks Member" films={topRated} onPick={onPick} brandPrimary={brandPrimary} showRating />}
+          {tg.coming_soon && comingSoon.length > 0 && <FilmRow title="🔜 Segera Tayang" films={comingSoon} onPick={onPick} brandPrimary={brandPrimary} />}
+          {tg.by_genre && genreEntries.map(([genre, list]) => (
             <FilmRow key={genre} title={`🎭 ${genre}`} films={list} onPick={onPick} brandPrimary={brandPrimary} />
           ))}
         </>
@@ -1398,7 +1412,7 @@ function PageHero({ tag, title, subtitle, brandPrimary, accent = "🎬", bgImage
   );
 }
 
-function PromoPage({ brandPrimary }) {
+function PromoPage({ brandPrimary, heroOverride }) {
   const [promos, setPromos] = useState(null);
   useEffect(() => {
     fetch(`${API_HOST}/api/cinema/promotions/active`).then(r => r.json()).then(d => setPromos(d.promotions || d || []))
@@ -1408,10 +1422,10 @@ function PromoPage({ brandPrimary }) {
   return (
     <div style={{ paddingBottom: 60 }}>
       <PageHero
-        tag="Promo & Event"
-        title="Nonton Lebih Hemat"
-        subtitle={`${promos.length} promo aktif menunggu Anda. Pakai kode saat checkout — diskon langsung kepotong, tanpa drama.`}
-        accent="🎟"
+        tag={heroOverride?.tag || "Promo & Event"}
+        title={heroOverride?.title || "Nonton Lebih Hemat"}
+        subtitle={heroOverride?.subtitle || `${promos.length} promo aktif menunggu Anda. Pakai kode saat checkout — diskon langsung kepotong, tanpa drama.`}
+        accent={heroOverride?.accent || "🎟"}
         brandPrimary={brandPrimary}
       />
       {promos.length === 0 ? (
@@ -1447,7 +1461,7 @@ function PromoPage({ brandPrimary }) {
   );
 }
 
-function StudioPage({ brandPrimary }) {
+function StudioPage({ brandPrimary, heroOverride }) {
   const [packages, setPackages] = useState(null);
   useEffect(() => {
     fetch(`${API_HOST}/api/cinema/party-packages`).then(r => r.ok ? r.json() : { packages: [] })
@@ -1458,10 +1472,10 @@ function StudioPage({ brandPrimary }) {
   return (
     <div style={{ paddingBottom: 60 }}>
       <PageHero
-        tag="Studio Booking"
-        title="Sewa Bioskop Sendiri"
-        subtitle="Ulang tahun anak, anniversary, gathering kantor, screening rilis perdana — semua bisa di sini. Studio jadi milik Anda dari layar sampai snack."
-        accent="🎉"
+        tag={heroOverride?.tag || "Studio Booking"}
+        title={heroOverride?.title || "Sewa Bioskop Sendiri"}
+        subtitle={heroOverride?.subtitle || "Ulang tahun anak, anniversary, gathering kantor, screening rilis perdana — semua bisa di sini. Studio jadi milik Anda dari layar sampai snack."}
+        accent={heroOverride?.accent || "🎉"}
         brandPrimary={brandPrimary}
       />
       {packages.length === 0 ? (
@@ -1490,7 +1504,7 @@ function StudioPage({ brandPrimary }) {
   );
 }
 
-function LocationsPage({ brandPrimary, onPick }) {
+function LocationsPage({ brandPrimary, onPick, heroOverride }) {
   const [outlets, setOutlets] = useState(null);
   useEffect(() => {
     fetch(`${API_HOST}/api/outlet-master`).then(r => r.json()).then(d => {
@@ -1502,10 +1516,10 @@ function LocationsPage({ brandPrimary, onPick }) {
   return (
     <div style={{ paddingBottom: 60 }}>
       <PageHero
-        tag="Lokasi"
-        title="Cari Cinema Terdekat"
-        subtitle={`${outlets.length} outlet KaryaOS siap menyambut Anda di kota-kota besar Indonesia. Klik kota, lihat jadwal, pesan dari sofa.`}
-        accent="📍"
+        tag={heroOverride?.tag || "Lokasi"}
+        title={heroOverride?.title || "Cari Cinema Terdekat"}
+        subtitle={heroOverride?.subtitle || `${outlets.length} outlet KaryaOS siap menyambut Anda di kota-kota besar Indonesia. Klik kota, lihat jadwal, pesan dari sofa.`}
+        accent={heroOverride?.accent || "📍"}
         brandPrimary={brandPrimary}
       />
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: 14 }}>
@@ -1596,7 +1610,7 @@ const FAQ_GROUPS = [
   },
 ];
 
-function FAQPage({ brandPrimary, customFaqGroups }) {
+function FAQPage({ brandPrimary, customFaqGroups, heroOverride }) {
   const [openKey, setOpenKey] = useState("0-0");  // group 0 item 0 default open
   // Resolve: tenant custom FAQ kalau ada (>=1 grup dgn >=1 item), fallback default
   const groups = (Array.isArray(customFaqGroups) && customFaqGroups.length > 0)
@@ -1605,10 +1619,10 @@ function FAQPage({ brandPrimary, customFaqGroups }) {
   return (
     <div style={{ paddingBottom: 60 }}>
       <PageHero
-        tag="FAQ · Bantuan"
-        title="Tanya Apa Saja"
-        subtitle="Dari klasifikasi usia film sampai cara redeem poin — semua jawaban yang Anda butuhkan, dalam satu halaman."
-        accent="❓"
+        tag={heroOverride?.tag || "FAQ · Bantuan"}
+        title={heroOverride?.title || "Tanya Apa Saja"}
+        subtitle={heroOverride?.subtitle || "Dari klasifikasi usia film sampai cara redeem poin — semua jawaban yang Anda butuhkan, dalam satu halaman."}
+        accent={heroOverride?.accent || "❓"}
         brandPrimary={brandPrimary}
       />
       <div style={{ maxWidth: 820, margin: "0 auto" }}>
@@ -1683,15 +1697,15 @@ function FAQPage({ brandPrimary, customFaqGroups }) {
 // ════════════════════════════════════════════════════════════════════
 // ABOUT PAGE — company history & info
 // ════════════════════════════════════════════════════════════════════
-function AboutPage({ brand, brandPrimary, onBack }) {
+function AboutPage({ brand, brandPrimary, onBack, heroOverride }) {
   const name = brand?.brand_short || brand?.name || "KaryaOS";
   return (
     <div style={{ paddingBottom: 60 }}>
       <PageHero
-        tag="About Us"
-        title={name}
-        subtitle="Bioskop tanpa antri loket. Pilih film dari sofa, pilih kursi favorit, sambil order popcorn — semuanya dalam satu scan QR."
-        accent="🎬"
+        tag={heroOverride?.tag || "About Us"}
+        title={heroOverride?.title || name}
+        subtitle={heroOverride?.subtitle || "Bioskop tanpa antri loket. Pilih film dari sofa, pilih kursi favorit, sambil order popcorn — semuanya dalam satu scan QR."}
+        accent={heroOverride?.accent || "🎬"}
         brandPrimary={brandPrimary}
       />
       <div style={{ maxWidth: 800, margin: "0 auto" }}>
