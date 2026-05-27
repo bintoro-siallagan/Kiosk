@@ -116,10 +116,17 @@ export default function AdminBranding({ onBack }) {
       <header style={S.header}>
         {onBack && <button onClick={onBack} style={S.backBtn}>← Back</button>}
         <h2 style={S.title}>Branding</h2>
+        <div style={{ flex: 1 }} />
+        <button onClick={saveBranding} disabled={saving} style={{ ...S.saveBtn, padding: "8px 18px", fontSize: 13 }}>
+          {saving ? "Saving…" : "💾 Save"}
+        </button>
       </header>
 
       <div style={S.intro}>
         🎨 <b style={{ color: "#fff" }}>Per-tenant branding</b> — logo, brand color, dan nama yang muncul di kiosk, POS, receipt, dan modal. Customer lo bakal liat brand lo, bukan karyaos.
+        <div style={{ marginTop: 8, fontSize: 12, color: "rgba(255,255,255,0.55)" }}>
+          💡 Edit field di bawah → klik <b style={{ color: "#fb923c" }}>💾 Save</b> di header atau footer bawah utk simpan.
+        </div>
       </div>
 
       {/* LOGO BLOCK */}
@@ -288,6 +295,26 @@ export default function AdminBranding({ onBack }) {
           </button>
         </div>
       </section>
+
+      {/* STICKY SAVE BAR — selalu visible saat scroll */}
+      <div style={{
+        position: "sticky", bottom: 0, marginTop: 24,
+        padding: "14px 20px", marginLeft: -24, marginRight: -24,
+        background: "linear-gradient(to top, rgba(10,12,20,0.98) 60%, rgba(10,12,20,0.85))",
+        backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)",
+        borderTop: "1px solid rgba(255,255,255,0.08)",
+        display: "flex", justifyContent: "flex-end", gap: 10, alignItems: "center",
+      }}>
+        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginRight: "auto" }}>
+          {saving ? "⏳ Menyimpan…" : "💡 Klik Save untuk apply perubahan"}
+        </span>
+        <button onClick={resetAllBranding} disabled={saving} style={S.removeBtn}>
+          ⚠️ Reset Default
+        </button>
+        <button onClick={saveBranding} disabled={saving} style={S.saveBtn}>
+          {saving ? "Saving…" : "💾 Save All Branding"}
+        </button>
+      </div>
     </div>
   );
 }
