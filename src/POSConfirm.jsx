@@ -150,7 +150,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
   // ═══════════════════════════════════════════════════════════
   const applyPromoCode = async (codeInput) => {
     const code = (codeInput || "").trim().toUpperCase();
-    if (!code) { setPromoError("Masukkan kode promo dulu"); return; }
+    if (!code) { setPromoError("Enter a promo code first"); return; }
     setPromoLoading(true);
     setPromoError(null);
 
@@ -230,7 +230,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
       }
 
     } catch (e) {
-      setPromoError("Gagal cek promo: " + e.message);
+      setPromoError("Failed to check promo: " + e.message);
     } finally {
       setPromoLoading(false);
     }
@@ -296,7 +296,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
         onCancel();
         return;
       } catch (e) {
-        alert("Gagal update tab: " + e.message);
+        alert("Failed to update tab: " + e.message);
         setBusy(false);
         return;
       }
@@ -355,7 +355,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
 
       onSuccess(saved);
     } catch (e) {
-      alert("Gagal save order: " + e.message);
+      alert("Failed to save order: " + e.message);
       setBusy(false);
     }
   };
@@ -368,7 +368,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
       return;
     }
     if (payMethod === "CASH" && !cashSufficient) {
-      alert(`Uang diterima belum cukup. Kurang Rp ${fmt(finalTotal - cashReceived)}`);
+      alert(`Cash received is not enough. Short Rp ${fmt(finalTotal - cashReceived)}`);
       return;
     }
     if (payMethod === "QRIS") { setQrisFlow(true); }
@@ -393,29 +393,30 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
   // ═══════════════════════════════════════════════════════════
   return (
     <div style={S.root}>
+      <style>{CONFIRM_CSS}</style>
       <header style={S.header}>
         <button onClick={onBack} style={S.iconBtn}>← Back</button>
-        <h1 style={S.headTitle}>Payment Confirmation</h1>
+        <h1 style={S.headTitle}>Review &amp; Pay</h1>
         <button onClick={onCancel} style={S.iconBtn}>✕</button>
       </header>
 
       <main style={S.main}>
         {isOpenTab && (
-          <div style={S.tabBanner}>
-            <span style={{fontSize: 22}}>📋</span>
+          <div className="lg" style={S.tabBanner}>
+            <span style={{ fontSize: 22 }}>📋</span>
             <div>
-              <div style={S.tabBannerTitle}>{isResuming ? "Tambah ke Tab #" + order.resumeTabId : "Mode Buka Tab"}</div>
+              <div style={S.tabBannerTitle}>{isResuming ? `Adding to Tab #${order.resumeTabId}` : "Open tab mode"}</div>
               <div style={S.tabBannerHint}>{isResuming ? "Old + new items updated. Pay later when customer settles." : "Tab saved without payment. Pay later."}</div>
             </div>
           </div>
         )}
 
         {/* Order meta */}
-        <div style={S.metaCard}>
+        <div className="lg" style={S.metaCard}>
           <div style={S.metaRow}>
-            <span style={S.metaLabel}>Tipe</span>
+            <span style={S.metaLabel}>Type</span>
             <span style={S.metaValue}>
-              {order.type === "dine-in" ? "🍽️ Dine-in" : "🛍️ Take-away"}
+              {order.type === "dine-in" ? "🍽️ Dine-in" : "🛍️ Takeaway"}
               {order.table && ` · ${order.table.name}`}
             </span>
           </div>
@@ -425,7 +426,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
               <span style={S.metaValue}>
                 {order.customerId ? "📱" : "👤"} {order.customerName}
                 {customerPoints > 0 && (
-                  <span style={S.customerPoints}> · {fmt(customerPoints)} poin</span>
+                  <span style={S.customerPoints}> · {fmt(customerPoints)} pts</span>
                 )}
               </span>
             </div>
@@ -437,8 +438,8 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
         </div>
 
         {/* Items */}
-        <div style={S.itemsCard}>
-          <div style={S.itemsHeader}>PESANAN ({cart.length} ITEM)</div>
+        <div className="lg" style={S.itemsCard}>
+          <div style={S.itemsHeader}>Order · {cart.length} item{cart.length === 1 ? "" : "s"}</div>
           {cart.map((ci, idx) => {
             const toppings = ci.addons?.toppings || [];
             const lineTotal = ((ci.price || 0) + (ci.addonTotal || 0)) * ci.qty;
@@ -464,26 +465,26 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
           })}
         </div>
 
-        {/* Subtotal — kalau ada deduction, gak punya border orange (jadi sekedar info) */}
-        <div style={hasDeduction ? S.subtotalCardPlain : S.subtotalCard}>
+        {/* Subtotal */}
+        <div className={hasDeduction ? "" : "lg"} style={hasDeduction ? S.subtotalCardPlain : S.subtotalCard}>
           <div>
             <div style={S.subLabel}>Subtotal</div>
-            <div style={S.taxNote}>PPN 10% included</div>
+            <div style={S.taxNote}>VAT 10% included</div>
           </div>
           <div style={hasDeduction ? S.subAmountPlain : S.subAmount}>Rp {fmt(subtotal)}</div>
         </div>
 
-        {/* ═══════ NEW: Promo & Poin sections (hidden for open tab) ═══════ */}
+        {/* ═══════ Promo & Points sections (hidden for open tab) ═══════ */}
         {!isOpenTab && (
           <>
             {/* Promo input */}
-            <div style={S.payCard}>
-              <div style={S.payTitle}>Promo / Voucher</div>
+            <div className="lg" style={S.payCard}>
+              <div style={S.payTitle}>Promo · Voucher</div>
               {appliedPromo ? (
                 <div style={S.promoApplied}>
-                  <div style={{flex: 1}}>
+                  <div style={{ flex: 1 }}>
                     <div style={S.promoCodeLabel}>✓ {appliedPromo.code}</div>
-                    <div style={S.promoSub}>{appliedPromo.label} · Customer hemat Rp {fmt(promoDiscount)}</div>
+                    <div style={S.promoSub}>{appliedPromo.label} · saves Rp {fmt(promoDiscount)}</div>
                   </div>
                   <button onClick={removePromo} style={S.promoRemove}>✕</button>
                 </div>
@@ -495,7 +496,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
                       value={promoCode}
                       onChange={e => { setPromoCode(e.target.value.toUpperCase()); setPromoError(null); }}
                       onKeyDown={e => e.key === "Enter" && applyPromoCode(promoCode)}
-                      placeholder="Masukkan kode..."
+                      placeholder="Enter code..."
                       style={S.promoInput}
                       disabled={promoLoading}
                     />
@@ -512,13 +513,13 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
               )}
             </div>
 
-            {/* Poin redemption — only if customer has points */}
+            {/* Points redemption — only if customer has points */}
             {customerPoints > 0 && (
-              <div style={S.payCard}>
+              <div className="lg" style={S.payCard}>
                 <div style={S.pointsHeader}>
                   <div>
                     <div style={S.payTitle}>Pay with points</div>
-                    <div style={S.pointsHint}>{fmt(customerPoints)} poin · 1 poin = Rp {getPointValue()}</div>
+                    <div style={S.pointsHint}>{fmt(customerPoints)} pts · 1 pt = Rp {getPointValue()}</div>
                   </div>
                   <ToggleSwitch on={pointsOn} onChange={togglePoints} />
                 </div>
@@ -535,8 +536,8 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
                       style={S.pointsSlider}
                     />
                     <div style={S.pointsReadout}>
-                      <span>Pakai <strong>{fmt(pointsUsed)}</strong> poin</span>
-                      <span style={S.pointsValueRp}>-Rp {fmt(pointsUsed * getPointValue())}</span>
+                      <span>Use <strong>{fmt(pointsUsed)}</strong> pts</span>
+                      <span style={S.pointsValueRp}>−Rp {fmt(pointsUsed * getPointValue())}</span>
                     </div>
                     <div style={S.pointsQuick}>
                       <button onClick={() => setPointsAmount(Math.round(maxPointsCanUse * 0.25))} style={S.pointsQuickBtn}>25%</button>
@@ -548,40 +549,40 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
 
                 {pointsOn && maxPointsCanUse === 0 && (
                   <div style={S.pointsEmpty}>
-                    Total sudah Rp 0 (semua udah ke-cover promo). Matiin toggle untuk pakai poin di transaksi lain.
+                    Total is Rp 0 (fully covered by promo). Turn off to use points on a future order.
                   </div>
                 )}
               </div>
             )}
 
-            {/* Final breakdown (kalau ada deduction atau service charge) */}
+            {/* Final breakdown */}
             {(hasDeduction || serviceCharge > 0) && (
-              <div style={S.breakdownCard}>
+              <div className="lg" style={S.breakdownCard}>
                 <div style={S.breakdownRow}>
                   <span style={S.breakdownLabel}>Subtotal</span>
-                  <span>Rp {fmt(subtotal)}</span>
+                  <span style={{ fontVariantNumeric: "tabular-nums" }}>Rp {fmt(subtotal)}</span>
                 </div>
                 {promoDiscount > 0 && (
-                  <div style={{...S.breakdownRow, color: "#10B981"}}>
+                  <div style={{ ...S.breakdownRow, color: "rgba(52,211,153,0.92)" }}>
                     <span>Promo {appliedPromo.code}</span>
-                    <span>-Rp {fmt(promoDiscount)}</span>
+                    <span style={{ fontVariantNumeric: "tabular-nums" }}>−Rp {fmt(promoDiscount)}</span>
                   </div>
                 )}
                 {pointsValue > 0 && (
-                  <div style={{...S.breakdownRow, color: "#10B981"}}>
-                    <span>Bayar dgn {fmt(pointsUsed)} poin</span>
-                    <span>-Rp {fmt(pointsValue)}</span>
+                  <div style={{ ...S.breakdownRow, color: "rgba(52,211,153,0.92)" }}>
+                    <span>{fmt(pointsUsed)} pts redeemed</span>
+                    <span style={{ fontVariantNumeric: "tabular-nums" }}>−Rp {fmt(pointsValue)}</span>
                   </div>
                 )}
                 {serviceCharge > 0 && (
-                  <div style={{...S.breakdownRow, color: "#FBBF24"}}>
-                    <span>🍽️ {serviceConfig.label} {serviceConfig.pct}%</span>
-                    <span>+Rp {fmt(serviceCharge)}</span>
+                  <div style={{ ...S.breakdownRow, color: "rgba(251,191,36,0.88)" }}>
+                    <span>{serviceConfig.label} · {serviceConfig.pct}%</span>
+                    <span style={{ fontVariantNumeric: "tabular-nums" }}>+Rp {fmt(serviceCharge)}</span>
                   </div>
                 )}
                 <div style={S.breakdownDivider} />
                 <div style={S.breakdownTotalRow}>
-                  <span style={S.breakdownTotalLabel}>Total Due</span>
+                  <span style={S.breakdownTotalLabel}>Total</span>
                   <span style={S.breakdownTotalAmount}>Rp {fmt(finalTotal)}</span>
                 </div>
               </div>
@@ -589,42 +590,42 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
           </>
         )}
 
-        {/* Payment method (hidden if open tab OR if total is 0 from poin) */}
+        {/* Payment method */}
         {!isOpenTab && finalTotal > 0 && (
-          <div style={S.payCard}>
+          <div className="lg" style={S.payCard}>
             <div style={S.payTitle}>Payment Method</div>
             <div style={S.payOptions}>
               <button
                 onClick={() => setPayMethod("CASH")}
-                style={{...S.payBtn, ...(payMethod === "CASH" ? S.payActive : {})}}
+                style={{ ...S.payBtn, ...(payMethod === "CASH" ? S.payActive : {}) }}
               >
                 <span style={S.payIcon}>💵</span>
-                <span style={S.payName}>CASH</span>
-                <span style={S.payHint}>Pay cash at the counter</span>
+                <span style={S.payName}>Cash</span>
+                <span style={S.payHint}>Pay at the counter</span>
               </button>
               <button
                 onClick={() => setPayMethod("QRIS")}
-                style={{...S.payBtn, ...(payMethod === "QRIS" ? S.payActive : {})}}
+                style={{ ...S.payBtn, ...(payMethod === "QRIS" ? S.payActive : {}) }}
               >
                 <span style={S.payIcon}>📱</span>
                 <span style={S.payName}>QRIS</span>
-                <span style={S.payHint}>Customer scan QR di CDS</span>
+                <span style={S.payHint}>Scan QR on CDS</span>
               </button>
               <button
                 onClick={() => setShowSplitModal(true)}
-                style={{...S.payBtn, background:"rgba(139,92,246,0.10)", borderColor:"rgba(139,92,246,0.4)"}}
+                style={{ ...S.payBtn, background: "rgba(139,92,246,0.10)", border: "1px solid rgba(139,92,246,0.35)" }}
               >
                 <span style={S.payIcon}>💸</span>
-                <span style={S.payName}>SPLIT</span>
-                <span style={S.payHint}>Pay with 2+ methods</span>
+                <span style={S.payName}>Split</span>
+                <span style={S.payHint}>2+ methods</span>
               </button>
             </div>
           </div>
         )}
 
-        {/* Cash counter — only when CASH selected and total > 0 (Step 4A) */}
+        {/* Cash counter */}
         {!isOpenTab && finalTotal > 0 && payMethod === "CASH" && (
-          <div style={S.payCard}>
+          <div className="lg" style={S.payCard}>
             <div style={S.payTitle}>Cash Received</div>
             <div style={S.cashDisplay}>
               <div style={S.cashReceivedAmount}>Rp {fmt(cashReceived)}</div>
@@ -635,7 +636,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
                   </div>
                 ) : (
                   <div style={S.cashShortRow}>
-                    Kurang: <strong>Rp {fmt(finalTotal - cashReceived)}</strong>
+                    Short: <strong>Rp {fmt(finalTotal - cashReceived)}</strong>
                   </div>
                 )
               )}
@@ -667,7 +668,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
            finalTotal === 0 ? "✓ Konfirmasi (Bayar Poin)" :
            payMethod === "QRIS" ? "📱 Tampilkan QR ke Customer" :
            payMethod === "CASH" && cashReceived === 0 ? "💵 Input uang diterima dulu" :
-           payMethod === "CASH" && !cashSufficient ? `⚠ Kurang Rp ${fmt(finalTotal - cashReceived)}` :
+           payMethod === "CASH" && !cashSufficient ? `⚠ Short Rp ${fmt(finalTotal - cashReceived)}` :
            payMethod === "CASH" ? `✓ Konfirmasi (Change Rp ${fmt(cashChange)})` :
            "✓ Konfirmasi Bayar"}
         </button>
@@ -876,7 +877,7 @@ function POSQRISFlow({ cart, subtotal, order, onCancel, onPaid }) {
             <div style={{fontSize:64, marginBottom:16}}>⏰</div>
             <h2 style={{fontSize:24, marginBottom:8}}>Pembayaran Timeout</h2>
             <p style={{color:"#888", marginBottom:24}}>QR expired atau customer cancel</p>
-            <button onClick={handleCancel} style={S.confirmBtn}>← Kembali</button>
+            <button onClick={handleCancel} style={S.confirmBtn}>← Back</button>
           </>
         )}
 
@@ -900,161 +901,200 @@ function POSQRISFlow({ cart, subtotal, order, onCancel, onPaid }) {
 // ═══════════════════════════════════════════════════════════
 // Styles
 // ═══════════════════════════════════════════════════════════
+const FONT = "'Inter',sans-serif";
+const BRAND = "var(--brand-primary,#FF6B35)";
+const BRAND_SEC = "var(--brand-secondary,#E55A2B)";
+
+const CONFIRM_CSS = `
+  :root{color-scheme:dark}
+  *{box-sizing:border-box}
+  .lg{position:relative;background:linear-gradient(180deg,rgba(255,255,255,0.05) 0%,rgba(255,255,255,0.02) 60%,rgba(255,255,255,0.008) 100%);backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);border:1px solid rgba(255,255,255,0.07);box-shadow:inset 0 1px 0 rgba(255,255,255,0.14),inset 0 -1px 0 rgba(0,0,0,0.18),0 8px 24px rgba(0,0,0,0.24)}
+  button{cursor:pointer;font-family:'Inter',sans-serif}
+  input,textarea{font-family:'Inter',sans-serif;outline:none}
+  input::placeholder{color:rgba(255,255,255,0.3)}
+`;
+
 const S = {
-  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Inter',sans-serif", 
-    display:"flex", flexDirection:"column" },
-  header: { display:"flex", alignItems:"center", justifyContent:"space-between",
-    padding:"16px 24px", borderBottom:"1px solid #222" },
-  headTitle: { fontFamily:"'Inter',sans-serif", fontSize:32, color:"#F59E0B", margin:0 },
-  iconBtn: { background:"transparent", border:"1px solid #333", color:"#aaa",
-    padding:"8px 14px", borderRadius:8, fontSize:13, cursor:"pointer", fontFamily:"inherit" },
-  main: { flex:1, padding:"24px 20px", maxWidth:640, margin:"0 auto", width:"100%",
-    boxSizing:"border-box", display:"flex", flexDirection:"column", gap:14 },
+  root: {
+    minHeight: "100vh",
+    background: "radial-gradient(ellipse 70% 55% at 50% 38%, rgba(40,44,58,0.5) 0%, transparent 70%), linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)",
+    backgroundAttachment: "fixed",
+    color: "#fff", fontFamily: FONT,
+    display: "flex", flexDirection: "column"
+  },
+  header: {
+    display: "flex", alignItems: "center", justifyContent: "space-between",
+    padding: "16px 24px",
+    background: "rgba(13,17,23,0.7)",
+    backdropFilter: "blur(20px) saturate(180%)",
+    WebkitBackdropFilter: "blur(20px) saturate(180%)",
+    borderBottom: "1px solid rgba(255,255,255,0.06)",
+    position: "sticky", top: 0, zIndex: 10
+  },
+  headTitle: { fontFamily: FONT, fontSize: 18, fontWeight: 600, color: "rgba(255,255,255,0.95)", letterSpacing: "-0.4px", margin: 0 },
+  iconBtn: {
+    background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+    color: "rgba(255,255,255,0.7)", padding: "7px 14px", borderRadius: 999,
+    fontSize: 12, fontWeight: 500, cursor: "pointer", fontFamily: FONT, letterSpacing: "-0.1px"
+  },
+  main: {
+    flex: 1, padding: "20px 20px 32px",
+    maxWidth: 640, margin: "0 auto", width: "100%",
+    boxSizing: "border-box",
+    display: "flex", flexDirection: "column", gap: 12
+  },
 
   tabBanner: {
-    padding:"14px 18px", borderRadius:12,
-    background:"rgba(245,158,11,0.10)", border:"1px solid rgba(245,158,11,0.40)",
-    color:"#F59E0B", display:"flex", alignItems:"center", gap:10
+    padding: "14px 16px", borderRadius: 16,
+    background: "color-mix(in srgb, var(--brand-primary,#FF6B35) 10%, rgba(255,255,255,0.02))",
+    border: "1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 35%, transparent)",
+    color: "#fff", display: "flex", alignItems: "center", gap: 12
   },
-  tabBannerTitle: { fontSize:15, fontWeight:700 },
-  tabBannerHint: { fontSize:12, color:"#FCD34D", marginTop:2 },
+  tabBannerTitle: { fontSize: 14, fontWeight: 600, letterSpacing: "-0.2px" },
+  tabBannerHint: { fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 2 },
 
-  metaCard: { background:"#0a0a0a", border:"1px solid #222", borderRadius:14, padding:16 },
-  metaRow: { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 0" },
-  metaLabel: { fontSize:13, color:"#888" },
-  metaValue: { fontSize:14, fontWeight:600 },
-  customerPoints: { color:"#F59E0B", marginLeft:8, fontSize:12 },
+  // .lg class on element handles bg/border/shadow; tokens here = layout only
+  metaCard: { borderRadius: 16, padding: "12px 16px" },
+  metaRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", fontSize: 13 },
+  metaLabel: { color: "rgba(255,255,255,0.5)", fontWeight: 400 },
+  metaValue: { fontWeight: 500, color: "rgba(255,255,255,0.92)", letterSpacing: "-0.1px" },
+  customerPoints: { color: BRAND, marginLeft: 8, fontSize: 12, fontWeight: 500 },
 
-  itemsCard: { background:"#0a0a0a", border:"1px solid #222", borderRadius:14, padding:"12px 16px" },
-  itemsHeader: { fontSize:11, color:"#666", letterSpacing:2, fontWeight:700, padding:"4px 0 12px" },
-  cartRow: { display:"flex", justifyContent:"space-between", alignItems:"flex-start",
-    padding:"12px 0", borderTop:"1px solid #1a1a1a", gap:12 },
-  cartLeft: { display:"flex", gap:12, flex:1 },
-  cartEmoji: { fontSize:36 },
-  cartName: { fontSize:14, fontWeight:700 },
-  cartSubprice: { fontSize:11, color:"#888", marginTop:2 },
-  cartToppings: { marginTop:4, fontSize:11, color:"#10B981" },
-  cartLineTotal: { fontSize:15, fontWeight:800, color:"#F59E0B" },
+  itemsCard: { borderRadius: 16, padding: "12px 16px" },
+  itemsHeader: { fontSize: 11, color: "rgba(255,255,255,0.45)", letterSpacing: 1.5, fontWeight: 500, padding: "4px 0 8px", textTransform: "uppercase" },
+  cartRow: {
+    display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+    padding: "10px 0", borderTop: "1px solid rgba(255,255,255,0.04)", gap: 12
+  },
+  cartLeft: { display: "flex", gap: 10, flex: 1, minWidth: 0 },
+  cartEmoji: { fontSize: 28, filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.25))" },
+  cartName: { fontSize: 14, fontWeight: 600, letterSpacing: "-0.2px", color: "rgba(255,255,255,0.92)" },
+  cartSubprice: { fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2, fontVariantNumeric: "tabular-nums" },
+  cartToppings: { marginTop: 4, fontSize: 11, color: "#34D399", lineHeight: 1.5 },
+  cartLineTotal: { fontSize: 14, fontWeight: 600, color: "#fff", fontVariantNumeric: "tabular-nums", letterSpacing: "-0.2px", whiteSpace: "nowrap" },
 
-  // Subtotal — orange when no deduction, plain when there's promo/poin (the real total is in breakdown card)
-  subtotalCard: { background:"#0a0a0a", border:"1px solid #F59E0B", borderRadius:14,
-    padding:"16px 20px", display:"flex", justifyContent:"space-between", alignItems:"center" },
-  subtotalCardPlain: { background:"#0a0a0a", border:"1px solid #222", borderRadius:14,
-    padding:"16px 20px", display:"flex", justifyContent:"space-between", alignItems:"center" },
-  subLabel: { fontSize:13, fontWeight:600 },
-  taxNote: { fontSize:10, color:"#666", marginTop:2 },
-  subAmount: { fontFamily:"'Inter',sans-serif", fontSize:36, color:"#F59E0B", letterSpacing:1 },
-  subAmountPlain: { fontFamily:"'Inter',sans-serif", fontSize:24, color:"#888", letterSpacing:1 },
+  // Subtotal — when no deduction, soft brand-tint; otherwise plain
+  subtotalCard: { borderRadius: 16, padding: "16px 20px", display: "flex", justifyContent: "space-between", alignItems: "center" },
+  subtotalCardPlain: { borderRadius: 16, padding: "12px 18px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.05)" },
+  subLabel: { fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.65)", letterSpacing: "-0.1px" },
+  taxNote: { fontSize: 10, color: "rgba(255,255,255,0.35)", marginTop: 2, letterSpacing: 0.2 },
+  subAmount: { fontFamily: FONT, fontSize: 30, fontWeight: 600, color: "#fff", letterSpacing: "-0.8px", fontVariantNumeric: "tabular-nums" },
+  subAmountPlain: { fontFamily: FONT, fontSize: 20, fontWeight: 500, color: "rgba(255,255,255,0.55)", letterSpacing: "-0.4px", fontVariantNumeric: "tabular-nums" },
 
   // Promo
-  promoInputRow: { display:"flex", gap:8 },
-  promoInput: { flex:1, background:"#050810", border:"1px solid #2a2a2a", borderRadius:10,
-    padding:"12px 14px", color:"#fff", fontSize:14, fontFamily:"inherit",
-    letterSpacing:1, textTransform:"uppercase" },
-  promoApply: { background:"#F59E0B", color:"#111", border:"none", borderRadius:10,
-    padding:"0 18px", fontWeight:700, fontSize:13, cursor:"pointer", fontFamily:"inherit" },
-  promoApplyDisabled: { background:"#2a2a2a", color:"#666", border:"none", borderRadius:10,
-    padding:"0 18px", fontWeight:700, fontSize:13, cursor:"not-allowed", fontFamily:"inherit" },
-  promoErr: { color:"#FCA5A5", fontSize:12, marginTop:8, padding:"6px 10px",
-    background:"rgba(239,68,68,0.08)", borderRadius:6 },
-  promoApplied: { display:"flex", alignItems:"center", gap:12,
-    background:"rgba(16,185,129,0.10)", border:"1px solid #10B981",
-    borderRadius:10, padding:"12px 14px" },
-  promoCodeLabel: { fontSize:14, fontWeight:700, color:"#34D399", letterSpacing:1 },
-  promoSub: { fontSize:11, color:"#A7F3D0", marginTop:2 },
-  promoRemove: { background:"transparent", border:"none", color:"#34D399",
-    fontSize:18, cursor:"pointer", padding:"4px 8px" },
+  promoInputRow: { display: "flex", gap: 8 },
+  promoInput: {
+    flex: 1, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: 12, padding: "11px 14px", color: "#fff", fontSize: 14, fontFamily: FONT,
+    letterSpacing: 1, textTransform: "uppercase", outline: "none"
+  },
+  promoApply: {
+    background: `linear-gradient(180deg, ${BRAND}, ${BRAND_SEC})`,
+    color: "#fff", border: "1px solid rgba(255,255,255,0.16)", borderRadius: 12,
+    padding: "0 18px", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FONT, letterSpacing: "-0.1px",
+    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 12px color-mix(in srgb, ${BRAND} 28%, transparent)`
+  },
+  promoApplyDisabled: {
+    background: "rgba(255,255,255,0.04)", color: "rgba(255,255,255,0.3)", border: "1px solid rgba(255,255,255,0.06)",
+    borderRadius: 12, padding: "0 18px", fontWeight: 500, fontSize: 13, cursor: "not-allowed", fontFamily: FONT
+  },
+  promoErr: { color: "rgba(248,113,113,0.9)", fontSize: 12, marginTop: 8, padding: "7px 12px", background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.18)", borderRadius: 10 },
+  promoApplied: {
+    display: "flex", alignItems: "center", gap: 12,
+    background: "rgba(52,211,153,0.08)", border: "1px solid rgba(52,211,153,0.22)",
+    borderRadius: 12, padding: "12px 14px"
+  },
+  promoCodeLabel: { fontSize: 14, fontWeight: 600, color: "#34D399", letterSpacing: "-0.2px" },
+  promoSub: { fontSize: 11, color: "rgba(167,243,208,0.85)", marginTop: 2 },
+  promoRemove: { background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.2)", color: "rgba(248,113,113,0.85)", fontSize: 11, padding: "4px 10px", borderRadius: 8, cursor: "pointer" },
 
   // Points
-  pointsHeader: { display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:12 },
-  pointsHint: { fontSize:11, color:"#666", marginTop:4 },
-  pointsControl: { marginTop:12, paddingTop:12, borderTop:"1px solid #222" },
-  pointsSlider: { width:"100%", marginBottom:8, accentColor:"#10B981" },
-  pointsReadout: { display:"flex", justifyContent:"space-between", alignItems:"center",
-    fontSize:13, marginBottom:10 },
-  pointsValueRp: { color:"#10B981", fontWeight:700 },
-  pointsQuick: { display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:6 },
-  pointsQuickBtn: { background:"#1a1a1a", border:"1px solid #2a2a2a", color:"#A7F3D0",
-    borderRadius:8, padding:"8px 4px", fontSize:11, fontWeight:600, cursor:"pointer",
-    fontFamily:"inherit" },
-  pointsEmpty: { marginTop:10, padding:"10px 12px", background:"rgba(245,158,11,0.08)",
-    color:"#FCD34D", fontSize:12, borderRadius:8 },
+  pointsHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
+  pointsHint: { fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 4 },
+  pointsControl: { marginTop: 12, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,0.06)" },
+  pointsSlider: { width: "100%", marginBottom: 8, accentColor: "#10B981" },
+  pointsReadout: { display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, marginBottom: 10, color: "rgba(255,255,255,0.85)" },
+  pointsValueRp: { color: "#10B981", fontWeight: 600, fontVariantNumeric: "tabular-nums" },
+  pointsQuick: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6 },
+  pointsQuickBtn: {
+    background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)",
+    color: "rgba(167,243,208,0.85)", borderRadius: 10, padding: "8px 4px",
+    fontSize: 11, fontWeight: 500, cursor: "pointer", fontFamily: FONT
+  },
+  pointsEmpty: { marginTop: 10, padding: "10px 12px", background: "rgba(255,255,255,0.025)", color: "rgba(255,255,255,0.55)", fontSize: 12, borderRadius: 10, border: "1px solid rgba(255,255,255,0.05)" },
 
-  // Breakdown
-  breakdownCard: { background:"linear-gradient(180deg, rgba(245,158,11,0.06) 0%, rgba(245,158,11,0.02) 100%)",
-    border:"1px solid #F59E0B", borderRadius:14, padding:"14px 18px" },
-  breakdownRow: { display:"flex", justifyContent:"space-between", alignItems:"center",
-    padding:"5px 0", fontSize:13 },
-  breakdownLabel: { color:"#888" },
-  breakdownDivider: { height:1, background:"rgba(245,158,11,0.3)", margin:"8px 0" },
-  breakdownTotalRow: { display:"flex", justifyContent:"space-between", alignItems:"center",
-    padding:"4px 0" },
-  breakdownTotalLabel: { fontSize:14, fontWeight:700, color:"#fff" },
-  breakdownTotalAmount: { fontFamily:"'Inter',sans-serif", fontSize:32,
-    color:"#F59E0B", letterSpacing:1, fontWeight:800 },
+  // Breakdown — final total with brand glow
+  breakdownCard: { borderRadius: 18, padding: "14px 18px" },
+  breakdownRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", fontSize: 13, color: "rgba(255,255,255,0.6)" },
+  breakdownLabel: { color: "rgba(255,255,255,0.5)" },
+  breakdownDivider: { height: 1, background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)", margin: "10px 0 6px" },
+  breakdownTotalRow: { display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "4px 0" },
+  breakdownTotalLabel: { fontSize: 13, fontWeight: 400, color: "rgba(255,255,255,0.55)", letterSpacing: 0.4, textTransform: "uppercase" },
+  breakdownTotalAmount: { fontFamily: FONT, fontSize: 30, color: "#fff", letterSpacing: "-0.8px", fontWeight: 600, fontVariantNumeric: "tabular-nums" },
 
-  // Payment
-  payCard: { background:"#0a0a0a", border:"1px solid #222", borderRadius:14, padding:16 },
-  payTitle: { fontSize:11, color:"#888", letterSpacing:2, fontWeight:700, marginBottom:12 },
-  payOptions: { display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 },
-  payBtn: { background:"#111", border:"2px solid #2a2a2a", borderRadius:12,
-    padding:"14px 12px", cursor:"pointer", color:"#fff", fontFamily:"inherit",
-    display:"flex", flexDirection:"column", alignItems:"center", gap:4, transition:"all 0.15s" },
-  payActive: { borderColor:"#F59E0B", background:"rgba(245,158,11,0.08)" },
-  payIcon: { fontSize:32 },
-  payName: { fontSize:14, fontWeight:800 },
-  payHint: { fontSize:10, color:"#888", textAlign:"center" },
+  // Payment selector
+  payCard: { borderRadius: 16, padding: 16 },
+  payTitle: { fontSize: 11, color: "rgba(255,255,255,0.45)", letterSpacing: 1.5, fontWeight: 500, marginBottom: 12, textTransform: "uppercase" },
+  payOptions: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
+  payBtn: {
+    background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)",
+    borderRadius: 14, padding: "14px 12px", cursor: "pointer", color: "#fff", fontFamily: FONT,
+    display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+    transition: "all 0.2s cubic-bezier(.2,.8,.2,1)"
+  },
+  payActive: {
+    background: `color-mix(in srgb, ${BRAND} 10%, rgba(255,255,255,0.02))`,
+    border: `1px solid color-mix(in srgb, ${BRAND} 50%, transparent)`,
+    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.07), 0 4px 14px color-mix(in srgb, ${BRAND} 20%, transparent)`
+  },
+  payIcon: { fontSize: 28, filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.25))" },
+  payName: { fontSize: 13, fontWeight: 600, letterSpacing: "-0.2px" },
+  payHint: { fontSize: 10, color: "rgba(255,255,255,0.4)", textAlign: "center", letterSpacing: 0.2 },
 
   fullyPaidBanner: {
-    padding:"14px 18px", borderRadius:12,
-    background:"rgba(16,185,129,0.10)", border:"1px solid #10B981",
-    display:"flex", alignItems:"center", gap:12
+    padding: "14px 18px", borderRadius: 14,
+    background: "rgba(52,211,153,0.10)", border: "1px solid rgba(52,211,153,0.28)",
+    display: "flex", alignItems: "center", gap: 12
   },
 
-  // Cash counter (Step 4A)
+  // Cash counter
   cashDisplay: {
-    background: "#050810", padding: "16px 20px",
-    borderRadius: 10, marginBottom: 12,
-    border: "1px solid #1a1a1a"
+    background: "rgba(255,255,255,0.025)", padding: "14px 18px",
+    borderRadius: 14, marginBottom: 12,
+    border: "1px solid rgba(255,255,255,0.06)"
   },
   cashReceivedAmount: {
-    fontSize: 28, fontWeight: 800, color: "#fff",
-    fontFamily: "'Inter',sans-serif", letterSpacing: 1
+    fontSize: 26, fontWeight: 600, color: "#fff",
+    fontFamily: FONT, letterSpacing: "-0.5px", fontVariantNumeric: "tabular-nums"
   },
-  cashChangeRow: {
-    fontSize: 14, color: "#34D399", fontWeight: 600,
-    marginTop: 6
-  },
-  cashShortRow: {
-    fontSize: 14, color: "#FCA5A5", fontWeight: 600,
-    marginTop: 6
-  },
-  cashQuickRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr 1.5fr 1fr",
-    gap: 6
-  },
+  cashChangeRow: { fontSize: 13, color: "#34D399", fontWeight: 500, marginTop: 5, fontVariantNumeric: "tabular-nums" },
+  cashShortRow: { fontSize: 13, color: "rgba(248,113,113,0.9)", fontWeight: 500, marginTop: 5, fontVariantNumeric: "tabular-nums" },
+  cashQuickRow: { display: "grid", gridTemplateColumns: "1fr 1fr 1.5fr 1fr", gap: 6 },
   cashQuickBtn: {
-    background: "rgba(245,158,11,0.15)", color: "#FCD34D",
-    border: "1px solid rgba(245,158,11,0.4)", borderRadius: 8,
-    padding: "12px 8px", fontWeight: 700, fontSize: 13,
-    cursor: "pointer", fontFamily: "inherit"
+    background: `color-mix(in srgb, ${BRAND} 12%, rgba(255,255,255,0.02))`,
+    color: "#fff",
+    border: `1px solid color-mix(in srgb, ${BRAND} 35%, transparent)`,
+    borderRadius: 10, padding: "11px 8px", fontWeight: 600, fontSize: 12,
+    cursor: "pointer", fontFamily: FONT, fontVariantNumeric: "tabular-nums", letterSpacing: "-0.1px"
   },
   cashQuickBtnPas: {
-    background: "rgba(16,185,129,0.15)", color: "#34D399",
-    border: "1px solid rgba(16,185,129,0.4)", borderRadius: 8,
-    padding: "12px 8px", fontWeight: 700, fontSize: 13,
-    cursor: "pointer", fontFamily: "inherit"
+    background: "rgba(52,211,153,0.12)", color: "#34D399",
+    border: "1px solid rgba(52,211,153,0.32)", borderRadius: 10,
+    padding: "11px 8px", fontWeight: 600, fontSize: 12, cursor: "pointer", fontFamily: FONT
   },
   cashQuickBtnClear: {
-    background: "transparent", color: "#666",
-    border: "1px solid #2a2a2a", borderRadius: 8,
-    padding: "12px 8px", fontWeight: 500, fontSize: 12,
-    cursor: "pointer", fontFamily: "inherit"
+    background: "transparent", color: "rgba(255,255,255,0.4)",
+    border: "1px solid rgba(255,255,255,0.08)", borderRadius: 10,
+    padding: "11px 8px", fontWeight: 500, fontSize: 12,
+    cursor: "pointer", fontFamily: FONT
   },
 
-  confirmBtn: { background:"#F59E0B", color:"#111", border:"none", borderRadius:14,
-    padding:"18px", fontFamily:"inherit", fontSize:16, fontWeight:800,
-    letterSpacing:1, cursor:"pointer", boxShadow:"0 0 30px rgba(245,158,11,0.3)",
-    marginTop:8 }
+  confirmBtn: {
+    background: `linear-gradient(180deg, ${BRAND}, ${BRAND_SEC})`,
+    color: "#fff", border: "1px solid rgba(255,255,255,0.16)", borderRadius: 16,
+    padding: "16px 20px", fontFamily: FONT, fontSize: 15, fontWeight: 600,
+    letterSpacing: "-0.2px", cursor: "pointer",
+    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 24px color-mix(in srgb, ${BRAND} 28%, transparent), 0 24px 60px color-mix(in srgb, ${BRAND} 18%, transparent)`,
+    marginTop: 6, transition: "all 0.25s cubic-bezier(.2,.8,.2,1)"
+  }
 };
