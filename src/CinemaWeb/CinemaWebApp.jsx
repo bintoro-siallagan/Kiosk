@@ -992,13 +992,24 @@ function filmMatchesGenre(film, genre) {
 function MoviesPage({ brandPrimary, onPick, session }) {
   const [films, setFilms] = useState(null);
   const [top10, setTop10] = useState([]);
+  const [top10Loading, setTop10Loading] = useState(false);
+  const [top10Period, setTop10Period] = useState("month");  // "week" | "month" | "all"
   const [watchlist, setWatchlist] = useState([]);
   const [genreFilter, setGenreFilter] = useState("all");
 
   useEffect(() => {
     fetch(`${API_HOST}/api/cinema/films`).then(r => r.json()).then(d => setFilms(d.films || [])).catch(() => setFilms([]));
-    fetch(`${API_HOST}/api/cinema/films/top10`).then(r => r.json()).then(d => setTop10(d.items || [])).catch(() => {});
   }, []);
+
+  // Top 10: refetch saat period berubah
+  useEffect(() => {
+    const days = top10Period === "week" ? 7 : top10Period === "month" ? 30 : 365;
+    setTop10Loading(true);
+    fetch(`${API_HOST}/api/cinema/films/top10?days=${days}`)
+      .then(r => r.json()).then(d => setTop10(d.items || []))
+      .catch(() => {})
+      .finally(() => setTop10Loading(false));
+  }, [top10Period]);
 
   // My List — fetch when signed-in
   useEffect(() => {
@@ -1088,7 +1099,13 @@ function MoviesPage({ brandPrimary, onPick, session }) {
         <>
           {watchlistFiltered.length > 0 && <FilmRow title="📑 My List" films={watchlistFiltered} onPick={onPick} brandPrimary={brandPrimary} onRemove={removeFromList} />}
           {nowShowing.length > 0 && <FilmRow title={genreFilter === "all" ? "🎬 Sedang Tayang" : `🎬 Sedang Tayang · ${genreFilter}`} films={nowShowing} onPick={onPick} brandPrimary={brandPrimary} />}
-          {top10Filtered.length > 0 && <FilmRow title="🔥 Top 10 di KaryaOS" films={top10Filtered} onPick={onPick} brandPrimary={brandPrimary} numbered />}
+          {top10Filtered.length > 0 && (
+            <FilmRow
+              title={`🔥 Top 10 ${top10Period === "week" ? "Minggu Ini" : top10Period === "month" ? "Bulan Ini" : "Sepanjang Waktu"}`}
+              titleExtra={<Top10PeriodToggle value={top10Period} onChange={setTop10Period} brandPrimary={brandPrimary} loading={top10Loading} />}
+              films={top10Filtered} onPick={onPick} brandPrimary={brandPrimary} numbered
+            />
+          )}
           {topRated.length > 0 && <FilmRow title="⭐ Top Picks Member" films={topRated} onPick={onPick} brandPrimary={brandPrimary} showRating />}
           {comingSoon.length > 0 && <FilmRow title="🔜 Segera Tayang" films={comingSoon} onPick={onPick} brandPrimary={brandPrimary} />}
           {genreEntries.map(([genre, list]) => (
@@ -1126,10 +1143,45 @@ function GenreChip({ label, count, active, onClick, brandPrimary }) {
   );
 }
 
+// Segment-style toggle Minggu/Bulan/Semua — di header Top 10 row
+function Top10PeriodToggle({ value, onChange, brandPrimary, loading }) {
+  const opts = [
+    { key: "week",  label: "Minggu Ini" },
+    { key: "month", label: "Bulan Ini" },
+    { key: "all",   label: "Sepanjang Waktu" },
+  ];
+  return (
+    <div style={{
+      display: "inline-flex", padding: 3,
+      background: "rgba(255,255,255,0.06)", borderRadius: 999,
+      border: "1px solid rgba(255,255,255,0.12)",
+      opacity: loading ? 0.6 : 1, transition: "opacity 0.2s",
+    }}>
+      {opts.map(o => {
+        const active = value === o.key;
+        return (
+          <button key={o.key} onClick={() => onChange(o.key)} disabled={loading} style={{
+            padding: "5px 14px", borderRadius: 999, border: "none",
+            background: active ? brandPrimary : "transparent",
+            color: active ? "#fff" : "rgba(255,255,255,0.7)",
+            fontSize: 11.5, fontWeight: active ? 800 : 600,
+            cursor: loading ? "wait" : "pointer", fontFamily: "inherit",
+            transition: "all 0.15s", whiteSpace: "nowrap",
+          }}
+            onMouseEnter={(e) => { if (!active && !loading) e.currentTarget.style.color = "#fff"; }}
+            onMouseLeave={(e) => { if (!active && !loading) e.currentTarget.style.color = "rgba(255,255,255,0.7)"; }}>
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════════
 // FILM ROW — Netflix-style horizontal scroll carousel
 // ════════════════════════════════════════════════════════════════════
-function FilmRow({ title, films, onPick, brandPrimary, showRating = false, numbered = false, onRemove = null }) {
+function FilmRow({ title, titleExtra = null, films, onPick, brandPrimary, showRating = false, numbered = false, onRemove = null }) {
   const scrollRef = useRef(null);
   const [hover, setHover] = useState(false);
   const scrollBy = (dir) => {
@@ -1139,7 +1191,10 @@ function FilmRow({ title, films, onPick, brandPrimary, showRating = false, numbe
   return (
     <section className="cw-film-row" style={{ marginBottom: 36 }}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
-      <h2 style={{ fontSize: 19, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 14, letterSpacing: -0.3 }}>{title}</h2>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
+        <h2 style={{ fontSize: 19, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: -0.3 }}>{title}</h2>
+        {titleExtra}
+      </div>
       <div style={{ position: "relative" }}>
         {/* Left chevron */}
         <button className="cw-row-chevron" onClick={() => scrollBy(-1)} aria-label="Prev" style={{
