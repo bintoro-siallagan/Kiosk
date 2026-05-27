@@ -851,7 +851,7 @@ function POSQRISFlow({ cart, subtotal, order, onCancel, onPaid }) {
             </div>
             <h2 style={{fontSize:22, marginBottom:8}}>Customer scan QR di CDS layar</h2>
             <p style={{color:"#888", marginBottom:24}}>QR juga tampil besar di Customer Display</p>
-            <div style={{padding:"12px 24px", background:"#111", border:"1px solid #F59E0B",
+            <div style={{padding:"12px 24px", background: "radial-gradient(ellipse 70% 55% at 50% 38%, rgba(40,44,58,0.5) 0%, transparent 70%), linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)", border:"1px solid #F59E0B",
               borderRadius:12, marginBottom:24, display:"inline-flex", flexDirection:"column", alignItems:"center"}}>
               <span style={{fontSize:11, color:"#888", letterSpacing:2}}>MENUNGGU PEMBAYARAN</span>
               <span style={{fontSize:32, fontFamily:"'Inter',sans-serif", color:"#F59E0B", letterSpacing:2}}>

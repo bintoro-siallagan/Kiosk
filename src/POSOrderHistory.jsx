@@ -12,7 +12,7 @@ const STATUS_LABELS = {
   tab_open:       { label: "Tab Aktif",        color: "#10B981", bg: "rgba(16,185,129,0.15)", icon: "🟢" },
   preparing:      { label: "Diproses",         color: "#3B82F6", bg: "rgba(59,130,246,0.15)", icon: "👨‍🍳" },
   ready:          { label: "Siap",             color: "#10B981", bg: "rgba(16,185,129,0.15)", icon: "✅" },
-  waiting:        { label: "Menunggu",         color: "#F59E0B", bg: "rgba(245,158,11,0.15)", icon: "⏳" },
+  waiting:        { label: "Menunggu",         color: "#F59E0B", bg: "color-mix(in srgb, var(--brand-primary,#FF6B35) 15%, transparent)", icon: "⏳" },
 };
 
 const fIDR = (n) => "Rp " + (n || 0).toLocaleString("id-ID");
@@ -393,7 +393,7 @@ const S = {
   },
   modal: {
     width: "min(900px, 95vw)", maxHeight: "92vh",
-    background: "linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%)",
+    background: "linear-gradient(180deg,rgba(255,255,255,0.05) 0%,rgba(255,255,255,0.02) 60%,rgba(255,255,255,0.008) 100%)",
     border: "1px solid #2a2a2a", borderRadius: 16,
     display: "flex", flexDirection: "column", overflow: "hidden",
     boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
@@ -413,7 +413,7 @@ const S = {
   controls: { padding: "16px 24px", borderBottom: "1px solid #2a2a2a", display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" },
   search: {
     flex: 1, minWidth: 200, padding: "10px 14px", borderRadius: 10,
-    background: "#0a0a0a", border: "1px solid #2a2a2a", color: "white",
+    background: "rgba(13,17,23,0.7)", border: "1px solid #2a2a2a", color: "white",
     fontSize: 14, outline: "none", fontFamily: "inherit",
   },
   filterTabs: { display: "flex", gap: 6 },
@@ -423,7 +423,7 @@ const S = {
     cursor: "pointer", fontFamily: "inherit",
   },
   filterBtnActive: {
-    background: "rgba(245,158,11,0.15)", border: "1px solid #F59E0B", color: "#F59E0B",
+    background: "color-mix(in srgb, var(--brand-primary,#FF6B35) 15%, transparent)", border: "1px solid #F59E0B", color: "#F59E0B",
   },
   list: { flex: 1, overflowY: "auto", padding: "8px 24px 24px" },
   empty: { textAlign: "center", padding: "40px 20px", color: "#6B7280", fontSize: 14 },
@@ -464,7 +464,7 @@ const S = {
   },
   actionModal: {
     width: "min(500px, 95vw)",
-    background: "#1a1a1a", border: "1px solid #2a2a2a", borderRadius: 16,
+    background: "rgba(255,255,255,0.025)", border: "1px solid #2a2a2a", borderRadius: 16,
     display: "flex", flexDirection: "column", overflow: "hidden",
   },
   actionHeader: {
@@ -476,7 +476,7 @@ const S = {
   actionBody: { padding: "20px 24px", maxHeight: "60vh", overflowY: "auto" },
   actionWarning: {
     padding: "12px 14px", borderRadius: 10, marginBottom: 16,
-    background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)",
+    background: "color-mix(in srgb, var(--brand-primary,#FF6B35) 10%, transparent)", border: "1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent)",
     color: "#FCD34D", fontSize: 13, lineHeight: 1.5,
   },
   refundInfo: {
@@ -487,18 +487,18 @@ const S = {
   label: { fontSize: 13, color: "#9CA3AF", marginBottom: 6, display: "block" },
   textarea: {
     width: "100%", padding: "10px 14px", borderRadius: 10,
-    background: "#0a0a0a", border: "1px solid #2a2a2a", color: "white",
+    background: "rgba(13,17,23,0.7)", border: "1px solid #2a2a2a", color: "white",
     fontSize: 14, fontFamily: "inherit", resize: "vertical", outline: "none",
   },
   amountRow: { display: "flex", gap: 0, marginBottom: 10 },
   amountPrefix: {
-    padding: "12px 14px", background: "#0a0a0a",
+    padding: "12px 14px", background: "rgba(13,17,23,0.7)",
     border: "1px solid #2a2a2a", borderRight: "none", borderRadius: "10px 0 0 10px",
     color: "#9CA3AF", fontSize: 14,
   },
   amountInput: {
     flex: 1, padding: "12px 14px", borderRadius: "0 10px 10px 0",
-    background: "#0a0a0a", border: "1px solid #2a2a2a", color: "white",
+    background: "rgba(13,17,23,0.7)", border: "1px solid #2a2a2a", color: "white",
     fontSize: 18, fontFamily: "'Inter', sans-serif", letterSpacing: 1, outline: "none",
   },
   quickButtons: { display: "flex", gap: 6, marginBottom: 10 },

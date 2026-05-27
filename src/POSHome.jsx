@@ -399,7 +399,7 @@ const S = {
     WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text",
   },
   user: { display: "flex", alignItems: "center", gap: 12, fontSize: 14 },
-  userIcon: { fontSize: 22, filter: "drop-shadow(0 0 8px rgba(245,158,11,0.3))" },
+  userIcon: { fontSize: 22, filter: "drop-shadow(0 0 8px color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent))" },
   userName: { fontWeight: 700, color: "#fff", letterSpacing: -0.2 },
   userRole: {
     color: "#fff", padding: "3px 10px", borderRadius: 6,
@@ -482,7 +482,7 @@ const S = {
     background: "linear-gradient(135deg,#F59E0B,#fbbf24)",
     color: "#1a1205", padding: "2px 10px", borderRadius: 12,
     fontSize: 11, fontWeight: 800, fontFamily: "'Geist Mono',monospace",
-    boxShadow: "0 2px 8px rgba(245,158,11,0.35)",
+    boxShadow: "0 2px 8px color-mix(in srgb, var(--brand-primary,#FF6B35) 35%, transparent)",
   },
   loadingState: { textAlign: "center", color: "rgba(255,255,255,0.4)", padding: 24, fontSize: 13 },
   empty: {
@@ -537,8 +537,8 @@ const S = {
   },
   tabBtnAdd: {
     flex: 1, padding: "10px 14px", borderRadius: 9,
-    background: "rgba(245,158,11,0.1)",
-    border: "1px solid rgba(245,158,11,0.3)",
+    background: "color-mix(in srgb, var(--brand-primary,#FF6B35) 10%, transparent)",
+    border: "1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent)",
     color: "#fbbf24", cursor: "pointer", fontSize: 12.5, fontWeight: 700, fontFamily: "inherit",
     transition: "all 0.15s",
   },

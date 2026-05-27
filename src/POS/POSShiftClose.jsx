@@ -278,17 +278,17 @@ const tabBtn = (active) => ({
 
 const styles = {
   overlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: 16 },
-  box: { background: '#1a1a1a', borderRadius: 16, padding: 24, maxWidth: 480, width: '100%', maxHeight: '90vh', overflowY: 'auto', border: '1px solid #2a2a2a', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#fff' },
+  box: { background: "rgba(255,255,255,0.025)", borderRadius: 16, padding: 24, maxWidth: 480, width: '100%', maxHeight: '90vh', overflowY: 'auto', border: '1px solid #2a2a2a', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#fff' },
   closeBtn: { width: 36, height: 36, borderRadius: 8, background: '#2a2a2a', color: '#9ca3af', border: 'none', cursor: 'pointer' },
-  summaryGrid: { background: '#0f0f0f', borderRadius: 8, padding: 14 },
-  expectedBox: { background: '#1f1f1f', borderRadius: 10, padding: 14, marginTop: 14, textAlign: 'center' },
-  denomGrid: { background: '#0f0f0f', borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 6 },
+  summaryGrid: { background: "rgba(255,255,255,0.025)", borderRadius: 8, padding: 14 },
+  expectedBox: { background: "rgba(255,255,255,0.025)", borderRadius: 10, padding: 14, marginTop: 14, textAlign: 'center' },
+  denomGrid: { background: "rgba(255,255,255,0.025)", borderRadius: 8, padding: 12, display: 'flex', flexDirection: 'column', gap: 6 },
   denomRow: { display: 'flex', alignItems: 'center', gap: 12 },
   qtyInput: { width: 70, padding: '6px 10px', background: '#2a2a2a', border: '1px solid #3a3a3a', borderRadius: 4, color: '#fff', fontSize: 14, textAlign: 'center', fontFamily: 'inherit' },
-  manualInput: { width: '100%', padding: '14px', background: '#1f1f1f', border: '1px solid #2a2a2a', borderRadius: 8, color: '#fff', fontSize: 20, fontWeight: 500, textAlign: 'right', fontFamily: 'inherit', boxSizing: 'border-box' },
-  notes: { width: '100%', padding: 10, background: '#1f1f1f', border: '1px solid #2a2a2a', borderRadius: 6, color: '#fff', fontSize: 12, marginTop: 12, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' },
+  manualInput: { width: '100%', padding: '14px', background: "rgba(255,255,255,0.025)", border: '1px solid #2a2a2a', borderRadius: 8, color: '#fff', fontSize: 20, fontWeight: 500, textAlign: 'right', fontFamily: 'inherit', boxSizing: 'border-box' },
+  notes: { width: '100%', padding: 10, background: "rgba(255,255,255,0.025)", border: '1px solid #2a2a2a', borderRadius: 6, color: '#fff', fontSize: 12, marginTop: 12, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box' },
   errorBox: { padding: 10, background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderRadius: 6, marginTop: 12, fontSize: 12, textAlign: 'center' },
   warning: { padding: 8, background: 'rgba(251,191,36,0.1)', color: '#fbbf24', borderRadius: 6, fontSize: 11, textAlign: 'center' },
   btn: { padding: '12px 16px', background: '#2a2a2a', color: '#9ca3af', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontFamily: 'inherit' },
-  btnPrimary: { padding: '12px 16px', background: '#f97316', color: '#1a1a1a', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, fontFamily: 'inherit' }
+  btnPrimary: { padding: '12px 16px', background: '#f97316', color: 'var(--brand-text,#fff)', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600, fontFamily: 'inherit' }
 };

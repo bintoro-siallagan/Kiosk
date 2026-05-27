@@ -461,7 +461,7 @@ const S = {
   },
   modal: {
     width: "min(560px, 100%)", maxHeight: "92vh",
-    background: "linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%)",
+    background: "linear-gradient(180deg,rgba(255,255,255,0.05) 0%,rgba(255,255,255,0.02) 60%,rgba(255,255,255,0.008) 100%)",
     border: "1px solid #2a2a2a", borderRadius: 16,
     display: "flex", flexDirection: "column", overflow: "hidden",
   },
@@ -502,7 +502,7 @@ const S = {
     color: "#9CA3AF", cursor: "pointer", fontSize: 13, fontFamily: "inherit",
   },
   methodBtnActive: {
-    background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.5)",
+    background: "color-mix(in srgb, var(--brand-primary,#FF6B35) 10%, transparent)", border: "1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 50%, transparent)",
     color: "#F59E0B", fontWeight: 700,
   },
   qrisHint: {
@@ -514,13 +514,13 @@ const S = {
   fieldLabel: { fontSize: 11, color: "#9CA3AF", marginBottom: 4, display: "block" },
   inputRow: { display: "flex", gap: 0, marginBottom: 6 },
   inputPrefix: {
-    padding: "10px 12px", background: "#0a0a0a",
+    padding: "10px 12px", background: "rgba(13,17,23,0.7)",
     border: "1px solid #2a2a2a", borderRight: "none", borderRadius: "10px 0 0 10px",
     color: "#9CA3AF", fontSize: 13,
   },
   input: {
     flex: 1, padding: "10px 14px", borderRadius: "0 10px 10px 0",
-    background: "#0a0a0a", border: "1px solid #2a2a2a", color: "white",
+    background: "rgba(13,17,23,0.7)", border: "1px solid #2a2a2a", color: "white",
     fontSize: 15, fontFamily: "inherit", outline: "none",
   },
   quickButtons: { display: "flex", gap: 6 },
@@ -532,7 +532,7 @@ const S = {
   changeRow: { fontSize: 12, color: "#10B981", padding: "4px 0" },
   addBtn: {
     width: "100%", padding: "10px", borderRadius: 10,
-    background: "transparent", border: "1px dashed rgba(245,158,11,0.4)", color: "#F59E0B",
+    background: "transparent", border: "1px dashed color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent)", color: "#F59E0B",
     cursor: "pointer", fontSize: 13, fontFamily: "inherit",
   },
   error: { padding: "10px 20px", color: "#F87171", fontSize: 12 },

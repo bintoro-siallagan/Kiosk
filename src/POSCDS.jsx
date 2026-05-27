@@ -328,7 +328,7 @@ function CDSIdle() {
           {slides.map((_, i) => (
             <div key={i} style={{
               ...S.ssDot,
-              background: i === idx ? "var(--brand-primary,#FF6B35)" : "rgba(245,158,11,0.25)",
+              background: i === idx ? "var(--brand-primary,#FF6B35)" : "color-mix(in srgb, var(--brand-primary,#FF6B35) 25%, transparent)",
               width: i === idx ? 28 : 8
             }}/>
           ))}
@@ -512,8 +512,8 @@ function CDSWelcoming({ state }) {
           <div style={{
             display: "flex", alignItems: "center", gap: 16,
             padding: "20px 36px", borderRadius: 16,
-            background: "rgba(245,158,11,0.10)",
-            border: "1px solid rgba(245,158,11,0.40)"
+            background: "color-mix(in srgb, var(--brand-primary,#FF6B35) 10%, transparent)",
+            border: "1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent)"
           }}>
             <span style={{ fontSize: 32 }}>⭐</span>
             <div>
@@ -569,7 +569,7 @@ function CDSWelcoming({ state }) {
           color: "#fff", letterSpacing: 4,
           padding: "16px 32px",
           background: "rgba(255,255,255,0.05)",
-          borderRadius: 12, border: "1px dashed rgba(245,158,11,0.4)"
+          borderRadius: 12, border: "1px dashed color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent)"
         }}>
           {phoneLookup.masked || "08xxxxxxxx"}
         </div>
@@ -950,7 +950,7 @@ const S = {
   ssTagline: { fontSize:"min(56px,6vh)", color:"#fff", marginBottom:12, fontWeight:700, letterSpacing:1 },
   ssHint: { fontSize:24, color:"#666", marginTop:8, letterSpacing:4 },
 
-  ssBadge: { padding:"8px 24px", background:"rgba(245,158,11,0.15)",
+  ssBadge: { padding:"8px 24px", background:"color-mix(in srgb, var(--brand-primary,#FF6B35) 15%, transparent)",
     color:"var(--brand-primary,#FF6B35)", borderRadius:100, fontSize:"min(48px,5vh)", fontWeight:800,
     letterSpacing:2, marginBottom:0 },
 
@@ -1002,10 +1002,10 @@ const S = {
   headerLeft: { display:"flex", alignItems:"center", gap:18 },
   tag: {
     fontSize:18, padding:"8px 18px", borderRadius:100,
-    background:"linear-gradient(135deg, rgba(245,158,11,0.18), rgba(251,191,36,0.08))",
-    border:"1px solid rgba(245,158,11,0.35)",
+    background:"linear-gradient(135deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 18%, transparent), rgba(251,191,36,0.08))",
+    border:"1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 35%, transparent)",
     color:"#fbbf24", fontWeight:700, letterSpacing:0.5,
-    boxShadow:"0 0 16px rgba(245,158,11,0.15)",
+    boxShadow:"0 0 16px color-mix(in srgb, var(--brand-primary,#FF6B35) 15%, transparent)",
   },
 
   cartMain: { flex:1, padding:"32px 60px", overflowY:"auto", display:"flex", flexDirection:"column" },
@@ -1019,8 +1019,8 @@ const S = {
   customerName: { fontSize:24, color:"rgba(255,255,255,0.55)", marginLeft:14, fontWeight:600 },
   itemCountTag: {
     fontSize:13, padding:"6px 14px", borderRadius:100,
-    background:"rgba(245,158,11,0.12)",
-    border:"1px solid rgba(245,158,11,0.3)",
+    background:"color-mix(in srgb, var(--brand-primary,#FF6B35) 12%, transparent)",
+    border:"1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent)",
     color:"#fbbf24", fontWeight:800, letterSpacing:1,
     fontFamily:"'Geist Mono',monospace",
   },
@@ -1045,7 +1045,7 @@ const S = {
   toppingFree: { fontSize:12, color:"#10B981", fontWeight:700, letterSpacing:0.5,
     background:"rgba(16,185,129,0.1)", padding:"2px 10px", borderRadius:100 },
   toppingPaid: { fontSize:12, color:"var(--brand-primary,#FF6B35)", fontWeight:700,
-    background:"rgba(245,158,11,0.1)", padding:"2px 10px", borderRadius:100 },
+    background:"color-mix(in srgb, var(--brand-primary,#FF6B35) 10%, transparent)", padding:"2px 10px", borderRadius:100 },
   itemAddons: { display:"flex", flexWrap:"wrap", gap:6, marginTop:6 },
   addonTag: { fontSize:12, color:"#10B981", background:"rgba(16,185,129,0.1)",
     padding:"3px 10px", borderRadius:100 },
@@ -1054,7 +1054,7 @@ const S = {
   itemPrice: { fontSize:32, color:"var(--brand-primary,#FF6B35)", minWidth:140, textAlign:"right",
     fontFamily:"'Inter',sans-serif", letterSpacing:2, paddingTop:4 },
 
-  summaryInline: { background:"#0a0a0a", border:"1px solid #222",
+  summaryInline: { background: "rgba(13,17,23,0.7)", border:"1px solid #222",
     borderRadius:18, padding:"20px 28px", marginTop:8 },
   summaryRow: { display:"flex", justifyContent:"space-between", alignItems:"center",
     padding:"6px 0" },
@@ -1085,7 +1085,7 @@ const S = {
   },
   pointsAfterRow: {
     marginTop: 12, padding: "10px 16px",
-    background: "rgba(245,158,11,0.06)",
+    background: "color-mix(in srgb, var(--brand-primary,#FF6B35) 60%, transparent)",
     borderRadius: 8, textAlign: "center",
     fontSize: 14, color: "#FCD34D"
   },
@@ -1142,29 +1142,29 @@ const S = {
   },
 
   verifyNotice: { display:"flex", alignItems:"flex-start", gap:16, marginTop:20,
-    padding:"20px 28px", background:"rgba(245,158,11,0.06)",
-    border:"1px solid rgba(245,158,11,0.3)", borderRadius:14 },
+    padding:"20px 28px", background:"color-mix(in srgb, var(--brand-primary,#FF6B35) 60%, transparent)",
+    border:"1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent)", borderRadius:14 },
   verifyIcon: { fontSize:28, lineHeight:1 },
   verifyText: { flex:1, fontSize:15, color:"#fff", lineHeight:1.6, fontWeight:500 },
   verifyEmphasis: { color:"var(--brand-primary,#FF6B35)", fontWeight:700 },
   verifyName: { display:"inline-block", padding:"3px 14px", margin:"0 4px",
-    background:"rgba(245,158,11,0.18)", color:"var(--brand-primary,#FF6B35)", borderRadius:8,
+    background:"color-mix(in srgb, var(--brand-primary,#FF6B35) 18%, transparent)", color:"var(--brand-primary,#FF6B35)", borderRadius:8,
     fontWeight:800, letterSpacing:0.5,
-    border:"1px solid rgba(245,158,11,0.4)" },
+    border:"1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent)" },
 
   qrMain: { flex:1, display:"flex", flexDirection:"column", alignItems:"center",
     justifyContent:"center", gap:16, padding:40, textAlign:"center" },
   qrTitle: { fontSize:56, fontFamily:"'Inter',sans-serif", color:"var(--brand-primary,#FF6B35)",
     letterSpacing:4, marginBottom:80 },
   qrFrame: { padding:24, background:"#fff", borderRadius:24,
-    boxShadow:"0 0 60px rgba(245,158,11,0.3)" },
+    boxShadow:"0 0 60px color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent)" },
   qrImage: { width:360, height:360, objectFit:"contain", display:"block" },
   qrLoading: { width:360, height:360, display:"flex", flexDirection:"column",
     alignItems:"center", justifyContent:"center", color:"#666" },
   loader: { fontSize:64, marginBottom:12 },
   qrHint: { fontSize:18, color:"#aaa", marginTop:24, lineHeight:1.6 },
   qrAmountBox: { marginTop:32, padding:"20px 40px",
-    background:"#111", border:"2px solid #F59E0B", borderRadius:16,
+    background: "radial-gradient(ellipse 70% 55% at 50% 38%, rgba(40,44,58,0.5) 0%, transparent 70%), linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)", border:"2px solid #F59E0B", borderRadius:16,
     display:"flex", flexDirection:"column", alignItems:"center" },
   subLabel: { fontSize:14, color:"#888", letterSpacing:2, fontWeight:600 },
   qrAmount: { fontSize:72, fontFamily:"'Inter',sans-serif", color:"var(--brand-primary,#FF6B35)",
@@ -1184,7 +1184,7 @@ const S = {
     letterSpacing:1, marginBottom:6, fontWeight:800, lineHeight:1.1 },
   trackQrSubtitle: { fontSize:16, color:"#cbd5e1", marginBottom:18 },
   trackQrFrame: { padding:16, background:"#fff", borderRadius:18,
-    boxShadow:"0 0 60px rgba(245,158,11,0.2)", marginBottom:14 },
+    boxShadow:"0 0 60px color-mix(in srgb, var(--brand-primary,#FF6B35) 20%, transparent)", marginBottom:14 },
   trackQrImage: { width:300, height:300, objectFit:"contain", display:"block" },
   trackQrHint: { fontSize:14, color:"#94a3b8", lineHeight:1.5, marginBottom:18,
     maxWidth:380 },
@@ -1192,7 +1192,7 @@ const S = {
     border:"1px solid var(--brand-primary,#FF6B35)", borderRadius:12, fontSize:13, color:"var(--brand-primary,#FF6B35)",
     maxWidth:540, marginBottom:16, lineHeight:1.5 },
   urlBox: { fontSize:13, color:"#666", padding:"8px 16px",
-    background:"#0a0a0a", border:"1px solid #222", borderRadius:8,
+    background: "rgba(13,17,23,0.7)", border:"1px solid #222", borderRadius:8,
     fontFamily:"monospace", marginBottom:24, wordBreak:"break-all", maxWidth:540 },
   totalRow: { display:"flex", flexDirection:"column", alignItems:"center",
     marginTop:16, gap:6, padding:"12px 28px",

@@ -102,7 +102,7 @@ export default function POSMenuPicker({ onCheckout, onExit, apiBase = '/api/mast
         .qs-card { box-shadow: 0 1px 2px rgba(0,0,0,0.3),0 4px 16px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.04); }
         .qs-card:hover { transform: translateY(-2px); border-color: rgba(255,255,255,0.16) !important; box-shadow: 0 1px 2px rgba(0,0,0,0.3),0 12px 32px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.08) !important; }
         .qs-card:active { transform: translateY(0) scale(0.985); }
-        .qs-search:focus { border-color: rgba(245,158,11,0.4) !important; box-shadow: 0 0 0 3px rgba(245,158,11,0.12) !important; }
+        .qs-search:focus { border-color: color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary,#FF6B35) 12%, transparent) !important; }
       `}</style>
       {/* Top header bar — match POSMenu Order Baru */}
       <header style={styles.header}>
@@ -406,7 +406,7 @@ function MenuPickerModal({ menu, extras, onAdd, onClose }) {
               if (!e) return null;
               return (
                 <span key={eid} onClick={() => updateExtra(eid, -qty)}
-                  style={{ ...MP.selectedChip, background: 'rgba(245,158,11,0.15)', borderColor: '#F59E0B' }}>
+                  style={{ ...MP.selectedChip, background: 'color-mix(in srgb, var(--brand-primary,#FF6B35) 15%, transparent)', borderColor: '#F59E0B' }}>
                   {e.name}{qty > 1 ? ` ×${qty}` : ''} ✕
                 </span>
               );
@@ -451,7 +451,7 @@ const MP = {
   optSelected: { background: 'color-mix(in srgb, var(--brand-primary,#FF6B35) 10%, rgba(255,255,255,0.02))', border: '1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 50%, transparent)', color: '#fff' },
   optName: { fontSize: 13, fontWeight: 600, marginBottom: 5, letterSpacing: '-0.1px' },
   optMeta: { display: 'flex', gap: 5, flexWrap: 'wrap' },
-  premiumTag: { fontSize: 10, padding: '2px 7px', borderRadius: 6, background: 'rgba(245,158,11,0.14)', color: '#F59E0B', fontWeight: 600, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.1px' },
+  premiumTag: { fontSize: 10, padding: '2px 7px', borderRadius: 6, background: 'color-mix(in srgb, var(--brand-primary,#FF6B35) 14%, transparent)', color: '#F59E0B', fontWeight: 600, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.1px' },
   freeTag: { fontSize: 10, padding: '2px 7px', borderRadius: 6, background: 'rgba(52,211,153,0.16)', color: '#34D399', fontWeight: 600, letterSpacing: '-0.1px' },
   defaultTag: { fontSize: 9, padding: '2px 7px', borderRadius: 6, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.5)', fontWeight: 500, letterSpacing: 0.3 },
   checkCircle: { position: 'absolute', top: 8, right: 8, width: 22, height: 22, borderRadius: 11, background: 'linear-gradient(180deg, var(--brand-primary,#FF6B35), var(--brand-secondary,#E55A2B))', color: '#fff', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.25), 0 3px 8px color-mix(in srgb, var(--brand-primary,#FF6B35) 32%, transparent)' },
@@ -644,7 +644,7 @@ const styles = {
     position:'absolute', top:6, left:6, fontSize:9, fontWeight:800,
     background:'linear-gradient(135deg,#fbbf24,#f59e0b)', color:'#1a1205',
     padding:'3px 8px', borderRadius:5, textTransform:'uppercase', letterSpacing:0.6,
-    boxShadow:'0 2px 8px rgba(245,158,11,0.4)',
+    boxShadow:'0 2px 8px color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent)',
   },
   cartList: { flex:1, overflow:'auto', marginBottom:12, paddingRight:2 },
   empty: {
@@ -683,7 +683,7 @@ const styles = {
     background:'linear-gradient(135deg,#F59E0B,#fbbf24)',
     color:'#1a1205', border:'none', borderRadius:11,
     fontSize:15, fontWeight:800, cursor:'pointer', fontFamily:'inherit', letterSpacing:0.3,
-    boxShadow:'0 6px 18px rgba(245,158,11,0.35), inset 0 1px 0 rgba(255,255,255,0.2)',
+    boxShadow:'0 6px 18px color-mix(in srgb, var(--brand-primary,#FF6B35) 35%, transparent), inset 0 1px 0 rgba(255,255,255,0.2)',
     transition:'all 0.2s',
   },
   checkoutDisabled: {
@@ -734,7 +734,7 @@ const styles = {
     background:'linear-gradient(135deg,#F59E0B,#fbbf24)',
     color:'#1a1205', border:'none', borderRadius:9,
     fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'inherit', letterSpacing:0.3,
-    boxShadow:'0 4px 14px rgba(245,158,11,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
+    boxShadow:'0 4px 14px color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent), inset 0 1px 0 rgba(255,255,255,0.2)',
   },
 };
 const catBtn = (active) => ({

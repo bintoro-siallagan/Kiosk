@@ -70,12 +70,12 @@ if (typeof window !== "undefined") {
 // ═══════════════════════════════════════════════════════════════════
 const TH = {
   bg: "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)",
-  mesh: "radial-gradient(900px 700px at 20% 5%, rgba(168,85,247,0.07), transparent 60%), radial-gradient(700px 500px at 85% 80%, rgba(245,158,11,0.05), transparent 60%)",
+  mesh: "radial-gradient(900px 700px at 20% 5%, rgba(168,85,247,0.07), transparent 60%), radial-gradient(700px 500px at 85% 80%, color-mix(in srgb, var(--brand-primary,#FF6B35) 50%, transparent), transparent 60%)",
   panel: "linear-gradient(180deg,rgba(255,255,255,0.025),rgba(255,255,255,0.005))",
   panelGlass: "rgba(13,17,23,0.72)",
   border: "1px solid rgba(255,255,255,0.06)",
   borderHover: "1px solid rgba(255,255,255,0.12)",
-  borderActive: "1px solid rgba(245,158,11,0.4)",
+  borderActive: "1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent)",
   amber: "#f59e0b",
   amberLight: "#fbbf24",
   purple: "#a855f7",
@@ -88,8 +88,8 @@ const TH = {
   // Shadows
   shadowCard: "0 4px 12px rgba(0,0,0,0.4), 0 12px 40px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.05)",
   shadowHover: "0 8px 24px rgba(0,0,0,0.5), 0 16px 56px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.08)",
-  shadowSelected: "0 0 0 1px rgba(245,158,11,0.4), 0 8px 24px rgba(245,158,11,0.18)",
-  shadowCTA: "0 6px 20px rgba(245,158,11,0.4), inset 0 1px 0 rgba(255,255,255,0.2)",
+  shadowSelected: "0 0 0 1px color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent), 0 8px 24px color-mix(in srgb, var(--brand-primary,#FF6B35) 18%, transparent)",
+  shadowCTA: "0 6px 20px color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent), inset 0 1px 0 rgba(255,255,255,0.2)",
 };
 
 const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
@@ -345,7 +345,7 @@ function TopBar({ cashier, stage, onLogout, onHome }) {
   return (
     <div style={S.topbar} className="topbar-glass">
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <div style={{ width: 38, height: 38, borderRadius: 10, background: "linear-gradient(135deg,#f59e0b,#a855f7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, filter: "drop-shadow(0 0 12px rgba(245,158,11,0.4))" }}>🎬</div>
+        <div style={{ width: 38, height: 38, borderRadius: 10, background: "linear-gradient(135deg,#f59e0b,#a855f7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, filter: "drop-shadow(0 0 12px color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent))" }}>🎬</div>
         <div>
           <div style={{ fontSize: 19, fontWeight: 750, color: "#fff", letterSpacing: -0.4 }}>POS Cinema</div>
           <div style={{ fontSize: 9.5, color: TH.dim, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase" }}>karyaOS · Ticketing Counter</div>
@@ -690,11 +690,11 @@ function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, p
                         style={{
                           width: 30, height: 30, borderRadius: 7,
                           background: sold ? "rgba(239,68,68,0.15)" : sel ? "linear-gradient(135deg,#f59e0b,#fbbf24)" : "rgba(255,255,255,0.04)",
-                          border: sold ? "1px solid rgba(239,68,68,0.3)" : sel ? "1px solid rgba(245,158,11,0.6)" : "1px solid rgba(255,255,255,0.08)",
+                          border: sold ? "1px solid rgba(239,68,68,0.3)" : sel ? "1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 60%, transparent)" : "1px solid rgba(255,255,255,0.08)",
                           color: sold ? "#ef4444" : sel ? "#1a1205" : TH.sub,
                           fontSize: 10, fontWeight: 800, fontFamily: "'Geist Mono',monospace",
                           cursor: sold ? "not-allowed" : "pointer",
-                          boxShadow: sel ? "0 4px 12px rgba(245,158,11,0.35)" : "none",
+                          boxShadow: sel ? "0 4px 12px color-mix(in srgb, var(--brand-primary,#FF6B35) 35%, transparent)" : "none",
                           transition: "all 0.15s",
                         }}>{ci + 1}</button>
                     );
@@ -705,7 +705,7 @@ function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, p
           </div>
           <div style={{ display: "flex", justifyContent: "center", gap: 18, marginTop: 18, fontSize: 11, color: TH.sub, flexWrap: "wrap" }}>
             <Legend color="rgba(255,255,255,0.04)" border="rgba(255,255,255,0.08)" label="Tersedia" />
-            <Legend color="linear-gradient(135deg,#f59e0b,#fbbf24)" border="rgba(245,158,11,0.6)" label="Selected" />
+            <Legend color="linear-gradient(135deg,#f59e0b,#fbbf24)" border="color-mix(in srgb, var(--brand-primary,#FF6B35) 60%, transparent)" label="Selected" />
             <Legend color="rgba(239,68,68,0.15)" border="rgba(239,68,68,0.3)" label="Terjual" />
           </div>
           {/* CTA Lanjut */}
@@ -778,7 +778,7 @@ function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, p
             ) : seats.sort().map(s => (
               <span key={s} style={{
                 fontSize: 11, fontWeight: 700, padding: "3px 8px", borderRadius: 6, fontFamily: "'Geist Mono',monospace",
-                background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", color: TH.amberLight,
+                background: "color-mix(in srgb, var(--brand-primary,#FF6B35) 15%, transparent)", border: "1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent)", color: TH.amberLight,
               }}>{s}</span>
             ))}
           </div>
@@ -817,8 +817,8 @@ function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, p
             ].map(([k, l]) => (
               <button key={k} onClick={() => setPaymentMethod(k)}
                 style={{
-                  background: paymentMethod === k ? "rgba(245,158,11,0.12)" : "rgba(255,255,255,0.02)",
-                  border: paymentMethod === k ? "1px solid rgba(245,158,11,0.4)" : TH.border,
+                  background: paymentMethod === k ? "color-mix(in srgb, var(--brand-primary,#FF6B35) 12%, transparent)" : "rgba(255,255,255,0.02)",
+                  border: paymentMethod === k ? "1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent)" : TH.border,
                   color: paymentMethod === k ? TH.amberLight : TH.sub,
                   padding: "9px 10px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
                   transition: "all 0.15s",
@@ -1108,7 +1108,7 @@ function Pay({ picked, saleData, paymentMethod, buyer, setBuyer, cashier, onBack
           ...S.cardLarge, padding: "28px 30px", textAlign: "center",
           background: "linear-gradient(135deg, #F59E0B 0%, #fbbf24 50%, #F59E0B 100%)",
           color: "#1a1205",
-          boxShadow: "0 8px 32px rgba(245,158,11,0.4), inset 0 1px 0 rgba(255,255,255,0.25)",
+          boxShadow: "0 8px 32px color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent), inset 0 1px 0 rgba(255,255,255,0.25)",
           marginBottom: 14,
         }}>
           <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase" }}>TOTAL TAGIHAN</div>
@@ -1126,7 +1126,7 @@ function Pay({ picked, saleData, paymentMethod, buyer, setBuyer, cashier, onBack
 
         {/* Quick Promo Chips — list aktif yg langsung clickable */}
         {activePromos.length > 0 && !discount.code && (
-          <div style={{ ...S.cardLarge, padding: 14, marginBottom: 10, background: "linear-gradient(180deg, rgba(245,158,11,0.06), rgba(245,158,11,0.02))", border: "1px solid rgba(245,158,11,0.3)" }}>
+          <div style={{ ...S.cardLarge, padding: 14, marginBottom: 10, background: "linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 60%, transparent), color-mix(in srgb, var(--brand-primary,#FF6B35) 20%, transparent))", border: "1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
               <div style={{ fontSize: 11, color: "#fbbf24", letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>🎁 PROMO AKTIF — KLIK UNTUK APPLY</div>
               <div style={{ fontSize: 10, color: TH.dim, fontFamily: "'Geist Mono',monospace" }}>{activePromos.length} promo</div>
@@ -1139,8 +1139,8 @@ function Pay({ picked, saleData, paymentMethod, buyer, setBuyer, cashier, onBack
                   <button key={p.id} onClick={() => applyPromoChip(p)} disabled={!minOk}
                     style={{
                       padding: "10px 14px", borderRadius: 10,
-                      background: minOk ? "rgba(245,158,11,0.1)" : "rgba(255,255,255,0.03)",
-                      border: minOk ? "1px solid rgba(245,158,11,0.4)" : "1px solid rgba(255,255,255,0.05)",
+                      background: minOk ? "color-mix(in srgb, var(--brand-primary,#FF6B35) 10%, transparent)" : "rgba(255,255,255,0.03)",
+                      border: minOk ? "1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent)" : "1px solid rgba(255,255,255,0.05)",
                       color: minOk ? "#fff" : TH.dim,
                       cursor: minOk ? "pointer" : "not-allowed",
                       textAlign: "left", fontFamily: "inherit",
@@ -1222,7 +1222,7 @@ function Pay({ picked, saleData, paymentMethod, buyer, setBuyer, cashier, onBack
               onChange: (v) => setReceived(parseInt(v) || 0),
               label: "💵 TUNAI DITERIMA (Rp)",
             })} style={{
-              width: "100%", border: "2px dashed rgba(245,158,11,0.4)", background: "rgba(245,158,11,0.04)",
+              width: "100%", border: "2px dashed color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent)", background: "color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent)",
               borderRadius: 12, padding: "14px 0", margin: "14px 0", cursor: "pointer", fontFamily: "inherit",
               fontSize: 42, fontWeight: 800, color: cashEnough ? TH.green : "#fff",
               fontFamily: "'Geist Mono',monospace", letterSpacing: -0.6, textAlign: "center",
@@ -1236,7 +1236,7 @@ function Pay({ picked, saleData, paymentMethod, buyer, setBuyer, cashier, onBack
               ))}
             </div>
             <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={() => setReceived(total)} style={{ ...S.ghostBtn, flex: 1, padding: "10px", color: TH.amber, borderColor: "rgba(245,158,11,0.4)", background: "rgba(245,158,11,0.1)", fontWeight: 700, justifyContent: "center" }}>UANG PAS</button>
+              <button onClick={() => setReceived(total)} style={{ ...S.ghostBtn, flex: 1, padding: "10px", color: TH.amber, borderColor: "color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent)", background: "color-mix(in srgb, var(--brand-primary,#FF6B35) 10%, transparent)", fontWeight: 700, justifyContent: "center" }}>UANG PAS</button>
               <button onClick={() => setReceived(0)} style={{ ...S.ghostBtn, flex: 1, padding: "10px", color: TH.red, borderColor: "rgba(239,68,68,0.3)", background: "rgba(239,68,68,0.06)", fontWeight: 700, justifyContent: "center" }}>RESET</button>
             </div>
             {cashEnough && (
@@ -1575,8 +1575,8 @@ const S = {
     transition: "all 0.15s",
   },
   pillActive: {
-    background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.4)", color: TH.amberLight,
-    boxShadow: "0 0 16px rgba(245,158,11,0.15)",
+    background: "color-mix(in srgb, var(--brand-primary,#FF6B35) 12%, transparent)", border: "1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent)", color: TH.amberLight,
+    boxShadow: "0 0 16px color-mix(in srgb, var(--brand-primary,#FF6B35) 15%, transparent)",
   },
   input: {
     background: "rgba(255,255,255,0.03)", border: TH.border, color: TH.text,
@@ -1619,11 +1619,11 @@ const CSS = `
   }
   .checkout-glass {}
   .ghost-btn:hover { background: rgba(255,255,255,0.06) !important; border-color: rgba(255,255,255,0.12) !important; color: #fff !important; }
-  .primary-btn:hover { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 10px 28px rgba(245,158,11,0.5), inset 0 1px 0 rgba(255,255,255,0.25) !important; }
+  .primary-btn:hover { transform: translateY(-1px); filter: brightness(1.06); box-shadow: 0 10px 28px color-mix(in srgb, var(--brand-primary,#FF6B35) 50%, transparent), inset 0 1px 0 rgba(255,255,255,0.25) !important; }
   .primary-btn:active { transform: translateY(0); }
   .pill-btn:hover { background: rgba(255,255,255,0.04) !important; border-color: rgba(255,255,255,0.12) !important; color: #fff !important; }
-  .premium-input:focus { border-color: rgba(245,158,11,0.4) !important; box-shadow: 0 0 0 3px rgba(245,158,11,0.12) !important; }
-  .showtime-card:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 24px rgba(245,158,11,0.08), inset 0 1px 0 rgba(255,255,255,0.08) !important; border-color: rgba(255,255,255,0.12) !important; }
+  .premium-input:focus { border-color: color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-primary,#FF6B35) 12%, transparent) !important; }
+  .showtime-card:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 24px color-mix(in srgb, var(--brand-primary,#FF6B35) 80%, transparent), inset 0 1px 0 rgba(255,255,255,0.08) !important; border-color: rgba(255,255,255,0.12) !important; }
   .bundle-card:hover { transform: translateY(-1px); }
   .seat-btn:not(:disabled):hover { transform: scale(1.08); }
   .qty-btn:hover:not(:disabled) { background: rgba(255,255,255,0.1) !important; }

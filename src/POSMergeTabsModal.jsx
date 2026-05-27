@@ -194,7 +194,7 @@ const S = {
   },
   sourceBox: {
     margin: "16px 20px", padding: "14px 16px", borderRadius: 12,
-    background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.3)",
+    background: "color-mix(in srgb, var(--brand-primary,#FF6B35) 80%, transparent)", border: "1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent)",
   },
   sourceLabel: { fontSize: 10, color: "#F59E0B", letterSpacing: 1.5, fontWeight: 700, marginBottom: 8 },
   sourceRow: { display: "flex", justifyContent: "space-between", alignItems: "center" },

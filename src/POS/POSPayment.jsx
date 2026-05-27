@@ -233,7 +233,7 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
 
         {/* PROMO CHIPS — quick apply */}
         {activePromos.length > 0 && (
-          <div style={{ marginTop: 12, padding: 12, background: "linear-gradient(180deg, rgba(245,158,11,0.06), rgba(245,158,11,0.02))", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 12 }}>
+          <div style={{ marginTop: 12, padding: 12, background: "linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 60%, transparent), color-mix(in srgb, var(--brand-primary,#FF6B35) 20%, transparent))", border: "1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent)", borderRadius: 12 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
               <div style={{ fontSize: 10, color: "#fbbf24", letterSpacing: 2, fontFamily: "monospace", fontWeight: 800 }}>🎁 PROMO AKTIF — KLIK APPLY</div>
               <div style={{ fontSize: 10, color: "#9ca3af", fontFamily: "monospace" }}>{activePromos.length}</div>
@@ -256,8 +256,8 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
                     <button key={p.id} onClick={() => applyPromoChip(p)} disabled={!minOk}
                       style={{
                         padding: "8px 10px", borderRadius: 8,
-                        background: minOk ? "rgba(245,158,11,0.1)" : "rgba(255,255,255,0.02)",
-                        border: minOk ? "1px solid rgba(245,158,11,0.4)" : "1px solid rgba(255,255,255,0.05)",
+                        background: minOk ? "color-mix(in srgb, var(--brand-primary,#FF6B35) 10%, transparent)" : "rgba(255,255,255,0.02)",
+                        border: minOk ? "1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent)" : "1px solid rgba(255,255,255,0.05)",
                         color: minOk ? "#fff" : "#5b6470",
                         cursor: minOk ? "pointer" : "not-allowed",
                         textAlign: "left", fontFamily: "inherit",
@@ -564,7 +564,7 @@ const styles = {
     background: 'linear-gradient(135deg, #F59E0B 0%, #fbbf24 50%, #F59E0B 100%)',
     color: '#1a1205',
     padding: '22px 20px', borderRadius: 14, textAlign: 'center',
-    boxShadow: '0 8px 28px rgba(245,158,11,0.35), inset 0 1px 0 rgba(255,255,255,0.25)',
+    boxShadow: '0 8px 28px color-mix(in srgb, var(--brand-primary,#FF6B35) 35%, transparent), inset 0 1px 0 rgba(255,255,255,0.25)',
   },
   totalLabel: { fontSize: 11, fontWeight: 700, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", textTransform: 'uppercase' },
   totalAmount: { fontSize: 38, fontWeight: 800, marginTop: 4, letterSpacing: '-0.6px', fontFamily: "'Geist Mono',monospace" },
@@ -674,8 +674,8 @@ const styles = {
   },
   quickBtnExact: {
     flex: 1.5, minWidth: 100, padding: '10px 8px',
-    background: 'rgba(245,158,11,0.15)',
-    border: '1px solid rgba(245,158,11,0.4)',
+    background: 'color-mix(in srgb, var(--brand-primary,#FF6B35) 15%, transparent)',
+    border: '1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent)',
     color: '#fbbf24', borderRadius: 7,
     cursor: 'pointer', fontSize: 13, fontWeight: 800, fontFamily: "'Geist Mono',monospace",
   },
@@ -685,7 +685,7 @@ const styles = {
     color: '#1a1205', border: 'none', borderRadius: 9,
     fontSize: 14, fontWeight: 800, cursor: 'pointer', marginTop: 4,
     fontFamily: 'inherit', letterSpacing: 0.3,
-    boxShadow: '0 4px 14px rgba(245,158,11,0.3), inset 0 1px 0 rgba(255,255,255,0.2)',
+    boxShadow: '0 4px 14px color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent), inset 0 1px 0 rgba(255,255,255,0.2)',
   },
   gatewayPanel: {
     background: 'rgba(59,130,246,0.08)',
@@ -704,8 +704,8 @@ const styles = {
   },
   gatewayHint: { fontSize: 11, color: 'rgba(255,255,255,0.4)', textAlign: 'center' },
   loyaltyCard: {
-    background: 'rgba(245,158,11,0.08)',
-    border: '1px solid rgba(245,158,11,0.3)',
+    background: 'color-mix(in srgb, var(--brand-primary,#FF6B35) 80%, transparent)',
+    border: '1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent)',
     borderRadius: 11, padding: 12,
     display: 'flex', flexDirection: 'column', gap: 8,
   },
@@ -722,13 +722,13 @@ const styles = {
     background: 'linear-gradient(135deg,#f59e0b,#fbbf24)',
     color: '#1a1205', border: 'none', borderRadius: 7,
     fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-    boxShadow: '0 3px 10px rgba(245,158,11,0.3)',
+    boxShadow: '0 3px 10px color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent)',
   },
   loyaltyMsg: { fontSize: 12, color: '#fbbf24' },
   loyaltyClear: {
     width: 26, height: 26, borderRadius: 6,
-    background: 'rgba(245,158,11,0.15)', color: '#fbbf24',
-    border: '1px solid rgba(245,158,11,0.3)',
+    background: 'color-mix(in srgb, var(--brand-primary,#FF6B35) 15%, transparent)', color: '#fbbf24',
+    border: '1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent)',
     fontSize: 15, cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit',
   },
   loyaltyRedeemBtn: {
@@ -736,7 +736,7 @@ const styles = {
     background: 'linear-gradient(135deg,#f59e0b,#fbbf24)',
     color: '#1a1205', border: 'none', borderRadius: 8,
     fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
-    boxShadow: '0 3px 10px rgba(245,158,11,0.3)',
+    boxShadow: '0 3px 10px color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent)',
   },
   loyaltyApplied: {
     fontSize: 13, color: '#34d399',

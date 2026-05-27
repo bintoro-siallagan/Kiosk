@@ -387,7 +387,7 @@ const doneBtn = {
   borderRadius: 12, padding: '15px',
   fontFamily: 'inherit', fontSize: 15, fontWeight: 800,
   cursor: 'pointer', letterSpacing: 0.3,
-  boxShadow: '0 8px 24px rgba(245,158,11,0.4), inset 0 1px 0 rgba(255,255,255,0.25)',
+  boxShadow: '0 8px 24px color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent), inset 0 1px 0 rgba(255,255,255,0.25)',
   transition: 'all 0.2s',
 };
 const successHint = {
