@@ -250,6 +250,7 @@ function setupCompanies(app, opts = {}) {
       try {
         const r = db.prepare(`UPDATE companies SET logo_url = ? WHERE id = ?`).run(url, companyId);
         if (!r.changes) return res.status(404).json({ error: 'company not found' });
+        if (typeof global.logAudit === 'function') global.logAudit(req, { action: 'branding.logo_upload', entity: 'company', entity_id: companyId, payload: { url } });
         res.json({ ok: true, company_id: companyId, logo_url: url });
       } catch (e) { res.status(500).json({ error: e.message }); }
     });
@@ -282,6 +283,7 @@ function setupCompanies(app, opts = {}) {
     if (!sets.length) return res.json({ ok: true, noop: true });
     params.push(companyId);
     db.prepare(`UPDATE companies SET ${sets.join(', ')} WHERE id = ?`).run(...params);
+    if (typeof global.logAudit === 'function') global.logAudit(req, { action: 'branding.update', entity: 'company', entity_id: companyId, payload: b });
     res.json({ ok: true, company_id: companyId });
   });
 

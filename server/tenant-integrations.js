@@ -173,6 +173,13 @@ function setupTenantIntegrations(app, opts = {}) {
         count++;
       }
     }
+    // Audit log (do NOT include plaintext values — only key names)
+    if (typeof global.logAudit === 'function') {
+      global.logAudit(req, {
+        action: 'integration.update', entity: 'integration', entity_id: provider,
+        payload: { provider, keys: Object.keys(keys), count },
+      });
+    }
     res.json({ ok: true, provider, updated: count });
   });
 
@@ -182,6 +189,9 @@ function setupTenantIntegrations(app, opts = {}) {
     const companyId = sc.company_id;
     if (!companyId) return res.status(400).json({ error: 'no company scope' });
     deleteProvider(db, companyId, req.params.provider);
+    if (typeof global.logAudit === 'function') {
+      global.logAudit(req, { action: 'integration.wipe', entity: 'integration', entity_id: req.params.provider });
+    }
     res.json({ ok: true });
   });
 

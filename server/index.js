@@ -4741,6 +4741,15 @@ const companies = setupCompanies(app, { dbPath: DB_PATH, uploadMiddleware: uploa
 // White-label P2B — per-tenant encrypted API keys
 const { setupTenantIntegrations } = require('./tenant-integrations');
 const tenantIntegrations = setupTenantIntegrations(app, { dbPath: DB_PATH });
+
+// White-label P2C — GDPR-ready data export per tenant
+const { setupTenantDataExport } = require('./tenant-data-export');
+setupTenantDataExport(app, { dbPath: DB_PATH });
+
+// White-label P2D — per-tenant audit log
+const { setupTenantAuditLog, logAudit } = require('./tenant-audit-log');
+setupTenantAuditLog(app, { dbPath: DB_PATH });
+global.logAudit = logAudit; // make available everywhere
 // Expose resolveScope helper to global (semua endpoint lain bisa pakai untuk filter)
 global.resolveCompanyScope = companies.resolveScope;
 
