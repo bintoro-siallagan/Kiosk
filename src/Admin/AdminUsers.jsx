@@ -20,8 +20,16 @@ export default function AdminUsers({ apiBase = "" }) {
   const [creating, setCreating] = useState(false); // open modal create user
   const [editVerticalUser, setEditVerticalUser] = useState(null); // P6: open vertical edit modal
   const [editingUser, setEditingUser] = useState(null); // open full edit modal (nama+role+vertical)
-  const [customRoles, setCustomRoles] = useState([]); // custom roles dari RBAC (selain 15 default)
+  const [customRoles, setCustomRoles] = useState([]); // custom roles dari RBAC backend (legacy + custom)
   const [search, setSearch] = useState("");
+
+  // Merge: ROLE_LIST (new presets — manager/fnb-manager/finance-spv dll) + legacy /api/rbac
+  // ROLE_LIST diutamakan, legacy ditambahin jika id-nya gak overlap.
+  const mergedRoles = useMemo(() => {
+    const seen = new Set(ROLE_LIST.map(r => r.id));
+    const extras = (customRoles || []).filter(r => !seen.has(r.id));
+    return [...ROLE_LIST, ...extras];
+  }, [customRoles]);
 
   const load = useCallback(() => {
     setErr(null);
@@ -209,7 +217,7 @@ export default function AdminUsers({ apiBase = "" }) {
 
       {creating && (
         <CreateUserModal
-          API={API} token={token} roles={customRoles}
+          API={API} token={token} roles={mergedRoles}
           onClose={() => setCreating(false)}
           onCreated={(msg) => { setCreating(false); setInfo(msg); load(); }}
         />
@@ -227,7 +235,7 @@ export default function AdminUsers({ apiBase = "" }) {
       {editingUser && (
         <EditUserModal
           user={editingUser}
-          API={API} token={token} roles={customRoles}
+          API={API} token={token} roles={mergedRoles}
           onClose={() => setEditingUser(null)}
           onSaved={(msg) => { setEditingUser(null); setInfo(msg); load(); }}
         />
