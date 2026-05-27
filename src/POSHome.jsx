@@ -78,6 +78,7 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
   const [loading, setLoading] = useState(true);
   // Detect outlet vertical (fnb | cinema | hybrid) — bisa load Jual Tiket button kalau hybrid
   const [outletVertical, setOutletVertical] = useState("fnb");
+  const [brand, setBrand] = useState({ name: null, code: null, logoUrl: "/logo.png" });
   useEffect(() => {
     const outletCode = new URLSearchParams(window.location.search).get("outlet")
       || localStorage.getItem("posOutlet") || "";
@@ -85,6 +86,11 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
     fetch(`/api/outlet-master`).then(r => r.json()).then(d => {
       const o = (d.outlets || []).find(x => x.code === outletCode || x.name === outletCode);
       if (o?.vertical) setOutletVertical(o.vertical);
+    }).catch(() => {});
+  }, []);
+  useEffect(() => {
+    fetch(`${API_BASE}/api/companies/branding`).then(r => r.json()).then(b => {
+      if (b?.brand_color) setBrand({ name: b.name, code: b.company_code, logoUrl: b.logo_url || "/logo.png" });
     }).catch(() => {});
   }, []);
   const isHybrid = outletVertical === "hybrid";
@@ -220,7 +226,10 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
       <UpsellTicker vertical={isHybrid ? "hybrid" : "fnb"} />
 
       <header style={S.header}>
-        <div style={S.brand}><img src="/logo.png" alt="" style={{ height: 26, verticalAlign: "middle", marginRight: 7 }} />KaryaOS POS</div>
+        <div style={S.brand}>
+          <img src={brand.logoUrl || "/logo.png"} alt="" style={{ height: 26, verticalAlign: "middle", marginRight: 7 }} />
+          {brand.name && !["BTS","CMX","KARYAOS"].includes(brand.code) ? `${brand.name} POS` : "karyaos POS"}
+        </div>
         <div style={S.user}>
           <span style={S.userIcon}>👤</span>
           <span style={S.userName}>{cashier.name}</span>

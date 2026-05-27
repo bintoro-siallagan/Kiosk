@@ -4689,7 +4689,7 @@ const { setupFnbFeatures } = require('./fnb-features-backend');
 setupFnbFeatures(app, { dbPath: DB_PATH });
 // MUST mount AFTER setupCinema/setupFnbFeatures — companies-backend ALTERs their tables
 const { setupCompanies } = require('./companies-backend');
-const companies = setupCompanies(app, { dbPath: DB_PATH });
+const companies = setupCompanies(app, { dbPath: DB_PATH, uploadMiddleware: upload });
 // Expose resolveScope helper to global (semua endpoint lain bisa pakai untuk filter)
 global.resolveCompanyScope = companies.resolveScope;
 

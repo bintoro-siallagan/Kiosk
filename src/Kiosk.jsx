@@ -241,10 +241,10 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
   const MENU_ITEMS = _menu.items;
 
   // Per-tenant brand override — fetch from /api/companies/branding (auto-scoped via outlet param or x-company-id)
-  const [tenantBrand, setTenantBrand] = useState({ primary: "#FF6B35", secondary: "#E55A2B", name: null, code: null });
+  const [tenantBrand, setTenantBrand] = useState({ primary: "#FF6B35", secondary: "#E55A2B", name: null, code: null, logoUrl: "/logo.png" });
   useEffect(() => {
     fetch("/api/companies/branding").then(r => r.json()).then(b => {
-      if (b?.brand_color) setTenantBrand({ primary: b.brand_color, secondary: b.brand_secondary || b.brand_color, name: b.name, code: b.company_code });
+      if (b?.brand_color) setTenantBrand({ primary: b.brand_color, secondary: b.brand_secondary || b.brand_color, name: b.name, code: b.company_code, logoUrl: b.logo_url || "/logo.png" });
     }).catch(() => {});
   }, []);
   // Inject CSS variables so existing #FF6B35 references auto-themed via root override.
@@ -496,7 +496,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
         {/* Backlit boot logo — lit-from-within feel ala MacBook lid */}
         <div style={{display:"flex",justifyContent:"center",marginBottom:40}}>
           <img
-            src="/logo.png"
+            src={tenantBrand.logoUrl || "/logo.png"}
             alt={isCustomBrand ? tenantBrand.name : "karyaos"}
             className="boot-logo"
             onClick={()=>{const n=logoTaps+1;setLogoTaps(n);if(n>=5&&onAdminAccess){setLogoTaps(0);onAdminAccess();}}}
@@ -678,7 +678,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
         {/* Header — brand language consistent with welcome */}
         <div style={K.header}>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <img src="/logo.png" alt="" className="boot-logo" style={{height:32,width:32,objectFit:"contain",animation:"none",filter:"drop-shadow(0 0 8px rgba(255,255,255,0.4)) drop-shadow(0 0 18px var(--brand-primary,#FF6B35))"}}/>
+            <img src={tenantBrand.logoUrl || "/logo.png"} alt="" className="boot-logo" style={{height:32,width:32,objectFit:"contain",animation:"none",filter:"drop-shadow(0 0 8px rgba(255,255,255,0.4)) drop-shadow(0 0 18px var(--brand-primary,#FF6B35))"}}/>
             <div>
               <div style={K.headerBrand}>
                 {isCustomBrand ? tenantBrand.name : (<>karya<span style={{fontWeight:300,opacity:.55}}>os</span></>)}

@@ -216,6 +216,55 @@ function setupCompanies(app, opts = {}) {
     });
   });
 
+  // POST /branding/logo — upload tenant logo (multipart, field "logo").
+  // Auto-scopes to current company via req.companyScope; super-admin can pass ?company_id=X.
+  router.post('/branding/logo', (req, res) => {
+    const upload = opts.uploadMiddleware;
+    if (!upload) return res.status(500).json({ error: 'upload middleware not configured' });
+    upload.single('logo')(req, res, (err) => {
+      if (err) return res.status(400).json({ error: err.message });
+      if (!req.file) return res.status(400).json({ error: 'no logo uploaded (field name: logo)' });
+      const sc = req.companyScope || {};
+      let companyId = sc.company_id;
+      if (sc.is_super_admin && req.query.company_id) companyId = parseInt(req.query.company_id, 10);
+      if (!companyId) return res.status(400).json({ error: 'no company scope; pass ?company_id for super-admin' });
+      const url = `/uploads/${req.file.filename}`;
+      try {
+        const r = db.prepare(`UPDATE companies SET logo_url = ? WHERE id = ?`).run(url, companyId);
+        if (!r.changes) return res.status(404).json({ error: 'company not found' });
+        res.json({ ok: true, company_id: companyId, logo_url: url });
+      } catch (e) { res.status(500).json({ error: e.message }); }
+    });
+  });
+
+  // DELETE /branding/logo — remove tenant logo (fallback to platform default)
+  router.delete('/branding/logo', (req, res) => {
+    const sc = req.companyScope || {};
+    let companyId = sc.company_id;
+    if (sc.is_super_admin && req.query.company_id) companyId = parseInt(req.query.company_id, 10);
+    if (!companyId) return res.status(400).json({ error: 'no company scope' });
+    try {
+      db.prepare(`UPDATE companies SET logo_url = NULL WHERE id = ?`).run(companyId);
+      res.json({ ok: true, company_id: companyId });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
+  // PUT /branding — update brand color / name (no logo here; use /branding/logo for that)
+  router.put('/branding', (req, res) => {
+    const sc = req.companyScope || {};
+    let companyId = sc.company_id;
+    if (sc.is_super_admin && req.body.company_id) companyId = parseInt(req.body.company_id, 10);
+    if (!companyId) return res.status(400).json({ error: 'no company scope' });
+    const b = req.body || {};
+    const sets = [], params = [];
+    if (b.brand_color !== undefined) { sets.push('brand_color = ?'); params.push(b.brand_color); }
+    if (b.name !== undefined)        { sets.push('name = ?'); params.push(b.name); }
+    if (!sets.length) return res.json({ ok: true, noop: true });
+    params.push(companyId);
+    db.prepare(`UPDATE companies SET ${sets.join(', ')} WHERE id = ?`).run(...params);
+    res.json({ ok: true, company_id: companyId });
+  });
+
   router.get('/:id', (req, res) => {
     const row = db.prepare(`SELECT * FROM companies WHERE id = ?`).get(req.params.id);
     if (!row) return res.status(404).json({ error: 'company not found' });

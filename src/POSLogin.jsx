@@ -21,7 +21,7 @@ export default function POSLogin({ onLogin }) {
     fetch(`${API_BASE}/api/companies/branding`)
       .then(r => r.json()).then(b => {
         if (b?.brand_color) {
-          setBrand({ name: b.name, code: b.company_code });
+          setBrand({ name: b.name, code: b.company_code, logoUrl: b.logo_url || "/logo.png" });
           const root = document.documentElement;
           root.style.setProperty("--brand-primary", b.brand_color);
           root.style.setProperty("--brand-secondary", b.brand_secondary || b.brand_color);
@@ -45,7 +45,7 @@ export default function POSLogin({ onLogin }) {
     <div style={S.root}>
       <style>{LOGIN_CSS}</style>
       <header style={S.header}>
-        <img src="/logo.png" alt="" className="boot-logo-mini"
+        <img src={brand.logoUrl || "/logo.png"} alt="" className="boot-logo-mini"
           style={{ width: 64, height: 64, objectFit: "contain", marginBottom: 12 }} />
         <h1 style={S.title}>
           {isPlatform
