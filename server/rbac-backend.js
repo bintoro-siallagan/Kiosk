@@ -21,16 +21,40 @@ CREATE TABLE IF NOT EXISTS rbac_permissions (
 const ROLES = [
   { id: 'super-admin',    name: 'Super Admin',      cat: 'HQ / IT',     icon: '👑' },
   { id: 'owner',          name: 'Owner / Director', cat: 'Executive',   icon: '💼' },
+  // ─── GENERAL (semua modul) ───
+  { id: 'manager',        name: 'General Manager',  cat: 'Management',  icon: '👑' },
+  { id: 'staff',          name: 'General Staff',    cat: 'Operations',  icon: '👤' },
+  // ─── LEGACY MANAGEMENT ───
   { id: 'area-manager',   name: 'Area Manager',     cat: 'Management',  icon: '🗺️' },
   { id: 'outlet-manager', name: 'Outlet Manager',   cat: 'Management',  icon: '🏪' },
   { id: 'supervisor',     name: 'Supervisor',       cat: 'Operations',  icon: '🧭' },
+  // ─── F&B DEPT ───
+  { id: 'fnb-manager',    name: 'F&B Manager',      cat: 'F&B',         icon: '🍔' },
+  { id: 'fnb-spv',        name: 'F&B Supervisor',   cat: 'F&B',         icon: '🧭' },
+  { id: 'fnb-staff',      name: 'F&B Staff',        cat: 'F&B',         icon: '👤' },
+  // ─── CINEMA DEPT ───
+  { id: 'cinema-manager', name: 'Cinema Manager',   cat: 'Cinema',      icon: '🎬' },
+  { id: 'cinema-spv',     name: 'Cinema Supervisor',cat: 'Cinema',      icon: '🎬' },
+  { id: 'cinema-staff',   name: 'Cinema Staff',     cat: 'Cinema',      icon: '👤' },
+  // ─── FINANCE DEPT ───
+  { id: 'finance-manager',name: 'Finance Manager',  cat: 'Finance',     icon: '💰' },
+  { id: 'finance-spv',    name: 'Finance Supervisor',cat: 'Finance',    icon: '💰' },
+  { id: 'finance',        name: 'Finance Staff',    cat: 'Finance',     icon: '💰' },
+  // ─── HR ───
+  { id: 'hr-manager',     name: 'HR Manager',       cat: 'HR',          icon: '👥' },
+  { id: 'hr',             name: 'HR Staff',         cat: 'HR',          icon: '👥' },
+  // ─── PROCUREMENT ───
+  { id: 'procurement-manager',name:'Procurement Manager',cat:'Operations',icon:'📦' },
+  { id: 'procurement',    name: 'Procurement',      cat: 'Operations',  icon: '🛒' },
+  // ─── MARKETING ───
+  { id: 'marketing-manager',name:'Marketing Manager',cat:'Marketing',   icon:'📢' },
+  { id: 'marketing',      name: 'Marketing Team',   cat: 'Marketing',   icon: '🎯' },
+  // ─── OPERATIONAL ───
   { id: 'cashier',        name: 'Cashier / Crew',   cat: 'Operations',  icon: '🧑‍💼' },
+  { id: 'kasir',          name: 'Kasir',            cat: 'Operations',  icon: '🧾' },
   { id: 'kitchen',        name: 'Kitchen Staff',    cat: 'Operations',  icon: '👨‍🍳' },
   { id: 'warehouse',      name: 'Warehouse Staff',  cat: 'Operations',  icon: '📦' },
-  { id: 'procurement',    name: 'Procurement',      cat: 'Operations',  icon: '🛒' },
-  { id: 'finance',        name: 'Finance Staff',    cat: 'Finance',     icon: '💰' },
-  { id: 'hr',             name: 'HR Staff',         cat: 'HR',          icon: '👥' },
-  { id: 'marketing',      name: 'Marketing Team',   cat: 'Marketing',   icon: '🎯' },
+  // ─── COMPLIANCE / FRANCHISE / CUSTOMER ───
   { id: 'auditor',        name: 'Auditor',          cat: 'Compliance',  icon: '🔍' },
   { id: 'franchise',      name: 'Franchise Owner',  cat: 'Franchise',   icon: '🏛️' },
   { id: 'customer',       name: 'Customer',         cat: 'Customer',    icon: '🙋' },
@@ -54,21 +78,45 @@ const LEVELS = ['none', 'view', 'edit', 'approve', 'full'];
 
 // L = view, E = edit, A = approve, F = full (sisanya none)
 const DEFAULTS = {
-  'super-admin': 'ALL_FULL',
-  'auditor': 'ALL_VIEW',
-  'owner':          'ALL_FULL',
-  'area-manager':   { command: 'L', pos: 'L', kds: 'L', stock: 'A', procurement: 'A', hr: 'L', marketing: 'L', reward: 'L', audit: 'L' },
-  'outlet-manager': { pos: 'E', kds: 'L', stock: 'E', hr: 'E', marketing: 'L', reward: 'L', command: 'L', audit: 'L' },
-  'supervisor':     { pos: 'A', kds: 'L', stock: 'L', audit: 'E' },
-  'cashier':        { pos: 'E', marketing: 'L', reward: 'L' },
-  'kitchen':        { kds: 'E' },
-  'warehouse':      { stock: 'E', procurement: 'L' },
-  'procurement':    { procurement: 'E', stock: 'L', finance: 'L' },
-  'finance':        { finance: 'F', procurement: 'L', audit: 'L' },
-  'hr':             { hr: 'F', reward: 'E', audit: 'L' },
-  'marketing':      { marketing: 'F', reward: 'L', command: 'L' },
-  'franchise':      { command: 'L', finance: 'L', marketing: 'L', reward: 'L' },
-  'customer':       {},
+  'super-admin':         'ALL_FULL',
+  'auditor':             'ALL_VIEW',
+  'owner':               'ALL_FULL',
+  // General tier
+  'manager':             'ALL_FULL',
+  'staff':               'ALL_VIEW',
+  // Legacy management
+  'area-manager':        { command: 'L', pos: 'L', kds: 'L', stock: 'A', procurement: 'A', hr: 'L', marketing: 'L', reward: 'L', audit: 'L' },
+  'outlet-manager':      { pos: 'E', kds: 'L', stock: 'E', hr: 'E', marketing: 'L', reward: 'L', command: 'L', audit: 'L' },
+  'supervisor':          { pos: 'A', kds: 'L', stock: 'L', audit: 'E' },
+  // F&B
+  'fnb-manager':         { pos: 'F', kds: 'F', stock: 'F', marketing: 'L', reward: 'L', audit: 'L' },
+  'fnb-spv':             { pos: 'E', kds: 'E', stock: 'E', audit: 'L' },
+  'fnb-staff':           { pos: 'L', kds: 'L' },
+  // Cinema — modul khusus belum di matrix backend, beri akses operasional umum
+  'cinema-manager':      { command: 'L', marketing: 'L', reward: 'L', audit: 'L' },
+  'cinema-spv':          { command: 'L', marketing: 'L', audit: 'L' },
+  'cinema-staff':        { command: 'L' },
+  // Finance
+  'finance-manager':     { finance: 'F', procurement: 'A', audit: 'F', command: 'L' },
+  'finance-spv':         { finance: 'E', audit: 'L' },  // edit payment OK, delete NO
+  'finance':             { finance: 'F', procurement: 'L', audit: 'L' },
+  // HR
+  'hr-manager':          { hr: 'F', reward: 'F', audit: 'L' },
+  'hr':                  { hr: 'F', reward: 'E', audit: 'L' },
+  // Procurement
+  'procurement-manager': { procurement: 'F', stock: 'F', finance: 'L' },
+  'procurement':         { procurement: 'E', stock: 'L', finance: 'L' },
+  // Marketing
+  'marketing-manager':   { marketing: 'F', reward: 'F', command: 'L' },
+  'marketing':           { marketing: 'F', reward: 'L', command: 'L' },
+  // Operational
+  'cashier':             { pos: 'E', marketing: 'L', reward: 'L' },
+  'kasir':               { pos: 'E', marketing: 'L', reward: 'L' },
+  'kitchen':             { kds: 'E' },
+  'warehouse':           { stock: 'E', procurement: 'L' },
+  // Compliance / Franchise / Customer
+  'franchise':           { command: 'L', finance: 'L', marketing: 'L', reward: 'L' },
+  'customer':            {},
 };
 const ABBR = { L: 'view', E: 'edit', A: 'approve', F: 'full' };
 
@@ -88,13 +136,13 @@ function setupRBAC(app, opts = {}) {
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
 
-  // Seed matrix dari default (sekali)
-  if (db.prepare(`SELECT COUNT(*) c FROM rbac_permissions`).get().c === 0) {
-    const ins = db.prepare(`INSERT INTO rbac_permissions (role_id, module_id, level) VALUES (?,?,?)`);
-    for (const r of ROLES) {
-      const def = defaultsFor(r.id);
-      for (const m of MODULE_IDS) ins.run(r.id, m, def[m]);
-    }
+  // Seed matrix dari default — pakai INSERT OR IGNORE biar idempotent.
+  // Tetap aman dijalankan tiap startup: role baru dapat default,
+  // role lama yg udah customize gak ke-overwrite (karena IGNORE on PK conflict).
+  const ins = db.prepare(`INSERT OR IGNORE INTO rbac_permissions (role_id, module_id, level) VALUES (?,?,?)`);
+  for (const r of ROLES) {
+    const def = defaultsFor(r.id);
+    for (const m of MODULE_IDS) ins.run(r.id, m, def[m]);
   }
 
   // Custom roles table — selain 15 ROLES hardcoded, admin bisa tambah role baru
