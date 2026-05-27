@@ -565,7 +565,7 @@ function ShowtimesList({ outlet, film, onPickShowtime, brandPrimary }) {
               <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", letterSpacing: -0.2 }}>{fmtDate(date)}</div>
               <div style={{ fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{list.length} jadwal</div>
             </div>
-            <div className="cw-showtimes-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 140px), 1fr))", gap: 8 }}>
+            <div className="cw-showtimes-grid" style={{ display: "grid", gridTemplateColumns: list.length === 1 ? "1fr" : "repeat(auto-fit, minmax(140px, 1fr))", gap: 8 }}>
               {list.map(s => {
                 const remaining = (s.capacity || 0) - (s.sold_count || 0);
                 const lowSeats = remaining <= 10 && remaining > 0;
