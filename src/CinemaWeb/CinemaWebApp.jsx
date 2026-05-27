@@ -2064,7 +2064,7 @@ function Footer({ brand, brandPrimary, onAbout, onNav, footerConfig }) {
             <span>© {year} {brandName}. All rights reserved.</span>
             <span style={{ display: "flex", alignItems: "center", gap: 6, color: C.sub }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px #10b981" }} />
-              System operational
+              Cinema Operational Intelligence
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
