@@ -100,6 +100,20 @@ export default function CinemaWebApp() {
   return (
     <div style={{ minHeight: "100vh", background: C.bgGrad, color: C.text, fontFamily: "'Inter','-apple-system',sans-serif", paddingBottom: 80 }}>
       <style>{`
+        /* Animations */
+        @keyframes cwFadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes cwFadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes cwHeroGlow { 0%,100% { filter: drop-shadow(0 0 24px rgba(168,85,247,0.3)); } 50% { filter: drop-shadow(0 0 36px rgba(168,85,247,0.55)); } }
+        @keyframes cwPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+        .cw-film-poster:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 14px 36px rgba(168,85,247,0.4); }
+        .cw-section-pad > * { animation: cwFadeUp 0.4s ease both; }
+        .cw-section-pad > *:nth-child(2) { animation-delay: 0.08s; }
+        .cw-section-pad > *:nth-child(3) { animation-delay: 0.16s; }
+
+        /* Hide scrollbar on carousel for clean look */
+        .cw-section-pad > div::-webkit-scrollbar { display: none; }
+
         /* Mobile responsive overrides */
         @media (max-width: 768px) {
           .cw-checkout { grid-template-columns: 1fr !important; gap: 16px !important; }
@@ -109,6 +123,7 @@ export default function CinemaWebApp() {
           .cw-page-title { font-size: 24px !important; }
           .cw-films-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
           .cw-bundles-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+          .cw-showtimes-grid { grid-template-columns: repeat(3, 1fr) !important; }
           .cw-seat { width: 22px !important; height: 22px !important; font-size: 7px !important; }
           .cw-seat-row { gap: 4px !important; margin-bottom: 4px !important; }
           .cw-section-pad { padding: 20px 0 !important; }
@@ -116,6 +131,7 @@ export default function CinemaWebApp() {
         @media (max-width: 420px) {
           .cw-films-grid { grid-template-columns: 1fr !important; }
           .cw-bundles-grid { grid-template-columns: 1fr !important; }
+          .cw-showtimes-grid { grid-template-columns: repeat(2, 1fr) !important; }
           .cw-seat { width: 18px !important; height: 18px !important; }
         }
       `}</style>
@@ -152,7 +168,64 @@ export default function CinemaWebApp() {
             brandPrimary={brandPrimary} />
         )}
       </main>
+      <Footer brand={brand} brandPrimary={brandPrimary} />
     </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
+// FOOTER
+// ════════════════════════════════════════════════════════════════════
+function Footer({ brand, brandPrimary }) {
+  const brandName = brand?.brand_short || brand?.name || "karyaOS";
+  const year = new Date().getFullYear();
+  return (
+    <footer style={{
+      marginTop: 80, padding: "40px 20px 30px",
+      borderTop: `1px solid ${C.border}`,
+      background: "linear-gradient(180deg, transparent, rgba(0,0,0,0.4))",
+    }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: 24, marginBottom: 28 }}>
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              {brand?.logo_url && <img src={brand.logo_url} alt="" style={{ height: 24, objectFit: "contain" }} />}
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{brandName}</div>
+            </div>
+            <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.6 }}>
+              Tiket bioskop online — pesan kursi, ambil di counter. Tanpa antri.
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: C.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 10, textTransform: "uppercase", fontWeight: 700 }}>Bantuan</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, color: C.sub }}>
+              <div>Tunjukkan QR di counter</div>
+              <div>Datang 15 menit sebelum</div>
+              <div>Auto-member di booking pertama</div>
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: C.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 10, textTransform: "uppercase", fontWeight: 700 }}>Loyalty</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, color: C.sub }}>
+              <div>🎬 Rp 5.000 = 1 poin</div>
+              <div>⭐ 100 poin = Rp 1.000</div>
+              <div>🎁 Auto-redeem di checkout</div>
+            </div>
+          </div>
+        </div>
+        <div style={{
+          paddingTop: 18, borderTop: `1px solid ${C.border}`,
+          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap",
+          fontSize: 11, color: C.dim,
+        }}>
+          <div>© {year} {brandName} · All rights reserved</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, opacity: 0.7 }}>
+            <span>Powered by</span>
+            <span style={{ fontFamily: "'Geist Mono',monospace", color: brandPrimary, fontWeight: 700 }}>karya<span style={{ color: "#fbbf24" }}>OS</span></span>
+          </div>
+        </div>
+      </div>
+    </footer>
   );
 }
 
@@ -248,25 +321,31 @@ function OutletPicker({ onPick, brandPrimary }) {
       {/* Now showing carousel (if available) */}
       {films && films.length > 0 && (
         <div style={{ marginBottom: 50 }}>
-          <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 14, textAlign: "center", textTransform: "uppercase" }}>
+          <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 16, textAlign: "center", textTransform: "uppercase" }}>
             ✨ Now Showing
           </div>
-          <div style={{ overflowX: "auto", paddingBottom: 12, margin: "0 -20px" }}>
-            <div style={{ display: "flex", gap: 12, padding: "0 20px", minWidth: "fit-content" }}>
-              {films.map(f => (
-                <div key={f.id} style={{
-                  flexShrink: 0, width: 140, aspectRatio: "2/3", borderRadius: 12,
-                  background: `url(${f.poster_url}) center/cover`,
+          <div style={{ overflowX: "auto", paddingBottom: 12, margin: "0 -20px", scrollSnapType: "x mandatory", scrollbarWidth: "none" }}>
+            <div style={{ display: "flex", gap: 14, padding: "8px 20px", minWidth: "fit-content" }}>
+              {films.map((f, i) => (
+                <div key={f.id} className="cw-film-poster" style={{
+                  flexShrink: 0, width: 150, aspectRatio: "2/3", borderRadius: 14,
+                  background: `url(${f.poster_url}) center/cover, #1a1a22`,
                   border: `1px solid ${C.border}`, position: "relative",
                   display: "flex", flexDirection: "column", justifyContent: "flex-end",
                   overflow: "hidden",
+                  scrollSnapAlign: "start",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+                  transition: "transform 0.25s ease, box-shadow 0.25s ease",
+                  animation: `cwFadeUp 0.5s ease ${i * 0.05}s both`,
+                  cursor: "default",
                 }}>
+                  {/* Solid backdrop gradient — kept high so title is always readable */}
                   <div style={{
-                    background: "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)",
-                    padding: "30px 10px 10px",
+                    background: "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0.95) 100%)",
+                    padding: "60px 12px 12px",
                   }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", lineHeight: 1.2, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.title}</div>
-                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.7)", fontFamily: "'Geist Mono',monospace" }}>{f.duration_min || 0} mnt</div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>{f.title}</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.85)", fontFamily: "'Geist Mono',monospace", textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>{f.duration_min || 0} mnt · {f.genre || "—"}</div>
                   </div>
                 </div>
               ))}
@@ -469,43 +548,53 @@ function ShowtimesList({ outlet, film, onPickShowtime, brandPrimary }) {
         </div>
       </div>
 
-      <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, letterSpacing: -0.3 }}>Pilih Jadwal</h2>
+      <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 6, letterSpacing: -0.4 }}>Pilih Jadwal</h2>
+      <p style={{ fontSize: 12, color: C.dim, margin: "0 0 18px" }}>{showtimes.length} jadwal tersedia · klik untuk pilih kursi</p>
+
       {showtimes.length === 0 ? (
-        <div style={{ textAlign: "center", padding: 40, color: C.dim }}>
-          <div style={{ fontSize: 40, marginBottom: 10 }}>📅</div>
-          <div>Tidak ada jadwal tersedia untuk film ini</div>
+        <div style={{ textAlign: "center", padding: 60, color: C.dim, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14 }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>📅</div>
+          <div style={{ fontSize: 15, marginBottom: 4 }}>Tidak ada jadwal tersedia</div>
+          <div style={{ fontSize: 12 }}>Coba pilih film lain atau cek lokasi berbeda</div>
         </div>
       ) : (
         Object.entries(byDate).map(([date, list]) => (
-          <div key={date} style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.2, color: C.dim, fontFamily: "'Geist Mono',monospace", marginBottom: 10, textTransform: "uppercase" }}>{fmtDate(date)}</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 170px), 1fr))", gap: 10 }}>
+          <div key={date} style={{ marginBottom: 24, background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: "16px 18px" }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14, paddingBottom: 10, borderBottom: `1px solid ${C.border}` }}>
+              <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", letterSpacing: -0.2 }}>{fmtDate(date)}</div>
+              <div style={{ fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{list.length} jadwal</div>
+            </div>
+            <div className="cw-showtimes-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 140px), 1fr))", gap: 8 }}>
               {list.map(s => {
                 const remaining = (s.capacity || 0) - (s.sold_count || 0);
                 const lowSeats = remaining <= 10 && remaining > 0;
                 const soldOut = remaining <= 0 || s.derived_status === "sold_out";
+                const pctSold = s.capacity > 0 ? Math.round((s.sold_count || 0) / s.capacity * 100) : 0;
                 return (
                   <button key={s.id} onClick={() => !soldOut && onPickShowtime(s)} disabled={soldOut} style={{
-                    background: soldOut ? "rgba(239,68,68,0.08)" : C.card,
-                    border: `1px solid ${soldOut ? "rgba(239,68,68,0.3)" : C.border}`,
-                    borderRadius: 12, padding: "12px 14px", textAlign: "left",
+                    background: soldOut ? "rgba(239,68,68,0.06)" : "rgba(255,255,255,0.03)",
+                    border: `1px solid ${soldOut ? "rgba(239,68,68,0.25)" : "rgba(255,255,255,0.08)"}`,
+                    borderRadius: 10, padding: "10px 11px", textAlign: "left",
                     color: soldOut ? C.dim : C.text, cursor: soldOut ? "not-allowed" : "pointer",
-                    fontFamily: "inherit", transition: "all 0.15s",
+                    fontFamily: "inherit", transition: "all 0.18s ease",
+                    position: "relative", overflow: "hidden",
                   }}
-                    onMouseEnter={(e) => { if (!soldOut) { e.currentTarget.style.borderColor = `${brandPrimary}66`; e.currentTarget.style.background = C.cardHover; } }}
-                    onMouseLeave={(e) => { if (!soldOut) { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.background = C.card; } }}>
-                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
-                      <span style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Geist Mono',monospace" }}>{s.start_time}</span>
-                      <span style={{ fontSize: 10, color: FORMAT_COLOR[s.format] || C.dim, fontWeight: 800, fontFamily: "'Geist Mono',monospace" }}>{s.format || "2D"}</span>
+                    onMouseEnter={(e) => { if (!soldOut) { e.currentTarget.style.borderColor = brandPrimary; e.currentTarget.style.background = `${brandPrimary}1a`; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 6px 16px ${brandPrimary}33`; } }}
+                    onMouseLeave={(e) => { if (!soldOut) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; } }}>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 3 }}>
+                      <span style={{ fontSize: 17, fontWeight: 800, fontFamily: "'Geist Mono',monospace", letterSpacing: -0.3 }}>{s.start_time}</span>
+                      <span style={{ fontSize: 9, color: FORMAT_COLOR[s.format] || C.dim, fontWeight: 800, fontFamily: "'Geist Mono',monospace", background: (FORMAT_COLOR[s.format] || "#9ca3af") + "22", padding: "1px 6px", borderRadius: 3, letterSpacing: 0.3 }}>{s.format || "2D"}</span>
                     </div>
-                    <div style={{ fontSize: 11, color: C.sub, marginBottom: 4 }}>{s.studio_name} · {s.studio_type || "Regular"}</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: brandPrimary, fontFamily: "'Geist Mono',monospace" }}>{rp(s.price)}</div>
+                    <div style={{ fontSize: 10, color: C.sub, marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.studio_name}</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: brandPrimary, fontFamily: "'Geist Mono',monospace", letterSpacing: -0.2 }}>{rp(s.price)}</div>
                     {soldOut ? (
-                      <div style={{ marginTop: 4, fontSize: 10, color: "#ef4444", fontWeight: 700 }}>SOLD OUT</div>
+                      <div style={{ marginTop: 6, fontSize: 9, color: "#ef4444", fontWeight: 800, letterSpacing: 1, fontFamily: "'Geist Mono',monospace" }}>SOLD OUT</div>
                     ) : lowSeats ? (
-                      <div style={{ marginTop: 4, fontSize: 10, color: "#fbbf24", fontWeight: 700 }}>Sisa {remaining} kursi</div>
+                      <div style={{ marginTop: 6, fontSize: 9, color: "#fbbf24", fontWeight: 700 }}>⚠ Sisa {remaining}</div>
                     ) : (
-                      <div style={{ marginTop: 4, fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{remaining}/{s.capacity}</div>
+                      <div style={{ marginTop: 6, height: 3, background: "rgba(255,255,255,0.05)", borderRadius: 2, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${pctSold}%`, background: pctSold > 70 ? "#fbbf24" : "#10b981", transition: "width 0.3s" }} />
+                      </div>
                     )}
                   </button>
                 );
