@@ -1251,8 +1251,8 @@ function PromoPage({ brandPrimary }) {
     <div style={{ paddingBottom: 60 }}>
       <PageHero
         tag="Promo & Event"
-        title="Hemat Lebih, Nonton Lebih"
-        subtitle={`${promos.length} promo aktif — pakai kode saat checkout untuk diskon langsung di tiket Anda.`}
+        title="Nonton Lebih Hemat"
+        subtitle={`${promos.length} promo aktif menunggu Anda. Pakai kode saat checkout — diskon langsung kepotong, tanpa drama.`}
         accent="🎟"
         brandPrimary={brandPrimary}
       />
@@ -1301,8 +1301,8 @@ function StudioPage({ brandPrimary }) {
     <div style={{ paddingBottom: 60 }}>
       <PageHero
         tag="Studio Booking"
-        title="Privat Studio Anda"
-        subtitle="Sewa studio cinema untuk private event — ulang tahun, gathering, screening korporat. Anda nonton, kami fasilitasi."
+        title="Sewa Bioskop Sendiri"
+        subtitle="Ulang tahun anak, anniversary, gathering kantor, screening rilis perdana — semua bisa di sini. Studio jadi milik Anda dari layar sampai snack."
         accent="🎉"
         brandPrimary={brandPrimary}
       />
@@ -1345,8 +1345,8 @@ function LocationsPage({ brandPrimary, onPick }) {
     <div style={{ paddingBottom: 60 }}>
       <PageHero
         tag="Lokasi"
-        title="Cinema di Setiap Kota"
-        subtitle={`${outlets.length} outlet KaryaOS tersebar di kota-kota besar Indonesia — temukan cinema terdekat dari Anda.`}
+        title="Cari Cinema Terdekat"
+        subtitle={`${outlets.length} outlet KaryaOS siap menyambut Anda di kota-kota besar Indonesia. Klik kota, lihat jadwal, pesan dari sofa.`}
         accent="📍"
         brandPrimary={brandPrimary}
       />
@@ -1393,47 +1393,47 @@ const FAQ_GROUPS = [
   {
     title: "🎟️ Pemesanan Tiket",
     items: [
-      { q: "Bagaimana cara pesan tiket online?", a: "Pilih lokasi cinema → pilih film → pilih jadwal → pilih kursi → tambah F&B (opsional) → checkout & bayar. Tiket akan dikirim via WhatsApp dalam bentuk QR code." },
-      { q: "Bayar di mana saja?", a: "Bayar di counter cinema saat pengambilan tiket (cash/QRIS/kartu) atau via Midtrans online (QRIS, e-wallet, virtual account). Pilih metode saat checkout." },
-      { q: "Bisa pilih kursi sendiri?", a: "Ya, peta kursi real-time tersedia. Kursi yang sudah dibeli orang lain akan terblok otomatis sehingga tidak ada double-booking." },
-      { q: "Apakah harus print tiket?", a: "Tidak perlu. Cukup tunjukkan QR code di counter atau pintu masuk studio. Staff akan scan dan print tiket fisik untuk Anda." },
-      { q: "Berapa lama sebelum showtime saya bisa booking?", a: "Booking dibuka sampai 15 menit sebelum showtime dimulai. Kami sarankan booking lebih awal untuk dapat kursi terbaik." },
+      { q: "Bagaimana cara pesan tiket?", a: "Lima langkah, lima menit: pilih lokasi → pilih film → pilih jadwal → pilih kursi → checkout. Tiket otomatis dikirim ke WhatsApp Anda dalam bentuk QR. Tinggal tunjukin di counter, beres." },
+      { q: "Bayarnya di mana?", a: "Dua pilihan: bayar online lewat Midtrans (QRIS, e-wallet, transfer bank, kartu) atau bayar tunai/QRIS di counter saat ambil tiket. Pilih sesuai mood Anda saat checkout." },
+      { q: "Bisa pilih kursi sendiri?", a: "Tentu. Peta kursi real-time — kursi yang sudah dibeli orang lain langsung terblok, jadi tidak ada cerita kursi kembar atau double-booking." },
+      { q: "Harus print tiket?", a: "Tidak. Cukup tunjukkan QR code dari WhatsApp atau halaman E-Ticket. Staf scan, tiket fisik tercetak otomatis untuk Anda. Hemat kertas, hemat antri." },
+      { q: "Sampai jam berapa bisa booking?", a: "Sampai 15 menit sebelum film mulai. Tapi makin awal makin bagus — kursi tengah suka cepat habis." },
     ],
   },
   {
     title: "💳 Pembayaran & Refund",
     items: [
-      { q: "Metode pembayaran apa saja?", a: "QRIS, kartu kredit/debit, e-wallet (GoPay, OVO, Dana, ShopeePay), Virtual Account (BCA, BNI, Mandiri, BRI, Permata), Alfamart/Indomaret." },
-      { q: "Apakah ada biaya admin?", a: "Tidak ada biaya tambahan. Harga yang Anda lihat sudah termasuk PPN 11%." },
-      { q: "Bisakah refund tiket?", a: "Tiket yang sudah dibeli tidak bisa di-refund dalam bentuk uang. Namun bisa reschedule ke jadwal lain di hari yang sama (subject to availability) dengan menghubungi customer service min. 2 jam sebelum showtime." },
-      { q: "Apa yang terjadi kalau film dibatalkan?", a: "Jika film dibatalkan dari pihak kami, Anda akan dihubungi langsung dan mendapatkan full refund atau pilihan reschedule." },
+      { q: "Metode pembayaran apa saja?", a: "Hampir semua: QRIS, kartu kredit/debit, e-wallet (GoPay, OVO, Dana, ShopeePay), Virtual Account semua bank besar (BCA, BNI, Mandiri, BRI, Permata), bahkan bayar tunai di Alfamart/Indomaret." },
+      { q: "Ada biaya admin tersembunyi?", a: "Tidak ada. Harga yang Anda lihat adalah harga yang Anda bayar — sudah termasuk PPN 11%. Tidak ada surprise di akhir transaksi." },
+      { q: "Bisa refund tiket?", a: "Tiket tidak bisa di-refund dalam bentuk uang, tapi bisa reschedule ke jadwal lain di hari yang sama (tergantung kursi tersedia). Hubungi CS minimal 2 jam sebelum showtime." },
+      { q: "Kalau filmnya dibatalkan, gimana?", a: "Kalau pembatalan dari pihak kami, Anda dihubungi langsung. Pilih: full refund kembali ke metode pembayaran, atau reschedule gratis ke jadwal lain." },
     ],
   },
   {
     title: "🎁 Promo & Loyalty",
     items: [
-      { q: "Bagaimana cara pakai kode promo?", a: "Di halaman checkout, masukkan kode promo di kolom yang tersedia, lalu klik Apply. Diskon akan otomatis dihitung." },
-      { q: "Bagaimana cara dapat poin loyalty?", a: "Setiap booking otomatis dapat poin: Rp 5.000 = 1 poin. Tidak perlu daftar terpisah, cukup masukkan nomor HP yang sama setiap booking." },
-      { q: "Bagaimana cara tukar poin?", a: "100 poin = Rp 1.000 diskon. Saat checkout, pilih jumlah poin yang ingin di-redeem (kelipatan 100). Diskon akan langsung diterapkan." },
-      { q: "Apakah poin bisa kadaluarsa?", a: "Poin berlaku 12 bulan sejak transaksi terakhir. Tetap aktif booking untuk perpanjang masa berlaku." },
+      { q: "Cara pakai kode promo?", a: "Di halaman checkout, ada kolom 'Kode Promo' — masukkan kodenya, klik Apply. Diskon langsung kepotong, tanpa ribet." },
+      { q: "Bagaimana cara dapat poin?", a: "Setiap booking, Anda otomatis dapat poin: setiap Rp 5.000 = 1 poin. Tidak perlu daftar member terpisah — cukup pakai nomor HP yang sama tiap booking, sistem yang urus." },
+      { q: "Poin bisa ditukar jadi apa?", a: "Diskon tiket berikutnya. Rumus mudah: 100 poin = Rp 1.000. Pilih jumlah poin di checkout (kelipatan 100), diskon langsung diterapkan." },
+      { q: "Poin bisa expired?", a: "Berlaku 12 bulan sejak transaksi terakhir Anda. Selama Anda masih nonton, poin Anda aman." },
     ],
   },
   {
     title: "🎬 Film & Studio",
     items: [
-      { q: "Format film apa saja yang tersedia?", a: "2D, 3D, IMAX, dan 4DX (tergantung outlet). Format tersedia per jadwal akan ditampilkan saat pilih showtime." },
-      { q: "Apa arti rating film (SU, 13+, 17+, D21)?", a: "SU = Semua Umur, 13+ = remaja 13 tahun ke atas, 17+ = remaja 17 tahun ke atas, D21 = dewasa 21 tahun ke atas. Mohon bawa identitas valid jika diminta." },
-      { q: "Apakah ada subtitle Indonesia?", a: "Sebagian besar film impor disediakan subtitle Indonesia. Info subtitle ada di halaman detail film." },
-      { q: "Bisakah booking studio untuk event privat?", a: "Ya, kami menyediakan booking studio penuh untuk event privat (corporate, ulang tahun, wedding). Cek menu Studio untuk request." },
+      { q: "Format film yang tersedia?", a: "2D (standar), 3D (kacamata disediakan), IMAX (layar raksasa + audio premium), dan 4DX (kursi bergerak + efek wind/water). Ketersediaan tergantung outlet — cek saat pilih jadwal." },
+      { q: "Apa arti rating SU, 13+, 17+, D21?", a: "SU bebas semua usia, 13+ remaja 13 tahun ke atas, 17+ remaja 17 tahun ke atas, D21 khusus dewasa 21 tahun ke atas. Detail lengkap + kebijakan ada di section 'Klasifikasi Usia Film' di atas." },
+      { q: "Ada subtitle Indonesia?", a: "Hampir semua film impor sudah ada subtitle Indonesia. Cek info subtitle di halaman detail film masing-masing." },
+      { q: "Bisa sewa studio untuk event privat?", a: "Bisa banget. Ulang tahun anak, anniversary, gathering kantor, screening rilis perdana — cek menu 'Studio' di header. Studio jadi milik Anda, dari layar sampai snack." },
     ],
   },
   {
     title: "📱 Akun & E-Ticket",
     items: [
-      { q: "Apakah harus daftar akun dulu?", a: "Tidak perlu daftar terpisah. Cukup masukkan nomor HP saat booking; sistem otomatis buat profile member untuk Anda." },
-      { q: "Bagaimana akses booking history?", a: "Klik tombol Sign In di header → masukkan nomor HP yang digunakan saat booking. Anda akan lihat semua booking aktif & past, poin loyalty, dan promo." },
-      { q: "Tidak terima WhatsApp e-tiket?", a: "Cek folder spam atau pastikan nomor WA aktif. Jika tetap tidak terima, hubungi customer service via WA atau cek di halaman akun Anda untuk download manual." },
-      { q: "Bisakah transfer tiket ke orang lain?", a: "Tiket tidak diatasnamakan, jadi bisa dipakai siapa saja yang membawa QR code-nya. Pastikan jaga QR code dengan baik." },
+      { q: "Harus daftar akun dulu?", a: "Tidak. Cukup masukkan nomor HP saat booking — sistem otomatis buat profile member untuk Anda. Tidak ada formulir berlembar-lembar, tidak ada password yang harus diingat." },
+      { q: "Cara akses booking history?", a: "Klik tombol Sign In di header, masukkan nomor HP yang dipakai booking. Anda akan lihat semua booking (aktif & past), saldo poin, dan promo yang tersedia." },
+      { q: "Tidak terima WhatsApp e-tiket?", a: "Cek folder spam atau pastikan nomor WhatsApp aktif. Atau buka halaman 'Akun' Anda — semua e-tiket bisa di-download manual dari sana. Kalau masih tidak ada, chat CS kami." },
+      { q: "Bisa transfer tiket ke orang lain?", a: "Bisa. Tiket tidak diatasnamakan — siapapun yang bawa QR codenya bisa masuk. Forward saja QR-nya ke teman. Tapi jaga baik-baik, sekali QR di-scan, tiket terpakai." },
     ],
   },
 ];
@@ -1444,12 +1444,27 @@ function FAQPage({ brandPrimary }) {
     <div style={{ paddingBottom: 60 }}>
       <PageHero
         tag="FAQ · Bantuan"
-        title="Pertanyaan Umum"
-        subtitle="Jawaban cepat untuk pertanyaan paling sering — pemesanan, pembayaran, refund, loyalty, dan e-tiket."
+        title="Tanya Apa Saja"
+        subtitle="Dari klasifikasi usia film sampai cara redeem poin — semua jawaban yang Anda butuhkan, dalam satu halaman."
         accent="❓"
         brandPrimary={brandPrimary}
       />
       <div style={{ maxWidth: 820, margin: "0 auto" }}>
+      {/* RATING GUIDE — selalu di paling atas FAQ */}
+      <div id="rating-guide" style={{ marginBottom: 32, scrollMarginTop: 100 }}>
+        <h2 style={{ fontSize: 20, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 6, letterSpacing: -0.3 }}>🎞️ Klasifikasi Usia Film</h2>
+        <p style={{ fontSize: 13.5, color: C.sub, margin: 0, marginBottom: 16, lineHeight: 1.6 }}>
+          Kami mengikuti standar resmi <strong style={{ color: "#fff" }}>Lembaga Sensor Film (LSF) Indonesia</strong>. Pastikan Anda dan rombongan sesuai dengan klasifikasi film yang dipilih — staf kami berhak meminta identitas di pintu masuk untuk verifikasi usia.
+        </p>
+        <RatingGuideSection brandPrimary={brandPrimary} />
+        <div style={{
+          marginTop: 14, padding: "12px 16px",
+          background: "rgba(251,191,36,0.06)", border: "1px solid rgba(251,191,36,0.25)",
+          borderRadius: 10, fontSize: 12.5, color: "rgba(255,255,255,0.85)", lineHeight: 1.6,
+        }}>
+          <strong style={{ color: "#fbbf24" }}>💡 Tips:</strong> Bawa KTP, SIM, atau Kartu Pelajar untuk film 13+, 17+, dan D21. Tanpa identitas resmi, staf berhak menolak masuk demi keamanan & kepatuhan regulasi.
+        </div>
+      </div>
       {FAQ_GROUPS.map((group, gi) => (
         <div key={gi} style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 12, letterSpacing: -0.3 }}>{group.title}</h2>
@@ -1513,7 +1528,7 @@ function AboutPage({ brand, brandPrimary, onBack }) {
       <PageHero
         tag="About Us"
         title={name}
-        subtitle="Pengalaman cinema digital untuk Indonesia — pilih kursi, F&B, dan ambil tiket lewat satu scan QR."
+        subtitle="Bioskop tanpa antri loket. Pilih film dari sofa, pilih kursi favorit, sambil order popcorn — semuanya dalam satu scan QR."
         accent="🎬"
         brandPrimary={brandPrimary}
       />
@@ -2594,6 +2609,139 @@ function OutletPicker({ onPick, onPickFeaturedFilm, pendingFilm, brandPrimary, o
 // ════════════════════════════════════════════════════════════════════
 const RATING_COLOR = { "SU": "#10b981", "13+": "#22d3ee", "17+": "#fbbf24", "D21": "#ef4444", "21+": "#ef4444" };
 
+// ════════════════════════════════════════════════════════════════════
+// KLASIFIKASI USIA — Lembaga Sensor Film Indonesia (LSF)
+// ════════════════════════════════════════════════════════════════════
+const RATING_GUIDE = [
+  {
+    code: "SU",
+    label: "Semua Umur",
+    color: "#10b981",
+    icon: "👨‍👩‍👧",
+    age: "Tanpa batasan usia",
+    desc: "Bisa diajak nonton bareng anak, ponakan, sampai oma-opa. Bebas adegan kekerasan, konten dewasa, dan bahasa kasar — dari awal sampai credit roll.",
+    examples: "Animasi anak, film keluarga, dokumenter edukasi, petualangan ringan",
+    policy: "Bebas masuk untuk semua usia. Tidak ada pengecekan identitas di pintu.",
+  },
+  {
+    code: "13+",
+    label: "Remaja 13 Tahun ke Atas",
+    color: "#22d3ee",
+    icon: "🧒",
+    age: "Minimal 13 tahun",
+    desc: "Cocok untuk remaja yang sudah bisa membedakan fiksi dan realita. Mungkin ada perkelahian ringan, tema percintaan remaja, atau adegan menegangkan yang butuh kedewasaan menonton.",
+    examples: "Action ringan, fantasi remaja, horror PG, drama keluarga dewasa, sci-fi",
+    policy: "Anak di bawah 13 tahun wajib didampingi orang tua. KTP/identitas bisa diminta jika usia diragukan.",
+  },
+  {
+    code: "17+",
+    label: "Remaja 17 Tahun ke Atas",
+    color: "#fbbf24",
+    icon: "🧑",
+    age: "Minimal 17 tahun",
+    desc: "Konten cukup intens — kekerasan eksplisit, adegan menegangkan, bahasa kasar, atau tema yang berat. Hanya untuk yang sudah cukup matang secara emosional.",
+    examples: "Action intens, horror, thriller, drama berat, war movie",
+    policy: "Wajib KTP/SIM/identitas resmi. Penonton di bawah 17 tahun tidak diizinkan masuk — bahkan jika didampingi orang tua.",
+  },
+  {
+    code: "D21",
+    label: "Dewasa 21 Tahun ke Atas",
+    color: "#ef4444",
+    icon: "🔞",
+    age: "Minimal 21 tahun",
+    desc: "Khusus penonton dewasa. Mengandung kekerasan ekstrem, konten seksual eksplisit, atau tema sensitif berat yang butuh kedewasaan psikologis penuh.",
+    examples: "Thriller dewasa, drama kontroversial, dokumenter sensitif",
+    policy: "Wajib bawa KTP/identitas resmi. Penonton di bawah 21 tahun TIDAK BOLEH masuk — tanpa pengecualian.",
+  },
+];
+
+const RATING_GUIDE_MAP = Object.fromEntries(RATING_GUIDE.map(r => [r.code, r]));
+
+function RatingGuideSection({ brandPrimary, compact = false }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: compact ? "repeat(auto-fit, minmax(min(100%, 240px), 1fr))" : "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: 12 }}>
+      {RATING_GUIDE.map(r => (
+        <div key={r.code} style={{
+          background: C.card, border: `1px solid ${r.color}33`, borderRadius: 12,
+          padding: 16, position: "relative",
+          borderTop: `3px solid ${r.color}`,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+            <div style={{
+              fontSize: 14, fontWeight: 900, color: r.color,
+              padding: "4px 10px", borderRadius: 6, fontFamily: "'JetBrains Mono',monospace",
+              background: `${r.color}1a`, border: `1px solid ${r.color}55`,
+              letterSpacing: 1, minWidth: 46, textAlign: "center",
+            }}>{r.code}</div>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#fff" }}>{r.label}</div>
+              <div style={{ fontSize: 10, color: C.dim, fontFamily: "'JetBrains Mono',monospace", textTransform: "uppercase", letterSpacing: 1 }}>{r.age}</div>
+            </div>
+          </div>
+          <p style={{ fontSize: 12, color: C.sub, lineHeight: 1.55, margin: "10px 0 8px" }}>{r.desc}</p>
+          {!compact && (
+            <>
+              <div style={{ fontSize: 10, color: C.dim, textTransform: "uppercase", letterSpacing: 1.5, fontFamily: "'JetBrains Mono',monospace", marginTop: 12 }}>Contoh Genre</div>
+              <div style={{ fontSize: 11.5, color: C.sub, marginBottom: 8 }}>{r.examples}</div>
+              <div style={{ fontSize: 10, color: r.color, textTransform: "uppercase", letterSpacing: 1.5, fontFamily: "'JetBrains Mono',monospace", marginTop: 10 }}>Kebijakan Outlet</div>
+              <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.78)", lineHeight: 1.55 }}>{r.policy}</div>
+            </>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// Popover modal untuk satu rating spesifik (dipanggil saat user klik badge)
+function RatingInfoModal({ ratingCode, onClose, onSeeAll }) {
+  const r = RATING_GUIDE_MAP[ratingCode] || RATING_GUIDE_MAP[String(ratingCode).toUpperCase()];
+  if (!r) return null;
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: "#1a1a22", border: `1px solid ${r.color}66`, borderTop: `3px solid ${r.color}`,
+        borderRadius: 14, padding: 24, maxWidth: 420, width: "100%",
+        boxShadow: "0 24px 60px rgba(0,0,0,0.6)",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{
+              fontSize: 18, fontWeight: 900, color: r.color,
+              padding: "6px 14px", borderRadius: 8, fontFamily: "'JetBrains Mono',monospace",
+              background: `${r.color}1a`, border: `1px solid ${r.color}55`, letterSpacing: 1,
+            }}>{r.code}</div>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{r.label}</div>
+              <div style={{ fontSize: 11, color: r.color, fontFamily: "'JetBrains Mono',monospace", textTransform: "uppercase", letterSpacing: 1.5 }}>{r.age}</div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.5)", fontSize: 22, cursor: "pointer", padding: 0, lineHeight: 1 }}>×</button>
+        </div>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", lineHeight: 1.6, margin: "0 0 14px" }}>{r.desc}</p>
+        <div style={{ background: "rgba(0,0,0,0.3)", borderRadius: 8, padding: "10px 12px", marginBottom: 10 }}>
+          <div style={{ fontSize: 9, color: r.color, fontWeight: 800, letterSpacing: 1.5, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>KEBIJAKAN OUTLET</div>
+          <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.9)", lineHeight: 1.55 }}>{r.policy}</div>
+        </div>
+        <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: 8, padding: "10px 12px", marginBottom: 16 }}>
+          <div style={{ fontSize: 9, color: "rgba(255,255,255,0.5)", fontWeight: 800, letterSpacing: 1.5, fontFamily: "'JetBrains Mono',monospace", marginBottom: 4 }}>CONTOH GENRE</div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>{r.examples}</div>
+        </div>
+        {onSeeAll && (
+          <button onClick={onSeeAll} style={{
+            width: "100%", padding: 12, background: "rgba(255,255,255,0.06)", color: "#fff",
+            border: "1px solid rgba(255,255,255,0.15)", borderRadius: 10, fontSize: 13, fontWeight: 700,
+            cursor: "pointer", fontFamily: "inherit",
+          }}>📖 Lihat Semua Klasifikasi</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function FilmsGrid({ outlet, onPickFilm, brandPrimary }) {
   const [films, setFilms] = useState(null);
   const [showtimes, setShowtimes] = useState(null);
@@ -2708,6 +2856,7 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSig
 
   const trailerEmbed = ytEmbedUrl(film.trailer_url);
   const formats = (film.available_formats || "2D").split(",").map(s => s.trim()).filter(Boolean);
+  const [ratingModalOpen, setRatingModalOpen] = useState(false);
 
   // My List toggle
   const [inList, setInList] = useState(false);
@@ -2755,13 +2904,14 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSig
             <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: -1, margin: 0, marginBottom: 8, color: "#fff", textShadow: "0 2px 12px rgba(0,0,0,0.8)" }}>{film.title}</h1>
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
               {film.rating && (
-                <span style={{
+                <button onClick={() => setRatingModalOpen(true)} title={`Apa arti ${film.rating}?`} style={{
                   padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 800,
                   background: (RATING_COLOR[film.rating] || "#9ca3af") + "33",
                   color: RATING_COLOR[film.rating] || "#9ca3af",
                   border: `1px solid ${RATING_COLOR[film.rating] || "#9ca3af"}66`,
                   fontFamily: "'Geist Mono',monospace",
-                }}>{film.rating}</span>
+                  cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4,
+                }}>{film.rating} <span style={{ fontSize: 9, opacity: 0.7 }}>ⓘ</span></button>
               )}
               <span style={{ fontSize: 13, color: "rgba(255,255,255,0.85)" }}>{film.duration_min || 0} menit</span>
               <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>·</span>
@@ -2862,6 +3012,15 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSig
 
       {/* Reviews from penonton */}
       <ReviewsSection filmId={film.id} brandPrimary={brandPrimary} />
+
+      {/* Modal info rating ketika user klik badge */}
+      {ratingModalOpen && (
+        <RatingInfoModal
+          ratingCode={film.rating}
+          onClose={() => setRatingModalOpen(false)}
+          onSeeAll={() => { setRatingModalOpen(false); window.location.href = "/?movies=1#rating-guide"; }}
+        />
+      )}
     </div>
   );
 }
