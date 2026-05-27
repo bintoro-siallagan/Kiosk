@@ -97,6 +97,14 @@ function setupCompanies(app, opts = {}) {
   for (const m of COMPANY_COLUMN_MIGRATIONS) { try { db.exec(m); } catch (e) { /* column exists or table missing */ } }
   for (const m of COMPANY_INDEX_MIGRATIONS) { try { db.exec(m); } catch {} }
 
+  // 1b) Per-tenant branding extras (white-label P2A) — idempotent ALTERs
+  for (const col of [
+    'ALTER TABLE companies ADD COLUMN receipt_footer TEXT',     // custom footer text on receipt
+    'ALTER TABLE companies ADD COLUMN wa_signature TEXT',       // signature appended to WA notifications
+    'ALTER TABLE companies ADD COLUMN email_signature TEXT',    // signature for email
+    'ALTER TABLE companies ADD COLUMN brand_short TEXT',        // short display name (POS header)
+  ]) { try { db.exec(col); } catch {} }
+
   // 2) Bootstrap default companies kalau kosong
   const count = db.prepare(`SELECT COUNT(*) c FROM companies`).get().c;
   if (count === 0) {
@@ -200,7 +208,10 @@ function setupCompanies(app, opts = {}) {
       const row = db.prepare(`SELECT id FROM companies WHERE status='active' ORDER BY id LIMIT 1`).get();
       companyId = row?.id || 1;
     }
-    const c = db.prepare(`SELECT id, code, name, primary_vertical, brand_color, logo_url FROM companies WHERE id = ?`).get(companyId);
+    const c = db.prepare(`SELECT id, code, name, primary_vertical, brand_color, logo_url,
+                                  contact_email, contact_phone, address,
+                                  receipt_footer, wa_signature, email_signature, brand_short
+                          FROM companies WHERE id = ?`).get(companyId);
     if (!c) return res.json({
       company_id: null, name: 'karyaOS',
       brand_color: '#FF6B35', brand_secondary: '#E55A2B',
@@ -209,10 +220,17 @@ function setupCompanies(app, opts = {}) {
     const brand = c.brand_color || '#FF6B35';
     res.json({
       company_id: c.id, company_code: c.code, name: c.name,
+      brand_short: c.brand_short || c.name,
       brand_color: brand,
       brand_secondary: darkenHex(brand, 0.2),
       logo_url: c.logo_url || '/logo.png',
       vertical: c.primary_vertical,
+      contact_email: c.contact_email || null,
+      contact_phone: c.contact_phone || null,
+      address: c.address || null,
+      receipt_footer: c.receipt_footer || null,
+      wa_signature: c.wa_signature || null,
+      email_signature: c.email_signature || null,
     });
   });
 
@@ -257,8 +275,10 @@ function setupCompanies(app, opts = {}) {
     if (!companyId) return res.status(400).json({ error: 'no company scope' });
     const b = req.body || {};
     const sets = [], params = [];
-    if (b.brand_color !== undefined) { sets.push('brand_color = ?'); params.push(b.brand_color); }
-    if (b.name !== undefined)        { sets.push('name = ?'); params.push(b.name); }
+    const allowed = ['brand_color', 'name', 'brand_short', 'contact_email', 'contact_phone', 'address', 'receipt_footer', 'wa_signature', 'email_signature'];
+    for (const k of allowed) {
+      if (b[k] !== undefined) { sets.push(`${k} = ?`); params.push(b[k]); }
+    }
     if (!sets.length) return res.json({ ok: true, noop: true });
     params.push(companyId);
     db.prepare(`UPDATE companies SET ${sets.join(', ')} WHERE id = ?`).run(...params);

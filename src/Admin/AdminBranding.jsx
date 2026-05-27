@@ -8,17 +8,30 @@ export default function AdminBranding({ onBack }) {
   const [data, setData] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [editColor, setEditColor] = useState("");
-  const [editName, setEditName] = useState("");
+  const [form, setForm] = useState({
+    brand_color: "", name: "", brand_short: "",
+    contact_email: "", contact_phone: "", address: "",
+    receipt_footer: "", wa_signature: "", email_signature: "",
+  });
   const fileRef = useRef(null);
+  const setF = (k) => (e) => setForm(s => ({ ...s, [k]: e.target.value }));
 
   const load = useCallback(() => {
     fetch("/api/companies/branding")
       .then(r => r.json())
       .then(b => {
         setData(b);
-        setEditColor(b?.brand_color || "#FF6B35");
-        setEditName(b?.name || "");
+        setForm({
+          brand_color: b?.brand_color || "#FF6B35",
+          name: b?.name || "",
+          brand_short: b?.brand_short || "",
+          contact_email: b?.contact_email || "",
+          contact_phone: b?.contact_phone || "",
+          address: b?.address || "",
+          receipt_footer: b?.receipt_footer || "",
+          wa_signature: b?.wa_signature || "",
+          email_signature: b?.email_signature || "",
+        });
       });
   }, []);
   useEffect(load, [load]);
@@ -50,7 +63,7 @@ export default function AdminBranding({ onBack }) {
       const r = await fetch("/api/companies/branding", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ brand_color: editColor, name: editName }),
+        body: JSON.stringify(form),
       });
       if (!r.ok) throw new Error((await r.json()).error || `HTTP ${r.status}`);
       load();
@@ -104,22 +117,76 @@ export default function AdminBranding({ onBack }) {
           <div>
             <label style={S.label}>Brand color</label>
             <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <input type="color" value={editColor} onChange={e => setEditColor(e.target.value)}
+              <input type="color" value={form.brand_color} onChange={setF("brand_color")}
                 style={{ width: 52, height: 40, border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, background: "transparent", cursor: "pointer" }}/>
-              <input type="text" value={editColor} onChange={e => setEditColor(e.target.value)}
+              <input type="text" value={form.brand_color} onChange={setF("brand_color")}
                 placeholder="#FF6B35" style={S.input}/>
               <span style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Hex</span>
             </div>
             <div style={S.hint}>Auto-derives secondary (darker) for gradients. Text color auto-contrast (white on dark / dark on light).</div>
           </div>
           <div>
-            <label style={S.label}>Brand name</label>
-            <input type="text" value={editName} onChange={e => setEditName(e.target.value)}
+            <label style={S.label}>Brand name (long)</label>
+            <input type="text" value={form.name} onChange={setF("name")}
               placeholder="e.g. Sour Sally · Demo Pitch Cafe" style={{ ...S.input, width: "100%" }}/>
-            <div style={S.hint}>Shown on kiosk wordmark + POS title + receipt header.</div>
+            <div style={S.hint}>Shown on receipt header, full reports.</div>
+          </div>
+          <div>
+            <label style={S.label}>Brand short (optional)</label>
+            <input type="text" value={form.brand_short} onChange={setF("brand_short")}
+              placeholder="e.g. Sour Sally" style={{ ...S.input, width: "100%" }}/>
+            <div style={S.hint}>Compact display name for POS header, WA sender. Defaults to brand name long.</div>
+          </div>
+        </div>
+      </section>
+
+      {/* CONTACT & ADDRESS */}
+      <section style={S.card}>
+        <div style={S.cardTitle}>Contact &amp; address</div>
+        <div style={{ display: "grid", gap: 14 }}>
+          <div>
+            <label style={S.label}>Contact phone</label>
+            <input type="text" value={form.contact_phone} onChange={setF("contact_phone")}
+              placeholder="e.g. +62 812-3456-7890" style={{ ...S.input, width: "100%" }}/>
+            <div style={S.hint}>Shown on receipt footer; used in WA template &lbrace;brandPhone&rbrace; variable.</div>
+          </div>
+          <div>
+            <label style={S.label}>Contact email</label>
+            <input type="email" value={form.contact_email} onChange={setF("contact_email")}
+              placeholder="hello@yourbrand.com" style={{ ...S.input, width: "100%" }}/>
+          </div>
+          <div>
+            <label style={S.label}>Address</label>
+            <textarea value={form.address} onChange={setF("address")} rows={2}
+              placeholder="Jl. Sudirman Kav 1, Jakarta Pusat 10220" style={{ ...S.input, width: "100%", resize: "vertical", fontFamily: "'Inter',sans-serif" }}/>
+          </div>
+        </div>
+      </section>
+
+      {/* NOTIFICATION FOOTERS */}
+      <section style={S.card}>
+        <div style={S.cardTitle}>Receipt &amp; notification footers</div>
+        <div style={{ display: "grid", gap: 14 }}>
+          <div>
+            <label style={S.label}>Receipt footer</label>
+            <textarea value={form.receipt_footer} onChange={setF("receipt_footer")} rows={2}
+              placeholder="Thank you for your order!" style={{ ...S.input, width: "100%", resize: "vertical", fontFamily: "'Inter',sans-serif" }}/>
+            <div style={S.hint}>Custom text at the bottom of receipt (after totals). Brand name auto-included.</div>
+          </div>
+          <div>
+            <label style={S.label}>WhatsApp signature</label>
+            <textarea value={form.wa_signature} onChange={setF("wa_signature")} rows={2}
+              placeholder="— Sour Sally Demo Pitch&#10;📞 +62 812-3456-7890&#10;Jl. Sudirman Kav 1" style={{ ...S.input, width: "100%", resize: "vertical", fontFamily: "'Inter',sans-serif" }}/>
+            <div style={S.hint}>Appended to every WA notification. Multi-line OK.</div>
+          </div>
+          <div>
+            <label style={S.label}>Email signature</label>
+            <textarea value={form.email_signature} onChange={setF("email_signature")} rows={3}
+              placeholder="Best regards,&#10;Sour Sally Team&#10;hello@soursally.com" style={{ ...S.input, width: "100%", resize: "vertical", fontFamily: "'Inter',sans-serif" }}/>
+            <div style={S.hint}>Appended to outgoing emails (formatted as plain or HTML).</div>
           </div>
           <button onClick={saveBranding} disabled={saving} style={S.saveBtn}>
-            {saving ? "Saving…" : "Save branding"}
+            {saving ? "Saving…" : "Save all branding"}
           </button>
         </div>
       </section>
@@ -130,12 +197,12 @@ export default function AdminBranding({ onBack }) {
         <div style={S.preview}>
           <img src={data.logo_url || "/logo.png"} alt="logo" style={{ width: 64, height: 64, objectFit: "contain" }}/>
           <div>
-            <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.5px" }}>{editName || "karyaos"}</div>
+            <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: "-0.5px" }}>{form.name || "karyaos"}</div>
             <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>
-              Brand color · <span style={{ color: editColor, fontWeight: 600 }}>{editColor}</span>
+              Brand color · <span style={{ color: form.brand_color, fontWeight: 600 }}>{form.brand_color}</span>
             </div>
           </div>
-          <button style={{ ...S.saveBtn, marginLeft: "auto", background: `linear-gradient(180deg, ${editColor}, ${editColor}cc)` }}>
+          <button style={{ ...S.saveBtn, marginLeft: "auto", background: `linear-gradient(180deg, ${form.brand_color}, ${form.brand_color}cc)` }}>
             Sample CTA
           </button>
         </div>

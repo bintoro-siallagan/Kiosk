@@ -104,12 +104,33 @@ async function sendMessage(phone, message) {
   }
 }
 
+// Lookup per-tenant branding for notification footer (white-label P2A)
+function _getTenantBrand(companyId) {
+  try {
+    const Database = require('better-sqlite3');
+    const path = require('path');
+    const db = new Database(path.join(__dirname, 'data.db'), { readonly: true });
+    const PLATFORM = ['BTS', 'CMX', 'KARYAOS'];
+    const c = db.prepare(`SELECT code, name, brand_short, contact_phone, address, wa_signature FROM companies WHERE id = ?`).get(companyId || 1);
+    db.close();
+    if (!c) return null;
+    const isPlatform = !c.code || PLATFORM.includes(c.code);
+    return {
+      name: isPlatform ? 'karyaos' : (c.brand_short || c.name),
+      phone: c.contact_phone || '',
+      address: c.address || '',
+      signature: c.wa_signature || '',
+    };
+  } catch { return null; }
+}
+
 async function notifyOrderStatus(order, newStatus) {
   if (!config.enabled[newStatus]) return { ok: false, skipped: "status not enabled" };
   if (!order.customerPhone) return { ok: false, skipped: "no customer phone" };
   const template = config.templates[newStatus];
   if (!template) return { ok: false, skipped: "no template" };
   const trackingBase = process.env.TRACKING_BASE_URL || "";
+  const brand = _getTenantBrand(order.companyId) || { name: 'karyaos', phone: '', address: '', signature: '' };
   const vars = {
     customerName: order.customerName || "Customer",
     orderId:      order.id,
@@ -118,8 +139,20 @@ async function notifyOrderStatus(order, newStatus) {
     trackingUrl:  trackingBase ? `${trackingBase}/?trackorder=${order.id}` : "",
     date:         new Date(order.time || Date.now()).toLocaleDateString("id-ID"),
     time:         new Date(order.time || Date.now()).toLocaleTimeString("id-ID", { hour:"2-digit", minute:"2-digit" }),
+    // White-label vars
+    brandName:    brand.name,
+    brandPhone:   brand.phone,
+    brandAddress: brand.address,
+    signature:    brand.signature,
   };
-  const message = fillTemplate(template, vars);
+  let message = fillTemplate(template, vars);
+  // Append signature if defined + not already in template
+  if (brand.signature && !template.includes('{signature}')) {
+    message += `\n\n${brand.signature}`;
+  } else if (!brand.signature && !template.includes('{brandName}')) {
+    // Default footer with brand name
+    message += `\n\n— ${brand.name}`;
+  }
   return sendMessage(order.customerPhone, message);
 }
 
