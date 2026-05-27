@@ -581,7 +581,7 @@ const S = {
   removeBtn: { width: 28, height: 28, borderRadius: 14, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", color: "#F87171", fontSize: 12, cursor: "pointer", padding: 0 },
   codeInputRow: { display: "flex", gap: 8 },
   codeInput: { flex: 1, padding: "11px 14px", borderRadius: 10, background: "#0d0d0d", border: "1px solid #2a2a2a", color: "white", fontSize: 13, outline: "none", fontFamily: "inherit", letterSpacing: 1, textTransform: "uppercase" },
-  applyBtn: { padding: "11px 18px", borderRadius: 10, background: "var(--brand-primary,#FF6B35)", border: "none", color: "#000", fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" },
+  applyBtn: { padding: "11px 18px", borderRadius: 12, background: "radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, var(--brand-primary,#FF6B35) 60%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 38%, #1a1d29), color-mix(in srgb, var(--brand-secondary,#E55A2B) 30%, #0d0f14))", border: "1px solid rgba(255,255,255,0.16)", color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.45)", fontSize: 13, fontWeight: 600, letterSpacing: "-0.1px", cursor: "pointer", fontFamily: "'Inter',sans-serif", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 12px color-mix(in srgb, var(--brand-primary,#FF6B35) 22%, transparent)" },
   softErr: { padding: "8px 12px", borderRadius: 8, background: "rgba(245,158,11,0.08)", color: "var(--brand-primary,#FF6B35)", fontSize: 12 },
 
   // Points

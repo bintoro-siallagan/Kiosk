@@ -239,12 +239,16 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
         {cart.length > 0 ? (
           <button onClick={() => setShowCart(true)} style={{
             width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-            gap: 10, padding: "13px 18px", borderRadius: 14, background: BRAND, border: "none",
-            color: "#000", cursor: "pointer", boxSizing: "border-box"
+            gap: 10, padding: "13px 18px", borderRadius: 14,
+            background: `radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, var(--brand-primary,#FF6B35) 60%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 38%, #1a1d29), color-mix(in srgb, var(--brand-secondary,#E55A2B) 30%, #0d0f14))`,
+            border: "1px solid rgba(255,255,255,0.16)",
+            color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.45)",
+            cursor: "pointer", boxSizing: "border-box",
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 24px color-mix(in srgb, var(--brand-primary,#FF6B35) 22%, transparent)"
           }}>
-            <span style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 800, fontSize: 13 }}>
-              <span style={{ background: "#000", color: BRAND, borderRadius: 999, padding: "2px 9px", fontSize: 12 }}>{cartCount}</span>
-              Lihat Pesanan
+            <span style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 600, fontSize: 13, letterSpacing: "-0.2px" }}>
+              <span style={{ background: "rgba(0,0,0,0.4)", color: "#fff", borderRadius: 999, padding: "2px 9px", fontSize: 12, fontWeight: 600 }}>{cartCount}</span>
+              View order
             </span>
             <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 22, letterSpacing: 0.5 }}>{rupiah(cartTotal)} →</span>
           </button>
@@ -320,7 +324,7 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
                     <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 18, letterSpacing: 1 }}>TOTAL</span>
                     <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 28, color: BRAND }}>{rupiah(cartTotal)}</span>
                   </div>
-                  <button onClick={() => setScreen("checkout")} style={{ width: "100%", padding: "14px", borderRadius: 12, background: BRAND, border: "none", color: "#000", fontFamily: "'Inter', sans-serif", fontSize: 20, letterSpacing: 2, cursor: "pointer" }}>CHECKOUT →</button>
+                  <button onClick={() => setScreen("checkout")} style={{ width: "100%", padding: "14px", borderRadius: 14, background: `radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, var(--brand-primary,#FF6B35) 60%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 38%, #1a1d29), color-mix(in srgb, var(--brand-secondary,#E55A2B) 30%, #0d0f14))`, border: "1px solid rgba(255,255,255,0.16)", color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.45)", fontFamily: "'Inter', sans-serif", fontSize: 16, fontWeight: 600, letterSpacing: "-0.3px", cursor: "pointer", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 24px color-mix(in srgb, var(--brand-primary,#FF6B35) 22%, transparent)" }}>Checkout →</button>
                   <button onClick={() => setShowCart(false)} style={{ width: "100%", padding: "10px", marginTop: 8, borderRadius: 10, background: "transparent", border: "none", color: SUB, fontSize: 13, cursor: "pointer" }}>← Lanjut pilih menu</button>
                 </>
               ) : (
@@ -402,7 +406,7 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
               </div>
               <div style={{ display: "flex", gap: 10 }}>
                 <button onClick={closeDetail} style={{ flex: 1, padding: "12px", borderRadius: 10, background: "transparent", border: `1px solid ${BORDER}`, color: TEXT, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-                <button onClick={handleAdd} style={{ flex: 2, padding: "12px", borderRadius: 10, background: BRAND, border: "none", color: "#000", fontSize: 14, fontWeight: 800, cursor: "pointer" }}>+ Tambah ke Cart</button>
+                <button onClick={handleAdd} style={{ flex: 2, padding: "13px", borderRadius: 12, background: `radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, var(--brand-primary,#FF6B35) 60%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 38%, #1a1d29), color-mix(in srgb, var(--brand-secondary,#E55A2B) 30%, #0d0f14))`, border: "1px solid rgba(255,255,255,0.16)", color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.45)", fontSize: 14, fontWeight: 600, letterSpacing: "-0.2px", cursor: "pointer", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 14px color-mix(in srgb, var(--brand-primary,#FF6B35) 22%, transparent)" }}>+ Add to cart</button>
               </div>
             </div>
           </div>
