@@ -20,12 +20,21 @@ const fmtDateTime = (sec) => sec ? new Date(sec*1000).toLocaleString('id-ID', {d
 
 export default function POSReceipt({ order, onClose, onPrintDone }) {
   const [taxConfig, setTaxConfig] = useState([]);
-  const [kioskName, setKioskName] = useState('KaryaOS');
+  const [kioskName, setKioskName] = useState('karyaos');
+  const [brandLogo, setBrandLogo] = useState('/logo.png');
   const printRef = useRef(null);
 
   useEffect(() => {
     fetch(`${API_HOST}/api/finance/tax-config`).then(r=>r.json()).then(d => setTaxConfig((d || []).filter(t => t.is_active)));
-    fetch(`${API_HOST}/api/pos/config/KIOSK_NAME`).then(r=>r.json()).then(d => { if (d.parsed_value) setKioskName(d.parsed_value); }).catch(()=>{});
+    // Per-tenant branding overrides KIOSK_NAME config — tenant name wins if non-default
+    fetch(`${API_HOST}/api/companies/branding`).then(r => r.json()).then(b => {
+      const PLATFORM = ["BTS", "CMX", "KARYAOS"];
+      const isPlatform = !b?.company_code || PLATFORM.includes(b.company_code);
+      if (b?.name && !isPlatform) setKioskName(b.name);
+      if (b?.logo_url) setBrandLogo(b.logo_url);
+    }).catch(() => {
+      fetch(`${API_HOST}/api/pos/config/KIOSK_NAME`).then(r=>r.json()).then(d => { if (d.parsed_value) setKioskName(d.parsed_value); }).catch(()=>{});
+    });
   }, []);
 
   // Calculate totals

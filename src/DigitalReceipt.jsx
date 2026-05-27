@@ -9,15 +9,30 @@ export default function DigitalReceipt({ orderId, onDone }) {
   const [receipt, setReceipt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [qrSrc, setQrSrc]     = useState(null);
+  // Per-tenant branding for receipt header
+  const [brand, setBrand] = useState({ name: "karyaos", logoUrl: "/logo.png", code: null });
 
   useEffect(() => {
     if (!orderId) { setLoading(false); return; }
-    // Voice already played at payment confirm; just fetch receipt
     api.getReceipt(orderId)
       .then(setReceipt)
       .catch(() => setReceipt(null))
       .finally(() => setLoading(false));
   }, [orderId]);
+
+  useEffect(() => {
+    fetch("/api/companies/branding").then(r => r.json()).then(b => {
+      if (b?.name) {
+        const PLATFORM = ["BTS", "CMX", "KARYAOS"];
+        const isPlatform = !b.company_code || PLATFORM.includes(b.company_code);
+        setBrand({
+          name: isPlatform ? "karyaos" : b.name,
+          logoUrl: b.logo_url || "/logo.png",
+          code: b.company_code,
+        });
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (!orderId) return;
@@ -65,10 +80,9 @@ export default function DigitalReceipt({ orderId, onDone }) {
         <div style={R.paper} className="receipt-paper">
           {/* Header */}
           <div style={R.rHeader}>
-            <div style={R.rLogo}><img src="/logo.png" alt="KaryaOS" style={{ height: 56, objectFit: "contain" }} /></div>
-            <div style={R.rBrand}>KaryaOS</div>
-            <div style={R.rAddr}>Self Order Kiosk</div>
-            <div style={R.rAddr}>Jakarta, Indonesia</div>
+            <div style={R.rLogo}><img src={brand.logoUrl} alt={brand.name} style={{ height: 56, objectFit: "contain" }} /></div>
+            <div style={R.rBrand}>{brand.name}</div>
+            <div style={R.rAddr}>Self-order kiosk</div>
             {/* BIG type badge — dine-in vs takeaway prominent di header */}
             {receipt.type && (
               <div style={{
