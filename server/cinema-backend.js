@@ -1976,7 +1976,7 @@ function setupCinema(app, opts = {}) {
     const tickets = db.prepare(`
       SELECT t.*, s.show_date, s.start_time, s.format,
              f.title AS film_title, f.rating, f.duration_min,
-             st.name AS studio_name, st.type AS studio_type, st.outlet
+             st.name AS studio_name, st.studio_type, st.outlet
       FROM cinema_tickets t
       LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
       LEFT JOIN cinema_films f ON f.id = s.film_id
