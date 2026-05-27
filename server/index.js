@@ -3116,12 +3116,68 @@ if (adminUsers.filter(u => u.pin && !u.username).length === 0 && adminUsers.leng
   console.log(`🔐 Seeded legacy PIN users (kasir quick-login: 111111 / 222222)`);
 }
 
+// Persist sessions to DB so survives backend restart (PM2 restart, deploy)
+// Hybrid: Map cache + SQLite write-through
+try {
+  db.rawDb.exec(`
+    CREATE TABLE IF NOT EXISTS admin_sessions_persist (
+      token TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      name TEXT, role TEXT,
+      company_id INTEGER, is_super_admin INTEGER DEFAULT 0,
+      login_at INTEGER NOT NULL, expires_at INTEGER NOT NULL,
+      ip TEXT, last_seen_at INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_admin_sess_exp ON admin_sessions_persist(expires_at);
+  `);
+} catch (e) { console.error('[sessions] create table:', e.message); }
+
+const _sessionDb = {
+  upsert: (token, s) => {
+    try {
+      db.rawDb.prepare(`INSERT OR REPLACE INTO admin_sessions_persist
+        (token, user_id, name, role, company_id, is_super_admin, login_at, expires_at, ip, last_seen_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, strftime('%s','now')*1000)`).run(
+          token, s.userId, s.name || null, s.role || null,
+          s.company_id ?? null, s.is_super_admin ? 1 : 0,
+          s.loginAt, s.expiresAt, s.ip || null);
+    } catch (e) { /* silent — Map still works as cache */ }
+  },
+  delete: (token) => { try { db.rawDb.prepare(`DELETE FROM admin_sessions_persist WHERE token = ?`).run(token); } catch {} },
+  loadValid: () => {
+    try {
+      return db.rawDb.prepare(`SELECT * FROM admin_sessions_persist WHERE expires_at > ?`).all(Date.now());
+    } catch { return []; }
+  },
+  purgeExpiredDb: () => { try { db.rawDb.prepare(`DELETE FROM admin_sessions_persist WHERE expires_at < ?`).run(Date.now()); } catch {} },
+};
+
 const adminSessions = new Map(); // token → { userId, role, loginAt, expiresAt }
+// Load valid sessions from DB at startup (survive restart)
+try {
+  const rows = _sessionDb.loadValid();
+  rows.forEach(r => {
+    adminSessions.set(r.token, {
+      userId: r.user_id, name: r.name, role: r.role,
+      company_id: r.company_id ?? null, is_super_admin: !!r.is_super_admin,
+      loginAt: r.login_at, expiresAt: r.expires_at, ip: r.ip,
+    });
+  });
+  if (rows.length > 0) console.log(`🔐 Restored ${rows.length} active session(s) from DB`);
+} catch (e) { console.error('[sessions] restore:', e.message); }
+
+// Wrap original Map methods utk write-through ke DB
+const _origSet = adminSessions.set.bind(adminSessions);
+const _origDelete = adminSessions.delete.bind(adminSessions);
+adminSessions.set = (token, value) => { _sessionDb.upsert(token, value); return _origSet(token, value); };
+adminSessions.delete = (token) => { _sessionDb.delete(token); return _origDelete(token); };
+
 let twoFA = null;                 // P3D — set later by setup2FA(); login handler reads at request-time
 function genToken() { return crypto.randomBytes(32).toString("hex"); }
 function purgeExpired() {
   const now = Date.now();
   for (const [t, s] of adminSessions) if (s.expiresAt < now) adminSessions.delete(t);
+  _sessionDb.purgeExpiredDb();
 }
 function clientIp(req) { return (req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "").toString().split(",")[0].trim(); }
 
