@@ -2,7 +2,7 @@
 // Contract Management — kontrak vendor / sewa / franchise + alert.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit, LoadingState } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—";
@@ -49,7 +49,7 @@ export default function AdminContract({ apiBase = "" }) {
     }).then(r => r.json()).then(j => { if (j.ok) { setMsg(`✓ ${c.title} diperpanjang +12 month`); load(); } }).catch(() => {});
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Contract Management…</div>;
+  if (!d) return <LoadingState label="Memuat Contract Management…" sub="Mengambil kontrak & alert masa berlaku" />;
   const s = d.summary;
 
   return (

@@ -2,7 +2,7 @@
 // AP Aging — Hutang Usaha (Accounts Payable) aging.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit, LoadingState } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtJt = (n) => (n / 1e6).toFixed(1) + "M";
@@ -42,7 +42,7 @@ export default function AdminApAging({ apiBase = "" }) {
     }).then(r => r.json()).then(j => { if (j.ok) { setMsg(`✓ ${p.invoice_no} dibayar — ${j.status}`); load(); } else setMsg(j.error || "gagal"); }).catch(e => setMsg(String(e)));
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat AP Aging…</div>;
+  if (!d) return <LoadingState label="Memuat AP Aging…" sub="Menyusun bucket umur hutang" />;
   const s = d.summary;
   const maxB = Math.max(1, ...d.buckets.map(b => b.total));
 

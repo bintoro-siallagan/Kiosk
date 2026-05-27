@@ -2,7 +2,7 @@
 // B2B Customer — master pelanggan korporat untuk Sales Order.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit, LoadingState } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const AC = "#5b21b6";
@@ -62,7 +62,7 @@ export default function AdminB2bCustomer({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat B2B Customer…</div>;
+  if (!d) return <LoadingState label="Memuat B2B Customer…" sub="Mengambil master pelanggan korporat" />;
   const s = d.summary;
 
   return (

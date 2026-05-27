@@ -2,6 +2,7 @@
 // Batch & Expiry Tracking — FEFO.
 
 import { useState, useEffect, useCallback } from "react";
+import { LoadingState } from "../components/uiKit.jsx";
 
 const AC = "#ca8a04";
 const DAY_SEC = 86400;
@@ -37,7 +38,7 @@ export default function AdminBatchTracking({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Batch Tracking…</div>;
+  if (!d) return <LoadingState label="Memuat Batch Tracking…" sub="Mengevaluasi FEFO & expiry" />;
   const s = d.summary;
 
   return (

@@ -4,7 +4,7 @@
 // Provider: <UiKitProvider> wrapped di main.jsx
 // Hook: const { confirm, toast, undoToast, prompt } = useUiKit();
 //
-// Components: <EmptyState> · <TooltipButton> · <LoadingSkeleton>
+// Components: <EmptyState> · <TooltipButton> · <LoadingSkeleton> · <LoadingState>
 //             · <BulkActionBar> · <StatHeader> · <SearchBar>
 //             · <CrudButtons> · <EditModal>
 //
@@ -385,6 +385,34 @@ export function LoadingSkeleton({ rows = 3, height = 40 }) {
         }} />
       ))}
       <style>{`@keyframes uiKitSkeleton { 0%,100% { opacity: 0.4; } 50% { opacity: 0.8; } }`}</style>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
+// COMPONENT: LoadingState (spinner + label, brand-aware)
+// ════════════════════════════════════════════════════════════════════
+export function LoadingState({ label = "Memuat…", sub = "", compact = false }) {
+  const size = compact ? 16 : 28;
+  return (
+    <div style={{
+      display: "flex", flexDirection: compact ? "row" : "column",
+      alignItems: "center", justifyContent: "center",
+      gap: compact ? 10 : 14,
+      padding: compact ? "10px 12px" : "44px 20px",
+      color: C.sub, fontFamily: "'Inter',sans-serif",
+    }}>
+      <div style={{
+        width: size, height: size,
+        border: `2px solid ${C.border}`, borderTopColor: "#3b82f6",
+        borderRadius: "50%", animation: "uiKitSpin 0.8s linear infinite",
+        flexShrink: 0,
+      }} />
+      <div style={{ textAlign: compact ? "left" : "center" }}>
+        <div style={{ fontSize: compact ? 13 : 14, fontWeight: 600, color: C.text }}>{label}</div>
+        {sub && !compact && <div style={{ fontSize: 12, color: C.sub, marginTop: 4 }}>{sub}</div>}
+      </div>
+      <style>{`@keyframes uiKitSpin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

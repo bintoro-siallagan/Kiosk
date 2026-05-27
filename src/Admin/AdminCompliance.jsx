@@ -2,7 +2,7 @@
 // Compliance & Perizinan — izin & sertifikasi F&B + alert masa berlaku.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit, LoadingState } from "../components/uiKit.jsx";
 
 const AC = "#15803d";
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—";
@@ -54,7 +54,7 @@ export default function AdminCompliance({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Compliance…</div>;
+  if (!d) return <LoadingState label="Memuat Compliance…" sub="Mengecek masa berlaku izin & sertifikasi" />;
   const s = d.summary;
 
   return (

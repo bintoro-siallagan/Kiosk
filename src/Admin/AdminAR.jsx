@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import ReportActions from "./ReportActions.jsx";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit, LoadingState } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "2-digit" }) : "—";
@@ -66,7 +66,7 @@ export default function AdminAR({ apiBase = "" }) {
     }).catch(e => setMsg(String(e)));
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Accounts Receivable…</div>;
+  if (!d) return <LoadingState label="Memuat Accounts Receivable…" sub="Menarik data invoice & aging" />;
   const s = d.summary;
   const maxAge = Math.max(1, ...Object.values(s.aging));
 

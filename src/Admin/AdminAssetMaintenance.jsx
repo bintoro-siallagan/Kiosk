@@ -2,7 +2,7 @@
 // Asset & Maintenance — registry aset + jadwal maintenance.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit, LoadingState } from "../components/uiKit.jsx";
 
 const AC = "#78716c";
 const CAT_ICON = { Machine: "⚙️", Refrigeration: "❄️", "IT Equipment": "💻", Furniture: "🪑" };
@@ -51,7 +51,7 @@ export default function AdminAssetMaintenance({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Asset & Maintenance…</div>;
+  if (!d) return <LoadingState label="Memuat Asset & Maintenance…" sub="Mengambil registry aset" />;
   const s = d.summary;
 
   return (

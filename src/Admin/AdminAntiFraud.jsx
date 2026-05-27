@@ -2,6 +2,7 @@
 // Anti-Fraud Engine — deteksi pola mencurigakan reward & transaksi.
 
 import { useState, useEffect, useCallback } from "react";
+import { LoadingState } from "../components/uiKit.jsx";
 
 const SEV = {
   critical: { c: "#ef4444", t: "CRITICAL" },
@@ -21,7 +22,7 @@ export default function AdminAntiFraud({ apiBase = "" }) {
     return () => clearInterval(t);
   }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Anti-Fraud Engine…</div>;
+  if (!d) return <LoadingState label="Memuat Anti-Fraud Engine…" sub="Scan otomatis berjalan tiap 30 detik" />;
   const s = d.summary;
 
   return (
