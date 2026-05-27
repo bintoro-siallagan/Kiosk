@@ -4737,6 +4737,10 @@ setupFnbFeatures(app, { dbPath: DB_PATH });
 // MUST mount AFTER setupCinema/setupFnbFeatures — companies-backend ALTERs their tables
 const { setupCompanies } = require('./companies-backend');
 const companies = setupCompanies(app, { dbPath: DB_PATH, uploadMiddleware: upload });
+
+// White-label P2B — per-tenant encrypted API keys
+const { setupTenantIntegrations } = require('./tenant-integrations');
+const tenantIntegrations = setupTenantIntegrations(app, { dbPath: DB_PATH });
 // Expose resolveScope helper to global (semua endpoint lain bisa pakai untuk filter)
 global.resolveCompanyScope = companies.resolveScope;
 
