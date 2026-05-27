@@ -108,6 +108,9 @@ function setupCompanies(app, opts = {}) {
     'ALTER TABLE companies ADD COLUMN custom_domain TEXT',                // P4C — tenant CNAME (e.g. order.brand.com)
     'ALTER TABLE companies ADD COLUMN custom_domain_verified INTEGER DEFAULT 0',
     'ALTER TABLE companies ADD COLUMN custom_domain_token TEXT',          // DNS-TXT verification token
+    // P5 — Theme Studio (font + background per tenant)
+    'ALTER TABLE companies ADD COLUMN font_family TEXT',                  // Google Font name (e.g. "Playfair Display")
+    'ALTER TABLE companies ADD COLUMN bg_config TEXT',                    // JSON {mode, value, value2, direction}
   ]) { try { db.exec(col); } catch {} }
   try { db.exec(`CREATE INDEX IF NOT EXISTS idx_companies_custom_domain ON companies(custom_domain) WHERE custom_domain IS NOT NULL`); } catch {}
 
@@ -231,7 +234,7 @@ function setupCompanies(app, opts = {}) {
     const c = db.prepare(`SELECT id, code, name, primary_vertical, brand_color, logo_url,
                                   contact_email, contact_phone, address,
                                   receipt_footer, wa_signature, email_signature, brand_short,
-                                  currency_code, locale
+                                  currency_code, locale, font_family, bg_config
                           FROM companies WHERE id = ?`).get(companyId);
     if (!c) return res.json({
       company_id: null, name: 'karyaOS',
@@ -254,6 +257,9 @@ function setupCompanies(app, opts = {}) {
       email_signature: c.email_signature || null,
       currency_code: c.currency_code || 'IDR',
       locale: c.locale || 'id-ID',
+      // P5 — Theme Studio
+      font_family: c.font_family || null,
+      bg_config: c.bg_config ? (() => { try { return JSON.parse(c.bg_config); } catch { return null; } })() : null,
     });
   });
 
@@ -319,9 +325,14 @@ function setupCompanies(app, opts = {}) {
     if (!companyId) return res.status(400).json({ error: 'no company scope and no active company' });
     const b = req.body || {};
     const sets = [], params = [];
-    const allowed = ['brand_color', 'name', 'brand_short', 'contact_email', 'contact_phone', 'address', 'receipt_footer', 'wa_signature', 'email_signature', 'currency_code', 'locale'];
+    const allowed = ['brand_color', 'name', 'brand_short', 'contact_email', 'contact_phone', 'address', 'receipt_footer', 'wa_signature', 'email_signature', 'currency_code', 'locale', 'font_family'];
     for (const k of allowed) {
       if (b[k] !== undefined) { sets.push(`${k} = ?`); params.push(b[k]); }
+    }
+    // bg_config — serialize JSON kalau ada
+    if (b.bg_config !== undefined) {
+      sets.push('bg_config = ?');
+      params.push(b.bg_config ? JSON.stringify(b.bg_config) : null);
     }
     if (!sets.length) return res.json({ ok: true, noop: true });
     params.push(companyId);

@@ -188,6 +188,35 @@ export default function CinemaWebApp() {
   }, []);
   const brandPrimary = brand?.brand_color || "#a855f7";
 
+  // P5 — Theme Studio: apply font + custom background dari Branding
+  const tenantFont = brand?.font_family;
+  const tenantBg = brand?.bg_config;
+  // Lazy-load Google Font kalau tenant set font_family
+  useEffect(() => {
+    if (!tenantFont) return;
+    const href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(tenantFont)}:wght@300;400;500;600;700;800;900&display=swap`;
+    const existing = document.querySelector(`link[href="${href}"]`);
+    if (existing) return;
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    document.head.appendChild(link);
+  }, [tenantFont]);
+  // Resolve final background CSS value
+  const resolvedBackground = (() => {
+    if (!tenantBg || tenantBg.mode === "default") return C.bgGrad;
+    if (tenantBg.mode === "color") return tenantBg.value || C.bg;
+    if (tenantBg.mode === "gradient") return `linear-gradient(${tenantBg.direction || "135deg"}, ${tenantBg.value || C.bg}, ${tenantBg.value2 || C.bg})`;
+    if (tenantBg.mode === "image" && tenantBg.value) return `linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.85)), url('${tenantBg.value}') center/cover fixed, ${C.bg}`;
+    if (tenantBg.mode === "pattern") {
+      if (tenantBg.value === "dots")  return `radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px) 0 0/20px 20px, ${C.bg}`;
+      if (tenantBg.value === "grid")  return `linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px) 0 0/20px 20px, linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0/20px 20px, ${C.bg}`;
+      if (tenantBg.value === "noise") return `repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, transparent 1px, transparent 3px), ${C.bg}`;
+    }
+    return C.bgGrad;
+  })();
+  const resolvedFontFamily = tenantFont ? `'${tenantFont}','Inter','-apple-system',sans-serif` : "'Inter','-apple-system',sans-serif";
+
   // Web config (nav + footer customization per tenant)
   const [webConfig, setWebConfig] = useState(null);
   useEffect(() => {
@@ -271,7 +300,7 @@ export default function CinemaWebApp() {
   const dismissDraft = useCallback(() => clearDraft(), []);
 
   return (
-    <div style={{ minHeight: "100vh", background: C.bgGrad, color: C.text, fontFamily: "'Inter','-apple-system',sans-serif", paddingBottom: 80, ["--brand-primary"]: brandPrimary }}>
+    <div style={{ minHeight: "100vh", background: resolvedBackground, color: C.text, fontFamily: resolvedFontFamily, paddingBottom: 80, ["--brand-primary"]: brandPrimary }}>
       <style>{`
         /* ═══ PREMIUM TYPOGRAPHY SYSTEM ═══ */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
