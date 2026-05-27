@@ -100,7 +100,7 @@ const FONT = "'Inter',sans-serif";
 const S = {
   root: {
     position: 'fixed', inset: 0,
-    background: 'radial-gradient(ellipse 70% 55% at 50% 38%, rgba(70,76,98,0.45) 0%, transparent 70%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)',
+    background: 'radial-gradient(ellipse 60% 50% at 30% 20%, rgba(70,76,98,0.45) 0%, transparent 65%), radial-gradient(ellipse 55% 45% at 75% 80%, rgba(50,55,72,0.35) 0%, transparent 65%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)',
     backgroundAttachment: 'fixed',
     display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10000,
     fontFamily: FONT, padding: 20, overflowY: 'auto',

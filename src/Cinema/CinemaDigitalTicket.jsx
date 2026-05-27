@@ -154,7 +154,7 @@ export default function CinemaDigitalTicket() {
 
 function Shell({ children }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: "radial-gradient(ellipse 70% 55% at 50% 38%, rgba(70,76,98,0.45) 0%, transparent 70%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", color: "#e6edf3", fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif", overflowY: "auto" }}>
+    <div style={{ position: "fixed", inset: 0, background: "radial-gradient(ellipse 60% 50% at 30% 20%, rgba(70,76,98,0.45) 0%, transparent 65%), radial-gradient(ellipse 55% 45% at 75% 80%, rgba(50,55,72,0.35) 0%, transparent 65%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", color: "#e6edf3", fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif", overflowY: "auto" }}>
       <div aria-hidden style={{ position: "fixed", inset: 0, background: "radial-gradient(700px 500px at 50% 0%, rgba(245,158,11,0.08), transparent 60%)", pointerEvents: "none" }} />
       <div style={{ position: "relative", maxWidth: 460, margin: "0 auto" }}>{children}</div>
     </div>

@@ -1258,7 +1258,7 @@ const CSS = `
 // Premium dark — Linear/Vercel: flat near-black, hairline borders,
 // calm neutrals, depth via subtle inset highlight (di CSS .card).
 const S = {
-  root: { minHeight: "100vh", background: "radial-gradient(ellipse 70% 55% at 50% 38%, rgba(70,76,98,0.45) 0%, transparent 70%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", backgroundAttachment: "fixed", color: "#c3c4c9", fontFamily: "'Geist','Inter',system-ui,sans-serif", padding: "16px 28px 24px", boxSizing: "border-box" },
+  root: { minHeight: "100vh", background: "radial-gradient(ellipse 60% 50% at 30% 20%, rgba(70,76,98,0.45) 0%, transparent 65%), radial-gradient(ellipse 55% 45% at 75% 80%, rgba(50,55,72,0.35) 0%, transparent 65%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", backgroundAttachment: "fixed", color: "#c3c4c9", fontFamily: "'Geist','Inter',system-ui,sans-serif", padding: "16px 28px 24px", boxSizing: "border-box" },
   topbar: { display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 14, borderBottom: "1px solid #1a1b1e" },
   logo: { width: 38, height: 38, borderRadius: 10, background: "linear-gradient(160deg,#f5a623,#d97706)", color: "#1a1205", fontWeight: 900, fontSize: 21, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 },
   brand: { fontSize: 21, fontWeight: 750, color: "#f0f0f2", letterSpacing: -0.4, lineHeight: 1 },

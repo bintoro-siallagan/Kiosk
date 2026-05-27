@@ -251,7 +251,7 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
 }
 
 const S = {
-  root: { minHeight:"100vh", background:"radial-gradient(ellipse 70% 55% at 50% 38%, rgba(70,76,98,0.45) 0%, transparent 70%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", backgroundAttachment:"fixed", color:"#fff", fontFamily:"'Inter',sans-serif",
+  root: { minHeight:"100vh", background:"radial-gradient(ellipse 60% 50% at 30% 20%, rgba(70,76,98,0.45) 0%, transparent 65%), radial-gradient(ellipse 55% 45% at 75% 80%, rgba(50,55,72,0.35) 0%, transparent 65%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", backgroundAttachment:"fixed", color:"#fff", fontFamily:"'Inter',sans-serif",
     display:"flex", flexDirection:"column" },
   header: { display:"flex", alignItems:"center", gap:12,
     padding:"12px 20px", borderBottom:"1px solid #222", background:"rgba(13,17,23,0.6)", backdropFilter:"blur(20px) saturate(180%)", WebkitBackdropFilter:"blur(20px) saturate(180%)",

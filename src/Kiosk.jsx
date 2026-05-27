@@ -927,8 +927,8 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
 // ─── STYLES ───────────────────────────────────────────────────────────────────
 const FONT_CSS = `@import url('https://fonts.googleapis.com/css2?family=Inter:wght@700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap');`;
 const KIOSK_CSS = `
-  :root{color-scheme:dark;--bg:#08090a;--text:#fff;--text-h:#fff;--border:#1e1f23}
-  html,body{background:#08090a;color:#fff}
+  :root{color-scheme:dark;--bg:#12141c;--text:#fff;--text-h:#fff;--border:rgba(255,255,255,0.08)}
+  html,body{background:radial-gradient(ellipse 60% 50% at 30% 20%, rgba(70,76,98,0.45) 0%, transparent 65%),radial-gradient(ellipse 55% 45% at 75% 80%, rgba(50,55,72,0.35) 0%, transparent 65%),linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%);background-attachment:fixed;color:#fff}
   *{box-sizing:border-box;margin:0;padding:0}
   ::-webkit-scrollbar{width:3px;height:3px}
   ::-webkit-scrollbar-thumb{background:rgba(255,107,53,0.6);border-radius:2px}
@@ -1032,7 +1032,7 @@ const KIOSK_CSS = `
 `;
 
 // ─── PREMIUM AESTHETIC TOKENS ─────────────────────────────────────────────────
-const PREMIUM_BG = "radial-gradient(ellipse 70% 55% at 50% 38%, rgba(70,76,98,0.45) 0%, transparent 70%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)";
+const PREMIUM_BG = "radial-gradient(ellipse 60% 50% at 30% 20%, rgba(70,76,98,0.45) 0%, transparent 65%), radial-gradient(ellipse 55% 45% at 75% 80%, rgba(50,55,72,0.35) 0%, transparent 65%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)";
 const PREMIUM_OVERLAY = "radial-gradient(800px 600px at 30% 10%,rgba(245,158,11,0.04),transparent),radial-gradient(600px 400px at 80% 70%,rgba(59,130,246,0.03),transparent)";
 const GLASS_BG = "rgba(13,17,23,0.7)";
 // Opaque dark card — fallback ke #0d1117 walaupun body putih (light-mode browser).
