@@ -3706,7 +3706,7 @@ const CITY_IMAGES = {
   "jakarta":    { url: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1200&q=80&auto=format&fit=crop", emoji: "🏙️" },  // red velvet seats — metropolitan classic
   "bandung":    { url: "https://images.unsplash.com/photo-1574267432553-4b4628081c31?w=1200&q=80&auto=format&fit=crop", emoji: "🌋" },  // cinema marquee neon — creative city vibe
   "bali":       { url: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=1200&q=80&auto=format&fit=crop", emoji: "🏝️" },  // premium reclining — resort luxury feel
-  "medan":      { url: "https://images.unsplash.com/photo-1604079628040-94301bb21b91?w=1200&q=80&auto=format&fit=crop", emoji: "🌴" },  // cinema interior (replaced broken 1489599735188)
+  "medan":      { url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1200&q=80&auto=format&fit=crop", emoji: "🌴" },  // duplicate Surabaya — verified cinema interior (replaced blur 1604079628040)
   "surabaya":   { url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1200&q=80&auto=format&fit=crop", emoji: "🌉" },  // modern cinema interior lights
   "yogyakarta": { url: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1200&q=80&auto=format&fit=crop", emoji: "🏛️" },  // classic seats — heritage city
   "semarang":   { url: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=1200&q=80&auto=format&fit=crop", emoji: "⛩️" },  // film projection beams
