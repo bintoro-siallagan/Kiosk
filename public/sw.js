@@ -89,3 +89,37 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data === 'skip-waiting') self.skipWaiting();
 });
+
+// ─── Web Push handler ─────────────────────────────────────────────────
+self.addEventListener('push', (event) => {
+  let payload = { title: 'karyaOS', body: 'You have a new update' };
+  try {
+    if (event.data) payload = { ...payload, ...event.data.json() };
+  } catch {
+    if (event.data) payload.body = event.data.text();
+  }
+  const opts = {
+    body: payload.body,
+    icon: payload.icon || '/logo.png',
+    badge: payload.badge || '/logo.png',
+    tag: payload.tag || 'karyaos',
+    data: payload.data || {},
+    vibrate: [200, 100, 200],
+    requireInteraction: payload.requireInteraction === true,
+  };
+  event.waitUntil(self.registration.showNotification(payload.title, opts));
+});
+
+// Click on a notification → focus existing tab or open target URL
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = event.notification.data?.url || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((tabs) => {
+      for (const t of tabs) {
+        if ('focus' in t) { t.navigate(target).catch(() => {}); return t.focus(); }
+      }
+      return self.clients.openWindow(target);
+    })
+  );
+});

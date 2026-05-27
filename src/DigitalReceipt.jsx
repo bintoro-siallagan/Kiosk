@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import * as audio from "./audio.js";
 import { api } from "./api.js";
 import QRCode from "qrcode";
+import { subscribeToOrderPush, isPushSupported } from "./lib/push.js";
 
 import { fmtMoney as fIDR } from "./lib/currency.js";
 
@@ -15,7 +16,13 @@ export default function DigitalReceipt({ orderId, onDone }) {
   useEffect(() => {
     if (!orderId) { setLoading(false); return; }
     api.getReceipt(orderId)
-      .then(setReceipt)
+      .then((r) => {
+        setReceipt(r);
+        // Subscribe customer to push for this order (fire-and-forget)
+        if (isPushSupported()) {
+          subscribeToOrderPush({ orderId, phone: r?.customer_phone }).catch(() => {});
+        }
+      })
       .catch(() => setReceipt(null))
       .finally(() => setLoading(false));
   }, [orderId]);

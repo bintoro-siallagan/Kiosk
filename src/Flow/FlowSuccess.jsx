@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import API_HOST from "../apiBase.js";
 import POSCelebration from "../POS/POSCelebration.jsx";
+import { subscribeToOrderPush, isPushSupported } from "../lib/push.js";
 
 const API = API_HOST;
 import { fmtMoney as fIDR } from "../lib/currency.js";
@@ -44,6 +45,13 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
     const t = setTimeout(() => setShowCelebration(true), 1200);
     return () => clearTimeout(t);
   }, []);
+
+  // Subscribe to push for this order so customer gets notified when ready
+  // (silent if browser already granted permission; prompts otherwise)
+  useEffect(() => {
+    if (!isPushSupported()) return;
+    subscribeToOrderPush({ orderId: order.id, phone: session?.phone }).catch(() => {});
+  }, [order.id, session?.phone]);
 
   // Live status polling every 5s
   useEffect(() => {

@@ -856,6 +856,31 @@ app.patch("/api/orders/:id/status", (req, res) => {
   // WhatsApp notification (fire-and-forget)
   wa.notifyOrderStatus(orders[idx], status).catch(e => console.error("WA error:", e.message));
 
+  // P-Polish — Web Push notification when order is ready
+  if (status === "ready" && prevStatus !== "ready" && typeof global.sendPushToOrder === "function") {
+    const o = orders[idx];
+    const tableNote = o.table && o.table !== "-" ? ` · Meja ${o.table}` : "";
+    global.sendPushToOrder(o.id, {
+      title: "Pesanan Anda siap! 🔔",
+      body: `Order #${o.id}${tableNote} sudah bisa diambil.`,
+      tag: `order-${o.id}`,
+      icon: "/logo.png",
+      data: { orderId: o.id, url: `/?customer-track&orderId=${o.id}` },
+    }).catch(e => console.warn("push.ready:", e.message));
+  }
+
+  // P4A — outbound webhook for status transitions
+  if (typeof global.emitWebhook === "function" && orders[idx].company_id) {
+    const events = { ready: "order.ready", completed: "order.completed", cancelled: "order.cancelled" };
+    if (events[status] && prevStatus !== status) {
+      global.emitWebhook(orders[idx].company_id, events[status], {
+        id: orders[idx].id, prev_status: prevStatus, new_status: status,
+        total: orders[idx].total, customer_name: orders[idx].customerName,
+        timestamp: Date.now(),
+      });
+    }
+  }
+
   // Free table when order completed/cancelled
   if (["completed","cancelled"].includes(status) && orders[idx].type === "dine") {
     const ti = tables.findIndex(t => t.id === orders[idx].table || t.name === orders[idx].table);
@@ -4831,6 +4856,13 @@ setupTenantApiKeys(app, { dbPath: DB_PATH });
 // White-label P4D — in-product announcements + changelog
 const { setupAnnouncements } = require('./announcements');
 setupAnnouncements(app, { dbPath: DB_PATH, adminSessions });
+
+// Web Push notifications — VAPID + per-customer push subscription store
+const { setupWebPush } = require('./web-push');
+const _push = setupWebPush(app, { dbPath: DB_PATH });
+global.sendPushToOrder = _push.sendToOrder;
+global.sendPushToPhone = _push.sendToPhone;
+global.sendPushToCompany = _push.sendToCompany;
 // Expose resolveScope helper to global (semua endpoint lain bisa pakai untuk filter)
 global.resolveCompanyScope = companies.resolveScope;
 
