@@ -3,6 +3,7 @@
 // Period selector: today/week/month + optional outlet filter
 import { useState, useEffect } from "react";
 import { HelpButton } from "../components/HelpModal.jsx";
+import { EmptyState } from "../components/uiKit.jsx";
 
 import { fmtMoney as rp } from "../lib/currency.js";
 const fmtK = (n) => n >= 1e9 ? (n / 1e9).toFixed(1) + "M" : n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "K" : String(Math.round(n));
@@ -260,5 +261,5 @@ function Panel({ title, color, children }) {
 }
 
 function Empty() {
-  return <div style={{ padding: 30, textAlign: "center", color: "#5b6470", fontSize: 12 }}>No data yet di periode ini</div>;
+  return <EmptyState icon="📊" title="Belum ada data" desc="Tidak ada aktivitas di periode ini. Pilih rentang waktu lain atau cek di outlet lain." />;
 }

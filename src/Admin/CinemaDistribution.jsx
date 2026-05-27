@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470", text: "#e6edf3" };
 import { fmtMoney as rp } from "../lib/currency.js";
+import { EmptyState } from "../components/uiKit.jsx";
 const pct = (n) => `${(Math.round((n || 0) * 100) / 100).toFixed(2)}%`;
 const TABS = [["distributor", "🏢 Distributor"], ["license", "📜 Lisensi per Film"], ["settlement", "💹 Settlement & Recon"]];
 const PERIODS = [
@@ -210,6 +211,7 @@ function LicenseTab({ base, showToast }) {
         {/* Film picker */}
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 8, maxHeight: 540, overflowY: "auto" }}>
           <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, padding: "8px 10px", fontFamily: "'Geist Mono',monospace" }}>FILM CATALOG</div>
+          {films.length === 0 && <EmptyState icon="🎞️" title="Belum ada film" desc="Tambah film di tab Showtimes untuk muncul di catalog." />}
           {films.map(f => (
             <button key={f.id} onClick={() => setPicked(f.id)}
               style={{
@@ -397,7 +399,7 @@ function Header({ cols, widths }) {
   );
 }
 function Empty({ children }) {
-  return <div style={{ padding: "22px 14px", textAlign: "center", color: C.sub, fontSize: 13 }}>{children}</div>;
+  return <EmptyState icon="📭" title={typeof children === "string" ? children : "Belum ada data"} />;
 }
 function Section({ title, children }) {
   return (

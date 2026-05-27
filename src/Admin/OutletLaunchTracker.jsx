@@ -3,6 +3,7 @@
 // GO LIVE locked sampai semua dept lead tandatangan.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorInline } from "../components/ConnectionError.jsx";
+import { EmptyState } from "../components/uiKit.jsx";
 
 const PURPLE = "#a855f7", GREEN = "#10b981", AMBER = "#f59e0b", RED = "#ef4444", CYAN = "#22d3ee";
 const CARD_BG = "rgba(255,255,255,0.04)";
@@ -67,10 +68,8 @@ export default function OutletLaunchTracker({ apiBase = "" }) {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(100%, 300px),1fr))", gap: 12 }}>
         {launches.map(l => <LaunchCard key={l.id} launch={l} onClick={() => setSelected(l)} />)}
         {launches.length === 0 && !loading && (
-          <div style={{ gridColumn: "1/-1", padding: 60, textAlign: "center", color: "#64748b" }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🚀</div>
-            <div style={{ fontSize: 14, marginBottom: 16 }}>No outlet launch project tercatat</div>
-            <button onClick={() => setShowCreate(true)} style={{ padding: "10px 18px", background: PURPLE, border: "none", borderRadius: 8, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>+ Start Project Pertama</button>
+          <div style={{ gridColumn: "1/-1" }}>
+            <EmptyState icon="🚀" title="Belum ada outlet launch project" desc="Track readiness 9 dept × 6 stage sebelum GO LIVE — semua dept lead harus signoff." action={{ label: "+ Start Project Pertama", onClick: () => setShowCreate(true), color: PURPLE }} />
           </div>
         )}
       </div>

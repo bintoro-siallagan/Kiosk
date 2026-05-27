@@ -3,6 +3,7 @@
 // realtime anomaly count, drill-down ke audit photos + CCTV + KPI.
 // Goal: substitute OP Head visits with remote eyes.
 import { useEffect, useMemo, useState } from "react";
+import { EmptyState } from "../components/uiKit.jsx";
 
 const COLORS = { A: "#10b981", B: "#22d3ee", C: "#f59e0b", D: "#ef4444", muted: "#475569" };
 const CARD_BG = "rgba(255,255,255,0.04)";
@@ -109,9 +110,8 @@ export default function RemoteOpsCommand({ apiBase = "" }) {
           <OutletCard key={o.code} outlet={o} onClick={() => setSelected(o)} />
         ))}
         {filtered.length === 0 && !loading && (
-          <div style={{ gridColumn: "1/-1", padding: 40, textAlign: "center", color: "#64748b" }}>
-            <div style={{ fontSize: 32, marginBottom: 8 }}>📭</div>
-            <div>No outlet for filter ini</div>
+          <div style={{ gridColumn: "1/-1" }}>
+            <EmptyState icon="🏪" title="Belum ada outlet" desc="Tidak ada outlet sesuai filter. Reset filter atau tambah outlet dari Master Outlet." />
           </div>
         )}
       </div>
