@@ -1077,6 +1077,27 @@ function SuccessPage({ booking, film, showtime, seats, bundlesCart, onNewBooking
           ⏰ <strong>Datang min. 15 menit sebelum jadwal.</strong> {isCounter ? `Bayar ${rp(total)} di counter saat ambil tiket.` : "Tunjukkan QR untuk akses studio."}
         </div>
 
+        {/* Loyalty / Points apresiasi — kalau backend return loyalty data */}
+        {booking?.loyalty && (
+          <div style={{
+            background: "linear-gradient(135deg, rgba(168,85,247,0.15), rgba(251,191,36,0.08))",
+            border: "1px solid rgba(168,85,247,0.4)",
+            borderRadius: 14, padding: 14, marginBottom: 18, textAlign: "left",
+          }}>
+            <div style={{ fontSize: 11, color: "#c084fc", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 8 }}>⭐ POIN ANDA</div>
+            {booking.loyalty.new_member && (
+              <div style={{ fontSize: 13, fontWeight: 700, color: "#fbbf24", marginBottom: 6 }}>🎉 Selamat! Anda jadi member otomatis!</div>
+            )}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
+              <span style={{ fontSize: 13, color: C.sub }}>+ {booking.loyalty.earned} poin dari booking ini</span>
+              <span style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: "#c084fc" }}>{booking.loyalty.balance} pt</span>
+            </div>
+            <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.4 }}>
+              💰 Saldo Anda ≈ Rp {(booking.loyalty.balance * 10).toLocaleString('id-ID')} · 100 poin = Rp 1.000 diskon di booking berikutnya
+            </div>
+          </div>
+        )}
+
         {/* Actions */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
           <a href={`https://wa.me/?text=${waText}`} target="_blank" rel="noopener noreferrer" style={{

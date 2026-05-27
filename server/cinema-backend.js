@@ -23,6 +23,11 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const net = require('net');
 const { buildCinemaTicket } = require('./escpos');
+
+// WA module for auto-send e-ticket. Lazy require so server starts even kalau
+// whatsapp.js belum siap (best-effort, never block booking).
+let _waMod = null;
+try { _waMod = require('./whatsapp'); } catch { _waMod = null; }
 let _emailMod = null;
 function getEmail() {
   if (_emailMod) return _emailMod;
@@ -3519,6 +3524,50 @@ function setupCinema(app, opts = {}) {
       } catch (e) { console.error('[cinema loyalty] err:', e.message); }
     }
 
+    // Fire-and-forget auto-send WA e-ticket. Best-effort — never block booking
+    // response. Customer dapet WA notif dengan link ke e-ticket page.
+    if (b.buyer_phone && _waMod && typeof _waMod.sendMessage === 'function') {
+      const trackingBase = process.env.TRACKING_BASE_URL || '';
+      const eticketUrl = trackingBase ? `${trackingBase}/?purchase=${purchaseId}` : `/?purchase=${purchaseId}`;
+      const total = finalTotal;
+      const seatList = newTickets.map(t => t.seat).join(', ');
+      const showDate = st.show_date || '';
+      const showTime = st.start_time || '';
+      const film = db.prepare(`SELECT title FROM cinema_films WHERE id = ?`).get(st.film_id);
+      const filmTitle = film?.title || 'Film';
+      // Loyalty info (jika ada — earned + saldo) untuk apresiasi customer
+      const loyaltyLines = loyalty ? [
+        ``,
+        `⭐ *POIN ANDA:*`,
+        loyalty.new_member ? `🎉 Selamat! Anda otomatis terdaftar sebagai member.` : ``,
+        `💎 + ${loyalty.earned} poin dari booking ini`,
+        `💰 Saldo total: ${loyalty.balance} poin (~ Rp ${(loyalty.balance * 10).toLocaleString('id-ID')})`,
+        `ℹ️ 100 poin = Rp 1.000 diskon di booking berikutnya`,
+      ].filter(Boolean) : [];
+
+      const msg = [
+        `🎬 *TIKET CINEMA BERHASIL DIBOOKING*`,
+        ``,
+        `Halo ${b.buyer || 'Sobat'}! Terima kasih sudah pesan online 🙏`,
+        ``,
+        `🎥 *${filmTitle}*`,
+        `📅 ${showDate} · ${showTime}`,
+        `💺 ${seats.length} kursi: *${seatList}*`,
+        `💰 Total: *Rp ${total.toLocaleString('id-ID')}*`,
+        ``,
+        `🎫 *E-TIKET ANDA:*`,
+        eticketUrl,
+        ``,
+        `Tunjukkan QR di atas saat masuk studio.`,
+        `Datang min. 15 menit sebelum jadwal.`,
+        ...loyaltyLines,
+      ].join('\n');
+      // Best-effort, log result. No await — booking response returns immediately.
+      Promise.resolve(_waMod.sendMessage(b.buyer_phone, msg))
+        .then(r => console.log(`📱 Cinema WA e-ticket → ${b.buyer_phone}: ${r.ok ? '✓ sent (' + r.provider + ')' : '⚠ ' + r.error}`))
+        .catch(e => console.warn('[cinema-wa]', e.message));
+    }
+
     res.json({
       ok: true,
       count: seats.length,
@@ -3531,6 +3580,7 @@ function setupCinema(app, opts = {}) {
       tickets: newTickets,
       bundles: newBundles,
       loyalty,
+      wa_queued: !!(b.buyer_phone && _waMod),
     });
   });
 
@@ -3601,6 +3651,46 @@ function setupCinema(app, opts = {}) {
   router.delete('/bundles/:id', (req, res) => {
     db.prepare(`DELETE FROM cinema_bundles WHERE id = ?`).run(req.params.id);
     res.json({ ok: true });
+  });
+
+  // ── PURCHASE — manual resend WA e-ticket (rescue path) ──
+  // Customer hilang link? Buyer_phone keganti? Kasir / admin trigger ulang.
+  router.post('/purchase/:pid/send-wa', async (req, res) => {
+    const pid = String(req.params.pid || '').trim().toUpperCase();
+    if (!pid) return res.status(400).json({ ok: false, error: 'purchase_id required' });
+    if (!_waMod || typeof _waMod.sendMessage !== 'function') {
+      return res.status(503).json({ ok: false, error: 'WhatsApp module unavailable' });
+    }
+    const tickets = db.prepare(`
+      SELECT t.*, s.show_date, s.start_time, f.title AS film_title
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      WHERE t.purchase_id = ? ORDER BY t.seat
+    `).all(pid);
+    if (!tickets.length) return res.status(404).json({ ok: false, error: 'Purchase tidak ditemukan' });
+    // Phone from request body OR from existing ticket buyer_phone
+    const phone = String(req.body?.phone || tickets[0].buyer_phone || '').trim();
+    if (!phone) return res.status(400).json({ ok: false, error: 'phone required (atau set buyer_phone di booking awal)' });
+
+    const head = tickets[0];
+    const total = tickets.reduce((s, t) => s + (t.price || 0), 0);
+    const seatList = tickets.map(t => t.seat).join(', ');
+    const trackingBase = process.env.TRACKING_BASE_URL || '';
+    const eticketUrl = trackingBase ? `${trackingBase}/?purchase=${pid}` : `/?purchase=${pid}`;
+    const msg = [
+      `🎬 *TIKET CINEMA*  (kiriman ulang)`,
+      ``,
+      `🎥 *${head.film_title || 'Film'}*`,
+      `📅 ${head.show_date || ''} · ${head.start_time || ''}`,
+      `💺 ${tickets.length} kursi: *${seatList}*`,
+      `💰 Total: *Rp ${total.toLocaleString('id-ID')}*`,
+      ``,
+      `🎫 *E-TIKET:*`,
+      eticketUrl,
+    ].join('\n');
+    const r = await _waMod.sendMessage(phone, msg);
+    res.json({ ok: !!r.ok, phone, ...r });
   });
 
   // ── PURCHASE LOOKUP (all tickets + bundles for one purchase) ──
