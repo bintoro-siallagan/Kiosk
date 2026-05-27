@@ -4,13 +4,16 @@
 import { useEffect, useState, useCallback } from "react";
 
 export default function AdminCompanies({ onBack }) {
+  const [tab, setTab] = useState("list");  // "list" | "dashboard"
   const [companies, setCompanies] = useState(null);
+  const [configStatus, setConfigStatus] = useState(null);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [dashFilter, setDashFilter] = useState({ vertical: "all", status: "all", completion: "all" });
 
   // Cek apakah user super-admin
   const ctx = (() => { try { return JSON.parse(localStorage.getItem("karya_company_ctx") || "null"); } catch { return null; } })();
@@ -22,6 +25,11 @@ export default function AdminCompanies({ onBack }) {
       .then(r => r.ok ? r.json() : r.json().then(d => Promise.reject(d)))
       .then(d => setCompanies(Array.isArray(d) ? d : (d.companies || d.data || [])))
       .catch(e => setError(e.error || e.message || "Load failed"));
+    // Dashboard data — load paralel
+    fetch("/api/companies/platform/config-status", { headers: { "x-super-admin": "true" } })
+      .then(r => r.ok ? r.json() : Promise.resolve(null))
+      .then(d => d && setConfigStatus(d))
+      .catch(() => {});
   }, []);
   useEffect(load, [load]);
 
@@ -124,12 +132,29 @@ export default function AdminCompanies({ onBack }) {
         {companies.length} total · {companies.filter(c => c.status === "active").length} aktif
       </p>
 
+      {/* Tab switcher */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 16, borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+        {[
+          { k: "list",      l: "📋 List + CRUD" },
+          { k: "dashboard", l: "📊 Config Dashboard" },
+        ].map(t => (
+          <button key={t.k} onClick={() => setTab(t.k)} style={{
+            padding: "10px 18px", background: "transparent", border: "none",
+            color: tab === t.k ? "#fb923c" : "#9ca3af",
+            borderBottom: `2px solid ${tab === t.k ? "#fb923c" : "transparent"}`,
+            fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+            marginBottom: -1,
+          }}>{t.l}</button>
+        ))}
+      </div>
+
       {error && (
         <div style={{ padding: "10px 14px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 8, marginBottom: 16, fontSize: 13, color: "#fca5a5" }}>
           ⚠️ {error}
         </div>
       )}
 
+      {tab === "list" && (
       <div style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, overflow: "hidden" }}>
         {/* Header row */}
         <div style={{ display: "grid", gridTemplateColumns: "60px 100px 1fr 120px 120px 120px 280px", padding: "10px 14px", background: "rgba(255,255,255,0.04)", fontSize: 11, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 1, fontWeight: 700, gap: 8 }}>
@@ -202,10 +227,230 @@ export default function AdminCompanies({ onBack }) {
         )}
       </div>
 
+      )}
+
+      {tab === "dashboard" && (
+        <DashboardView data={configStatus} filter={dashFilter} setFilter={setDashFilter} switchTo={switchTo} />
+      )}
+
       {showAdd && <AddCompanyModal onClose={() => setShowAdd(false)} onSaved={() => { setShowAdd(false); load(); }} />}
     </div>
   );
 }
+
+// ════════════════════════════════════════════════════════════════════
+// DASHBOARD VIEW — per-tenant config completion + aggregates
+// ════════════════════════════════════════════════════════════════════
+function DashboardView({ data, filter, setFilter, switchTo }) {
+  if (!data) {
+    return <div style={{ padding: 40, color: "#9ca3af", textAlign: "center", background: "#0f172a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10 }}>Memuat dashboard data…</div>;
+  }
+  const { tenants = [], aggregate = {} } = data;
+  const filtered = tenants.filter(t => {
+    if (filter.vertical !== "all" && t.vertical !== filter.vertical) return false;
+    if (filter.status !== "all" && t.status !== filter.status) return false;
+    if (filter.completion !== "all" && t.completion_label !== filter.completion) return false;
+    return true;
+  });
+
+  const exportCsv = () => {
+    const headers = ["ID", "Code", "Name", "Vertical", "Status", "Completion%", "Logo", "BrandColor", "WANav", "WAFooter", "FAQ", "Sections", "Heros", "CustomSections", "CustomPages", "LastUpdate"];
+    const rows = filtered.map(t => [
+      t.id, t.code, t.name, t.vertical, t.status, t.completion_pct,
+      t.branding.logo_url ? "Y" : "N",
+      t.branding.brand_color ? "Y" : "N",
+      t.config.nav_items ? "Y" : "N",
+      t.config.footer_config ? "Y" : "N",
+      t.config.faq_groups ? "Y" : "N",
+      t.config.section_toggles ? "Y" : "N",
+      t.config.page_heros ? "Y" : "N",
+      t.custom_section_count, t.custom_page_count,
+      t.config_updated_at ? new Date(t.config_updated_at * 1000).toISOString() : "",
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = `tenants-config-${new Date().toISOString().slice(0,10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div>
+      {/* 4 aggregate cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: 12, marginBottom: 18 }}>
+        <StatCard label="Total Tenants" value={aggregate.total} sub={`${aggregate.configured_count} customized`} color="#3b82f6" />
+        <StatCard label="Avg Completion" value={`${aggregate.avg_completion_pct}%`} sub="rata-rata config completeness" color="#fb923c" />
+        <StatCard label="Default Only" value={aggregate.default_only_count} sub="belum kustomisasi apapun" color="#9ca3af" />
+        <StatCard label="Recent Activity" value={aggregate.recently_edited_7d} sub="edited dalam 7 hari" color="#10b981" />
+      </div>
+
+      {/* Filter bar */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+        <FilterChip label="All Vertical"   active={filter.vertical === "all"}    onClick={() => setFilter(f => ({ ...f, vertical: "all" }))} />
+        {Object.keys(aggregate.by_vertical || {}).map(v => (
+          <FilterChip key={v} label={v.toUpperCase()} count={aggregate.by_vertical[v]} active={filter.vertical === v} onClick={() => setFilter(f => ({ ...f, vertical: v }))} />
+        ))}
+        <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.1)" }} />
+        <FilterChip label="All Status" active={filter.status === "all"} onClick={() => setFilter(f => ({ ...f, status: "all" }))} />
+        {Object.keys(aggregate.by_status || {}).map(s => (
+          <FilterChip key={s} label={s.toUpperCase()} count={aggregate.by_status[s]} active={filter.status === s} onClick={() => setFilter(f => ({ ...f, status: s }))} />
+        ))}
+        <div style={{ width: 1, height: 18, background: "rgba(255,255,255,0.1)" }} />
+        {["excellent", "good", "partial", "minimal"].map(c => (
+          <FilterChip key={c} label={`${c.toUpperCase()} ${c === "excellent" ? "(≥80%)" : c === "good" ? "(50-79%)" : c === "partial" ? "(20-49%)" : "(<20%)"}`}
+            count={aggregate.by_completion?.[c]}
+            active={filter.completion === c}
+            onClick={() => setFilter(f => ({ ...f, completion: f.completion === c ? "all" : c }))} />
+        ))}
+        <div style={{ flex: 1 }} />
+        <button onClick={exportCsv} style={{
+          padding: "7px 14px", borderRadius: 6, fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+          background: "rgba(16,185,129,0.1)", color: "#10b981", border: "1px solid rgba(16,185,129,0.3)",
+        }}>📥 Export CSV</button>
+      </div>
+
+      <p style={{ fontSize: 12, color: "#9ca3af", marginBottom: 12 }}>Showing {filtered.length} of {tenants.length} tenants</p>
+
+      {/* Tenants table */}
+      <div style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, overflow: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 980 }}>
+          <thead>
+            <tr style={{ background: "rgba(255,255,255,0.04)", color: "#9ca3af", textTransform: "uppercase", letterSpacing: 1 }}>
+              <th style={th()}>Tenant</th>
+              <th style={th()}>Vertical</th>
+              <th style={th()}>Status</th>
+              <th style={th()}>Completion</th>
+              <th style={th()} title="Branding fields: logo, color, name, contact, signature">Brand</th>
+              <th style={th()} title="Cinema web config: nav, footer, FAQ, sections, heros">Web Config</th>
+              <th style={th()}>Custom Sections / Pages</th>
+              <th style={th()}>Last Updated</th>
+              <th style={{ ...th(), textAlign: "right" }}>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(t => (
+              <tr key={t.id} style={{ borderTop: "1px solid rgba(255,255,255,0.04)" }}>
+                <td style={td()}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: "50%", background: t.brand_color || "#374151", flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontSize: 12.5, fontWeight: 700, color: "#fff" }}>{t.name}</div>
+                      <div style={{ fontSize: 10, color: "#6b7280", fontFamily: "'JetBrains Mono',monospace" }}>#{t.id} · {t.code}</div>
+                    </div>
+                  </div>
+                </td>
+                <td style={td()}>{verticalPill(t.vertical)}</td>
+                <td style={td()}>{statusPill(t.status)}</td>
+                <td style={td()}>
+                  <CompletionBar pct={t.completion_pct} label={t.completion_label} />
+                </td>
+                <td style={td()}><DotGrid items={t.branding} /></td>
+                <td style={td()}><DotGrid items={t.config} /></td>
+                <td style={td()}>
+                  <div style={{ display: "flex", gap: 4, alignItems: "center", fontSize: 11, color: "#e5e7eb" }}>
+                    <span title="Custom sections">🎬 {t.custom_section_count}</span>
+                    <span style={{ color: "#374151" }}>·</span>
+                    <span title="Custom pages">📄 {t.custom_page_count}</span>
+                  </div>
+                </td>
+                <td style={td()}>
+                  {t.config_updated_at ? (
+                    <div>
+                      <div style={{ fontSize: 11, color: "#e5e7eb" }}>{relativeTime(t.config_updated_at)}</div>
+                      {t.config_updated_by && <div style={{ fontSize: 10, color: "#6b7280" }}>by {t.config_updated_by}</div>}
+                    </div>
+                  ) : <span style={{ color: "#6b7280", fontSize: 11 }}>—</span>}
+                </td>
+                <td style={{ ...td(), textAlign: "right" }}>
+                  <button onClick={() => switchTo({ id: t.id, code: t.code, name: t.name, primary_vertical: t.vertical, brand_color: t.brand_color, logo_url: t.logo_url })} title="Switch ke tenant ini" style={{
+                    padding: "5px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                    background: "rgba(251,146,60,0.1)", color: "#fb923c", border: "1px solid rgba(251,146,60,0.3)", borderRadius: 6,
+                  }}>⟲ Switch</button>
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 && (
+              <tr><td colSpan={9} style={{ padding: 40, color: "#6b7280", textAlign: "center" }}>Tidak ada tenant match filter.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({ label, value, sub, color }) {
+  return (
+    <div style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: 14, borderTop: `2px solid ${color}` }}>
+      <div style={{ fontSize: 10, color: "#9ca3af", textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 26, fontWeight: 900, color, fontFamily: "'JetBrains Mono',monospace", lineHeight: 1 }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: "#6b7280", marginTop: 6 }}>{sub}</div>}
+    </div>
+  );
+}
+
+function FilterChip({ label, count, active, onClick }) {
+  return (
+    <button onClick={onClick} style={{
+      padding: "5px 10px", borderRadius: 999, border: `1px solid ${active ? "#fb923c" : "rgba(255,255,255,0.12)"}`,
+      background: active ? "#fb923c" : "transparent",
+      color: active ? "#fff" : "#e5e7eb",
+      fontSize: 11, fontWeight: active ? 800 : 600, cursor: "pointer", fontFamily: "inherit",
+      display: "inline-flex", alignItems: "center", gap: 5,
+    }}>
+      {label}
+      {count != null && <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 999, background: active ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.08)", fontFamily: "'JetBrains Mono',monospace" }}>{count}</span>}
+    </button>
+  );
+}
+
+function CompletionBar({ pct, label }) {
+  const color = label === "excellent" ? "#10b981" : label === "good" ? "#22d3ee" : label === "partial" ? "#fbbf24" : "#ef4444";
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 3, minWidth: 100 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11 }}>
+        <span style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 800, color }}>{pct}%</span>
+        <span style={{ fontSize: 9, color: "#6b7280", textTransform: "uppercase" }}>{label}</span>
+      </div>
+      <div style={{ height: 4, background: "rgba(255,255,255,0.08)", borderRadius: 2, overflow: "hidden" }}>
+        <div style={{ width: `${pct}%`, height: "100%", background: color, transition: "width 0.3s" }} />
+      </div>
+    </div>
+  );
+}
+
+function DotGrid({ items }) {
+  return (
+    <div style={{ display: "inline-flex", gap: 3, alignItems: "center" }}>
+      {Object.entries(items).map(([k, v]) => (
+        <span key={k} title={`${k}: ${v ? "configured" : "default"}`} style={{
+          width: 8, height: 8, borderRadius: "50%",
+          background: v ? "#10b981" : "rgba(255,255,255,0.08)",
+          border: v ? "1px solid #10b98155" : "1px solid rgba(255,255,255,0.12)",
+        }} />
+      ))}
+    </div>
+  );
+}
+
+function verticalPill(vertical) {
+  const colors = { fnb: ["#10b981", "rgba(16,185,129,0.15)"], cinema: ["#a855f7", "rgba(168,85,247,0.15)"], hybrid: ["#fbbf24", "rgba(251,191,36,0.15)"] };
+  const [color, bg] = colors[vertical] || ["#6b7280", "rgba(107,114,128,0.15)"];
+  return <span style={{ padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 800, color, background: bg, border: `1px solid ${color}55`, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, textTransform: "uppercase" }}>{vertical || "—"}</span>;
+}
+
+function relativeTime(ts) {
+  if (!ts) return "—";
+  const diff = Math.floor(Date.now() / 1000) - ts;
+  if (diff < 60) return "baru saja";
+  if (diff < 3600) return `${Math.floor(diff / 60)} mnt lalu`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} jam lalu`;
+  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)} hari lalu`;
+  return new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function th() { return { padding: "10px 12px", textAlign: "left", fontSize: 10, fontWeight: 700 }; }
+function td() { return { padding: "10px 12px", verticalAlign: "middle" }; }
 
 function AddCompanyModal({ onClose, onSaved }) {
   const [form, setForm] = useState({

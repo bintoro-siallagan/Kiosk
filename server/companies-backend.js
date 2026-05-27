@@ -632,6 +632,123 @@ function setupCompanies(app, opts = {}) {
     return { company_id: null, is_super_admin: true, filter_sql: '1=1', filter_params: [] };
   }
 
+  // ─── PLATFORM CONFIG STATUS — Phase 4 ───────────────────────────────
+  // GET /platform/config-status
+  // Per-tenant: web config customization status + completion %
+  // Aggregate: totals per status/vertical + avg completion
+  router.get('/platform/config-status', (req, res) => {
+    const isSuperAdmin = String(req.headers['x-super-admin'] || '') === 'true';
+    if (!isSuperAdmin) return res.status(403).json({ error: 'super-admin only' });
+
+    // Fields yg ada di cinema_web_config + bobot completion
+    const CONFIG_FIELDS = ['nav_items', 'footer_config', 'faq_groups', 'section_toggles', 'page_heros', 'custom_sections', 'custom_pages'];
+    // Field branding di companies
+    const BRAND_FIELDS = ['name', 'brand_short', 'brand_color', 'logo_url', 'contact_email', 'contact_phone', 'address', 'receipt_footer', 'wa_signature', 'email_signature'];
+    const TOTAL_FIELDS = CONFIG_FIELDS.length + BRAND_FIELDS.length;
+
+    const rows = db.prepare(`
+      SELECT c.id, c.code, c.name, c.primary_vertical, c.status, c.brand_color, c.logo_url,
+             c.name AS b_name, c.brand_short, c.contact_email, c.contact_phone, c.address,
+             c.receipt_footer, c.wa_signature, c.email_signature, c.created_at AS company_created,
+             wc.nav_items, wc.footer_config, wc.faq_groups, wc.section_toggles,
+             wc.page_heros, wc.custom_sections, wc.custom_pages,
+             wc.updated_at AS config_updated_at, wc.updated_by AS config_updated_by
+      FROM companies c
+      LEFT JOIN cinema_web_config wc ON wc.company_id = c.id
+      ORDER BY c.id
+    `).all();
+
+    const tenants = rows.map(r => {
+      const hasField = (raw) => {
+        if (!raw) return false;
+        try {
+          const v = JSON.parse(raw);
+          if (Array.isArray(v)) return v.length > 0;
+          if (typeof v === 'object') return Object.keys(v).length > 0;
+          return !!v;
+        } catch { return false; }
+      };
+      const branding = {
+        name:            !!r.b_name,
+        brand_short:     !!r.brand_short,
+        brand_color:     !!r.brand_color && r.brand_color !== '#FF6B35',
+        logo_url:        !!r.logo_url && r.logo_url !== '/logo.png',
+        contact_email:   !!r.contact_email,
+        contact_phone:   !!r.contact_phone,
+        address:         !!r.address,
+        receipt_footer:  !!r.receipt_footer,
+        wa_signature:    !!r.wa_signature,
+        email_signature: !!r.email_signature,
+      };
+      const config = {
+        nav_items:       hasField(r.nav_items),
+        footer_config:   hasField(r.footer_config),
+        faq_groups:      hasField(r.faq_groups),
+        section_toggles: hasField(r.section_toggles),
+        page_heros:      hasField(r.page_heros),
+        custom_sections: hasField(r.custom_sections),
+        custom_pages:    hasField(r.custom_pages),
+      };
+      const brandCount = Object.values(branding).filter(Boolean).length;
+      const configCount = Object.values(config).filter(Boolean).length;
+      const completion = Math.round(((brandCount + configCount) / TOTAL_FIELDS) * 100);
+      // Count custom sections/pages items
+      let customSectionCount = 0, customPageCount = 0;
+      try { customSectionCount = (JSON.parse(r.custom_sections || '[]') || []).length; } catch {}
+      try { customPageCount = (JSON.parse(r.custom_pages || '[]') || []).length; } catch {}
+      return {
+        id: r.id, code: r.code, name: r.name,
+        vertical: r.primary_vertical, status: r.status,
+        brand_color: r.brand_color, logo_url: r.logo_url,
+        branding, config,
+        custom_section_count: customSectionCount,
+        custom_page_count: customPageCount,
+        completion_pct: completion,
+        completion_label:
+          completion >= 80 ? 'excellent' :
+          completion >= 50 ? 'good' :
+          completion >= 20 ? 'partial' : 'minimal',
+        config_updated_at: r.config_updated_at || null,
+        config_updated_by: r.config_updated_by || null,
+        is_default: brandCount === 0 && configCount === 0,
+      };
+    });
+
+    // Aggregates
+    const totalTenants = tenants.length;
+    const byStatus = {};
+    const byVertical = {};
+    const byCompletionBand = { excellent: 0, good: 0, partial: 0, minimal: 0 };
+    let sumCompletion = 0;
+    let configuredCount = 0;  // tenants yg punya minimal 1 customization
+    let recentlyEdited = 0;   // edited dalam 7 hari terakhir
+    const sevenDaysAgo = Math.floor(Date.now() / 1000) - 7 * 86400;
+    tenants.forEach(t => {
+      byStatus[t.status || 'active'] = (byStatus[t.status || 'active'] || 0) + 1;
+      byVertical[t.vertical || 'unknown'] = (byVertical[t.vertical || 'unknown'] || 0) + 1;
+      byCompletionBand[t.completion_label]++;
+      sumCompletion += t.completion_pct;
+      if (!t.is_default) configuredCount++;
+      if (t.config_updated_at && t.config_updated_at >= sevenDaysAgo) recentlyEdited++;
+    });
+    const avgCompletion = totalTenants ? Math.round(sumCompletion / totalTenants) : 0;
+
+    res.json({
+      ok: true,
+      tenants,
+      aggregate: {
+        total: totalTenants,
+        by_status: byStatus,
+        by_vertical: byVertical,
+        by_completion: byCompletionBand,
+        avg_completion_pct: avgCompletion,
+        configured_count: configuredCount,
+        default_only_count: totalTenants - configuredCount,
+        recently_edited_7d: recentlyEdited,
+      },
+    });
+  });
+
   return { router, db, resolveScope };
 }
 
