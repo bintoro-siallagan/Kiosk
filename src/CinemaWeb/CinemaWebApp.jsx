@@ -2019,7 +2019,8 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
 
   // ═══ Trailer autoplay (Netflix-style: after 3s, fade ke trailer muted) ═══
   const [trailerPlaying, setTrailerPlaying] = useState(false);
-  const [muted, setMuted] = useState(true);
+  const [muted, setMuted] = useState(loadMuted);
+  useEffect(() => { saveMuted(muted); }, [muted]);
   const trailerEmbed = current ? ytEmbedUrl(current.trailer_url) : null;
   const isTouch = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
 
@@ -2844,6 +2845,15 @@ function ytEmbedUrl(url) {
   return m ? `https://www.youtube.com/embed/${m[1]}?rel=0&modestbranding=1` : null;
 }
 
+// Mute-state shared antara CinemaHero & FilmDetail trailer
+const MUTE_KEY = "cw_trailer_muted";
+function loadMuted() {
+  try { return sessionStorage.getItem(MUTE_KEY) !== "0"; } catch { return true; }
+}
+function saveMuted(m) {
+  try { sessionStorage.setItem(MUTE_KEY, m ? "1" : "0"); } catch {}
+}
+
 function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSignInClick }) {
   const [showtimeCount, setShowtimeCount] = useState(null);
   useEffect(() => {
@@ -2857,6 +2867,19 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSig
   const trailerEmbed = ytEmbedUrl(film.trailer_url);
   const formats = (film.available_formats || "2D").split(",").map(s => s.trim()).filter(Boolean);
   const [ratingModalOpen, setRatingModalOpen] = useState(false);
+
+  // Trailer autoplay (Netflix-style, sama dgn CinemaHero)
+  const [trailerPlaying, setTrailerPlaying] = useState(false);
+  const [muted, setMuted] = useState(loadMuted);
+  useEffect(() => { saveMuted(muted); }, [muted]);
+  const isTouch = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
+  useEffect(() => {
+    setTrailerPlaying(false);
+    if (!trailerEmbed || isTouch) return;
+    const t = setTimeout(() => setTrailerPlaying(true), 3000);
+    return () => clearTimeout(t);
+  }, [trailerEmbed, isTouch, film.id]);
+  const trailerVideoId = trailerEmbed ? trailerEmbed.split("/embed/")[1]?.split("?")[0] : null;
 
   // My List toggle
   const [inList, setInList] = useState(false);
@@ -2887,13 +2910,52 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSig
 
   return (
     <div style={{ padding: "20px 0 60px" }}>
-      {/* Hero with poster backdrop */}
+      {/* Hero with poster backdrop + trailer autoplay overlay */}
       <div style={{
         position: "relative", borderRadius: 18, overflow: "hidden",
-        marginBottom: 24, minHeight: 320,
+        marginBottom: 24, minHeight: 360,
         background: film.poster_url ? `linear-gradient(180deg, rgba(10,10,15,0.4) 0%, rgba(10,10,15,0.95) 100%), url(${film.poster_url}) center/cover, #1a1a22` : DEFAULT_CITY_GRADIENT,
       }}>
-        <div style={{ display: "flex", gap: 20, padding: "32px 24px 28px", alignItems: "flex-end", minHeight: 320, flexWrap: "wrap" }}>
+        {/* Trailer iframe — appear after 3s (desktop only), poster bg fade out */}
+        {trailerPlaying && trailerEmbed && trailerVideoId && (
+          <>
+            <div style={{ position: "absolute", inset: 0, background: "#000", animation: "cwFadeIn 0.8s ease forwards" }}>
+              <iframe
+                src={`${trailerEmbed}&autoplay=1&mute=${muted ? 1 : 0}&controls=0&loop=1&playlist=${trailerVideoId}&playsinline=1&modestbranding=1&showinfo=0&rel=0`}
+                title={`${film.title} trailer`}
+                allow="autoplay; encrypted-media"
+                style={{
+                  position: "absolute", top: "50%", left: "50%",
+                  width: "min(177.77vh, 100%)", height: "min(56.25vw, 100%)",
+                  minWidth: "100%", minHeight: "100%",
+                  transform: "translate(-50%, -50%) scale(1.05)",
+                  border: 0, pointerEvents: "none",
+                }}
+              />
+            </div>
+            {/* Gradient overlay supaya teks tetap legible di atas trailer */}
+            <div style={{
+              position: "absolute", inset: 0,
+              background: "linear-gradient(180deg, rgba(10,10,15,0.45) 0%, rgba(10,10,15,0.9) 100%)",
+              animation: "cwFadeIn 1.2s ease 0.4s both",
+            }} />
+            {/* Mute toggle */}
+            <button onClick={() => setMuted(m => !m)} aria-label={muted ? "Unmute" : "Mute"} style={{
+              position: "absolute", top: 16, right: 16, zIndex: 5,
+              width: 38, height: 38, borderRadius: "50%",
+              background: "rgba(0,0,0,0.6)", color: "#fff",
+              border: "1px solid rgba(255,255,255,0.4)",
+              fontSize: 16, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              backdropFilter: "blur(8px)", transition: "all 0.2s",
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.85)"; e.currentTarget.style.transform = "scale(1.08)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.6)"; e.currentTarget.style.transform = "scale(1)"; }}>
+              {muted ? "🔇" : "🔊"}
+            </button>
+          </>
+        )}
+        <div style={{ position: "relative", zIndex: 2, display: "flex", gap: 20, padding: "32px 24px 28px", alignItems: "flex-end", minHeight: 360, flexWrap: "wrap" }}>
           {film.poster_url && (
             <img src={film.poster_url} alt={film.title} style={{
               width: 160, aspectRatio: "2/3", objectFit: "cover", borderRadius: 12,
@@ -2971,23 +3033,6 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSig
           </div>
         </div>
       </div>
-
-      {/* Trailer */}
-      {trailerEmbed && (
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 11, color: brandPrimary, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 10, textTransform: "uppercase" }}>▶ Trailer</div>
-          <div style={{ position: "relative", aspectRatio: "16/9", borderRadius: 14, overflow: "hidden", background: "#000", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}>
-            <iframe
-              src={trailerEmbed}
-              title={`${film.title} trailer`}
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
-            />
-          </div>
-        </div>
-      )}
 
       {/* Synopsis */}
       {film.synopsis && (
