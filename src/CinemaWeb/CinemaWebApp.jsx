@@ -948,7 +948,7 @@ function HistoryPage({ session, brandPrimary, onSignInClick }) {
           {/* Active promos for member */}
           {promos.length > 0 && (
             <div style={{ marginBottom: 28 }}>
-              <h2 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 12 }}>🎟 Promo Tersedia</h2>
+              <h2 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 12 }}>🎟 Available Promotions</h2>
               <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 8, margin: "0 -20px", padding: "0 20px" }}>
                 {promos.slice(0, 6).map(p => (
                   <div key={p.id || p.code} style={{
@@ -1566,20 +1566,20 @@ function PromoPage({ brandPrimary, heroOverride }) {
     fetch(`${API_HOST}/api/cinema/promotions/active`).then(r => r.json()).then(d => setPromos(d.promotions || d || []))
       .catch(() => setPromos([]));
   }, []);
-  if (!promos) return <LoadingState label="Memuat promo…" />;
+  if (!promos) return <LoadingState label="Loading promotions…" />;
   return (
     <div style={{ paddingBottom: 60 }}>
       <PageHero
-        tag={heroOverride?.tag || "Promo & Event"}
-        title={heroOverride?.title || "Nonton Lebih Hemat"}
-        subtitle={heroOverride?.subtitle || `${promos.length} promo aktif menunggu Anda. Pakai kode saat checkout — diskon langsung kepotong, tanpa drama.`}
+        tag={heroOverride?.tag || "Promotions & Events"}
+        title={heroOverride?.title || "Watch More, Spend Less"}
+        subtitle={heroOverride?.subtitle || `${promos.length} active promotions waiting for you. Apply the code at checkout — instant discount, no hassle.`}
         accent={heroOverride?.accent || "🎟"}
         brandPrimary={brandPrimary}
       />
       {promos.length === 0 ? (
         <div style={{ textAlign: "center", padding: 60, color: C.dim, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14 }}>
           <div style={{ fontSize: 48, marginBottom: 14 }}>🎟</div>
-          <div style={{ fontSize: 15 }}>Belum ada promo aktif saat ini</div>
+          <div style={{ fontSize: 15 }}>No active promotions at the moment</div>
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))", gap: 14 }}>
@@ -1598,7 +1598,7 @@ function PromoPage({ brandPrimary, heroOverride }) {
               {(p.min_purchase > 0 || p.valid_to) && (
                 <div style={{ marginTop: 10, fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>
                   {p.min_purchase > 0 && <span>MIN Rp {p.min_purchase.toLocaleString("id-ID")}</span>}
-                  {p.valid_to && <span> · BERLAKU SAMPAI {p.valid_to}</span>}
+                  {p.valid_to && <span> · VALID UNTIL {p.valid_to}</span>}
                 </div>
               )}
             </div>
@@ -1616,22 +1616,22 @@ function StudioPage({ brandPrimary, heroOverride }) {
       .then(d => setPackages(d.packages || d || []))
       .catch(() => setPackages([]));
   }, []);
-  if (!packages) return <LoadingState label="Memuat paket studio…" />;
+  if (!packages) return <LoadingState label="Loading studio packages…" />;
   return (
     <div style={{ paddingBottom: 60 }}>
       <PageHero
-        tag={heroOverride?.tag || "Studio Booking"}
-        title={heroOverride?.title || "Sewa Bioskop Sendiri"}
-        subtitle={heroOverride?.subtitle || "Ulang tahun anak, anniversary, gathering kantor, screening rilis perdana — semua bisa di sini. Studio jadi milik Anda dari layar sampai snack."}
+        tag={heroOverride?.tag || "Private Event Booking"}
+        title={heroOverride?.title || "Rent the Whole Cinema"}
+        subtitle={heroOverride?.subtitle || "Kids' birthdays, anniversaries, office gatherings, premiere screenings — all possible here. The studio is yours from screen to snacks."}
         accent={heroOverride?.accent || "🎉"}
         brandPrimary={brandPrimary}
       />
       {packages.length === 0 ? (
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 32, textAlign: "center", color: C.dim }}>
           <div style={{ fontSize: 48, marginBottom: 14 }}>🎉</div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 6 }}>Hubungi Kami untuk Booking Studio</div>
-          <div style={{ fontSize: 12, marginBottom: 20 }}>Custom event, ulang tahun anak, gathering kantor, screening privat — semua bisa kami atur.</div>
-          <a href="https://wa.me/6285190062368?text=Halo,%20saya%20mau%20tanya%20booking%20studio%20cinema" target="_blank" rel="noopener noreferrer" style={{
+          <div style={{ fontSize: 15, fontWeight: 700, color: "#fff", marginBottom: 6 }}>Contact Us for Private Event Booking</div>
+          <div style={{ fontSize: 12, marginBottom: 20 }}>Custom events, kids' birthdays, office gatherings, private screenings — all customizable.</div>
+          <a href="https://wa.me/6285190062368?text=Hello,%20I%20want%20to%20inquire%20about%20cinema%20studio%20booking" target="_blank" rel="noopener noreferrer" style={{
             display: "inline-block", padding: "12px 24px", background: "#25D366", color: "#fff",
             borderRadius: 10, fontSize: 14, fontWeight: 800, textDecoration: "none", fontFamily: "inherit",
           }}>📱 Chat WhatsApp</a>
@@ -1989,7 +1989,7 @@ function AboutPage({ brand, brandPrimary, onBack, heroOverride }) {
           <FeatureCard icon="💺" title="Pilih Kursi Sendiri" desc="Real-time seat map per studio" />
           <FeatureCard icon="🍿" title="F&B Bundles" desc="Popcorn, drinks, snack combo" />
           <FeatureCard icon="⭐" title="Auto-Member Loyalty" desc="Setiap booking dapet poin (Rp 5k = 1pt)" />
-          <FeatureCard icon="🎟️" title="Promo Code" desc="Diskon promo + voucher" />
+          <FeatureCard icon="🎟️" title="Promo Code" desc="Promo discounts + vouchers" />
           <FeatureCard icon="📱" title="WA E-Tiket" desc="Auto-kirim e-tiket via WhatsApp" />
         </div>
       </Section>
@@ -2071,7 +2071,7 @@ const DEFAULT_FOOTER_CONFIG = {
   nav: [
     { label: "Home", target: "outlet" },
     { label: "Movies", target: "movies" },
-    { label: "Promo", target: "promo" },
+    { label: "Promotions", target: "promo" },
     { label: "Private Event", target: "studio" },
     { label: "Locations", target: "locations" },
     { label: "About", target: "about" },
@@ -2310,7 +2310,7 @@ const footerLinkStyle = {
 const NAV_ITEMS = [
   { key: "outlet",    label: "Home" },
   { key: "movies",    label: "Movies" },
-  { key: "promo",     label: "Promo" },
+  { key: "promo",     label: "Promotions" },
   { key: "studio",    label: "Private Event" },
   { key: "locations", label: "Locations" },
   { key: "about",     label: "About" },
