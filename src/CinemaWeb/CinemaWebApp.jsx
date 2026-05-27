@@ -340,6 +340,36 @@ export default function CinemaWebApp() {
         /* Hide scrollbar on carousel for clean look */
         .cw-section-pad > div::-webkit-scrollbar { display: none; }
 
+        /* ═══════════════════════════════════════════════════════════
+           NETFLIX FILM ROW — horizontal carousel + tile hover
+           ═══════════════════════════════════════════════════════════ */
+        .cw-row-track {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .cw-row-track::-webkit-scrollbar { display: none; }
+
+        .cw-row-card {
+          will-change: transform;
+        }
+        .cw-row-card:hover {
+          transform: scale(1.12) translateY(-6px);
+          z-index: 10;
+        }
+        .cw-row-card:hover > div {
+          box-shadow: 0 12px 30px rgba(0,0,0,0.6), 0 0 0 2px rgba(255,255,255,0.25);
+        }
+        .cw-row-card:hover .cw-row-card-info {
+          opacity: 1 !important;
+        }
+        /* Ujung karena di-scale, kasih ruang lebih utk hover yg di edge */
+        .cw-row-card:first-child:hover {
+          transform-origin: left bottom;
+        }
+        .cw-row-card:last-child:hover {
+          transform-origin: right bottom;
+        }
+
         /* Mobile responsive overrides */
         @media (max-width: 900px) {
           .cw-nav-desktop { display: none !important; }
@@ -874,13 +904,118 @@ function MoviesPage({ brandPrimary, onPick }) {
   );
   const nowShowing = films.filter(f => f.status === "now_showing" || !f.status);
   const comingSoon = films.filter(f => f.status === "coming_soon");
+  // Group by genre (top picks)
+  const topRated = [...films].filter(f => (f.avg_rating || 0) >= 4 && f.ratings_count >= 1).sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0)).slice(0, 10);
+  const byGenre = {};
+  nowShowing.forEach(f => {
+    const genre = (f.genre || "Lainnya").split(/[,\/]/)[0].trim();
+    if (!byGenre[genre]) byGenre[genre] = [];
+    byGenre[genre].push(f);
+  });
+  const genreEntries = Object.entries(byGenre).filter(([, list]) => list.length >= 2);
   return (
-    <div style={{ padding: "30px 0 60px" }}>
-      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 6 }}>🎬 Movies</h1>
-      <p style={{ fontSize: 13, color: C.sub, margin: 0, marginBottom: 24 }}>{films.length} film · {nowShowing.length} now showing · {comingSoon.length} coming soon</p>
-      <FilmGroup title="🎥 Now Showing" films={nowShowing} onPick={onPick} brandPrimary={brandPrimary} />
-      {comingSoon.length > 0 && <FilmGroup title="🔜 Coming Soon" films={comingSoon} onPick={onPick} brandPrimary={brandPrimary} />}
+    <div style={{ padding: "20px 0 60px" }}>
+      <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: -1, margin: 0, marginBottom: 8, color: "#fff" }}>Movies</h1>
+      <p style={{ fontSize: 13.5, color: C.sub, margin: 0, marginBottom: 28 }}>{films.length} film tersedia di KaryaOS Cinema</p>
+      {nowShowing.length > 0 && <FilmRow title="🎬 Sedang Tayang" films={nowShowing} onPick={onPick} brandPrimary={brandPrimary} />}
+      {topRated.length > 0 && <FilmRow title="⭐ Top Picks Member" films={topRated} onPick={onPick} brandPrimary={brandPrimary} showRating />}
+      {comingSoon.length > 0 && <FilmRow title="🔜 Segera Tayang" films={comingSoon} onPick={onPick} brandPrimary={brandPrimary} />}
+      {genreEntries.map(([genre, list]) => (
+        <FilmRow key={genre} title={`🎭 ${genre}`} films={list} onPick={onPick} brandPrimary={brandPrimary} />
+      ))}
     </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
+// FILM ROW — Netflix-style horizontal scroll carousel
+// ════════════════════════════════════════════════════════════════════
+function FilmRow({ title, films, onPick, brandPrimary, showRating = false }) {
+  const scrollRef = useRef(null);
+  const [hover, setHover] = useState(false);
+  const scrollBy = (dir) => {
+    const el = scrollRef.current; if (!el) return;
+    el.scrollBy({ left: dir * (el.clientWidth * 0.8), behavior: "smooth" });
+  };
+  return (
+    <section className="cw-film-row" style={{ marginBottom: 36 }}
+      onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
+      <h2 style={{ fontSize: 19, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 14, letterSpacing: -0.3 }}>{title}</h2>
+      <div style={{ position: "relative" }}>
+        {/* Left chevron */}
+        <button onClick={() => scrollBy(-1)} aria-label="Prev" style={{
+          position: "absolute", left: -2, top: 0, bottom: 0, width: 48, zIndex: 5,
+          background: "linear-gradient(90deg, rgba(20,20,20,0.95), transparent)",
+          border: "none", color: "#fff", fontSize: 28, cursor: "pointer",
+          opacity: hover ? 1 : 0, transition: "opacity 0.25s",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>‹</button>
+        {/* Scroll track */}
+        <div ref={scrollRef} className="cw-row-track" style={{
+          display: "flex", gap: 8, overflowX: "auto",
+          scrollSnapType: "x mandatory", scrollPaddingLeft: 8,
+          paddingBottom: 30, marginBottom: -30, // ruang utk hover scale, mask balik dgn neg margin
+        }}>
+          {films.map(f => (
+            <button key={f.id} onClick={() => onPick(f)} className="cw-row-card" style={{
+              flexShrink: 0, scrollSnapAlign: "start",
+              width: "clamp(140px, 18vw, 220px)",
+              background: "transparent", border: "none", padding: 0,
+              cursor: "pointer", color: "#fff", fontFamily: "inherit",
+              transition: "transform 0.3s cubic-bezier(.2,.8,.2,1)",
+              transformOrigin: "center bottom",
+            }}>
+              <div style={{
+                aspectRatio: "2/3",
+                backgroundImage: f.poster_url ? `url(${f.poster_url})` : "none",
+                background: f.poster_url ? `url(${f.poster_url}) center/cover` : "#1c1c22",
+                borderRadius: 6, position: "relative", overflow: "hidden",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+              }}>
+                {!f.poster_url && (
+                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48, opacity: 0.3 }}>🎬</div>
+                )}
+                {f.status === "coming_soon" && (
+                  <div style={{
+                    position: "absolute", top: 8, left: 8,
+                    background: brandPrimary, color: "#fff",
+                    padding: "3px 8px", fontSize: 9, fontWeight: 800, letterSpacing: 1,
+                    fontFamily: "'JetBrains Mono',monospace", borderRadius: 3,
+                  }}>SOON</div>
+                )}
+                {/* Bottom gradient + title on hover */}
+                <div className="cw-row-card-info" style={{
+                  position: "absolute", bottom: 0, left: 0, right: 0,
+                  padding: "30px 10px 10px",
+                  background: "linear-gradient(180deg, transparent, rgba(0,0,0,0.92))",
+                  opacity: 0, transition: "opacity 0.25s",
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.title}</div>
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.75)", marginTop: 2 }}>
+                    {f.duration_min ? `${f.duration_min}mnt` : ""}
+                    {f.rating ? ` · ${f.rating}` : ""}
+                  </div>
+                  {(showRating && f.ratings_count > 0) && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
+                      <Stars value={f.avg_rating || 0} size={9} color={brandPrimary} />
+                      <span style={{ fontSize: 9, color: "#fff", fontFamily: "'JetBrains Mono',monospace" }}>{Number(f.avg_rating || 0).toFixed(1)}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+        {/* Right chevron */}
+        <button onClick={() => scrollBy(1)} aria-label="Next" style={{
+          position: "absolute", right: -2, top: 0, bottom: 0, width: 48, zIndex: 5,
+          background: "linear-gradient(-90deg, rgba(20,20,20,0.95), transparent)",
+          border: "none", color: "#fff", fontSize: 28, cursor: "pointer",
+          opacity: hover ? 1 : 0, transition: "opacity 0.25s",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>›</button>
+      </div>
+    </section>
   );
 }
 
@@ -1642,117 +1777,164 @@ const menuBtnStyle = {
 // CINEMA HERO — full-bleed slideshow, "berasa di dalam area cinema"
 // Poster film auto-rotate setiap 5 detik, dark gradient overlay, sinematik feel
 // ════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════
+// NETFLIX BILLBOARD HERO — featured film, CTA Pesan/Detail, left-aligned
+// ════════════════════════════════════════════════════════════════════
 function CinemaHero({ films, brandPrimary, onPickFilm }) {
-  const slides = useMemo(() => (films || []).filter(f => f.poster_url).slice(0, 6), [films]);
+  const slides = useMemo(() => (films || []).filter(f => f.poster_url && f.status !== "archived").slice(0, 5), [films]);
   const [idx, setIdx] = useState(0);
   useEffect(() => {
     if (slides.length < 2) return;
-    const iv = setInterval(() => setIdx(i => (i + 1) % slides.length), 6000);
+    const iv = setInterval(() => setIdx(i => (i + 1) % slides.length), 8000);
     return () => clearInterval(iv);
   }, [slides.length]);
 
   const current = slides[idx];
-  const handleBadgeClick = () => { if (current && onPickFilm) onPickFilm(current); };
+
+  if (!current) {
+    // Fallback ringan saat film belum loaded — bg gradient brand subtle
+    return (
+      <section style={{
+        position: "relative", width: "100vw", minHeight: "85vh",
+        marginLeft: "calc(-50vw + 50%)", marginRight: "calc(-50vw + 50%)",
+        background: `linear-gradient(135deg, ${brandPrimary}11, #141414 60%)`,
+      }} />
+    );
+  }
 
   return (
     <section style={{
-      position: "relative", width: "100%", minHeight: "min(70vh, 600px)",
-      overflow: "hidden", marginLeft: "calc(-50vw + 50%)", marginRight: "calc(-50vw + 50%)",
-      width: "100vw",
+      position: "relative", width: "100vw", minHeight: "85vh",
+      overflow: "hidden",
+      marginLeft: "calc(-50vw + 50%)", marginRight: "calc(-50vw + 50%)",
+      background: "#141414",
     }}>
-      {/* Crossfade slides */}
+      {/* Crossfade poster bg */}
       {slides.map((f, i) => (
         <div key={f.id} aria-hidden={i !== idx} style={{
           position: "absolute", inset: 0,
           backgroundImage: `url(${f.poster_url})`,
-          backgroundSize: "cover", backgroundPosition: "center 20%",
+          backgroundSize: "cover", backgroundPosition: "center 15%",
           opacity: i === idx ? 1 : 0,
-          transition: "opacity 1.2s ease-in-out",
-          filter: "blur(0.5px)",
+          transition: "opacity 1.4s ease-in-out",
         }} />
       ))}
 
-      {/* Cinematic overlay layers */}
-      {/* 1. Vertical dark gradient (bottom heavier) */}
+      {/* Netflix dual gradient mask: dark dari kiri (text legibility) + bottom (fade ke row carousel) */}
       <div style={{ position: "absolute", inset: 0,
-        background: "linear-gradient(180deg, rgba(10,10,15,0.5) 0%, rgba(10,10,15,0.7) 50%, rgba(10,10,15,0.98) 100%)",
+        background: "linear-gradient(90deg, rgba(20,20,20,0.95) 0%, rgba(20,20,20,0.75) 30%, rgba(20,20,20,0.4) 60%, transparent 100%)",
       }} />
-      {/* 2. Spotlight (radial vignette from center, dim edges) */}
       <div style={{ position: "absolute", inset: 0,
-        background: "radial-gradient(ellipse 70% 60% at 50% 40%, transparent 0%, rgba(10,10,15,0.7) 100%)",
-      }} />
-      {/* 3. Top side darkening (theater curtain effect) */}
-      <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: "20%",
-        background: "linear-gradient(90deg, rgba(10,10,15,0.95), transparent)", pointerEvents: "none",
-      }} />
-      <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: "20%",
-        background: "linear-gradient(-90deg, rgba(10,10,15,0.95), transparent)", pointerEvents: "none",
-      }} />
-      {/* 4. Brand color glow accent */}
-      <div style={{ position: "absolute", inset: 0,
-        background: `radial-gradient(circle 600px at 50% 30%, ${brandPrimary}11, transparent 60%)`,
-      }} />
-      {/* 5. Subtle film grain noise via repeating gradient */}
-      <div style={{ position: "absolute", inset: 0, opacity: 0.08, pointerEvents: "none",
-        backgroundImage: "repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0px, transparent 1px, transparent 2px)",
+        background: "linear-gradient(180deg, rgba(20,20,20,0.4) 0%, transparent 30%, transparent 60%, #141414 100%)",
       }} />
 
-      {/* Hero content */}
+      {/* Content — left-aligned Netflix style */}
       <div style={{
-        position: "relative", zIndex: 10, padding: "80px 24px 90px",
-        maxWidth: 900, margin: "0 auto", textAlign: "center",
-        minHeight: "min(70vh, 600px)", display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
+        position: "relative", zIndex: 10,
+        maxWidth: 1280, margin: "0 auto",
+        padding: "100px 60px 140px",
+        minHeight: "85vh",
+        display: "flex", flexDirection: "column", justifyContent: "center",
       }}>
-        {/* "NOW SHOWING" badge — clickable → jump to film detail (lock outlet first) */}
-        {current && (
-          <button onClick={handleBadgeClick} title={`Lihat detail ${current.title}`} style={{
-            display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 22,
-            padding: "8px 18px", borderRadius: 999,
-            background: "rgba(0,0,0,0.55)", backdropFilter: "blur(20px)",
-            border: `1px solid ${brandPrimary}55`,
-            fontSize: 11, fontWeight: 800, letterSpacing: 2, color: brandPrimary,
-            fontFamily: "'Geist Mono',monospace", textTransform: "uppercase",
-            animation: "cwFadeIn 1s ease both",
-            cursor: "pointer", transition: "all 0.2s ease",
-          }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = `${brandPrimary}33`; e.currentTarget.style.borderColor = brandPrimary; e.currentTarget.style.transform = "scale(1.05)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.55)"; e.currentTarget.style.borderColor = `${brandPrimary}55`; e.currentTarget.style.transform = "scale(1)"; }}>
-            <span style={{ width: 8, height: 8, borderRadius: "50%", background: brandPrimary, boxShadow: `0 0 12px ${brandPrimary}`, animation: "cwPulse 2s ease infinite" }} />
-            NOW SHOWING · {current.title}
-            <span style={{ fontSize: 13, opacity: 0.7, marginLeft: 4 }}>→</span>
-          </button>
-        )}
+        <div style={{ maxWidth: 620 }}>
+          {/* Badge "NOW SHOWING" */}
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 20,
+            padding: "6px 14px", borderRadius: 4,
+            background: `${brandPrimary}cc`,
+            fontSize: 11, fontWeight: 800, letterSpacing: 2.5, color: "#fff",
+            fontFamily: "'JetBrains Mono',monospace", textTransform: "uppercase",
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#fff", animation: "cwPulse 2s ease infinite" }} />
+            {current.status === "coming_soon" ? "Segera Tayang" : "Sedang Tayang"}
+          </div>
 
-        <h1 className="cw-page-title" style={{
-          fontSize: "clamp(36px, 6vw, 60px)", fontWeight: 900, letterSpacing: -1.8,
-          margin: 0, marginBottom: 18, lineHeight: 1.05, color: "#fff",
-          textShadow: "0 4px 24px rgba(0,0,0,0.8)",
-        }}>
-          Lebih Dari Sekadar<br />
-          <span style={{ color: brandPrimary, textShadow: `0 0 32px ${brandPrimary}99` }}>Sebuah Film.</span>
-        </h1>
-        <p style={{
-          fontSize: "clamp(14px, 1.5vw, 17px)", color: "rgba(255,255,255,0.85)",
-          maxWidth: 560, margin: "0 auto 32px", lineHeight: 1.6,
-          textShadow: "0 2px 8px rgba(0,0,0,0.6)",
-        }}>
-          Pesan tiket bioskop online, pilih kursi favorit, langsung nonton tanpa antri. Pengalaman cinema premium di ujung jari Anda.
-        </p>
+          {/* Title huge */}
+          <h1 style={{
+            fontSize: "clamp(40px, 7vw, 82px)", fontWeight: 900,
+            letterSpacing: -2.5, lineHeight: 0.95,
+            margin: 0, marginBottom: 18, color: "#fff",
+            textShadow: "0 4px 30px rgba(0,0,0,0.8)",
+          }}>
+            {current.title}
+          </h1>
 
-        {/* CTA scroll-down indicator */}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "rgba(255,255,255,0.7)", fontFamily: "'Geist Mono',monospace", letterSpacing: 1.5, animation: "cwPulse 2.5s ease infinite" }}>
-          <span>PILIH LOKASI DI BAWAH</span>
-          <span style={{ fontSize: 16 }}>↓</span>
+          {/* Meta row */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: 18, fontSize: 14, color: "rgba(255,255,255,0.95)" }}>
+            {current.rating && (
+              <span style={{
+                padding: "3px 10px", borderRadius: 4,
+                background: "rgba(255,255,255,0.15)",
+                border: "1px solid rgba(255,255,255,0.3)",
+                fontSize: 11, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace",
+              }}>{current.rating}</span>
+            )}
+            {current.duration_min > 0 && <span>{Math.floor(current.duration_min / 60)}j {current.duration_min % 60}m</span>}
+            {current.genre && <><span style={{ opacity: 0.5 }}>•</span><span>{current.genre}</span></>}
+            {current.ratings_count > 0 && (
+              <>
+                <span style={{ opacity: 0.5 }}>•</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <Stars value={current.avg_rating || 0} size={13} color={brandPrimary} />
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>{Number(current.avg_rating || 0).toFixed(1)}</span>
+                </span>
+              </>
+            )}
+          </div>
+
+          {/* Synopsis preview */}
+          {current.synopsis && (
+            <p style={{
+              fontSize: "clamp(13px, 1.3vw, 16px)", color: "rgba(255,255,255,0.88)",
+              lineHeight: 1.55, margin: 0, marginBottom: 28,
+              maxWidth: 540,
+              display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
+              textShadow: "0 2px 8px rgba(0,0,0,0.7)",
+            }}>{current.synopsis}</p>
+          )}
+
+          {/* CTAs Netflix style: Play + Info */}
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button onClick={() => onPickFilm?.(current)} style={{
+              display: "inline-flex", alignItems: "center", gap: 10,
+              padding: "12px 28px",
+              background: "#fff", color: "#0a0a0f",
+              border: "none", borderRadius: 4,
+              fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+              transition: "all 0.2s",
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.85)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "#fff"; }}>
+              <span style={{ fontSize: 18, lineHeight: 1 }}>▶</span>
+              Pesan Tiket
+            </button>
+            <button onClick={() => onPickFilm?.(current)} style={{
+              display: "inline-flex", alignItems: "center", gap: 10,
+              padding: "12px 24px",
+              background: "rgba(109,109,110,0.7)", color: "#fff",
+              border: "none", borderRadius: 4,
+              fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+              transition: "all 0.2s",
+              backdropFilter: "blur(8px)",
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(109,109,110,0.5)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(109,109,110,0.7)"; }}>
+              <span style={{ fontSize: 16, lineHeight: 1 }}>ⓘ</span>
+              Info Lengkap
+            </button>
+          </div>
         </div>
 
-        {/* Slideshow dots indicator */}
+        {/* Slideshow dots — bottom right Netflix style */}
         {slides.length > 1 && (
-          <div style={{ display: "flex", gap: 8, marginTop: 28 }}>
+          <div style={{
+            position: "absolute", bottom: 60, right: 60,
+            display: "flex", gap: 8, alignItems: "center",
+          }}>
             {slides.map((_, i) => (
               <button key={i} onClick={() => setIdx(i)} aria-label={`Slide ${i + 1}`} style={{
-                width: i === idx ? 24 : 8, height: 8, borderRadius: 999, border: "none",
-                background: i === idx ? brandPrimary : "rgba(255,255,255,0.3)",
+                width: i === idx ? 28 : 6, height: 4, borderRadius: 2, border: "none",
+                background: i === idx ? "#fff" : "rgba(255,255,255,0.4)",
                 cursor: "pointer", transition: "all 0.3s ease", padding: 0,
               }} />
             ))}
