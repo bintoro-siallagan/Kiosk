@@ -24,6 +24,20 @@ export default function MemberList({ onBack }) {
   const [waMsg,     setWAMsg]       = useState("");
   const [sortBy,    setSortBy]      = useState("lastVisit"); // lastVisit | visits | totalSpend | createdAt
   const [toast,     setToast]       = useState(null);
+  const [editing,   setEditing]     = useState(null);  // customer being edited
+
+  async function saveEdit(updated) {
+    try {
+      const result = await api.updateCustomer(updated.id, {
+        name: updated.name, phone: updated.phone, points: updated.points,
+        totalSpend: updated.totalSpend, visits: updated.visits, tags: updated.tags || [],
+      });
+      setCustomers(p => p.map(c => c.id === updated.id ? { ...c, ...result } : c));
+      if (selected?.id === updated.id) setSelected({ ...selected, ...result });
+      setEditing(null);
+      notify("Customer updated ✓");
+    } catch (e) { notify("Update failed: " + e.message, "#F87171"); }
+  }
 
   useEffect(()=>{
     load();
@@ -205,7 +219,8 @@ export default function MemberList({ onBack }) {
                   <span style={{width:70,textAlign:"center",fontFamily:"'Geist Mono',monospace",fontSize:14,fontWeight:700,color:"#F59E0B"}}>{c.visits}</span>
                   <span style={{width:110,textAlign:"right",fontSize:12,fontWeight:600}}>{fIDR(c.totalSpend)}</span>
                   <span style={{width:90,textAlign:"center",fontSize:11,color:"#555"}}>{fAgo(c.lastVisit)}</span>
-                  <span style={{width:80,textAlign:"center",display:"flex",gap:4,justifyContent:"center"}}>
+                  <span style={{width:110,textAlign:"center",display:"flex",gap:4,justifyContent:"center"}}>
+                    <button style={M.editIconBtn} title="Edit customer" onClick={e=>{e.stopPropagation();setEditing(c);}}>✏️</button>
                     <button style={M.waIconBtn} disabled={waSending===c.id}
                       onClick={e=>{e.stopPropagation();handleSendWA(c);}}>
                       {waSending===c.id?"⏳":"💬"}
@@ -311,7 +326,101 @@ export default function MemberList({ onBack }) {
           </div>
         )}
       </div>
+
+      {/* EDIT MODAL */}
+      {editing && (
+        <CustomerEditModal
+          customer={editing}
+          onClose={() => setEditing(null)}
+          onSave={saveEdit}
+        />
+      )}
     </div>
+  );
+}
+
+// Edit customer modal — name, phone, points, total_spend, visits, tags
+function CustomerEditModal({ customer, onClose, onSave }) {
+  const [form, setForm] = useState({
+    name: customer.name || "",
+    phone: customer.phone || "",
+    points: customer.points || 0,
+    totalSpend: customer.totalSpend || 0,
+    visits: customer.visits || 0,
+    tags: customer.tags || [],
+  });
+  const [saving, setSaving] = useState(false);
+
+  const submit = async () => {
+    setSaving(true);
+    try {
+      await onSave({ ...customer, ...form, points: parseInt(form.points, 10) || 0, totalSpend: parseInt(form.totalSpend, 10) || 0, visits: parseInt(form.visits, 10) || 0 });
+    } finally { setSaving(false); }
+  };
+
+  const toggleTag = (t) => {
+    setForm(f => ({ ...f, tags: f.tags.includes(t) ? f.tags.filter(x => x !== t) : [...f.tags, t] }));
+  };
+
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)",
+      display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20,
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: "#1a1d29", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16,
+        padding: 28, maxWidth: 480, width: "100%", color: "#e5e7eb",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>✏️ Edit Customer</h2>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#888", fontSize: 24, cursor: "pointer", padding: 0 }}>×</button>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <EditField label="Nama" value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} placeholder="Nama lengkap" />
+          <EditField label="Phone (HP)" value={form.phone} onChange={v => setForm(f => ({ ...f, phone: v.replace(/\D/g, "") }))} placeholder="08123456789" />
+          <EditField label="Points (⭐)" value={form.points} onChange={v => setForm(f => ({ ...f, points: v }))} type="number" />
+          <EditField label="Total Spend (Rp)" value={form.totalSpend} onChange={v => setForm(f => ({ ...f, totalSpend: v }))} type="number" />
+          <EditField label="Visit Count" value={form.visits} onChange={v => setForm(f => ({ ...f, visits: v }))} type="number" />
+
+          <div>
+            <div style={{ fontSize: 11, color: "#9ca3af", fontWeight: 700, marginBottom: 6, fontFamily: "'JetBrains Mono',monospace", textTransform: "uppercase", letterSpacing: 1 }}>Tags</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {["member", "vip", "new"].map(t => {
+                const active = form.tags.includes(t);
+                const cfg = TAG_CFG[t] || { label: t };
+                return (
+                  <button key={t} onClick={() => toggleTag(t)} style={{
+                    padding: "5px 12px", fontSize: 12, fontWeight: 700,
+                    background: active ? cfg.bg : "rgba(255,255,255,0.04)",
+                    color: active ? cfg.color : "#9ca3af",
+                    border: `1px solid ${active ? cfg.color + "55" : "rgba(255,255,255,0.1)"}`,
+                    borderRadius: 6, cursor: "pointer", fontFamily: "inherit",
+                  }}>{active ? "✓ " : ""}{cfg.label}</button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <button onClick={onClose} style={{ padding: "9px 18px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: "#e5e7eb", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
+          <button onClick={submit} disabled={saving} style={{ padding: "9px 18px", background: "#fb923c", border: "none", color: "#fff", borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: saving ? "wait" : "pointer", fontFamily: "inherit", opacity: saving ? 0.6 : 1 }}>
+            {saving ? "Saving…" : "💾 Save"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditField({ label, value, onChange, placeholder, type = "text" }) {
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <span style={{ fontSize: 11, color: "#9ca3af", fontWeight: 700, fontFamily: "'JetBrains Mono',monospace", textTransform: "uppercase", letterSpacing: 1 }}>{label}</span>
+      <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        style={{ padding: "9px 12px", background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fff", fontSize: 14, fontFamily: "inherit", outline: "none" }} />
+    </label>
   );
 }
 
@@ -340,6 +449,7 @@ const M = {
   avatar:{width:36,height:36,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:700,flexShrink:0},
   waIconBtn:{background:"rgba(37,211,102,0.12)",border:"1px solid rgba(37,211,102,0.3)",borderRadius:8,padding:"5px 8px",fontSize:13},
   delIconBtn:{background:"rgba(248,113,113,0.08)",border:"1px solid rgba(248,113,113,0.2)",borderRadius:8,padding:"5px 8px",fontSize:13},
+  editIconBtn:{background:"rgba(251,146,60,0.12)",border:"1px solid rgba(251,146,60,0.3)",borderRadius:8,padding:"5px 8px",fontSize:13,cursor:"pointer"},
   detailCol:{width:300,background:"#080c10",borderLeft:"1px solid #0f1629",padding:"20px",overflowY:"auto",flexShrink:0},
   detailTitle:{fontFamily:"'Geist Mono',monospace",fontSize:13,fontWeight:700,color:"#aaa",letterSpacing:2},
   avatarLg:{width:64,height:64,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,fontWeight:700},

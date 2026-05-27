@@ -211,7 +211,12 @@ export default function App() {
     // AdminLogin is static — no Suspense needed for this gate.
     node = <AdminLogin onLogin={handleAdminLogin}/>;
   } else if (scene === "admin-login") {
-    node = <AdminLogin onLogin={handleAdminLogin}/>;
+    // Kalau sudah ada session valid (refresh di /?admin), skip login → ke admin home
+    if (adminSession?.token) {
+      node = <AdminHome initialView="home" adminSession={adminSession} onLogout={handleAdminLogout} onExit={() => setScene("kiosk")} />;
+    } else {
+      node = <AdminLogin onLogin={handleAdminLogin}/>;
+    }
   } else if (adminRoutes.includes(scene)) {
     node = <AdminHome initialView={scene} adminSession={adminSession} onLogout={handleAdminLogout} onExit={() => setScene("kiosk")} />;
   } else if (scene === "flow") {
