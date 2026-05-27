@@ -676,13 +676,23 @@ export default function CinemaKiosk({ apiBase }) {
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 14 }}>
                   {films.filter(f => f.status === "coming_soon").map(f => (
-                    <div key={f.id} style={{ ...card(), cursor: "default", opacity: 0.85, position: "relative", overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)" }}>
-                      <div style={{ position: "absolute", top: 10, right: 10, fontSize: 9, color: "#fbbf24", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", border: "1px solid rgba(245,158,11,0.4)", borderRadius: 5, padding: "3px 8px", fontWeight: 800, letterSpacing: 1.5 }}>SEGERA</div>
-                      <div style={{ fontSize: 38, marginBottom: 8, filter: "grayscale(0.3)" }}>🎞️</div>
-                      <div style={{ fontSize: 16, fontWeight: 800, letterSpacing: -0.3 }}>{f.title}</div>
-                      <div style={{ fontSize: 12.5, color: "rgba(255,255,255,0.5)", marginTop: 4 }}>{f.genre || "—"} · {f.duration_min || 0} mnt · {f.rating}</div>
-                      {f.synopsis && <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)", marginTop: 8, lineHeight: 1.45, maxHeight: 56, overflow: "hidden" }}>{f.synopsis}</div>}
-                      {f.license_start && <div style={{ fontSize: 11, color: "#fbbf24", marginTop: 8, fontWeight: 700 }}>📅 Mulai {f.license_start}</div>}
+                    <div key={f.id} style={{ ...card(), cursor: "default", opacity: 0.92, padding: 0, position: "relative", overflow: "hidden", boxShadow: "0 4px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)" }}>
+                      {/* Poster (filter sedikit utk indikasi belum tayang) */}
+                      {f.poster_url ? (
+                        <img src={f.poster_url} alt={f.title} loading="lazy"
+                          style={{ width: "100%", aspectRatio: "2/3", objectFit: "cover", display: "block", background: "#0a0e16", filter: "grayscale(0.25) brightness(0.85)" }} />
+                      ) : (
+                        <div style={{ width: "100%", aspectRatio: "2/3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 60, background: "linear-gradient(135deg,#1e1b4b,#0a0e16)", opacity: 0.7 }}>🎞️</div>
+                      )}
+                      {/* SEGERA badge — di poster top-right (gak overlap dgn meta text di bawah) */}
+                      <div style={{ position: "absolute", top: 10, right: 10, fontSize: 9, color: "#fbbf24", background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)", border: "1px solid rgba(245,158,11,0.5)", borderRadius: 5, padding: "4px 9px", fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace" }}>SEGERA</div>
+                      {/* Meta text di bawah poster */}
+                      <div style={{ padding: 14 }}>
+                        <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4, lineHeight: 1.3, letterSpacing: -0.3 }}>{f.title}</div>
+                        <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.55)" }}>{f.genre || "—"} · {f.duration_min || 0} mnt{f.rating ? ` · ${f.rating}` : ""}</div>
+                        {f.synopsis && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", marginTop: 8, lineHeight: 1.5, maxHeight: 48, overflow: "hidden" }}>{f.synopsis}</div>}
+                        {f.license_start && <div style={{ fontSize: 11, color: "#fbbf24", marginTop: 8, fontWeight: 700, fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5 }}>📅 MULAI {f.license_start}</div>}
+                      </div>
                     </div>
                   ))}
                 </div>
