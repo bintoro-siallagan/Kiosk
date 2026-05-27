@@ -40,7 +40,7 @@ export default function UpsellTicker({ vertical = "cinema" }) {
       // F&B: fetch promo + happy hour (correct backend paths)
       Promise.all([
         fetch(`${API_HOST}/api/promos`).then(r => r.ok ? r.json() : []).catch(() => []),
-        fetch(`${API_HOST}/api/fnb-features/happy-hours/active-now`).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+        fetch(`${API_HOST}/api/fnb/happy-hours/active-now`).then(r => r.ok ? r.json() : {}).catch(() => ({})),
       ]).then(([promos, hh]) => {
         const dynamic = [];
         const promoList = Array.isArray(promos) ? promos : (promos.data || promos.promos || []);
