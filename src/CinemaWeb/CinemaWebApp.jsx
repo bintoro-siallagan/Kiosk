@@ -282,6 +282,7 @@ function OutletPicker({ onPick, brandPrimary }) {
   const [outlets, setOutlets] = useState(null);
   const [films, setFilms] = useState(null);
   const [error, setError] = useState(null);
+  const [cityFilter, setCityFilter] = useState("all");
 
   const load = useCallback(() => {
     setError(null);
@@ -299,6 +300,27 @@ function OutletPicker({ onPick, brandPrimary }) {
     }).catch(e => setError(e));
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  // Compute unique cities for filter chips
+  const uniqueCities = useMemo(() => {
+    if (!outlets) return [];
+    const map = new Map();
+    for (const o of outlets) {
+      const city = (o.area || o.name?.replace("Karya Cinema ", "") || o.code).split(",")[0].trim();
+      const key = city.toLowerCase();
+      if (!map.has(key)) map.set(key, { key, label: city, count: 0 });
+      map.get(key).count += 1;
+    }
+    return [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
+  }, [outlets]);
+
+  const filteredOutlets = useMemo(() => {
+    if (!outlets || cityFilter === "all") return outlets || [];
+    return outlets.filter(o => {
+      const city = (o.area || o.name?.replace("Karya Cinema ", "") || o.code).split(",")[0].trim().toLowerCase();
+      return city === cityFilter;
+    });
+  }, [outlets, cityFilter]);
 
   if (error) return <ErrorInline error={error} label="Gagal memuat lokasi" onRetry={load} />;
   if (!outlets) return <LoadingState label="Memuat lokasi bioskop…" />;
@@ -359,7 +381,7 @@ function OutletPicker({ onPick, brandPrimary }) {
       )}
 
       {/* Outlet picker section */}
-      <div style={{ textAlign: "center", marginBottom: 28 }}>
+      <div style={{ textAlign: "center", marginBottom: 18 }}>
         <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 6 }}>
           Mau Nonton Di Mana?
         </h2>
@@ -367,14 +389,38 @@ function OutletPicker({ onPick, brandPrimary }) {
           {outlets.length} kota · pilih lokasi favorit Anda
         </p>
       </div>
-      {outlets.length === 0 ? (
+
+      {/* City filter chips — quick filter for power users */}
+      {outlets.length > 3 && (
+        <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", justifyContent: "center" }}>
+          {[{ key: "all", label: "Semua", count: outlets.length }, ...uniqueCities].map(c => {
+            const active = cityFilter === c.key;
+            return (
+              <button key={c.key} onClick={() => setCityFilter(c.key)} style={{
+                padding: "8px 14px", borderRadius: 999,
+                background: active ? brandPrimary : "rgba(255,255,255,0.04)",
+                border: `1px solid ${active ? brandPrimary : "rgba(255,255,255,0.1)"}`,
+                color: active ? "#fff" : C.sub,
+                fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                transition: "all 0.15s",
+                boxShadow: active ? `0 4px 14px ${brandPrimary}55` : "none",
+              }}
+                onMouseEnter={(e) => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = C.text; } }}
+                onMouseLeave={(e) => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = C.sub; } }}>
+                {c.label} <span style={{ opacity: 0.6, fontFamily: "'Geist Mono',monospace", fontSize: 10 }}>({c.count})</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {filteredOutlets.length === 0 ? (
         <div style={{ textAlign: "center", padding: 60, color: C.dim }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>🎬</div>
-          <div>Belum ada lokasi bioskop aktif</div>
+          <div>{outlets.length === 0 ? "Belum ada lokasi bioskop aktif" : "Tidak ada outlet untuk filter ini"}</div>
         </div>
       ) : (
         <div className="cw-outlets-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: 18 }}>
-          {outlets.map((o, i) => {
+          {filteredOutlets.map((o, i) => {
             const visual = getCityVisual(o);
             const cityName = o.area || o.name?.replace("Karya Cinema ", "") || o.code;
             return (
