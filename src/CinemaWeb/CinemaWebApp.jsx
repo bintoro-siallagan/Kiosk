@@ -947,9 +947,18 @@ function Row({ label, value }) {
 // STEP 6: SUCCESS
 // ════════════════════════════════════════════════════════════════════
 function SuccessPage({ booking, film, showtime, seats, bundlesCart, onNewBooking, brandPrimary }) {
-  // Server returns tickets[] array (one per seat) — use first ticket code as primary QR target
+  // Server returns tickets[] array (one per seat) — use first ticket code as primary QR target.
+  // STRICT: only accept codes starting with "CT-" or "CP-" (ticket code or purchase id);
+  // otherwise fallback to purchase_id. Never let outlet code slip through.
   const tickets = Array.isArray(booking?.tickets) ? booking.tickets : [];
-  const primaryCode = tickets[0]?.code || booking?.ticket_code || booking?.code || booking?.purchase_id || booking?.id;
+  const isTicketCode = (s) => typeof s === "string" && /^(CT-|CP-)/.test(s);
+  const primaryCode = (
+    (isTicketCode(tickets[0]?.code) && tickets[0].code) ||
+    (isTicketCode(booking?.ticket_code) && booking.ticket_code) ||
+    (isTicketCode(booking?.purchase_id) && booking.purchase_id) ||
+    null
+  );
+  const allTicketCodes = tickets.map(t => t.code).filter(isTicketCode);
   const total = booking?.total || (seats.length * (showtime.price || 0));
   const hasBundles = bundlesCart && Object.keys(bundlesCart).length > 0;
   const paymentStatus = booking?._payment_status || "unknown";
@@ -959,9 +968,10 @@ function SuccessPage({ booking, film, showtime, seats, bundlesCart, onNewBooking
   const [showCelebration, setShowCelebration] = useState(true);
   const [qrSrc, setQrSrc] = useState(null);
 
-  // Generate QR code for the ticket URL (link to digital ticket page)
+  // Generate QR code for the ticket URL (link to digital ticket page).
+  // Skip if primaryCode is null (defensive — never QR an invalid code).
   useEffect(() => {
-    if (!primaryCode) return;
+    if (!primaryCode) { setQrSrc(null); return; }
     const ticketUrl = `${window.location.origin}/?ticket=${primaryCode}`;
     QRCode.toDataURL(ticketUrl, { width: 320, margin: 1, color: { dark: "#000", light: "#fff" } })
       .then(setQrSrc).catch(() => setQrSrc(null));
@@ -1000,22 +1010,36 @@ function SuccessPage({ booking, film, showtime, seats, bundlesCart, onNewBooking
             : "Scan QR ini di pintu studio untuk masuk"}
         </p>
 
-        {/* QR CODE — main attraction */}
-        <div style={{
-          background: "#fff", padding: 16, borderRadius: 16, marginBottom: 14,
-          boxShadow: `0 12px 36px ${brandPrimary}22, 0 0 0 1px ${C.border}`,
-          display: "inline-block",
-        }}>
-          {qrSrc ? (
-            <img src={qrSrc} alt={`QR ${primaryCode}`} style={{ width: 220, height: 220, display: "block" }} />
-          ) : (
-            <div style={{ width: 220, height: 220, display: "flex", alignItems: "center", justifyContent: "center", color: "#999", fontSize: 12 }}>
-              Generating QR…
+        {/* QR CODE — main attraction (only render kalau primaryCode valid) */}
+        {primaryCode ? (
+          <>
+            <div style={{
+              background: "#fff", padding: 16, borderRadius: 16, marginBottom: 14,
+              boxShadow: `0 12px 36px ${brandPrimary}22, 0 0 0 1px ${C.border}`,
+              display: "inline-block",
+            }}>
+              {qrSrc ? (
+                <img src={qrSrc} alt={`QR ${primaryCode}`} style={{ width: 220, height: 220, display: "block" }} />
+              ) : (
+                <div style={{ width: 220, height: 220, display: "flex", alignItems: "center", justifyContent: "center", color: "#999", fontSize: 12 }}>
+                  Generating QR…
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 4, textTransform: "uppercase" }}>Kode Tiket</div>
-        <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: brandPrimary, marginBottom: 22, letterSpacing: 0.5 }}>{primaryCode}</div>
+            <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 4, textTransform: "uppercase" }}>Kode Tiket</div>
+            <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: brandPrimary, marginBottom: 8, letterSpacing: 0.5 }}>{primaryCode}</div>
+            {allTicketCodes.length > 1 && (
+              <div style={{ fontSize: 11, color: C.dim, marginBottom: 22 }}>
+                {allTicketCodes.length} tiket — kode lain: {allTicketCodes.slice(1).join(", ")}
+              </div>
+            )}
+            {allTicketCodes.length <= 1 && <div style={{ marginBottom: 22 }} />}
+          </>
+        ) : (
+          <div style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 12, padding: 16, marginBottom: 22, fontSize: 12, color: "#fca5a5" }}>
+            ⚠ Kode tiket tidak ter-generate. Hubungi staff atau cek di halaman tracking.
+          </div>
+        )}
 
         {/* Booking details */}
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 18, marginBottom: 16, textAlign: "left" }}>
