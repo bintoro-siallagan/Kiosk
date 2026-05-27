@@ -1677,23 +1677,48 @@ function LocationsPage({ brandPrimary, onPick, heroOverride }) {
           const mapsUrl = o.address ? `https://maps.google.com/?q=${encodeURIComponent(o.address)}` : null;
           return (
             <div key={o.code} className="cw-location-card" style={{
-              background: visual.url ? `linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.45) 45%, rgba(10,10,10,0.96) 100%), url(${visual.url}) center/cover` : DEFAULT_CITY_GRADIENT,
+              background: DEFAULT_CITY_GRADIENT,
               border: `1px solid ${C.borderSubtle}`, borderRadius: 14, padding: 0, overflow: "hidden",
               minHeight: 280, display: "flex", flexDirection: "column", justifyContent: "flex-end",
               transition: "all 0.3s cubic-bezier(.2,.8,.2,1)",
               boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
               position: "relative",
             }}>
+              {/* Image layer (zIndex 0) — local file pertama, fallback ke Unsplash kalau 404,
+                  fallback final ke gradient kalau Unsplash juga gagal */}
+              {visual.url && (
+                <img
+                  src={visual.url}
+                  alt=""
+                  loading="lazy"
+                  onError={(e) => {
+                    if (visual.fallback && e.currentTarget.src !== visual.fallback) {
+                      e.currentTarget.src = visual.fallback;
+                    } else {
+                      e.currentTarget.style.display = "none";  // give up → biarkan gradient
+                    }
+                  }}
+                  style={{
+                    position: "absolute", inset: 0, width: "100%", height: "100%",
+                    objectFit: "cover", zIndex: 0,
+                  }}
+                />
+              )}
+              {/* Overlay gradient (zIndex 1) */}
+              <div style={{
+                position: "absolute", inset: 0, zIndex: 1,
+                background: "linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.45) 45%, rgba(10,10,10,0.96) 100%)",
+              }} />
               {/* Emoji bubble top-right */}
               <div style={{
-                position: "absolute", top: S[4], right: S[4],
+                position: "absolute", top: S[4], right: S[4], zIndex: 3,
                 background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)",
                 width: 36, height: 36, borderRadius: "50%",
                 display: "flex", alignItems: "center", justifyContent: "center",
                 fontSize: T.md, border: `1px solid rgba(255,255,255,0.12)`,
               }}>{visual.emoji}</div>
 
-              <div style={{ padding: `${S[5]}px ${S[5]}px ${S[5]}px` }}>
+              <div style={{ padding: `${S[5]}px ${S[5]}px ${S[5]}px`, position: "relative", zIndex: 2 }}>
                 {/* Eyebrow city tag */}
                 <div style={{
                   fontSize: T.xs, color: brandPrimary, fontFamily: T.mono,
@@ -2045,10 +2070,11 @@ const DEFAULT_FOOTER_CONFIG = {
   ],
   nav: [
     { label: "Beranda", target: "outlet" },
-    { label: "Movies", target: "movies" },
-    { label: "Promo & Event", target: "promo" },
-    { label: "Booking Studio", target: "studio" },
+    { label: "Film", target: "movies" },
+    { label: "Promo", target: "promo" },
+    { label: "Event Privat", target: "studio" },
     { label: "Lokasi", target: "locations" },
+    { label: "Tentang", target: "about" },
   ],
   help: [
     { label: "FAQ", target: "faq" },
@@ -2282,11 +2308,11 @@ const footerLinkStyle = {
 // ════════════════════════════════════════════════════════════════════
 const NAV_ITEMS = [
   { key: "outlet",    label: "Beranda" },
-  { key: "movies",    label: "Movies" },
+  { key: "movies",    label: "Film" },
   { key: "promo",     label: "Promo" },
-  { key: "studio",    label: "Studio" },
+  { key: "studio",    label: "Event Privat" },
   { key: "locations", label: "Lokasi" },
-  { key: "about",     label: "About" },
+  { key: "about",     label: "Tentang" },
 ];
 
 function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrimary, session, onSignInClick, onSignOut, onNav, onPickFilm, navItems }) {
@@ -3727,21 +3753,28 @@ const GENERIC_CINEMA_PHOTOS = [
 const DEFAULT_CITY_GRADIENT = "linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 40%, #2a1810 100%)";
 
 function getCityVisual(outlet) {
-  // 1. Admin-uploaded photo (future field) → highest priority
+  // 1. Admin-uploaded photo (future DB field) → highest priority
   if (outlet.image_url || outlet.cover_url) {
-    return { url: outlet.image_url || outlet.cover_url, emoji: "🎬" };
+    return { url: outlet.image_url || outlet.cover_url, fallback: null, emoji: "🎬" };
   }
-  // 2. City-specific curated photo
+  // 2. City-specific: try LOCAL file first (kapten upload ke public/img/cities/{slug}.jpg),
+  //    fallback ke Unsplash stock photo via onError handler di <img>.
   const key = (outlet.area || outlet.name || "").toLowerCase();
   for (const city of Object.keys(CITY_IMAGES)) {
-    if (key.includes(city)) return CITY_IMAGES[city];
+    if (key.includes(city)) {
+      return {
+        url: `/img/cities/${city}.jpg`,           // local file (kalau ada)
+        fallback: CITY_IMAGES[city].url,           // Unsplash stock backup
+        emoji: CITY_IMAGES[city].emoji,
+      };
+    }
   }
   // 3. Generic cinema photo (stable per outlet — hash code → index)
   const seed = outlet.code || outlet.name || "x";
   let hash = 0;
   for (let i = 0; i < seed.length; i++) hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
   const idx = Math.abs(hash) % GENERIC_CINEMA_PHOTOS.length;
-  return { url: GENERIC_CINEMA_PHOTOS[idx], emoji: "🎬" };
+  return { url: GENERIC_CINEMA_PHOTOS[idx], fallback: null, emoji: "🎬" };
 }
 
 function fmtDate(yyyymmdd) {
