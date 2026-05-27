@@ -466,7 +466,11 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
   }, [showIdle]);
 
   // ── SCREENSAVER ───────────────────────────────────────────────────
-  if (showScreensaver) return <Screensaver onDismiss={()=>setShowScreensaver(false)}/>;
+  if (showScreensaver) return <Screensaver
+    onDismiss={()=>setShowScreensaver(false)}
+    brandName={isCustomBrand ? tenantBrand.name : null}
+    brandLogo={tenantBrand.logoUrl}
+  />;
 
   // ── IDLE WARNING ──────────────────────────────────────────────────
   if (showIdle) return (
