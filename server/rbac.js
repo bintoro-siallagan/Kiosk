@@ -21,7 +21,13 @@ const ROLE_PRESETS = {
   'cinema-manager':  { 'cinema-*': 'full', 'reports': 'view', '*': 'none' },
   'cinema-spv':      { 'cinema-*': 'update', 'reports': 'view', '*': 'none' },
   'cinema-staff':    { 'cinema-*': 'view', '*': 'none' },
-  'finance-manager': { 'finance': 'full', 'reports': 'full', 'orders': 'view', '*': 'view' },
+  'finance-manager': {
+    'finance': 'full', 'reports': 'full', 'orders': 'view',
+    'promo': 'view',         // cross-dept granular: lihat promo aja
+    'customers': 'none',     // explicit block (override '*')
+    'branding': 'none',
+    '*': 'view',
+  },
   'finance-spv':     { 'finance': 'update', 'reports': 'view', 'orders': 'view', '*': 'none' },
   'finance-staff':   { 'finance': 'view', 'reports': 'view', '*': 'none' },
   'hr-manager':      { 'hr': 'full', 'users': 'full', '*': 'none' },

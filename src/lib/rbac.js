@@ -44,8 +44,20 @@ const ROLE_PRESETS = {
   'cinema-spv':      { 'cinema-*': 'update', 'reports': 'view', '*': 'none' },
   'cinema-staff':    { 'cinema-*': 'view', '*': 'none' },
 
-  // Finance
-  'finance-manager': { 'finance': 'full', 'reports': 'full', 'orders': 'view', '*': 'view' },
+  // Finance — contoh CROSS-DEPT GRANULAR:
+  //   - finance-manager: full di Finance, lihat Reports/Orders,
+  //     boleh lihat Promo (cross-dept utk validasi cost) — TAPI Customers/Branding explicit BLOCKED
+  //   - '*': 'view' artinya fallback bisa lihat modul umum lain (dashboard, dll)
+  //   - Pattern: explicit 'none' di module key OVERRIDE '*' fallback (exact > wildcard > *)
+  'finance-manager': {
+    'finance':   'full',
+    'reports':   'full',
+    'orders':    'view',
+    'promo':     'view',   // ← lintas dept: validasi biaya promo
+    'customers': 'none',   // ← explicit block (sensitif PII, bukan ranah finance)
+    'branding':  'none',   // ← explicit block
+    '*':         'view',   // fallback: dashboard umum, modul tidak sensitif
+  },
   'finance-spv':     { 'finance': 'update', 'reports': 'view', 'orders': 'view', '*': 'none' },  // edit payment OK, delete NO
   'finance-staff':   { 'finance': 'view', 'reports': 'view', '*': 'none' },
 
