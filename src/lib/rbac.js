@@ -52,14 +52,17 @@ const ROLE_PRESETS = {
   // HR
   'hr-manager':      { 'hr': 'full', 'users': 'full', '*': 'none' },
   'hr-spv':          { 'hr': 'update', 'users': 'view', '*': 'none' },
+  'hr-staff':        { 'hr': 'update', '*': 'none' },  // edit OK, delete NO
 
   // Procurement
   'procurement-manager': { 'procurement': 'full', 'stock': 'full', '*': 'view' },
   'procurement-spv':     { 'procurement': 'update', 'stock': 'update', '*': 'none' },
+  'procurement-staff':   { 'procurement': 'update', 'stock': 'view', '*': 'none' },
 
   // Marketing
   'marketing-manager': { 'promo': 'full', 'customers': 'full', 'branding': 'full', '*': 'view' },
   'marketing-spv':     { 'promo': 'update', 'customers': 'view', '*': 'none' },
+  'marketing-staff':   { 'promo': 'update', 'customers': 'view', '*': 'none' },  // edit promo OK, delete NO
 
   // Operational roles
   'kasir':           { 'pos': 'update', 'cinema-pos': 'update', 'orders': 'view', '*': 'none' },
@@ -113,8 +116,14 @@ export const ROLE_LIST = [
   { id: 'finance-spv',        name: 'Finance Supervisor',   icon: '💰', desc: 'Edit payment, view reports' },
   { id: 'finance-staff',      name: 'Finance Staff',        icon: '💰', desc: 'View finance + reports' },
   { id: 'hr-manager',         name: 'HR Manager',           icon: '👥', desc: 'Full HR + User Management' },
+  { id: 'hr-spv',             name: 'HR Supervisor',        icon: '🧭', desc: 'Edit HR, view users' },
+  { id: 'hr-staff',           name: 'HR Staff',             icon: '👤', desc: 'Edit HR (tidak bisa hapus)' },
   { id: 'procurement-manager', name: 'Procurement Manager', icon: '📦', desc: 'Full Procurement + Stock' },
+  { id: 'procurement-spv',    name: 'Procurement Supervisor', icon: '🧭', desc: 'Edit procurement + stock, no delete' },
+  { id: 'procurement-staff',  name: 'Procurement Staff',    icon: '👤', desc: 'Edit procurement (tidak bisa hapus)' },
   { id: 'marketing-manager',  name: 'Marketing Manager',    icon: '📢', desc: 'Full Promo + Customer + Branding' },
+  { id: 'marketing-spv',      name: 'Marketing Supervisor', icon: '🧭', desc: 'Edit promo, view customer' },
+  { id: 'marketing-staff',    name: 'Marketing Staff',      icon: '👤', desc: 'Edit promo (tidak bisa hapus)' },
   { id: 'kasir',              name: 'Kasir / Cashier',      icon: '🧾', desc: 'Hanya POS + Cinema POS' },
   { id: 'kitchen',            name: 'Kitchen Staff',        icon: '👨‍🍳', desc: 'Hanya KDS + view menu' },
   { id: 'warehouse',          name: 'Warehouse Staff',      icon: '📦', desc: 'Hanya Stock + view Procurement' },

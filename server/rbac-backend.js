@@ -42,13 +42,19 @@ const ROLES = [
   { id: 'finance',        name: 'Finance Staff',    cat: 'Finance',     icon: '💰' },
   // ─── HR ───
   { id: 'hr-manager',     name: 'HR Manager',       cat: 'HR',          icon: '👥' },
-  { id: 'hr',             name: 'HR Staff',         cat: 'HR',          icon: '👥' },
+  { id: 'hr-spv',         name: 'HR Supervisor',    cat: 'HR',          icon: '🧭' },
+  { id: 'hr-staff',       name: 'HR Staff',         cat: 'HR',          icon: '👤' },
+  { id: 'hr',             name: 'HR (Legacy)',      cat: 'HR',          icon: '👥' },
   // ─── PROCUREMENT ───
-  { id: 'procurement-manager',name:'Procurement Manager',cat:'Operations',icon:'📦' },
-  { id: 'procurement',    name: 'Procurement',      cat: 'Operations',  icon: '🛒' },
+  { id: 'procurement-manager',name:'Procurement Manager',cat:'Procurement',icon:'📦' },
+  { id: 'procurement-spv',name:'Procurement Supervisor',cat:'Procurement',icon:'🧭' },
+  { id: 'procurement-staff',name:'Procurement Staff',cat:'Procurement', icon:'👤' },
+  { id: 'procurement',    name: 'Procurement (Legacy)',cat:'Procurement',icon:'🛒' },
   // ─── MARKETING ───
   { id: 'marketing-manager',name:'Marketing Manager',cat:'Marketing',   icon:'📢' },
-  { id: 'marketing',      name: 'Marketing Team',   cat: 'Marketing',   icon: '🎯' },
+  { id: 'marketing-spv',  name:'Marketing Supervisor',cat:'Marketing',  icon:'🧭' },
+  { id: 'marketing-staff',name:'Marketing Staff',   cat:'Marketing',    icon:'👤' },
+  { id: 'marketing',      name: 'Marketing (Legacy)',cat:'Marketing',   icon: '🎯' },
   // ─── OPERATIONAL ───
   { id: 'cashier',        name: 'Cashier / Crew',   cat: 'Operations',  icon: '🧑‍💼' },
   { id: 'kasir',          name: 'Kasir',            cat: 'Operations',  icon: '🧾' },
@@ -100,15 +106,21 @@ const DEFAULTS = {
   'finance-manager':     { finance: 'F', procurement: 'A', audit: 'F', command: 'L' },
   'finance-spv':         { finance: 'E', audit: 'L' },  // edit payment OK, delete NO
   'finance':             { finance: 'F', procurement: 'L', audit: 'L' },
-  // HR
+  // HR — manager full, spv approve, staff edit (no delete)
   'hr-manager':          { hr: 'F', reward: 'F', audit: 'L' },
-  'hr':                  { hr: 'F', reward: 'E', audit: 'L' },
-  // Procurement
+  'hr-spv':              { hr: 'A', reward: 'E', audit: 'L' },
+  'hr-staff':            { hr: 'E', reward: 'L' },
+  'hr':                  { hr: 'F', reward: 'E', audit: 'L' },  // legacy
+  // Procurement — manager full, spv approve, staff edit
   'procurement-manager': { procurement: 'F', stock: 'F', finance: 'L' },
-  'procurement':         { procurement: 'E', stock: 'L', finance: 'L' },
-  // Marketing
+  'procurement-spv':     { procurement: 'A', stock: 'E', finance: 'L' },
+  'procurement-staff':   { procurement: 'E', stock: 'L' },
+  'procurement':         { procurement: 'E', stock: 'L', finance: 'L' },  // legacy
+  // Marketing — manager full, spv approve, staff edit (no delete)
   'marketing-manager':   { marketing: 'F', reward: 'F', command: 'L' },
-  'marketing':           { marketing: 'F', reward: 'L', command: 'L' },
+  'marketing-spv':       { marketing: 'A', reward: 'E' },
+  'marketing-staff':     { marketing: 'E', reward: 'L' },
+  'marketing':           { marketing: 'F', reward: 'L', command: 'L' },  // legacy
   // Operational
   'cashier':             { pos: 'E', marketing: 'L', reward: 'L' },
   'kasir':               { pos: 'E', marketing: 'L', reward: 'L' },
