@@ -57,6 +57,7 @@ app.use(cors({
     const allowed = [
       /\.karyaos\.tech$/i,                     // app/admin/api.karyaos.tech + any future subdomain
       /^https?:\/\/karyaos\.tech$/i,           // root
+      /\.karys\.tech$/i,                       // TEMP: kiosk.karys.tech selama transition, hapus setelah cutover
       /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i,  // dev
       /^https?:\/\/(192|10|172)\.\d+\.\d+\.\d+(:\d+)?$/i,  // LAN dev (POS terminal, dll)
     ];
