@@ -2071,7 +2071,7 @@ const DEFAULT_FOOTER_CONFIG = {
   nav: [
     { label: "Home", target: "outlet" },
     { label: "Movies", target: "movies" },
-    { label: "Promotions", target: "promo" },
+    { label: "Promo", target: "promo" },
     { label: "Private Event", target: "studio" },
     { label: "Locations", target: "locations" },
     { label: "About", target: "about" },
@@ -2310,7 +2310,7 @@ const footerLinkStyle = {
 const NAV_ITEMS = [
   { key: "outlet",    label: "Home" },
   { key: "movies",    label: "Movies" },
-  { key: "promo",     label: "Promotions" },
+  { key: "promo",     label: "Promo" },
   { key: "studio",    label: "Private Event" },
   { key: "locations", label: "Locations" },
   { key: "about",     label: "About" },
