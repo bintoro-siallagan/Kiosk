@@ -2,7 +2,13 @@
 // RBAC — permission matrix 15 role × 12 modul. Klik cell buat ganti level.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit, EmptyState } from "../components/uiKit.jsx";
+
+const EmptyRow = ({ cols, icon, title, desc }) => (
+  <tr><td colSpan={cols} style={{ padding: 0, background: 'transparent' }}>
+    <EmptyState icon={icon} title={title} desc={desc} />
+  </td></tr>
+);
 
 const LEVELS = ["none", "view", "edit", "approve", "full"];
 const LV_C = { none: "#161b22", view: "#3b82f6", edit: "#10b981", approve: "#f59e0b", full: "#a855f7" };
@@ -168,6 +174,7 @@ export default function AdminRBAC({ apiBase = "" }) {
             </tr>
           </thead>
           <tbody>
+            {d.roles.length === 0 && <EmptyRow cols={(d.modules?.length || 0) + 1} icon="🔐" title="Belum ada role" desc="Role default belum di-seed. Hubungi platform admin atau apply RBAC template." />}
             {d.roles.map(r => (
               <tr key={r.id} style={r.custom ? { background: "rgba(168,85,247,0.04)" } : {}}>
                 <td style={S.roleTd}>

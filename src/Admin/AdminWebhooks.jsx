@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import API_HOST from "../apiBase.js";
+import { EmptyState } from "../components/uiKit.jsx";
 
 const EVENT_CATALOG = [
   { group: "Orders", items: ["order.created", "order.paid", "order.cancelled"] },
@@ -117,7 +118,7 @@ export default function AdminWebhooks() {
       {tab === "hooks" && (
         <section>
           {hooks.length === 0 ? (
-            <div style={S.empty}>Belum ada webhook. Klik "+ Tambah webhook" untuk mulai.</div>
+            <EmptyState icon="🔔" title="Belum ada webhook" desc="Klik '+ Tambah webhook' untuk subscribe ke event (order.created, payment.paid, dll.) dan kirim ke endpoint Anda." />
           ) : (
             <div style={{ display: "grid", gap: 12 }}>
               {hooks.map(h => (
@@ -152,7 +153,7 @@ export default function AdminWebhooks() {
       {tab === "deliveries" && (
         <section>
           {deliveries.length === 0 ? (
-            <div style={S.empty}>Belum ada delivery.</div>
+            <EmptyState icon="📡" title="Belum ada delivery" desc="History pengiriman webhook akan muncul setelah ada event yang ter-trigger." />
           ) : (
             <div style={S.table}>
               <div style={{ ...S.row, ...S.rowHead }}>

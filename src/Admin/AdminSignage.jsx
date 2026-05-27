@@ -2,7 +2,7 @@
 // Digital Signage CMS — layar & konten media.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit , LoadingState} from "../components/uiKit.jsx";
+import { useUiKit , LoadingState, EmptyState } from "../components/uiKit.jsx";
 
 const AC = "#9333ea";
 const MEDIA_STATUSES = ["active", "scheduled", "inactive"];
@@ -74,6 +74,9 @@ export default function AdminSignage({ apiBase = "" }) {
       {/* Screens */}
       <div style={{ ...S.card, marginTop: 14 }}>
         <div style={S.kicker}>🖥️ LAYAR — {d.screens.length} · klik buat toggle online</div>
+        {d.screens.length === 0 ? (
+          <EmptyState icon="📺" title="Belum ada layar terdaftar" desc="Register device dengan buka /?signage&device=CODE di tablet/TV signage untuk muncul di sini." />
+        ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(240px,1fr))", gap: 10, marginTop: 10 }}>
           {d.screens.map(sc => {
             const on = sc.status === "online";
@@ -95,6 +98,7 @@ export default function AdminSignage({ apiBase = "" }) {
             );
           })}
         </div>
+        )}
       </div>
 
       {/* Media */}
@@ -111,6 +115,7 @@ export default function AdminSignage({ apiBase = "" }) {
           </select>
           <button onClick={addMedia} style={S.btn}>+ Media</button>
         </div>
+        {d.media.length === 0 && <EmptyState icon="🎞️" title="Belum ada media" desc="Klik '+ Media' untuk upload gambar/video/poster ke playlist signage." />}
         {d.media.map(m => (
           <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 11, padding: "8px 0", borderTop: "1px solid #161b22", fontSize: 12 }}>
             <span style={{ fontSize: 16 }}>{TYPE_ICON[m.media_type] || "📄"}</span>

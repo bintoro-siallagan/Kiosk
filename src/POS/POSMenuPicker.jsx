@@ -12,6 +12,7 @@
 //   apiBase (default '/api/master')
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import API_HOST from "../apiBase.js";
+import { EmptyState } from "../components/uiKit.jsx";
 
 const fmtIDR = (n) => new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', maximumFractionDigits:0}).format(Math.round(n||0));
 
@@ -137,6 +138,11 @@ export default function POSMenuPicker({ onCheckout, onExit, apiBase = '/api/mast
         </div>
 
         <div style={styles.grid}>
+          {visiblePackages.length === 0 && visibleMenus.length === 0 && (
+            <div style={{ gridColumn: "1/-1" }}>
+              <EmptyState icon="🍽️" title="Menu kosong" desc={activeCat === 'all' ? "Belum ada menu di-setup. Tambah dari Admin → Master Item." : "Tidak ada menu di kategori ini. Pilih kategori lain di atas."} />
+            </div>
+          )}
           {visiblePackages.map(p => (
             <PackageCard key={p.id} pkg={p} onClick={()=>setPicking({pkg:p, isPackage:true})} />
           ))}
