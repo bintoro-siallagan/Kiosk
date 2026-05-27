@@ -25,31 +25,35 @@ const S = {
   totalAmount: { fontSize: 56, fontWeight: 700, color: '#fff', marginBottom: 32, fontVariantNumeric: 'tabular-nums', letterSpacing: '-2px', textShadow: '0 4px 24px rgba(0,0,0,0.45)' },
   methodGrid: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 16,
+    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+    gap: 14,
     width: '100%',
     maxWidth: 640,
+    boxSizing: 'border-box',
+    padding: '0 8px',
   },
-  // Liquid-glass method card
+  // Liquid-glass method card — auto-fits column, comfortable padding, no overlap
   methodCard: {
     background: 'linear-gradient(180deg,rgba(255,255,255,0.05) 0%,rgba(255,255,255,0.02) 60%,rgba(255,255,255,0.008) 100%)',
     backdropFilter: 'blur(28px) saturate(180%)',
     WebkitBackdropFilter: 'blur(28px) saturate(180%)',
     border: '1px solid rgba(255,255,255,0.07)',
     borderRadius: 22,
-    padding: '52px 36px',
+    padding: '36px 20px 30px',
     cursor: 'pointer',
     transition: 'background .2s cubic-bezier(.2,.8,.2,1), border-color .2s ease, transform .2s ease, box-shadow .2s ease',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     userSelect: 'none',
     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 8px 24px rgba(0,0,0,0.28)',
+    minHeight: 200,
+    boxSizing: 'border-box',
   },
-  methodIcon: { fontSize: 64, filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.35))' },
-  methodLabel: { fontSize: 20, fontWeight: 600, letterSpacing: '-0.4px', color: 'rgba(255,255,255,0.95)' },
-  methodSub: { fontSize: 13, color: 'rgba(255,255,255,0.5)', letterSpacing: '-0.1px' },
+  methodIcon: { fontSize: 56, lineHeight: 1, filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.35))' },
+  methodLabel: { fontSize: 19, fontWeight: 600, letterSpacing: '-0.4px', color: 'rgba(255,255,255,0.95)', textAlign: 'center' },
+  methodSub: { fontSize: 12, color: 'rgba(255,255,255,0.5)', letterSpacing: '-0.1px', textAlign: 'center', lineHeight: 1.4 },
   backBtn: {
     marginTop: 32,
     background: 'rgba(255,255,255,0.04)',
@@ -215,22 +219,22 @@ export default function Payment({ cart, orderType, promo, tableData, customerDat
           {enabledMethods?.cash && (
             <div style={S.methodCard} onClick={() => setMethod('cash')} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>
               <div style={S.methodIcon}>💵</div>
-              <div style={S.methodLabel}>TUNAI</div>
-              <div style={S.methodSub}>Bayar di kasir</div>
+              <div style={S.methodLabel}>Cash</div>
+              <div style={S.methodSub}>Pay at the counter</div>
             </div>
           )}
 
           {enabledMethods?.qris && (
             <div style={S.methodCard} onClick={() => setMethod('qris')} onMouseEnter={hoverIn} onMouseLeave={hoverOut}>
               <div style={S.methodIcon}>📱</div>
-              <div style={S.methodLabel}>QRIS / GoPay</div>
-              <div style={S.methodSub}>Scan & bayar{qrisFee > 0 ? ` · +${convFee.label} Rp ${qrisFee.toLocaleString('id-ID')}` : ''}</div>
+              <div style={S.methodLabel}>QRIS</div>
+              <div style={S.methodSub}>{qrisFee > 0 ? `Scan & pay · +Rp ${qrisFee.toLocaleString('id-ID')}` : 'Scan & pay'}</div>
             </div>
           )}
 
           {enabledMethods && !enabledMethods.cash && !enabledMethods.qris && (
-            <div style={{textAlign:"center",color:"#F87171",padding:24,gridColumn:"1/-1",fontSize:14}}>
-              ⚠️ Tidak ada metode pembayaran tersedia.<br/>Hubungi staff.
+            <div style={{textAlign:"center",color:"#FCA5A5",padding:24,gridColumn:"1/-1",fontSize:14}}>
+              ⚠️ No payment methods available. Please contact staff.
             </div>
           )}
         </div>
