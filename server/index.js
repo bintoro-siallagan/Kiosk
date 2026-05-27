@@ -2284,9 +2284,35 @@ app.post("/api/customers/send-wa", async (req, res) => {
   const { phone, orderId, customerName } = req.body;
   if (!phone || !orderId) return res.status(400).json({ error: "phone and orderId required" });
 
-  const trackUrl = `${WA_TRACKING_BASE}/track?order=${orderId}`;
-  const message  = encodeURIComponent(
-    `Halo ${customerName||"Kak"}! 👋\n\nTerima kasih sudah memesan di *KaryaOS* 🍽️\n\nPesanan *#${orderId}* Anda sedang kami proses.\n\nCek status pesanan real-time di sini:\n👉 ${trackUrl}\n\nEstimasi siap: *12–18 menit*\n\nTerima kasih! 🙏`
+  // Auto-resolve base URL — fallback chain:
+  // 1. WA_TRACKING_BASE env var (manual override)
+  // 2. TRACKING_BASE_URL env var
+  // 3. Auto-detect dari request (production HTTPS) — TIDAK lagi hardcode localhost
+  let trackingBase = process.env.WA_TRACKING_BASE || process.env.TRACKING_BASE_URL;
+  if (!trackingBase) {
+    const proto = (req.headers["x-forwarded-proto"] || "https").split(",")[0].trim();
+    const host = (req.headers["x-forwarded-host"] || req.headers.host || "kiosk.karys.tech").split(",")[0].trim();
+    trackingBase = `${proto}://${host}`;
+  }
+  const trackUrl = `${trackingBase}/track?order=${orderId}`;
+
+  // Sanitize name — kalau "x", placeholder, single char, atau cuma simbol → "Kak"
+  const cleanName = (customerName || "").trim();
+  const safeName = (cleanName.length >= 2 && !/^[xX_\-\.]+$/.test(cleanName) && cleanName.toLowerCase() !== "anonymous")
+    ? cleanName : "Kak";
+
+  // Resolve brand name from companies table for the current scope (or default)
+  let brandName = "KaryaOS";
+  try {
+    const cid = parseInt(req.headers["x-company-id"], 10);
+    if (cid) {
+      const c = db.rawDb.prepare(`SELECT name, brand_short FROM companies WHERE id = ?`).get(cid);
+      if (c) brandName = c.brand_short || c.name || brandName;
+    }
+  } catch {}
+
+  const message = encodeURIComponent(
+    `Halo ${safeName}! 👋\n\nTerima kasih sudah memesan di *${brandName}* 🍽️\n\nPesanan *#${orderId}* Anda sedang kami proses.\n\nCek status pesanan real-time di sini:\n👉 ${trackUrl}\n\nEstimasi siap: *12–18 menit*\n\nTerima kasih! 🙏`
   );
 
   // WhatsApp API (wa.me deep link — works without Business API)
@@ -2294,7 +2320,7 @@ app.post("/api/customers/send-wa", async (req, res) => {
   const waPhone    = cleanPhone.startsWith("0") ? "62" + cleanPhone.slice(1) : cleanPhone;
   const waUrl      = `https://wa.me/${waPhone}?text=${message}`;
 
-  console.log(`📱 WA link generated for ${waPhone} — Order #${orderId}`);
+  console.log(`📱 WA link generated for ${waPhone} — Order #${orderId} (brand: ${brandName}, name: ${safeName}, track: ${trackingBase})`);
   res.json({ ok: true, waUrl, trackUrl });
 });
 
