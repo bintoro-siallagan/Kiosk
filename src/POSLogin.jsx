@@ -22,8 +22,17 @@ export default function POSLogin({ onLogin }) {
       .then(r => r.json()).then(b => {
         if (b?.brand_color) {
           setBrand({ name: b.name, code: b.company_code });
-          document.documentElement.style.setProperty("--brand-primary", b.brand_color);
-          document.documentElement.style.setProperty("--brand-secondary", b.brand_secondary || b.brand_color);
+          const root = document.documentElement;
+          root.style.setProperty("--brand-primary", b.brand_color);
+          root.style.setProperty("--brand-secondary", b.brand_secondary || b.brand_color);
+          // Contrast-aware text color (white on dark brand, dark on light brand)
+          try {
+            const hex = String(b.brand_color || "#FF6B35").replace("#", "");
+            const rgb = hex.length === 3 ? hex.split("").map(c => parseInt(c + c, 16)) : hex.match(/.{2}/g).map(h => parseInt(h, 16));
+            const [R, G, B] = rgb.map(c => { const v = c / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+            const lum = 0.2126 * R + 0.7152 * G + 0.0722 * B;
+            root.style.setProperty("--brand-text", lum > 0.55 ? "#0a0e16" : "#ffffff");
+          } catch { root.style.setProperty("--brand-text", "#ffffff"); }
         }
       }).catch(() => {});
   }, []);

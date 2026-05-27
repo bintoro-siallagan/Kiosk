@@ -990,7 +990,8 @@ const S = {
   },
   promoApply: {
     background: `linear-gradient(180deg, ${BRAND}, ${BRAND_SEC})`,
-    color: "#fff", border: "1px solid rgba(255,255,255,0.16)", borderRadius: 12,
+    color: "var(--brand-text,#fff)", textShadow: "0 1px 2px rgba(0,0,0,0.22)",
+    border: "1px solid rgba(255,255,255,0.16)", borderRadius: 12,
     padding: "0 18px", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: FONT, letterSpacing: "-0.1px",
     boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 12px color-mix(in srgb, ${BRAND} 28%, transparent)`
   },
@@ -1091,7 +1092,8 @@ const S = {
 
   confirmBtn: {
     background: `linear-gradient(180deg, ${BRAND}, ${BRAND_SEC})`,
-    color: "#fff", border: "1px solid rgba(255,255,255,0.16)", borderRadius: 16,
+    color: "var(--brand-text,#fff)", textShadow: "0 1px 2px rgba(0,0,0,0.22)",
+    border: "1px solid rgba(255,255,255,0.16)", borderRadius: 16,
     padding: "16px 20px", fontFamily: FONT, fontSize: 15, fontWeight: 600,
     letterSpacing: "-0.2px", cursor: "pointer",
     boxShadow: `inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 24px color-mix(in srgb, ${BRAND} 28%, transparent), 0 24px 60px color-mix(in srgb, ${BRAND} 18%, transparent)`,

@@ -247,11 +247,27 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
       if (b?.brand_color) setTenantBrand({ primary: b.brand_color, secondary: b.brand_secondary || b.brand_color, name: b.name, code: b.company_code });
     }).catch(() => {});
   }, []);
-  // Inject CSS variables so existing #FF6B35 references auto-themed via root override
+  // Inject CSS variables so existing #FF6B35 references auto-themed via root override.
+  // Also compute a contrast-aware text color so .lg-brand buttons stay readable
+  // on any brand color (white on lime would be invisible — flip to dark).
   useEffect(() => {
     const r = document.documentElement;
     r.style.setProperty("--brand-primary", tenantBrand.primary);
     r.style.setProperty("--brand-secondary", tenantBrand.secondary);
+    try {
+      const hex = (tenantBrand.primary || "#FF6B35").replace("#", "");
+      const rgb = hex.length === 3
+        ? hex.split("").map(c => parseInt(c + c, 16))
+        : hex.match(/.{2}/g).map(h => parseInt(h, 16));
+      const [R, G, B] = rgb.map(c => {
+        const v = c / 255;
+        return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+      });
+      const lum = 0.2126 * R + 0.7152 * G + 0.0722 * B;
+      r.style.setProperty("--brand-text", lum > 0.55 ? "#0a0e16" : "#ffffff");
+    } catch {
+      r.style.setProperty("--brand-text", "#ffffff");
+    }
   }, [tenantBrand]);
   // "Platform default" tenant — these are the bootstrap/seed companies, treat as karyaos surface (not a customer brand).
   // BTS = Karya Bites (bootstrap F&B tenant), CMX = Cinema Express (bootstrap cinema tenant).
@@ -942,8 +958,9 @@ const KIOSK_CSS = `
   .lg::after{content:"";position:absolute;top:0;left:0;right:0;height:55%;border-radius:inherit;background:radial-gradient(ellipse 75% 90% at 30% 0%,rgba(255,255,255,0.18) 0%,rgba(255,255,255,0.04) 45%,transparent 80%);pointer-events:none;z-index:1;mix-blend-mode:screen;opacity:.85}
   /* Variant: orb (circular) — tighter sheen */
   .lg-orb::after{height:60%;background:radial-gradient(ellipse 70% 60% at 30% 18%,rgba(255,255,255,0.32) 0%,rgba(255,255,255,0.06) 50%,transparent 80%)}
-  /* Variant: brand-tinted pill (CTA) */
-  .lg-brand{background:linear-gradient(180deg,var(--brand-primary,#FF6B35) 0%,var(--brand-secondary,#E55A2B) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,0.35),inset 0 -1px 0 rgba(0,0,0,0.22),inset 0 12px 28px rgba(255,255,255,0.12),inset 0 -16px 28px rgba(0,0,0,0.18),0 10px 28px rgba(0,0,0,0.28),0 24px 60px color-mix(in srgb,var(--brand-primary,#FF6B35) 28%,transparent)}
+  /* Variant: brand-tinted pill (CTA). Text uses --brand-text (contrast-computed) with shadow fallback */
+  .lg-brand{color:var(--brand-text,#fff)!important;text-shadow:0 1px 2px rgba(0,0,0,0.25);background:linear-gradient(180deg,var(--brand-primary,#FF6B35) 0%,var(--brand-secondary,#E55A2B) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,0.35),inset 0 -1px 0 rgba(0,0,0,0.22),inset 0 12px 28px rgba(255,255,255,0.12),inset 0 -16px 28px rgba(0,0,0,0.18),0 10px 28px rgba(0,0,0,0.28),0 24px 60px color-mix(in srgb,var(--brand-primary,#FF6B35) 28%,transparent)}
+  .lg-brand *{color:inherit}
   .lg-brand::before{background:linear-gradient(180deg,rgba(255,255,255,0.65) 0%,rgba(255,255,255,0.18) 35%,rgba(0,0,0,0.06) 60%,rgba(255,255,255,0.18) 100%)}
   /* Content must sit above sheen/border layers */
   .lg > *{position:relative;z-index:3}
