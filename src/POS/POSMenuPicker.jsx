@@ -565,10 +565,11 @@ const styles = {
   },
   summary: { display: "flex", gap: 8, alignItems: "center", flex: 1, marginLeft: 14, color: "rgba(255,255,255,0.65)", fontSize: 12.5 },
   modeChip: {
-    background: "linear-gradient(135deg, rgba(245,158,11,0.18), rgba(251,191,36,0.08))",
-    border: "1px solid rgba(245,158,11,0.4)",
-    color: "#fbbf24", padding: "4px 10px", borderRadius: 7,
-    fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+    background: "color-mix(in srgb, var(--brand-primary,#FF6B35) 14%, rgba(255,255,255,0.02))",
+    border: "1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 35%, transparent)",
+    color: "#fff", padding: "5px 12px", borderRadius: 999,
+    fontSize: 11, fontWeight: 500, letterSpacing: "-0.1px",
+    textShadow: "0 1px 2px rgba(0,0,0,0.35)",
   },
   dot: { color: "#3a3b40", fontSize: 11 },
   muted: { color: "rgba(255,255,255,0.4)", fontSize: 12, fontStyle: "italic" },
@@ -610,25 +611,27 @@ const styles = {
   cats: { display:'flex', gap:6, marginBottom:14, overflowX:'auto', paddingBottom:4 },
   grid: { display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(170px, 1fr))', gap:12, overflow:'auto', flex:1, padding:2 },
   card: {
-    background:'linear-gradient(180deg,#15171c 0%,#0d0f14 100%)',
-    border:'1px solid rgba(255,255,255,0.08)',
-    borderRadius:14, padding:0, textAlign:'left',
-    cursor:'pointer', position:'relative', display:'flex', flexDirection:'column',
-    color:'#fff', overflow: 'hidden',
-    boxShadow:'0 1px 2px rgba(0,0,0,0.3),0 4px 16px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.04)',
-    transition:'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+    background: 'linear-gradient(180deg,rgba(255,255,255,0.05) 0%,rgba(255,255,255,0.02) 60%,rgba(255,255,255,0.008) 100%)',
+    backdropFilter: 'blur(20px) saturate(180%)',
+    WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+    border: '1px solid rgba(255,255,255,0.07)',
+    borderRadius: 16, padding: 0, textAlign: 'left',
+    cursor: 'pointer', position: 'relative', display: 'flex', flexDirection: 'column',
+    color: '#fff', overflow: 'hidden',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 0 rgba(0,0,0,0.18), 0 4px 14px rgba(0,0,0,0.22), 0 12px 32px rgba(0,0,0,0.18)',
+    transition: 'transform 0.25s cubic-bezier(.2,.8,.2,1), box-shadow 0.25s ease',
     fontFamily: 'inherit',
   },
-  // Visual image-placeholder area at top — emoji centered, gradient bg
+  // Visual image area — soft brand glow backdrop
   cardImg: {
     width: '100%', height: 110,
-    background: 'linear-gradient(180deg, rgba(255,107,53,0.08) 0%, rgba(255,255,255,0.02) 100%)',
+    background: 'radial-gradient(ellipse 80% 60% at 50% 30%, color-mix(in srgb, var(--brand-primary,#FF6B35) 14%, transparent), transparent 70%)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     position: 'relative',
     borderBottom: '1px solid rgba(255,255,255,0.04)',
   },
-  cardTitle: { fontSize:13.5, fontWeight:700, color:'#fff', letterSpacing:'-0.2px', padding: '10px 12px 4px', lineHeight: 1.3, minHeight: 38 },
-  cardPrice: { fontSize:15, fontWeight:800, color:'#F59E0B', fontFamily:"'Geist Mono',monospace", letterSpacing:'-0.3px', padding: '0 12px 12px' },
+  cardTitle: { fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.95)', letterSpacing: '-0.3px', padding: '10px 12px 4px', lineHeight: 1.3, minHeight: 38, fontFamily: "'Inter',sans-serif" },
+  cardPrice: { fontSize: 14, fontWeight: 600, color: '#fff', fontFamily: "'Inter',sans-serif", letterSpacing: '-0.2px', padding: '0 12px 12px', fontVariantNumeric: 'tabular-nums' },
   cardBadge: {
     position:'absolute', bottom:6, right:6, fontSize:9, fontWeight:700,
     background:'rgba(13,17,23,0.85)', color:'#60a5fa',
@@ -735,12 +738,20 @@ const styles = {
   },
 };
 const catBtn = (active) => ({
-  padding:'8px 14px', borderRadius:20,
-  border: active ? '1px solid rgba(245,158,11,0.4)' : '1px solid rgba(255,255,255,0.08)',
-  background: active ? 'rgba(245,158,11,0.12)' : 'rgba(255,255,255,0.025)',
-  color: active ? '#fbbf24' : 'rgba(255,255,255,0.55)',
-  fontWeight: active ? 700 : 500, cursor:'pointer', whiteSpace:'nowrap',
-  fontSize:12.5, fontFamily:'inherit',
-  boxShadow: active ? '0 0 16px rgba(245,158,11,0.15)' : 'none',
-  transition:'all 0.15s',
+  padding: '8px 16px', borderRadius: 999,
+  border: active
+    ? '1px solid rgba(255,255,255,0.16)'
+    : '1px solid rgba(255,255,255,0.06)',
+  background: active
+    ? 'radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, var(--brand-primary,#FF6B35) 55%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 38%, #1a1d29), color-mix(in srgb, var(--brand-secondary,#E55A2B) 30%, #0d0f14))'
+    : 'rgba(255,255,255,0.025)',
+  color: '#fff',
+  textShadow: active ? '0 1px 2px rgba(0,0,0,0.4)' : 'none',
+  fontWeight: active ? 600 : 500,
+  cursor: 'pointer', whiteSpace: 'nowrap',
+  fontSize: 12.5, fontFamily: "'Inter',sans-serif", letterSpacing: '-0.1px',
+  boxShadow: active
+    ? 'inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 12px color-mix(in srgb, var(--brand-primary,#FF6B35) 22%, transparent)'
+    : 'none',
+  transition: 'all 0.2s cubic-bezier(.2,.8,.2,1)',
 });
