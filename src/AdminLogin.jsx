@@ -62,7 +62,7 @@ export default function AdminLogin({ onLogin }) {
           company_id: res.user.company_id ?? null,
           is_super_admin: !!res.user.is_super_admin,
           company: res.company || null,
-          user: { id: res.user.id, name: res.user.name, role: res.user.role },
+          user: { id: res.user.id, name: res.user.name, role: res.user.role, vertical: res.user.vertical || null },
         });
       } catch {}
       // Force Change Password modal DISABLED — user bisa ganti via User Management.
@@ -242,7 +242,7 @@ function TwoFAPrompt({ session, onCancel, onSuccess }) {
           company_id: res.user.company_id ?? null,
           is_super_admin: !!res.user.is_super_admin,
           company: res.company || null,
-          user: { id: res.user.id, name: res.user.name, role: res.user.role },
+          user: { id: res.user.id, name: res.user.name, role: res.user.role, vertical: res.user.vertical || null },
         });
       } catch {}
       onSuccess({ token: res.token, name: res.user.name, role: res.user.role, company: res.company });

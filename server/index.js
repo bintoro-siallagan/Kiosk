@@ -3402,7 +3402,8 @@ app.post("/api/auth/login-password", (req, res) => {
     force_pin_change: isWeakPin(user.pin),  // SECURITY: force ganti kalau PIN weak
     user: { id: user.id, name: user.name, username: user.username, email: user.email, role: user.role,
             must_change_password: !!user.must_change_password, last_login_at: user.last_login_at,
-            company_id: user.company_id ?? null, is_super_admin: user.company_id == null },
+            company_id: user.company_id ?? null, is_super_admin: user.company_id == null,
+            vertical: user.vertical || null },
     company: companyInfo,  // {id, code, name, primary_vertical, brand_color} atau null untuk super-admin
     expiresAt,
   });
@@ -3534,7 +3535,8 @@ app.post("/api/auth/login", (req, res) => {
     must_change_password: !!user.must_change_password,
     force_pin_change: isWeakPin(user.pin),  // SECURITY: force ganti kalau PIN weak
     user: { id: user.id, name: user.name, role: user.role,
-            company_id: user.company_id ?? null, is_super_admin: user.company_id == null },
+            company_id: user.company_id ?? null, is_super_admin: user.company_id == null,
+            vertical: user.vertical || null },
     company: companyInfo,
   });
 });
@@ -3606,7 +3608,7 @@ app.patch("/api/auth/users/:id", (req, res) => {
   if (!isSuperAdmin && adminUsers[idx].company_id !== companyId) {
     return res.status(403).json({ error: "Tidak punya akses user ini" });
   }
-  const { name, pin, role, active } = req.body;
+  const { name, pin, role, active, vertical } = req.body;
   // Guard: tenant gak boleh ubah ke super-admin
   if (!isSuperAdmin && (role === "super-admin" || role === "superadmin")) {
     return res.status(403).json({ error: "Tidak boleh assign role super-admin" });
@@ -3623,6 +3625,16 @@ app.patch("/api/auth/users/:id", (req, res) => {
   }
   if (role) adminUsers[idx].role = role;
   if (active !== undefined) adminUsers[idx].active = Boolean(active);
+  // Vertical filter — fnb|cinema|hybrid|null
+  if (vertical !== undefined) {
+    if (vertical === null || vertical === "") {
+      adminUsers[idx].vertical = null;  // inherit company
+    } else if (['fnb', 'cinema', 'hybrid'].includes(vertical)) {
+      adminUsers[idx].vertical = vertical;
+    } else {
+      return res.status(400).json({ error: "Vertical harus salah satu: fnb, cinema, hybrid, atau kosong (inherit company)" });
+    }
+  }
   db.insertAdminUser(adminUsers[idx]); // persist
   res.json({ ...adminUsers[idx], pin: "••••••" });
 });

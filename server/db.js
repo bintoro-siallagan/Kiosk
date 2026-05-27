@@ -137,6 +137,8 @@ try { db.exec("ALTER TABLE admin_users ADD COLUMN failed_login_count INTEGER DEF
 try { db.exec("ALTER TABLE admin_users ADD COLUMN locked_until INTEGER"); } catch {}
 // Multi-tenant: company_id (NULL = karys super-admin akses semua company / global)
 try { db.exec("ALTER TABLE admin_users ADD COLUMN company_id INTEGER"); } catch {}
+// P6 — Per-user vertical filter (fnb|cinema|hybrid|null=inherit company)
+try { db.exec("ALTER TABLE admin_users ADD COLUMN vertical TEXT"); } catch {}
 try { db.exec("ALTER TABLE orders ADD COLUMN company_id INTEGER"); } catch {}
 try { db.exec("CREATE INDEX IF NOT EXISTS idx_orders_company ON orders(company_id)"); } catch {}
 try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users(username) WHERE username IS NOT NULL"); } catch {}
@@ -499,11 +501,11 @@ const adminUserStmts = {
     (id, name, pin, role, active, created_at,
      username, email, password_hash, password_salt, password_changed_at,
      must_change_password, last_login_at, last_login_ip,
-     failed_login_count, locked_until, company_id)
+     failed_login_count, locked_until, company_id, vertical)
     VALUES (@id, @name, @pin, @role, @active, @created_at,
      @username, @email, @password_hash, @password_salt, @password_changed_at,
      @must_change_password, @last_login_at, @last_login_ip,
-     @failed_login_count, @locked_until, @company_id)`),
+     @failed_login_count, @locked_until, @company_id, @vertical)`),
   selectAll: db.prepare(`SELECT * FROM admin_users ORDER BY id`),
   delete:    db.prepare(`DELETE FROM admin_users WHERE id = ?`),
 };
@@ -514,6 +516,9 @@ const adminUserToRow = u => {
   let companyId = u.company_id ?? null;
   const isSuperAdminRole = (u.role && /super/i.test(u.role)) || (u.username && u.username.toLowerCase() === 'admin');
   if (isSuperAdminRole) companyId = null;
+  // Vertical: validate enum, null = inherit company
+  let vertical = u.vertical || null;
+  if (vertical && !['fnb', 'cinema', 'hybrid'].includes(vertical)) vertical = null;
   return {
     id: u.id, name: u.name, pin: u.pin, role: u.role || 'kasir',
     active: u.active === false ? 0 : 1, created_at: u.createdAt ?? Date.now(),
@@ -525,6 +530,7 @@ const adminUserToRow = u => {
     failed_login_count: u.failed_login_count || 0,
     locked_until: u.locked_until || null,
     company_id: companyId,
+    vertical,
   };
 };
 const rowToAdminUser = r => ({
@@ -539,6 +545,7 @@ const rowToAdminUser = r => ({
   locked_until: r.locked_until,
   // Multi-tenant: company_id (NULL = karys super-admin)
   company_id: r.company_id ?? null,
+  vertical: r.vertical || null,
 });
 function loadAllAdminUsers() { return adminUserStmts.selectAll.all().map(rowToAdminUser); }
 function insertAdminUser(u)  { adminUserStmts.insert.run(adminUserToRow(u)); }

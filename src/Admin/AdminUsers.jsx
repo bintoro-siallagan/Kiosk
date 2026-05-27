@@ -17,6 +17,7 @@ export default function AdminUsers({ apiBase = "" }) {
   const [filter, setFilter] = useState("all"); // all | locked | inactive
   const [info, setInfo] = useState("");
   const [creating, setCreating] = useState(false); // open modal create user
+  const [editVerticalUser, setEditVerticalUser] = useState(null); // P6: open vertical edit modal
   const [customRoles, setCustomRoles] = useState([]); // custom roles dari RBAC (selain 15 default)
 
   const load = useCallback(() => {
@@ -172,7 +173,11 @@ export default function AdminUsers({ apiBase = "" }) {
                 <span style={chip(GREEN)}>Active</span>
               )}
             </div>
-            <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: 6, justifyContent: "flex-end", flexWrap: "wrap", alignItems: "center" }}>
+              {/* P6: Vertical badge + edit */}
+              <button onClick={() => setEditVerticalUser(u)} title="Set vertical access" style={verticalBadge(u.vertical)}>
+                {u.vertical === "fnb" ? "🍔 FNB" : u.vertical === "cinema" ? "🎬 Cinema" : u.vertical === "hybrid" ? "🌐 Hybrid" : "⤵ Inherit"}
+              </button>
               {u.is_locked && (
                 <button onClick={() => unlockOne(u)} disabled={busy} style={{...actionBtn, background: RED, color: "#fff", borderColor: RED}}>🔓 Unlock</button>
               )}
@@ -199,6 +204,84 @@ export default function AdminUsers({ apiBase = "" }) {
           onCreated={(msg) => { setCreating(false); setInfo(msg); load(); }}
         />
       )}
+
+      {editVerticalUser && (
+        <EditVerticalModal
+          user={editVerticalUser}
+          API={API} token={token}
+          onClose={() => setEditVerticalUser(null)}
+          onSaved={(msg) => { setEditVerticalUser(null); setInfo(msg); load(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// P6: Quick modal to set/clear vertical access for a user
+function EditVerticalModal({ user, API, token, onClose, onSaved }) {
+  const [vertical, setVertical] = useState(user.vertical || "");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const save = async () => {
+    setBusy(true); setErr("");
+    try {
+      const r = await fetch(`${API}/api/auth/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Authorization: token ? `Bearer ${token}` : undefined },
+        body: JSON.stringify({ vertical: vertical || null }),
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j?.error || "Gagal");
+      const label = vertical === "fnb" ? "F&B only" : vertical === "cinema" ? "Cinema only" : vertical === "hybrid" ? "Hybrid (F&B + Cinema)" : "Inherit company";
+      onSaved(`✓ ${user.name} → ${label}`);
+    } catch (e) { setErr(e.message); }
+    setBusy(false);
+  };
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20, backdropFilter: "blur(6px)" }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "min(440px, 100%)", background: "rgba(10,15,28,0.96)", border: `1px solid ${PURPLE}55`, borderRadius: 16, padding: 24 }}>
+        <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>VERTICAL ACCESS</div>
+        <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", marginTop: 6, marginBottom: 4 }}>🎚 Set Vertical: {user.name}</div>
+        <div style={{ fontSize: 11.5, color: "#94a3b8", marginBottom: 18, lineHeight: 1.6 }}>
+          Pilih modul yg bisa diakses user ini. Filter ini control menu sidebar di admin dashboard.
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 16 }}>
+          {[
+            { v: "",       l: "⤵ Inherit dari company",       d: "Ikut setting vertical company (default)" },
+            { v: "fnb",    l: "🍔 F&B Only",                   d: "User cuma lihat menu F&B (POS, KDS, Stock F&B, dll)" },
+            { v: "cinema", l: "🎬 Cinema Only",                d: "User cuma lihat menu Cinema (Ops, Tickets, Studio, dll)" },
+            { v: "hybrid", l: "🌐 Hybrid — F&B + Cinema",      d: "User lihat semua modul (untuk multi-vertical company)" },
+          ].map(opt => {
+            const active = vertical === opt.v;
+            return (
+              <label key={opt.v || "inherit"} style={{
+                display: "flex", alignItems: "flex-start", gap: 10, padding: 12,
+                background: active ? "rgba(168,85,247,0.08)" : "rgba(255,255,255,0.02)",
+                border: `1px solid ${active ? PURPLE : "rgba(255,255,255,0.06)"}`,
+                borderRadius: 10, cursor: "pointer",
+              }}>
+                <input type="radio" name="vertical" checked={active} onChange={() => setVertical(opt.v)} style={{ marginTop: 3, cursor: "pointer" }} />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: active ? PURPLE : "#fff" }}>{opt.l}</div>
+                  <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>{opt.d}</div>
+                </div>
+              </label>
+            );
+          })}
+        </div>
+
+        {err && <div style={{ padding: "10px 12px", background: "rgba(239,68,68,0.1)", border: `1px solid ${RED}55`, borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 12 }}>⚠ {err}</div>}
+
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={onClose} disabled={busy} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: BORDER, borderRadius: 10, color: "#fff", fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>Cancel</button>
+          <button onClick={save} disabled={busy} style={{ flex: 2, padding: 12, background: `linear-gradient(135deg, ${PURPLE}, #7c3aed)`, border: "none", borderRadius: 10, color: "#fff", fontWeight: 800, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
+            {busy ? "⏳ Saving…" : "💾 Save"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -207,6 +290,7 @@ function CreateUserModal({ API, token, roles, onClose, onCreated }) {
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
   const [role, setRole] = useState("kasir");
+  const [vertical, setVertical] = useState("");  // P6: fnb | cinema | hybrid | "" (inherit)
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const genPin = () => setPin(String(Math.floor(100000 + Math.random() * 900000)));
@@ -221,11 +305,21 @@ function CreateUserModal({ API, token, roles, onClose, onCreated }) {
       const r = await fetch(`${API}/api/auth/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: token ? `Bearer ${token}` : undefined },
-        body: JSON.stringify({ name: name.trim(), pin, role }),
+        body: JSON.stringify({ name: name.trim(), pin, role, vertical: vertical || null }),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j?.error || "Gagal");
-      onCreated(`✓ User "${name}" dibuat — PIN: ${pin}, Role: ${role}`);
+      // After create, PATCH to apply vertical (POST endpoint mungkin gak handle vertical)
+      if (vertical && j.id) {
+        try {
+          await fetch(`${API}/api/auth/users/${j.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", Authorization: token ? `Bearer ${token}` : undefined },
+            body: JSON.stringify({ vertical }),
+          });
+        } catch {}
+      }
+      onCreated(`✓ User "${name}" dibuat — PIN: ${pin}, Role: ${role}${vertical ? `, Vertical: ${vertical}` : ""}`);
     } catch (e) { setErr(e.message); }
     setBusy(false);
   };
@@ -275,6 +369,21 @@ function CreateUserModal({ API, token, roles, onClose, onCreated }) {
           </div>
         </div>
 
+        {/* P6: VERTICAL FILTER */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>VERTICAL ACCESS</div>
+          <select value={vertical} onChange={e => setVertical(e.target.value)}
+            style={{ width: "100%", padding: 10, background: "rgba(0,0,0,0.4)", border: BORDER, borderRadius: 8, color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box", outline: "none", cursor: "pointer" }}>
+            <option value="">⤵ Inherit dari company (default)</option>
+            <option value="fnb">🍔 F&B Only — modul F&B saja</option>
+            <option value="cinema">🎬 Cinema Only — modul Cinema saja</option>
+            <option value="hybrid">🌐 Hybrid — F&B + Cinema</option>
+          </select>
+          <div style={{ fontSize: 10, color: "#64748b", marginTop: 4 }}>
+            💡 Filter menu sidebar berdasarkan vertical user. Inherit = ikut setting company.
+          </div>
+        </div>
+
         {err && <div style={{ padding: "10px 12px", background: "rgba(239,68,68,0.1)", border: `1px solid ${RED}55`, borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 12 }}>⚠ {err}</div>}
 
         <div style={{ display: "flex", gap: 8 }}>
@@ -317,6 +426,21 @@ function chip(color) {
 
 const ghostBtn = { padding: "8px 14px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 700, fontFamily: "inherit", cursor: "pointer" };
 const actionBtn = { padding: "5px 10px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 6, color: "#cbd5e1", fontSize: 11, fontWeight: 700, fontFamily: "inherit", cursor: "pointer", letterSpacing: 0.2 };
+
+// P6: Vertical badge style — color by vertical type
+function verticalBadge(v) {
+  const cfg = {
+    fnb:    { bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.4)", color: "#10b981" },
+    cinema: { bg: "rgba(168,85,247,0.12)", border: "rgba(168,85,247,0.4)", color: "#a855f7" },
+    hybrid: { bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.4)", color: "#fbbf24" },
+  };
+  const c = cfg[v] || { bg: "rgba(100,116,139,0.1)", border: "rgba(100,116,139,0.3)", color: "#94a3b8" };
+  return {
+    padding: "5px 10px", background: c.bg, border: `1px solid ${c.border}`,
+    borderRadius: 6, color: c.color, fontSize: 11, fontWeight: 700,
+    fontFamily: "inherit", cursor: "pointer", letterSpacing: 0.2, whiteSpace: "nowrap",
+  };
+}
 
 function roleColor(role) {
   if (role === "super-admin") return PURPLE;

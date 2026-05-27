@@ -663,7 +663,10 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
 
   // Multi-tenant: filter columns AND items by explicit `vertical` tag
   // Tag rule: `vertical='fnb'|'cinema'` → restricted, no tag = shared
-  const _vertical = _adminCtx?.company?.primary_vertical || null;
+  // P6: prefer USER-level vertical (per-user override), fallback ke company
+  const _userVertical = _adminCtx?.user?.vertical || null;
+  const _companyVertical = _adminCtx?.company?.primary_vertical || null;
+  const _vertical = _userVertical || _companyVertical;
   const _isSuperAdmin = !!(_adminCtx?.is_super_admin || _adminCtx?.company_id == null);
   const _showAll = _isSuperAdmin || _vertical === "hybrid" || !_vertical;
   const _matchVertical = (tag) => !tag || _showAll || tag === _vertical;
