@@ -678,7 +678,7 @@ function CinemaOpsInner({ apiBase }) {
 
       {tmdbModal && (
         <div onClick={() => setTmdbModal(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.78)", backdropFilter: "blur(8px)", zIndex: 20000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: "linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 22, width: "100%", maxWidth: 720, maxHeight: "90vh", overflowY: "auto", color: "#e6edf3" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "radial-gradient(ellipse 70% 55% at 50% 38%, rgba(70,76,98,0.45) 0%, transparent 70%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 22, width: "100%", maxWidth: 720, maxHeight: "90vh", overflowY: "auto", color: "#e6edf3" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
               <div>
                 <div style={{ fontSize: 17, fontWeight: 800 }}>🎥 Hasil TMDB</div>

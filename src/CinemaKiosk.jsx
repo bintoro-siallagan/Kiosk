@@ -1432,7 +1432,7 @@ function FilmPreviewModal({ film, onClose, onPick }) {
       animation: "karyaKioskFadeUp 0.3s ease-out",
     }}>
       <div onClick={e => e.stopPropagation()} style={{
-        background: "linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)",
+        background: "radial-gradient(ellipse 70% 55% at 50% 38%, rgba(70,76,98,0.45) 0%, transparent 70%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)",
         border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20,
         maxWidth: 920, width: "100%", maxHeight: "92vh", overflowY: "auto",
         color: "#e6edf3", boxShadow: "0 32px 96px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.05)",

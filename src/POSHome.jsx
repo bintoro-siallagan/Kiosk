@@ -381,7 +381,7 @@ const S = {
   // MacBook-premium dark theme — match POSMenuPicker, POSPayment, POS Cinema
   root: {
     minHeight: "100vh",
-    background: "linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)",
+    background: "radial-gradient(ellipse 70% 55% at 50% 38%, rgba(70,76,98,0.45) 0%, transparent 70%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)",
     color: "#fff",
     fontFamily: "'Inter','SF Pro Display',system-ui,-apple-system,sans-serif",
   },

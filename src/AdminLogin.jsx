@@ -450,7 +450,7 @@ const CSS = `
 `;
 
 const L = {
-  root:    { fontFamily: "'Inter',sans-serif", background: "linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", color: "#fff", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, position: "relative" },
+  root:    { fontFamily: "'Inter',sans-serif", background: "radial-gradient(ellipse 70% 55% at 50% 38%, rgba(70,76,98,0.45) 0%, transparent 70%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", color: "#fff", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, position: "relative" },
   wrap:    { position: "relative", zIndex: 1, textAlign: "center", padding: "40px 28px", maxWidth: 400, width: "100%", background: "rgba(12,14,22,0.78)", backdropFilter: "blur(24px) saturate(140%)", WebkitBackdropFilter: "blur(24px) saturate(140%)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 18, boxShadow: "0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.04)" },
   logoImg: { width: 84, height: 84, objectFit: "cover", marginBottom: 14, borderRadius: 22, boxShadow: "0 12px 32px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.06) inset" },
   brand:   { fontFamily: "'Geist Mono',monospace", fontSize: 26, fontWeight: 800, color: "#F59E0B", letterSpacing: 4, marginBottom: 4 },
