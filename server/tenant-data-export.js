@@ -73,20 +73,17 @@ function setupTenantDataExport(app, opts = {}) {
     const cid = sc.company_id;
     if (!cid) return res.status(400).send('no company scope');
     try {
-      const rows = db.prepare(`SELECT id, time, type, status, pay, kasir, source, table_name AS "table",
-                                      customerName, customerPhone, customerId,
-                                      subtotal, tax, convenienceFee, serviceCharge, total,
-                                      promoCode, promoDiscount, pointsRedeemed, pointsDiscount, cashReceived
+      const rows = db.prepare(`SELECT id, time, type, status, pay, "table",
+                                      customer_id, customer_name, customer_phone,
+                                      subtotal, tax, total, promo_code
                                FROM orders WHERE company_id = ? ORDER BY time DESC`).all(cid);
-      const header = ['id', 'time_iso', 'type', 'status', 'pay', 'cashier', 'source', 'table',
-                      'customer_name', 'customer_phone', 'customer_id',
-                      'subtotal', 'tax', 'convenience_fee', 'service_charge', 'total',
-                      'promo_code', 'promo_discount', 'points_redeemed', 'points_discount', 'cash_received'];
+      const header = ['id', 'time_iso', 'type', 'status', 'pay', 'table',
+                      'customer_id', 'customer_name', 'customer_phone',
+                      'subtotal', 'tax', 'total', 'promo_code'];
       const data = rows.map(r => [
-        r.id, new Date(r.time).toISOString(), r.type, r.status, r.pay, r.kasir, r.source, r.table,
-        r.customerName, r.customerPhone, r.customerId,
-        r.subtotal, r.tax, r.convenienceFee, r.serviceCharge, r.total,
-        r.promoCode, r.promoDiscount, r.pointsRedeemed, r.pointsDiscount, r.cashReceived,
+        r.id, new Date(r.time).toISOString(), r.type, r.status, r.pay, r.table,
+        r.customer_id, r.customer_name, r.customer_phone,
+        r.subtotal, r.tax, r.total, r.promo_code,
       ]);
       _sendCSV(res, `orders-company${cid}-${Date.now()}.csv`, header, data);
     } catch (e) { res.status(500).send('error: ' + e.message); }
@@ -98,11 +95,12 @@ function setupTenantDataExport(app, opts = {}) {
     const cid = sc.company_id;
     if (!cid) return res.status(400).send('no company scope');
     try {
-      const rows = db.prepare(`SELECT id, name, phone, email, tags, visits, points, created_at
+      const rows = db.prepare(`SELECT id, name, phone, tags, visits, total_spend, points, created_at, last_visit
                                FROM customers WHERE company_id = ? ORDER BY visits DESC`).all(cid);
-      const header = ['id', 'name', 'phone', 'email', 'tags', 'visits', 'points', 'joined_at'];
-      const data = rows.map(r => [r.id, r.name, r.phone, r.email, r.tags, r.visits, r.points,
-                                  r.created_at ? new Date(r.created_at * 1000).toISOString() : '']);
+      const header = ['id', 'name', 'phone', 'tags', 'visits', 'total_spend', 'points', 'joined_at', 'last_visit'];
+      const data = rows.map(r => [r.id, r.name, r.phone, r.tags, r.visits, r.total_spend, r.points,
+                                  r.created_at ? new Date(r.created_at * 1000).toISOString() : '',
+                                  r.last_visit ? new Date(r.last_visit * 1000).toISOString() : '']);
       _sendCSV(res, `customers-company${cid}-${Date.now()}.csv`, header, data);
     } catch (e) { res.status(500).send('error: ' + e.message); }
   });
