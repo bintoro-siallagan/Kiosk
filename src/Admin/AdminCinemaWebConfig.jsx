@@ -120,6 +120,7 @@ export default function AdminCinemaWebConfig({ onBack }) {
   const [openHeroKey, setOpenHeroKey] = useState("promo");
   const [editingSectionIdx, setEditingSectionIdx] = useState(-1);
   const [editingPageIdx, setEditingPageIdx] = useState(-1);
+  const [showTemplate, setShowTemplate] = useState(false);
 
   useEffect(() => {
     fetch(`${API_HOST}/api/cinema/web-config`)
@@ -280,10 +281,13 @@ export default function AdminCinemaWebConfig({ onBack }) {
           </h1>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => setShowTemplate(true)} style={btnStyle("ghost")}>🎨 Apply Template</button>
           <button onClick={resetDefault} style={btnStyle("ghost")}>↺ Reset Default</button>
           <button onClick={save} disabled={saving} style={btnStyle("primary", saving)}>{saving ? "Menyimpan…" : "💾 Simpan"}</button>
         </div>
       </div>
+
+      {showTemplate && <TemplatePickerModal onClose={() => setShowTemplate(false)} onApplied={() => { setShowTemplate(false); window.location.reload(); }} />}
 
       <p style={{ color: "#9ca3af", fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
         Atur nav header & footer di cinema booking web (<code style={{ color: "#fb923c" }}>kiosk.karys.tech/?movies=1</code>).
@@ -697,6 +701,104 @@ export default function AdminCinemaWebConfig({ onBack }) {
       {/* Floating save button */}
       <div style={{ position: "sticky", bottom: 0, marginTop: 30, padding: "14px 0", background: "linear-gradient(to top, #0a0e16 60%, transparent)", display: "flex", justifyContent: "flex-end", gap: 8 }}>
         <button onClick={save} disabled={saving} style={btnStyle("primary", saving)}>{saving ? "Menyimpan…" : "💾 Simpan Perubahan"}</button>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
+// TEMPLATE PICKER MODAL — apply preset config 1-klik
+// ════════════════════════════════════════════════════════════════════
+function TemplatePickerModal({ onClose, onApplied }) {
+  const [templates, setTemplates] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [applying, setApplying] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    fetch(`${API_HOST}/api/cinema/web-config/templates`)
+      .then(r => r.json())
+      .then(d => setTemplates(d.templates || []))
+      .catch(() => {});
+  }, []);
+
+  const apply = async () => {
+    if (!selected) return;
+    if (!confirm(`Apply template "${selected.label}"? Ini akan OVERWRITE config Anda yg sekarang. Lanjut?`)) return;
+    setApplying(true); setError("");
+    try {
+      const r = await fetch(`${API_HOST}/api/cinema/web-config/apply-template`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ template: selected.key }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.ok) throw new Error(d.error || `HTTP ${r.status}`);
+      alert(`✓ Template "${selected.label}" applied successfully`);
+      onApplied?.();
+    } catch (e) { setError(e.message); }
+    finally { setApplying(false); }
+  };
+
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(6px)",
+      display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: "#0f172a", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14,
+        padding: 24, maxWidth: 720, width: "100%", color: "#e5e7eb", maxHeight: "90vh", overflowY: "auto",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: "#fff" }}>🎨 Pilih Template</h2>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#9ca3af", fontSize: 22, cursor: "pointer" }}>×</button>
+        </div>
+        <p style={{ fontSize: 12.5, color: "#9ca3af", lineHeight: 1.6, marginBottom: 16 }}>
+          Pilih template untuk overwrite config Anda. <strong style={{ color: "#fbbf24" }}>⚠️ Action ini akan menggantikan nav, footer, FAQ, sections, dan page heros yang ada.</strong> Custom sections/pages akan di-clear (kecuali template Cinema Premium yg sudah include preset).
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {templates.length === 0 && <div style={{ color: "#6b7280", textAlign: "center", padding: 20 }}>Loading templates…</div>}
+          {templates.map(t => {
+            const isSelected = selected?.key === t.key;
+            return (
+              <label key={t.key} style={{
+                display: "flex", alignItems: "flex-start", gap: 12, padding: 14,
+                background: isSelected ? "rgba(251,146,60,0.08)" : "rgba(255,255,255,0.02)",
+                border: `1px solid ${isSelected ? "#fb923c" : "rgba(255,255,255,0.06)"}`,
+                borderRadius: 10, cursor: "pointer", transition: "all 0.15s",
+              }}>
+                <input type="radio" name="template" checked={isSelected} onChange={() => setSelected(t)}
+                  style={{ marginTop: 3, cursor: "pointer", width: 16, height: 16 }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: "#fff" }}>{t.label}</span>
+                    <span style={{
+                      padding: "2px 8px", borderRadius: 4, fontSize: 9, fontWeight: 800,
+                      background: t.vertical === "cinema" ? "rgba(168,85,247,0.15)" :
+                                  t.vertical === "fnb" ? "rgba(16,185,129,0.15)" :
+                                  "rgba(107,114,128,0.15)",
+                      color: t.vertical === "cinema" ? "#a855f7" :
+                             t.vertical === "fnb" ? "#10b981" : "#6b7280",
+                      border: `1px solid ${t.vertical === "cinema" ? "#a855f755" :
+                                          t.vertical === "fnb" ? "#10b98155" : "#6b728055"}`,
+                      fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1, textTransform: "uppercase",
+                    }}>{t.vertical}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: "#9ca3af", marginTop: 4, lineHeight: 1.5 }}>{t.description}</div>
+                </div>
+              </label>
+            );
+          })}
+        </div>
+
+        {error && <div style={{ marginTop: 12, padding: 10, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, color: "#fca5a5", fontSize: 12 }}>⚠️ {error}</div>}
+
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 18, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <button onClick={onClose} style={btnStyle("ghost")}>Batal</button>
+          <button onClick={apply} disabled={applying || !selected} style={btnStyle("primary", applying || !selected)}>
+            {applying ? "Applying…" : selected ? `🎨 Apply "${selected.label}"` : "Pilih template dulu"}
+          </button>
+        </div>
       </div>
     </div>
   );

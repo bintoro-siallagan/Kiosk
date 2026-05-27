@@ -507,19 +507,26 @@ const adminUserStmts = {
   selectAll: db.prepare(`SELECT * FROM admin_users ORDER BY id`),
   delete:    db.prepare(`DELETE FROM admin_users WHERE id = ?`),
 };
-const adminUserToRow = u => ({
-  id: u.id, name: u.name, pin: u.pin, role: u.role || 'kasir',
-  active: u.active === false ? 0 : 1, created_at: u.createdAt ?? Date.now(),
-  username: u.username || null, email: u.email || null,
-  password_hash: u.password_hash || null, password_salt: u.password_salt || null,
-  password_changed_at: u.password_changed_at || null,
-  must_change_password: u.must_change_password ? 1 : 0,
-  last_login_at: u.last_login_at || null, last_login_ip: u.last_login_ip || null,
-  failed_login_count: u.failed_login_count || 0,
-  locked_until: u.locked_until || null,
-  // Multi-tenant: company_id (NULL = karys super-admin)
-  company_id: u.company_id ?? null,
-});
+const adminUserToRow = u => {
+  // Multi-tenant guard: super-admin (role contains 'super' OR username='admin')
+  // MUST have company_id = NULL. Force-override walau u.company_id ada nilai
+  // (jaga kalau ada cache stale yg overwrite saat login flow).
+  let companyId = u.company_id ?? null;
+  const isSuperAdminRole = (u.role && /super/i.test(u.role)) || (u.username && u.username.toLowerCase() === 'admin');
+  if (isSuperAdminRole) companyId = null;
+  return {
+    id: u.id, name: u.name, pin: u.pin, role: u.role || 'kasir',
+    active: u.active === false ? 0 : 1, created_at: u.createdAt ?? Date.now(),
+    username: u.username || null, email: u.email || null,
+    password_hash: u.password_hash || null, password_salt: u.password_salt || null,
+    password_changed_at: u.password_changed_at || null,
+    must_change_password: u.must_change_password ? 1 : 0,
+    last_login_at: u.last_login_at || null, last_login_ip: u.last_login_ip || null,
+    failed_login_count: u.failed_login_count || 0,
+    locked_until: u.locked_until || null,
+    company_id: companyId,
+  };
+};
 const rowToAdminUser = r => ({
   id: r.id, name: r.name, pin: r.pin, role: r.role,
   active: !!r.active, createdAt: r.created_at,

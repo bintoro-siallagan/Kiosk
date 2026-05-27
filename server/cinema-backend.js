@@ -5735,6 +5735,156 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: true, company_id: companyId });
   });
 
+  // ── WEB CONFIG TEMPLATES (Phase 5) ────────────────────────────────────
+  // Preset configurations utk 1-klik onboarding tenant baru
+  const WEB_CONFIG_TEMPLATES = {
+    cinema_standard: {
+      label: "🎬 Cinema Standard",
+      description: "Full Netflix-style cinema booking — nav lengkap, semua row enabled, FAQ standar bioskop",
+      vertical: "cinema",
+      config: {
+        nav_items: [
+          { key: "outlet",    label: "Beranda",   target: "outlet",    visible: true, order: 1 },
+          { key: "movies",    label: "Movies",    target: "movies",    visible: true, order: 2 },
+          { key: "promo",     label: "Promo",     target: "promo",     visible: true, order: 3 },
+          { key: "studio",    label: "Studio",    target: "studio",    visible: true, order: 4 },
+          { key: "locations", label: "Lokasi",    target: "locations", visible: true, order: 5 },
+          { key: "about",     label: "About",     target: "about",     visible: true, order: 6 },
+        ],
+        section_toggles: { my_list: true, now_showing: true, top10: true, top_picks: true, coming_soon: true, by_genre: true, genre_filter: true },
+        footer_config: null,  // pakai DEFAULT_FOOTER_CONFIG di frontend
+        faq_groups: null,     // pakai FAQ_GROUPS di frontend
+        page_heros: {},
+        custom_sections: [],
+        custom_pages: [],
+      },
+    },
+    cinema_premium: {
+      label: "🎭 Cinema Premium",
+      description: "Cinema + showcase custom — section 'Pilihan Manager' siap pakai, hero copy marketing-friendly",
+      vertical: "cinema",
+      config: {
+        nav_items: [
+          { key: "outlet",    label: "Beranda",   target: "outlet",    visible: true, order: 1 },
+          { key: "movies",    label: "Movies",    target: "movies",    visible: true, order: 2 },
+          { key: "promo",     label: "Promo",     target: "promo",     visible: true, order: 3 },
+          { key: "studio",    label: "Event Privat", target: "studio", visible: true, order: 4 },
+          { key: "locations", label: "Lokasi",    target: "locations", visible: true, order: 5 },
+          { key: "about",     label: "About",     target: "about",     visible: true, order: 6 },
+        ],
+        section_toggles: { my_list: true, now_showing: true, top10: true, top_picks: true, coming_soon: true, by_genre: true, genre_filter: true },
+        footer_config: null,
+        faq_groups: null,
+        page_heros: {
+          promo:     { tag: "Promo Eksklusif", title: "Diskon Khusus Member Setia", subtitle: "Sebagai member, dapat akses promo eksklusif yang tidak tersedia untuk publik. Pakai kode di checkout untuk klaim langsung.", accent: "🎁" },
+          studio:    { tag: "Event Privat", title: "Sewa Studio untuk Momen Spesial Anda", subtitle: "Ulang tahun, anniversary, screening privat, gathering korporat. Studio jadi milik Anda sepenuhnya — dari layar hingga snack.", accent: "🎉" },
+          locations: { tag: "Lokasi", title: "Cinema Premium di Kota Anda", subtitle: "Lokasi strategis dengan fasilitas terbaik. Pesan dari sofa, nonton kapan pun.", accent: "📍" },
+          about:     { tag: "About Us", title: "Pengalaman Cinema Terbaik di Indonesia", subtitle: "Lebih dari sekadar nonton — kami hadirkan pengalaman premium yang tidak terlupakan. Pesan tiket, pilih kursi, order F&B — semua dalam satu scan QR.", accent: "🎬" },
+          faq:       { tag: "FAQ · Bantuan", title: "Semua Pertanyaan Anda Terjawab", subtitle: "Dari pemesanan tiket sampai program loyalty member — temukan jawaban lengkap di sini.", accent: "❓" },
+        },
+        custom_sections: [
+          { id: Date.now(), title: "🎯 Pilihan Manager", film_ids: [], visible: true, order: 1 },
+          { id: Date.now() + 1, title: "🌟 Rekomendasi Akhir Pekan", film_ids: [], visible: true, order: 2 },
+        ],
+        custom_pages: [],
+      },
+    },
+    cinema_minimal: {
+      label: "📽 Cinema Minimal",
+      description: "Lean cinema — hanya Now Showing + Lokasi. Tanpa FAQ, tanpa custom section. Cocok untuk single-outlet kecil.",
+      vertical: "cinema",
+      config: {
+        nav_items: [
+          { key: "outlet",    label: "Beranda",   target: "outlet",    visible: true, order: 1 },
+          { key: "movies",    label: "Film",      target: "movies",    visible: true, order: 2 },
+          { key: "locations", label: "Lokasi",    target: "locations", visible: true, order: 3 },
+        ],
+        section_toggles: { my_list: false, now_showing: true, top10: false, top_picks: false, coming_soon: true, by_genre: false, genre_filter: false },
+        footer_config: null,
+        faq_groups: [],  // FAQ disabled (kosong array)
+        page_heros: {},
+        custom_sections: [],
+        custom_pages: [],
+      },
+    },
+    fnb_brand: {
+      label: "🍔 F&B Brand",
+      description: "Untuk tenant F&B yg tidak pakai cinema booking — nav sederhana, semua section cinema disabled",
+      vertical: "fnb",
+      config: {
+        nav_items: [
+          { key: "outlet",    label: "Beranda",   target: "outlet",    visible: true, order: 1 },
+          { key: "locations", label: "Outlet",    target: "locations", visible: true, order: 2 },
+          { key: "about",     label: "About",     target: "about",     visible: true, order: 3 },
+        ],
+        section_toggles: { my_list: false, now_showing: false, top10: false, top_picks: false, coming_soon: false, by_genre: false, genre_filter: false },
+        footer_config: null,
+        faq_groups: null,
+        page_heros: {},
+        custom_sections: [],
+        custom_pages: [],
+      },
+    },
+    blank: {
+      label: "⚪ Blank (Custom)",
+      description: "Mulai dari nol — semua default platform, admin atur manual",
+      vertical: "any",
+      config: {
+        nav_items: null, section_toggles: null, footer_config: null,
+        faq_groups: null, page_heros: null, custom_sections: [], custom_pages: [],
+      },
+    },
+  };
+
+  // GET /web-config/templates — list available templates
+  router.get('/web-config/templates', (req, res) => {
+    const list = Object.entries(WEB_CONFIG_TEMPLATES).map(([key, t]) => ({
+      key, label: t.label, description: t.description, vertical: t.vertical,
+    }));
+    res.json({ ok: true, templates: list });
+  });
+
+  // POST /web-config/apply-template { template, company_id }
+  // Overwrite web_config rows dgn template. Super-admin atau owner tenant.
+  router.post('/web-config/apply-template', (req, res) => {
+    const b = req.body || {};
+    const templateKey = b.template;
+    const template = WEB_CONFIG_TEMPLATES[templateKey];
+    if (!template) return res.status(400).json({ error: 'invalid template key', available: Object.keys(WEB_CONFIG_TEMPLATES) });
+    const scope = req.companyScope || { is_super_admin: true };
+    let companyId = scope.is_super_admin
+      ? (parseInt(b.company_id, 10) || 2)
+      : scope.company_id;
+    if (!companyId) return res.status(400).json({ error: 'no company_id' });
+    const c = template.config;
+    const updatedBy = req.headers['x-admin-user'] || 'template:' + templateKey;
+    db.prepare(`
+      INSERT INTO cinema_web_config (company_id, nav_items, footer_config, faq_groups, section_toggles, page_heros, custom_sections, custom_pages, updated_at, updated_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%s','now'), ?)
+      ON CONFLICT(company_id) DO UPDATE SET
+        nav_items = excluded.nav_items,
+        footer_config = excluded.footer_config,
+        faq_groups = excluded.faq_groups,
+        section_toggles = excluded.section_toggles,
+        page_heros = excluded.page_heros,
+        custom_sections = excluded.custom_sections,
+        custom_pages = excluded.custom_pages,
+        updated_at = excluded.updated_at,
+        updated_by = excluded.updated_by
+    `).run(
+      companyId,
+      c.nav_items ? JSON.stringify(c.nav_items) : null,
+      c.footer_config ? JSON.stringify(c.footer_config) : null,
+      c.faq_groups != null ? JSON.stringify(c.faq_groups) : null,
+      c.section_toggles ? JSON.stringify(c.section_toggles) : null,
+      c.page_heros ? JSON.stringify(c.page_heros) : null,
+      JSON.stringify(c.custom_sections || []),
+      JSON.stringify(c.custom_pages || []),
+      updatedBy,
+    );
+    res.json({ ok: true, company_id: companyId, template: templateKey, label: template.label });
+  });
+
   // ── STUDIO EVENT BOOKING ──────────────────────────────────────────────
   // Booking studio penuh untuk event privat / corporate / wedding / birthday.
   // Conflict check: tidak boleh overlap dengan booking lain di studio/tanggal yang sama.

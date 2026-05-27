@@ -158,6 +158,20 @@ function setupCompanies(app, opts = {}) {
       }
     }
 
+    // 3b-extra: SAFEGUARD — pastikan user 'admin' atau role 'super-admin' selalu NULL company_id
+    // (kalau ada code lain (mis. login flow) reset ke 1, ini jaga setiap restart)
+    try {
+      const fix = db.prepare(`
+        UPDATE admin_users
+        SET company_id = NULL
+        WHERE (LOWER(COALESCE(username,'')) = 'admin' OR LOWER(COALESCE(role,'')) LIKE '%super%')
+          AND company_id IS NOT NULL
+      `).run();
+      if (fix.changes > 0) {
+        console.log(`[companies] safeguard: re-promoted ${fix.changes} super-admin user(s) (company_id NULL)`);
+      }
+    } catch (e) { console.error('[companies] safeguard error:', e.message); }
+
     // 3c. orders (F&B) → company 1
     try {
       const r = db.prepare(`UPDATE orders SET company_id = 1 WHERE company_id IS NULL`).run();
