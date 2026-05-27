@@ -1964,10 +1964,13 @@ function setupCinema(app, opts = {}) {
     if (!pid) return res.status(400).json({ ok: false, error: 'purchase_id wajib' });
     const outlet = String(req.body?.outlet || req.query?.outlet || '').trim().toUpperCase();
     const printer = resolvePrinter(outlet);
-    if (!printer) {
+    // DEBUG MODE: kalau PRINTER_DEBUG=true di env, skip physical print + simulate.
+    // Mirror behavior real (loop semua tiket, log per ticket) tanpa perlu hardware.
+    const debugMode = String(process.env.PRINTER_DEBUG || '').toLowerCase() === 'true';
+    if (!printer && !debugMode) {
       return res.status(503).json({
         ok: false,
-        error: 'Printer belum di-set. Set pos_config CINEMA_PRINTER_HOST_DEFAULT atau env CINEMA_PRINTER_IP.',
+        error: 'Printer belum di-set. Set pos_config CINEMA_PRINTER_HOST_DEFAULT atau env CINEMA_PRINTER_IP. Atau set PRINTER_DEBUG=true buat simulasi.',
       });
     }
     const tickets = db.prepare(`
@@ -1993,15 +1996,28 @@ function setupCinema(app, opts = {}) {
           ticket: { code: t.code, seat: t.seat, price: t.price },
           total: t.price,
         });
-        await tcpPrintDirect(printer.host, printer.port, bytes);
-        results.push({ ticket_id: t.id, seat: t.seat, code: t.code, ok: true });
+        if (printer) {
+          await tcpPrintDirect(printer.host, printer.port, bytes);
+        }
+        if (debugMode) {
+          console.log(`🖨️ [SIMULATED PRINT] ${pid} · seat ${t.seat} · ${t.code} · ${t.film_title} ${t.show_date} ${t.start_time} (${bytes.length} bytes)`);
+        }
+        results.push({ ticket_id: t.id, seat: t.seat, code: t.code, ok: true, simulated: !printer && debugMode });
       } catch (e) {
         console.error('[cinema-print]', t.id, e.message);
         results.push({ ticket_id: t.id, seat: t.seat, code: t.code, ok: false, error: e.message });
       }
     }
     const okCount = results.filter(r => r.ok).length;
-    res.json({ ok: okCount > 0, printer, printed: okCount, total: tickets.length, results });
+    const simulated = results.every(r => r.simulated);
+    res.json({
+      ok: okCount > 0,
+      printer: printer || { host: 'SIMULATED', port: 'debug' },
+      simulated,
+      printed: okCount,
+      total: tickets.length,
+      results,
+    });
   });
 
   // GET /tickets/lookup/:code — public read-only ticket info (untuk digital ticket page)

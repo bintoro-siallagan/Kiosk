@@ -87,7 +87,9 @@ export default function CinemaDigitalTicket() {
       const r = await fetch(`${API_HOST}/api/cinema/purchases/${encodeURIComponent(purchase.purchase_id)}/print`, { method: "POST" });
       const d = await r.json();
       if (d.ok) {
-        setThermalMsg(`✓ ${d.printed || purchase.tickets.length} tiket ter-print${d.printer ? " · " + d.printer : ""}`);
+        const where = d.printer?.host && d.printer.host !== "SIMULATED" ? ` · ${d.printer.host}` : "";
+        const sim = d.simulated ? " (SIMULATED — no real printer)" : "";
+        setThermalMsg(`✓ ${d.printed || purchase.tickets.length} tiket ter-print${where}${sim}`);
       } else {
         setThermalMsg(`⚠ ${d.error || "Gagal print"}`);
       }
