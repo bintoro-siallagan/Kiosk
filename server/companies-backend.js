@@ -253,8 +253,13 @@ function setupCompanies(app, opts = {}) {
       if (!req.file) return res.status(400).json({ error: 'no logo uploaded (field name: logo)' });
       const sc = req.companyScope || {};
       let companyId = sc.company_id;
-      if (sc.is_super_admin && req.query.company_id) companyId = parseInt(req.query.company_id, 10);
-      if (!companyId) return res.status(400).json({ error: 'no company scope; pass ?company_id for super-admin' });
+      const reqCid = parseInt(req.query.company_id || req.body?.company_id, 10);
+      if (reqCid && (sc.is_super_admin || !companyId)) companyId = reqCid;
+      if (!companyId) {
+        const row = db.prepare(`SELECT id FROM companies WHERE status='active' ORDER BY id LIMIT 1`).get();
+        companyId = row?.id;
+      }
+      if (!companyId) return res.status(400).json({ error: 'no company scope and no active company' });
       const url = `/uploads/${req.file.filename}`;
       try {
         const r = db.prepare(`UPDATE companies SET logo_url = ? WHERE id = ?`).run(url, companyId);
@@ -269,8 +274,13 @@ function setupCompanies(app, opts = {}) {
   router.delete('/branding/logo', (req, res) => {
     const sc = req.companyScope || {};
     let companyId = sc.company_id;
-    if (sc.is_super_admin && req.query.company_id) companyId = parseInt(req.query.company_id, 10);
-    if (!companyId) return res.status(400).json({ error: 'no company scope' });
+    const reqCid = parseInt(req.query.company_id, 10);
+    if (reqCid && (sc.is_super_admin || !companyId)) companyId = reqCid;
+    if (!companyId) {
+      const row = db.prepare(`SELECT id FROM companies WHERE status='active' ORDER BY id LIMIT 1`).get();
+      companyId = row?.id;
+    }
+    if (!companyId) return res.status(400).json({ error: 'no company scope and no active company' });
     try {
       db.prepare(`UPDATE companies SET logo_url = NULL WHERE id = ?`).run(companyId);
       res.json({ ok: true, company_id: companyId });
@@ -281,8 +291,18 @@ function setupCompanies(app, opts = {}) {
   router.put('/branding', (req, res) => {
     const sc = req.companyScope || {};
     let companyId = sc.company_id;
-    if (sc.is_super_admin && req.body.company_id) companyId = parseInt(req.body.company_id, 10);
-    if (!companyId) return res.status(400).json({ error: 'no company scope' });
+    // Super-admin bisa override via body. Also: kalau no scope, accept body.company_id
+    // (sinkron dgn GET behavior yg ada fallback)
+    if (req.body && req.body.company_id) {
+      const bid = parseInt(req.body.company_id, 10);
+      if (sc.is_super_admin || !companyId) companyId = bid;
+    }
+    if (!companyId) {
+      // Fallback ke first active company (sama dgn GET behavior)
+      const row = db.prepare(`SELECT id FROM companies WHERE status='active' ORDER BY id LIMIT 1`).get();
+      companyId = row?.id;
+    }
+    if (!companyId) return res.status(400).json({ error: 'no company scope and no active company' });
     const b = req.body || {};
     const sets = [], params = [];
     const allowed = ['brand_color', 'name', 'brand_short', 'contact_email', 'contact_phone', 'address', 'receipt_footer', 'wa_signature', 'email_signature', 'currency_code', 'locale'];
@@ -383,6 +403,57 @@ function setupCompanies(app, opts = {}) {
       if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({ error: 'code already exists' });
       res.status(500).json({ error: e.message });
     }
+  });
+
+  // PUT /:id — update company fields (super-admin only)
+  router.put('/:id', (req, res) => {
+    const isSuperAdmin = String(req.headers['x-super-admin'] || '') === 'true';
+    if (!isSuperAdmin) return res.status(403).json({ error: 'super-admin only' });
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ error: 'invalid id' });
+    const b = req.body || {};
+    const sets = [], params = [];
+    const allowed = ['code', 'name', 'primary_vertical', 'brand_color', 'contact_email', 'contact_phone', 'address', 'npwp', 'status'];
+    for (const k of allowed) {
+      if (b[k] !== undefined) { sets.push(`${k} = ?`); params.push(k === 'code' ? String(b[k]).toUpperCase() : b[k]); }
+    }
+    if (!sets.length) return res.json({ ok: true, noop: true });
+    params.push(id);
+    try {
+      db.prepare(`UPDATE companies SET ${sets.join(', ')} WHERE id = ?`).run(...params);
+      if (typeof global.logAudit === 'function') global.logAudit(req, { action: 'company.update', entity: 'company', entity_id: id, payload: b });
+      res.json({ ok: true, id });
+    } catch (e) {
+      if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') return res.status(409).json({ error: 'code already exists' });
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // DELETE /:id — soft delete (set status='inactive'). Hard delete dgn ?hard=1
+  // Super-admin only. Tidak bisa delete diri sendiri / company id 1 (root tenant)
+  router.delete('/:id', (req, res) => {
+    const isSuperAdmin = String(req.headers['x-super-admin'] || '') === 'true';
+    if (!isSuperAdmin) return res.status(403).json({ error: 'super-admin only' });
+    const id = parseInt(req.params.id, 10);
+    if (!id) return res.status(400).json({ error: 'invalid id' });
+    if (id === 1) return res.status(403).json({ error: 'cannot delete root tenant (id=1)' });
+    const company = db.prepare(`SELECT id, name FROM companies WHERE id = ?`).get(id);
+    if (!company) return res.status(404).json({ error: 'company not found' });
+    const hard = req.query.hard === '1';
+    try {
+      if (hard) {
+        // Cek dependency basic — kasih warning kalau ada data terkait
+        const ticketCount = db.prepare(`SELECT COUNT(*) AS c FROM cinema_tickets WHERE company_id = ?`).get(id)?.c || 0;
+        if (ticketCount > 0 && req.query.confirm !== 'destroy') {
+          return res.status(409).json({ error: `company has ${ticketCount} tickets. Pass ?hard=1&confirm=destroy to force delete.`, ticket_count: ticketCount });
+        }
+        db.prepare(`DELETE FROM companies WHERE id = ?`).run(id);
+      } else {
+        db.prepare(`UPDATE companies SET status = 'inactive' WHERE id = ?`).run(id);
+      }
+      if (typeof global.logAudit === 'function') global.logAudit(req, { action: hard ? 'company.delete_hard' : 'company.deactivate', entity: 'company', entity_id: id });
+      res.json({ ok: true, id, mode: hard ? 'hard' : 'soft' });
+    } catch (e) { res.status(500).json({ error: e.message }); }
   });
 
   // ─── PUBLIC SIGNUP — no auth required ───

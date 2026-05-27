@@ -43,6 +43,7 @@ export default function AdminBranding({ onBack }) {
     if (!file) return;
     setUploading(true);
     const fd = new FormData(); fd.append("logo", file);
+    if (data?.company_id) fd.append("company_id", String(data.company_id));
     try {
       const r = await fetch("/api/companies/branding/logo", { method: "POST", body: fd });
       const j = await r.json();
@@ -55,7 +56,8 @@ export default function AdminBranding({ onBack }) {
   async function removeLogo() {
     if (!confirm("Hapus logo tenant? Akan fallback ke karyaos default.")) return;
     try {
-      await fetch("/api/companies/branding/logo", { method: "DELETE" });
+      const url = data?.company_id ? `/api/companies/branding/logo?company_id=${data.company_id}` : "/api/companies/branding/logo";
+      await fetch(url, { method: "DELETE" });
       load();
     } catch (e) { alert("✗ " + e.message); }
   }
@@ -63,10 +65,12 @@ export default function AdminBranding({ onBack }) {
   async function saveBranding() {
     setSaving(true);
     try {
+      // Pass company_id explicit dari GET response — jaga2 kalau scope hilang/super-admin
+      const body = data?.company_id ? { ...form, company_id: data.company_id } : form;
       const r = await fetch("/api/companies/branding", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(body),
       });
       if (!r.ok) throw new Error((await r.json()).error || `HTTP ${r.status}`);
       load();
