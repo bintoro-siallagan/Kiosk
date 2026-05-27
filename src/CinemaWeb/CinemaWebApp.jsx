@@ -7,10 +7,12 @@
 // Premium dark theme, brand-aware via /api/companies/branding.
 
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import QRCode from "qrcode";
 import API_HOST from "../apiBase.js";
 import { fmtMoney as rp } from "../lib/currency.js";
 import { LoadingState } from "../components/uiKit.jsx";
 import { ErrorInline } from "../components/ConnectionError.jsx";
+import CinemaCelebration from "../CinemaCelebration.jsx";
 
 // Load Midtrans Snap.js once per page lifecycle. Returns Promise resolved when
 // window.snap is ready. Idempotent — multiple calls share the same load.
@@ -945,80 +947,128 @@ function Row({ label, value }) {
 // STEP 6: SUCCESS
 // ════════════════════════════════════════════════════════════════════
 function SuccessPage({ booking, film, showtime, seats, bundlesCart, onNewBooking, brandPrimary }) {
-  const ticketCode = booking?.ticket_code || booking?.code || booking?.order_id || booking?.id;
-  // booking response may include bundles_total — prefer server-computed total
+  // Server returns tickets[] array (one per seat) — use first ticket code as primary QR target
+  const tickets = Array.isArray(booking?.tickets) ? booking.tickets : [];
+  const primaryCode = tickets[0]?.code || booking?.ticket_code || booking?.code || booking?.purchase_id || booking?.id;
   const total = booking?.total || (seats.length * (showtime.price || 0));
   const hasBundles = bundlesCart && Object.keys(bundlesCart).length > 0;
-  const paymentStatus = booking?._payment_status || "unknown";  // 'paid' | 'pending_verification' | 'counter'
+  const paymentStatus = booking?._payment_status || "unknown";
   const isPaid = paymentStatus === "paid";
   const isCounter = paymentStatus === "counter";
 
+  const [showCelebration, setShowCelebration] = useState(true);
+  const [qrSrc, setQrSrc] = useState(null);
+
+  // Generate QR code for the ticket URL (link to digital ticket page)
+  useEffect(() => {
+    if (!primaryCode) return;
+    const ticketUrl = `${window.location.origin}/?ticket=${primaryCode}`;
+    QRCode.toDataURL(ticketUrl, { width: 320, margin: 1, color: { dark: "#000", light: "#fff" } })
+      .then(setQrSrc).catch(() => setQrSrc(null));
+  }, [primaryCode]);
+
+  const customerName = booking?.buyer || "Sobat Bioskop";
+  const waText = encodeURIComponent(`🎬 Tiket bioskop ku: ${film.title}\n📅 ${fmtDate(showtime.show_date)} ${showtime.start_time}\n💺 ${seats.sort().join(", ")}\n🎫 Kode: ${primaryCode}\n\n${window.location.origin}/?ticket=${primaryCode}`);
+
   return (
-    <div style={{ padding: "40px 0 60px", maxWidth: 540, margin: "0 auto", textAlign: "center" }}>
-      <div style={{
-        width: 80, height: 80, margin: "0 auto 20px",
-        borderRadius: "50%",
-        background: isPaid ? "rgba(16,185,129,0.15)" : isCounter ? "rgba(168,85,247,0.15)" : "rgba(251,191,36,0.15)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 40,
-      }}>{isPaid ? "✓" : isCounter ? "🎫" : "⏳"}</div>
-      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 8,
-        color: isPaid ? "#10b981" : isCounter ? brandPrimary : "#fbbf24" }}>
-        {isPaid ? "Pembayaran Sukses!" : isCounter ? "Booking Berhasil!" : "Pembayaran Sedang Diverifikasi"}
-      </h1>
-      <p style={{ fontSize: 13, color: C.sub, margin: 0, marginBottom: 24 }}>
-        {isPaid
-          ? "Tiket sudah dibooking + dibayar. Tunjukkan kode tiket di counter atau scan QR di pintu studio."
-          : isCounter
-          ? "Kursi sudah ter-book atas nama Anda. Datang ke counter 15 menit sebelum jadwal, bayar di sana, kasir akan kasih tiket fisik."
-          : "Pembayaran Anda belum tercatat sistem dalam 30 detik. Kalau Anda sudah bayar, tiket TETAP TERSIMPAN — staff counter bisa verifikasi pembayaran via Midtrans dashboard pakai kode tiket di bawah."}
-      </p>
+    <>
+      {/* Celebration overlay — leaderboard + Sultan title, dismiss to see QR */}
+      {showCelebration && (
+        <CinemaCelebration
+          order={{ customerName, total, filmTitle: film.title }}
+          apiBase={API_HOST}
+          onDone={() => setShowCelebration(false)}
+        />
+      )}
 
-      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20, marginBottom: 20, textAlign: "left" }}>
-        <div style={{ fontSize: 10, color: C.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 4 }}>KODE TIKET</div>
-        <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: brandPrimary, marginBottom: 16 }}>{ticketCode}</div>
+      <div style={{ padding: "30px 0 60px", maxWidth: 540, margin: "0 auto", textAlign: "center" }}>
+        {/* Hero status */}
+        <div style={{
+          width: 70, height: 70, margin: "0 auto 16px",
+          borderRadius: "50%",
+          background: isPaid ? "rgba(16,185,129,0.15)" : isCounter ? `${brandPrimary}26` : "rgba(251,191,36,0.15)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontSize: 36,
+        }}>{isPaid ? "✓" : isCounter ? "🎫" : "⏳"}</div>
+        <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 6,
+          color: isPaid ? "#10b981" : isCounter ? brandPrimary : "#fbbf24" }}>
+          {isPaid ? "Pembayaran Sukses!" : isCounter ? "Booking Berhasil!" : "Pembayaran Diverifikasi"}
+        </h1>
+        <p style={{ fontSize: 13, color: C.sub, margin: 0, marginBottom: 22 }}>
+          {isCounter
+            ? "Tunjukkan QR ini di counter saat ambil tiket"
+            : "Scan QR ini di pintu studio untuk masuk"}
+        </p>
 
-        {/* Outlet ditampilkan prominent — anti cross-outlet contamination */}
-        {booking?._client_outlet && (
-          <div style={{
-            background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.3)",
-            borderRadius: 10, padding: "10px 12px", marginBottom: 14,
-          }}>
-            <div style={{ fontSize: 10, color: C.dim, letterSpacing: 1.2, fontFamily: "'Geist Mono',monospace", marginBottom: 2 }}>📍 AMBIL TIKET DI</div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{booking._client_outlet.name}</div>
-            <div style={{ fontSize: 11, color: C.sub, fontFamily: "'Geist Mono',monospace" }}>{booking._client_outlet.code}</div>
-            {booking._client_outlet.address && <div style={{ fontSize: 11, color: C.sub, marginTop: 4 }}>{booking._client_outlet.address}</div>}
-          </div>
-        )}
+        {/* QR CODE — main attraction */}
+        <div style={{
+          background: "#fff", padding: 16, borderRadius: 16, marginBottom: 14,
+          boxShadow: `0 12px 36px ${brandPrimary}22, 0 0 0 1px ${C.border}`,
+          display: "inline-block",
+        }}>
+          {qrSrc ? (
+            <img src={qrSrc} alt={`QR ${primaryCode}`} style={{ width: 220, height: 220, display: "block" }} />
+          ) : (
+            <div style={{ width: 220, height: 220, display: "flex", alignItems: "center", justifyContent: "center", color: "#999", fontSize: 12 }}>
+              Generating QR…
+            </div>
+          )}
+        </div>
+        <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 4, textTransform: "uppercase" }}>Kode Tiket</div>
+        <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: brandPrimary, marginBottom: 22, letterSpacing: 0.5 }}>{primaryCode}</div>
 
-        <Row label="🎬 Film" value={film.title} />
-        <Row label="📅 Jadwal" value={`${fmtDate(showtime.show_date)} · ${showtime.start_time}`} />
-        <Row label="🎬 Studio" value={`${showtime.studio_name} · ${showtime.format || "2D"}`} />
-        <Row label="💺 Kursi" value={seats.sort().join(", ")} />
-        {hasBundles && <Row label="🍿 Snack" value={`${Object.values(bundlesCart).reduce((s, q) => s + q, 0)} item`} />}
-        <Row label="💰 Total" value={rp(total)} />
-      </div>
+        {/* Booking details */}
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 18, marginBottom: 16, textAlign: "left" }}>
+          {/* Outlet prominently — anti cross-outlet contamination */}
+          {booking?._client_outlet && (
+            <div style={{
+              background: `${brandPrimary}14`, border: `1px solid ${brandPrimary}44`,
+              borderRadius: 10, padding: "10px 12px", marginBottom: 14,
+            }}>
+              <div style={{ fontSize: 10, color: C.dim, letterSpacing: 1.2, fontFamily: "'Geist Mono',monospace", marginBottom: 2 }}>📍 AMBIL TIKET DI</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{booking._client_outlet.name}</div>
+              <div style={{ fontSize: 11, color: C.sub, fontFamily: "'Geist Mono',monospace" }}>{booking._client_outlet.code}</div>
+              {booking._client_outlet.address && <div style={{ fontSize: 11, color: C.sub, marginTop: 4 }}>{booking._client_outlet.address}</div>}
+            </div>
+          )}
+          <Row label="🎬 Film" value={film.title} />
+          <Row label="📅 Jadwal" value={`${fmtDate(showtime.show_date)} · ${showtime.start_time}`} />
+          <Row label="🎬 Studio" value={`${showtime.studio_name} · ${showtime.format || "2D"}`} />
+          <Row label="💺 Kursi" value={seats.sort().join(", ")} />
+          {hasBundles && <Row label="🍿 Snack" value={`${Object.values(bundlesCart).reduce((s, q) => s + q, 0)} item`} />}
+          <Row label="💰 Total" value={rp(total)} />
+        </div>
 
-      <div style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 12, padding: "12px 14px", marginBottom: 20, fontSize: 12, color: "#fbbf24", textAlign: "left" }}>
-        ⏰ <strong>Datang min. 15 menit sebelum jadwal.</strong> {isCounter ? `Bayar ${rp(total)} di counter, tunjukkan kode tiket — kasir kasih tiket fisik + akses studio.` : "Tunjukkan kode tiket di atas untuk akses studio."}
-      </div>
+        <div style={{ background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.3)", borderRadius: 12, padding: "11px 14px", marginBottom: 18, fontSize: 12, color: "#fbbf24", textAlign: "left" }}>
+          ⏰ <strong>Datang min. 15 menit sebelum jadwal.</strong> {isCounter ? `Bayar ${rp(total)} di counter saat ambil tiket.` : "Tunjukkan QR untuk akses studio."}
+        </div>
 
-      <div style={{ display: "flex", gap: 10 }}>
-        <button onClick={onNewBooking} style={{
-          flex: 1, padding: "12px",
-          background: "transparent", border: `1px solid ${C.border}`, color: C.text,
-          borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
-        }}>+ Booking Lagi</button>
-        {ticketCode && (
-          <a href={`/?ticket=${ticketCode}`} target="_blank" rel="noopener noreferrer" style={{
-            flex: 1, padding: "12px",
-            background: brandPrimary, border: "none", color: "#fff",
-            borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+        {/* Actions */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+          <a href={`https://wa.me/?text=${waText}`} target="_blank" rel="noopener noreferrer" style={{
+            padding: "12px", background: "#25D366", border: "none", color: "#fff",
+            borderRadius: 10, fontSize: 13, fontWeight: 700, fontFamily: "inherit",
             textDecoration: "none", textAlign: "center",
-            boxShadow: `0 6px 16px ${brandPrimary}55`,
-          }}>🎫 Lihat E-Tiket</a>
-        )}
+          }}>📱 Share WA</a>
+          {primaryCode && (
+            <a href={`/?ticket=${primaryCode}`} target="_blank" rel="noopener noreferrer" style={{
+              padding: "12px", background: brandPrimary, border: "none", color: "#fff",
+              borderRadius: 10, fontSize: 13, fontWeight: 700, fontFamily: "inherit",
+              textDecoration: "none", textAlign: "center",
+              boxShadow: `0 6px 16px ${brandPrimary}55`,
+            }}>🎫 Buka E-Tiket</a>
+          )}
+        </div>
+        <button onClick={onNewBooking} style={{
+          width: "100%", padding: "11px",
+          background: "transparent", border: `1px solid ${C.border}`, color: C.sub,
+          borderRadius: 10, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+        }}>+ Booking Tiket Lagi</button>
+
+        <div style={{ marginTop: 18, fontSize: 11, color: C.dim, fontStyle: "italic" }}>
+          📸 Screenshot QR di atas untuk akses lebih cepat di pintu studio.
+        </div>
       </div>
-    </div>
+    </>
   );
 }
