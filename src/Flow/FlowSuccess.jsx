@@ -210,7 +210,12 @@ const S = {
   infoText: { fontSize: 11, color: "#D1D5DB", lineHeight: 1.6 },
   btnRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 },
   btnSecondary: { padding: "12px", borderRadius: 10, background: "rgba(255,255,255,0.04)", border: "1px solid #2a2a2a", color: "white", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" },
-  btnPrimary: { padding: "14px", borderRadius: 12, background: "linear-gradient(135deg, #FF6B35, #D97706)", border: "none", color: "#111", fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" },
+  btnPrimary: { padding: "14px", borderRadius: 12,
+    background: "radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, var(--brand-primary,#FF6B35) 60%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 38%, #1a1d29), color-mix(in srgb, var(--brand-secondary,#E55A2B) 30%, #0d0f14))",
+    border: "1px solid rgba(255,255,255,0.16)",
+    color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.45)",
+    fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 24px color-mix(in srgb, var(--brand-primary,#FF6B35) 25%, transparent)" },
   btnGhost: { padding: "10px", background: "transparent", border: "none", color: "#9CA3AF", fontSize: 12, cursor: "pointer", fontFamily: "inherit" },
   footer: { marginTop: "auto", textAlign: "center", fontSize: 10, color: "#4B5563", letterSpacing: 1, padding: "12px 0" },
 };
