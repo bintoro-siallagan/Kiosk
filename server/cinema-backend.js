@@ -3489,7 +3489,26 @@ function setupCinema(app, opts = {}) {
         } catch {}
       }
     }
-    const finalTotal = Math.max(0, grossTotal - discountApplied);
+    // ── Apply poin redemption (kalau request — sebelum compute earned) ──
+    let pointsRedeemed = 0;
+    let pointsDiscount = 0;
+    if (b.buyer_phone && Number(b.points_redeem) > 0) {
+      try {
+        const phone = String(b.buyer_phone).trim();
+        const cust = db.prepare(`SELECT id, current_points FROM loyalty_customers WHERE phone = ?`).get(phone);
+        if (cust && cust.current_points > 0) {
+          let pointValueIDR = 10;
+          try { const r = db.prepare(`SELECT value FROM pos_config WHERE key='POINT_VALUE_IDR'`).get(); if (r?.value) pointValueIDR = Number(JSON.parse(r.value)) || 10; } catch {}
+          const want = Math.floor(Number(b.points_redeem));
+          // Cap: tidak boleh > saldo + tidak boleh > sisa total setelah promo discount
+          const remaining = Math.max(0, grossTotal - discountApplied);
+          const maxFromCash = Math.floor(remaining / pointValueIDR);
+          pointsRedeemed = Math.min(want, cust.current_points, maxFromCash);
+          pointsDiscount = pointsRedeemed * pointValueIDR;
+        }
+      } catch (e) { console.error('[cinema points redeem] err:', e.message); }
+    }
+    const finalTotal = Math.max(0, grossTotal - discountApplied - pointsDiscount);
 
     // ── Auto-member (loyalty) — kalau buyer_phone ada ──
     let loyalty = null;
@@ -3506,21 +3525,38 @@ function setupCinema(app, opts = {}) {
           customer = { id: info.lastInsertRowid, phone, current_points: 0, lifetime_points: 0, lifetime_spend: 0, total_visits: 0, current_tier_code: 'BRONZE' };
         }
         // Earn points — default 1 point per Rp 10.000 (configurable di pos_config POINT_PER_AMOUNT)
+        // Earn based on FINAL TOTAL setelah discount + redeem (poin dipakai tidak ngehasilin poin baru)
         let pointPerAmount = 10000;
         try { const row = db.prepare(`SELECT value FROM pos_config WHERE key='POINT_PER_AMOUNT'`).get(); if (row?.value) pointPerAmount = Number(JSON.parse(row.value)) || 10000; } catch {}
         const earned = Math.floor(finalTotal / pointPerAmount);
-        const newBalance = (customer.current_points || 0) + earned;
+        // Apply redemption (deduct first) then add earned
+        const balanceAfterRedeem = Math.max(0, (customer.current_points || 0) - pointsRedeemed);
+        const newBalance = balanceAfterRedeem + earned;
         const newLifetime = (customer.lifetime_points || 0) + earned;
         const newSpend = (customer.lifetime_spend || 0) + finalTotal;
         const newVisits = (customer.total_visits || 0) + 1;
         db.prepare(`UPDATE loyalty_customers SET current_points = ?, lifetime_points = ?, lifetime_spend = ?, total_visits = ?, updated_at = strftime('%s','now') WHERE id = ?`)
           .run(newBalance, newLifetime, newSpend, newVisits, customer.id);
+        // Log transactions: 1 redeem (kalau ada) + 1 earn
         try {
+          if (pointsRedeemed > 0) {
+            db.prepare(`INSERT INTO loyalty_transactions (customer_id, type, points, balance_after, ref_order_id, description, created_by)
+              VALUES (?, 'redeem', ?, ?, ?, ?, ?)`)
+              .run(customer.id, -pointsRedeemed, balanceAfterRedeem, purchaseId, `Cinema redeem ${pointsRedeemed} pt (-Rp ${pointsDiscount.toLocaleString('id-ID')})`, b.cashier_name || 'cinema-web');
+          }
           db.prepare(`INSERT INTO loyalty_transactions (customer_id, type, points, balance_after, ref_order_id, description, created_by)
             VALUES (?, 'earn', ?, ?, ?, ?, ?)`)
-            .run(customer.id, earned, newBalance, purchaseId, `Cinema ${(picked || st).start_time || ''} ${seats.length} tiket`, b.cashier_name || 'system');
+            .run(customer.id, earned, newBalance, purchaseId, `Cinema ${(picked || st).start_time || ''} ${seats.length} tiket`, b.cashier_name || 'cinema-web');
         } catch {}
-        loyalty = { customer_id: customer.id, earned, balance: newBalance, tier: customer.current_tier_code, new_member: !customer.lifetime_points };
+        loyalty = {
+          customer_id: customer.id,
+          earned,
+          redeemed: pointsRedeemed,
+          redeem_discount: pointsDiscount,
+          balance: newBalance,
+          tier: customer.current_tier_code,
+          new_member: !customer.lifetime_points,
+        };
       } catch (e) { console.error('[cinema loyalty] err:', e.message); }
     }
 
@@ -3651,6 +3687,37 @@ function setupCinema(app, opts = {}) {
   router.delete('/bundles/:id', (req, res) => {
     db.prepare(`DELETE FROM cinema_bundles WHERE id = ?`).run(req.params.id);
     res.json({ ok: true });
+  });
+
+  // ── LOYALTY LOOKUP — cek saldo poin by phone (untuk apply di checkout) ──
+  router.get('/loyalty/lookup', (req, res) => {
+    const phone = String(req.query.phone || '').trim();
+    if (!phone) return res.status(400).json({ ok: false, error: 'phone required' });
+    const customer = db.prepare(`SELECT id, phone, name, current_points, lifetime_points, lifetime_spend, total_visits, current_tier_code FROM loyalty_customers WHERE phone = ?`).get(phone);
+    if (!customer) return res.json({ ok: true, found: false, points: 0 });
+    // Get config: 1 poin = POINT_VALUE_IDR rupiah; min redeem = POINT_MIN_REDEEM
+    let pointValueIDR = 10, minRedeem = 10;
+    try { const r = db.prepare(`SELECT value FROM pos_config WHERE key='POINT_VALUE_IDR'`).get(); if (r?.value) pointValueIDR = Number(JSON.parse(r.value)) || 10; } catch {}
+    try { const r = db.prepare(`SELECT value FROM pos_config WHERE key='POINT_MIN_REDEEM'`).get(); if (r?.value) minRedeem = Number(JSON.parse(r.value)) || 10; } catch {}
+    res.json({
+      ok: true,
+      found: true,
+      customer: {
+        id: customer.id,
+        name: customer.name,
+        phone: customer.phone,
+        points: customer.current_points || 0,
+        tier: customer.current_tier_code || 'BRONZE',
+        lifetime_spend: customer.lifetime_spend || 0,
+        total_visits: customer.total_visits || 0,
+      },
+      config: {
+        point_value_idr: pointValueIDR,  // 1 poin = Rp X
+        min_redeem: minRedeem,
+        // helper: berapa rupiah dari saldo
+        max_idr_redeemable: (customer.current_points || 0) * pointValueIDR,
+      },
+    });
   });
 
   // ── PURCHASE — manual resend WA e-ticket (rescue path) ──

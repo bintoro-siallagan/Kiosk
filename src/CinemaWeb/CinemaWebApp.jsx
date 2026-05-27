@@ -781,6 +781,10 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, brandP
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [bundlesMeta, setBundlesMeta] = useState(null);
+  // Loyalty lookup state
+  const [loyaltyData, setLoyaltyData] = useState(null);  // { found, customer, config } | null
+  const [pointsToRedeem, setPointsToRedeem] = useState(0);
+  const [lookupBusy, setLookupBusy] = useState(false);
 
   // Load bundle metadata for display (need names + prices in summary)
   useEffect(() => {
@@ -789,12 +793,35 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, brandP
       .then(r => r.json()).then(d => setBundlesMeta(d.bundles || [])).catch(() => {});
   }, [outlet.code, bundlesCart]);
 
+  // Auto-lookup loyalty when phone is valid (debounced 600ms)
+  useEffect(() => {
+    const phone = form.phone.replace(/[^\d]/g, "");
+    if (phone.length < 8) { setLoyaltyData(null); setPointsToRedeem(0); return; }
+    setLookupBusy(true);
+    const t = setTimeout(() => {
+      fetch(`${API_HOST}/api/cinema/loyalty/lookup?phone=${encodeURIComponent(phone)}`)
+        .then(r => r.json()).then(d => setLoyaltyData(d.ok ? d : null))
+        .catch(() => setLoyaltyData(null))
+        .finally(() => setLookupBusy(false));
+    }, 600);
+    return () => clearTimeout(t);
+  }, [form.phone]);
+
   const seatTotal = seats.length * (showtime.price || 0);
   const bundleTotal = bundlesMeta ? Object.entries(bundlesCart || {}).reduce((s, [bid, q]) => {
     const b = bundlesMeta.find(x => String(x.id) === String(bid));
     return s + (b ? b.price * q : 0);
   }, 0) : 0;
-  const total = seatTotal + bundleTotal;
+  const grossTotal = seatTotal + bundleTotal;
+  // Compute points discount (1 poin = config.point_value_idr IDR)
+  const pointValueIDR = loyaltyData?.config?.point_value_idr || 10;
+  const maxRedeem = loyaltyData?.found ? Math.min(
+    loyaltyData.customer.points,
+    Math.floor(grossTotal / pointValueIDR),
+  ) : 0;
+  const safePointsToRedeem = Math.min(pointsToRedeem, maxRedeem);
+  const pointsDiscount = safePointsToRedeem * pointValueIDR;
+  const total = Math.max(0, grossTotal - pointsDiscount);
   const valid = form.name.trim() && form.phone.trim().match(/^[0-9+\-\s]{8,}$/);
 
   // Simple kiosk-style flow: create ticket as paid immediately, no Snap popup.
@@ -825,6 +852,7 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, brandP
         buyer_phone: form.phone.replace(/[^\d]/g, ""),
         buyer_email: form.email.trim() || undefined,
         payment_method: "counter", // pay-at-counter, like kiosk default
+        points_redeem: safePointsToRedeem > 0 ? safePointsToRedeem : undefined,
       };
       const bookRes = await fetch(`${API_HOST}/api/cinema/tickets`, {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -857,6 +885,61 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, brandP
           <div style={{ fontSize: 11, color: C.dim, marginTop: 4 }}>
             ⚡ E-tiket akan dikirim via WhatsApp + Email setelah pembayaran.
           </div>
+
+          {/* Loyalty lookup result */}
+          {form.phone.replace(/[^\d]/g, "").length >= 8 && (
+            <div style={{ marginTop: 14, padding: 14, borderRadius: 12,
+              background: loyaltyData?.found ? "linear-gradient(135deg, rgba(168,85,247,0.12), rgba(251,191,36,0.06))" : "rgba(255,255,255,0.03)",
+              border: `1px solid ${loyaltyData?.found ? "rgba(168,85,247,0.4)" : C.border}`,
+            }}>
+              {lookupBusy ? (
+                <div style={{ fontSize: 12, color: C.dim }}>🔍 Cek saldo poin…</div>
+              ) : loyaltyData?.found ? (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 8 }}>
+                    <div>
+                      <div style={{ fontSize: 11, color: "#c084fc", letterSpacing: 1.2, fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>⭐ HALO MEMBER</div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginTop: 2 }}>{loyaltyData.customer.name || form.name || "Sobat"}</div>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: "#c084fc" }}>{loyaltyData.customer.points} pt</div>
+                      <div style={{ fontSize: 10, color: C.dim }}>≈ Rp {(loyaltyData.config.max_idr_redeemable).toLocaleString("id-ID")}</div>
+                    </div>
+                  </div>
+                  {maxRedeem > 0 ? (
+                    <>
+                      <div style={{ fontSize: 11, color: C.sub, marginBottom: 8 }}>
+                        Pakai poin untuk potong harga (max {maxRedeem} pt = Rp {(maxRedeem * pointValueIDR).toLocaleString("id-ID")}):
+                      </div>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <input type="range" min={0} max={maxRedeem} step={Math.max(1, Math.floor(maxRedeem / 50))} value={safePointsToRedeem}
+                          onChange={(e) => setPointsToRedeem(Number(e.target.value))}
+                          style={{ flex: 1, accentColor: brandPrimary }} />
+                        <input type="number" min={0} max={maxRedeem} value={safePointsToRedeem}
+                          onChange={(e) => setPointsToRedeem(Math.max(0, Math.min(maxRedeem, Number(e.target.value) || 0)))}
+                          style={{ width: 70, padding: "6px 8px", background: C.card, border: `1px solid ${C.border}`, borderRadius: 6, color: C.text, fontSize: 12, fontFamily: "'Geist Mono',monospace", textAlign: "center" }} />
+                        <button onClick={() => setPointsToRedeem(maxRedeem)} style={{
+                          padding: "6px 10px", background: "transparent", border: `1px solid ${brandPrimary}66`, color: brandPrimary,
+                          borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                        }}>MAX</button>
+                      </div>
+                      {safePointsToRedeem > 0 && (
+                        <div style={{ marginTop: 8, fontSize: 12, color: "#10b981", fontWeight: 700 }}>
+                          💰 Potongan: − Rp {pointsDiscount.toLocaleString("id-ID")}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div style={{ fontSize: 11, color: C.dim }}>Belum bisa redeem — minimal Rp {pointValueIDR.toLocaleString("id-ID")} per poin.</div>
+                  )}
+                </>
+              ) : (
+                <div style={{ fontSize: 12, color: C.dim }}>
+                  💡 Nomor ini belum terdaftar. Anda akan otomatis jadi member setelah booking ini.
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {error && (
@@ -905,6 +988,12 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, brandP
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.dim, marginBottom: 6 }}>
                 <span>Snack & minuman</span>
                 <span style={{ fontFamily: "'Geist Mono',monospace" }}>{rp(bundleTotal)}</span>
+              </div>
+            )}
+            {safePointsToRedeem > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#10b981", marginBottom: 6, fontWeight: 700 }}>
+                <span>⭐ Tukar {safePointsToRedeem} poin</span>
+                <span style={{ fontFamily: "'Geist Mono',monospace" }}>− {rp(pointsDiscount)}</span>
               </div>
             )}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 8 }}>
