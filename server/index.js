@@ -2547,6 +2547,117 @@ app.post("/api/admin/midtrans-test", async (_, res) => {
   res.json(result);
 });
 
+// ─── CINEMA WEB BOOKING — MIDTRANS SNAP ────────────────────────────────────
+// POST /api/payment/cinema-snap — create Snap token for a cinema purchase.
+// Frontend (CinemaWeb) calls this AFTER /api/cinema/tickets returns purchase_id.
+// Then opens Snap popup with the returned snap_token.
+//
+// Defense layers (per user-reported issues):
+//   1. Refuse if purchase already paid (anti double-charge)
+//   2. order_id encodes purchase_id so webhook can route back unambiguously
+//   3. Persist payment_ref so we can match webhook → ticket
+//   4. Snap response includes redirect_url as fallback if Snap.js fails
+app.post("/api/payment/cinema-snap", async (req, res) => {
+  const { purchase_id } = req.body || {};
+  if (!purchase_id) return res.status(400).json({ error: "purchase_id required" });
+  if (!midtransConfig.serverKey) return res.status(503).json({ error: "Midtrans server key not configured" });
+
+  try {
+    const tickets = db.prepare(`SELECT * FROM cinema_tickets WHERE purchase_id = ?`).all(purchase_id);
+    if (tickets.length === 0) return res.status(404).json({ error: "purchase tidak ditemukan" });
+    if (tickets[0].payment_status === "paid") return res.status(409).json({ error: "purchase sudah dibayar", paid: true });
+
+    const bundles = db.prepare(`SELECT * FROM cinema_purchase_bundles WHERE purchase_id = ?`).all(purchase_id);
+    const t0 = tickets[0];
+    const seatsTotal = tickets.reduce((s, t) => s + (t.price || 0), 0);
+    const bundlesTotal = bundles.reduce((s, b) => s + (b.price * b.qty), 0);
+    const grossAmount = Math.round(seatsTotal + bundlesTotal);
+
+    const itemDetails = [
+      ...tickets.map(t => ({
+        id: `seat-${t.seat}`.slice(0, 50),
+        name: `Tiket Kursi ${t.seat}`.slice(0, 50),
+        price: Math.round(t.price || 0),
+        quantity: 1,
+      })),
+      ...bundles.map(b => ({
+        id: `bundle-${b.bundle_id}`.slice(0, 50),
+        name: String(b.bundle_name || `Bundle ${b.bundle_id}`).replace(/[^\w\s.,()\-]/g, "").slice(0, 50),
+        price: Math.round(b.price),
+        quantity: b.qty,
+      })),
+    ].filter(i => i.price > 0);
+
+    // Unique order_id per Snap attempt — encode purchase_id for webhook routing
+    const orderId = `CINEMA-${purchase_id}-${Date.now()}`;
+
+    const snapUrl = midtransConfig.isProduction
+      ? "https://app.midtrans.com/snap/v1/transactions"
+      : "https://app.sandbox.midtrans.com/snap/v1/transactions";
+
+    const fetch = (await import("node-fetch")).default;
+    const snapRes = await fetch(snapUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "Authorization": mtAuth(),
+      },
+      body: JSON.stringify({
+        transaction_details: { order_id: orderId, gross_amount: grossAmount },
+        item_details: itemDetails,
+        customer_details: {
+          first_name: t0.buyer || "Customer",
+          email: t0.buyer_email || undefined,
+          phone: t0.buyer_phone || undefined,
+        },
+        callbacks: {
+          finish: `${process.env.TRACKING_BASE_URL || ""}/?ticket=${tickets[0].code}`,
+        },
+      }),
+    });
+    const snapData = await snapRes.json();
+    if (!snapRes.ok || !snapData.token) {
+      console.error("❌ Snap create failed:", snapData);
+      return res.status(502).json({ error: "Snap creation failed", details: snapData });
+    }
+
+    // Persist payment_ref so webhook can match back
+    db.prepare(`UPDATE cinema_tickets SET payment_ref = ?, payment_method = 'snap', payment_status = COALESCE(payment_status, 'pending_payment') WHERE purchase_id = ?`)
+      .run(orderId, purchase_id);
+
+    console.log(`🎬 Snap created for ${purchase_id} → ${orderId} (Rp ${grossAmount.toLocaleString("id-ID")})`);
+    res.json({
+      snap_token: snapData.token,
+      redirect_url: snapData.redirect_url,
+      order_id: orderId,
+      purchase_id,
+      gross_amount: grossAmount,
+    });
+  } catch (e) {
+    console.error("❌ /cinema-snap error:", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/cinema/purchase/:purchase_id/status — frontend polling fallback.
+// Used when Snap popup closes / webhook delayed — confirm payment status
+// independently via DB. Cheap query, safe to call repeatedly.
+app.get("/api/cinema/purchase/:purchase_id/status", (req, res) => {
+  const rows = db.prepare(`SELECT code, payment_status, paid_at, payment_ref FROM cinema_tickets WHERE purchase_id = ?`).all(req.params.purchase_id);
+  if (rows.length === 0) return res.status(404).json({ error: "purchase not found" });
+  const allPaid = rows.every(r => r.payment_status === "paid");
+  const anyFailed = rows.some(r => r.payment_status === "failed");
+  res.json({
+    purchase_id: req.params.purchase_id,
+    payment_status: allPaid ? "paid" : anyFailed ? "failed" : (rows[0].payment_status || "pending_payment"),
+    paid: allPaid,
+    paid_at: rows[0].paid_at,
+    ticket_count: rows.length,
+    ticket_codes: rows.map(r => r.code),
+  });
+});
+
 // POST /api/payment/qris — create QRIS transaction
 app.post("/api/payment/qris", async (req, res) => {
   const { orderId, amount, items, customerName } = req.body;
@@ -2808,6 +2919,7 @@ app.post("/api/payment/webhook", async (req, res) => {
 
   const tx = transactions.get(notif.order_id);
   const paid = ["capture","settlement"].includes(notif.transaction_status);
+  const failed = ["deny","cancel","expire","failure"].includes(notif.transaction_status);
 
   if (tx) {
     tx.status = notif.transaction_status;
@@ -2827,6 +2939,37 @@ app.post("/api/payment/webhook", async (req, res) => {
       });
     }
   }
+
+  // ── CINEMA WEB BOOKING webhook routing ────────────────────────────────
+  // order_id format: CINEMA-{purchase_id}-{timestamp} (created in cinema-snap endpoint)
+  // Match payment_ref column (set when Snap created) to update tickets.
+  if (notif.order_id && notif.order_id.startsWith("CINEMA-")) {
+    try {
+      const newStatus = paid ? "paid" : failed ? "failed" : "pending_payment";
+      const paidAt = paid ? Math.floor(Date.now() / 1000) : null;
+      const result = db.prepare(`
+        UPDATE cinema_tickets
+        SET payment_status = ?, paid_at = COALESCE(?, paid_at), payment_method = ?
+        WHERE payment_ref = ?
+      `).run(newStatus, paidAt, notif.payment_type || "snap", notif.order_id);
+      if (result.changes > 0) {
+        console.log(`🎬 Cinema payment update: ${notif.order_id} → ${newStatus} (${result.changes} tickets)`);
+        broadcast("cinema:payment", {
+          order_id: notif.order_id,
+          status: newStatus,
+          paid,
+          payment_type: notif.payment_type,
+        });
+      } else {
+        console.warn(`⚠ Cinema webhook ${notif.order_id} matched no tickets`);
+      }
+    } catch (e) {
+      console.error("❌ Cinema webhook update failed:", e.message);
+      // Important: still return 200 so Midtrans doesn't retry indefinitely.
+      // Defense: GET /api/cinema/purchase/:id/status lets frontend poll as fallback.
+    }
+  }
+
   res.json({ status: "ok" });
 });
 

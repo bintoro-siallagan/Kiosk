@@ -6,11 +6,33 @@
 // Reuses backend /api/cinema/* (films, showtimes, seats, tickets).
 // Premium dark theme, brand-aware via /api/companies/branding.
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import API_HOST from "../apiBase.js";
 import { fmtMoney as rp } from "../lib/currency.js";
 import { LoadingState } from "../components/uiKit.jsx";
 import { ErrorInline } from "../components/ConnectionError.jsx";
+
+// Load Midtrans Snap.js once per page lifecycle. Returns Promise resolved when
+// window.snap is ready. Idempotent — multiple calls share the same load.
+let _snapPromise = null;
+function loadSnapScript() {
+  if (_snapPromise) return _snapPromise;
+  _snapPromise = new Promise((resolve, reject) => {
+    fetch(`${API_HOST}/api/payment/config`)
+      .then(r => r.json())
+      .then(cfg => {
+        if (!cfg.configured) { reject(new Error("Midtrans not configured on server")); return; }
+        const s = document.createElement("script");
+        s.src = cfg.snapUrl;
+        s.setAttribute("data-client-key", cfg.clientKey || "");
+        s.onload = () => resolve(window.snap);
+        s.onerror = () => reject(new Error("Failed to load Snap.js"));
+        document.head.appendChild(s);
+      })
+      .catch(reject);
+  });
+  return _snapPromise;
+}
 
 const C = {
   bg: "#0a0a0f",
@@ -773,48 +795,116 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, brandP
   const total = seatTotal + bundleTotal;
   const valid = form.name.trim() && form.phone.trim().match(/^[0-9+\-\s]{8,}$/);
 
+  // Stage: 'idle' | 'booking' | 'paying' | 'polling'
+  const [stage, setStage] = useState("idle");
+
+  // Flow with Midtrans Snap + defense layers:
+  // 1. POST /tickets → create ticket(s) in pending_payment state (seats locked)
+  // 2. POST /payment/cinema-snap → get snap_token
+  // 3. Open snap.pay() popup
+  // 4. On snap callback (success/pending/close) → poll status endpoint
+  // 5. Only show success page after backend confirms paid (defense vs
+  //    "Midtrans success but webhook lost → no ticket update")
   const submit = async () => {
-    if (!valid) return;
-    // ANTI cross-outlet contamination: refuse submit kalau showtime.outlet beda dari
-    // outlet yang dipilih user. Backend juga harus validate, tapi double-check di
-    // sini biar user gak proceed dengan state corrupt.
+    if (!valid || submitting) return;
+
+    // ANTI cross-outlet contamination: pre-flight check
     if (showtime.outlet && showtime.outlet !== outlet.code) {
       setError(new Error(`Outlet mismatch: showtime di ${showtime.outlet}, Anda pilih ${outlet.code}. Refresh & ulangi.`));
       return;
     }
-    setSubmitting(true); setError(null);
+
+    setSubmitting(true); setError(null); setStage("booking");
+
     try {
+      // Step 1: create booking (server validates seats + creates pending tickets)
       const bundlesArr = Object.entries(bundlesCart || {}).map(([bid, qty]) => ({ bundle_id: Number(bid), qty }));
-      const body = {
+      const bookBody = {
         showtime_id: showtime.id,
-        outlet_code: outlet.code,  // explicit, server can cross-check
+        outlet_code: outlet.code,
         seats,
         bundles: bundlesArr,
         buyer: form.name.trim(),
         buyer_phone: form.phone.replace(/[^\d]/g, ""),
         buyer_email: form.email.trim() || undefined,
-        payment_method: "pending", // Phase 2: integrate Snap → "qris"/"gopay"/etc
+        payment_method: "snap_pending",
       };
-      const r = await fetch(`${API_HOST}/api/cinema/tickets`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+      const bookRes = await fetch(`${API_HOST}/api/cinema/tickets`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bookBody),
       });
-      const data = await r.json();
-      if (!r.ok || !data.ok) {
-        throw new Error(data.error || `HTTP ${r.status}`);
+      const bookData = await bookRes.json();
+      if (!bookRes.ok || !bookData.ok) {
+        throw new Error(bookData.error || `Booking gagal (HTTP ${bookRes.status})`);
       }
-      // Defensive: server response harus include outlet info. Kalau mismatch,
-      // alarm — jangan tampilkan success page palsu.
-      if (data.outlet && data.outlet !== outlet.code) {
-        throw new Error(`⚠ Ticket dibuat di outlet ${data.outlet} bukan ${outlet.code}. Hubungi staff.`);
+      if (bookData.outlet && bookData.outlet !== outlet.code) {
+        throw new Error(`⚠ Ticket dibuat di outlet ${bookData.outlet} bukan ${outlet.code}. Hubungi staff.`);
       }
-      onBooked({ ...data, _client_outlet: outlet });
+      const purchaseId = bookData.purchase_id;
+      if (!purchaseId) throw new Error("Booking response tidak include purchase_id");
+
+      // Step 2: load Snap.js + request snap_token
+      setStage("paying");
+      const snap = await loadSnapScript();
+      if (!snap) throw new Error("Snap.js gagal load — coba refresh halaman");
+
+      const snapRes = await fetch(`${API_HOST}/api/payment/cinema-snap`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ purchase_id: purchaseId }),
+      });
+      const snapData = await snapRes.json();
+      if (!snapRes.ok || !snapData.snap_token) {
+        throw new Error(snapData.error || "Gagal membuat link pembayaran");
+      }
+
+      // Step 3 + 4: open Snap popup, poll status on any close
+      const finalizeBooking = async (resultLabel) => {
+        setStage("polling");
+        // Poll up to 30 seconds — Midtrans webhook may take a few seconds
+        for (let i = 0; i < 15; i++) {
+          await new Promise(r => setTimeout(r, 2000));
+          try {
+            const sr = await fetch(`${API_HOST}/api/cinema/purchase/${purchaseId}/status`);
+            const sd = await sr.json();
+            if (sd.paid) {
+              // Defense complete — backend confirmed payment, tickets settled
+              onBooked({ ...bookData, _client_outlet: outlet, _payment_status: "paid", _snap_result: resultLabel });
+              return;
+            }
+            if (sd.payment_status === "failed") {
+              throw new Error("Pembayaran gagal / dibatalkan");
+            }
+          } catch (e) { /* keep polling */ }
+        }
+        // Timeout fallback: show success page with pending status
+        // User has ticket code → counter can manually verify with Midtrans dashboard
+        onBooked({ ...bookData, _client_outlet: outlet, _payment_status: "pending_verification", _snap_result: resultLabel });
+      };
+
+      snap.pay(snapData.snap_token, {
+        onSuccess: () => finalizeBooking("success"),
+        onPending: () => finalizeBooking("pending"),
+        onError: (err) => {
+          setStage("idle"); setSubmitting(false);
+          setError(new Error("Pembayaran error: " + (err?.status_message || JSON.stringify(err))));
+        },
+        onClose: () => {
+          // User closed popup — booking is still in pending_payment state
+          // (seats remain held until backend expires them).
+          // Poll a few times in case payment did go through.
+          finalizeBooking("closed");
+        },
+      });
     } catch (e) {
-      setError(e);
-      setSubmitting(false);
+      setError(e); setStage("idle"); setSubmitting(false);
     }
   };
+
+  // UI label per stage
+  const submitLabel = stage === "booking" ? "Membuat booking…"
+                    : stage === "paying"  ? "Membuka pembayaran…"
+                    : stage === "polling" ? "Mengonfirmasi pembayaran…"
+                    : "Bayar Sekarang";
 
   return (
     <div className="cw-checkout" style={{ padding: "30px 0", display: "grid", gridTemplateColumns: "1fr 360px", gap: 24 }}>
@@ -842,7 +932,12 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, brandP
           border: "none", color: "#fff", borderRadius: 10,
           fontSize: 14, fontWeight: 800, cursor: valid && !submitting ? "pointer" : "not-allowed", fontFamily: "inherit",
           boxShadow: valid && !submitting ? `0 8px 20px ${brandPrimary}55` : "none",
-        }}>{submitting ? "Memproses…" : "Booking Sekarang"}</button>
+        }}>{submitLabel}</button>
+        {stage === "polling" && (
+          <div style={{ marginTop: 12, fontSize: 11, color: C.dim, textAlign: "center" }}>
+            ⏳ Verifikasi backend (max 30 detik) — defense layer anti "paid tapi tiket tidak keluar".
+          </div>
+        )}
       </div>
 
       {/* Right: Order summary */}
@@ -919,20 +1014,24 @@ function SuccessPage({ booking, film, showtime, seats, bundlesCart, onNewBooking
   // booking response may include bundles_total — prefer server-computed total
   const total = booking?.total || (seats.length * (showtime.price || 0));
   const hasBundles = bundlesCart && Object.keys(bundlesCart).length > 0;
+  const paymentStatus = booking?._payment_status || "unknown";  // 'paid' | 'pending_verification'
+  const isPaid = paymentStatus === "paid";
 
   return (
     <div style={{ padding: "40px 0 60px", maxWidth: 540, margin: "0 auto", textAlign: "center" }}>
       <div style={{
         width: 80, height: 80, margin: "0 auto 20px",
-        borderRadius: "50%", background: "rgba(16,185,129,0.15)",
+        borderRadius: "50%", background: isPaid ? "rgba(16,185,129,0.15)" : "rgba(251,191,36,0.15)",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 40,
-      }}>✓</div>
-      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 8, color: "#10b981" }}>
-        Booking Berhasil!
+      }}>{isPaid ? "✓" : "⏳"}</div>
+      <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 8, color: isPaid ? "#10b981" : "#fbbf24" }}>
+        {isPaid ? "Pembayaran Sukses!" : "Pembayaran Sedang Diverifikasi"}
       </h1>
       <p style={{ fontSize: 13, color: C.sub, margin: 0, marginBottom: 24 }}>
-        E-tiket dikirim ke WhatsApp. Tunjukkan di counter atau scan QR di pintu studio.
+        {isPaid
+          ? "Tiket sudah dibooking + dibayar. Tunjukkan kode tiket di counter atau scan QR di pintu studio."
+          : "Pembayaran Anda belum tercatat sistem dalam 30 detik. Kalau Anda sudah bayar, tiket TETAP TERSIMPAN — staff counter bisa verifikasi pembayaran via Midtrans dashboard pakai kode tiket di bawah."}
       </p>
 
       <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20, marginBottom: 20, textAlign: "left" }}>
