@@ -27,7 +27,7 @@ const C = {
   red: "#ef4444",
 };
 
-const STEPS = ["outlet", "films", "showtime", "seats", "checkout", "success"];
+const STEPS = ["outlet", "films", "showtime", "seats", "bundles", "checkout", "success"];
 
 export default function CinemaWebApp() {
   const [step, setStep] = useState(() => {
@@ -44,6 +44,7 @@ export default function CinemaWebApp() {
   const [film, setFilm] = useState(null);
   const [showtime, setShowtime] = useState(null);
   const [seats, setSeats] = useState([]);
+  const [bundlesCart, setBundlesCart] = useState({}); // { [bundle_id]: qty }
   const [booking, setBooking] = useState(null); // result from POST /tickets
 
   // Brand theming (auto-load tenant brand for color hint)
@@ -74,6 +75,26 @@ export default function CinemaWebApp() {
 
   return (
     <div style={{ minHeight: "100vh", background: C.bgGrad, color: C.text, fontFamily: "'Inter','-apple-system',sans-serif", paddingBottom: 80 }}>
+      <style>{`
+        /* Mobile responsive overrides */
+        @media (max-width: 768px) {
+          .cw-checkout { grid-template-columns: 1fr !important; gap: 16px !important; }
+          .cw-checkout aside > div { position: static !important; }
+          .cw-header h1 { font-size: 14px !important; }
+          .cw-outlet-pill { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+          .cw-page-title { font-size: 24px !important; }
+          .cw-films-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+          .cw-bundles-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; }
+          .cw-seat { width: 22px !important; height: 22px !important; font-size: 7px !important; }
+          .cw-seat-row { gap: 4px !important; margin-bottom: 4px !important; }
+          .cw-section-pad { padding: 20px 0 !important; }
+        }
+        @media (max-width: 420px) {
+          .cw-films-grid { grid-template-columns: 1fr !important; }
+          .cw-bundles-grid { grid-template-columns: 1fr !important; }
+          .cw-seat { width: 18px !important; height: 18px !important; }
+        }
+      `}</style>
       <Header outlet={outlet} step={step} onResetOutlet={resetOutlet} onBack={goBack} brand={brand} brandPrimary={brandPrimary} />
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "0 20px" }}>
         {step === "outlet" && <OutletPicker onPick={pickOutlet} brandPrimary={brandPrimary} />}
@@ -85,17 +106,25 @@ export default function CinemaWebApp() {
         )}
         {step === "seats" && showtime && (
           <SeatPicker showtime={showtime} film={film} initialSeats={seats}
-            onConfirm={(picked) => { setSeats(picked); goTo("checkout"); }}
+            onConfirm={(picked) => { setSeats(picked); goTo("bundles"); }}
+            brandPrimary={brandPrimary} />
+        )}
+        {step === "bundles" && (
+          <BundlesStep outlet={outlet} cart={bundlesCart}
+            onChange={setBundlesCart}
+            onContinue={() => goTo("checkout")}
             brandPrimary={brandPrimary} />
         )}
         {step === "checkout" && (
           <Checkout outlet={outlet} film={film} showtime={showtime} seats={seats}
+            bundlesCart={bundlesCart}
             onBooked={(b) => { setBooking(b); goTo("success"); }}
             brandPrimary={brandPrimary} />
         )}
         {step === "success" && booking && (
           <SuccessPage booking={booking} film={film} showtime={showtime} seats={seats}
-            onNewBooking={() => { setFilm(null); setShowtime(null); setSeats([]); setBooking(null); goTo("films"); }}
+            bundlesCart={bundlesCart}
+            onNewBooking={() => { setFilm(null); setShowtime(null); setSeats([]); setBundlesCart({}); setBooking(null); goTo("films"); }}
             brandPrimary={brandPrimary} />
         )}
       </main>
@@ -131,7 +160,7 @@ function Header({ outlet, step, onResetOutlet, onBack, brand, brandPrimary }) {
           </div>
         </div>
         {outlet && step !== "outlet" && (
-          <button onClick={onResetOutlet} style={{
+          <button onClick={onResetOutlet} className="cw-outlet-pill" style={{
             background: `${brandPrimary}22`, border: `1px solid ${brandPrimary}55`, color: brandPrimary,
             borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
             display: "flex", alignItems: "center", gap: 6,
@@ -151,21 +180,23 @@ function Header({ outlet, step, onResetOutlet, onBack, brand, brandPrimary }) {
 // ════════════════════════════════════════════════════════════════════
 function OutletPicker({ onPick, brandPrimary }) {
   const [outlets, setOutlets] = useState(null);
+  const [films, setFilms] = useState(null);
   const [error, setError] = useState(null);
 
   const load = useCallback(() => {
     setError(null);
-    fetch(`${API_HOST}/api/outlet-master`)
-      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-      .then(d => {
-        const list = Array.isArray(d) ? d : (d.outlets || d.data || []);
-        const cinemaOutlets = list.filter(o =>
-          (o.primary_vertical === "cinema" || o.vertical === "cinema") &&
-          (o.status !== "inactive")
-        );
-        setOutlets(cinemaOutlets);
-      })
-      .catch(e => setError(e));
+    Promise.all([
+      fetch(`${API_HOST}/api/outlet-master`).then(r => { if (!r.ok) throw new Error(`outlets ${r.status}`); return r.json(); }),
+      fetch(`${API_HOST}/api/cinema/films`).then(r => r.ok ? r.json() : { films: [] }).catch(() => ({ films: [] })),
+    ]).then(([d, fd]) => {
+      const list = Array.isArray(d) ? d : (d.outlets || d.data || []);
+      const cinemaOutlets = list.filter(o =>
+        (o.primary_vertical === "cinema" || o.vertical === "cinema") &&
+        (o.status !== "inactive")
+      );
+      setOutlets(cinemaOutlets);
+      setFilms((fd.films || []).filter(f => f.poster_url).slice(0, 8));
+    }).catch(e => setError(e));
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -173,13 +204,60 @@ function OutletPicker({ onPick, brandPrimary }) {
   if (!outlets) return <LoadingState label="Memuat lokasi bioskop…" />;
 
   return (
-    <div style={{ padding: "60px 0 40px" }}>
+    <div className="cw-section-pad" style={{ padding: "50px 0 40px" }}>
+      {/* HERO */}
       <div style={{ textAlign: "center", marginBottom: 40 }}>
-        <h1 style={{ fontSize: 36, fontWeight: 800, letterSpacing: -1, margin: 0, marginBottom: 10 }}>
-          Pilih Lokasi Bioskop
+        <div style={{
+          display: "inline-block", padding: "5px 14px", borderRadius: 999,
+          background: `${brandPrimary}1a`, border: `1px solid ${brandPrimary}55`,
+          color: brandPrimary, fontSize: 11, fontWeight: 700, letterSpacing: 1.5,
+          fontFamily: "'Geist Mono',monospace", marginBottom: 16, textTransform: "uppercase",
+        }}>🎬 Online Booking · Skip Antrian</div>
+        <h1 className="cw-page-title" style={{ fontSize: 42, fontWeight: 800, letterSpacing: -1.5, margin: 0, marginBottom: 12, lineHeight: 1.1, background: `linear-gradient(135deg, #fff 0%, ${brandPrimary} 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+          Pesan Tiket. Pilih Kursi.<br/>Langsung Nonton.
         </h1>
-        <p style={{ fontSize: 14, color: C.sub, maxWidth: 480, margin: "0 auto" }}>
-          Tiket online untuk lokasi {outlets.length} kota. Pilih bioskop untuk lihat film & jadwal hari ini.
+        <p style={{ fontSize: 15, color: C.sub, maxWidth: 520, margin: "0 auto", lineHeight: 1.5 }}>
+          Tiket bioskop online tanpa antri loket. Pilih lokasi, pick film, pesan kursi favorit, ambil di counter.
+        </p>
+      </div>
+
+      {/* Now showing carousel (if available) */}
+      {films && films.length > 0 && (
+        <div style={{ marginBottom: 50 }}>
+          <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 14, textAlign: "center", textTransform: "uppercase" }}>
+            ✨ Now Showing
+          </div>
+          <div style={{ overflowX: "auto", paddingBottom: 12, margin: "0 -20px" }}>
+            <div style={{ display: "flex", gap: 12, padding: "0 20px", minWidth: "fit-content" }}>
+              {films.map(f => (
+                <div key={f.id} style={{
+                  flexShrink: 0, width: 140, aspectRatio: "2/3", borderRadius: 12,
+                  background: `url(${f.poster_url}) center/cover`,
+                  border: `1px solid ${C.border}`, position: "relative",
+                  display: "flex", flexDirection: "column", justifyContent: "flex-end",
+                  overflow: "hidden",
+                }}>
+                  <div style={{
+                    background: "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)",
+                    padding: "30px 10px 10px",
+                  }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", lineHeight: 1.2, marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.title}</div>
+                    <div style={{ fontSize: 9, color: "rgba(255,255,255,0.7)", fontFamily: "'Geist Mono',monospace" }}>{f.duration_min || 0} mnt</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Outlet picker section */}
+      <div style={{ textAlign: "center", marginBottom: 28 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.4, margin: 0, marginBottom: 6 }}>
+          Pilih Lokasi Bioskop
+        </h2>
+        <p style={{ fontSize: 13, color: C.sub, margin: 0 }}>
+          {outlets.length} kota · klik untuk lihat jadwal hari ini
         </p>
       </div>
       {outlets.length === 0 ? (
@@ -269,7 +347,7 @@ function FilmsGrid({ outlet, onPickFilm, brandPrimary }) {
           <div style={{ fontSize: 12 }}>Cek lokasi lain atau besok</div>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 220px), 1fr))", gap: 16 }}>
+        <div className="cw-films-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 220px), 1fr))", gap: 16 }}>
           {filmsWithShowtimes.map(f => {
             const showCount = showtimes.filter(s => s.film_id === f.id).length;
             return (
@@ -476,7 +554,7 @@ function SeatPicker({ showtime, film, initialSeats, onConfirm, brandPrimary }) {
       <div style={{ overflowX: "auto", paddingBottom: 10 }}>
         <div style={{ display: "inline-block", margin: "0 auto", minWidth: "100%" }}>
           {rowLetters.map(row => (
-            <div key={row} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, justifyContent: "center" }}>
+            <div key={row} className="cw-seat-row" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, justifyContent: "center" }}>
               <div style={{ width: 18, fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace", textAlign: "right" }}>{row}</div>
               {Array.from({ length: cols }, (_, i) => i + 1).map(col => {
                 const seat = `${row}${col}`;
@@ -489,6 +567,7 @@ function SeatPicker({ showtime, film, initialSeats, onConfirm, brandPrimary }) {
                   <button key={seat} onClick={() => toggle(seat)}
                     disabled={isSold || isHeldOther}
                     title={isSold ? `${seat} (sold)` : isHeldOther ? `${seat} (held)` : seat}
+                    className="cw-seat"
                     style={{
                       width: 26, height: 26, borderRadius: 6,
                       background: bg, border: `1px solid ${border}`,
@@ -548,23 +627,169 @@ function SeatPicker({ showtime, film, initialSeats, onConfirm, brandPrimary }) {
 }
 
 // ════════════════════════════════════════════════════════════════════
+// STEP 4.5: F&B BUNDLES (optional add-on)
+// ════════════════════════════════════════════════════════════════════
+function BundlesStep({ outlet, cart, onChange, onContinue, brandPrimary }) {
+  const [bundles, setBundles] = useState(null);
+  const [error, setError] = useState(null);
+
+  const load = useCallback(() => {
+    setError(null);
+    fetch(`${API_HOST}/api/cinema/bundles?outlet=${encodeURIComponent(outlet.code)}`)
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then(d => setBundles((d.bundles || []).filter(b => b.is_active !== 0)))
+      .catch(e => setError(e));
+  }, [outlet.code]);
+  useEffect(() => { load(); }, [load]);
+
+  // Auto-skip if outlet has no bundles
+  useEffect(() => {
+    if (bundles && bundles.length === 0) onContinue();
+  }, [bundles, onContinue]);
+
+  const setQty = (bid, qty) => {
+    const next = { ...cart };
+    if (qty <= 0) delete next[bid];
+    else next[bid] = qty;
+    onChange(next);
+  };
+
+  const totalQty = Object.values(cart).reduce((s, q) => s + q, 0);
+  const totalPrice = bundles ? Object.entries(cart).reduce((s, [bid, q]) => {
+    const b = bundles.find(x => String(x.id) === String(bid));
+    return s + (b ? b.price * q : 0);
+  }, 0) : 0;
+
+  if (error) return <ErrorInline error={error} label="Gagal memuat menu F&B" onRetry={load} />;
+  if (!bundles) return <LoadingState label="Memuat menu snack & minuman…" />;
+  if (bundles.length === 0) return <LoadingState label="Melanjutkan…" />;
+
+  return (
+    <div style={{ padding: "30px 0 120px" }}>
+      <div style={{ marginBottom: 24 }}>
+        <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.4, margin: 0, marginBottom: 6 }}>
+          🍿 Tambah Snack?
+        </h2>
+        <p style={{ fontSize: 13, color: C.sub, margin: 0 }}>
+          Pesan sekalian di sini, ambil di counter saat scan tiket. Bisa di-skip.
+        </p>
+      </div>
+
+      <div className="cw-bundles-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 260px), 1fr))", gap: 14 }}>
+        {bundles.map(b => {
+          const qty = cart[b.id] || 0;
+          return (
+            <div key={b.id} style={{
+              background: C.card, border: `1px solid ${qty > 0 ? brandPrimary + "66" : C.border}`,
+              borderRadius: 14, overflow: "hidden",
+              transition: "border-color 0.15s",
+            }}>
+              <div style={{
+                aspectRatio: "16/10", background: b.image_url ? `url(${b.image_url}) center/cover` : "rgba(255,255,255,0.04)",
+                display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, color: C.dim,
+              }}>{!b.image_url && "🍿"}</div>
+              <div style={{ padding: "12px 14px 14px" }}>
+                <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{b.name}</div>
+                {b.description && <div style={{ fontSize: 11, color: C.sub, lineHeight: 1.4, marginBottom: 10, minHeight: 28 }}>{b.description}</div>}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: brandPrimary }}>{rp(b.price)}</div>
+                  {qty === 0 ? (
+                    <button onClick={() => setQty(b.id, 1)} style={{
+                      background: `${brandPrimary}22`, border: `1px solid ${brandPrimary}55`, color: brandPrimary,
+                      borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                    }}>+ Tambah</button>
+                  ) : (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, background: brandPrimary, borderRadius: 8, padding: "2px 4px" }}>
+                      <button onClick={() => setQty(b.id, qty - 1)} style={{
+                        width: 28, height: 28, background: "transparent", border: "none", color: "#fff",
+                        fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                      }}>−</button>
+                      <span style={{ minWidth: 16, textAlign: "center", color: "#fff", fontWeight: 800, fontFamily: "'Geist Mono',monospace" }}>{qty}</span>
+                      <button onClick={() => setQty(b.id, qty + 1)} style={{
+                        width: 28, height: 28, background: "transparent", border: "none", color: "#fff",
+                        fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                      }}>+</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Sticky bottom action */}
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
+        background: "rgba(10,10,15,0.95)", backdropFilter: "blur(20px)",
+        borderTop: `1px solid ${C.border}`, padding: "14px 20px",
+      }}>
+        <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {totalQty > 0 ? (
+              <>
+                <div style={{ fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>
+                  {totalQty} ITEM SNACK
+                </div>
+                <div style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: brandPrimary }}>+ {rp(totalPrice)}</div>
+              </>
+            ) : (
+              <div style={{ fontSize: 12, color: C.sub }}>Tanpa snack juga OK — bisa beli di counter</div>
+            )}
+          </div>
+          <button onClick={onContinue} style={{
+            background: brandPrimary, border: "none", color: "#fff",
+            padding: "12px 22px", borderRadius: 10,
+            fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+            boxShadow: `0 8px 20px ${brandPrimary}55`,
+          }}>{totalQty > 0 ? "Lanjut →" : "Skip →"}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
 // STEP 5: CHECKOUT (customer info + booking submit)
 // ════════════════════════════════════════════════════════════════════
-function Checkout({ outlet, film, showtime, seats, onBooked, brandPrimary }) {
+function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, brandPrimary }) {
   const [form, setForm] = useState({ name: "", phone: "", email: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [bundlesMeta, setBundlesMeta] = useState(null);
 
-  const total = seats.length * (showtime.price || 0);
+  // Load bundle metadata for display (need names + prices in summary)
+  useEffect(() => {
+    if (!bundlesCart || Object.keys(bundlesCart).length === 0) return;
+    fetch(`${API_HOST}/api/cinema/bundles?outlet=${encodeURIComponent(outlet.code)}`)
+      .then(r => r.json()).then(d => setBundlesMeta(d.bundles || [])).catch(() => {});
+  }, [outlet.code, bundlesCart]);
+
+  const seatTotal = seats.length * (showtime.price || 0);
+  const bundleTotal = bundlesMeta ? Object.entries(bundlesCart || {}).reduce((s, [bid, q]) => {
+    const b = bundlesMeta.find(x => String(x.id) === String(bid));
+    return s + (b ? b.price * q : 0);
+  }, 0) : 0;
+  const total = seatTotal + bundleTotal;
   const valid = form.name.trim() && form.phone.trim().match(/^[0-9+\-\s]{8,}$/);
 
   const submit = async () => {
     if (!valid) return;
+    // ANTI cross-outlet contamination: refuse submit kalau showtime.outlet beda dari
+    // outlet yang dipilih user. Backend juga harus validate, tapi double-check di
+    // sini biar user gak proceed dengan state corrupt.
+    if (showtime.outlet && showtime.outlet !== outlet.code) {
+      setError(new Error(`Outlet mismatch: showtime di ${showtime.outlet}, Anda pilih ${outlet.code}. Refresh & ulangi.`));
+      return;
+    }
     setSubmitting(true); setError(null);
     try {
+      const bundlesArr = Object.entries(bundlesCart || {}).map(([bid, qty]) => ({ bundle_id: Number(bid), qty }));
       const body = {
         showtime_id: showtime.id,
+        outlet_code: outlet.code,  // explicit, server can cross-check
         seats,
+        bundles: bundlesArr,
         buyer: form.name.trim(),
         buyer_phone: form.phone.replace(/[^\d]/g, ""),
         buyer_email: form.email.trim() || undefined,
@@ -579,7 +804,12 @@ function Checkout({ outlet, film, showtime, seats, onBooked, brandPrimary }) {
       if (!r.ok || !data.ok) {
         throw new Error(data.error || `HTTP ${r.status}`);
       }
-      onBooked(data);
+      // Defensive: server response harus include outlet info. Kalau mismatch,
+      // alarm — jangan tampilkan success page palsu.
+      if (data.outlet && data.outlet !== outlet.code) {
+        throw new Error(`⚠ Ticket dibuat di outlet ${data.outlet} bukan ${outlet.code}. Hubungi staff.`);
+      }
+      onBooked({ ...data, _client_outlet: outlet });
     } catch (e) {
       setError(e);
       setSubmitting(false);
@@ -587,7 +817,7 @@ function Checkout({ outlet, film, showtime, seats, onBooked, brandPrimary }) {
   };
 
   return (
-    <div style={{ padding: "30px 0", display: "grid", gridTemplateColumns: "1fr 360px", gap: 24 }}>
+    <div className="cw-checkout" style={{ padding: "30px 0", display: "grid", gridTemplateColumns: "1fr 360px", gap: 24 }}>
       {/* Left: Customer form */}
       <div>
         <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.3, margin: 0, marginBottom: 16 }}>Data Pemesan</h2>
@@ -630,9 +860,25 @@ function Checkout({ outlet, film, showtime, seats, onBooked, brandPrimary }) {
           <Row label="📅 Jadwal" value={`${fmtDate(showtime.show_date)} · ${showtime.start_time}`} />
           <Row label="🎬 Studio" value={`${showtime.studio_name} · ${showtime.format || "2D"}`} />
           <Row label="💺 Kursi" value={`${seats.length} kursi · ${seats.sort().join(", ")}`} />
-          <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <span style={{ fontSize: 13, color: C.sub }}>Total</span>
-            <span style={{ fontSize: 22, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: brandPrimary }}>{rp(total)}</span>
+          {bundlesMeta && Object.entries(bundlesCart || {}).map(([bid, q]) => {
+            const b = bundlesMeta.find(x => String(x.id) === String(bid));
+            return b ? <Row key={bid} label={`🍿 ${b.name}`} value={`${q}× · ${rp(b.price * q)}`} /> : null;
+          })}
+          <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.dim, marginBottom: 6 }}>
+              <span>Tiket ({seats.length})</span>
+              <span style={{ fontFamily: "'Geist Mono',monospace" }}>{rp(seatTotal)}</span>
+            </div>
+            {bundleTotal > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.dim, marginBottom: 6 }}>
+                <span>Snack & minuman</span>
+                <span style={{ fontFamily: "'Geist Mono',monospace" }}>{rp(bundleTotal)}</span>
+              </div>
+            )}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 8 }}>
+              <span style={{ fontSize: 13, color: C.sub }}>Total</span>
+              <span style={{ fontSize: 22, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: brandPrimary }}>{rp(total)}</span>
+            </div>
           </div>
         </div>
       </aside>
@@ -668,9 +914,11 @@ function Row({ label, value }) {
 // ════════════════════════════════════════════════════════════════════
 // STEP 6: SUCCESS
 // ════════════════════════════════════════════════════════════════════
-function SuccessPage({ booking, film, showtime, seats, onNewBooking, brandPrimary }) {
+function SuccessPage({ booking, film, showtime, seats, bundlesCart, onNewBooking, brandPrimary }) {
   const ticketCode = booking?.ticket_code || booking?.code || booking?.order_id || booking?.id;
-  const total = seats.length * (showtime.price || 0);
+  // booking response may include bundles_total — prefer server-computed total
+  const total = booking?.total || (seats.length * (showtime.price || 0));
+  const hasBundles = bundlesCart && Object.keys(bundlesCart).length > 0;
 
   return (
     <div style={{ padding: "40px 0 60px", maxWidth: 540, margin: "0 auto", textAlign: "center" }}>
@@ -691,10 +939,24 @@ function SuccessPage({ booking, film, showtime, seats, onNewBooking, brandPrimar
         <div style={{ fontSize: 10, color: C.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 4 }}>KODE TIKET</div>
         <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: brandPrimary, marginBottom: 16 }}>{ticketCode}</div>
 
+        {/* Outlet ditampilkan prominent — anti cross-outlet contamination */}
+        {booking?._client_outlet && (
+          <div style={{
+            background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.3)",
+            borderRadius: 10, padding: "10px 12px", marginBottom: 14,
+          }}>
+            <div style={{ fontSize: 10, color: C.dim, letterSpacing: 1.2, fontFamily: "'Geist Mono',monospace", marginBottom: 2 }}>📍 AMBIL TIKET DI</div>
+            <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>{booking._client_outlet.name}</div>
+            <div style={{ fontSize: 11, color: C.sub, fontFamily: "'Geist Mono',monospace" }}>{booking._client_outlet.code}</div>
+            {booking._client_outlet.address && <div style={{ fontSize: 11, color: C.sub, marginTop: 4 }}>{booking._client_outlet.address}</div>}
+          </div>
+        )}
+
         <Row label="🎬 Film" value={film.title} />
         <Row label="📅 Jadwal" value={`${fmtDate(showtime.show_date)} · ${showtime.start_time}`} />
         <Row label="🎬 Studio" value={`${showtime.studio_name} · ${showtime.format || "2D"}`} />
         <Row label="💺 Kursi" value={seats.sort().join(", ")} />
+        {hasBundles && <Row label="🍿 Snack" value={`${Object.values(bundlesCart).reduce((s, q) => s + q, 0)} item`} />}
         <Row label="💰 Total" value={rp(total)} />
       </div>
 
