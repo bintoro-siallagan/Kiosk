@@ -84,6 +84,21 @@ function SceneLoading() {
 
 function getScene() {
   const q = window.location.search;
+  const host = (typeof window !== "undefined" && window.location.hostname) || "";
+
+  // Hostname-based surface split (karyaos.tech migration).
+  // admin.karyaos.tech → admin entry only (login → admin dashboard)
+  // app.karyaos.tech   → customer surfaces (kiosk/POS/cinema dll) — query param tetap berlaku
+  // api.karyaos.tech   → backend only, frontend gak di-serve di sini
+  if (host.startsWith("admin.")) {
+    // Query param tetap menang kalau admin sengaja navigate ke ?tools, ?command, dll
+    if (q.includes("tools")) return "tools";
+    if (q.includes("command") || new URLSearchParams(q).has("command")) return "command";
+    if (q.includes("signup")) return "signup";
+    if (q.includes("reset")) return "reset-password";
+    return "admin-login";  // default: entry admin
+  }
+
   if (new URLSearchParams(q).has("command")) return "command";
   // POS scenes — MUST be checked BEFORE generic "cinema" / "pos" suffixes
   // ("pos-cinema" contains "cinema" so cinema check would steal it otherwise)

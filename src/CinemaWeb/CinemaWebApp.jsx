@@ -1979,7 +1979,7 @@ function Footer({ brand, brandPrimary, onAbout, onNav, footerConfig }) {
   };
   const FooterLink = ({ children, onClick, href }) => href
     ? <a href={href} target="_blank" rel="noopener noreferrer" style={footerLinkStyle}>{children}</a>
-    : <button onClick={onClick} style={{ ...footerLinkStyle, background: "transparent", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}>{children}</button>;
+    : <button onClick={onClick} style={{ ...footerLinkStyle, background: "transparent", border: "none", cursor: "pointer", textAlign: "left" }}>{children}</button>;
   const renderLinks = (list) => list.map((l, i) => (
     l.url
       ? <FooterLink key={`${l.label}-${i}`} href={l.url}>{l.label}</FooterLink>

@@ -49,7 +49,23 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-app.use(cors());
+// CORS — restrict ke karyaos.tech subdomains (production) + localhost dev.
+// Pre-migration kiosk.karys.tech masih boleh sampai cutover selesai.
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin) return cb(null, true);  // same-origin / curl / native app
+    const allowed = [
+      /\.karyaos\.tech$/i,                     // app/admin/api.karyaos.tech + any future subdomain
+      /^https?:\/\/karyaos\.tech$/i,           // root
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i,  // dev
+      /^https?:\/\/(192|10|172)\.\d+\.\d+\.\d+(:\d+)?$/i,  // LAN dev (POS terminal, dll)
+    ];
+    if (allowed.some(re => re.test(origin))) return cb(null, true);
+    console.warn('[CORS] blocked origin:', origin);
+    cb(new Error(`Origin ${origin} not allowed`));
+  },
+  credentials: true,
+}));
 app.use("/audio", express.static(require("path").join(__dirname, "audio")));
 app.use("/screensaver", express.static(require("path").join(__dirname, "screensaver")));
 
