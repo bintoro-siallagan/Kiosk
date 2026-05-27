@@ -161,18 +161,18 @@ export default function CashPayment({ items = [], amount = 0, subtotal = 0, prom
 
   return (
     <div style={S.page}>
-      <h1 style={S.title}>KaryaOS</h1>
-      <p style={S.subtitle}>Pembayaran Tunai</p>
+      <h1 style={S.title}>karyaos</h1>
+      <p style={S.subtitle}>Cash payment</p>
 
       <div style={S.grid}>
         {/* LEFT — order summary */}
         <div style={S.card}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
             <span style={S.chip}>#{orderNum}</span>
-            <span style={S.chip}>{items.length} item</span>
+            <span style={S.chip}>{items.length} item{items.length === 1 ? '' : 's'}</span>
           </div>
 
-          <div style={S.label}>ITEMS</div>
+          <div style={S.label}>Items</div>
           <div style={{ flex: 1, overflowY: 'auto', marginBottom: 16 }}>
             {items.map((it, i) => {
               const qty = it.qty ?? 1;
@@ -202,7 +202,7 @@ export default function CashPayment({ items = [], amount = 0, subtotal = 0, prom
                     const extra = Math.max(0, (it.addonTotal||0) - explicit) * qty;
                     return extra > 0 ? (
                       <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#888',marginLeft:16,marginTop:3,lineHeight:1.4}}>
-                        <span>+ Topping ekstra</span>
+                        <span>+ Extra toppings</span>
                         <span>Rp {extra.toLocaleString('id-ID')}</span>
                       </div>
                     ) : null;
@@ -236,55 +236,55 @@ export default function CashPayment({ items = [], amount = 0, subtotal = 0, prom
               </div>
             )}
             {pointsRedeemed > 0 && (
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#FB923C",padding:"4px 0"}}>
-                <span>🎁 Tukar {pointsRedeemed} poin</span>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"var(--brand-primary,#FF6B35)",padding:"4px 0"}}>
+                <span>🎁 Redeemed {pointsRedeemed} pts</span>
                 <span>− Rp {pointsDiscount.toLocaleString('id-ID')}</span>
               </div>
             )}
             {serviceCharge > 0 && (
-              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#FBBF24",padding:"4px 0",fontWeight:600}}>
-                <span>🍽️ {serviceChargeLabel} {serviceChargePct}%</span>
+              <div style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"rgba(251,191,36,0.85)",padding:"4px 0",fontWeight:500}}>
+                <span>{serviceChargeLabel} · {serviceChargePct}%</span>
                 <span>+ Rp {serviceCharge.toLocaleString('id-ID')}</span>
               </div>
             )}
-            <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"#666",padding:"4px 0",fontStyle:"italic"}}>
-              <span>PPN</span>
-              <span>sudah termasuk</span>
+            <div style={{display:"flex",justifyContent:"space-between",fontSize:11,color:"rgba(255,255,255,0.4)",padding:"4px 0",fontStyle:"italic"}}>
+              <span>VAT</span>
+              <span>included</span>
             </div>
           </div>
 
-          <div style={{ paddingTop: 12, borderTop: '2px solid rgba(255,255,255,0.15)' }}>
+          <div style={{ paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline"}}>
-              <div style={S.label}>TOTAL{orderType ? (orderType === "dine-in" || orderType === "dine" ? " · 🪑" : " · 🛍️") : ""}</div>
+              <div style={S.label}>Total{orderType ? (orderType === "dine-in" || orderType === "dine" ? " · 🪑" : " · 🛍️") : ""}</div>
               <div style={S.amount}>Rp {amount.toLocaleString('id-ID')}</div>
             </div>
             {isMember && (
-              <div style={{marginTop:10,padding:"10px 12px",background:"rgba(52,211,153,0.08)",border:"1px solid rgba(52,211,153,0.2)",borderRadius:8,fontSize:12,color:"#34D399",textAlign:"center"}}>
-                🎁 Anda akan dapat <strong>{Math.floor(amount / 1000)} poin</strong> dari pembelian ini
+              <div style={{marginTop:10,padding:"10px 12px",background:"rgba(52,211,153,0.08)",border:"1px solid rgba(52,211,153,0.22)",borderRadius:10,fontSize:12,color:"#34D399",textAlign:"center",fontFamily:"'Inter',sans-serif"}}>
+                🎁 You'll earn <strong>{Math.floor(amount / 1000)} pts</strong> from this purchase
               </div>
             )}
           </div>
 
-          {onBack && <button style={S.backBtn} onClick={onBack}>← Kembali</button>}
+          {onBack && <button style={S.backBtn} onClick={onBack}>← Back</button>}
         </div>
 
         {/* RIGHT — cash entry */}
         <div style={S.card}>
-          <div style={S.label}>UANG DITERIMA</div>
+          <div style={S.label}>Cash received</div>
           <div style={S.receivedDisplay}>Rp {received.toLocaleString('id-ID')}</div>
 
           <div style={S.quickGrid}>
-            <button style={S.qBtn} onClick={() => addAmount(50000)}>+ 50rb</button>
-            <button style={S.qBtn} onClick={() => addAmount(100000)}>+ 100rb</button>
-            <button style={S.qBtn} onClick={() => addAmount(200000)}>+ 200rb</button>
-            <button style={S.qBtn} onClick={() => addAmount(500000)}>+ 500rb</button>
-            <button style={{ ...S.qBtn, ...S.qBtnPas }} onClick={setExact}>UANG PAS</button>
-            <button style={{ ...S.qBtn, ...S.qBtnReset }} onClick={reset}>RESET</button>
+            <button style={S.qBtn} onClick={() => addAmount(50000)}>+ 50k</button>
+            <button style={S.qBtn} onClick={() => addAmount(100000)}>+ 100k</button>
+            <button style={S.qBtn} onClick={() => addAmount(200000)}>+ 200k</button>
+            <button style={S.qBtn} onClick={() => addAmount(500000)}>+ 500k</button>
+            <button style={{ ...S.qBtn, ...S.qBtnPas }} onClick={setExact}>Exact</button>
+            <button style={{ ...S.qBtn, ...S.qBtnReset }} onClick={reset}>Reset</button>
           </div>
 
           {received > 0 && (
             <div style={S.changeBox}>
-              <div style={S.changeLabel}>{isEnough ? 'KEMBALIAN' : 'KURANG'}</div>
+              <div style={S.changeLabel}>{isEnough ? 'Change' : 'Short'}</div>
               <div style={{ ...S.changeValue, ...(isEnough ? S.changeOK : S.changeShort) }}>
                 Rp {Math.abs(change).toLocaleString('id-ID')}
               </div>
@@ -296,12 +296,12 @@ export default function CashPayment({ items = [], amount = 0, subtotal = 0, prom
             disabled={!isEnough}
             onClick={confirm}
           >
-            ✓ KONFIRMASI BAYAR
+            ✓ Confirm payment
           </button>
         </div>
       </div>
 
-      <div style={S.footer}>KaryaOS Kiosk · {new Date().toLocaleString('id-ID')}</div>
+      <div style={S.footer}>karyaos kiosk · {new Date().toLocaleString('id-ID')}</div>
     </div>
   );
 }
