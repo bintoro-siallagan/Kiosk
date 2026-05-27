@@ -5672,6 +5672,9 @@ function setupCinema(app, opts = {}) {
   // Phase 3 ALTER — section toggles + page heros
   try { db.exec("ALTER TABLE cinema_web_config ADD COLUMN section_toggles TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_web_config ADD COLUMN page_heros TEXT"); } catch {}
+  // Phase 3.5 ALTER — custom sections (manual film row) + custom pages (new admin-defined pages)
+  try { db.exec("ALTER TABLE cinema_web_config ADD COLUMN custom_sections TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_web_config ADD COLUMN custom_pages TEXT"); } catch {}
 
   router.get('/web-config', (req, res) => {
     // Auto-resolve company_id dari scope, atau dari query param (super admin)
@@ -5691,6 +5694,8 @@ function setupCinema(app, opts = {}) {
         faq_groups: row.faq_groups ? JSON.parse(row.faq_groups) : null,
         section_toggles: row.section_toggles ? JSON.parse(row.section_toggles) : null,
         page_heros: row.page_heros ? JSON.parse(row.page_heros) : null,
+        custom_sections: row.custom_sections ? JSON.parse(row.custom_sections) : null,
+        custom_pages: row.custom_pages ? JSON.parse(row.custom_pages) : null,
       },
       company_id: companyId,
       updated_at: row.updated_at,
@@ -5709,19 +5714,24 @@ function setupCinema(app, opts = {}) {
     const faqJson = b.faq_groups ? JSON.stringify(b.faq_groups) : null;
     const sectionJson = b.section_toggles ? JSON.stringify(b.section_toggles) : null;
     const heroJson = b.page_heros ? JSON.stringify(b.page_heros) : null;
+    // Custom sections + pages: allow explicit empty array (= clear), tidak coalesce
+    const customSectionsJson = (b.custom_sections !== undefined) ? JSON.stringify(b.custom_sections || []) : null;
+    const customPagesJson    = (b.custom_pages !== undefined)    ? JSON.stringify(b.custom_pages || [])    : null;
     const updatedBy = req.headers['x-admin-user'] || 'unknown';
     db.prepare(`
-      INSERT INTO cinema_web_config (company_id, nav_items, footer_config, faq_groups, section_toggles, page_heros, updated_at, updated_by)
-      VALUES (?, ?, ?, ?, ?, ?, strftime('%s','now'), ?)
+      INSERT INTO cinema_web_config (company_id, nav_items, footer_config, faq_groups, section_toggles, page_heros, custom_sections, custom_pages, updated_at, updated_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, strftime('%s','now'), ?)
       ON CONFLICT(company_id) DO UPDATE SET
         nav_items = COALESCE(excluded.nav_items, nav_items),
         footer_config = COALESCE(excluded.footer_config, footer_config),
         faq_groups = COALESCE(excluded.faq_groups, faq_groups),
         section_toggles = COALESCE(excluded.section_toggles, section_toggles),
         page_heros = COALESCE(excluded.page_heros, page_heros),
+        custom_sections = COALESCE(excluded.custom_sections, custom_sections),
+        custom_pages = COALESCE(excluded.custom_pages, custom_pages),
         updated_at = excluded.updated_at,
         updated_by = excluded.updated_by
-    `).run(companyId, navJson, footerJson, faqJson, sectionJson, heroJson, updatedBy);
+    `).run(companyId, navJson, footerJson, faqJson, sectionJson, heroJson, customSectionsJson, customPagesJson, updatedBy);
     res.json({ ok: true, company_id: companyId });
   });
 

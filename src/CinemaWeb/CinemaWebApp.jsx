@@ -118,7 +118,9 @@ const C = {
   red: "#ef4444",
 };
 
-const STEPS = ["outlet", "films", "filmDetail", "showtime", "seats", "bundles", "checkout", "success", "about", "history", "movies", "promo", "studio", "locations", "faq"];
+// Built-in steps — custom slugs from admin akan auto-allowed via fallback
+const BUILTIN_STEPS = ["outlet", "films", "filmDetail", "showtime", "seats", "bundles", "checkout", "success", "about", "history", "movies", "promo", "studio", "locations", "faq"];
+const STEPS = BUILTIN_STEPS;  // legacy alias
 
 // ════════════════════════════════════════════════════════════════════
 // DRAFT BOOKING PERSISTENCE
@@ -562,7 +564,7 @@ export default function CinemaWebApp() {
           <HistoryPage session={session} brandPrimary={brandPrimary} onSignInClick={() => setSignInOpen(true)} />
         )}
         {step === "movies" && (
-          <MoviesPage brandPrimary={brandPrimary} session={session} onPick={(f) => { setFilm(f); goTo(outlet ? "filmDetail" : "outlet"); }} sectionToggles={webConfig?.section_toggles} />
+          <MoviesPage brandPrimary={brandPrimary} session={session} onPick={(f) => { setFilm(f); goTo(outlet ? "filmDetail" : "outlet"); }} sectionToggles={webConfig?.section_toggles} customSections={webConfig?.custom_sections} />
         )}
         {step === "promo" && (
           <PromoPage brandPrimary={brandPrimary} heroOverride={webConfig?.page_heros?.promo} />
@@ -576,6 +578,11 @@ export default function CinemaWebApp() {
         {step === "faq" && (
           <FAQPage brandPrimary={brandPrimary} customFaqGroups={webConfig?.faq_groups} heroOverride={webConfig?.page_heros?.faq} />
         )}
+        {/* Custom pages (admin-defined) */}
+        {(() => {
+          const cp = (webConfig?.custom_pages || []).find(p => p.slug === step && p.visible !== false);
+          return cp ? <CustomPage page={cp} brandPrimary={brandPrimary} /> : null;
+        })()}
       </main>
       <Footer brand={brand} brandPrimary={brandPrimary} onAbout={() => goTo("about")} onNav={(t) => goTo(t)} footerConfig={resolvedFooterConfig} />
       {signInOpen && <SignInModal onClose={() => setSignInOpen(false)} onSignIn={handleSignIn} brandPrimary={brandPrimary} />}
@@ -1012,8 +1019,9 @@ const DEFAULT_SECTION_TOGGLES = {
   genre_filter: true,
 };
 
-function MoviesPage({ brandPrimary, onPick, session, sectionToggles }) {
+function MoviesPage({ brandPrimary, onPick, session, sectionToggles, customSections }) {
   const tg = { ...DEFAULT_SECTION_TOGGLES, ...(sectionToggles || {}) };
+  const customRows = Array.isArray(customSections) ? customSections.filter(s => s.visible !== false).sort((a, b) => (a.order || 0) - (b.order || 0)) : [];
   const [films, setFilms] = useState(null);
   const [top10, setTop10] = useState([]);
   const [top10Loading, setTop10Loading] = useState(false);
@@ -1137,6 +1145,13 @@ function MoviesPage({ brandPrimary, onPick, session, sectionToggles }) {
           {tg.by_genre && genreEntries.map(([genre, list]) => (
             <FilmRow key={genre} title={`🎭 ${genre}`} films={list} onPick={onPick} brandPrimary={brandPrimary} />
           ))}
+          {/* Custom sections — admin-curated film row */}
+          {customRows.map(s => {
+            const ids = new Set((s.film_ids || []).map(Number));
+            const list = fg(films.filter(f => ids.has(f.id)));
+            if (!list.length) return null;
+            return <FilmRow key={`custom-${s.id}`} title={s.title} films={list} onPick={onPick} brandPrimary={brandPrimary} />;
+          })}
         </>
       )}
     </div>
@@ -1697,6 +1712,36 @@ function FAQPage({ brandPrimary, customFaqGroups, heroOverride }) {
 // ════════════════════════════════════════════════════════════════════
 // ABOUT PAGE — company history & info
 // ════════════════════════════════════════════════════════════════════
+// ════════════════════════════════════════════════════════════════════
+// CUSTOM PAGE — admin-defined page dgn hero + body
+// ════════════════════════════════════════════════════════════════════
+function CustomPage({ page, brandPrimary }) {
+  const h = page.hero || {};
+  // body: plain text dgn newline support, atau HTML kalau diawali "<"
+  const body = page.body || "";
+  const isHtml = body.trim().startsWith("<");
+  return (
+    <div style={{ paddingBottom: 60 }}>
+      <PageHero
+        tag={h.tag || page.slug.toUpperCase()}
+        title={h.title || page.slug}
+        subtitle={h.subtitle || ""}
+        accent={h.accent || "📄"}
+        brandPrimary={brandPrimary}
+      />
+      {body && (
+        <div style={{ maxWidth: 820, margin: "0 auto", padding: "0 4px" }}>
+          {isHtml ? (
+            <div style={{ color: C.text, fontSize: 14, lineHeight: 1.7 }} dangerouslySetInnerHTML={{ __html: body }} />
+          ) : (
+            <div style={{ color: C.text, fontSize: 14, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>{body}</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AboutPage({ brand, brandPrimary, onBack, heroOverride }) {
   const name = brand?.brand_short || brand?.name || "KaryaOS";
   return (

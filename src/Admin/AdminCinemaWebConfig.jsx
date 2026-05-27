@@ -109,12 +109,17 @@ export default function AdminCinemaWebConfig({ onBack }) {
   const [faqGroups, setFaqGroups] = useState(DEFAULT_FAQ);
   const [sectionToggles, setSectionToggles] = useState(DEFAULT_SECTION_TOGGLES);
   const [pageHeros, setPageHeros] = useState(DEFAULT_PAGE_HEROS);
+  const [customSections, setCustomSections] = useState([]);
+  const [customPages, setCustomPages] = useState([]);
+  const [films, setFilms] = useState([]);  // utk film picker di custom section
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const [tab, setTab] = useState("nav");
   const [openGroupIdx, setOpenGroupIdx] = useState(0);
   const [openHeroKey, setOpenHeroKey] = useState("promo");
+  const [editingSectionIdx, setEditingSectionIdx] = useState(-1);
+  const [editingPageIdx, setEditingPageIdx] = useState(-1);
 
   useEffect(() => {
     fetch(`${API_HOST}/api/cinema/web-config`)
@@ -125,9 +130,13 @@ export default function AdminCinemaWebConfig({ onBack }) {
         if (d.config?.faq_groups?.length) setFaqGroups(d.config.faq_groups);
         if (d.config?.section_toggles) setSectionToggles({ ...DEFAULT_SECTION_TOGGLES, ...d.config.section_toggles });
         if (d.config?.page_heros) setPageHeros({ ...DEFAULT_PAGE_HEROS, ...d.config.page_heros });
+        if (Array.isArray(d.config?.custom_sections)) setCustomSections(d.config.custom_sections);
+        if (Array.isArray(d.config?.custom_pages)) setCustomPages(d.config.custom_pages);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
+    // Load film list utk picker
+    fetch(`${API_HOST}/api/cinema/films`).then(r => r.json()).then(d => setFilms(d.films || [])).catch(() => {});
   }, []);
 
   const save = async () => {
@@ -143,6 +152,8 @@ export default function AdminCinemaWebConfig({ onBack }) {
           faq_groups: faqGroups,
           section_toggles: sectionToggles,
           page_heros: pageHeros,
+          custom_sections: customSections.map((s, i) => ({ ...s, order: i + 1 })),
+          custom_pages: customPages,
         }),
       });
       const d = await res.json();
@@ -163,6 +174,8 @@ export default function AdminCinemaWebConfig({ onBack }) {
     setFaqGroups(DEFAULT_FAQ);
     setSectionToggles(DEFAULT_SECTION_TOGGLES);
     setPageHeros(DEFAULT_PAGE_HEROS);
+    setCustomSections([]);
+    setCustomPages([]);
   };
 
   // ───────── FAQ editing ─────────
@@ -482,6 +495,77 @@ export default function AdminCinemaWebConfig({ onBack }) {
               );
             })}
           </div>
+
+          {/* CUSTOM SECTIONS — admin bikin row film manual */}
+          <div style={{ marginTop: 28 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 800, color: "#fff", margin: 0 }}>➕ Custom Sections (Row Film Manual)</h3>
+              <button onClick={() => {
+                const id = Date.now();
+                setCustomSections(s => [...s, { id, title: "🎯 Section Baru", film_ids: [], visible: true }]);
+                setEditingSectionIdx(customSections.length);
+              }} style={btnStyle("primary")}>+ Tambah Section</button>
+            </div>
+            <div style={{ marginBottom: 12, fontSize: 12, color: "#9ca3af", lineHeight: 1.5 }}>
+              Bikin row film custom dgn pilih film manual. Cocok utk "Pilihan Manager", "Film Akhir Pekan", dll. Muncul di bawah row default.
+            </div>
+            {customSections.length === 0 && (
+              <div style={{ padding: 24, color: "#6b7280", fontSize: 12, textAlign: "center", background: "rgba(255,255,255,0.02)", borderRadius: 8 }}>
+                Belum ada custom section. Klik "+ Tambah Section" di atas.
+              </div>
+            )}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {customSections.map((s, si) => {
+                const isEditing = editingSectionIdx === si;
+                const selectedFilms = films.filter(f => (s.film_ids || []).includes(f.id));
+                return (
+                  <div key={s.id} style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: 14 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                      <input value={s.title} onChange={e => setCustomSections(arr => arr.map((x, i) => i === si ? { ...x, title: e.target.value } : x))} placeholder="🎯 Judul Section" style={{ ...inputStyle, flex: 1, fontWeight: 700 }} />
+                      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#9ca3af", cursor: "pointer" }}>
+                        <input type="checkbox" checked={s.visible !== false} onChange={e => setCustomSections(arr => arr.map((x, i) => i === si ? { ...x, visible: e.target.checked } : x))} />
+                        Visible
+                      </label>
+                      <button onClick={() => setEditingSectionIdx(isEditing ? -1 : si)} style={btnStyle("ghost")}>{isEditing ? "Tutup" : "Pilih Film"}</button>
+                      <button onClick={() => {
+                        if (!confirm(`Hapus section "${s.title}"?`)) return;
+                        setCustomSections(arr => arr.filter((_, i) => i !== si));
+                      }} style={btnStyle("danger-mini")}>🗑 Hapus</button>
+                    </div>
+                    <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 6 }}>
+                      {(s.film_ids || []).length} film terpilih
+                      {selectedFilms.length > 0 && ": " + selectedFilms.map(f => f.title).join(", ").slice(0, 80) + (selectedFilms.map(f => f.title).join(", ").length > 80 ? "..." : "")}
+                    </div>
+                    {isEditing && (
+                      <div style={{ marginTop: 10, padding: 12, background: "rgba(0,0,0,0.25)", borderRadius: 8 }}>
+                        <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 8 }}>Pilih film (klik utk toggle):</div>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, maxHeight: 240, overflowY: "auto" }}>
+                          {films.length === 0 && <div style={{ fontSize: 12, color: "#6b7280" }}>Loading films…</div>}
+                          {films.map(f => {
+                            const sel = (s.film_ids || []).includes(f.id);
+                            return (
+                              <button key={f.id} onClick={() => setCustomSections(arr => arr.map((x, i) => i === si ? {
+                                ...x,
+                                film_ids: sel ? (x.film_ids || []).filter(id => id !== f.id) : [...(x.film_ids || []), f.id],
+                              } : x))} style={{
+                                padding: "5px 10px", fontSize: 11, fontWeight: 700,
+                                background: sel ? "#fb923c" : "rgba(255,255,255,0.06)",
+                                color: sel ? "#fff" : "#e5e7eb",
+                                border: `1px solid ${sel ? "#fb923c" : "rgba(255,255,255,0.12)"}`,
+                                borderRadius: 5, cursor: "pointer", fontFamily: "inherit",
+                              }}>
+                                {sel ? "✓ " : ""}{f.title}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 
@@ -541,6 +625,71 @@ export default function AdminCinemaWebConfig({ onBack }) {
                 </div>
               );
             })}
+          </div>
+
+          {/* CUSTOM PAGES — admin bikin page baru */}
+          <div style={{ marginTop: 28 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 800, color: "#fff", margin: 0 }}>➕ Custom Pages (Halaman Baru)</h3>
+              <button onClick={() => {
+                setCustomPages(p => [...p, { slug: `page-${Date.now()}`, hero: { tag: "", title: "Halaman Baru", subtitle: "", accent: "📄" }, body: "", visible: true }]);
+                setEditingPageIdx(customPages.length);
+              }} style={btnStyle("primary")}>+ Tambah Page</button>
+            </div>
+            <div style={{ marginBottom: 12, fontSize: 12, color: "#9ca3af", lineHeight: 1.5 }}>
+              Buat halaman baru selain Promo/Studio/dll. URL: <code style={{ color: "#fb923c" }}>?movies=1#step=&lt;slug&gt;</code>. Untuk muncul di header nav, tambahkan ke Nav Header dgn target = slug page.
+            </div>
+            {customPages.length === 0 && (
+              <div style={{ padding: 24, color: "#6b7280", fontSize: 12, textAlign: "center", background: "rgba(255,255,255,0.02)", borderRadius: 8 }}>
+                Belum ada custom page. Klik "+ Tambah Page" di atas.
+              </div>
+            )}
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {customPages.map((p, pi) => {
+                const isEditing = editingPageIdx === pi;
+                return (
+                  <div key={pi} style={{ background: "#0f172a", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, padding: 14 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                      <span style={{ fontSize: 12, color: "#fb923c", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, padding: "3px 8px", background: "rgba(251,146,60,0.1)", borderRadius: 4 }}>/{p.slug}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#fff", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.hero?.title || p.slug}</span>
+                      <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#9ca3af", cursor: "pointer" }}>
+                        <input type="checkbox" checked={p.visible !== false} onChange={e => setCustomPages(arr => arr.map((x, i) => i === pi ? { ...x, visible: e.target.checked } : x))} />
+                        Visible
+                      </label>
+                      <button onClick={() => setEditingPageIdx(isEditing ? -1 : pi)} style={btnStyle("ghost")}>{isEditing ? "Tutup" : "Edit"}</button>
+                      <button onClick={() => {
+                        if (!confirm(`Hapus page "${p.hero?.title || p.slug}"?`)) return;
+                        setCustomPages(arr => arr.filter((_, i) => i !== pi));
+                      }} style={btnStyle("danger-mini")}>🗑 Hapus</button>
+                    </div>
+                    {isEditing && (
+                      <div style={{ marginTop: 8, padding: 12, background: "rgba(0,0,0,0.25)", borderRadius: 8, display: "flex", flexDirection: "column", gap: 10 }}>
+                        <Field label="Slug (URL identifier — lowercase, no spasi)" value={p.slug}
+                          onChange={v => setCustomPages(arr => arr.map((x, i) => i === pi ? { ...x, slug: v.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9\-]/g, "") } : x))}
+                          placeholder="karier" />
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 80px", gap: 8 }}>
+                          <Field label="Hero Tag" value={p.hero?.tag || ""}
+                            onChange={v => setCustomPages(arr => arr.map((x, i) => i === pi ? { ...x, hero: { ...x.hero, tag: v } } : x))}
+                            placeholder="Karier" />
+                          <Field label="Accent" value={p.hero?.accent || ""}
+                            onChange={v => setCustomPages(arr => arr.map((x, i) => i === pi ? { ...x, hero: { ...x.hero, accent: v } } : x))}
+                            placeholder="💼" narrow />
+                        </div>
+                        <Field label="Hero Title" value={p.hero?.title || ""}
+                          onChange={v => setCustomPages(arr => arr.map((x, i) => i === pi ? { ...x, hero: { ...x.hero, title: v } } : x))}
+                          placeholder="Karier di KaryaOS" />
+                        <Field label="Hero Subtitle" value={p.hero?.subtitle || ""}
+                          onChange={v => setCustomPages(arr => arr.map((x, i) => i === pi ? { ...x, hero: { ...x.hero, subtitle: v } } : x))}
+                          placeholder="Bergabunglah dengan tim kami..." multiline />
+                        <Field label="Body (plain text atau HTML — diawali < untuk HTML)" value={p.body || ""}
+                          onChange={v => setCustomPages(arr => arr.map((x, i) => i === pi ? { ...x, body: v } : x))}
+                          placeholder="Lowongan Posisi:&#10;- Frontend Developer&#10;- Backend Developer&#10;&#10;Atau pakai &lt;p&gt;HTML&lt;/p&gt;" multiline />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
