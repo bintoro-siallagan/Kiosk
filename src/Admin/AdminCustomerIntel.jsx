@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const VISIT = {
   "first-time": { c: "#22d3ee", t: "First-time" },
   repeat: { c: "#3b82f6", t: "Repeat" },
@@ -20,7 +21,7 @@ export default function AdminCustomerIntel({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Customer Intelligence…</div>;
+  if (!d) return <LoadingState label="Memuat Customer Intelligence…" />;
   const s = d.summary;
   const vf = d.visit_frequency;
   const maxVf = Math.max(1, ...Object.values(vf));

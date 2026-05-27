@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import ReportActions from "./ReportActions.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const fcColor = (p) => (p > 40 ? "#ef4444" : p >= 35 ? "#f59e0b" : "#10b981");
 const CAT = { froyo: "Froyo", smoothies: "Smoothie", takehome: "Tato Home", yogulato: "Yogulato", collab: "Collab" };
 
@@ -18,7 +19,7 @@ export default function AdminFoodCost({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Food Cost…</div>;
+  if (!d) return <LoadingState label="Memuat Food Cost…" />;
   const s = d.summary;
 
   return (

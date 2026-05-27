@@ -2,7 +2,7 @@
 // Core Tax — PPN, PPh, faktur pajak & SPT Masa.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#b91c1c";
@@ -57,7 +57,7 @@ export default function AdminCoreTax({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Core Tax…</div>;
+  if (!d) return <LoadingState label="Memuat Core Tax…" />;
   const s = d.summary, ppn = d.ppn;
 
   return (

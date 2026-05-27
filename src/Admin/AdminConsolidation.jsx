@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const fmtJt = (n) => (n / 1e6).toFixed(1) + "M";
 const AC = "#1e40af";
 
@@ -15,7 +16,7 @@ export default function AdminConsolidation({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Consolidation…</div>;
+  if (!d) return <LoadingState label="Memuat Consolidation…" />;
   const s = d.summary, c = d.consolidated;
   const maxNP = Math.max(1, ...d.entities.map(e => e.net_profit));
 

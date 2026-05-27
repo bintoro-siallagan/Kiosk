@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { ErrorInline } from "../components/ConnectionError.jsx";
+import { LoadingState } from "../components/uiKit.jsx";
 
 const SEV = {
   critical: { c: "#ef4444", bg: "#2a1416", label: "CRITICAL" },
@@ -23,7 +24,7 @@ export default function AdminFinanceAlert({ apiBase = "" }) {
   useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, [load]);
 
   if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} /></div>;
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat finance alert…</div>;
+  if (!d) return <LoadingState label="Memuat finance alert…" />;
   const s = d.summary;
 
   return (

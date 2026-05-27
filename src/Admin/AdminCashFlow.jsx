@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { fmtMoney } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => (n < 0 ? "−" : "") + fmtMoney(Math.abs(n || 0));
 const fmtJt = (n) => (n < 0 ? "−" : "") + (Math.abs(n) / 1e6).toFixed(1) + "M";
@@ -17,7 +18,7 @@ export default function AdminCashFlow({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Laporan Arus Kas…</div>;
+  if (!d) return <LoadingState label="Memuat Laporan Arus Kas…" />;
   const s = d.summary;
 
   return (

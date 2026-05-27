@@ -2,7 +2,7 @@
 // Notification Center — hub alert terpusat.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#db2777";
 const PRI = { high: { c: "#ef4444", l: "TINGGI" }, medium: { c: "#f59e0b", l: "SEDANG" }, low: { c: "#3b82f6", l: "RENDAH" } };
@@ -48,7 +48,7 @@ export default function AdminNotificationCenter({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Notification Center…</div>;
+  if (!d) return <LoadingState label="Memuat Notification Center…" />;
   const s = d.summary;
   const list = filter === "all" ? d.notifications : d.notifications.filter(n => n.category === filter);
 

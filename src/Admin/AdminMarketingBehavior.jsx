@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const AC = "#22d3ee";
 
 export default function AdminMarketingBehavior({ apiBase = "" }) {
@@ -15,7 +16,7 @@ export default function AdminMarketingBehavior({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Behavior Analytics…</div>;
+  if (!d) return <LoadingState label="Memuat Behavior Analytics…" />;
   const s = d.summary;
   const maxHour = Math.max(1, ...d.by_hour);
   const maxDay = Math.max(1, ...d.by_day.map(x => x.count));

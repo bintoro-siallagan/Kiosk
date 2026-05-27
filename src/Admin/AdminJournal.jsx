@@ -8,6 +8,7 @@ import PeriodPicker from "./PeriodPicker.jsx";
 import { ErrorInline } from "../components/ConnectionError.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 
 export default function AdminJournal({ apiBase = "" }) {
   const [range, setRange] = useState(() => {
@@ -27,7 +28,7 @@ export default function AdminJournal({ apiBase = "" }) {
   useEffect(() => { load(); }, [load]);
 
   if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} /></div>;
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat jurnal…</div>;
+  if (!d) return <LoadingState label="Memuat jurnal…" />;
   const t = d.totals;
 
   return (

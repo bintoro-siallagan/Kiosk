@@ -2,7 +2,7 @@
 // Risk Management — risk register enterprise (likelihood × impact).
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#dc2626";
 const LVL = { Critical: "#ef4444", High: "#f97316", Medium: "#f59e0b", Low: "#10b981" };
@@ -51,7 +51,7 @@ export default function AdminRisk({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Risk Management…</div>;
+  if (!d) return <LoadingState label="Memuat Risk Management…" />;
   const s = d.summary;
   const maxL = Math.max(1, ...s.by_level.map(x => x.count));
 

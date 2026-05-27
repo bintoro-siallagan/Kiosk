@@ -2,7 +2,7 @@
 // Item Rules — kitchen routing, promo link, availability + combo CRUD.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#ea580c";
@@ -49,7 +49,7 @@ export default function AdminItemRules({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Item Rules…</div>;
+  if (!d) return <LoadingState label="Memuat Item Rules…" />;
   const s = d.summary;
   const cycle = (arr, cur) => arr[(arr.indexOf(cur) + 1) % arr.length];
   const maxSt = Math.max(1, ...d.station_dist.map(x => x.count));

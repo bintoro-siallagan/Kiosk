@@ -3,6 +3,7 @@
 // Selalu positif — apresiasi, bukan punishment.
 
 import { useState, useEffect, useCallback } from "react";
+import { LoadingState } from "../components/uiKit.jsx";
 
 export default function AdminMotivation({ apiBase = "" }) {
   const [d, setD] = useState(null);
@@ -12,7 +13,7 @@ export default function AdminMotivation({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Smart Motivation…</div>;
+  if (!d) return <LoadingState label="Memuat Smart Motivation…" />;
   const s = d.summary;
 
   return (

@@ -2,7 +2,7 @@
 // Release Payment — pencairan pembayaran vendor.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#c2410c";
@@ -49,7 +49,7 @@ export default function AdminReleasePayment({ apiBase = "" }) {
     }).catch(e => setMsg(String(e))).finally(() => setBusy(null));
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Release Payment…</div>;
+  if (!d) return <LoadingState label="Memuat Release Payment…" />;
   const s = d.summary;
 
   return (

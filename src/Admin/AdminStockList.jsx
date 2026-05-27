@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const AC = "#155e75";
 
 export default function AdminStockList({ apiBase = "" }) {
@@ -16,7 +17,7 @@ export default function AdminStockList({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Stock List…</div>;
+  if (!d) return <LoadingState label="Memuat Stock List…" />;
   const s = d.summary;
   const items = d.items.filter(i =>
     (cat === "all" || i.category === cat) &&

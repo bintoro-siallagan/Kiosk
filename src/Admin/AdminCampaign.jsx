@@ -2,7 +2,7 @@
 // Realtime Campaign Engine + Event/Weather Impact Analytics.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#fb7185";
 const ago = (ts) => {
@@ -64,7 +64,7 @@ export default function AdminCampaign({ apiBase = "" }) {
     setEditing({ ...editing, channels: cur.includes(id) ? cur.filter(c => c !== id) : [...cur, id] });
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Campaign Center…</div>;
+  if (!d) return <LoadingState label="Memuat Campaign Center…" />;
   const im = d.impact, s = d.summary;
   const chMap = Object.fromEntries(d.channels.map(c => [c.id, c]));
 

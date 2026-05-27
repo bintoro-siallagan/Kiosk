@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import ReportActions from "./ReportActions.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const ST = {
   over: { c: "#ef4444", t: "OVER BUDGET" },
   warning: { c: "#f59e0b", t: "HAMPIR LIMIT" },
@@ -47,7 +48,7 @@ export default function AdminBudget({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Budget…</div>;
+  if (!d) return <LoadingState label="Memuat Budget…" />;
   const s = d.summary;
 
   return (

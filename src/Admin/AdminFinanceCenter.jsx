@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import { ErrorInline } from "../components/ConnectionError.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const fmtK = (n) => (n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "K" : String(n || 0));
 
 export default function AdminFinanceCenter({ apiBase = "" }) {
@@ -21,7 +22,7 @@ export default function AdminFinanceCenter({ apiBase = "" }) {
   useEffect(() => { setD(null); setErr(""); load(); }, [load]);
 
   if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} /></div>;
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Finance Center…</div>;
+  if (!d) return <LoadingState label="Memuat Finance Center…" />;
   const k = d.kpi;
   const maxRev = Math.max(1, ...d.outlets.map(o => o.revenue_today));
 

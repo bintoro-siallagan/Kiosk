@@ -2,7 +2,7 @@
 // Sales Pipeline / CRM — funnel lead B2B.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
 const fmtJt = (n) => (n / 1e6).toFixed(0) + "M";
@@ -50,7 +50,7 @@ export default function AdminSalesPipeline({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Sales Pipeline…</div>;
+  if (!d) return <LoadingState label="Memuat Sales Pipeline…" />;
   const s = d.summary;
   const maxV = Math.max(1, ...d.stages.map(x => x.value));
 

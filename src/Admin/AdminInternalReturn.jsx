@@ -2,7 +2,7 @@
 // Internal Return — Transfer Return & Delivery Return + partial complete.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#9f1239";
 const TYPE = { transfer: { c: "#2563eb", l: "TRANSFER RETURN" }, delivery: { c: "#0e7490", l: "DELIVERY RETURN" } };
@@ -46,7 +46,7 @@ export default function AdminInternalReturn({ apiBase = "" }) {
     }).catch(e => setMsg(String(e)));
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Internal Return…</div>;
+  if (!d) return <LoadingState label="Memuat Internal Return…" />;
   const s = d.summary;
 
   return (

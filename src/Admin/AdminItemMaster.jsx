@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const AC = "#0891b2";
 const TYPE_C = {
   "Finished Goods": "#10b981", "Raw Material": "#f59e0b", "Semi Finished": "#a855f7",
@@ -19,7 +20,7 @@ export default function AdminItemMaster({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Item Master…</div>;
+  if (!d) return <LoadingState label="Memuat Item Master…" />;
   const s = d.summary;
   const items = filter === "all" ? d.items : d.items.filter(i => i.item_type === filter);
   const maxCat = Math.max(1, ...d.categories.map(c => c.count));

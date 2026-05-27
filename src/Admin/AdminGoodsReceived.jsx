@@ -2,7 +2,7 @@
 // Good Received — outlet konfirmasi terima barang → stok nambah.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#0e7490";
 const ago = (ts) => {
@@ -65,7 +65,7 @@ export default function AdminGoodsReceived({ apiBase = "" }) {
       }).catch(e => setMsg(String(e)));
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Good Received…</div>;
+  if (!d) return <LoadingState label="Memuat Good Received…" />;
   const s = d.summary;
 
   return (

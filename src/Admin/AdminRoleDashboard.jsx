@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const fmtVal = (v, fmt) =>
   fmt === "rp" ? fmtRp(v) : fmt === "rating" ? "★ " + v : Number(v || 0).toLocaleString("id-ID");
 
@@ -16,7 +17,7 @@ export default function AdminRoleDashboard({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Role Dashboards…</div>;
+  if (!d) return <LoadingState label="Memuat Role Dashboards…" />;
   const dash = d.dashboards.find(x => x.id === sel) || d.dashboards[0];
 
   return (

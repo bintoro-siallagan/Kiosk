@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import ReportActions from "./ReportActions.jsx";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
 
@@ -52,7 +52,7 @@ export default function AdminPayroll({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Payroll…</div>;
+  if (!d) return <LoadingState label="Memuat Payroll…" />;
   const s = d.summary;
 
   return (

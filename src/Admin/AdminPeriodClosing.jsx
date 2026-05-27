@@ -2,7 +2,7 @@
 // Period Closing — tutup periode akuntansi & stok.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#475569";
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—";
@@ -45,7 +45,7 @@ export default function AdminPeriodClosing({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Period Closing…</div>;
+  if (!d) return <LoadingState label="Memuat Period Closing…" />;
   const s = d.summary;
 
   const Section = ({ title, icon, list }) => (

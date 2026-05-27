@@ -2,7 +2,7 @@
 // Stock Transfer — transfer stok antar lokasi.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#2563eb";
 const ST = { requested: { c: "#f59e0b", l: "DIMINTA" }, in_transit: { c: "#3b82f6", l: "DIKIRIM" }, received: { c: "#10b981", l: "DITERIMA" } };
@@ -52,7 +52,7 @@ export default function AdminStockTransfer({ apiBase = "" }) {
       }).catch(e => setMsg(String(e)));
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Stock Transfer…</div>;
+  if (!d) return <LoadingState label="Memuat Stock Transfer…" />;
   const s = d.summary;
 
   return (

@@ -2,7 +2,7 @@
 // General Ledger — chart of accounts + Memorial Journal.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#0369a1";
@@ -53,7 +53,7 @@ export default function AdminGeneralLedger({ apiBase = "" }) {
     }).catch(e => setMsg(String(e)));
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat General Ledger…</div>;
+  if (!d) return <LoadingState label="Memuat General Ledger…" />;
   const s = d.summary;
   const allAccounts = d.groups.flatMap(g => g.accounts);
 

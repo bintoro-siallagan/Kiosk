@@ -3,7 +3,7 @@
 // buat nutup biaya MDR. Tunai bebas fee.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
 
@@ -45,7 +45,7 @@ export default function AdminConvenienceFee({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!cfg) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat config…</div>;
+  if (!cfg) return <LoadingState label="Memuat config…" />;
 
   return (
     <div>

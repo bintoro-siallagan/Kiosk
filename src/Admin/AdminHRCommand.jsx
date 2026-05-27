@@ -3,6 +3,7 @@
 // low engagement, outlet morale, attendance. Dukung tim, bukan monitor.
 
 import { useState, useEffect, useCallback } from "react";
+import { LoadingState } from "../components/uiKit.jsx";
 
 const moraleColor = (m) => (m >= 70 ? "#10b981" : m >= 45 ? "#f59e0b" : "#ef4444");
 const healthColor = (s) => (s >= 80 ? "#10b981" : s >= 60 ? "#f59e0b" : "#ef4444");
@@ -16,7 +17,7 @@ export default function AdminHRCommand({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat HR Command Center…</div>;
+  if (!d) return <LoadingState label="Memuat HR Command Center…" />;
   const w = d.workforce_health, a = d.attendance, rd = d.reward_distribution;
   const hc = healthColor(w.score);
 

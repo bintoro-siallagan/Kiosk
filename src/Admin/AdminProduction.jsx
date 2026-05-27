@@ -2,7 +2,7 @@
 // Production / Central Kitchen — production order.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#9a3412";
 const ST = { planned: { c: "#3b82f6", l: "PLANNED" }, in_progress: { c: "#f59e0b", l: "IN PROGRESS" }, completed: { c: "#10b981", l: "COMPLETED" } };
@@ -52,7 +52,7 @@ export default function AdminProduction({ apiBase = "" }) {
       }).catch(e => setMsg(String(e)));
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Production…</div>;
+  if (!d) return <LoadingState label="Memuat Production…" />;
   const s = d.summary;
 
   return (

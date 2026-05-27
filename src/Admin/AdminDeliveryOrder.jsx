@@ -2,7 +2,7 @@
 // Delivery Order (Surat Jalan) — pengiriman barang ke customer B2B.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#0891b2";
 const STAT = { draft: { c: "#f59e0b", l: "DRAFT" }, shipped: { c: "#3b82f6", l: "DIKIRIM" }, delivered: { c: "#10b981", l: "DITERIMA" } };
@@ -41,7 +41,7 @@ export default function AdminDeliveryOrder({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Delivery Order…</div>;
+  if (!d) return <LoadingState label="Memuat Delivery Order…" />;
   const s = d.summary;
 
   return (

@@ -3,7 +3,7 @@
 // Refactored ke pattern uiKit `useCrud` + `<EditModal>` + `<CrudButtons>`.
 
 import { useState, useEffect, useCallback } from "react";
-import { useCrud, EditModal, CrudButtons } from "../components/uiKit.jsx";
+import { useCrud, EditModal, CrudButtons , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#0e7490";
 const CAT_C = { Berat: "#f59e0b", Volume: "#3b82f6", Jumlah: "#10b981" };
@@ -35,7 +35,7 @@ export default function AdminMasterUnit({ apiBase = "" }) {
       .then(r => r.json()).then(j => { if (j.ok) load(); }).catch(() => {});
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Master Unit…</div>;
+  if (!d) return <LoadingState label="Memuat Master Unit…" />;
   const s = d.summary;
 
   return (

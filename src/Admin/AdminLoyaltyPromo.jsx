@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const AC = "#f43f5e";
 const rrColor = (r) => (r >= 70 ? "#ef4444" : r >= 35 ? "#f59e0b" : "#10b981");
 
@@ -15,7 +16,7 @@ export default function AdminLoyaltyPromo({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Loyalty & Promo Analytics…</div>;
+  if (!d) return <LoadingState label="Memuat Loyalty & Promo Analytics…" />;
   const p = d.promo, l = d.loyalty, ch = d.channel;
   const maxUse = Math.max(1, ...p.usage.map(x => x.orders));
   const chTotal = ch.cashier + ch.kiosk + ch.qr || 1;

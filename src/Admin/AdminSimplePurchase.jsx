@@ -2,7 +2,7 @@
 // Simple Purchase — pembelian cepat / petty cash.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#65a30d";
@@ -52,7 +52,7 @@ export default function AdminSimplePurchase({ apiBase = "" }) {
     }).catch(e => setMsg(String(e)));
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Simple Purchase…</div>;
+  if (!d) return <LoadingState label="Memuat Simple Purchase…" />;
   const s = d.summary;
   const total = (Number(form.qty) || 0) * (Number(form.unit_price) || 0);
 

@@ -2,7 +2,7 @@
 // Approval Engine — approval bertingkat by nominal.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#f59e0b";
@@ -52,7 +52,7 @@ export default function AdminApproval({ apiBase = "" }) {
     }).then(r => r.json()).then(j => { if (j.ok) load(); }).catch(() => {});
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Approval Engine…</div>;
+  if (!d) return <LoadingState label="Memuat Approval Engine…" />;
   const s = d.summary;
   const tierRange = (tiers, i) => {
     const t = tiers[i], prev = i > 0 ? tiers[i - 1].max : 0;

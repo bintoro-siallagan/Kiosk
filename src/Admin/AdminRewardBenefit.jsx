@@ -2,7 +2,7 @@
 // Reward Benefit — crew tukar point jadi benefit nyata.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short" }) : "—";
 const ST = {
@@ -69,7 +69,7 @@ export default function AdminRewardBenefit({ apiBase = "" }) {
     }).then(r => r.json()).then(j => { if (j.ok) load(); }).catch(() => {});
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Reward Benefit…</div>;
+  if (!d) return <LoadingState label="Memuat Reward Benefit…" />;
   const s = d.summary;
   const sel = d.crew.find(c => String(c.id) === String(crewId));
 

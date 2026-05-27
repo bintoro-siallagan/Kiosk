@@ -2,6 +2,7 @@
 // Product Versioning — timeline riwayat perubahan produk.
 
 import { useState, useEffect, useCallback } from "react";
+import { LoadingState } from "../components/uiKit.jsx";
 
 const AC = "#7c3aed";
 const TYPE_C = { price: "#10b981", recipe: "#f97316", modifier: "#3b82f6", promo: "#fbbf24", status: "#ef4444" };
@@ -22,7 +23,7 @@ export default function AdminProductVersioning({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Product Versioning…</div>;
+  if (!d) return <LoadingState label="Memuat Product Versioning…" />;
   const s = d.summary;
   const versions = filter === "all" ? d.versions : d.versions.filter(v => v.change_type === filter);
 

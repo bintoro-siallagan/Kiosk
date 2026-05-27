@@ -2,7 +2,7 @@
 // Sales Order — penjualan B2B (antar PT, lintas brand, korporat).
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#6d28d9";
@@ -72,7 +72,7 @@ export default function AdminSalesOrder({ apiBase = "" }) {
       }).catch(e => setMsg(String(e)));
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Sales Order…</div>;
+  if (!d) return <LoadingState label="Memuat Sales Order…" />;
   const s = d.summary;
 
   return (

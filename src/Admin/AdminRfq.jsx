@@ -2,7 +2,7 @@
 // RFQ / Tender — banding penawaran multi-vendor sebelum PO.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#0891b2";
@@ -54,7 +54,7 @@ export default function AdminRfq({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat RFQ / Tender…</div>;
+  if (!d) return <LoadingState label="Memuat RFQ / Tender…" />;
   const s = d.summary;
 
   return (

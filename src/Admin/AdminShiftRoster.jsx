@@ -2,7 +2,7 @@
 // Shift Roster — penjadwalan shift staff.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#059669";
 const SHIFT_C = { Pagi: "#f59e0b", Siang: "#3b82f6", Malam: "#a855f7" };
@@ -51,7 +51,7 @@ export default function AdminShiftRoster({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Shift Roster…</div>;
+  if (!d) return <LoadingState label="Memuat Shift Roster…" />;
   const s = d.summary;
 
   return (

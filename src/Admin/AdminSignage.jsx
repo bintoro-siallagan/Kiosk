@@ -2,7 +2,7 @@
 // Digital Signage CMS — layar & konten media.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#9333ea";
 const MEDIA_STATUSES = ["active", "scheduled", "inactive"];
@@ -53,7 +53,7 @@ export default function AdminSignage({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Digital Signage…</div>;
+  if (!d) return <LoadingState label="Memuat Digital Signage…" />;
   const s = d.summary;
 
   return (

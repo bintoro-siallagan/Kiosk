@@ -2,6 +2,7 @@
 // Sales → Stock live hook — integrasi penjualan ke gudang.
 
 import { useState, useEffect, useCallback } from "react";
+import { LoadingState } from "../components/uiKit.jsx";
 
 const AC = "#14b8a6";
 const ago = (ts) => {
@@ -25,7 +26,7 @@ export default function AdminSalesStockSync({ apiBase = "" }) {
     return () => clearInterval(t);
   }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Sales → Stock Sync…</div>;
+  if (!d) return <LoadingState label="Memuat Sales → Stock Sync…" />;
   const s = d.summary;
   const maxIng = Math.max(1, ...d.top_ingredients.map(i => i.total));
 

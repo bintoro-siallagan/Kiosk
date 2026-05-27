@@ -2,7 +2,7 @@
 // Incident Management — insiden operasional outlet.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#dc2626";
 const SEV_C = { low: "#10b981", medium: "#f59e0b", high: "#f97316", critical: "#ef4444" };
@@ -52,7 +52,7 @@ export default function AdminIncidents({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Incident Management…</div>;
+  if (!d) return <LoadingState label="Memuat Incident Management…" />;
   const s = d.summary;
 
   return (

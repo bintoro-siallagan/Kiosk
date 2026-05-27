@@ -9,6 +9,7 @@ const TYPE_C = {
   Pendapatan: "#3b82f6", HPP: "#ec4899", Beban: "#ef4444",
 };
 import { fmtMoney as rp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 
 export default function AdminCoa({ apiBase = "" }) {
   const [d, setD] = useState(null);
@@ -78,7 +79,7 @@ export default function AdminCoa({ apiBase = "" }) {
     if (modal === "journalmap") fetch(`${apiBase}/api/coa/journal-map`).then(r => r.json()).then(j => setJournalMap(j.map || []));
   }, [modal, apiBase]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Chart of Accounts…</div>;
+  if (!d) return <LoadingState label="Memuat Chart of Accounts…" />;
   const s = d.summary;
 
   // Filter accounts via search + type

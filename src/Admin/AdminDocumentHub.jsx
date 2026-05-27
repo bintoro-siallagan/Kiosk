@@ -2,7 +2,7 @@
 // Document / SOP Hub — repositori SOP, kebijakan & work instruction.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#0891b2";
 const CAT_C = { SOP: "#22d3ee", Kebijakan: "#f59e0b", "Work Instruction": "#a855f7", Formulir: "#10b981" };
@@ -47,7 +47,7 @@ export default function AdminDocumentHub({ apiBase = "" }) {
       .then(r => r.json()).then(j => { if (j.ok) load(); else setMsg(j.error || "gagal"); }).catch(() => {});
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Document Hub…</div>;
+  if (!d) return <LoadingState label="Memuat Document Hub…" />;
   const s = d.summary;
 
   return (

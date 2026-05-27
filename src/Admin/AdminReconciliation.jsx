@@ -2,7 +2,7 @@
 // Reconciliation Center — Bank, Cash Count & GL Reconciliation.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#0d9488";
@@ -58,7 +58,7 @@ export default function AdminReconciliation({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Reconciliation Center…</div>;
+  if (!d) return <LoadingState label="Memuat Reconciliation Center…" />;
   const s = d.summary;
 
   return (

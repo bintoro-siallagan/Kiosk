@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import PeriodPicker from "./PeriodPicker.jsx";
 import { ErrorInline } from "../components/ConnectionError.jsx";
 import { fmtMoney } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => {
   const v = fmtMoney(Math.abs(n || 0));
@@ -30,7 +31,7 @@ export default function AdminFinancialStatements({ apiBase = "" }) {
   useEffect(() => { load(); }, [load]);
 
   if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} /></div>;
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat laporan keuangan…</div>;
+  if (!d) return <LoadingState label="Memuat laporan keuangan…" />;
   const lr = d.laba_rugi, n = d.neraca;
 
   return (

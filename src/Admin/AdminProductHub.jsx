@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const AC = "#8b5cf6";
 const TAG_C = { "Best Seller": "#fbbf24", "High Margin": "#10b981", Seasonal: "#a855f7", "Slow Moving": "#f59e0b", "2x Point": "#ec4899" };
 
@@ -19,7 +20,7 @@ export default function AdminProductHub({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Product Hub…</div>;
+  if (!d) return <LoadingState label="Memuat Product Hub…" />;
   const s = d.summary;
   const p = d.products.find(x => x.item_code === sel) || d.products[0];
 

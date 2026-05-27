@@ -2,7 +2,7 @@
 // Food Cost Calculator — rakit resep, hitung biaya & margin.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#ea580c";
@@ -74,7 +74,7 @@ export default function AdminFoodCostCalc({ apiBase = "" }) {
     }).catch(e => setMsg(String(e)));
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Food Cost Calculator…</div>;
+  if (!d) return <LoadingState label="Memuat Food Cost Calculator…" />;
 
   return (
     <div>

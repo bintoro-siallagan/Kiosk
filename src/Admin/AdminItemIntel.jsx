@@ -3,6 +3,7 @@
 // central kitchen & approval rule.
 
 import { useState, useEffect, useCallback } from "react";
+import { LoadingState } from "../components/uiKit.jsx";
 
 const AC = "#16a34a";
 const HEALTH_C = { Healthy: "#10b981", "Slow Moving": "#f59e0b", "Low Margin": "#fb923c", "High Waste": "#ef4444" };
@@ -16,7 +17,7 @@ export default function AdminItemIntel({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Item Intelligence…</div>;
+  if (!d) return <LoadingState label="Memuat Item Intelligence…" />;
   const s = d.summary;
   const maxH = Math.max(1, ...d.health_dist.map(h => h.count));
 

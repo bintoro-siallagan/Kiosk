@@ -2,7 +2,7 @@
 // Sales Return — retur penjualan B2B + posting contra-revenue ke COA.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#7e22ce";
@@ -57,7 +57,7 @@ export default function AdminSalesReturn({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Sales Return…</div>;
+  if (!d) return <LoadingState label="Memuat Sales Return…" />;
   const s = d.summary;
 
   return (

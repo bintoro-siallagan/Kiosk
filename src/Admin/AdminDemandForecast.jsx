@@ -2,7 +2,7 @@
 // Demand Forecast — proyeksi permintaan penjualan.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#0284c7";
 const CAT_C = { "Frozen Yogurt": "#ec4899", Beverage: "#3b82f6", Topping: "#f59e0b", Signature: "#a855f7" };
@@ -45,7 +45,7 @@ export default function AdminDemandForecast({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Demand Forecast…</div>;
+  if (!d) return <LoadingState label="Memuat Demand Forecast…" />;
   const s = d.summary;
   const maxF = Math.max(1, ...d.forecasts.map(f => f.forecast_7d));
 

@@ -2,6 +2,7 @@
 // Customer Feedback + Behavioral Segmentation.
 
 import { useState, useEffect, useCallback } from "react";
+import { LoadingState } from "../components/uiKit.jsx";
 
 const AC = "#eab308";
 const ratingColor = (r) => (r >= 4.3 ? "#10b981" : r >= 3.5 ? "#f59e0b" : "#ef4444");
@@ -14,7 +15,7 @@ export default function AdminFeedbackSegment({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Feedback Analytics…</div>;
+  if (!d) return <LoadingState label="Memuat Feedback Analytics…" />;
   const f = d.feedback, s = d.summary;
   const maxDist = Math.max(1, ...Object.values(f.distribution));
   const maxTrend = Math.max(1, ...f.trend.map(t => t.count));

@@ -3,6 +3,7 @@
 // Appreciation & gamification — bukan surveillance.
 
 import { useState, useEffect, useCallback } from "react";
+import { LoadingState } from "../components/uiKit.jsx";
 
 const RANK = ["🥇", "🥈", "🥉"];
 
@@ -14,7 +15,7 @@ export default function AdminReward({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Reward Engine…</div>;
+  if (!d) return <LoadingState label="Memuat Reward Engine…" />;
   const s = d.summary;
   const tiers = d.catalog.levels;
   const maxTier = Math.max(1, ...Object.values(s.tier));

@@ -2,7 +2,7 @@
 // Helpdesk / Complaint Management — tiket komplain pelanggan + SLA.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#f97316";
 const PRI = { high: "#ef4444", medium: "#f59e0b", low: "#5b6470" };
@@ -52,7 +52,7 @@ export default function AdminHelpdesk({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Helpdesk…</div>;
+  if (!d) return <LoadingState label="Memuat Helpdesk…" />;
   const s = d.summary;
 
   return (

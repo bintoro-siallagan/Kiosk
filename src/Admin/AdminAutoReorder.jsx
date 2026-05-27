@@ -2,7 +2,7 @@
 // Auto-Reorder Engine — integrasi Inventory → Procurement.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#3730a3";
@@ -57,7 +57,7 @@ export default function AdminAutoReorder({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Auto-Reorder Engine…</div>;
+  if (!d) return <LoadingState label="Memuat Auto-Reorder Engine…" />;
   const s = d.summary;
 
   return (

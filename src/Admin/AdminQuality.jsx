@@ -2,7 +2,7 @@
 // Quality & Food Safety — inspeksi mutu, food safety audit & HACCP.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#16a34a";
 const RES = { passed: { c: "#10b981", l: "LULUS" }, conditional: { c: "#f59e0b", l: "BERSYARAT" }, failed: { c: "#ef4444", l: "GAGAL" } };
@@ -47,7 +47,7 @@ export default function AdminQuality({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Quality & Food Safety…</div>;
+  if (!d) return <LoadingState label="Memuat Quality & Food Safety…" />;
   const s = d.summary;
 
   return (

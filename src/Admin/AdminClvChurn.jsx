@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const AC = "#10b981";
 const TIER_C = { Platinum: "#e5e7eb", Gold: "#fbbf24", Silver: "#9ca3af", Bronze: "#cd7f32" };
 const STAGE_C = { New: "#22d3ee", Active: "#10b981", Cooling: "#f59e0b", "At Risk": "#f97316", Churned: "#ef4444" };
@@ -16,7 +17,7 @@ export default function AdminClvChurn({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat CLV & Churn…</div>;
+  if (!d) return <LoadingState label="Memuat CLV & Churn…" />;
   const cl = d.clv, ch = d.churn;
   const maxTier = Math.max(1, ...Object.values(cl.tier_dist));
   const maxStage = Math.max(1, ...Object.values(ch.stage_dist));

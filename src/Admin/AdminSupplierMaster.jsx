@@ -2,7 +2,7 @@
 // Supplier/Vendor Master — registry vendor + scorecard (CRUD lengkap).
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#8b5cf6";
 const GRADE_C = { A: "#10b981", B: "#3b82f6", C: "#f59e0b", D: "#ef4444" };
@@ -49,7 +49,7 @@ export default function AdminSupplierMaster({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Supplier Master…</div>;
+  if (!d) return <LoadingState label="Memuat Supplier Master…" />;
   const s = d.summary;
 
   return (

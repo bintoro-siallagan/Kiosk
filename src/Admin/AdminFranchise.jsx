@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import ReportActions from "./ReportActions.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 
 export default function AdminFranchise({ apiBase = "" }) {
   const [d, setD] = useState(null);
@@ -15,7 +16,7 @@ export default function AdminFranchise({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Franchise Finance…</div>;
+  if (!d) return <LoadingState label="Memuat Franchise Finance…" />;
   const s = d.summary;
   const pct = Math.round(d.royalty_rate * 100);
 

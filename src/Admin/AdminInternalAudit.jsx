@@ -2,7 +2,7 @@
 // Internal Audit — audit-program: jadwal, temuan, corrective action.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit } from "../components/uiKit.jsx";
+import { useUiKit , LoadingState} from "../components/uiKit.jsx";
 
 const AC = "#7c3aed";
 const STT = { scheduled: { c: "#5b6470", l: "DIJADWALKAN" }, in_progress: { c: "#f59e0b", l: "BERJALAN" }, completed: { c: "#10b981", l: "SELESAI" } };
@@ -53,7 +53,7 @@ export default function AdminInternalAudit({ apiBase = "" }) {
     else setMsg(j.error || "gagal");
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Internal Audit…</div>;
+  if (!d) return <LoadingState label="Memuat Internal Audit…" />;
   const s = d.summary;
 
   return (

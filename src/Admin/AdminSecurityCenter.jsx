@@ -2,6 +2,7 @@
 // Audit Trail + Smart Security Layer.
 
 import { useState, useEffect, useCallback } from "react";
+import { LoadingState } from "../components/uiKit.jsx";
 
 const AC = "#e11d48";
 const SEV = { critical: "#ef4444", warning: "#f59e0b", info: "#3b82f6" };
@@ -27,7 +28,7 @@ export default function AdminSecurityCenter({ apiBase = "" }) {
     return () => clearInterval(t);
   }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Security Center…</div>;
+  if (!d) return <LoadingState label="Memuat Security Center…" />;
   const s = d.summary;
 
   return (

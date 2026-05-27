@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const AC = "#6366f1";
 
 export default function AdminGeoEngagement({ apiBase = "" }) {
@@ -14,7 +15,7 @@ export default function AdminGeoEngagement({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Memuat Geo & Engagement…</div>;
+  if (!d) return <LoadingState label="Memuat Geo & Engagement…" />;
   const g = d.geo, e = d.engagement, s = d.summary;
   const maxOutlet = Math.max(1, ...g.outlets.map(o => o.revenue));
   const maxArea = Math.max(1, ...g.by_area.map(a => a.revenue));
