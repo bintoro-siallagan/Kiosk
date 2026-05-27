@@ -29,6 +29,30 @@ import { PinGateProvider } from './components/ManagerPinGate.jsx'
 import { UiKitProvider } from './components/uiKit.jsx'
 import { LocaleProvider } from './i18n'
 
+// PWA — register service worker so `beforeinstallprompt` fires.
+// Skip on standalone admin/POS/CDS/KDS surfaces (they don't benefit + may run
+// inside other shells); enable broadly for customer-facing surfaces.
+if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+  const q = window.location.search;
+  const skip = /\b(admin|pos|pos-cinema|cds|kds|signage|command|tools)\b/.test(q);
+  if (!skip) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/sw.js').then((reg) => {
+        // If a new SW is waiting, swap it in next visit
+        if (reg.waiting) reg.waiting.postMessage('skip-waiting');
+        reg.addEventListener('updatefound', () => {
+          const nw = reg.installing;
+          if (nw) nw.addEventListener('statechange', () => {
+            if (nw.state === 'installed' && navigator.serviceWorker.controller) {
+              nw.postMessage('skip-waiting');
+            }
+          });
+        });
+      }).catch((e) => console.warn('[karyaOS] SW register failed:', e.message));
+    });
+  }
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <LocaleProvider>
