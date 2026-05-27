@@ -2224,28 +2224,54 @@ function FooterHeading({ children }) {
   }}>{children}</div>;
 }
 
-// Payment partners — branded icon pills (brand color background, white text, mono font).
-// Konsisten shape/size, beda warna sesuai brand. Pengganti text-only utk kesan profesional.
+// Payment partners — Midtrans, Xendit (gateway), GoPay (e-wallet), QRIS (universal QR).
+// Cuma 4 brand utama, biar bersih. Logo dari /img/payments/{slug}.png|.svg —
+// kalau gak ada, fallback ke text pill brand-colored.
 const PAYMENT_METHODS = [
-  // Gateway
-  { label: "Midtrans",   bg: "#0fb6ff", fg: "#fff",     short: "Midtrans" },
-  // Cards (BIN networks)
-  { label: "Visa",       bg: "#1a1f71", fg: "#fff",     short: "VISA" },
-  { label: "Mastercard", bg: "#eb001b", fg: "#fff",     short: "MC" },
-  { label: "JCB",        bg: "#0e4c96", fg: "#fff",     short: "JCB" },
-  // Banks
-  { label: "BCA",        bg: "#003d79", fg: "#fff",     short: "BCA" },
-  { label: "Mandiri",    bg: "#003a70", fg: "#ffd900",  short: "Mandiri" },
-  { label: "BRI",        bg: "#003d8f", fg: "#fff",     short: "BRI" },
-  { label: "BNI",        bg: "#005baa", fg: "#fc8019",  short: "BNI" },
-  // E-wallets
-  { label: "GoPay",      bg: "#00aed6", fg: "#fff",     short: "GoPay" },
-  { label: "OVO",        bg: "#4c2a86", fg: "#fff",     short: "OVO" },
-  { label: "DANA",       bg: "#118eea", fg: "#fff",     short: "DANA" },
-  { label: "ShopeePay",  bg: "#ee4d2d", fg: "#fff",     short: "ShopeePay" },
-  // QRIS — official red/white branding
-  { label: "QRIS",       bg: "#ed1c24", fg: "#fff",     short: "QRIS" },
+  { slug: "midtrans", label: "Midtrans", bg: "#005a9c", fg: "#fff" },  // navy blue
+  { slug: "xendit",   label: "Xendit",   bg: "#4573d2", fg: "#fff" },  // royal blue
+  { slug: "gopay",    label: "GoPay",    bg: "#00aed6", fg: "#fff" },  // gojek cyan
+  { slug: "qris",     label: "QRIS",     bg: "#ed1c24", fg: "#fff" },  // red official
 ];
+
+// Logo dgn fallback chain: local PNG → local SVG → text wordmark pill
+function PaymentLogo({ method }) {
+  const [stage, setStage] = useState(0);
+  const sources = [`/img/payments/${method.slug}.png`, `/img/payments/${method.slug}.svg`];
+  if (stage < sources.length) {
+    return (
+      <img
+        src={sources[stage]}
+        alt={method.label}
+        title={method.label}
+        loading="lazy"
+        onError={() => setStage(s => s + 1)}
+        style={{
+          height: 36, width: "auto", maxWidth: 110,
+          objectFit: "contain",
+          background: "#fff", padding: `${S[1]}px ${S[3]}px`,
+          borderRadius: 6, border: `1px solid ${C.borderSubtle}`,
+          transition: "all 0.15s ease",
+        }}
+      />
+    );
+  }
+  // Text wordmark fallback (brand-colored)
+  return (
+    <span title={method.label} style={{
+      minWidth: 80, height: 36,
+      padding: `0 ${S[4]}px`,
+      background: method.bg, color: method.fg,
+      border: `1px solid rgba(255,255,255,0.08)`,
+      borderRadius: 6,
+      fontSize: T.sm, fontFamily: T.sans,
+      fontWeight: T.bold, letterSpacing: T.tracking_wide,
+      display: "inline-flex", alignItems: "center", justifyContent: "center",
+      userSelect: "none",
+      boxShadow: "0 1px 2px rgba(0,0,0,0.3)",
+    }}>{method.label}</span>
+  );
+}
 
 function PaymentPartners() {
   return (
@@ -2265,33 +2291,8 @@ function PaymentPartners() {
         <span style={{ fontSize: T.sm }}>🔒</span>
         Secure Payment Supported by
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: S[2], alignItems: "center" }}>
-        {PAYMENT_METHODS.map(m => (
-          <span key={m.label} title={m.label} style={{
-            minWidth: 56, height: 30,
-            padding: `0 ${S[3]}px`,
-            background: m.bg,
-            border: `1px solid rgba(255,255,255,0.08)`,
-            borderRadius: 6,
-            fontSize: T.xs,
-            color: m.fg,
-            fontFamily: T.sans,
-            fontWeight: T.bold,
-            letterSpacing: T.tracking_wide,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "all 0.15s ease",
-            cursor: "default",
-            userSelect: "none",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)",
-          }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)"; }}
-          >
-            {m.short}
-          </span>
-        ))}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: S[3], alignItems: "center" }}>
+        {PAYMENT_METHODS.map(m => <PaymentLogo key={m.slug} method={m} />)}
       </div>
     </div>
   );
