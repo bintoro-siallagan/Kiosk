@@ -215,8 +215,16 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
               background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14,
               padding: 14, textAlign: "left", cursor: "pointer", position: "relative", overflow: "hidden", color: TEXT
             }}>
-              {item.popular && <span style={{ position: "absolute", top: 8, right: 8, background: BRAND, color: "#000", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4 }}>POPULAR</span>}
-              <div style={{ fontSize: 40, marginBottom: 6 }}>{item.emoji}</div>
+              {item.popular && <span style={{ position: "absolute", top: 8, right: 8, background: BRAND, color: "#000", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, zIndex: 2 }}>POPULAR</span>}
+              {(item.image_url || item.image) ? (
+                <div style={{ width: "100%", aspectRatio: "1/1", borderRadius: 10, overflow: "hidden", marginBottom: 8, background: "#0a0e16" }}>
+                  <img src={item.image_url || item.image} alt={item.name}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    onError={e => { e.target.style.display = "none"; }}/>
+                </div>
+              ) : (
+                <div style={{ fontSize: 40, marginBottom: 6 }}>{item.emoji}</div>
+              )}
               <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, lineHeight: 1.3, color: TEXT }}>{item.name}</div>
               <div style={{ fontSize: 11, color: SUB, marginBottom: 8, minHeight: 28, lineHeight: 1.3 }}>{item.desc}</div>
               {item.freeToppings > 0 && <div style={{ fontSize: 10, color: BRAND, marginBottom: 6 }}>+ {item.freeToppings} topping gratis</div>}
@@ -329,7 +337,15 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
           <div onClick={e => e.stopPropagation()} style={{ background: BG, width: "100%", maxWidth: 440, borderRadius: "20px 20px 0 0", maxHeight: "92vh", overflowY: "auto", paddingBottom: 110 }}>
             <div style={{ width: 40, height: 4, background: BORDER, borderRadius: 2, margin: "12px auto" }} />
             <div style={{ padding: "0 20px 16px" }}>
-              <div style={{ fontSize: 56, textAlign: "center", marginBottom: 8 }}>{detail.emoji}</div>
+              {(detail.image_url || detail.image) ? (
+                <div style={{ width: 160, height: 160, margin: "0 auto 12px", borderRadius: 16, overflow: "hidden", background: "#0a0e16" }}>
+                  <img src={detail.image_url || detail.image} alt={detail.name}
+                    style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                    onError={e => { e.target.style.display = "none"; }}/>
+                </div>
+              ) : (
+                <div style={{ fontSize: 56, textAlign: "center", marginBottom: 8 }}>{detail.emoji}</div>
+              )}
               <div style={{ fontSize: 20, fontWeight: 800, textAlign: "center" }}>{detail.name}</div>
               <div style={{ fontSize: 13, color: SUB, textAlign: "center", marginTop: 6, lineHeight: 1.4 }}>{detail.desc}</div>
               <div style={{ fontSize: 20, fontWeight: 800, color: BRAND, textAlign: "center", marginTop: 10 }}>{rupiah(detail.price)}</div>

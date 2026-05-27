@@ -149,9 +149,10 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
           <div style={S.grid}>
             {filtered.map(item => (
               <button key={item.id} onClick={() => handleItemClick(item)} style={S.itemCard}>
-                {item.image ? (
-                  <img src={item.image} alt="" style={S.itemImg} onError={e => e.target.style.display = "none"}/>
-                ) : (
+                {(item.image_url || item.image) ? (
+                  <img src={item.image_url || item.image} alt="" style={S.itemImg} onError={e => { e.target.style.display = "none"; e.target.nextSibling && (e.target.nextSibling.style.display = "flex"); }}/>
+                ) : null}
+                {!(item.image_url || item.image) && (
                   <div style={S.itemImgPlaceholder}>{item.emoji || "🍴"}</div>
                 )}
                 <div style={S.itemName}>{item.name}</div>
