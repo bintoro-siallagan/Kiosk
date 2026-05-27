@@ -475,6 +475,8 @@ export default function CinemaWebApp() {
         .cw-outlet-card { transform: translateY(0); }
         .cw-outlet-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.1); }
         .cw-outlet-card:active { transform: translateY(-2px); }
+        .cw-location-card { transform: translateY(0); }
+        .cw-location-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.08) !important; border-color: rgba(255,255,255,0.15) !important; }
         .cw-section-pad > * { animation: cwFadeUp 0.4s ease both; }
         .cw-section-pad > *:nth-child(2) { animation-delay: 0.08s; }
         .cw-section-pad > *:nth-child(3) { animation-delay: 0.16s; }
@@ -1668,31 +1670,81 @@ function LocationsPage({ brandPrimary, onPick, heroOverride }) {
         accent={heroOverride?.accent || "📍"}
         brandPrimary={brandPrimary}
       />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 340px), 1fr))", gap: S[4] }}>
         {outlets.map(o => {
           const visual = getCityVisual(o);
           const city = o.area || o.name?.replace("Karya Cinema ", "") || o.code;
           const mapsUrl = o.address ? `https://maps.google.com/?q=${encodeURIComponent(o.address)}` : null;
           return (
-            <div key={o.code} style={{
-              background: visual.url ? `linear-gradient(180deg, rgba(0,0,0,0.1), rgba(0,0,0,0.95)), url(${visual.url}) center/cover` : DEFAULT_CITY_GRADIENT,
-              border: `1px solid ${C.border}`, borderRadius: 16, padding: 0, overflow: "hidden",
-              minHeight: 220, display: "flex", flexDirection: "column", justifyContent: "flex-end",
+            <div key={o.code} className="cw-location-card" style={{
+              background: visual.url ? `linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.45) 45%, rgba(10,10,10,0.96) 100%), url(${visual.url}) center/cover` : DEFAULT_CITY_GRADIENT,
+              border: `1px solid ${C.borderSubtle}`, borderRadius: 14, padding: 0, overflow: "hidden",
+              minHeight: 280, display: "flex", flexDirection: "column", justifyContent: "flex-end",
+              transition: "all 0.3s cubic-bezier(.2,.8,.2,1)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+              position: "relative",
             }}>
-              <div style={{ padding: "16px 18px" }}>
-                <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", textShadow: "0 2px 12px rgba(0,0,0,0.8)" }}>{visual.emoji} {city}</div>
-                {o.name && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", marginBottom: 6 }}>{o.name}</div>}
-                {o.address && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", marginBottom: 10 }}>📍 {o.address}</div>}
-                <div style={{ display: "flex", gap: 8 }}>
+              {/* Emoji bubble top-right */}
+              <div style={{
+                position: "absolute", top: S[4], right: S[4],
+                background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)",
+                width: 36, height: 36, borderRadius: "50%",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: T.md, border: `1px solid rgba(255,255,255,0.12)`,
+              }}>{visual.emoji}</div>
+
+              <div style={{ padding: `${S[5]}px ${S[5]}px ${S[5]}px` }}>
+                {/* Eyebrow city tag */}
+                <div style={{
+                  fontSize: T.xs, color: brandPrimary, fontFamily: T.mono,
+                  letterSpacing: T.tracking_wider, textTransform: "uppercase",
+                  fontWeight: T.semibold, marginBottom: S[2],
+                }}>📍 {city}</div>
+
+                {/* Outlet name */}
+                {o.name && <div style={{
+                  fontSize: T.lg, fontWeight: T.bold, color: C.text,
+                  letterSpacing: T.tracking_tight, lineHeight: T.snug,
+                  marginBottom: S[2],
+                  textShadow: "0 1px 8px rgba(0,0,0,0.6)",
+                }}>{o.name}</div>}
+
+                {/* Address */}
+                {o.address && <div style={{
+                  fontSize: T.sm, color: C.sub, lineHeight: T.normal,
+                  marginBottom: S[4], fontWeight: T.regular,
+                  display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+                  overflow: "hidden",
+                }}>{o.address}</div>}
+
+                {/* CTAs */}
+                <div style={{ display: "flex", gap: S[2] }}>
                   <button onClick={() => onPick(o)} style={{
-                    flex: 1, padding: "8px 12px", background: brandPrimary, color: "#fff", border: "none",
-                    borderRadius: 8, fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-                  }}>Lihat Jadwal</button>
+                    flex: 1, padding: `${S[3]}px ${S[4]}px`,
+                    background: brandPrimary, color: "#fff", border: "none",
+                    borderRadius: 8, fontSize: T.sm, fontWeight: T.semibold,
+                    cursor: "pointer", fontFamily: T.sans,
+                    letterSpacing: T.tracking_normal,
+                    transition: "all 0.15s ease",
+                    boxShadow: `0 2px 8px ${brandPrimary}55`,
+                  }}
+                    onMouseEnter={(e) => { e.currentTarget.style.filter = "brightness(1.1)"; e.currentTarget.style.boxShadow = `0 4px 14px ${brandPrimary}88`; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.filter = "none"; e.currentTarget.style.boxShadow = `0 2px 8px ${brandPrimary}55`; }}
+                  >Lihat Jadwal</button>
                   {mapsUrl && (
                     <a href={mapsUrl} target="_blank" rel="noopener noreferrer" style={{
-                      padding: "8px 12px", background: "rgba(0,0,0,0.5)", color: "#fff", border: `1px solid rgba(255,255,255,0.2)`,
-                      borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: "none", fontFamily: "inherit",
-                    }}>🗺️ Maps</a>
+                      padding: `${S[3]}px ${S[4]}px`,
+                      background: "rgba(0,0,0,0.55)", color: C.text,
+                      border: `1px solid rgba(255,255,255,0.15)`,
+                      borderRadius: 8, fontSize: T.sm, fontWeight: T.semibold,
+                      textDecoration: "none", fontFamily: T.sans,
+                      letterSpacing: T.tracking_normal,
+                      display: "inline-flex", alignItems: "center", gap: S[1],
+                      transition: "all 0.15s ease",
+                    }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.75)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.3)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.55)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; }}
+                    >🗺️ Maps</a>
                   )}
                 </div>
               </div>
@@ -2146,22 +2198,27 @@ function FooterHeading({ children }) {
   }}>{children}</div>;
 }
 
-// Payment partners row — pill-style grayscale badges, Stripe-inspired.
-// Categories: Gateway (Midtrans) · Cards · Banks · E-wallets · QRIS
+// Payment partners — branded icon pills (brand color background, white text, mono font).
+// Konsisten shape/size, beda warna sesuai brand. Pengganti text-only utk kesan profesional.
 const PAYMENT_METHODS = [
-  { label: "Midtrans", group: "gateway" },
-  { label: "Visa", group: "card" },
-  { label: "Mastercard", group: "card" },
-  { label: "JCB", group: "card" },
-  { label: "BCA", group: "bank" },
-  { label: "Mandiri", group: "bank" },
-  { label: "BRI", group: "bank" },
-  { label: "BNI", group: "bank" },
-  { label: "GoPay", group: "ewallet" },
-  { label: "OVO", group: "ewallet" },
-  { label: "DANA", group: "ewallet" },
-  { label: "ShopeePay", group: "ewallet" },
-  { label: "QRIS", group: "qris" },
+  // Gateway
+  { label: "Midtrans",   bg: "#0fb6ff", fg: "#fff",     short: "Midtrans" },
+  // Cards (BIN networks)
+  { label: "Visa",       bg: "#1a1f71", fg: "#fff",     short: "VISA" },
+  { label: "Mastercard", bg: "#eb001b", fg: "#fff",     short: "MC" },
+  { label: "JCB",        bg: "#0e4c96", fg: "#fff",     short: "JCB" },
+  // Banks
+  { label: "BCA",        bg: "#003d79", fg: "#fff",     short: "BCA" },
+  { label: "Mandiri",    bg: "#003a70", fg: "#ffd900",  short: "Mandiri" },
+  { label: "BRI",        bg: "#003d8f", fg: "#fff",     short: "BRI" },
+  { label: "BNI",        bg: "#005baa", fg: "#fc8019",  short: "BNI" },
+  // E-wallets
+  { label: "GoPay",      bg: "#00aed6", fg: "#fff",     short: "GoPay" },
+  { label: "OVO",        bg: "#4c2a86", fg: "#fff",     short: "OVO" },
+  { label: "DANA",       bg: "#118eea", fg: "#fff",     short: "DANA" },
+  { label: "ShopeePay",  bg: "#ee4d2d", fg: "#fff",     short: "ShopeePay" },
+  // QRIS — official red/white branding
+  { label: "QRIS",       bg: "#ed1c24", fg: "#fff",     short: "QRIS" },
 ];
 
 function PaymentPartners() {
@@ -2184,24 +2241,29 @@ function PaymentPartners() {
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: S[2], alignItems: "center" }}>
         {PAYMENT_METHODS.map(m => (
-          <span key={m.label} style={{
-            padding: `${S[1]}px ${S[3]}px`,
-            background: C.card,
-            border: `1px solid ${C.borderSubtle}`,
+          <span key={m.label} title={m.label} style={{
+            minWidth: 56, height: 30,
+            padding: `0 ${S[3]}px`,
+            background: m.bg,
+            border: `1px solid rgba(255,255,255,0.08)`,
             borderRadius: 6,
             fontSize: T.xs,
-            color: C.sub,
+            color: m.fg,
             fontFamily: T.sans,
-            fontWeight: T.medium,
-            letterSpacing: T.tracking_normal,
+            fontWeight: T.bold,
+            letterSpacing: T.tracking_wide,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
             transition: "all 0.15s ease",
             cursor: "default",
             userSelect: "none",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)",
           }}
-            onMouseEnter={(e) => { e.currentTarget.style.color = C.text; e.currentTarget.style.borderColor = C.border; }}
-            onMouseLeave={(e) => { e.currentTarget.style.color = C.sub; e.currentTarget.style.borderColor = C.borderSubtle; }}
+            onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.boxShadow = "0 4px 8px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.12)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.08)"; }}
           >
-            {m.label}
+            {m.short}
           </span>
         ))}
       </div>
@@ -3636,26 +3698,50 @@ function MetaItem({ label, value }) {
 // ════════════════════════════════════════════════════════════════════
 const FORMAT_COLOR = { "2D": "#3b82f6", "3D": "#a855f7", IMAX: "#fbbf24", "4DX": "#ec4899" };
 
-// Curated Unsplash CDN photos per Indonesian city (free use, no API key).
-// Falls back to gradient + emoji if outlet's city isn't mapped or image fails to load.
+// Curated Unsplash cinema-interior photos (free use, no API key).
+// Theme: actual movie theater shots (seats, screens, projection) — NOT city skylines.
+// Stable URLs verified — each outlet maps ke 1 cinematic photo per city karakter.
+// Fallback: gradient + 🎬 (no random picsum — too unprofessional).
 const CITY_IMAGES = {
-  "jakarta":  { url: "https://images.unsplash.com/photo-1555899434-94d1368aa7af?w=800&q=80&auto=format&fit=crop", emoji: "🏙️" },
-  "bandung":  { url: "https://images.unsplash.com/photo-1612547038879-69bc0a18d2d2?w=800&q=80&auto=format&fit=crop", emoji: "🌋" },
-  "bali":     { url: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&q=80&auto=format&fit=crop", emoji: "🏝️" },
-  "medan":    { url: "https://images.unsplash.com/photo-1601121535582-d96c1283f9cb?w=800&q=80&auto=format&fit=crop", emoji: "🌴" },
-  "surabaya": { url: "https://images.unsplash.com/photo-1596402184320-417e7178b2cd?w=800&q=80&auto=format&fit=crop", emoji: "🌉" },
-  "yogyakarta": { url: "https://images.unsplash.com/photo-1596402184320-417e7178b2cd?w=800&q=80&auto=format&fit=crop", emoji: "🏛️" },
-  "semarang":   { url: "https://images.unsplash.com/photo-1601121535582-d96c1283f9cb?w=800&q=80&auto=format&fit=crop", emoji: "⛩️" },
+  "jakarta":    { url: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1200&q=80&auto=format&fit=crop", emoji: "🏙️" },  // red velvet seats — metropolitan classic
+  "bandung":    { url: "https://images.unsplash.com/photo-1574267432553-4b4628081c31?w=1200&q=80&auto=format&fit=crop", emoji: "🌋" },  // cinema marquee neon — creative city vibe
+  "bali":       { url: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=1200&q=80&auto=format&fit=crop", emoji: "🏝️" },  // premium reclining — resort luxury feel
+  "medan":      { url: "https://images.unsplash.com/photo-1489599735188-900e7f95f6c7?w=1200&q=80&auto=format&fit=crop", emoji: "🌴" },  // cinema lobby chandelier — grand
+  "surabaya":   { url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1200&q=80&auto=format&fit=crop", emoji: "🌉" },  // modern cinema interior lights
+  "yogyakarta": { url: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1200&q=80&auto=format&fit=crop", emoji: "🏛️" },  // classic seats — heritage city
+  "semarang":   { url: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=1200&q=80&auto=format&fit=crop", emoji: "⛩️" },  // film projection beams
+  "makassar":   { url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1200&q=80&auto=format&fit=crop", emoji: "⛵" },
+  "denpasar":   { url: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=1200&q=80&auto=format&fit=crop", emoji: "🏝️" },
 };
-const DEFAULT_CITY_GRADIENT = "linear-gradient(135deg, #1e293b 0%, #312e81 50%, #831843 100%)";
+
+// Generic cinema fallback pool — stable hash-based pick (consistent per outlet code).
+const GENERIC_CINEMA_PHOTOS = [
+  "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1200&q=80&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1200&q=80&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=1200&q=80&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=1200&q=80&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1574267432553-4b4628081c31?w=1200&q=80&auto=format&fit=crop",
+];
+
+// Premium cinema-themed dark gradient (no more bright purple/red). Used when no image.
+const DEFAULT_CITY_GRADIENT = "linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 40%, #2a1810 100%)";
 
 function getCityVisual(outlet) {
+  // 1. Admin-uploaded photo (future field) → highest priority
+  if (outlet.image_url || outlet.cover_url) {
+    return { url: outlet.image_url || outlet.cover_url, emoji: "🎬" };
+  }
+  // 2. City-specific curated photo
   const key = (outlet.area || outlet.name || "").toLowerCase();
   for (const city of Object.keys(CITY_IMAGES)) {
     if (key.includes(city)) return CITY_IMAGES[city];
   }
-  // Generic — use outlet name as seed for stable picsum
-  return { url: `https://picsum.photos/seed/${encodeURIComponent(outlet.code || outlet.name || 'x')}/800/600`, emoji: "🎬" };
+  // 3. Generic cinema photo (stable per outlet — hash code → index)
+  const seed = outlet.code || outlet.name || "x";
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = ((hash << 5) - hash + seed.charCodeAt(i)) | 0;
+  const idx = Math.abs(hash) % GENERIC_CINEMA_PHOTOS.length;
+  return { url: GENERIC_CINEMA_PHOTOS[idx], emoji: "🎬" };
 }
 
 function fmtDate(yyyymmdd) {
