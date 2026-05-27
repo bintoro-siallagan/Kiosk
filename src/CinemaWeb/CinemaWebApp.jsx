@@ -2069,12 +2069,12 @@ const DEFAULT_FOOTER_CONFIG = {
     { name: "YT", icon: "▶", url: "https://youtube.com" },
   ],
   nav: [
-    { label: "Beranda", target: "outlet" },
-    { label: "Film", target: "movies" },
+    { label: "Home", target: "outlet" },
+    { label: "Movies", target: "movies" },
     { label: "Promo", target: "promo" },
-    { label: "Event Privat", target: "studio" },
-    { label: "Lokasi", target: "locations" },
-    { label: "Tentang", target: "about" },
+    { label: "Private Event", target: "studio" },
+    { label: "Locations", target: "locations" },
+    { label: "About", target: "about" },
   ],
   help: [
     { label: "FAQ", target: "faq" },
@@ -2307,12 +2307,12 @@ const footerLinkStyle = {
 // HEADER
 // ════════════════════════════════════════════════════════════════════
 const NAV_ITEMS = [
-  { key: "outlet",    label: "Beranda" },
-  { key: "movies",    label: "Film" },
+  { key: "outlet",    label: "Home" },
+  { key: "movies",    label: "Movies" },
   { key: "promo",     label: "Promo" },
-  { key: "studio",    label: "Event Privat" },
-  { key: "locations", label: "Lokasi" },
-  { key: "about",     label: "Tentang" },
+  { key: "studio",    label: "Private Event" },
+  { key: "locations", label: "Locations" },
+  { key: "about",     label: "About" },
 ];
 
 function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrimary, session, onSignInClick, onSignOut, onNav, onPickFilm, navItems }) {
