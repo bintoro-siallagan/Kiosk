@@ -97,6 +97,7 @@ function getScene() {
   if (new URLSearchParams(q).has("reset")) return "reset-password";
   if (new URLSearchParams(q).has("service")) return "service-staff";
   if (new URLSearchParams(q).get("ticket")) return "cinema-digital-ticket";
+  if (new URLSearchParams(q).has("purchase")) return "cinema-digital-ticket";
   if (new URLSearchParams(q).has("signage")) return "signage";
   if (new URLSearchParams(q).has("signup")) return "signup";
   if (new URLSearchParams(q).has("movies")) return "movies";

@@ -983,7 +983,12 @@ function SuccessPage({ booking, film, showtime, seats, bundlesCart, onNewBooking
   }, [primaryCode, booking?.purchase_id]);
 
   const customerName = booking?.buyer || "Sobat Bioskop";
-  const waText = encodeURIComponent(`🎬 Tiket bioskop ku: ${film.title}\n📅 ${fmtDate(showtime.show_date)} ${showtime.start_time}\n💺 ${seats.sort().join(", ")}\n🎫 Kode: ${primaryCode}\n\n${window.location.origin}/?ticket=${primaryCode}`);
+  // Prefer purchase URL so single scan/click → semua tiket muncul + tombol Print Semua
+  const purchaseId = (booking?.purchase_id && /^CP-/.test(booking.purchase_id)) ? booking.purchase_id : null;
+  const eTicketUrl = purchaseId
+    ? `${window.location.origin}/?purchase=${purchaseId}`
+    : `${window.location.origin}/?ticket=${primaryCode}`;
+  const waText = encodeURIComponent(`🎬 Tiket bioskop ku: ${film.title}\n📅 ${fmtDate(showtime.show_date)} ${showtime.start_time}\n💺 ${seats.sort().join(", ")}\n🎫 Kode: ${primaryCode}\n\n${eTicketUrl}`);
 
   return (
     <>
@@ -1080,7 +1085,7 @@ function SuccessPage({ booking, film, showtime, seats, bundlesCart, onNewBooking
             textDecoration: "none", textAlign: "center",
           }}>📱 Share WA</a>
           {primaryCode && (
-            <a href={`/?ticket=${primaryCode}`} target="_blank" rel="noopener noreferrer" style={{
+            <a href={eTicketUrl} target="_blank" rel="noopener noreferrer" style={{
               padding: "12px", background: brandPrimary, border: "none", color: "#fff",
               borderRadius: 10, fontSize: 13, fontWeight: 700, fontFamily: "inherit",
               textDecoration: "none", textAlign: "center",
