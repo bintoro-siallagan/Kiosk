@@ -120,6 +120,42 @@ const C = {
 
 const STEPS = ["outlet", "films", "filmDetail", "showtime", "seats", "bundles", "checkout", "success", "about", "history", "movies", "promo", "studio", "locations", "faq"];
 
+// ════════════════════════════════════════════════════════════════════
+// DRAFT BOOKING PERSISTENCE
+// ════════════════════════════════════════════════════════════════════
+const DRAFT_KEY = "cinema_web_draft";
+const DRAFT_TTL_HOURS = 48;
+
+function loadDraft() {
+  try {
+    const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+    if (!d) return null;
+    // TTL: hapus kalau >48h
+    if (Date.now() - (d.timestamp || 0) > DRAFT_TTL_HOURS * 3600 * 1000) {
+      localStorage.removeItem(DRAFT_KEY);
+      return null;
+    }
+    // Expired showtime check: kalau show_date+start_time sudah lewat
+    if (d.showtime?.show_date) {
+      const [Y, M, D] = String(d.showtime.show_date).split("-").map(Number);
+      const [h, m] = String(d.showtime.start_time || "00:00").split(":").map(Number);
+      const shouldStart = new Date(Y, M - 1, D, h, m).getTime();
+      // Beri buffer 15 menit (booking masih bisa hingga showtime - 15m)
+      if (shouldStart - 15 * 60 * 1000 < Date.now()) {
+        localStorage.removeItem(DRAFT_KEY);
+        return null;
+      }
+    }
+    return d;
+  } catch { return null; }
+}
+function saveDraft(d) {
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify({ ...d, timestamp: Date.now() })); } catch {}
+}
+function clearDraft() {
+  try { localStorage.removeItem(DRAFT_KEY); } catch {}
+}
+
 export default function CinemaWebApp() {
   const [step, setStep] = useState(() => {
     // Persist outlet selection across reload
@@ -183,6 +219,43 @@ export default function CinemaWebApp() {
     setSession(null);
     try { localStorage.removeItem("cinema_web_session"); } catch {}
   };
+
+  // ═══ DRAFT AUTO-SAVE: simpan saat user pilih sesuatu di flow booking ═══
+  // Save kalau punya film + outlet (dari step "filmDetail" ke atas, sebelum "success")
+  useEffect(() => {
+    if (!film || !outlet) return;
+    if (step === "success" || step === "outlet" || step === "films") return;
+    // Hanya save STEPS yg di-flow booking
+    if (!["filmDetail", "showtime", "seats", "bundles", "checkout"].includes(step)) return;
+    saveDraft({
+      outlet: { code: outlet.code, name: outlet.name, area: outlet.area },
+      film: { id: film.id, title: film.title, poster_url: film.poster_url, duration_min: film.duration_min, genre: film.genre, rating: film.rating },
+      showtime: showtime ? { id: showtime.id, show_date: showtime.show_date, start_time: showtime.start_time, format: showtime.format, studio_name: showtime.studio_name } : null,
+      seats,
+      bundlesCart,
+      lastStep: step,
+    });
+  }, [film, outlet, showtime, seats, bundlesCart, step]);
+
+  // ═══ AUTO-CLEAR DRAFT pada success ═══
+  useEffect(() => {
+    if (step === "success") clearDraft();
+  }, [step]);
+
+  // ═══ RESTORE DRAFT (klik "Lanjutkan Booking" di home) ═══
+  const restoreDraft = useCallback((d) => {
+    if (!d) return;
+    if (d.outlet) {
+      setOutlet(d.outlet);
+      try { localStorage.setItem("cinema_web_outlet", JSON.stringify(d.outlet)); } catch {}
+    }
+    if (d.film) setFilm(d.film);
+    if (d.showtime) setShowtime(d.showtime);
+    if (d.seats) setSeats(d.seats);
+    if (d.bundlesCart) setBundlesCart(d.bundlesCart);
+    setStep(d.lastStep || "filmDetail");
+  }, []);
+  const dismissDraft = useCallback(() => clearDraft(), []);
 
   return (
     <div style={{ minHeight: "100vh", background: C.bgGrad, color: C.text, fontFamily: "'Inter','-apple-system',sans-serif", paddingBottom: 80, ["--brand-primary"]: brandPrimary }}>
@@ -429,10 +502,15 @@ export default function CinemaWebApp() {
               }, 100);
             }}
             brandPrimary={brandPrimary}
+            onRestoreDraft={restoreDraft}
+            onDismissDraft={dismissDraft}
           />
         )}
         {step === "films" && outlet && (
-          <FilmsGrid outlet={outlet} onPickFilm={(f) => { setFilm(f); goTo("filmDetail"); }} brandPrimary={brandPrimary} />
+          <>
+            <ContinueBookingRow brandPrimary={brandPrimary} onRestore={restoreDraft} onDismiss={dismissDraft} />
+            <FilmsGrid outlet={outlet} onPickFilm={(f) => { setFilm(f); goTo("filmDetail"); }} brandPrimary={brandPrimary} />
+          </>
         )}
         {step === "filmDetail" && film && (
           <FilmDetail outlet={outlet} film={film} onPickShowtime={() => goTo("showtime")} brandPrimary={brandPrimary} session={session} onSignInClick={() => setSignInOpen(true)} />
@@ -2131,7 +2209,121 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
 // ════════════════════════════════════════════════════════════════════
 // STEP 1: OUTLET PICKER
 // ════════════════════════════════════════════════════════════════════
-function OutletPicker({ onPick, onPickFeaturedFilm, pendingFilm, brandPrimary }) {
+// ════════════════════════════════════════════════════════════════════
+// CONTINUE BOOKING ROW — show kalau draft booking belum checkout
+// ════════════════════════════════════════════════════════════════════
+const STEP_LABEL = {
+  filmDetail: "Lihat detail film",
+  showtime:   "Pilih jadwal",
+  seats:      "Pilih kursi",
+  bundles:    "Pilih snack & bundle",
+  checkout:   "Konfirmasi & checkout",
+};
+const STEP_PROGRESS = {
+  filmDetail: 20,
+  showtime:   40,
+  seats:      60,
+  bundles:    80,
+  checkout:   90,
+};
+
+function ContinueBookingRow({ brandPrimary, onRestore, onDismiss }) {
+  const [draft, setDraft] = useState(() => loadDraft());
+
+  // Re-check draft saat component mount + setiap 30s (in case dari tab lain)
+  useEffect(() => {
+    const tick = () => setDraft(loadDraft());
+    const iv = setInterval(tick, 30000);
+    window.addEventListener("focus", tick);
+    return () => { clearInterval(iv); window.removeEventListener("focus", tick); };
+  }, []);
+
+  if (!draft || !draft.film) return null;
+
+  const f = draft.film;
+  const st = draft.showtime;
+  const seatLabel = (draft.seats || []).length;
+  const bundleQty = Object.values(draft.bundlesCart || {}).reduce((s, q) => s + q, 0);
+  const progress = STEP_PROGRESS[draft.lastStep] || 20;
+  const stepLabel = STEP_LABEL[draft.lastStep] || "Lanjutkan booking";
+  const showtimeLabel = st ? `${st.show_date} · ${st.start_time}${st.studio_name ? " · " + st.studio_name : ""}` : null;
+
+  const handleDismiss = (e) => {
+    e.stopPropagation();
+    onDismiss?.();
+    setDraft(null);
+  };
+
+  return (
+    <div onClick={() => onRestore?.(draft)} style={{
+      position: "relative", maxWidth: 1280, margin: "0 auto 32px",
+      background: `linear-gradient(90deg, rgba(20,20,20,0.9), rgba(20,20,20,0.7) 60%, transparent), ${f.poster_url ? `url(${f.poster_url}) center/cover` : "#1c1c22"}`,
+      borderRadius: 12, overflow: "hidden",
+      cursor: "pointer",
+      border: `1px solid ${brandPrimary}44`,
+      boxShadow: `0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px ${brandPrimary}22`,
+      transition: "transform 0.2s, box-shadow 0.2s",
+    }}
+      onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 14px 36px rgba(0,0,0,0.5), 0 0 0 1px ${brandPrimary}66`; }}
+      onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = `0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px ${brandPrimary}22`; }}>
+      <div style={{ display: "flex", alignItems: "stretch", minHeight: 140 }}>
+        {/* Poster mini di kiri */}
+        {f.poster_url && (
+          <div style={{
+            width: 100, aspectRatio: "2/3", flexShrink: 0,
+            background: `url(${f.poster_url}) center/cover`,
+            margin: 16, borderRadius: 6,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.6)",
+          }} />
+        )}
+        {/* Info */}
+        <div style={{ flex: 1, padding: "16px 12px 16px 4px", display: "flex", flexDirection: "column", justifyContent: "center", minWidth: 0 }}>
+          <div style={{
+            display: "inline-flex", alignSelf: "flex-start", alignItems: "center", gap: 6,
+            padding: "3px 10px", borderRadius: 4,
+            background: brandPrimary, color: "#fff",
+            fontSize: 9, fontWeight: 800, letterSpacing: 2,
+            fontFamily: "'JetBrains Mono',monospace", textTransform: "uppercase",
+            marginBottom: 8,
+          }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#fff", animation: "cwPulse 2s infinite" }} />
+            Lanjutkan Booking
+          </div>
+          <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textShadow: "0 2px 8px rgba(0,0,0,0.7)" }}>
+            {f.title}
+          </div>
+          <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginBottom: 10, textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
+            {[
+              draft.outlet?.name?.replace("Karya Cinema ", "") || draft.outlet?.area || draft.outlet?.code,
+              showtimeLabel,
+              seatLabel > 0 ? `${seatLabel} kursi` : null,
+              bundleQty > 0 ? `${bundleQty} bundle` : null,
+            ].filter(Boolean).join(" · ")}
+          </div>
+          {/* Progress bar */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
+            <div style={{ flex: 1, height: 4, background: "rgba(255,255,255,0.12)", borderRadius: 2, overflow: "hidden", maxWidth: 240 }}>
+              <div style={{ width: `${progress}%`, height: "100%", background: brandPrimary, transition: "width 0.4s" }} />
+            </div>
+            <span style={{ fontSize: 10, color: "rgba(255,255,255,0.85)", fontFamily: "'JetBrains Mono',monospace" }}>{stepLabel} →</span>
+          </div>
+        </div>
+        {/* Dismiss */}
+        <button onClick={handleDismiss} aria-label="Tutup" title="Hapus draft" style={{
+          alignSelf: "flex-start", margin: 12,
+          width: 30, height: 30, borderRadius: "50%",
+          background: "rgba(0,0,0,0.55)", border: "1px solid rgba(255,255,255,0.3)",
+          color: "#fff", fontSize: 16, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          fontFamily: "inherit", padding: 0, flexShrink: 0,
+          backdropFilter: "blur(8px)",
+        }}>×</button>
+      </div>
+    </div>
+  );
+}
+
+function OutletPicker({ onPick, onPickFeaturedFilm, pendingFilm, brandPrimary, onRestoreDraft, onDismissDraft }) {
   const [outlets, setOutlets] = useState(null);
   const [films, setFilms] = useState(null);
   const [error, setError] = useState(null);
@@ -2205,7 +2397,12 @@ function OutletPicker({ onPick, onPickFeaturedFilm, pendingFilm, brandPrimary })
     <div className="cw-section-pad" style={{ padding: 0 }}>
       {/* IMMERSIVE CINEMA HERO — film poster slideshow + dark gradient + spotlight feel */}
       <CinemaHero films={films || []} brandPrimary={brandPrimary} onPickFilm={onPickFeaturedFilm} />
-      <div style={{ height: 40 }} />
+      <div style={{ height: 32 }} />
+
+      {/* CONTINUE BOOKING — appear kalau ada draft (booking belum checkout) */}
+      <div style={{ padding: "0 20px" }}>
+        <ContinueBookingRow brandPrimary={brandPrimary} onRestore={onRestoreDraft} onDismiss={onDismissDraft} />
+      </div>
 
       {/* Now Showing carousel removed — now part of CinemaHero slideshow above */}
 
