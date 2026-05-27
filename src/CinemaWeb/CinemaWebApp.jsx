@@ -51,7 +51,7 @@ const C = {
   red: "#ef4444",
 };
 
-const STEPS = ["outlet", "films", "filmDetail", "showtime", "seats", "bundles", "checkout", "success"];
+const STEPS = ["outlet", "films", "filmDetail", "showtime", "seats", "bundles", "checkout", "success", "about"];
 
 export default function CinemaWebApp() {
   const [step, setStep] = useState(() => {
@@ -81,7 +81,8 @@ export default function CinemaWebApp() {
   const pickOutlet = (o) => {
     setOutlet(o);
     try { localStorage.setItem("cinema_web_outlet", JSON.stringify(o)); } catch {}
-    setStep("films");
+    // Kalau user udah pilih featured film dari hero, langsung lanjut ke filmDetail
+    setStep(film ? "filmDetail" : "films");
   };
   const resetOutlet = () => {
     try { localStorage.removeItem("cinema_web_outlet"); } catch {}
@@ -145,7 +146,21 @@ export default function CinemaWebApp() {
       `}</style>
       <Header outlet={outlet} step={step} onResetOutlet={resetOutlet} onBack={goBack} onHome={goHome} brand={brand} brandPrimary={brandPrimary} />
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "0 20px" }}>
-        {step === "outlet" && <OutletPicker onPick={pickOutlet} brandPrimary={brandPrimary} />}
+        {step === "outlet" && (
+          <OutletPicker
+            onPick={pickOutlet}
+            pendingFilm={film}
+            onPickFeaturedFilm={(f) => {
+              setFilm(f);
+              // User belum pilih outlet → tetap di sini, scroll ke outlet grid
+              setTimeout(() => {
+                const el = document.querySelector('.cw-outlets-grid');
+                if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }, 100);
+            }}
+            brandPrimary={brandPrimary}
+          />
+        )}
         {step === "films" && outlet && (
           <FilmsGrid outlet={outlet} onPickFilm={(f) => { setFilm(f); goTo("filmDetail"); }} brandPrimary={brandPrimary} />
         )}
@@ -170,6 +185,7 @@ export default function CinemaWebApp() {
           <Checkout outlet={outlet} film={film} showtime={showtime} seats={seats}
             bundlesCart={bundlesCart}
             onBooked={(b) => { setBooking(b); goTo("success"); }}
+            onEdit={(target) => goTo(target)}
             brandPrimary={brandPrimary} />
         )}
         {step === "success" && booking && (
@@ -178,16 +194,133 @@ export default function CinemaWebApp() {
             onNewBooking={() => { setFilm(null); setShowtime(null); setSeats([]); setBundlesCart({}); setBooking(null); goTo("films"); }}
             brandPrimary={brandPrimary} />
         )}
+        {step === "about" && (
+          <AboutPage brand={brand} brandPrimary={brandPrimary} onBack={goHome} />
+        )}
       </main>
-      <Footer brand={brand} brandPrimary={brandPrimary} />
+      <Footer brand={brand} brandPrimary={brandPrimary} onAbout={() => goTo("about")} />
     </div>
   );
 }
 
 // ════════════════════════════════════════════════════════════════════
+// ABOUT PAGE — company history & info
+// ════════════════════════════════════════════════════════════════════
+function AboutPage({ brand, brandPrimary, onBack }) {
+  const name = brand?.brand_short || brand?.name || "KaryaOS";
+  return (
+    <div style={{ padding: "40px 0 60px", maxWidth: 800, margin: "0 auto" }}>
+      {/* Hero */}
+      <div style={{
+        textAlign: "center", marginBottom: 40,
+        padding: "40px 24px",
+        background: `linear-gradient(135deg, ${brandPrimary}15, rgba(168,85,247,0.05))`,
+        border: `1px solid ${brandPrimary}33`, borderRadius: 18,
+      }}>
+        {brand?.logo_url && <img src={brand.logo_url} alt="" style={{ height: 56, marginBottom: 16, objectFit: "contain" }} />}
+        <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: -1, margin: 0, marginBottom: 8, color: "#fff" }}>{name}</h1>
+        <p style={{ fontSize: 14, color: C.sub, margin: 0, lineHeight: 1.6 }}>
+          Pengalaman cinema digital untuk Indonesia
+        </p>
+      </div>
+
+      {/* Story */}
+      <Section title="📖 Tentang Kami">
+        <p style={{ margin: 0, marginBottom: 12 }}>
+          <strong style={{ color: "#fff" }}>{name}</strong> adalah platform booking tiket bioskop online yang dirancang untuk memberi pengalaman pemesanan yang mulus tanpa antri loket. Customer bisa pilih film, kursi favorit, snack F&B, dan ambil tiket di counter dengan satu scan QR.
+        </p>
+        <p style={{ margin: 0, marginBottom: 12 }}>
+          Dibangun dengan teknologi modern di atas platform <span style={{ color: brandPrimary, fontWeight: 700 }}>karyaOS</span>, kami mendukung 5 outlet di kota besar Indonesia: Jakarta, Bandung, Bali, Medan, dan Surabaya — dengan jadwal real-time, F&B bundles, dan loyalty member otomatis.
+        </p>
+      </Section>
+
+      {/* Mission */}
+      <Section title="🎯 Misi Kami">
+        <ul style={{ margin: 0, paddingLeft: 18, color: C.sub, lineHeight: 1.8 }}>
+          <li>Memberikan pengalaman bioskop yang efisien & menyenangkan</li>
+          <li>Mengurangi waktu antri loket dengan teknologi self-service</li>
+          <li>Mendukung budaya nonton film di Indonesia dengan loyalty rewards</li>
+          <li>Mengintegrasikan F&B + tiket dalam satu transaksi mulus</li>
+        </ul>
+      </Section>
+
+      {/* Features */}
+      <Section title="✨ Apa yang Kami Tawarkan">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 14 }}>
+          <FeatureCard icon="🎬" title="5 Lokasi Cinema" desc="Jakarta, Bandung, Bali, Medan, Surabaya" />
+          <FeatureCard icon="💺" title="Pilih Kursi Sendiri" desc="Real-time seat map per studio" />
+          <FeatureCard icon="🍿" title="F&B Bundles" desc="Popcorn, drinks, snack combo" />
+          <FeatureCard icon="⭐" title="Auto-Member Loyalty" desc="Setiap booking dapet poin (Rp 5k = 1pt)" />
+          <FeatureCard icon="🎟️" title="Promo Code" desc="Diskon promo + voucher" />
+          <FeatureCard icon="📱" title="WA E-Tiket" desc="Auto-kirim e-tiket via WhatsApp" />
+        </div>
+      </Section>
+
+      {/* Contact */}
+      <Section title="📞 Kontak">
+        <div style={{ display: "grid", gap: 10 }}>
+          {brand?.contact_phone && <ContactRow icon="📞" label="Telepon" value={brand.contact_phone} />}
+          {brand?.contact_email && <ContactRow icon="✉️" label="Email" value={brand.contact_email} link={`mailto:${brand.contact_email}`} />}
+          {brand?.address && <ContactRow icon="📍" label="Alamat" value={brand.address} />}
+          {brand?.website && <ContactRow icon="🌐" label="Website" value={brand.website} link={brand.website} />}
+          {!brand?.contact_phone && !brand?.contact_email && (
+            <div style={{ fontSize: 13, color: C.dim }}>Hubungi kami via counter cinema di outlet terdekat.</div>
+          )}
+        </div>
+      </Section>
+
+      <div style={{ textAlign: "center", marginTop: 30 }}>
+        <button onClick={onBack} style={{
+          padding: "12px 28px", background: brandPrimary, color: "#fff",
+          border: "none", borderRadius: 12, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+          boxShadow: `0 6px 18px ${brandPrimary}55`,
+        }}>🎬 Mulai Booking</button>
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <div style={{ marginBottom: 28, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 22 }}>
+      <h2 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 14, letterSpacing: -0.3 }}>{title}</h2>
+      <div style={{ fontSize: 13.5, color: C.sub, lineHeight: 1.7 }}>{children}</div>
+    </div>
+  );
+}
+
+function FeatureCard({ icon, title, desc }) {
+  return (
+    <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}`, borderRadius: 12, padding: 14 }}>
+      <div style={{ fontSize: 24, marginBottom: 6 }}>{icon}</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginBottom: 4 }}>{title}</div>
+      <div style={{ fontSize: 11.5, color: C.dim, lineHeight: 1.5 }}>{desc}</div>
+    </div>
+  );
+}
+
+function ContactRow({ icon, label, value, link }) {
+  const inner = (
+    <>
+      <span style={{ fontSize: 18, flexShrink: 0 }}>{icon}</span>
+      <div>
+        <div style={{ fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, marginBottom: 2 }}>{label.toUpperCase()}</div>
+        <div style={{ fontSize: 13, color: "#fff", fontWeight: 600 }}>{value}</div>
+      </div>
+    </>
+  );
+  if (link) return (
+    <a href={link} target="_blank" rel="noopener noreferrer" style={{ display: "flex", gap: 10, padding: 10, borderRadius: 8, background: "rgba(255,255,255,0.03)", textDecoration: "none", border: `1px solid ${C.border}` }}>
+      {inner}
+    </a>
+  );
+  return <div style={{ display: "flex", gap: 10, padding: 10, borderRadius: 8, background: "rgba(255,255,255,0.03)", border: `1px solid ${C.border}` }}>{inner}</div>;
+}
+
+// ════════════════════════════════════════════════════════════════════
 // FOOTER
 // ════════════════════════════════════════════════════════════════════
-function Footer({ brand, brandPrimary }) {
+function Footer({ brand, brandPrimary, onAbout }) {
   const brandName = brand?.brand_short || brand?.name || "karyaOS";
   const year = new Date().getFullYear();
   return (
@@ -221,6 +354,14 @@ function Footer({ brand, brandPrimary }) {
               <div>🎬 Rp 5.000 = 1 poin</div>
               <div>⭐ 100 poin = Rp 1.000</div>
               <div>🎁 Auto-redeem di checkout</div>
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 10, color: C.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 10, textTransform: "uppercase", fontWeight: 700 }}>Perusahaan</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12 }}>
+              <button onClick={onAbout} style={{ background: "transparent", border: "none", color: C.sub, fontSize: 12, padding: 0, textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>📖 Tentang {brandName}</button>
+              <div style={{ color: C.sub }}>🎯 Misi & Sejarah</div>
+              <div style={{ color: C.sub }}>📞 Kontak</div>
             </div>
           </div>
         </div>
@@ -290,7 +431,7 @@ function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrima
 // CINEMA HERO — full-bleed slideshow, "berasa di dalam area cinema"
 // Poster film auto-rotate setiap 5 detik, dark gradient overlay, sinematik feel
 // ════════════════════════════════════════════════════════════════════
-function CinemaHero({ films, brandPrimary }) {
+function CinemaHero({ films, brandPrimary, onPickFilm }) {
   const slides = useMemo(() => (films || []).filter(f => f.poster_url).slice(0, 6), [films]);
   const [idx, setIdx] = useState(0);
   useEffect(() => {
@@ -300,6 +441,7 @@ function CinemaHero({ films, brandPrimary }) {
   }, [slides.length]);
 
   const current = slides[idx];
+  const handleBadgeClick = () => { if (current && onPickFilm) onPickFilm(current); };
 
   return (
     <section style={{
@@ -351,9 +493,9 @@ function CinemaHero({ films, brandPrimary }) {
         minHeight: "min(70vh, 600px)", display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center",
       }}>
-        {/* "NOW SHOWING" badge with current film name */}
+        {/* "NOW SHOWING" badge — clickable → jump to film detail (lock outlet first) */}
         {current && (
-          <div style={{
+          <button onClick={handleBadgeClick} title={`Lihat detail ${current.title}`} style={{
             display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 22,
             padding: "8px 18px", borderRadius: 999,
             background: "rgba(0,0,0,0.55)", backdropFilter: "blur(20px)",
@@ -361,10 +503,14 @@ function CinemaHero({ films, brandPrimary }) {
             fontSize: 11, fontWeight: 800, letterSpacing: 2, color: brandPrimary,
             fontFamily: "'Geist Mono',monospace", textTransform: "uppercase",
             animation: "cwFadeIn 1s ease both",
-          }}>
+            cursor: "pointer", transition: "all 0.2s ease",
+          }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = `${brandPrimary}33`; e.currentTarget.style.borderColor = brandPrimary; e.currentTarget.style.transform = "scale(1.05)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.55)"; e.currentTarget.style.borderColor = `${brandPrimary}55`; e.currentTarget.style.transform = "scale(1)"; }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", background: brandPrimary, boxShadow: `0 0 12px ${brandPrimary}`, animation: "cwPulse 2s ease infinite" }} />
             NOW SHOWING · {current.title}
-          </div>
+            <span style={{ fontSize: 13, opacity: 0.7, marginLeft: 4 }}>→</span>
+          </button>
         )}
 
         <h1 className="cw-page-title" style={{
@@ -409,7 +555,7 @@ function CinemaHero({ films, brandPrimary }) {
 // ════════════════════════════════════════════════════════════════════
 // STEP 1: OUTLET PICKER
 // ════════════════════════════════════════════════════════════════════
-function OutletPicker({ onPick, brandPrimary }) {
+function OutletPicker({ onPick, onPickFeaturedFilm, pendingFilm, brandPrimary }) {
   const [outlets, setOutlets] = useState(null);
   const [films, setFilms] = useState(null);
   const [error, setError] = useState(null);
@@ -459,7 +605,7 @@ function OutletPicker({ onPick, brandPrimary }) {
   return (
     <div className="cw-section-pad" style={{ padding: 0 }}>
       {/* IMMERSIVE CINEMA HERO — film poster slideshow + dark gradient + spotlight feel */}
-      <CinemaHero films={films || []} brandPrimary={brandPrimary} />
+      <CinemaHero films={films || []} brandPrimary={brandPrimary} onPickFilm={onPickFeaturedFilm} />
       <div style={{ height: 40 }} />
 
       {/* Now Showing carousel removed — now part of CinemaHero slideshow above */}
@@ -467,10 +613,30 @@ function OutletPicker({ onPick, brandPrimary }) {
       {/* Content sections — padded back in (hero is full-bleed) */}
       <div style={{ padding: "0 0 20px" }} />
 
+      {/* Pending film banner — kalau user klik NOW SHOWING tapi belum pilih outlet */}
+      {pendingFilm && (
+        <div style={{
+          maxWidth: 700, margin: "0 auto 20px",
+          background: `linear-gradient(135deg, ${brandPrimary}22, ${brandPrimary}08)`,
+          border: `1px solid ${brandPrimary}66`,
+          borderRadius: 14, padding: "14px 18px",
+          display: "flex", alignItems: "center", gap: 14, animation: "cwFadeUp 0.4s ease",
+        }}>
+          {pendingFilm.poster_url && (
+            <img src={pendingFilm.poster_url} alt="" style={{ width: 48, aspectRatio: "2/3", objectFit: "cover", borderRadius: 6, flexShrink: 0 }} />
+          )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 10, color: brandPrimary, fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 2, textTransform: "uppercase" }}>FILM TERPILIH</div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", lineHeight: 1.2 }}>{pendingFilm.title}</div>
+            <div style={{ fontSize: 11, color: C.sub, marginTop: 2 }}>👇 Pilih lokasi cinema untuk lanjut</div>
+          </div>
+        </div>
+      )}
+
       {/* Outlet picker section */}
       <div style={{ textAlign: "center", marginBottom: 18 }}>
         <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 6 }}>
-          Mau Nonton Di Mana?
+          {pendingFilm ? "Pilih Lokasi" : "Mau Nonton Di Mana?"}
         </h2>
         <p style={{ fontSize: 13, color: C.sub, margin: 0 }}>
           {outlets.length} kota · pilih lokasi favorit Anda
@@ -1185,7 +1351,7 @@ function BundlesStep({ outlet, cart, onChange, onContinue, brandPrimary }) {
 // ════════════════════════════════════════════════════════════════════
 // STEP 5: CHECKOUT (customer info + booking submit)
 // ════════════════════════════════════════════════════════════════════
-function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, brandPrimary }) {
+function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, onEdit, brandPrimary }) {
   const [form, setForm] = useState({ name: "", phone: "", email: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -1448,13 +1614,34 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, brandP
             </div>
           </div>
           <Row label="📍 Lokasi" value={outlet.name?.replace("Karya Cinema ", "") || outlet.code} />
-          <Row label="📅 Jadwal" value={`${fmtDate(showtime.show_date)} · ${showtime.start_time}`} />
+          <RowEdit label="📅 Jadwal" value={`${fmtDate(showtime.show_date)} · ${showtime.start_time}`} onEdit={() => onEdit?.("showtime")} brandPrimary={brandPrimary} />
           <Row label="🎬 Studio" value={`${showtime.studio_name} · ${showtime.format || "2D"}`} />
-          <Row label="💺 Kursi" value={`${seats.length} kursi · ${seats.sort().join(", ")}`} />
-          {bundlesMeta && Object.entries(bundlesCart || {}).map(([bid, q]) => {
-            const b = bundlesMeta.find(x => String(x.id) === String(bid));
-            return b ? <Row key={bid} label={`🍿 ${b.name}`} value={`${q}× · ${rp(b.price * q)}`} /> : null;
-          })}
+          <RowEdit label="💺 Kursi" value={`${seats.length} kursi · ${seats.sort().join(", ")}`} onEdit={() => onEdit?.("seats")} brandPrimary={brandPrimary} />
+          {bundlesMeta && Object.entries(bundlesCart || {}).length > 0 && (
+            <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px dashed ${C.border}` }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                <span style={{ fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>🍿 SNACK</span>
+                <button onClick={() => onEdit?.("bundles")} style={{ background: "transparent", border: "none", color: brandPrimary, fontSize: 11, fontWeight: 700, cursor: "pointer", padding: 0, fontFamily: "inherit" }}>✏️ Edit</button>
+              </div>
+              {Object.entries(bundlesCart).map(([bid, q]) => {
+                const b = bundlesMeta.find(x => String(x.id) === String(bid));
+                return b ? (
+                  <div key={bid} style={{ display: "flex", justifyContent: "space-between", padding: "3px 0", fontSize: 11.5, gap: 8 }}>
+                    <span style={{ color: C.text }}>{q}× {b.name}</span>
+                    <span style={{ color: C.sub, fontFamily: "'Geist Mono',monospace" }}>{rp(b.price * q)}</span>
+                  </div>
+                ) : null;
+              })}
+            </div>
+          )}
+          {Object.keys(bundlesCart || {}).length === 0 && (
+            <div style={{ marginTop: 8, padding: "8px 0", borderTop: `1px dashed ${C.border}` }}>
+              <button onClick={() => onEdit?.("bundles")} style={{
+                width: "100%", padding: "6px 10px", background: "transparent", border: `1px dashed ${C.border}`, color: brandPrimary,
+                borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+              }}>🍿 + Tambah Snack</button>
+            </div>
+          )}
           <div style={{ marginTop: 16, paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.dim, marginBottom: 6 }}>
               <span>Tiket ({seats.length})</span>
@@ -1510,6 +1697,21 @@ function Row({ label, value }) {
     <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 12, gap: 12 }}>
       <span style={{ color: C.dim, flexShrink: 0 }}>{label}</span>
       <span style={{ color: C.text, textAlign: "right" }}>{value}</span>
+    </div>
+  );
+}
+
+function RowEdit({ label, value, onEdit, brandPrimary }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 0", fontSize: 12, gap: 12, alignItems: "center" }}>
+      <span style={{ color: C.dim, flexShrink: 0 }}>{label}</span>
+      <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ color: C.text, textAlign: "right" }}>{value}</span>
+        <button onClick={onEdit} title="Edit" style={{
+          background: "transparent", border: "none", color: brandPrimary, fontSize: 11, fontWeight: 700, cursor: "pointer", padding: "0 4px",
+          fontFamily: "inherit",
+        }}>✏️</button>
+      </span>
     </div>
   );
 }
