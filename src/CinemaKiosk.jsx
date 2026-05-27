@@ -670,9 +670,9 @@ export default function CinemaKiosk({ apiBase }) {
 
             {films.filter(f => f.status === "coming_soon").length > 0 && (
               <>
-                <div style={{ marginTop: 36, marginBottom: 14, display: "flex", alignItems: "center", gap: 10 }}>
-                  <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 10, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.5)" }}>📅 Tayang Segera</div>
-                  <span style={{ fontSize: 10, color: "#fbbf24", background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", padding: "3px 10px", borderRadius: 6, fontWeight: 800, letterSpacing: 1.5 }}>COMING SOON</span>
+                <div style={{ marginTop: 36, marginBottom: 14, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                  <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 10, fontWeight: 800, letterSpacing: 2, textTransform: "uppercase", color: "rgba(255,255,255,0.5)", marginRight: 4 }}>📅 Tayang Segera</div>
+                  <span style={{ display: "inline-block", fontSize: 10, color: "#fbbf24", background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)", padding: "3px 10px", borderRadius: 6, fontWeight: 800, letterSpacing: 1.5 }}>COMING SOON</span>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 14 }}>
                   {films.filter(f => f.status === "coming_soon").map(f => (
