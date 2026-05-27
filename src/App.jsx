@@ -55,6 +55,7 @@ const POSApp                 = lazy(() => import("./POSApp.jsx"));
 const POSCinemaApp           = lazy(() => import("./POS/POSCinemaApp.jsx"));
 const KDS                    = lazy(() => import("./KDS/KDS.jsx"));
 const FlowApp                = lazy(() => import("./Flow/FlowApp.jsx"));
+const CinemaWebApp           = lazy(() => import("./CinemaWeb/CinemaWebApp.jsx"));
 const POSSatisfaction        = lazy(() => import("./POS/POSSatisfaction.jsx"));
 const PWAInstallPrompt       = lazy(() => import("./components/PWAInstallPrompt.jsx"));
 
@@ -98,6 +99,7 @@ function getScene() {
   if (new URLSearchParams(q).get("ticket")) return "cinema-digital-ticket";
   if (new URLSearchParams(q).has("signage")) return "signage";
   if (new URLSearchParams(q).has("signup")) return "signup";
+  if (new URLSearchParams(q).has("movies")) return "movies";
   if (q.includes("cinema-snack")) return "cinema-snack";
   if (q.includes("cinema-board")) return "cinema-board";
   if (q.includes("cinema")) return "cinema";
@@ -223,6 +225,8 @@ export default function App() {
     node = <SignagePlayer />;
   } else if (scene === "signup") {
     node = <TenantSignup />;
+  } else if (scene === "movies") {
+    node = <CinemaWebApp />;
   } else if (scene === "cinema-kds") {
     node = <CinemaKDS />;
   } else if (scene === "cinema-cds") {
