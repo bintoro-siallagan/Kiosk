@@ -5561,6 +5561,99 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: true, items: rows });
   });
 
+  // ── MY LIST (WATCHLIST) ───────────────────────────────────────────────
+  // Customer save film favorit per nomor HP.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS cinema_watchlist (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_phone TEXT NOT NULL,
+      film_id INTEGER NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (strftime('%s','now')),
+      company_id INTEGER,
+      UNIQUE(customer_phone, film_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_cw_phone ON cinema_watchlist(customer_phone);
+    CREATE INDEX IF NOT EXISTS idx_cw_film  ON cinema_watchlist(film_id);
+  `);
+
+  router.get('/watchlist', (req, res) => {
+    const phone = String(req.query.phone || '').trim();
+    if (!phone) return res.status(400).json({ ok: false, error: 'phone required' });
+    const rows = db.prepare(`
+      SELECT w.id, w.film_id, w.created_at,
+             f.title, f.poster_url, f.genre, f.duration_min, f.rating, f.status,
+             ROUND((SELECT AVG(rating) FROM cinema_film_ratings WHERE film_id = f.id), 2) AS avg_rating,
+             (SELECT COUNT(*) FROM cinema_film_ratings WHERE film_id = f.id) AS ratings_count
+      FROM cinema_watchlist w
+      LEFT JOIN cinema_films f ON f.id = w.film_id
+      WHERE w.customer_phone = ? AND f.id IS NOT NULL
+      ORDER BY w.created_at DESC LIMIT 50
+    `).all(phone);
+    res.json({ ok: true, items: rows });
+  });
+
+  router.post('/watchlist', (req, res) => {
+    const b = req.body || {};
+    const phone = String(b.customer_phone || '').trim();
+    const filmId = parseInt(b.film_id, 10);
+    if (!phone) return res.status(400).json({ ok: false, error: 'customer_phone required' });
+    if (!filmId) return res.status(400).json({ ok: false, error: 'film_id required' });
+    const film = db.prepare(`SELECT id FROM cinema_films WHERE id = ?`).get(filmId);
+    if (!film) return res.status(404).json({ ok: false, error: 'Film tidak ditemukan' });
+    try {
+      db.prepare(`INSERT INTO cinema_watchlist (customer_phone, film_id) VALUES (?, ?)`).run(phone, filmId);
+    } catch (e) {
+      // UNIQUE constraint — sudah ada, idempotent
+    }
+    res.json({ ok: true });
+  });
+
+  router.delete('/watchlist/:film_id', (req, res) => {
+    const phone = String(req.query.phone || '').trim();
+    const filmId = parseInt(req.params.film_id, 10);
+    if (!phone) return res.status(400).json({ ok: false, error: 'phone required' });
+    if (!filmId) return res.status(400).json({ ok: false, error: 'film_id required' });
+    const info = db.prepare(`DELETE FROM cinema_watchlist WHERE customer_phone = ? AND film_id = ?`).run(phone, filmId);
+    res.json({ ok: true, removed: info.changes });
+  });
+
+  // ── TOP 10 FILMS (by booking count 30 hari terakhir) ──────────────────
+  router.get('/films/top10', (req, res) => {
+    const sinceDays = parseInt(req.query.days, 10) || 30;
+    const since = Math.floor(Date.now() / 1000) - (sinceDays * 86400);
+    const rows = db.prepare(`
+      SELECT f.id, f.title, f.poster_url, f.genre, f.duration_min, f.rating, f.status,
+             ROUND((SELECT AVG(rating) FROM cinema_film_ratings WHERE film_id = f.id), 2) AS avg_rating,
+             (SELECT COUNT(*) FROM cinema_film_ratings WHERE film_id = f.id) AS ratings_count,
+             COUNT(t.id) AS booking_count
+      FROM cinema_films f
+      LEFT JOIN cinema_showtimes s ON s.film_id = f.id
+      LEFT JOIN cinema_tickets t ON t.showtime_id = s.id
+        AND t.sold_at >= ?
+        AND (t.payment_status IS NULL OR t.payment_status IN ('paid','settlement','capture'))
+      WHERE f.status = 'now_showing' OR f.status IS NULL
+      GROUP BY f.id
+      HAVING booking_count > 0
+      ORDER BY booking_count DESC, avg_rating DESC NULLS LAST
+      LIMIT 10
+    `).all(since);
+    // Fallback: kalau belum ada booking sama sekali, return film by rating
+    if (!rows.length) {
+      const fallback = db.prepare(`
+        SELECT f.id, f.title, f.poster_url, f.genre, f.duration_min, f.rating, f.status,
+               ROUND((SELECT AVG(rating) FROM cinema_film_ratings WHERE film_id = f.id), 2) AS avg_rating,
+               (SELECT COUNT(*) FROM cinema_film_ratings WHERE film_id = f.id) AS ratings_count,
+               0 AS booking_count
+        FROM cinema_films f
+        WHERE f.status = 'now_showing' OR f.status IS NULL
+        ORDER BY avg_rating DESC NULLS LAST, f.id DESC
+        LIMIT 10
+      `).all();
+      return res.json({ ok: true, items: fallback.map((r, i) => ({ ...r, rank: i + 1 })), source: 'fallback_by_rating' });
+    }
+    res.json({ ok: true, items: rows.map((r, i) => ({ ...r, rank: i + 1 })), source: 'booking_count', since_days: sinceDays });
+  });
+
   // ── STUDIO EVENT BOOKING ──────────────────────────────────────────────
   // Booking studio penuh untuk event privat / corporate / wedding / birthday.
   // Conflict check: tidak boleh overlap dengan booking lain di studio/tanggal yang sama.

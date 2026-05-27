@@ -435,7 +435,7 @@ export default function CinemaWebApp() {
           <FilmsGrid outlet={outlet} onPickFilm={(f) => { setFilm(f); goTo("filmDetail"); }} brandPrimary={brandPrimary} />
         )}
         {step === "filmDetail" && film && (
-          <FilmDetail outlet={outlet} film={film} onPickShowtime={() => goTo("showtime")} brandPrimary={brandPrimary} />
+          <FilmDetail outlet={outlet} film={film} onPickShowtime={() => goTo("showtime")} brandPrimary={brandPrimary} session={session} onSignInClick={() => setSignInOpen(true)} />
         )}
         {step === "showtime" && film && (
           <ShowtimesList outlet={outlet} film={film} onPickShowtime={(s) => { setShowtime(s); goTo("seats"); }} brandPrimary={brandPrimary} />
@@ -471,7 +471,7 @@ export default function CinemaWebApp() {
           <HistoryPage session={session} brandPrimary={brandPrimary} onSignInClick={() => setSignInOpen(true)} />
         )}
         {step === "movies" && (
-          <MoviesPage brandPrimary={brandPrimary} onPick={(f) => { setFilm(f); goTo(outlet ? "filmDetail" : "outlet"); }} />
+          <MoviesPage brandPrimary={brandPrimary} session={session} onPick={(f) => { setFilm(f); goTo(outlet ? "filmDetail" : "outlet"); }} />
         )}
         {step === "promo" && (
           <PromoPage brandPrimary={brandPrimary} />
@@ -901,11 +901,29 @@ function ReviewModal({ booking, session, brandPrimary, onClose, onSubmitted }) {
   );
 }
 
-function MoviesPage({ brandPrimary, onPick }) {
+function MoviesPage({ brandPrimary, onPick, session }) {
   const [films, setFilms] = useState(null);
+  const [top10, setTop10] = useState([]);
+  const [watchlist, setWatchlist] = useState([]);
+
   useEffect(() => {
     fetch(`${API_HOST}/api/cinema/films`).then(r => r.json()).then(d => setFilms(d.films || [])).catch(() => setFilms([]));
+    fetch(`${API_HOST}/api/cinema/films/top10`).then(r => r.json()).then(d => setTop10(d.items || [])).catch(() => {});
   }, []);
+
+  // My List — fetch when signed-in
+  useEffect(() => {
+    if (!session?.phone) { setWatchlist([]); return; }
+    fetch(`${API_HOST}/api/cinema/watchlist?phone=${encodeURIComponent(session.phone)}`)
+      .then(r => r.json()).then(d => setWatchlist(d.items || [])).catch(() => setWatchlist([]));
+  }, [session?.phone]);
+
+  const removeFromList = async (film) => {
+    if (!session?.phone) return;
+    await fetch(`${API_HOST}/api/cinema/watchlist/${film.id}?phone=${encodeURIComponent(session.phone)}`, { method: "DELETE" });
+    setWatchlist(w => w.filter(x => x.film_id !== film.id));
+  };
+
   if (!films) return (
     <div style={{ padding: "30px 0 60px" }}>
       <Skeleton h={28} w={180} style={{ marginBottom: 8 }} />
@@ -915,7 +933,6 @@ function MoviesPage({ brandPrimary, onPick }) {
   );
   const nowShowing = films.filter(f => f.status === "now_showing" || !f.status);
   const comingSoon = films.filter(f => f.status === "coming_soon");
-  // Group by genre (top picks)
   const topRated = [...films].filter(f => (f.avg_rating || 0) >= 4 && f.ratings_count >= 1).sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0)).slice(0, 10);
   const byGenre = {};
   nowShowing.forEach(f => {
@@ -928,7 +945,9 @@ function MoviesPage({ brandPrimary, onPick }) {
     <div style={{ padding: "20px 0 60px" }}>
       <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: -1, margin: 0, marginBottom: 8, color: "#fff" }}>Movies</h1>
       <p style={{ fontSize: 13.5, color: C.sub, margin: 0, marginBottom: 28 }}>{films.length} film tersedia di KaryaOS Cinema</p>
+      {watchlist.length > 0 && <FilmRow title="📑 My List" films={watchlist} onPick={onPick} brandPrimary={brandPrimary} onRemove={removeFromList} />}
       {nowShowing.length > 0 && <FilmRow title="🎬 Sedang Tayang" films={nowShowing} onPick={onPick} brandPrimary={brandPrimary} />}
+      {top10.length > 0 && <FilmRow title="🔥 Top 10 di KaryaOS" films={top10} onPick={onPick} brandPrimary={brandPrimary} numbered />}
       {topRated.length > 0 && <FilmRow title="⭐ Top Picks Member" films={topRated} onPick={onPick} brandPrimary={brandPrimary} showRating />}
       {comingSoon.length > 0 && <FilmRow title="🔜 Segera Tayang" films={comingSoon} onPick={onPick} brandPrimary={brandPrimary} />}
       {genreEntries.map(([genre, list]) => (
@@ -941,7 +960,7 @@ function MoviesPage({ brandPrimary, onPick }) {
 // ════════════════════════════════════════════════════════════════════
 // FILM ROW — Netflix-style horizontal scroll carousel
 // ════════════════════════════════════════════════════════════════════
-function FilmRow({ title, films, onPick, brandPrimary, showRating = false }) {
+function FilmRow({ title, films, onPick, brandPrimary, showRating = false, numbered = false, onRemove = null }) {
   const scrollRef = useRef(null);
   const [hover, setHover] = useState(false);
   const scrollBy = (dir) => {
@@ -963,59 +982,93 @@ function FilmRow({ title, films, onPick, brandPrimary, showRating = false }) {
         }}>‹</button>
         {/* Scroll track */}
         <div ref={scrollRef} className="cw-row-track" style={{
-          display: "flex", gap: 8, overflowX: "auto",
+          display: "flex", gap: numbered ? 0 : 8, overflowX: "auto",
           scrollSnapType: "x mandatory", scrollPaddingLeft: 8,
           paddingBottom: 30, marginBottom: -30, // ruang utk hover scale, mask balik dgn neg margin
+          paddingLeft: numbered ? 30 : 0,  // ruang utk numeral di kiri card pertama
         }}>
-          {films.map(f => (
-            <button key={f.id} onClick={() => onPick(f)} className="cw-row-card" style={{
+          {films.map((f, i) => {
+            const rank = f.rank || (i + 1);
+            return (
+            <div key={f.id} style={{
               flexShrink: 0, scrollSnapAlign: "start",
-              width: "clamp(140px, 18vw, 220px)",
-              background: "transparent", border: "none", padding: 0,
-              cursor: "pointer", color: "#fff", fontFamily: "inherit",
-              transition: "transform 0.3s cubic-bezier(.2,.8,.2,1)",
-              transformOrigin: "center bottom",
+              display: "flex", alignItems: "stretch",
+              width: numbered ? "clamp(220px, 26vw, 320px)" : "clamp(140px, 18vw, 220px)",
             }}>
-              <div style={{
-                aspectRatio: "2/3",
-                backgroundImage: f.poster_url ? `url(${f.poster_url})` : "none",
-                background: f.poster_url ? `url(${f.poster_url}) center/cover` : "#1c1c22",
-                borderRadius: 6, position: "relative", overflow: "hidden",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+              {/* Netflix-style huge numeral di kiri card */}
+              {numbered && (
+                <div style={{
+                  flexShrink: 0, width: "38%", display: "flex", alignItems: "flex-end",
+                  marginRight: "-12%",  // overlap poster
+                  fontFamily: "'Arial Black','Inter',sans-serif",
+                  fontSize: "clamp(120px, 18vw, 200px)",
+                  fontWeight: 900, lineHeight: 0.85,
+                  color: "transparent",
+                  WebkitTextStroke: "3px rgba(255,255,255,0.85)",
+                  textShadow: "8px 8px 0 rgba(0,0,0,0.5)",
+                  pointerEvents: "none",
+                  letterSpacing: -8,
+                }}>{rank}</div>
+              )}
+              <button onClick={() => onPick(f)} className="cw-row-card" style={{
+                flex: 1, position: "relative",
+                background: "transparent", border: "none", padding: 0,
+                cursor: "pointer", color: "#fff", fontFamily: "inherit",
+                transition: "transform 0.3s cubic-bezier(.2,.8,.2,1)",
+                transformOrigin: numbered ? "left bottom" : "center bottom",
               }}>
-                {!f.poster_url && (
-                  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48, opacity: 0.3 }}>🎬</div>
-                )}
-                {f.status === "coming_soon" && (
-                  <div style={{
-                    position: "absolute", top: 8, left: 8,
-                    background: brandPrimary, color: "#fff",
-                    padding: "3px 8px", fontSize: 9, fontWeight: 800, letterSpacing: 1,
-                    fontFamily: "'JetBrains Mono',monospace", borderRadius: 3,
-                  }}>SOON</div>
-                )}
-                {/* Bottom gradient + title on hover */}
-                <div className="cw-row-card-info" style={{
-                  position: "absolute", bottom: 0, left: 0, right: 0,
-                  padding: "30px 10px 10px",
-                  background: "linear-gradient(180deg, transparent, rgba(0,0,0,0.92))",
-                  opacity: 0, transition: "opacity 0.25s",
+                <div style={{
+                  aspectRatio: "2/3",
+                  backgroundImage: f.poster_url ? `url(${f.poster_url})` : "none",
+                  background: f.poster_url ? `url(${f.poster_url}) center/cover` : "#1c1c22",
+                  borderRadius: 6, position: "relative", overflow: "hidden",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
                 }}>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.title}</div>
-                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.75)", marginTop: 2 }}>
-                    {f.duration_min ? `${f.duration_min}mnt` : ""}
-                    {f.rating ? ` · ${f.rating}` : ""}
-                  </div>
-                  {(showRating && f.ratings_count > 0) && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
-                      <Stars value={f.avg_rating || 0} size={9} color={brandPrimary} />
-                      <span style={{ fontSize: 9, color: "#fff", fontFamily: "'JetBrains Mono',monospace" }}>{Number(f.avg_rating || 0).toFixed(1)}</span>
-                    </div>
+                  {!f.poster_url && (
+                    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48, opacity: 0.3 }}>🎬</div>
                   )}
+                  {f.status === "coming_soon" && !numbered && (
+                    <div style={{
+                      position: "absolute", top: 8, left: 8,
+                      background: brandPrimary, color: "#fff",
+                      padding: "3px 8px", fontSize: 9, fontWeight: 800, letterSpacing: 1,
+                      fontFamily: "'JetBrains Mono',monospace", borderRadius: 3,
+                    }}>SOON</div>
+                  )}
+                  {/* Remove button utk My List */}
+                  {onRemove && (
+                    <button onClick={(e) => { e.stopPropagation(); onRemove(f); }} aria-label="Hapus dari My List" style={{
+                      position: "absolute", top: 6, right: 6,
+                      width: 26, height: 26, borderRadius: "50%",
+                      background: "rgba(0,0,0,0.7)", color: "#fff", border: "1px solid rgba(255,255,255,0.4)",
+                      fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+                      fontFamily: "inherit", padding: 0,
+                    }}>×</button>
+                  )}
+                  {/* Bottom gradient + title on hover */}
+                  <div className="cw-row-card-info" style={{
+                    position: "absolute", bottom: 0, left: 0, right: 0,
+                    padding: "30px 10px 10px",
+                    background: "linear-gradient(180deg, transparent, rgba(0,0,0,0.92))",
+                    opacity: 0, transition: "opacity 0.25s",
+                  }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.title}</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.75)", marginTop: 2 }}>
+                      {f.duration_min ? `${f.duration_min}mnt` : ""}
+                      {f.rating ? ` · ${f.rating}` : ""}
+                    </div>
+                    {(showRating && f.ratings_count > 0) && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: 4 }}>
+                        <Stars value={f.avg_rating || 0} size={9} color={brandPrimary} />
+                        <span style={{ fontSize: 9, color: "#fff", fontFamily: "'JetBrains Mono',monospace" }}>{Number(f.avg_rating || 0).toFixed(1)}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            </div>
+            );
+          })}
         </div>
         {/* Right chevron */}
         <button className="cw-row-chevron" onClick={() => scrollBy(1)} aria-label="Next" style={{
@@ -2446,7 +2499,7 @@ function ytEmbedUrl(url) {
   return m ? `https://www.youtube.com/embed/${m[1]}?rel=0&modestbranding=1` : null;
 }
 
-function FilmDetail({ outlet, film, onPickShowtime, brandPrimary }) {
+function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSignInClick }) {
   const [showtimeCount, setShowtimeCount] = useState(null);
   useEffect(() => {
     fetch(`${API_HOST}/api/cinema/showtimes?outlet=${encodeURIComponent(outlet.code)}`)
@@ -2458,6 +2511,33 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary }) {
 
   const trailerEmbed = ytEmbedUrl(film.trailer_url);
   const formats = (film.available_formats || "2D").split(",").map(s => s.trim()).filter(Boolean);
+
+  // My List toggle
+  const [inList, setInList] = useState(false);
+  const [listBusy, setListBusy] = useState(false);
+  useEffect(() => {
+    if (!session?.phone) { setInList(false); return; }
+    fetch(`${API_HOST}/api/cinema/watchlist?phone=${encodeURIComponent(session.phone)}`)
+      .then(r => r.json()).then(d => setInList((d.items || []).some(x => x.film_id === film.id)))
+      .catch(() => setInList(false));
+  }, [session?.phone, film.id]);
+  const toggleList = async () => {
+    if (!session?.phone) { onSignInClick?.(); return; }
+    setListBusy(true);
+    try {
+      if (inList) {
+        await fetch(`${API_HOST}/api/cinema/watchlist/${film.id}?phone=${encodeURIComponent(session.phone)}`, { method: "DELETE" });
+        setInList(false);
+      } else {
+        await fetch(`${API_HOST}/api/cinema/watchlist`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ customer_phone: session.phone, film_id: film.id }),
+        });
+        setInList(true);
+      }
+    } catch {}
+    finally { setListBusy(false); }
+  };
 
   return (
     <div style={{ padding: "20px 0 60px" }}>
@@ -2512,20 +2592,35 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary }) {
                 }}>{f}</span>
               ))}
             </div>
-            <button onClick={onPickShowtime} disabled={showtimeCount === 0} style={{
-              background: showtimeCount === 0 ? "rgba(255,255,255,0.1)" : brandPrimary,
-              color: "#fff", border: "none", borderRadius: 12,
-              padding: "14px 28px", fontSize: 15, fontWeight: 800, cursor: showtimeCount === 0 ? "not-allowed" : "pointer",
-              fontFamily: "inherit",
-              boxShadow: showtimeCount === 0 ? "none" : `0 8px 24px ${brandPrimary}66`,
-              transition: "transform 0.15s",
-            }}
-              onMouseEnter={(e) => { if (showtimeCount !== 0) e.currentTarget.style.transform = "translateY(-2px)"; }}
-              onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
-              {showtimeCount === null ? "⏳ Cek jadwal…"
-                : showtimeCount === 0 ? "❌ Tidak ada jadwal"
-                : `🎟️ Lihat ${showtimeCount} Jadwal →`}
-            </button>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button onClick={onPickShowtime} disabled={showtimeCount === 0} style={{
+                background: showtimeCount === 0 ? "rgba(255,255,255,0.1)" : brandPrimary,
+                color: "#fff", border: "none", borderRadius: 12,
+                padding: "14px 28px", fontSize: 15, fontWeight: 800, cursor: showtimeCount === 0 ? "not-allowed" : "pointer",
+                fontFamily: "inherit",
+                boxShadow: showtimeCount === 0 ? "none" : `0 8px 24px ${brandPrimary}66`,
+                transition: "transform 0.15s",
+              }}
+                onMouseEnter={(e) => { if (showtimeCount !== 0) e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
+                {showtimeCount === null ? "⏳ Cek jadwal…"
+                  : showtimeCount === 0 ? "❌ Tidak ada jadwal"
+                  : `🎟️ Lihat ${showtimeCount} Jadwal →`}
+              </button>
+              <button onClick={toggleList} disabled={listBusy} title={session ? (inList ? "Hapus dari My List" : "Tambah ke My List") : "Sign in dulu utk simpan ke My List"} style={{
+                background: inList ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.5)",
+                color: "#fff", border: `1.5px solid ${inList ? brandPrimary : "rgba(255,255,255,0.4)"}`,
+                borderRadius: 12,
+                padding: "14px 22px", fontSize: 14, fontWeight: 700,
+                cursor: listBusy ? "wait" : "pointer", fontFamily: "inherit",
+                backdropFilter: "blur(8px)", transition: "all 0.2s",
+                display: "inline-flex", alignItems: "center", gap: 8,
+                opacity: listBusy ? 0.6 : 1,
+              }}>
+                <span style={{ fontSize: 16 }}>{inList ? "✓" : "+"}</span>
+                {inList ? "Tersimpan" : "My List"}
+              </button>
+            </div>
           </div>
         </div>
       </div>
