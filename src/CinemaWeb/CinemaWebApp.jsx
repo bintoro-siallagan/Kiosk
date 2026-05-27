@@ -107,6 +107,9 @@ export default function CinemaWebApp() {
         @keyframes cwPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
 
         .cw-film-poster:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 14px 36px rgba(168,85,247,0.4); }
+        .cw-outlet-card { transform: translateY(0); }
+        .cw-outlet-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 2px rgba(255,255,255,0.1); }
+        .cw-outlet-card:active { transform: translateY(-2px); }
         .cw-section-pad > * { animation: cwFadeUp 0.4s ease both; }
         .cw-section-pad > *:nth-child(2) { animation-delay: 0.08s; }
         .cw-section-pad > *:nth-child(3) { animation-delay: 0.16s; }
@@ -357,11 +360,11 @@ function OutletPicker({ onPick, brandPrimary }) {
 
       {/* Outlet picker section */}
       <div style={{ textAlign: "center", marginBottom: 28 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.4, margin: 0, marginBottom: 6 }}>
-          Pilih Lokasi Bioskop
+        <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 6 }}>
+          Mau Nonton Di Mana?
         </h2>
         <p style={{ fontSize: 13, color: C.sub, margin: 0 }}>
-          {outlets.length} kota · klik untuk lihat jadwal hari ini
+          {outlets.length} kota · pilih lokasi favorit Anda
         </p>
       </div>
       {outlets.length === 0 ? (
@@ -370,30 +373,55 @@ function OutletPicker({ onPick, brandPrimary }) {
           <div>Belum ada lokasi bioskop aktif</div>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))", gap: 14 }}>
-          {outlets.map(o => (
-            <button key={o.code} onClick={() => onPick(o)} style={{
-              background: C.card, border: `1px solid ${C.border}`, borderRadius: 16,
-              padding: "20px 18px", textAlign: "left", color: C.text, cursor: "pointer",
-              fontFamily: "inherit", transition: "all 0.15s",
-              display: "flex", flexDirection: "column", gap: 8,
-            }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = C.cardHover; e.currentTarget.style.borderColor = `${brandPrimary}66`; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = C.card; e.currentTarget.style.borderColor = C.border; }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 22 }}>🎬</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700 }}>{o.name?.replace("Karya Cinema ", "") || o.code}</div>
-                  <div style={{ fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{o.code}</div>
+        <div className="cw-outlets-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: 18 }}>
+          {outlets.map((o, i) => {
+            const visual = getCityVisual(o);
+            const cityName = o.area || o.name?.replace("Karya Cinema ", "") || o.code;
+            return (
+              <button key={o.code} onClick={() => onPick(o)} className="cw-outlet-card" style={{
+                position: "relative",
+                background: visual.url ? `linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.95) 100%), url(${visual.url}) center/cover, ${DEFAULT_CITY_GRADIENT}` : DEFAULT_CITY_GRADIENT,
+                border: `1px solid ${C.border}`, borderRadius: 18,
+                padding: 0, textAlign: "left", color: "#fff", cursor: "pointer",
+                fontFamily: "inherit", overflow: "hidden",
+                minHeight: 240, display: "flex", flexDirection: "column", justifyContent: "flex-end",
+                transition: "all 0.3s cubic-bezier(.2,.8,.2,1)",
+                animation: `cwFadeUp 0.5s ease ${0.08 * i}s both`,
+                boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
+              }}>
+                {/* Top-right city emoji bubble */}
+                <div style={{
+                  position: "absolute", top: 14, right: 14,
+                  background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  borderRadius: 999, padding: "6px 12px",
+                  fontSize: 16,
+                }}>{visual.emoji}</div>
+
+                {/* Top-left code badge */}
+                <div style={{
+                  position: "absolute", top: 14, left: 14,
+                  background: "rgba(0,0,0,0.5)", backdropFilter: "blur(10px)",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  borderRadius: 6, padding: "3px 8px",
+                  fontSize: 10, fontWeight: 700, fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5,
+                  color: "rgba(255,255,255,0.9)",
+                }}>{o.code}</div>
+
+                {/* Bottom info overlay */}
+                <div style={{ position: "relative", padding: "18px 20px 20px" }}>
+                  <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.8, marginBottom: 4, textShadow: "0 2px 12px rgba(0,0,0,0.8)", lineHeight: 1 }}>{cityName}</div>
+                  {o.name && o.name !== cityName && (
+                    <div style={{ fontSize: 12, color: "rgba(255,255,255,0.85)", fontWeight: 600, marginBottom: 8, textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}>{o.name.replace("Karya Cinema ", "Karya ")}</div>
+                  )}
+                  {o.address && <div style={{ fontSize: 11, color: "rgba(255,255,255,0.75)", lineHeight: 1.4, marginBottom: 10, textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>📍 {o.address}</div>}
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 12px", background: brandPrimary, color: "#fff", borderRadius: 8, fontSize: 12, fontWeight: 800, letterSpacing: 0.5, boxShadow: `0 4px 14px ${brandPrimary}66` }}>
+                    LIHAT JADWAL <span style={{ fontSize: 14 }}>→</span>
+                  </div>
                 </div>
-              </div>
-              {o.area && <div style={{ fontSize: 12, color: C.sub }}>{o.area}</div>}
-              {o.address && <div style={{ fontSize: 11, color: C.dim, lineHeight: 1.4 }}>{o.address}</div>}
-              <div style={{ marginTop: "auto", paddingTop: 10, fontSize: 11, color: brandPrimary, fontWeight: 700, letterSpacing: 0.5 }}>
-                LIHAT JADWAL →
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
@@ -496,6 +524,28 @@ function FilmsGrid({ outlet, onPickFilm, brandPrimary }) {
 // STEP 3: SHOWTIMES LIST (grouped by date)
 // ════════════════════════════════════════════════════════════════════
 const FORMAT_COLOR = { "2D": "#3b82f6", "3D": "#a855f7", IMAX: "#fbbf24", "4DX": "#ec4899" };
+
+// Curated Unsplash CDN photos per Indonesian city (free use, no API key).
+// Falls back to gradient + emoji if outlet's city isn't mapped or image fails to load.
+const CITY_IMAGES = {
+  "jakarta":  { url: "https://images.unsplash.com/photo-1555899434-94d1368aa7af?w=800&q=80&auto=format&fit=crop", emoji: "🏙️" },
+  "bandung":  { url: "https://images.unsplash.com/photo-1612547038879-69bc0a18d2d2?w=800&q=80&auto=format&fit=crop", emoji: "🌋" },
+  "bali":     { url: "https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&q=80&auto=format&fit=crop", emoji: "🏝️" },
+  "medan":    { url: "https://images.unsplash.com/photo-1601121535582-d96c1283f9cb?w=800&q=80&auto=format&fit=crop", emoji: "🌴" },
+  "surabaya": { url: "https://images.unsplash.com/photo-1596402184320-417e7178b2cd?w=800&q=80&auto=format&fit=crop", emoji: "🌉" },
+  "yogyakarta": { url: "https://images.unsplash.com/photo-1596402184320-417e7178b2cd?w=800&q=80&auto=format&fit=crop", emoji: "🏛️" },
+  "semarang":   { url: "https://images.unsplash.com/photo-1601121535582-d96c1283f9cb?w=800&q=80&auto=format&fit=crop", emoji: "⛩️" },
+};
+const DEFAULT_CITY_GRADIENT = "linear-gradient(135deg, #1e293b 0%, #312e81 50%, #831843 100%)";
+
+function getCityVisual(outlet) {
+  const key = (outlet.area || outlet.name || "").toLowerCase();
+  for (const city of Object.keys(CITY_IMAGES)) {
+    if (key.includes(city)) return CITY_IMAGES[city];
+  }
+  // Generic — use outlet name as seed for stable picsum
+  return { url: `https://picsum.photos/seed/${encodeURIComponent(outlet.code || outlet.name || 'x')}/800/600`, emoji: "🎬" };
+}
 
 function fmtDate(yyyymmdd) {
   if (!yyyymmdd) return "";
