@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { api } from "./api.js";
 import API_HOST from "./apiBase.js";
 
-const formatIDR = (a) => "Rp " + Math.round(a).toLocaleString("id-ID");
+import { fmtMoney as formatIDR } from "./lib/currency.js";
 const fmtDate  = (d) => new Date(d).toLocaleDateString("id-ID", { day:"2-digit", month:"short", year:"numeric" });
 const fmtTime  = (d) => new Date(d).toLocaleTimeString("id-ID", { hour:"2-digit", minute:"2-digit" });
 

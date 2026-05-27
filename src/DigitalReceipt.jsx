@@ -3,6 +3,7 @@ import * as audio from "./audio.js";
 import { api } from "./api.js";
 import QRCode from "qrcode";
 import { subscribeToOrderPush, isPushSupported } from "./lib/push.js";
+import PushPermissionPrompt from "./components/PushPermissionPrompt.jsx";
 
 import { fmtMoney as fIDR } from "./lib/currency.js";
 
@@ -18,8 +19,8 @@ export default function DigitalReceipt({ orderId, onDone }) {
     api.getReceipt(orderId)
       .then((r) => {
         setReceipt(r);
-        // Subscribe customer to push for this order (fire-and-forget)
-        if (isPushSupported()) {
+        // Silent subscribe if permission already granted; pre-prompt handles 'default'.
+        if (isPushSupported() && Notification.permission === "granted") {
           subscribeToOrderPush({ orderId, phone: r?.customer_phone }).catch(() => {});
         }
       })
@@ -83,6 +84,9 @@ export default function DigitalReceipt({ orderId, onDone }) {
       `}</style>
 
       <div style={R.wrap}>
+        <div className="no-print">
+          <PushPermissionPrompt orderId={orderId} phone={receipt?.customer_phone} />
+        </div>
         {/* Receipt paper */}
         <div style={R.paper} className="receipt-paper">
           {/* Header */}

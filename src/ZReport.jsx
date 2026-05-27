@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "./api.js";
 
-const fmt = n => "Rp " + (Number(n) || 0).toLocaleString("id-ID");
+import { fmtMoney as fmt } from "./lib/currency.js";
 const todayStr = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import API_HOST from "../apiBase.js";
 import POSCelebration from "../POS/POSCelebration.jsx";
 import { subscribeToOrderPush, isPushSupported } from "../lib/push.js";
+import PushPermissionPrompt from "../components/PushPermissionPrompt.jsx";
 
 const API = API_HOST;
 import { fmtMoney as fIDR } from "../lib/currency.js";
@@ -46,10 +47,12 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
     return () => clearTimeout(t);
   }, []);
 
-  // Subscribe to push for this order so customer gets notified when ready
-  // (silent if browser already granted permission; prompts otherwise)
+  // If browser permission already granted, subscribe silently for this order.
+  // For 'default' (not yet decided), the PushPermissionPrompt component
+  // renders an in-app pre-prompt and drives the subscribe on user opt-in.
   useEffect(() => {
     if (!isPushSupported()) return;
+    if (Notification.permission !== "granted") return;
     subscribeToOrderPush({ orderId: order.id, phone: session?.phone }).catch(() => {});
   }, [order.id, session?.phone]);
 
@@ -115,6 +118,8 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
           {(orderData.type || order.type) === "dine" ? `🍽️ Dine In · Meja ${orderData.table || order.table || "-"}` : "🛍️ Bawa Pulang"}
         </div>
       </div>
+
+      <PushPermissionPrompt orderId={order.id} phone={session?.phone} />
 
       <div style={S.steps}>
         <Step icon="📥" label="Diterima" active={currentStep >= 0} done={currentStep > 0} />
