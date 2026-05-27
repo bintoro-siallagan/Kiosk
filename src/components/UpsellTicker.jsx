@@ -37,16 +37,21 @@ export default function UpsellTicker({ vertical = "cinema" }) {
   useEffect(() => {
     // Fetch promos per vertical
     if (vertical === "fnb") {
-      // F&B: fetch promo + happy hour
+      // F&B: fetch promo + happy hour (correct backend paths)
       Promise.all([
-        fetch(`${API_HOST}/api/promo-codes/active`).then(r => r.json()).catch(() => ({})),
-        fetch(`${API_HOST}/api/fnb/happy-hour/current`).then(r => r.json()).catch(() => ({})),
+        fetch(`${API_HOST}/api/promos`).then(r => r.ok ? r.json() : []).catch(() => []),
+        fetch(`${API_HOST}/api/fnb-features/happy-hours/active-now`).then(r => r.ok ? r.json() : {}).catch(() => ({})),
       ]).then(([promos, hh]) => {
         const dynamic = [];
-        (promos.data || promos.promos || []).slice(0, 3).forEach(p => {
-          dynamic.push(`🎁 PROMO ${p.code || p.name}: ${p.description || "diskon aktif"} — tawarkan ke customer`);
+        const promoList = Array.isArray(promos) ? promos : (promos.data || promos.promos || []);
+        promoList.slice(0, 3).forEach(p => {
+          dynamic.push(`🎁 PROMO ${p.code || p.name}: ${p.description || p.desc || "active discount"} — offer to customer`);
         });
-        if (hh?.active) dynamic.push(`⏰ HAPPY HOUR sekarang! ${hh.discount_pct || 20}% off — sebut ke customer`);
+        const hhActive = Array.isArray(hh?.active) ? hh.active : (hh?.active ? [hh] : []);
+        if (hhActive.length > 0) {
+          const h = hhActive[0];
+          dynamic.push(`⏰ Happy Hour now! ${h.discount_pct || h.discount_percent || 20}% off — mention to customer`);
+        }
         setScripts([...STATIC, ...dynamic]);
       });
     } else {
