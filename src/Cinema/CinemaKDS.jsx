@@ -8,7 +8,7 @@ import { HelpButton } from "../components/HelpModal.jsx";
 import API_HOST from "../apiBase.js";
 
 
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const fmtTime = (sec) => sec ? new Date(sec * 1000).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "-";
 const minsAgo = (sec) => {
   if (!sec) return 0;

@@ -5,8 +5,7 @@
 import { useState, useEffect } from "react";
 import QRCode from "qrcode";
 import API_HOST from "../apiBase.js";
-
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 
 export default function CinemaDigitalTicket() {
   const params = new URLSearchParams(window.location.search);

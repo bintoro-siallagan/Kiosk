@@ -6,7 +6,7 @@ import { useT, LocaleSwitcher } from "./i18n";
 
 // CinemaKiosk — customer-facing cinema ticket flow.
 // films → showtimes → seats → F&B bundles → confirmation. Uses /api/cinema/*.
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "./lib/currency.js";
 const BG = "#050810";
 // Cinematic gradient + radial mesh (amber + purple over deep black)
 const BG_GRADIENT = "linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)";
@@ -967,8 +967,21 @@ export default function CinemaKiosk({ apiBase }) {
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 20, fontWeight: 800, color: "#10b981", letterSpacing: -0.5 }}>{rp(seats.size * price)}</div>
             <button onClick={goBundles} disabled={!seats.size}
-              style={{ background: seats.size ? "linear-gradient(135deg,#10b981,#34d399)" : "rgba(255,255,255,0.05)", border: "none", borderRadius: 12, padding: "13px 28px",
-                color: seats.size ? "#04130c" : "rgba(255,255,255,0.3)", fontSize: 15, fontWeight: 800, cursor: seats.size ? "pointer" : "not-allowed", fontFamily: "inherit", boxShadow: seats.size ? "0 4px 12px rgba(16,185,129,0.3), inset 0 1px 0 rgba(255,255,255,0.2)" : "none", letterSpacing: 0.3, transition: "transform 0.15s ease, filter 0.15s ease" }}
+              style={{
+                background: seats.size
+                  ? "radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, var(--brand-primary,#FF6B35) 60%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 38%, #1a1d29), color-mix(in srgb, var(--brand-secondary,#E55A2B) 30%, #0d0f14))"
+                  : "rgba(255,255,255,0.05)",
+                border: seats.size ? "1px solid rgba(255,255,255,0.16)" : "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 12, padding: "13px 28px",
+                color: seats.size ? "#fff" : "rgba(255,255,255,0.3)",
+                textShadow: seats.size ? "0 1px 2px rgba(0,0,0,0.45)" : "none",
+                fontSize: 15, fontWeight: 700, cursor: seats.size ? "pointer" : "not-allowed",
+                fontFamily: "inherit", letterSpacing: 0.3,
+                boxShadow: seats.size
+                  ? "inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 24px color-mix(in srgb, var(--brand-primary,#FF6B35) 25%, transparent)"
+                  : "none",
+                transition: "transform 0.15s ease, filter 0.15s ease",
+              }}
               onMouseEnter={(e) => { if (seats.size) { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.filter = "brightness(1.08)"; } }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.filter = "none"; }}>
               {bundleCatalog.length > 0 ? t("cinema.add_snack") + " →" : t("cinema.buy_ticket")}
@@ -1065,7 +1078,14 @@ export default function CinemaKiosk({ apiBase }) {
               {t("cinema.skip_snack")}
             </button>
             <button onClick={() => setStep("payment")}
-              style={{ background: "linear-gradient(135deg,#10b981,#34d399)", border: "none", borderRadius: 12, padding: "13px 28px", color: "#04130c", fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", boxShadow: "0 4px 12px rgba(16,185,129,0.3), inset 0 1px 0 rgba(255,255,255,0.2)", letterSpacing: 0.3, transition: "transform 0.15s ease, filter 0.15s ease" }}
+              style={{
+                background: "radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, var(--brand-primary,#FF6B35) 60%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 38%, #1a1d29), color-mix(in srgb, var(--brand-secondary,#E55A2B) 30%, #0d0f14))",
+                border: "1px solid rgba(255,255,255,0.16)", borderRadius: 12, padding: "13px 28px",
+                color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.45)",
+                fontSize: 15, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", letterSpacing: 0.3,
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 24px color-mix(in srgb, var(--brand-primary,#FF6B35) 25%, transparent)",
+                transition: "transform 0.15s ease, filter 0.15s ease",
+              }}
               onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-1px)"; e.currentTarget.style.filter = "brightness(1.08)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.filter = "none"; }}>
               Lanjut ke Pembayaran · {rp(Math.max(0, grandTotal - (promoApplied?.discount || 0)))}

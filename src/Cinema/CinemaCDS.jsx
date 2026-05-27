@@ -14,7 +14,7 @@ import API_HOST from "../apiBase.js";
 // HelpButton tidak di-import — CDS adalah TV display non-interactive (customer gak butuh help button)
 
 
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const fmtTime = (t) => t ? new Date(t).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "";
 const SEAT_COLOR = { regular: "#10b981", premium: "#fbbf24", couple: "#ec4899", disabled: "#22d3ee", vip: "#a855f7" };
 const SEAT_EMOJI = { regular: "💺", premium: "👑", couple: "💑", disabled: "♿", vip: "⭐" };

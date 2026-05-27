@@ -4,7 +4,7 @@
 // Panels: Now Showing · Today's Schedule · Coming Soon · Active Campaigns
 import { useState, useEffect, useCallback } from "react";
 
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "./lib/currency.js";
 const BG = "#040611";
 const BG_GRADIENT = "linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)";
 const BG_MESH = "radial-gradient(1200px 800px at 20% 10%, rgba(168,85,247,0.07), transparent 70%), radial-gradient(900px 600px at 80% 90%, rgba(245,158,11,0.05), transparent 70%), radial-gradient(700px 500px at 50% 50%, rgba(34,211,238,0.025), transparent 70%)";
