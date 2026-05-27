@@ -2,7 +2,7 @@
 // General Ledger — chart of accounts + Memorial Journal.
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit , LoadingState} from "../components/uiKit.jsx";
+import { useUiKit , LoadingState, EmptyState } from "../components/uiKit.jsx";
 
 import { fmtMoney as fmtRp } from "../lib/currency.js";
 const AC = "#0369a1";
@@ -114,6 +114,7 @@ export default function AdminGeneralLedger({ apiBase = "" }) {
       {/* Memorial list */}
       <div style={{ ...S.card, marginTop: 14 }}>
         <div style={S.kicker}>📜 JURNAL MEMORIAL — {d.memorial.length}</div>
+        {d.memorial.length === 0 && <EmptyState icon="📜" title="Belum ada jurnal memorial" desc="Jurnal manual (adjusting, closing, depreciation) akan muncul di sini setelah dibuat." />}
         {d.memorial.map(m => (
           <div key={m.id} style={{ padding: "10px 0", borderTop: "1px solid #161b22" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, gap: 8 }}>

@@ -2,7 +2,7 @@
 // Master Category — kategori & sub-kategori produk + mapping COA (CRUD lengkap).
 
 import { useState, useEffect, useCallback } from "react";
-import { useUiKit , LoadingState} from "../components/uiKit.jsx";
+import { useUiKit , LoadingState, EmptyState } from "../components/uiKit.jsx";
 
 const AC = "#0891b2";
 
@@ -94,6 +94,9 @@ export default function AdminMasterCategory({ apiBase = "" }) {
 
       <div style={{ ...S.card, marginTop: 14 }}>
         <div style={S.kicker}>🗂️ DAFTAR KATEGORI — {d.categories.length}</div>
+        {d.categories.length === 0 ? (
+          <EmptyState icon="🗂️" title="Belum ada kategori" desc="Tambah kategori produk (mis. Minuman, Makanan, Dessert) untuk grouping menu & mapping COA." />
+        ) : (
         <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
           {d.categories.map(c => (
             <div key={c.code} style={{ background: "#0a0e16", border: "1px solid #161b22", borderRadius: 9, padding: "11px 13px" }}>
@@ -122,6 +125,7 @@ export default function AdminMasterCategory({ apiBase = "" }) {
             </div>
           ))}
         </div>
+        )}
       </div>
 
       {editing && (

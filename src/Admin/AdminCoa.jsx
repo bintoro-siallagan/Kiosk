@@ -2,6 +2,7 @@
 // Chart of Accounts — master daftar akun + Live Balance + Search/Filter +
 // Export/Import CSV + Industry Templates + Per-Outlet Scope + Journal Map editor.
 import { useState, useEffect, useCallback } from "react";
+import { EmptyState } from "../components/uiKit.jsx";
 
 const AC = "#1d4ed8";
 const TYPE_C = {
@@ -210,6 +211,7 @@ export default function AdminCoa({ apiBase = "" }) {
       {modal === "journalmap" && <JournalMapModal apiBase={apiBase} map={journalMap} accounts={d.groups.flatMap(g => g.sub.flatMap(s => s.accounts))} onReload={() => fetch(`${apiBase}/api/coa/journal-map`).then(r => r.json()).then(j => setJournalMap(j.map || []))} onClose={() => setModal(null)} />}
 
       {/* COA tree */}
+      {filteredGroups.length === 0 && <EmptyState icon="📒" title="Belum ada Chart of Accounts" desc="Pakai template industri di tab Setup, atau tambah akun manual via tombol '+ Akun Baru'." />}
       {filteredGroups.map(g => {
         // Type-level subtotal
         const typeAccounts = g.sub.flatMap(s => s.accounts);

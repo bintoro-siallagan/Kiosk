@@ -2,6 +2,13 @@
 // Super-admin: MRR/ARR dashboard + tenant list + invoice management
 // Tenant admin: own plan + invoice history + upgrade CTA
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { EmptyState } from "../components/uiKit.jsx";
+
+const EmptyRow = ({ cols, icon, title, desc }) => (
+  <tr><td colSpan={cols} style={{ padding: 0, background: 'transparent' }}>
+    <EmptyState icon={icon} title={title} desc={desc} />
+  </td></tr>
+);
 
 const PURPLE = "#a855f7", GREEN = "#10b981", AMBER = "#f59e0b", RED = "#ef4444", CYAN = "#22d3ee", PINK = "#ec4899", BLUE = "#3b82f6";
 const CARD_BG = "rgba(255,255,255,0.04)";
@@ -199,7 +206,7 @@ function TenantsView({ tenants, plans, onEdit }) {
           </tr>
         </thead>
         <tbody>
-          {tenants.length === 0 && <tr><td colSpan={8} style={{ padding: 20, textAlign: "center", color: "#64748b" }}>No tenants</td></tr>}
+          {tenants.length === 0 && <EmptyRow cols={8} icon="🏢" title="Belum ada tenant" desc="Tenant baru akan muncul di sini setelah signup atau di-create dari Karys Platform View." />}
           {tenants.map(t => {
             const isTrial = t.plan_code === "TRIAL";
             const trialDaysLeft = isTrial && t.trial_until ? Math.max(0, Math.ceil((t.trial_until - Date.now()/1000) / 86400)) : null;
@@ -269,7 +276,7 @@ function InvoicesView({ invoices, onReload, API }) {
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 && <tr><td colSpan={7} style={{ padding: 20, textAlign: "center", color: "#64748b" }}>No invoices</td></tr>}
+            {filtered.length === 0 && <EmptyRow cols={7} icon="🧾" title="Belum ada invoice" desc="Invoice billing tenant akan ter-generate otomatis di tanggal cycle berikutnya." />}
             {filtered.map(i => (
               <tr key={i.id} style={{ borderTop: BORDER }}>
                 <td style={{ ...td, fontFamily: "'Geist Mono',monospace", color: "#fff", fontWeight: 700 }}>{i.invoice_no}</td>
@@ -432,6 +439,7 @@ function TenantView({ my, plans, API }) {
               </tr>
             </thead>
             <tbody>
+              {my.invoices.length === 0 && <EmptyRow cols={5} icon="📭" title="Belum ada invoice" desc="Invoice akan muncul di akhir periode billing pertama." />}
               {my.invoices.map(i => (
                 <tr key={i.id} style={{ borderTop: BORDER }}>
                   <td style={{ ...td, fontFamily: "'Geist Mono',monospace", color: "#fff", fontWeight: 700 }}>{i.invoice_no}</td>

@@ -3,6 +3,13 @@
 // Pasangkan ke AdminMasterItem.jsx existing sebagai tab tambahan, atau standalone.
 import React, { useState, useEffect, useCallback } from 'react';
 import API_HOST from "../apiBase.js";
+import { EmptyState } from "../components/uiKit.jsx";
+
+const EmptyRow = ({ cols, icon, title, desc }) => (
+  <tr><td colSpan={cols} style={{ padding: 0, background: 'transparent' }}>
+    <EmptyState icon={icon} title={title} desc={desc} />
+  </td></tr>
+);
 
 const API = API_HOST + '/api/master';
 const fmtIDR = (n) => new Intl.NumberFormat('id-ID', { style:'currency', currency:'IDR', maximumFractionDigits:0 }).format(Math.round(n||0));
@@ -165,6 +172,7 @@ function PackagesManager() {
       <table style={tableStyle}>
         <thead><tr><th>ID</th><th>Nama</th><th>Items</th><th>Price</th><th>Active</th><th></th></tr></thead>
         <tbody>
+          {list.length === 0 && <EmptyRow cols={6} icon="📦" title="Belum ada package" desc="Klik '+ Buat Package' untuk bikin bundle/paket menu (mis. Combo Hemat)." />}
           {list.map(p => (
             <tr key={p.id}>
               <td style={{fontSize:11, color:'#8b8b95'}}>{p.id}</td>
