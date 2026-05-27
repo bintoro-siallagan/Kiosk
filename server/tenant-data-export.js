@@ -98,9 +98,10 @@ function setupTenantDataExport(app, opts = {}) {
       const rows = db.prepare(`SELECT id, name, phone, tags, visits, total_spend, points, created_at, last_visit
                                FROM customers WHERE company_id = ? ORDER BY visits DESC`).all(cid);
       const header = ['id', 'name', 'phone', 'tags', 'visits', 'total_spend', 'points', 'joined_at', 'last_visit'];
+      // Auto-detect seconds vs millis (millis if > 10^12)
+      const toIso = (t) => !t ? '' : new Date(t > 1e12 ? t : t * 1000).toISOString();
       const data = rows.map(r => [r.id, r.name, r.phone, r.tags, r.visits, r.total_spend, r.points,
-                                  r.created_at ? new Date(r.created_at * 1000).toISOString() : '',
-                                  r.last_visit ? new Date(r.last_visit * 1000).toISOString() : '']);
+                                  toIso(r.created_at), toIso(r.last_visit)]);
       _sendCSV(res, `customers-company${cid}-${Date.now()}.csv`, header, data);
     } catch (e) { res.status(500).send('error: ' + e.message); }
   });
