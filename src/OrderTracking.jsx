@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "./api.js";
 
-const fIDR  = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
+import { fmtMoney as fIDR } from "./lib/currency.js";
 const fTime = (d) => new Date(d).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});
 
 const STEPS = [

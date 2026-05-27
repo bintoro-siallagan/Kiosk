@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import API_HOST from "./apiBase.js";
 
 const API = API_HOST;
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "./lib/currency.js";
 const MEDAL = ["🥇", "🥈", "🥉"];
 
 export default function LeaderboardModal({ onClose }) {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { api, createSocket } from "./api.js";
 
-const formatIDR = (a) => "Rp " + Math.round(a || 0).toLocaleString("id-ID");
+import { fmtMoney as formatIDR } from "./lib/currency.js";
 const fmtTime   = (d) => new Date(d).toLocaleTimeString("id-ID", { hour:"2-digit", minute:"2-digit", second:"2-digit" });
 
 export default function ESBNotif({ onBack }) {

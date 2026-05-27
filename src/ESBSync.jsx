@@ -10,7 +10,7 @@ import {
 } from "./esbApi.js";
 import { api } from "./api.js";
 
-const formatIDR = (a) => "Rp " + Math.round(a || 0).toLocaleString("id-ID");
+import { fmtMoney as formatIDR } from "./lib/currency.js";
 
 // Emoji map by category name
 const CAT_EMOJI = {

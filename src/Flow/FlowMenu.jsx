@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import API_HOST from "../apiBase.js";
+import { fmtMoney } from "../lib/currency.js";
 
 const BRAND = "var(--brand-primary,#FF6B35)";
 const BG = "#0A0A0A";
@@ -40,7 +41,7 @@ const GROUP_ORDER = ["Fruits", "Crunchies", "Sauces", "Premium"];
 const GROUP_EMOJI = { Fruits: "🍓", Crunchies: "🥣", Sauces: "🍯", Premium: "⭐" };
 
 function rupiah(n) {
-  return "Rp " + Number(n || 0).toLocaleString("id-ID");
+  return fmtMoney(n);
 }
 
 function calcAddonTotal(selected, freeQuota, extraPrice) {

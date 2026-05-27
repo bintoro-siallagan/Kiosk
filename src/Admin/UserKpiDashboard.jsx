@@ -3,6 +3,7 @@
 // Aggregate dari: cashier ratings, service tickets, audits, launch signoffs, POS orders.
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorInline } from "../components/ConnectionError.jsx";
+import { fmtMoney } from "../lib/currency.js";
 
 const PURPLE = "#a855f7", GREEN = "#10b981", AMBER = "#f59e0b", RED = "#ef4444", CYAN = "#22d3ee";
 const CARD_BG = "rgba(255,255,255,0.04)";
@@ -184,7 +185,7 @@ function UserDetailDrawer({ user, days, onClose }) {
 
         <Section icon="🧾" label="POS / SALES" color="#fbbf24">
           <Stat label="Orders" value={user.pos?.orders || 0} />
-          <Stat label="Revenue" value={"Rp " + (user.pos?.total_revenue || 0).toLocaleString("id-ID")} />
+          <Stat label="Revenue" value={fmtMoney(user.pos?.total_revenue)} />
         </Section>
       </div>
     </div>

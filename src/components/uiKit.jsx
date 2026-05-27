@@ -26,7 +26,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, useMemo } from "react";
 
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470", text: "#e6edf3" };
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
 
 // ════════════════════════════════════════════════════════════════════
 // PROVIDER + HOOKS

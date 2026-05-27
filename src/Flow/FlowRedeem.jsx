@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import API_HOST from "../apiBase.js";
+import { fmtMoney } from "../lib/currency.js";
 
 const BRAND = "var(--brand-primary,#FF6B35)";
 const BG = "#0A0A0A";
@@ -19,7 +20,7 @@ const DEFAULT_CFG = {
 };
 
 function rupiah(n) {
-  return "Rp " + Number(n || 0).toLocaleString("id-ID");
+  return fmtMoney(n);
 }
 
 function phoneVariants(phone) {

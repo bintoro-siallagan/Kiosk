@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { api } from "./api.js";
 
-const fIDR  = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
+import { fmtMoney as fIDR } from "./lib/currency.js";
 const fDate = (d) => d ? new Date(d).toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"}) : "–";
 const fAgo  = (d) => { if(!d) return "–"; const s=Math.floor((Date.now()-d)/86400000); return s===0?"Today":s===1?"Yesterday":`${s} hari lalu`; };
 

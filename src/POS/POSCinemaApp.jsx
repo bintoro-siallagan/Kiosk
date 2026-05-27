@@ -92,7 +92,7 @@ const TH = {
   shadowCTA: "0 6px 20px color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent), inset 0 1px 0 rgba(255,255,255,0.2)",
 };
 
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "../lib/currency.js";
 const fmtK = (n) => n >= 1e6 ? (n / 1e6).toFixed(1) + "jt" : n >= 1e3 ? Math.round(n / 1e3) + "rb" : String(Math.round(n) || 0);
 
 // ═══════════════════════════════════════════════════════════════════

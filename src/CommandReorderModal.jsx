@@ -6,7 +6,7 @@
 import { useState, useEffect } from "react";
 
 const MONO = "var(--m)";
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "./lib/currency.js";
 
 export default function CommandReorderModal({ item, apiBase = "", onClose, onDone }) {
   const daysLeft = item.dailyUse > 0 ? Math.floor(item.stock / item.dailyUse) : 999;

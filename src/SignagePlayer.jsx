@@ -6,7 +6,7 @@
 import { useEffect, useState, useRef } from "react";
 import API_HOST from "./apiBase.js";
 
-const rp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as rp } from "./lib/currency.js";
 
 export default function SignagePlayer() {
   const [items, setItems] = useState([]);

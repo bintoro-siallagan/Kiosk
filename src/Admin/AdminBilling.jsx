@@ -9,13 +9,14 @@ const BORDER  = "1px solid rgba(255,255,255,0.08)";
 
 const STATUS_COLOR = { open: AMBER, paid: GREEN, overdue: RED, void: "#64748b" };
 
-const fmtIDR = (n) => "Rp " + (Number(n) || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtIDR, getCurrencyConfig } from "../lib/currency.js";
 const fmtIDRShort = (n) => {
   n = Number(n) || 0;
-  if (n >= 1_000_000_000) return "Rp " + (n / 1_000_000_000).toFixed(1) + "B";
-  if (n >= 1_000_000) return "Rp " + (n / 1_000_000).toFixed(1) + "M";
-  if (n >= 1_000) return "Rp " + (n / 1_000).toFixed(0) + "K";
-  return "Rp " + n;
+  const sym = getCurrencyConfig().symbol;
+  if (n >= 1_000_000_000) return `${sym} ` + (n / 1_000_000_000).toFixed(1) + "B";
+  if (n >= 1_000_000) return `${sym} ` + (n / 1_000_000).toFixed(1) + "M";
+  if (n >= 1_000) return `${sym} ` + (n / 1_000).toFixed(0) + "K";
+  return `${sym} ` + n;
 };
 const fmtDate = (ts) => ts ? new Date(ts * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "—";
 const fmtDateTime = (ts) => ts ? new Date(ts * 1000).toLocaleString("id-ID", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";

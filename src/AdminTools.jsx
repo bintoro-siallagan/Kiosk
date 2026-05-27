@@ -176,7 +176,7 @@ import API_HOST from "./apiBase.js";
 const API = API_HOST;
 const TOKEN = () => localStorage.getItem("adminToken") || "";
 const hdr = () => ({ "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN()}` });
-const fR = n => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fR } from "./lib/currency.js";
 
 async function api(path, opts = {}) {
   const r = await fetch(`${API}${path}`, { headers: hdr(), ...opts });

@@ -259,7 +259,7 @@ export default function ZReport({ onClose }) {
   if (!report) return;
   const w = window.open("", "_blank", "width=900,height=1100");
   if (!w) { alert("Pop-up blocked. Izinkan pop-up untuk print."); return; }
-  const fIDR2 = (a) => "Rp " + Math.round(a||0).toLocaleString("id-ID");
+  const fIDR2 = fmt;
   const adminName = localStorage.getItem("adminName") || "Admin";
   const adminRole = localStorage.getItem("adminRole") || "-";
   const printedAt = new Date().toLocaleString("id-ID",{day:"numeric",month:"long",year:"numeric",hour:"2-digit",minute:"2-digit"});

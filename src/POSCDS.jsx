@@ -16,7 +16,7 @@ const STAGES = [
   { key: "completed", label: "Done",      emoji: "✅", color: "#22C55E" },
 ];
 
-const fmt = (n) => "Rp " + (n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmt } from "./lib/currency.js";
 
 export default function POSCDS() {
   const [mode, setMode] = useState("idle"); // idle | welcoming | cart | qris | success | track-qr

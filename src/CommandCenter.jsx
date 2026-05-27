@@ -43,7 +43,8 @@ const RULES = {
 };
 const SV={critical:{l:"CRIT",bg:"#450a0a",bd:"#dc2626",tx:"#fca5a5"},high:{l:"HIGH",bg:"#451a03",bd:"#ea580c",tx:"#fdba74"},medium:{l:"MED",bg:"#422006",bd:"#ca8a04",tx:"#fde047"},low:{l:"LOW",bg:"#052e16",bd:"#16a34a",tx:"#86efac"}};
 
-const fR=n=>(n<0?"−":"")+"Rp "+Math.abs(n).toLocaleString("id-ID");
+import { fmtMoney } from "./lib/currency.js";
+const fR=n=>(n<0?"−":"")+fmtMoney(Math.abs(n));
 const fK=n=>n>=1e6?(n/1e6).toFixed(1)+"jt":n>=1e3?Math.round(n/1e3)+"rb":String(n);
 const clk=()=>{const d=new Date();return[d.getHours(),d.getMinutes(),d.getSeconds()].map(v=>String(v).padStart(2,"0")).join(":");};
 const ago=ts=>{const m=Math.floor((Date.now()-new Date(ts).getTime())/6e4);return m<1?"now":m<60?m+"m":Math.floor(m/60)+"h";};

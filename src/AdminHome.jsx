@@ -68,7 +68,7 @@ function PanelLoading() {
 }
 
 const API = API_HOST;
-const fmtRp = (n) => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
+import { fmtMoney as fmtRp } from "./lib/currency.js";
 const fmtK = (n) => n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "K" : String(Math.round(n) || 0);
 const ago = (t) => { const s = Math.floor((Date.now() - t) / 60000); return s < 1 ? "baru" : s < 60 ? s + "m" : Math.floor(s / 60) + "j"; };
 const DAY = 864e5;
