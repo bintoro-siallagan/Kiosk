@@ -51,6 +51,7 @@ import TrialBanner from "./components/TrialBanner.jsx";
 import UpgradePrompt from "./components/UpgradePrompt.jsx";
 import OnboardingChecklist from "./components/OnboardingChecklist.jsx";
 import AnnouncementBanner from "./components/AnnouncementBanner.jsx";
+import { ErrorInline } from "./components/ConnectionError.jsx";
 import API_HOST from "./apiBase.js";
 import { LocaleSwitcher as KaryaLocaleSwitcher } from "./i18n";
 
@@ -208,6 +209,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
   const [now, setNow] = useState(new Date());
   const [orders, setOrders] = useState([]);
   const [allOrders, setAllOrders] = useState([]);
+  const [ordersError, setOrdersError] = useState(null);
   const [notifs, setNotifs] = useState([]);
   const [outlets, setOutlets] = useState([]);
   const [period, setPeriod] = useState("today");
@@ -296,12 +298,16 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
   const REFRESH_MS = 15000;
   const [lastRefresh, setLastRefresh] = useState(Date.now());
   useEffect(() => {
-    const loadOrders = () => fetch(`${API}/api/orders`).then(r => r.json()).then(o => {
+    const loadOrders = () => fetch(`${API}/api/orders`).then(r => {
+      if (!r.ok) throw new Error(`orders ${r.status}`);
+      return r.json();
+    }).then(o => {
       const arr = Array.isArray(o) ? o : [];
       setAllOrders(arr);
       setOrders(arr.filter(x => !["completed", "cancelled", "refunded", "partial_refund"].includes(x.status)));
       setLastRefresh(Date.now());
-    }).catch(() => {});
+      setOrdersError(null);
+    }).catch(e => setOrdersError(e));
     loadOrders();
     const iv = setInterval(loadOrders, REFRESH_MS);
     const loadNotif = () => fetch(`${API}/api/notification-center`).then(r => r.json()).then(d => setNotifs(d.notifications || [])).catch(() => {});
@@ -709,6 +715,12 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       <OnboardingChecklist onNavigate={(modId) => openRight("tools", modId)} />
 
       {/* Impersonation banner moved to <ImpersonationBanner/> mounted in App.jsx */}
+
+      {ordersError && (
+        <div style={{ padding: "8px 16px" }}>
+          <ErrorInline error={ordersError} label="Gagal memuat orders" onRetry={() => { setOrdersError(null); fetch(`${API}/api/orders`).then(r => r.ok ? r.json() : Promise.reject(new Error(`orders ${r.status}`))).then(o => { const arr = Array.isArray(o) ? o : []; setAllOrders(arr); setOrders(arr.filter(x => !["completed", "cancelled", "refunded", "partial_refund"].includes(x.status))); setLastRefresh(Date.now()); }).catch(e => setOrdersError(e)); }} compact />
+        </div>
+      )}
 
       {/* Topbar — polished with glow + brand pop */}
       <div style={S.topbar} className="no-print ah-topbar">

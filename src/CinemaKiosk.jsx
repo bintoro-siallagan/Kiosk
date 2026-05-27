@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import DelightPopup from "./components/DelightPopup.jsx";
 import MarqueeTicker from "./components/MarqueeTicker.jsx";
 import CinemaCelebration from "./CinemaCelebration.jsx";
+import { ErrorInline } from "./components/ConnectionError.jsx";
 import { useT, LocaleSwitcher } from "./i18n";
 
 // CinemaKiosk — customer-facing cinema ticket flow.
@@ -70,14 +71,26 @@ export default function CinemaKiosk({ apiBase }) {
   });
   const [holdExpiresAt, setHoldExpiresAt] = useState(null); // unix sec
   const [holdRemaining, setHoldRemaining] = useState(0);    // sec
+  // Surface API failures di hero — kiosk customer-facing, blank screen no-no.
+  const [loadError, setLoadError] = useState(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const base = `${apiBase || ""}/api/cinema`;
 
   useEffect(() => {
-    fetch(`${base}/films`).then(r => r.json()).then(d => setFilms(d.films || [])).catch(() => {});
-    // Filter showtime by outlet kalau ada outlet code di URL/storage
+    let cancelled = false;
+    setLoadError(null);
     const stUrl = outletCode ? `${base}/showtimes?outlet=${encodeURIComponent(outletCode)}` : `${base}/showtimes`;
-    fetch(stUrl).then(r => r.json()).then(d => setShowtimes(d.showtimes || [])).catch(() => {});
+    Promise.all([
+      fetch(`${base}/films`).then(r => { if (!r.ok) throw new Error(`films ${r.status}`); return r.json(); }),
+      fetch(stUrl).then(r => { if (!r.ok) throw new Error(`showtimes ${r.status}`); return r.json(); }),
+    ]).then(([f, s]) => {
+      if (cancelled) return;
+      setFilms(f.films || []);
+      setShowtimes(s.showtimes || []);
+    }).catch(e => { if (!cancelled) setLoadError(e); });
+    // Bundles is enrichment — failure can stay silent (no F&B = OK).
     fetch(`${base}/bundles${outletCode ? `?outlet=${encodeURIComponent(outletCode)}` : ""}`).then(r => r.json()).then(d => setBundleCatalog(d.bundles || [])).catch(() => {});
+    return () => { cancelled = true; };
     // Resolve outlet display name dari outlet_master
     if (outletCode) {
       fetch(`${apiBase || ""}/api/outlet-master`)
@@ -91,7 +104,7 @@ export default function CinemaKiosk({ apiBase }) {
         .catch(() => setOutletInfo({ code: outletCode, name: outletCode, area: "" }));
     }
     // eslint-disable-next-line
-  }, []);
+  }, [loadAttempt]);
 
   // ── Auto-trigger promos: poll setiap 30s, unlock kalau omzet/tiket harian capai threshold ──
   useEffect(() => {
@@ -600,6 +613,13 @@ export default function CinemaKiosk({ apiBase }) {
         {/* STEP: films — hanya tampilkan film yang udah ada jadwal aktif */}
         {step === "films" && (
           <>
+            {loadError && (
+              <ErrorInline
+                error={loadError}
+                label="Gagal memuat film & jadwal"
+                onRetry={() => setLoadAttempt(a => a + 1)}
+              />
+            )}
             {/* Auto-promo unlocked banner — milestone-based discount */}
             {bestAutoPromo && (
               <AutoPromoBanner promo={bestAutoPromo} />
