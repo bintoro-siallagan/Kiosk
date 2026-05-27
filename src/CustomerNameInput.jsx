@@ -1,7 +1,20 @@
 import { useState } from "react";
+import { validateCustomerName } from "./lib/nameValidator.js";
 
 export default function CustomerNameInput({ order, onContinue, onBack, onCancel }) {
   const [name, setName] = useState("");
+  const [error, setError] = useState("");
+
+  // Live validation — but only show error kalau user udah ketik
+  const validation = name ? validateCustomerName(name) : { valid: true, error: null };
+
+  const handleContinue = (rawName) => {
+    if (!rawName) return onContinue("");  // skip OK
+    const v = validateCustomerName(rawName);
+    if (!v.valid) { setError(v.error); return; }
+    setError("");
+    onContinue(v.cleaned);
+  };
 
   return (
     <div style={S.root}>
@@ -23,15 +36,23 @@ export default function CustomerNameInput({ order, onContinue, onBack, onCancel 
           type="text"
           autoFocus
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => { setName(e.target.value); setError(""); }}
           placeholder="Mis: Budi, Sarah..."
-          style={S.input}
-          onKeyDown={(e) => e.key === "Enter" && onContinue(name.trim())}
+          style={{ ...S.input, borderColor: (error || (name && !validation.valid)) ? "#ef4444" : "#2a2a2a" }}
+          onKeyDown={(e) => e.key === "Enter" && handleContinue(name.trim())}
         />
+        {(error || (name && !validation.valid)) && (
+          <div style={{ color: "#fca5a5", fontSize: 13, marginTop: -16, marginBottom: 18, padding: "8px 12px", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 8, textAlign: "left" }}>
+            ⚠️ {error || validation.error}
+          </div>
+        )}
+        <div style={{ color: "#666", fontSize: 11, marginTop: -16, marginBottom: 18, textAlign: "left" }}>
+          💡 Min 2 huruf · tanpa angka · tanpa simbol
+        </div>
 
         <div style={S.actions}>
           <button onClick={() => onContinue("")} style={S.skipBtn}>Skip →</button>
-          <button onClick={() => onContinue(name.trim())} style={S.continueBtn}>
+          <button onClick={() => handleContinue(name.trim())} style={S.continueBtn}>
             Lanjut ke Menu →
           </button>
         </div>

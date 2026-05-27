@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "./api.js";
+import { validateCustomerName } from "./lib/nameValidator.js";
 
 import { fmtMoney as fIDR } from "./lib/currency.js";
 import { LoadingState } from "./components/uiKit.jsx";
@@ -351,10 +352,13 @@ function CustomerEditModal({ customer, onClose, onSave }) {
   });
   const [saving, setSaving] = useState(false);
 
+  const nameValid = validateCustomerName(form.name);
+
   const submit = async () => {
+    if (!nameValid.valid) return;  // block submit kalau nama invalid
     setSaving(true);
     try {
-      await onSave({ ...customer, ...form, points: parseInt(form.points, 10) || 0, totalSpend: parseInt(form.totalSpend, 10) || 0, visits: parseInt(form.visits, 10) || 0 });
+      await onSave({ ...customer, ...form, name: nameValid.cleaned, points: parseInt(form.points, 10) || 0, totalSpend: parseInt(form.totalSpend, 10) || 0, visits: parseInt(form.visits, 10) || 0 });
     } finally { setSaving(false); }
   };
 
@@ -377,7 +381,13 @@ function CustomerEditModal({ customer, onClose, onSave }) {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <EditField label="Nama" value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} placeholder="Nama lengkap" />
+          <div>
+            <EditField label="Nama *" value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} placeholder="Nama lengkap (min 2 huruf)" />
+            {form.name && !nameValid.valid && (
+              <div style={{ marginTop: 5, fontSize: 11, color: "#fca5a5" }}>⚠️ {nameValid.error}</div>
+            )}
+            <div style={{ marginTop: 4, fontSize: 10, color: "#6b7280" }}>Min 2 huruf · tanpa angka · tanpa simbol</div>
+          </div>
           <EditField label="Phone (HP)" value={form.phone} onChange={v => setForm(f => ({ ...f, phone: v.replace(/\D/g, "") }))} placeholder="08123456789" />
           <EditField label="Points (⭐)" value={form.points} onChange={v => setForm(f => ({ ...f, points: v }))} type="number" />
           <EditField label="Total Spend (Rp)" value={form.totalSpend} onChange={v => setForm(f => ({ ...f, totalSpend: v }))} type="number" />
@@ -405,8 +415,8 @@ function CustomerEditModal({ customer, onClose, onSave }) {
 
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
           <button onClick={onClose} style={{ padding: "9px 18px", background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: "#e5e7eb", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>Batal</button>
-          <button onClick={submit} disabled={saving} style={{ padding: "9px 18px", background: "#fb923c", border: "none", color: "#fff", borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: saving ? "wait" : "pointer", fontFamily: "inherit", opacity: saving ? 0.6 : 1 }}>
-            {saving ? "Saving…" : "💾 Save"}
+          <button onClick={submit} disabled={saving || !nameValid.valid} style={{ padding: "9px 18px", background: nameValid.valid ? "#fb923c" : "#6b7280", border: "none", color: "#fff", borderRadius: 8, fontSize: 13, fontWeight: 800, cursor: (saving || !nameValid.valid) ? "not-allowed" : "pointer", fontFamily: "inherit", opacity: (saving || !nameValid.valid) ? 0.6 : 1 }}>
+            {saving ? "Saving…" : nameValid.valid ? "💾 Save" : "Nama invalid"}
           </button>
         </div>
       </div>
