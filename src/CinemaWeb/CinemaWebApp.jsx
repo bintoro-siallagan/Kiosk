@@ -421,6 +421,7 @@ export default function CinemaWebApp() {
           -ms-overflow-style: none;
         }
         .cw-row-track::-webkit-scrollbar { display: none; }
+        .cw-genre-chips::-webkit-scrollbar { display: none; }
 
         .cw-row-card {
           will-change: transform;
@@ -979,10 +980,20 @@ function ReviewModal({ booking, session, brandPrimary, onClose, onSubmitted }) {
   );
 }
 
+// Helper: split genre string ("Action / Adventure" / "Drama, Romance") jadi array
+function splitGenres(film) {
+  return String(film.genre || "").split(/[,\/]/).map(s => s.trim()).filter(Boolean);
+}
+function filmMatchesGenre(film, genre) {
+  if (genre === "all") return true;
+  return splitGenres(film).some(g => g.toLowerCase() === genre.toLowerCase());
+}
+
 function MoviesPage({ brandPrimary, onPick, session }) {
   const [films, setFilms] = useState(null);
   const [top10, setTop10] = useState([]);
   const [watchlist, setWatchlist] = useState([]);
+  const [genreFilter, setGenreFilter] = useState("all");
 
   useEffect(() => {
     fetch(`${API_HOST}/api/cinema/films`).then(r => r.json()).then(d => setFilms(d.films || [])).catch(() => setFilms([]));
@@ -1002,6 +1013,18 @@ function MoviesPage({ brandPrimary, onPick, session }) {
     setWatchlist(w => w.filter(x => x.film_id !== film.id));
   };
 
+  // Available genres: collect dari semua film (now showing + coming soon), count occurrences
+  const genreCounts = useMemo(() => {
+    const counts = {};
+    (films || []).forEach(f => {
+      splitGenres(f).forEach(g => { counts[g] = (counts[g] || 0) + 1; });
+    });
+    return counts;
+  }, [films]);
+  const availableGenres = useMemo(() => {
+    return Object.entries(genreCounts).sort((a, b) => b[1] - a[1]).map(([g]) => g);
+  }, [genreCounts]);
+
   if (!films) return (
     <div style={{ padding: "30px 0 60px" }}>
       <Skeleton h={28} w={180} style={{ marginBottom: 8 }} />
@@ -1009,29 +1032,97 @@ function MoviesPage({ brandPrimary, onPick, session }) {
       <FilmGridSkeleton count={6} />
     </div>
   );
-  const nowShowing = films.filter(f => f.status === "now_showing" || !f.status);
-  const comingSoon = films.filter(f => f.status === "coming_soon");
-  const topRated = [...films].filter(f => (f.avg_rating || 0) >= 4 && f.ratings_count >= 1).sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0)).slice(0, 10);
+
+  // Apply genre filter ke semua row (kalau "all" → pass through)
+  const fg = (list) => list.filter(f => filmMatchesGenre(f, genreFilter));
+
+  const nowShowing = fg(films.filter(f => f.status === "now_showing" || !f.status));
+  const comingSoon = fg(films.filter(f => f.status === "coming_soon"));
+  const topRated = fg([...films].filter(f => (f.avg_rating || 0) >= 4 && f.ratings_count >= 1).sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0))).slice(0, 10);
+  const top10Filtered = fg(top10);
+  const watchlistFiltered = fg(watchlist);
+
+  // By-genre rows hanya dipakai saat filter "all" (kalau sudah filter ke 1 genre, redundant)
   const byGenre = {};
-  nowShowing.forEach(f => {
-    const genre = (f.genre || "Lainnya").split(/[,\/]/)[0].trim();
-    if (!byGenre[genre]) byGenre[genre] = [];
-    byGenre[genre].push(f);
-  });
+  if (genreFilter === "all") {
+    nowShowing.forEach(f => {
+      const g = splitGenres(f)[0] || "Lainnya";
+      if (!byGenre[g]) byGenre[g] = [];
+      byGenre[g].push(f);
+    });
+  }
   const genreEntries = Object.entries(byGenre).filter(([, list]) => list.length >= 2);
+
+  const totalFiltered = nowShowing.length + comingSoon.length;
+
   return (
     <div style={{ padding: "20px 0 60px" }}>
       <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: -1, margin: 0, marginBottom: 8, color: "#fff" }}>Movies</h1>
-      <p style={{ fontSize: 13.5, color: C.sub, margin: 0, marginBottom: 28 }}>{films.length} film tersedia di KaryaOS Cinema</p>
-      {watchlist.length > 0 && <FilmRow title="📑 My List" films={watchlist} onPick={onPick} brandPrimary={brandPrimary} onRemove={removeFromList} />}
-      {nowShowing.length > 0 && <FilmRow title="🎬 Sedang Tayang" films={nowShowing} onPick={onPick} brandPrimary={brandPrimary} />}
-      {top10.length > 0 && <FilmRow title="🔥 Top 10 di KaryaOS" films={top10} onPick={onPick} brandPrimary={brandPrimary} numbered />}
-      {topRated.length > 0 && <FilmRow title="⭐ Top Picks Member" films={topRated} onPick={onPick} brandPrimary={brandPrimary} showRating />}
-      {comingSoon.length > 0 && <FilmRow title="🔜 Segera Tayang" films={comingSoon} onPick={onPick} brandPrimary={brandPrimary} />}
-      {genreEntries.map(([genre, list]) => (
-        <FilmRow key={genre} title={`🎭 ${genre}`} films={list} onPick={onPick} brandPrimary={brandPrimary} />
-      ))}
+      <p style={{ fontSize: 13.5, color: C.sub, margin: 0, marginBottom: 20 }}>
+        {genreFilter === "all"
+          ? `${films.length} film tersedia di KaryaOS Cinema`
+          : `${totalFiltered} film bergenre "${genreFilter}"`}
+      </p>
+
+      {/* Genre filter chips — horizontal scroll */}
+      <div className="cw-genre-chips" style={{
+        display: "flex", gap: 8, overflowX: "auto", paddingBottom: 12, marginBottom: 22,
+        scrollbarWidth: "none",
+      }}>
+        <GenreChip label="Semua" active={genreFilter === "all"} onClick={() => setGenreFilter("all")} count={films.length} brandPrimary={brandPrimary} />
+        {availableGenres.map(g => (
+          <GenreChip key={g} label={g} active={genreFilter === g} onClick={() => setGenreFilter(g)} count={genreCounts[g]} brandPrimary={brandPrimary} />
+        ))}
+      </div>
+
+      {totalFiltered === 0 && watchlistFiltered.length === 0 ? (
+        <div style={{ textAlign: "center", padding: 60, color: C.dim, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14 }}>
+          <div style={{ fontSize: 48, marginBottom: 14 }}>🎬</div>
+          <div style={{ fontSize: 15, marginBottom: 4 }}>Tidak ada film bergenre "{genreFilter}"</div>
+          <button onClick={() => setGenreFilter("all")} style={{
+            marginTop: 14, padding: "8px 18px", background: brandPrimary, color: "#fff",
+            border: "none", borderRadius: 8, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+          }}>Reset filter</button>
+        </div>
+      ) : (
+        <>
+          {watchlistFiltered.length > 0 && <FilmRow title="📑 My List" films={watchlistFiltered} onPick={onPick} brandPrimary={brandPrimary} onRemove={removeFromList} />}
+          {nowShowing.length > 0 && <FilmRow title={genreFilter === "all" ? "🎬 Sedang Tayang" : `🎬 Sedang Tayang · ${genreFilter}`} films={nowShowing} onPick={onPick} brandPrimary={brandPrimary} />}
+          {top10Filtered.length > 0 && <FilmRow title="🔥 Top 10 di KaryaOS" films={top10Filtered} onPick={onPick} brandPrimary={brandPrimary} numbered />}
+          {topRated.length > 0 && <FilmRow title="⭐ Top Picks Member" films={topRated} onPick={onPick} brandPrimary={brandPrimary} showRating />}
+          {comingSoon.length > 0 && <FilmRow title="🔜 Segera Tayang" films={comingSoon} onPick={onPick} brandPrimary={brandPrimary} />}
+          {genreEntries.map(([genre, list]) => (
+            <FilmRow key={genre} title={`🎭 ${genre}`} films={list} onPick={onPick} brandPrimary={brandPrimary} />
+          ))}
+        </>
+      )}
     </div>
+  );
+}
+
+function GenreChip({ label, count, active, onClick, brandPrimary }) {
+  return (
+    <button onClick={onClick} style={{
+      flexShrink: 0, padding: "8px 16px", borderRadius: 999,
+      background: active ? brandPrimary : "rgba(255,255,255,0.06)",
+      border: `1px solid ${active ? brandPrimary : "rgba(255,255,255,0.12)"}`,
+      color: active ? "#fff" : "rgba(255,255,255,0.85)",
+      fontSize: 12.5, fontWeight: active ? 800 : 600, cursor: "pointer",
+      fontFamily: "inherit", whiteSpace: "nowrap",
+      display: "inline-flex", alignItems: "center", gap: 6,
+      transition: "all 0.15s",
+    }}
+      onMouseEnter={(e) => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "#fff"; } }}
+      onMouseLeave={(e) => { if (!active) { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "rgba(255,255,255,0.85)"; } }}>
+      {label}
+      {count != null && (
+        <span style={{
+          fontSize: 10, padding: "1px 6px", borderRadius: 999,
+          background: active ? "rgba(255,255,255,0.25)" : "rgba(255,255,255,0.08)",
+          fontFamily: "'JetBrains Mono',monospace", fontWeight: 700,
+        }}>{count}</span>
+      )}
+    </button>
   );
 }
 
