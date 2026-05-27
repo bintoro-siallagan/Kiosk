@@ -51,7 +51,7 @@ const C = {
   red: "#ef4444",
 };
 
-const STEPS = ["outlet", "films", "showtime", "seats", "bundles", "checkout", "success"];
+const STEPS = ["outlet", "films", "filmDetail", "showtime", "seats", "bundles", "checkout", "success"];
 
 export default function CinemaWebApp() {
   const [step, setStep] = useState(() => {
@@ -96,6 +96,11 @@ export default function CinemaWebApp() {
     if (idx > 0) setStep(STEPS[idx - 1]);
   };
   const goTo = (s) => setStep(s);
+  // Click brand → go to home (outlet picker) but keep outlet selection
+  const goHome = () => {
+    setFilm(null); setShowtime(null); setSeats([]); setBundlesCart({}); setBooking(null);
+    setStep(outlet ? "films" : "outlet");
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: C.bgGrad, color: C.text, fontFamily: "'Inter','-apple-system',sans-serif", paddingBottom: 80 }}>
@@ -138,11 +143,14 @@ export default function CinemaWebApp() {
           .cw-seat { width: 18px !important; height: 18px !important; }
         }
       `}</style>
-      <Header outlet={outlet} step={step} onResetOutlet={resetOutlet} onBack={goBack} brand={brand} brandPrimary={brandPrimary} />
+      <Header outlet={outlet} step={step} onResetOutlet={resetOutlet} onBack={goBack} onHome={goHome} brand={brand} brandPrimary={brandPrimary} />
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "0 20px" }}>
         {step === "outlet" && <OutletPicker onPick={pickOutlet} brandPrimary={brandPrimary} />}
         {step === "films" && outlet && (
-          <FilmsGrid outlet={outlet} onPickFilm={(f) => { setFilm(f); goTo("showtime"); }} brandPrimary={brandPrimary} />
+          <FilmsGrid outlet={outlet} onPickFilm={(f) => { setFilm(f); goTo("filmDetail"); }} brandPrimary={brandPrimary} />
+        )}
+        {step === "filmDetail" && film && (
+          <FilmDetail outlet={outlet} film={film} onPickShowtime={() => goTo("showtime")} brandPrimary={brandPrimary} />
         )}
         {step === "showtime" && film && (
           <ShowtimesList outlet={outlet} film={film} onPickShowtime={(s) => { setShowtime(s); goTo("seats"); }} brandPrimary={brandPrimary} />
@@ -235,7 +243,7 @@ function Footer({ brand, brandPrimary }) {
 // ════════════════════════════════════════════════════════════════════
 // HEADER
 // ════════════════════════════════════════════════════════════════════
-function Header({ outlet, step, onResetOutlet, onBack, brand, brandPrimary }) {
+function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrimary }) {
   const brandName = brand?.brand_short || brand?.name || "karyaOS";
   const showBack = step !== "outlet" && step !== "success";
   return (
@@ -247,18 +255,21 @@ function Header({ outlet, step, onResetOutlet, onBack, brand, brandPrimary }) {
     }}>
       <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", gap: 12 }}>
         {showBack && (
-          <button onClick={onBack} style={{
+          <button onClick={onBack} title="Kembali" style={{
             background: "transparent", border: `1px solid ${C.border}`, color: C.text,
             borderRadius: 8, width: 36, height: 36, fontSize: 16, cursor: "pointer", fontFamily: "inherit",
           }}>←</button>
         )}
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1 }}>
+        <button onClick={onHome} title="Beranda" style={{
+          display: "flex", alignItems: "center", gap: 8, flex: 1, background: "transparent", border: "none",
+          color: C.text, cursor: "pointer", fontFamily: "inherit", padding: 0, textAlign: "left",
+        }}>
           {brand?.logo_url && <img src={brand.logo_url} alt="" style={{ height: 28, objectFit: "contain" }} />}
           <div>
             <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: -0.3 }}>{brandName}</div>
             <div style={{ fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>CINEMA · ONLINE BOOKING</div>
           </div>
-        </div>
+        </button>
         {outlet && step !== "outlet" && (
           <button onClick={onResetOutlet} className="cw-outlet-pill" style={{
             background: `${brandPrimary}22`, border: `1px solid ${brandPrimary}55`, color: brandPrimary,
@@ -272,6 +283,126 @@ function Header({ outlet, step, onResetOutlet, onBack, brand, brandPrimary }) {
         )}
       </div>
     </header>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
+// CINEMA HERO — full-bleed slideshow, "berasa di dalam area cinema"
+// Poster film auto-rotate setiap 5 detik, dark gradient overlay, sinematik feel
+// ════════════════════════════════════════════════════════════════════
+function CinemaHero({ films, brandPrimary }) {
+  const slides = useMemo(() => (films || []).filter(f => f.poster_url).slice(0, 6), [films]);
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    if (slides.length < 2) return;
+    const iv = setInterval(() => setIdx(i => (i + 1) % slides.length), 6000);
+    return () => clearInterval(iv);
+  }, [slides.length]);
+
+  const current = slides[idx];
+
+  return (
+    <section style={{
+      position: "relative", width: "100%", minHeight: "min(70vh, 600px)",
+      overflow: "hidden", marginLeft: "calc(-50vw + 50%)", marginRight: "calc(-50vw + 50%)",
+      width: "100vw",
+    }}>
+      {/* Crossfade slides */}
+      {slides.map((f, i) => (
+        <div key={f.id} aria-hidden={i !== idx} style={{
+          position: "absolute", inset: 0,
+          backgroundImage: `url(${f.poster_url})`,
+          backgroundSize: "cover", backgroundPosition: "center 20%",
+          opacity: i === idx ? 1 : 0,
+          transition: "opacity 1.2s ease-in-out",
+          filter: "blur(0.5px)",
+        }} />
+      ))}
+
+      {/* Cinematic overlay layers */}
+      {/* 1. Vertical dark gradient (bottom heavier) */}
+      <div style={{ position: "absolute", inset: 0,
+        background: "linear-gradient(180deg, rgba(10,10,15,0.5) 0%, rgba(10,10,15,0.7) 50%, rgba(10,10,15,0.98) 100%)",
+      }} />
+      {/* 2. Spotlight (radial vignette from center, dim edges) */}
+      <div style={{ position: "absolute", inset: 0,
+        background: "radial-gradient(ellipse 70% 60% at 50% 40%, transparent 0%, rgba(10,10,15,0.7) 100%)",
+      }} />
+      {/* 3. Top side darkening (theater curtain effect) */}
+      <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: "20%",
+        background: "linear-gradient(90deg, rgba(10,10,15,0.95), transparent)", pointerEvents: "none",
+      }} />
+      <div style={{ position: "absolute", top: 0, right: 0, bottom: 0, width: "20%",
+        background: "linear-gradient(-90deg, rgba(10,10,15,0.95), transparent)", pointerEvents: "none",
+      }} />
+      {/* 4. Brand color glow accent */}
+      <div style={{ position: "absolute", inset: 0,
+        background: `radial-gradient(circle 600px at 50% 30%, ${brandPrimary}11, transparent 60%)`,
+      }} />
+      {/* 5. Subtle film grain noise via repeating gradient */}
+      <div style={{ position: "absolute", inset: 0, opacity: 0.08, pointerEvents: "none",
+        backgroundImage: "repeating-linear-gradient(0deg, rgba(255,255,255,0.06) 0px, transparent 1px, transparent 2px)",
+      }} />
+
+      {/* Hero content */}
+      <div style={{
+        position: "relative", zIndex: 10, padding: "80px 24px 90px",
+        maxWidth: 900, margin: "0 auto", textAlign: "center",
+        minHeight: "min(70vh, 600px)", display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+      }}>
+        {/* "NOW SHOWING" badge with current film name */}
+        {current && (
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 8, marginBottom: 22,
+            padding: "8px 18px", borderRadius: 999,
+            background: "rgba(0,0,0,0.55)", backdropFilter: "blur(20px)",
+            border: `1px solid ${brandPrimary}55`,
+            fontSize: 11, fontWeight: 800, letterSpacing: 2, color: brandPrimary,
+            fontFamily: "'Geist Mono',monospace", textTransform: "uppercase",
+            animation: "cwFadeIn 1s ease both",
+          }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: brandPrimary, boxShadow: `0 0 12px ${brandPrimary}`, animation: "cwPulse 2s ease infinite" }} />
+            NOW SHOWING · {current.title}
+          </div>
+        )}
+
+        <h1 className="cw-page-title" style={{
+          fontSize: "clamp(36px, 6vw, 60px)", fontWeight: 900, letterSpacing: -1.8,
+          margin: 0, marginBottom: 18, lineHeight: 1.05, color: "#fff",
+          textShadow: "0 4px 24px rgba(0,0,0,0.8)",
+        }}>
+          Lebih Dari Sekadar<br />
+          <span style={{ color: brandPrimary, textShadow: `0 0 32px ${brandPrimary}99` }}>Sebuah Film.</span>
+        </h1>
+        <p style={{
+          fontSize: "clamp(14px, 1.5vw, 17px)", color: "rgba(255,255,255,0.85)",
+          maxWidth: 560, margin: "0 auto 32px", lineHeight: 1.6,
+          textShadow: "0 2px 8px rgba(0,0,0,0.6)",
+        }}>
+          Pesan tiket bioskop online, pilih kursi favorit, langsung nonton tanpa antri. Pengalaman cinema premium di ujung jari Anda.
+        </p>
+
+        {/* CTA scroll-down indicator */}
+        <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "rgba(255,255,255,0.7)", fontFamily: "'Geist Mono',monospace", letterSpacing: 1.5, animation: "cwPulse 2.5s ease infinite" }}>
+          <span>PILIH LOKASI DI BAWAH</span>
+          <span style={{ fontSize: 16 }}>↓</span>
+        </div>
+
+        {/* Slideshow dots indicator */}
+        {slides.length > 1 && (
+          <div style={{ display: "flex", gap: 8, marginTop: 28 }}>
+            {slides.map((_, i) => (
+              <button key={i} onClick={() => setIdx(i)} aria-label={`Slide ${i + 1}`} style={{
+                width: i === idx ? 24 : 8, height: 8, borderRadius: 999, border: "none",
+                background: i === idx ? brandPrimary : "rgba(255,255,255,0.3)",
+                cursor: "pointer", transition: "all 0.3s ease", padding: 0,
+              }} />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -326,59 +457,15 @@ function OutletPicker({ onPick, brandPrimary }) {
   if (!outlets) return <LoadingState label="Memuat lokasi bioskop…" />;
 
   return (
-    <div className="cw-section-pad" style={{ padding: "50px 0 40px" }}>
-      {/* HERO */}
-      <div style={{ textAlign: "center", marginBottom: 40 }}>
-        <div style={{
-          display: "inline-block", padding: "5px 14px", borderRadius: 999,
-          background: `${brandPrimary}1a`, border: `1px solid ${brandPrimary}55`,
-          color: brandPrimary, fontSize: 11, fontWeight: 700, letterSpacing: 1.5,
-          fontFamily: "'Geist Mono',monospace", marginBottom: 16, textTransform: "uppercase",
-        }}>🎬 Online Booking · Skip Antrian</div>
-        <h1 className="cw-page-title cw-hero-title" style={{ fontSize: 42, fontWeight: 800, letterSpacing: -1.5, margin: 0, marginBottom: 12, lineHeight: 1.1, color: "#fff" }}>
-          Pesan Tiket. Pilih Kursi.<br/>
-          <span style={{ color: brandPrimary, textShadow: `0 0 24px ${brandPrimary}66` }}>Langsung Nonton.</span>
-        </h1>
-        <p style={{ fontSize: 15, color: C.sub, maxWidth: 520, margin: "0 auto", lineHeight: 1.5 }}>
-          Tiket bioskop online tanpa antri loket. Pilih lokasi, pick film, pesan kursi favorit, ambil di counter.
-        </p>
-      </div>
+    <div className="cw-section-pad" style={{ padding: 0 }}>
+      {/* IMMERSIVE CINEMA HERO — film poster slideshow + dark gradient + spotlight feel */}
+      <CinemaHero films={films || []} brandPrimary={brandPrimary} />
+      <div style={{ height: 40 }} />
 
-      {/* Now showing carousel (if available) */}
-      {films && films.length > 0 && (
-        <div style={{ marginBottom: 50 }}>
-          <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 16, textAlign: "center", textTransform: "uppercase" }}>
-            ✨ Now Showing
-          </div>
-          <div style={{ overflowX: "auto", paddingBottom: 12, margin: "0 -20px", scrollSnapType: "x mandatory", scrollbarWidth: "none" }}>
-            <div style={{ display: "flex", gap: 14, padding: "8px 20px", minWidth: "fit-content" }}>
-              {films.map((f, i) => (
-                <div key={f.id} className="cw-film-poster" style={{
-                  flexShrink: 0, width: 150, aspectRatio: "2/3", borderRadius: 14,
-                  background: `url(${f.poster_url}) center/cover, #1a1a22`,
-                  border: `1px solid ${C.border}`, position: "relative",
-                  display: "flex", flexDirection: "column", justifyContent: "flex-end",
-                  overflow: "hidden",
-                  scrollSnapAlign: "start",
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-                  transition: "transform 0.25s ease, box-shadow 0.25s ease",
-                  animation: `cwFadeUp 0.5s ease ${i * 0.05}s both`,
-                  cursor: "default",
-                }}>
-                  {/* Solid backdrop gradient — kept high so title is always readable */}
-                  <div style={{
-                    background: "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0.95) 100%)",
-                    padding: "60px 12px 12px",
-                  }}>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>{f.title}</div>
-                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.85)", fontFamily: "'Geist Mono',monospace", textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>{f.duration_min || 0} mnt · {f.genre || "—"}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Now Showing carousel removed — now part of CinemaHero slideshow above */}
+
+      {/* Content sections — padded back in (hero is full-bleed) */}
+      <div style={{ padding: "0 0 20px" }} />
 
       {/* Outlet picker section */}
       <div style={{ textAlign: "center", marginBottom: 18 }}>
@@ -562,6 +649,142 @@ function FilmsGrid({ outlet, onPickFilm, brandPrimary }) {
           })}
         </div>
       )}
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
+// STEP 2.5: FILM DETAIL (synopsis + trailer + info lengkap)
+// ════════════════════════════════════════════════════════════════════
+function ytEmbedUrl(url) {
+  if (!url) return null;
+  const m = String(url).match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^?&]+)/);
+  return m ? `https://www.youtube.com/embed/${m[1]}?rel=0&modestbranding=1` : null;
+}
+
+function FilmDetail({ outlet, film, onPickShowtime, brandPrimary }) {
+  const [showtimeCount, setShowtimeCount] = useState(null);
+  useEffect(() => {
+    fetch(`${API_HOST}/api/cinema/showtimes?outlet=${encodeURIComponent(outlet.code)}`)
+      .then(r => r.json()).then(d => {
+        const count = (d.showtimes || []).filter(s => s.film_id === film.id && s.derived_status !== "closed" && s.derived_status !== "cancelled").length;
+        setShowtimeCount(count);
+      }).catch(() => setShowtimeCount(0));
+  }, [outlet.code, film.id]);
+
+  const trailerEmbed = ytEmbedUrl(film.trailer_url);
+  const formats = (film.available_formats || "2D").split(",").map(s => s.trim()).filter(Boolean);
+
+  return (
+    <div style={{ padding: "20px 0 60px" }}>
+      {/* Hero with poster backdrop */}
+      <div style={{
+        position: "relative", borderRadius: 18, overflow: "hidden",
+        marginBottom: 24, minHeight: 320,
+        background: film.poster_url ? `linear-gradient(180deg, rgba(10,10,15,0.4) 0%, rgba(10,10,15,0.95) 100%), url(${film.poster_url}) center/cover, #1a1a22` : DEFAULT_CITY_GRADIENT,
+      }}>
+        <div style={{ display: "flex", gap: 20, padding: "32px 24px 28px", alignItems: "flex-end", minHeight: 320, flexWrap: "wrap" }}>
+          {film.poster_url && (
+            <img src={film.poster_url} alt={film.title} style={{
+              width: 160, aspectRatio: "2/3", objectFit: "cover", borderRadius: 12,
+              boxShadow: "0 12px 36px rgba(0,0,0,0.6)", flexShrink: 0,
+            }} />
+          )}
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: -1, margin: 0, marginBottom: 8, color: "#fff", textShadow: "0 2px 12px rgba(0,0,0,0.8)" }}>{film.title}</h1>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
+              {film.rating && (
+                <span style={{
+                  padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 800,
+                  background: (RATING_COLOR[film.rating] || "#9ca3af") + "33",
+                  color: RATING_COLOR[film.rating] || "#9ca3af",
+                  border: `1px solid ${RATING_COLOR[film.rating] || "#9ca3af"}66`,
+                  fontFamily: "'Geist Mono',monospace",
+                }}>{film.rating}</span>
+              )}
+              <span style={{ fontSize: 13, color: "rgba(255,255,255,0.85)" }}>{film.duration_min || 0} menit</span>
+              <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>·</span>
+              <span style={{ fontSize: 13, color: "rgba(255,255,255,0.85)" }}>{film.genre || "—"}</span>
+              {film.language && <>
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>·</span>
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.85)" }}>🌐 {film.language}</span>
+              </>}
+            </div>
+            <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
+              {formats.map(f => (
+                <span key={f} style={{
+                  padding: "4px 10px", borderRadius: 6, fontSize: 10, fontWeight: 800,
+                  background: (FORMAT_COLOR[f] || "#3b82f6") + "33",
+                  color: FORMAT_COLOR[f] || "#3b82f6",
+                  border: `1px solid ${FORMAT_COLOR[f] || "#3b82f6"}66`,
+                  fontFamily: "'Geist Mono',monospace",
+                }}>{f}</span>
+              ))}
+            </div>
+            <button onClick={onPickShowtime} disabled={showtimeCount === 0} style={{
+              background: showtimeCount === 0 ? "rgba(255,255,255,0.1)" : brandPrimary,
+              color: "#fff", border: "none", borderRadius: 12,
+              padding: "14px 28px", fontSize: 15, fontWeight: 800, cursor: showtimeCount === 0 ? "not-allowed" : "pointer",
+              fontFamily: "inherit",
+              boxShadow: showtimeCount === 0 ? "none" : `0 8px 24px ${brandPrimary}66`,
+              transition: "transform 0.15s",
+            }}
+              onMouseEnter={(e) => { if (showtimeCount !== 0) e.currentTarget.style.transform = "translateY(-2px)"; }}
+              onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
+              {showtimeCount === null ? "⏳ Cek jadwal…"
+                : showtimeCount === 0 ? "❌ Tidak ada jadwal"
+                : `🎟️ Lihat ${showtimeCount} Jadwal →`}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Trailer */}
+      {trailerEmbed && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, color: brandPrimary, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 10, textTransform: "uppercase" }}>▶ Trailer</div>
+          <div style={{ position: "relative", aspectRatio: "16/9", borderRadius: 14, overflow: "hidden", background: "#000", boxShadow: "0 8px 32px rgba(0,0,0,0.5)" }}>
+            <iframe
+              src={trailerEmbed}
+              title={`${film.title} trailer`}
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Synopsis */}
+      {film.synopsis && (
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20, marginBottom: 20 }}>
+          <div style={{ fontSize: 11, color: brandPrimary, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 10, textTransform: "uppercase" }}>📖 Sinopsis</div>
+          <p style={{ fontSize: 14, color: C.text, lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>{film.synopsis}</p>
+        </div>
+      )}
+
+      {/* Meta info card */}
+      <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 18 }}>
+        <div style={{ fontSize: 11, color: brandPrimary, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 14, textTransform: "uppercase" }}>ℹ️ Info Film</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))", gap: 12 }}>
+          <MetaItem label="Durasi" value={`${film.duration_min || 0} menit`} />
+          <MetaItem label="Genre" value={film.genre || "—"} />
+          <MetaItem label="Rating" value={film.rating || "—"} />
+          <MetaItem label="Bahasa" value={film.language || "Indonesia"} />
+          {film.subtitle && <MetaItem label="Subtitle" value={film.subtitle} />}
+          <MetaItem label="Format" value={formats.join(" · ")} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MetaItem({ label, value }) {
+  return (
+    <div>
+      <div style={{ fontSize: 10, color: C.dim, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 4, textTransform: "uppercase" }}>{label}</div>
+      <div style={{ fontSize: 13, color: C.text, fontWeight: 600 }}>{value}</div>
     </div>
   );
 }
@@ -971,6 +1194,11 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, brandP
   const [loyaltyData, setLoyaltyData] = useState(null);  // { found, customer, config } | null
   const [pointsToRedeem, setPointsToRedeem] = useState(0);
   const [lookupBusy, setLookupBusy] = useState(false);
+  // Promo code state
+  const [promoCode, setPromoCode] = useState("");
+  const [promoApplied, setPromoApplied] = useState(null);  // { promo, discount } | null
+  const [promoError, setPromoError] = useState("");
+  const [promoBusy, setPromoBusy] = useState(false);
 
   // Load bundle metadata for display (need names + prices in summary)
   useEffect(() => {
@@ -999,15 +1227,35 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, brandP
     return s + (b ? b.price * q : 0);
   }, 0) : 0;
   const grossTotal = seatTotal + bundleTotal;
+  const promoDiscount = promoApplied?.discount || 0;
+  const afterPromo = Math.max(0, grossTotal - promoDiscount);
   // Compute points discount (1 poin = config.point_value_idr IDR)
   const pointValueIDR = loyaltyData?.config?.point_value_idr || 10;
   const maxRedeem = loyaltyData?.found ? Math.min(
     loyaltyData.customer.points,
-    Math.floor(grossTotal / pointValueIDR),
+    Math.floor(afterPromo / pointValueIDR),
   ) : 0;
   const safePointsToRedeem = Math.min(pointsToRedeem, maxRedeem);
   const pointsDiscount = safePointsToRedeem * pointValueIDR;
-  const total = Math.max(0, grossTotal - pointsDiscount);
+  const total = Math.max(0, afterPromo - pointsDiscount);
+
+  const applyPromo = async () => {
+    const code = promoCode.trim();
+    if (!code) return;
+    setPromoBusy(true); setPromoError(""); setPromoApplied(null);
+    try {
+      const r = await fetch(`${API_HOST}/api/cinema/promotions/apply`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, subtotal: grossTotal, film_id: film.id }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.ok) { setPromoError(d.error || "Promo gagal"); }
+      else { setPromoApplied({ promo: d.promo, discount: d.discount }); }
+    } catch (e) {
+      setPromoError(e.message);
+    } finally { setPromoBusy(false); }
+  };
+  const removePromo = () => { setPromoApplied(null); setPromoError(""); setPromoCode(""); };
   const valid = form.name.trim() && form.phone.trim().match(/^[0-9+\-\s]{8,}$/);
 
   // Simple kiosk-style flow: create ticket as paid immediately, no Snap popup.
@@ -1039,6 +1287,8 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, brandP
         buyer_email: form.email.trim() || undefined,
         payment_method: "counter", // pay-at-counter, like kiosk default
         points_redeem: safePointsToRedeem > 0 ? safePointsToRedeem : undefined,
+        discount_code: promoApplied ? promoApplied.promo.code : undefined,
+        discount_type: promoApplied ? "promo" : undefined,
       };
       const bookRes = await fetch(`${API_HOST}/api/cinema/tickets`, {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -1070,6 +1320,46 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, brandP
           <Field label="Email (opsional)" value={form.email} onChange={(v) => setForm({ ...form, email: v })} placeholder="email@domain.com" type="email" />
           <div style={{ fontSize: 11, color: C.dim, marginTop: 4 }}>
             ⚡ E-tiket akan dikirim via WhatsApp + Email setelah pembayaran.
+          </div>
+
+          {/* Promo code input */}
+          <div style={{ marginTop: 14, padding: 14, borderRadius: 12,
+            background: promoApplied ? "rgba(16,185,129,0.1)" : "rgba(255,255,255,0.03)",
+            border: `1px solid ${promoApplied ? "rgba(16,185,129,0.4)" : C.border}`,
+          }}>
+            <div style={{ fontSize: 11, color: promoApplied ? "#10b981" : C.dim, letterSpacing: 1.2, fontFamily: "'Geist Mono',monospace", fontWeight: 700, marginBottom: 8 }}>🎟 KODE PROMO {promoApplied ? "✓ DITERAPKAN" : "(opsional)"}</div>
+            {promoApplied ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#10b981" }}>{promoApplied.promo.code}</div>
+                  <div style={{ fontSize: 11, color: C.sub, marginTop: 2 }}>{promoApplied.promo.name || "Diskon promo"}</div>
+                  <div style={{ fontSize: 12, color: "#10b981", fontFamily: "'Geist Mono',monospace", marginTop: 2 }}>− {rp(promoApplied.discount)}</div>
+                </div>
+                <button onClick={removePromo} style={{
+                  background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: C.sub,
+                  borderRadius: 6, padding: "6px 10px", fontSize: 11, cursor: "pointer", fontFamily: "inherit",
+                }}>✕ Hapus</button>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: "flex", gap: 8 }}>
+                  <input value={promoCode} onChange={(e) => { setPromoCode(e.target.value.toUpperCase()); setPromoError(""); }}
+                    placeholder="KODE-PROMO"
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyPromo(); } }}
+                    style={{
+                      flex: 1, background: C.card, border: `1px solid ${C.border}`, color: C.text,
+                      borderRadius: 8, padding: "9px 12px", fontSize: 13, fontFamily: "'Geist Mono',monospace", outline: "none",
+                      letterSpacing: 1,
+                    }} />
+                  <button onClick={applyPromo} disabled={!promoCode.trim() || promoBusy} style={{
+                    padding: "9px 16px", background: promoCode.trim() && !promoBusy ? brandPrimary : "rgba(255,255,255,0.1)",
+                    color: "#fff", border: "none", borderRadius: 8,
+                    fontSize: 12, fontWeight: 700, cursor: promoCode.trim() && !promoBusy ? "pointer" : "not-allowed", fontFamily: "inherit",
+                  }}>{promoBusy ? "⏳" : "PAKAI"}</button>
+                </div>
+                {promoError && <div style={{ marginTop: 6, fontSize: 11, color: "#fca5a5" }}>⚠ {promoError}</div>}
+              </>
+            )}
           </div>
 
           {/* Loyalty lookup result */}
@@ -1174,6 +1464,12 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, brandP
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: C.dim, marginBottom: 6 }}>
                 <span>Snack & minuman</span>
                 <span style={{ fontFamily: "'Geist Mono',monospace" }}>{rp(bundleTotal)}</span>
+              </div>
+            )}
+            {promoApplied && (
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#10b981", marginBottom: 6, fontWeight: 700 }}>
+                <span>🎟 Promo {promoApplied.promo.code}</span>
+                <span style={{ fontFamily: "'Geist Mono',monospace" }}>− {rp(promoDiscount)}</span>
               </div>
             )}
             {safePointsToRedeem > 0 && (
