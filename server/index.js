@@ -546,8 +546,29 @@ app.post("/api/orders", (req, res) => {
   const _orderCompanyId = _orderScope.is_super_admin
     ? (parseInt(req.body.company_id, 10) || 1)
     : _orderScope.company_id;
+  // Queue number — resets daily at midnight, plus configurable START_OFFSET
+  // (marketing trick: start at e.g. #050 so first customer feels the place is busy).
+  // Config via pos_config keys:
+  //   QUEUE_START_OFFSET — int, default 0 (e.g. 50 = start at #051)
+  //   QUEUE_PADDING      — int, default 3 (digit count)
+  //   QUEUE_PREFIX       — string, default '' (e.g. 'A-' → 'A-051')
+  let _queueStartOffset = 0, _queuePadding = 3, _queuePrefix = '';
+  try {
+    const cfgRows = db.rawDb.prepare(`SELECT key, value FROM pos_config WHERE key IN ('QUEUE_START_OFFSET','QUEUE_PADDING','QUEUE_PREFIX')`).all();
+    for (const r of cfgRows) {
+      if (r.key === 'QUEUE_START_OFFSET') _queueStartOffset = parseInt(r.value, 10) || 0;
+      if (r.key === 'QUEUE_PADDING')      _queuePadding      = parseInt(r.value, 10) || 3;
+      if (r.key === 'QUEUE_PREFIX')       _queuePrefix       = String(r.value || '');
+    }
+  } catch {}
+  const _startOfDay = new Date(); _startOfDay.setHours(0,0,0,0);
+  const _todayCount = orders.filter(o => o.time >= _startOfDay.getTime()).length;
+  const _queueRaw = _todayCount + 1 + _queueStartOffset;
+  const _queueNumber = _queuePrefix + String(_queueRaw).padStart(_queuePadding, "0");
+
   const order = {
     id:       `A${String(++orderCounter).padStart(2, "0")}`,
+    queueNumber: _queueNumber,
     time:     Date.now(),
     type:     type || "dine",
     table:    table || "-",

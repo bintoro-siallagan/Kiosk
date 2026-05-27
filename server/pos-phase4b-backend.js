@@ -114,7 +114,18 @@ const CONFIG_DEFAULTS = [
   { key: 'CURRENCY_SYMBOL', value: '"Rp"', type: 'json', category: 'ui' },
   { key: 'LOW_STOCK_THRESHOLD', value: '5', type: 'number', category: 'audit',
     description: 'Stock < X → warning broadcast pas sale' },
+
+  // Queue number — marketing trick: start at N so first customer feels busy
+  { key: 'QUEUE_START_OFFSET', value: '0', type: 'number', category: 'ui',
+    description: 'Tambahin angka offset ke queue number (e.g. 50 → mulai dari #051). Marketing trick: bikin kelihatan udah rame.' },
+  { key: 'QUEUE_PADDING', value: '3', type: 'number', category: 'ui',
+    description: 'Jumlah digit queue number (default 3 → 001, 002, ...)' },
+  { key: 'QUEUE_PREFIX', value: '""', type: 'json', category: 'ui',
+    description: 'Prefix queue number (e.g. "A-" → A-051). Empty string = no prefix.' },
 ];
+
+// Re-seed queue config rows on update (if older install missing them)
+const QUEUE_CONFIG_KEYS = ['QUEUE_START_OFFSET', 'QUEUE_PADDING', 'QUEUE_PREFIX'];
 
 // ============================================================
 // HELPERS
@@ -415,6 +426,15 @@ function setupPhase4B(app, opts = {}) {
   if (configCount === 0) {
     const s = db.prepare(`INSERT INTO pos_config (key, value, type, description, category, updated_at) VALUES (?,?,?,?,?,?)`);
     for (const c of CONFIG_DEFAULTS) s.run(c.key, c.value, c.type, c.description || null, c.category || null, nowSec());
+  } else {
+    // Migration: ensure new keys exist (e.g. QUEUE_* added after initial seed)
+    const existing = new Set(db.prepare(`SELECT key FROM pos_config`).all().map(r => r.key));
+    const ins = db.prepare(`INSERT OR IGNORE INTO pos_config (key, value, type, description, category, updated_at) VALUES (?,?,?,?,?,?)`);
+    for (const c of CONFIG_DEFAULTS) {
+      if (!existing.has(c.key)) {
+        ins.run(c.key, c.value, c.type, c.description || null, c.category || null, nowSec());
+      }
+    }
   }
 
   const router = express.Router();

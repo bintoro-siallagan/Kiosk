@@ -15,6 +15,14 @@ export default function POSSuccess({ created, order, cashier, onDone, onAnother 
           {isPay ? "Payment successful" : "Tab opened"}
         </h1>
 
+        {created?.queueNumber && (
+          <div style={S.queueBlock}>
+            <div style={S.queueLabel}>Queue number</div>
+            <div style={S.queueNumber}>{created.queueNumber}</div>
+            <div style={S.queueHint}>Show this to the staff</div>
+          </div>
+        )}
+
         <div style={S.orderId}>Order · #{created?.id || "—"}</div>
 
         <div style={S.details}>
@@ -88,6 +96,43 @@ const S = {
   icon: { position: "relative", zIndex: 1, fontSize: 80, filter: "drop-shadow(0 8px 24px rgba(16,185,129,0.4))" },
   title: { fontFamily: "'Inter',sans-serif", fontSize: 28, fontWeight: 600, letterSpacing: "-0.8px", color: "#fff", margin: "0 0 6px" },
   orderId: { fontSize: 11, color: "rgba(255,255,255,0.45)", letterSpacing: 2, marginBottom: 26, fontWeight: 500, fontFamily: "'Inter',sans-serif", textTransform: "uppercase" },
+  // Big queue number — most prominent element on success screen
+  queueBlock: {
+    margin: "10px auto 22px",
+    padding: "20px 28px 22px",
+    borderRadius: 22,
+    background: "radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, var(--brand-primary,#FF6B35) 55%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 38%, #1a1d29), color-mix(in srgb, var(--brand-secondary,#E55A2B) 30%, #0d0f14))",
+    border: "1px solid rgba(255,255,255,0.16)",
+    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 24px color-mix(in srgb, var(--brand-primary,#FF6B35) 25%, transparent), 0 24px 60px color-mix(in srgb, var(--brand-primary,#FF6B35) 14%, transparent)",
+    display: "inline-block",
+    minWidth: 200,
+  },
+  queueLabel: {
+    fontSize: 10,
+    fontWeight: 500,
+    letterSpacing: 2.5,
+    color: "rgba(255,255,255,0.7)",
+    textTransform: "uppercase",
+    textShadow: "0 1px 2px rgba(0,0,0,0.45)",
+    marginBottom: 6,
+  },
+  queueNumber: {
+    fontSize: 64,
+    fontWeight: 700,
+    letterSpacing: "-2px",
+    color: "#fff",
+    fontFamily: "'Inter',sans-serif",
+    fontVariantNumeric: "tabular-nums",
+    lineHeight: 1,
+    textShadow: "0 4px 16px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.55)",
+  },
+  queueHint: {
+    fontSize: 10,
+    color: "rgba(255,255,255,0.55)",
+    marginTop: 8,
+    letterSpacing: 0.2,
+    textShadow: "0 1px 2px rgba(0,0,0,0.4)",
+  },
   details: { background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, padding: "8px 18px 14px", marginBottom: 24, textAlign: "left" },
   detailRow: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid rgba(255,255,255,0.05)", fontSize: 13 },
   detailLabel: { color: "rgba(255,255,255,0.5)", fontWeight: 400, fontFamily: "'Inter',sans-serif", letterSpacing: "-0.1px" },
