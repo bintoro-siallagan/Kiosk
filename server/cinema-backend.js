@@ -3831,9 +3831,81 @@ function setupCinema(app, opts = {}) {
   });
 
   // ── TICKET VALIDATION (QR scan at the studio door) ──
+  // Accepts:
+  //   - CT-XXXX (single ticket code) → validate 1 seat
+  //   - CP-XXXX (purchase id) → validate ALL seats in purchase (group entry)
+  //   - Full URL (https://.../?ticket=CT-X or ?purchase=CP-X) → auto-extract
   router.post('/tickets/validate', (req, res) => {
-    const code = (req.body && req.body.code) ? String(req.body.code).trim().toUpperCase() : '';
-    if (!code) return res.status(400).json({ ok: false, status: 'invalid', error: 'Code wajib diisi' });
+    let raw = (req.body && req.body.code) ? String(req.body.code).trim() : '';
+    if (!raw) return res.status(400).json({ ok: false, status: 'invalid', error: 'Code wajib diisi' });
+    // Extract from URL kalau scanner baca QR yang encode full URL
+    if (/^https?:\/\//i.test(raw)) {
+      try {
+        const u = new URL(raw);
+        raw = u.searchParams.get('purchase') || u.searchParams.get('ticket') || raw;
+      } catch {}
+    }
+    const code = raw.toUpperCase();
+    const isPurchase = /^CP-/.test(code);
+    const now = Math.floor(Date.now() / 1000);
+
+    const computeLate = (show_date, start_time) => {
+      if (!show_date || !start_time) return { late_entry: false, minutes_late: 0 };
+      const [Y, M, D] = String(show_date).split('-').map(Number);
+      const [h, m]    = String(start_time).split(':').map(Number);
+      if (!Y || !M || !D || isNaN(h) || isNaN(m)) return { late_entry: false, minutes_late: 0 };
+      const startSec = Math.floor(new Date(Y, M - 1, D, h, m, 0).getTime() / 1000);
+      const minutes_late = Math.floor((now - startSec) / 60);
+      return { late_entry: minutes_late > 15, minutes_late };
+    };
+
+    // ── PURCHASE MODE — validate semua kursi sekaligus (group entry) ──
+    if (isPurchase) {
+      const tickets = db.prepare(`
+        SELECT t.*, s.show_date, s.start_time, s.price AS showtime_price,
+               f.title AS film_title, f.duration_min AS film_duration,
+               st.name AS studio_name
+        FROM cinema_tickets t
+        LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+        LEFT JOIN cinema_films    f ON f.id = s.film_id
+        LEFT JOIN cinema_studios  st ON st.id = s.studio_id
+        WHERE t.purchase_id = ?
+        ORDER BY t.seat
+      `).all(code);
+      if (!tickets.length) return res.status(404).json({ ok: false, status: 'invalid', error: 'Purchase tidak ditemukan' });
+
+      const fresh = tickets.filter(t => !t.checked_in_at);
+      const alreadyUsed = tickets.filter(t => t.checked_in_at);
+      let newly_checked_in = 0;
+      if (fresh.length > 0) {
+        const ids = fresh.map(t => t.id);
+        const placeholders = ids.map(() => '?').join(',');
+        const r = db.prepare(`UPDATE cinema_tickets SET checked_in_at = ? WHERE id IN (${placeholders})`).run(now, ...ids);
+        newly_checked_in = r.changes;
+      }
+
+      const bundles = db.prepare(`SELECT * FROM cinema_purchase_bundles WHERE purchase_id = ? ORDER BY id`).all(code);
+      const head = tickets[0];
+      const late = computeLate(head.show_date, head.start_time);
+      const status = newly_checked_in === 0 ? 'used' : (alreadyUsed.length > 0 ? 'partial' : 'valid');
+
+      // Use 200 even kalau partial/used — frontend differentiates via status field
+      return res.json({
+        ok: true,
+        status,
+        mode: 'purchase',
+        purchase_id: code,
+        ticket_count: tickets.length,
+        newly_checked_in,
+        already_used_count: alreadyUsed.length,
+        ticket: { ...head, checked_in_at: head.checked_in_at || now },  // representative for list display
+        tickets: tickets.map(t => ({ ...t, checked_in_at: t.checked_in_at || now })),
+        bundles,
+        ...late,
+      });
+    }
+
+    // ── SINGLE TICKET MODE (CT- code or unprefixed code) ──
     const t = db.prepare(`
       SELECT t.*,
         s.show_date, s.start_time, s.price AS showtime_price,
@@ -3849,24 +3921,12 @@ function setupCinema(app, opts = {}) {
     if (t.checked_in_at) {
       return res.status(409).json({ ok: false, status: 'used', error: 'Tiket sudah dipakai', ticket: t, usedAt: t.checked_in_at });
     }
-    const now = Math.floor(Date.now() / 1000);
     db.prepare(`UPDATE cinema_tickets SET checked_in_at = ? WHERE id = ?`).run(now, t.id);
-    // Include F&B bundles attached to this purchase (heads-up to door staff)
     const bundles = t.purchase_id
       ? db.prepare(`SELECT * FROM cinema_purchase_bundles WHERE purchase_id = ? ORDER BY id`).all(t.purchase_id)
       : [];
-    // Late entry alert: if scanned >15 min after showtime start_time → flag
-    let late_entry = false, minutes_late = 0;
-    if (t.show_date && t.start_time) {
-      const [Y, M, D] = String(t.show_date).split('-').map(Number);
-      const [h, m]    = String(t.start_time).split(':').map(Number);
-      if (Y && M && D && !isNaN(h) && !isNaN(m)) {
-        const startSec = Math.floor(new Date(Y, M - 1, D, h, m, 0).getTime() / 1000);
-        minutes_late = Math.floor((now - startSec) / 60);
-        if (minutes_late > 15) late_entry = true;
-      }
-    }
-    res.json({ ok: true, status: 'valid', ticket: { ...t, checked_in_at: now }, bundles, late_entry, minutes_late });
+    const late = computeLate(t.show_date, t.start_time);
+    res.json({ ok: true, status: 'valid', mode: 'single', ticket: { ...t, checked_in_at: now }, bundles, ...late });
   });
 
   // ── E-TICKET via Email / WA ───────────────────────────────────────────

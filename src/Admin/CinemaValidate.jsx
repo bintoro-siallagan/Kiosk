@@ -91,15 +91,20 @@ export default function CinemaValidate({ apiBase = "" }) {
 
   const status = last?.status || "";
   const color =
-    status === "valid" ? "#10b981" :
-    status === "used"  ? "#f59e0b" : "#ef4444";
+    status === "valid"   ? "#10b981" :
+    status === "partial" ? "#22d3ee" :
+    status === "used"    ? "#f59e0b" : "#ef4444";
   const icon =
-    status === "valid" ? "✅" :
-    status === "used"  ? "⚠️" : "❌";
+    status === "valid"   ? "✅" :
+    status === "partial" ? "⚡" :
+    status === "used"    ? "⚠️" : "❌";
   const label =
-    status === "valid" ? "VALID" :
-    status === "used"  ? "SUDAH DIPAKAI" : "TIDAK VALID";
+    status === "valid"   ? (last?.mode === "purchase" ? `VALID · ${last.newly_checked_in} KURSI MASUK` : "VALID") :
+    status === "partial" ? `${last.newly_checked_in} KURSI BARU · ${last.already_used_count} SUDAH DIPAKAI` :
+    status === "used"    ? "SUDAH DIPAKAI" : "TIDAK VALID";
   const ticket = last?.ticket;
+  const allTickets = Array.isArray(last?.tickets) ? last.tickets : [];
+  const isPurchaseMode = last?.mode === "purchase" && allTickets.length > 0;
 
   return (
     <div style={S.root}>
@@ -146,9 +151,29 @@ export default function CinemaValidate({ apiBase = "" }) {
             <div style={S.ticketBox}>
               <Row k="Film"    v={ticket.film_title || "—"} />
               <Row k="Studio"  v={ticket.studio_name || "—"} />
-              <Row k="Schedule"  v={`${ticket.show_date || "—"} · ${ticket.show_time || ""}`} />
-              <Row k="Kursi"   v={<b style={{ fontSize: 18 }}>{ticket.seat}</b>} />
-              {status === "used" && (
+              <Row k="Schedule"  v={`${ticket.show_date || "—"} · ${ticket.start_time || ticket.show_time || ""}`} />
+              {isPurchaseMode ? (
+                <>
+                  <Row k="Total Kursi" v={<b style={{ fontSize: 18 }}>{last.ticket_count} kursi</b>} />
+                  <div style={{ marginTop: 8, padding: 10, background: "#0a0e16", border: "1px solid #1f2937", borderRadius: 8 }}>
+                    <div style={{ fontSize: 10, color: "#fbbf24", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 6 }}>🎟️ DETAIL KURSI</div>
+                    {allTickets.map(t => (
+                      <div key={t.code} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", fontSize: 13, borderTop: "1px solid #161b22" }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <b style={{ fontSize: 14, color: "#fbbf24", fontFamily: "'Geist Mono',monospace", minWidth: 30 }}>{t.seat}</b>
+                          <span style={{ color: "#9ca3af", fontSize: 11, fontFamily: "'Geist Mono',monospace" }}>{t.code}</span>
+                        </span>
+                        <span style={{ fontSize: 11, color: (t.checked_in_at && t.checked_in_at !== Math.floor((last.t || Date.now()) / 1000)) ? "#f59e0b" : "#10b981", fontWeight: 700 }}>
+                          {(t.checked_in_at && t.checked_in_at !== Math.floor((last.t || Date.now()) / 1000)) ? "⚠ sudah" : "✓ baru"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <Row k="Kursi" v={<b style={{ fontSize: 18 }}>{ticket.seat}</b>} />
+              )}
+              {status === "used" && !isPurchaseMode && (
                 <Row k="Dipakai" v={<b style={{ color: "#f59e0b" }}>{new Date((last.usedAt || ticket.checked_in_at) * 1000).toLocaleString("id-ID")}</b>} />
               )}
               {last.bundles?.length > 0 && (
