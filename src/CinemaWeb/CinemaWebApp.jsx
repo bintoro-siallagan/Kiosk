@@ -14,6 +14,38 @@ import { LoadingState } from "../components/uiKit.jsx";
 import { ErrorInline } from "../components/ConnectionError.jsx";
 import CinemaCelebration from "../CinemaCelebration.jsx";
 
+// ════════════════════════════════════════════════════════════════════
+// PREMIUM SKELETON COMPONENTS
+// ════════════════════════════════════════════════════════════════════
+function Skeleton({ w, h, r = 8, style }) {
+  return <div className="cw-skeleton" style={{ width: w, height: h, borderRadius: r, ...style }} />;
+}
+
+function GridSkeleton({ count = 6, height = 160 }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))", gap: 14 }}>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} className="cw-skeleton" style={{ height, borderRadius: 14, animationDelay: `${i * 0.06}s` }} />
+      ))}
+    </div>
+  );
+}
+
+function FilmGridSkeleton({ count = 6 }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 180px), 1fr))", gap: 14 }}>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i} style={{ animationDelay: `${i * 0.06}s` }}>
+          <div className="cw-skeleton" style={{ aspectRatio: "2/3", borderRadius: 12, marginBottom: 8 }} />
+          <Skeleton h={14} w="70%" />
+          <div style={{ height: 4 }} />
+          <Skeleton h={10} w="50%" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // Load Midtrans Snap.js once per page lifecycle. Returns Promise resolved when
 // window.snap is ready. Idempotent — multiple calls share the same load.
 let _snapPromise = null;
@@ -120,11 +152,64 @@ export default function CinemaWebApp() {
   return (
     <div style={{ minHeight: "100vh", background: C.bgGrad, color: C.text, fontFamily: "'Inter','-apple-system',sans-serif", paddingBottom: 80 }}>
       <style>{`
+        /* ═══ PREMIUM TYPOGRAPHY SYSTEM ═══ */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+        /* Apply Inter as primary, tighter rendering */
+        body, .cw-section-pad, .cw-section-pad * {
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+          text-rendering: optimizeLegibility;
+          font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11', 'ss01';
+        }
+
+        /* Custom scrollbar — thin, brand-aware */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+        /* Selection color */
+        ::selection { background: rgba(168,85,247,0.35); color: #fff; }
+
+        /* Smooth scroll */
+        html { scroll-behavior: smooth; }
+
         /* Animations */
         @keyframes cwFadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes cwFadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes cwHeroGlow { 0%,100% { filter: drop-shadow(0 0 24px rgba(168,85,247,0.3)); } 50% { filter: drop-shadow(0 0 36px rgba(168,85,247,0.55)); } }
         @keyframes cwPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+        @keyframes cwShimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+
+        /* Premium skeleton shimmer */
+        .cw-skeleton {
+          background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+          background-size: 200% 100%;
+          animation: cwShimmer 1.5s ease-in-out infinite;
+          border-radius: 8px;
+        }
+
+        /* Footer link hover */
+        footer a, footer button { transition: color 0.15s ease; }
+        footer a:hover, footer button:hover { color: #fff !important; }
+
+        /* Premium card hover treatment */
+        .cw-card-premium {
+          transition: transform 0.3s cubic-bezier(.2,.8,.2,1), box-shadow 0.3s cubic-bezier(.2,.8,.2,1), border-color 0.3s;
+          position: relative;
+        }
+        .cw-card-premium::before {
+          content: '';
+          position: absolute; inset: 0;
+          border-radius: inherit;
+          padding: 1px;
+          background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
+          -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          -webkit-mask-composite: xor;
+          mask-composite: exclude;
+          pointer-events: none;
+        }
 
         .cw-film-poster:hover { transform: translateY(-6px) scale(1.02); box-shadow: 0 14px 36px rgba(168,85,247,0.4); }
         .cw-outlet-card { transform: translateY(0); }
@@ -544,7 +629,13 @@ function MoviesPage({ brandPrimary, onPick }) {
   useEffect(() => {
     fetch(`${API_HOST}/api/cinema/films`).then(r => r.json()).then(d => setFilms(d.films || [])).catch(() => setFilms([]));
   }, []);
-  if (!films) return <LoadingState label="Memuat film…" />;
+  if (!films) return (
+    <div style={{ padding: "30px 0 60px" }}>
+      <Skeleton h={28} w={180} style={{ marginBottom: 8 }} />
+      <Skeleton h={14} w={260} style={{ marginBottom: 30 }} />
+      <FilmGridSkeleton count={6} />
+    </div>
+  );
   const nowShowing = films.filter(f => f.status === "now_showing" || !f.status);
   const comingSoon = films.filter(f => f.status === "coming_soon");
   return (
@@ -832,66 +923,130 @@ function ContactRow({ icon, label, value, link }) {
 // ════════════════════════════════════════════════════════════════════
 // FOOTER
 // ════════════════════════════════════════════════════════════════════
-function Footer({ brand, brandPrimary, onAbout }) {
+function Footer({ brand, brandPrimary, onAbout, onNav }) {
   const brandName = brand?.brand_short || brand?.name || "karyaOS";
   const year = new Date().getFullYear();
+  const FooterLink = ({ children, onClick, href }) => href
+    ? <a href={href} target="_blank" rel="noopener noreferrer" style={footerLinkStyle}>{children}</a>
+    : <button onClick={onClick} style={{ ...footerLinkStyle, background: "transparent", border: "none", cursor: "pointer", padding: 0, textAlign: "left" }}>{children}</button>;
   return (
     <footer style={{
-      marginTop: 80, padding: "40px 20px 30px",
+      marginTop: 100, padding: "56px 24px 28px",
       borderTop: `1px solid ${C.border}`,
-      background: "linear-gradient(180deg, transparent, rgba(0,0,0,0.4))",
+      background: "linear-gradient(180deg, transparent, rgba(0,0,0,0.5))",
+      position: "relative",
     }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: 24, marginBottom: 28 }}>
+      {/* Top edge glow */}
+      <div style={{
+        position: "absolute", top: -1, left: "50%", transform: "translateX(-50%)",
+        width: "50%", height: 2,
+        background: `linear-gradient(90deg, transparent, ${brandPrimary}, transparent)`,
+        opacity: 0.5,
+      }} />
+      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: 36, marginBottom: 40 }}>
+          {/* Column 1: Brand */}
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-              {brand?.logo_url && <img src={brand.logo_url} alt="" style={{ height: 24, objectFit: "contain" }} />}
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{brandName}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+              {brand?.logo_url && <img src={brand.logo_url} alt="" style={{ height: 32, objectFit: "contain" }} />}
+              <div>
+                <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: -0.3 }}>{brandName}</div>
+                <div style={{ fontSize: 9, color: C.dim, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1.5, textTransform: "uppercase" }}>Cinema Booking</div>
+              </div>
             </div>
-            <div style={{ fontSize: 12, color: C.dim, lineHeight: 1.6 }}>
-              Tiket bioskop online — pesan kursi, ambil di counter. Tanpa antri.
+            <p style={{ fontSize: 12.5, color: C.dim, lineHeight: 1.7, margin: 0, marginBottom: 16 }}>
+              Pengalaman cinema premium di ujung jari Anda. Pesan tiket online, pilih kursi, langsung nonton.
+            </p>
+            {/* Social icons */}
+            <div style={{ display: "flex", gap: 8 }}>
+              {[
+                { name: "WA", icon: "💬", url: "https://wa.me/6285190062368" },
+                { name: "IG", icon: "📷", url: "https://instagram.com" },
+                { name: "TT", icon: "🎵", url: "https://tiktok.com" },
+                { name: "YT", icon: "▶", url: "https://youtube.com" },
+              ].map(s => (
+                <a key={s.name} href={s.url} target="_blank" rel="noopener noreferrer" title={s.name} style={{
+                  width: 34, height: 34, borderRadius: 8,
+                  background: "rgba(255,255,255,0.04)", border: `1px solid ${C.border}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  textDecoration: "none", fontSize: 14, transition: "all 0.15s",
+                }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = `${brandPrimary}22`; e.currentTarget.style.borderColor = `${brandPrimary}66`; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = C.border; }}>{s.icon}</a>
+              ))}
             </div>
           </div>
+
+          {/* Column 2: Navigation */}
           <div>
-            <div style={{ fontSize: 10, color: C.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 10, textTransform: "uppercase", fontWeight: 700 }}>Bantuan</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, color: C.sub }}>
-              <div>Tunjukkan QR di counter</div>
-              <div>Datang 15 menit sebelum</div>
-              <div>Auto-member di booking pertama</div>
-            </div>
+            <FooterHeading>Navigasi</FooterHeading>
+            <FooterLink onClick={() => onNav?.("outlet")}>Beranda</FooterLink>
+            <FooterLink onClick={() => onNav?.("movies")}>Movies</FooterLink>
+            <FooterLink onClick={() => onNav?.("promo")}>Promo & Event</FooterLink>
+            <FooterLink onClick={() => onNav?.("studio")}>Booking Studio</FooterLink>
+            <FooterLink onClick={() => onNav?.("locations")}>Lokasi</FooterLink>
           </div>
+
+          {/* Column 3: Help */}
           <div>
-            <div style={{ fontSize: 10, color: C.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 10, textTransform: "uppercase", fontWeight: 700 }}>Loyalty</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12, color: C.sub }}>
-              <div>🎬 Rp 5.000 = 1 poin</div>
-              <div>⭐ 100 poin = Rp 1.000</div>
-              <div>🎁 Auto-redeem di checkout</div>
-            </div>
+            <FooterHeading>Bantuan</FooterHeading>
+            <FooterLink>FAQ</FooterLink>
+            <FooterLink>Cara Pesan Tiket</FooterLink>
+            <FooterLink>Kebijakan Refund</FooterLink>
+            <FooterLink>Loyalty Program</FooterLink>
+            <FooterLink href="https://wa.me/6285190062368">Customer Service</FooterLink>
           </div>
+
+          {/* Column 4: Company + Legal */}
           <div>
-            <div style={{ fontSize: 10, color: C.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 10, textTransform: "uppercase", fontWeight: 700 }}>Perusahaan</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6, fontSize: 12 }}>
-              <button onClick={onAbout} style={{ background: "transparent", border: "none", color: C.sub, fontSize: 12, padding: 0, textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>📖 Tentang {brandName}</button>
-              <div style={{ color: C.sub }}>🎯 Misi & Sejarah</div>
-              <div style={{ color: C.sub }}>📞 Kontak</div>
-            </div>
+            <FooterHeading>Perusahaan</FooterHeading>
+            <FooterLink onClick={onAbout}>Tentang {brandName}</FooterLink>
+            <FooterLink>Karier</FooterLink>
+            <FooterLink>Partnership</FooterLink>
+            <div style={{ height: 14 }} />
+            <FooterHeading>Legal</FooterHeading>
+            <FooterLink>Syarat & Ketentuan</FooterLink>
+            <FooterLink>Kebijakan Privasi</FooterLink>
           </div>
         </div>
+
+        {/* Bottom bar */}
         <div style={{
-          paddingTop: 18, borderTop: `1px solid ${C.border}`,
-          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap",
+          paddingTop: 22, borderTop: `1px solid ${C.border}`,
+          display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, flexWrap: "wrap",
           fontSize: 11, color: C.dim,
         }}>
-          <div>© {year} {brandName} · All rights reserved</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, opacity: 0.7 }}>
-            <span>Powered by</span>
-            <span style={{ fontFamily: "'Geist Mono',monospace", color: brandPrimary, fontWeight: 700 }}>karya<span style={{ color: "#fbbf24" }}>OS</span></span>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+            <span>© {year} {brandName}. All rights reserved.</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 6, color: C.sub }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", boxShadow: "0 0 8px #10b981" }} />
+              System operational
+            </span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, opacity: 0.85 }}>
+              <span style={{ fontSize: 10, color: C.dim, fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>SECURE PAYMENT</span>
+              <span style={{ fontSize: 14 }}>🔒</span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ fontSize: 10, color: C.dim }}>Powered by</span>
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", color: brandPrimary, fontWeight: 700, fontSize: 11 }}>karya<span style={{ color: "#fbbf24" }}>OS</span></span>
+            </div>
           </div>
         </div>
       </div>
     </footer>
   );
 }
+
+function FooterHeading({ children }) {
+  return <div style={{ fontSize: 10, color: "#fff", letterSpacing: 2, fontFamily: "'JetBrains Mono',monospace", marginBottom: 14, textTransform: "uppercase", fontWeight: 800 }}>{children}</div>;
+}
+
+const footerLinkStyle = {
+  display: "block", padding: "4px 0", fontSize: 12.5, color: "rgba(156,163,175,0.85)",
+  textDecoration: "none", transition: "color 0.15s", fontFamily: "inherit",
+};
 
 // ════════════════════════════════════════════════════════════════════
 // HEADER
@@ -1210,7 +1365,16 @@ function OutletPicker({ onPick, onPickFeaturedFilm, pendingFilm, brandPrimary })
   }, [outlets, cityFilter]);
 
   if (error) return <ErrorInline error={error} label="Gagal memuat lokasi" onRetry={load} />;
-  if (!outlets) return <LoadingState label="Memuat lokasi bioskop…" />;
+  if (!outlets) return (
+    <div style={{ padding: "30px 20px" }}>
+      <div className="cw-skeleton" style={{ height: 360, borderRadius: 18, marginBottom: 32 }} />
+      <div style={{ textAlign: "center", marginBottom: 28 }}>
+        <Skeleton h={30} w={260} style={{ margin: "0 auto 8px" }} />
+        <Skeleton h={14} w={180} style={{ margin: "0 auto" }} />
+      </div>
+      <GridSkeleton count={6} height={240} />
+    </div>
+  );
 
   return (
     <div className="cw-section-pad" style={{ padding: 0 }}>
