@@ -2159,13 +2159,19 @@ app.post("/api/customers", (req, res) => {
 app.patch("/api/customers/:id", (req, res) => {
   const idx = customers.findIndex(c => c.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Customer not found" });
-  customers[idx] = { ...customers[idx], ...req.body, id: customers[idx].id };
-  res.json(customers[idx]);
+  // Merge changes — protect id from override
+  const merged = { ...customers[idx], ...req.body, id: customers[idx].id };
+  customers[idx] = merged;
+  // PERSIST to DB (sebelumnya cuma in-memory → lost on restart)
+  try { db.insertCustomer(merged); } catch (e) { console.error('[customer patch] db persist:', e.message); }
+  res.json(merged);
 });
 
 // DELETE customer
 app.delete("/api/customers/:id", (req, res) => {
-  customers = customers.filter(c => c.id !== req.params.id);
+  const id = req.params.id;
+  customers = customers.filter(c => c.id !== id);
+  try { db.deleteCustomer(id); } catch (e) { console.error('[customer delete] db:', e.message); }
   res.json({ ok: true });
 });
 
