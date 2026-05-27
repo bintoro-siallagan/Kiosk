@@ -120,7 +120,7 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
 
       {/* ── PHONE STEP ── */}
       {step==="phone" && (
-        <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start",padding:"28px 24px 24px",animation:"fadeUp 0.25s ease",gap:0,maxWidth:480,margin:"0 auto",width:"100%"}}>
+        <div key="step-phone" style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start",padding:"28px 24px 24px",animation:"fadeUp 0.25s ease",gap:0,maxWidth:480,margin:"0 auto",width:"100%"}}>
           <div style={C.stepEmoji}>📱</div>
           <div style={C.stepTitle}>Phone number</div>
           <div style={{...C.stepSub,maxWidth:340}}>Get a notification when your order is ready and earn reward points.</div>
