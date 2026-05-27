@@ -2156,6 +2156,99 @@ app.post("/api/customers", (req, res) => {
 });
 
 // PATCH update customer
+// POST /api/customers/import — bulk migration from CSV (admin/super-admin)
+// Body: {
+//   rows: [{phone, name, points, tier, lifetime_spend, signup_date, external_id, tags}],
+//   mode: "dry_run" | "commit",
+//   dedup_strategy: "skip" | "merge" | "overwrite",   // kalau phone duplicate
+// }
+app.post("/api/customers/import", (req, res) => {
+  const b = req.body || {};
+  const rows = Array.isArray(b.rows) ? b.rows : [];
+  const mode = b.mode === "commit" ? "commit" : "dry_run";
+  const dedup = ["skip", "merge", "overwrite"].includes(b.dedup_strategy) ? b.dedup_strategy : "skip";
+  // Multi-tenant scope: pakai header x-company-id atau body.company_id (super-admin)
+  const scopeCid = parseInt(req.headers["x-company-id"], 10);
+  const isSuperAdmin = String(req.headers["x-super-admin"] || "") === "true";
+  let companyId = scopeCid || (isSuperAdmin ? parseInt(b.company_id, 10) : null);
+  if (!companyId) {
+    try {
+      const row = db.rawDb.prepare(`SELECT id FROM companies WHERE status='active' ORDER BY id LIMIT 1`).get();
+      companyId = row?.id;
+    } catch {}
+  }
+  if (!companyId) return res.status(400).json({ error: "no company scope" });
+
+  if (rows.length === 0) return res.status(400).json({ error: "rows kosong" });
+  if (rows.length > 10000) return res.status(400).json({ error: "max 10,000 rows per import" });
+
+  const summary = { total: rows.length, new: 0, update: 0, skip: 0, error: [] };
+  const newCustomers = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i] || {};
+    const phone = String(r.phone || "").replace(/\D/g, "").trim();  // strip non-digit
+    const name = String(r.name || "").trim();
+    if (!phone) { summary.error.push({ row: i + 1, phone: r.phone, error: "phone kosong/invalid" }); continue; }
+    if (phone.length < 8 || phone.length > 16) { summary.error.push({ row: i + 1, phone, error: "phone length invalid (8-16 digit)" }); continue; }
+
+    // Cek existing by phone + company
+    let existing = null;
+    try {
+      existing = db.rawDb.prepare(`SELECT id, name, phone, visits, total_spend, points, tags, created_at FROM customers WHERE phone = ? AND company_id = ?`).get(phone, companyId);
+    } catch {}
+
+    const points = Math.max(0, parseInt(r.points, 10) || 0);
+    const lifetimeSpend = Math.max(0, parseInt(r.lifetime_spend, 10) || 0);
+    const visits = Math.max(0, parseInt(r.visits, 10) || 0);
+    const tier = r.tier ? String(r.tier).toLowerCase().trim() : null;
+    const tagsArr = [];
+    if (r.tags) String(r.tags).split(/[,;]/).forEach(t => { const tag = t.trim().toLowerCase(); if (tag) tagsArr.push(tag); });
+    if (tier && !tagsArr.includes(tier)) tagsArr.push(tier);
+    if (!tagsArr.includes("member")) tagsArr.push("member");  // default mark as member
+    const tags = JSON.stringify(tagsArr);
+    const signupTs = r.signup_date ? Math.floor(new Date(r.signup_date).getTime()) : Date.now();
+
+    if (existing) {
+      // Duplicate handling
+      if (dedup === "skip") { summary.skip++; continue; }
+      if (mode === "commit") {
+        try {
+          if (dedup === "overwrite") {
+            db.rawDb.prepare(`UPDATE customers SET name = ?, points = ?, total_spend = ?, visits = ?, tags = ? WHERE id = ?`)
+              .run(name || existing.name, points, lifetimeSpend, visits, tags, existing.id);
+          } else {  // merge — preserve max value, append tags
+            const mergedPoints = Math.max(existing.points || 0, points);
+            const mergedSpend = Math.max(existing.total_spend || 0, lifetimeSpend);
+            const mergedVisits = Math.max(existing.visits || 0, visits);
+            db.rawDb.prepare(`UPDATE customers SET name = COALESCE(NULLIF(?, ''), name), points = ?, total_spend = ?, visits = ?, tags = ? WHERE id = ?`)
+              .run(name, mergedPoints, mergedSpend, mergedVisits, tags, existing.id);
+          }
+        } catch (e) { summary.error.push({ row: i + 1, phone, error: e.message }); continue; }
+      }
+      summary.update++;
+    } else {
+      // NEW customer
+      const id = `cust_${companyId}_${Date.now()}_${i}`;
+      if (mode === "commit") {
+        try {
+          db.rawDb.prepare(`INSERT INTO customers (id, name, phone, visits, total_spend, created_at, last_visit, tags, points, company_id) VALUES (?,?,?,?,?,?,?,?,?,?)`)
+            .run(id, name || "Anonymous", phone, visits, lifetimeSpend, signupTs, signupTs, tags, points, companyId);
+          newCustomers.push({ id, phone, name });
+        } catch (e) { summary.error.push({ row: i + 1, phone, error: e.message }); continue; }
+      }
+      summary.new++;
+    }
+  }
+
+  // Audit log
+  if (mode === "commit" && typeof global.logAudit === "function") {
+    try { global.logAudit(req, { action: "customer.bulk_import", entity: "customer", payload: { company_id: companyId, summary } }); } catch {}
+  }
+
+  res.json({ ok: true, mode, dedup_strategy: dedup, company_id: companyId, summary });
+});
+
 app.patch("/api/customers/:id", (req, res) => {
   const idx = customers.findIndex(c => c.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Customer not found" });
