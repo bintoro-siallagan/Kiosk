@@ -22,6 +22,7 @@ if (typeof window !== "undefined") {
 // — Small shared chrome (banners, gate) bundles cheaply with the shell
 import PromoBroadcastBanner from "./PromoBroadcastBanner.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
+import ImpersonationBanner from "./components/ImpersonationBanner.jsx";
 import AdminLogin, { ResetPasswordPage } from "./AdminLogin.jsx";
 import Kiosk from "./Kiosk.jsx";
 import ShiftGate from "./ShiftGate.jsx";
@@ -321,9 +322,12 @@ export default function App() {
   }
 
   return (
-    <Suspense fallback={<SceneLoading />}>
-      {node}
-      {PWA_PROMPT_SCENES.has(scene) && <PWAInstallPrompt />}
-    </Suspense>
+    <>
+      <ImpersonationBanner />
+      <Suspense fallback={<SceneLoading />}>
+        {node}
+        {PWA_PROMPT_SCENES.has(scene) && <PWAInstallPrompt />}
+      </Suspense>
+    </>
   );
 }

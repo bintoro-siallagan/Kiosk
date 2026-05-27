@@ -3,6 +3,7 @@ import { api } from "./api.js";
 import POSSatisfaction from "./POS/POSSatisfaction.jsx";
 import POSCelebration from "./POS/POSCelebration.jsx";
 import LeaderboardModal from "./LeaderboardModal.jsx";
+import PushPermissionPrompt from "./components/PushPermissionPrompt.jsx";
 import API_HOST from "./apiBase.js";
 
 
@@ -92,6 +93,8 @@ export default function CustomerTrackingPage({ orderId }) {
     <div style={S.root}>
       <div style={S.brand}>KaryaOS</div>
       <div style={S.muted}>SELF ORDER KIOSK</div>
+
+      <PushPermissionPrompt orderId={order.id} phone={order.customer_phone} />
 
       <button onClick={() => setShowLeaderboard(true)}
         style={{ display: "block", margin: "12px auto 4px", padding: "11px 22px", background: "linear-gradient(135deg,#fbbf24,#f97316)", color: "#1a1006", border: "none", borderRadius: 12, fontSize: 14, fontWeight: 800, cursor: "pointer", boxShadow: "0 4px 14px rgba(249,115,22,0.35)" }}>

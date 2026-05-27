@@ -30,6 +30,8 @@ const SAMPLE_ORDER = {
 
 export default function AdminNotifPreview() {
   const [brand, setBrand] = useState(null);
+  const [waCfg, setWaCfg] = useState(null);
+  const [waStatus, setWaStatus] = useState("ready");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState({ text: "", kind: "" });
   const [draft, setDraft] = useState({ wa_signature: "", email_signature: "", receipt_footer: "" });
@@ -37,8 +39,12 @@ export default function AdminNotifPreview() {
 
   async function refresh() {
     try {
-      const b = await fetch(`${API_HOST}/api/companies/branding`).then(r => r.json());
+      const [b, w] = await Promise.all([
+        fetch(`${API_HOST}/api/companies/branding`).then(r => r.json()),
+        fetch(`${API_HOST}/api/wa/config`).then(r => r.json()).catch(() => null),
+      ]);
       setBrand(b);
+      setWaCfg(w);
       setDraft({
         wa_signature: b?.wa_signature || "",
         email_signature: b?.email_signature || "",
@@ -127,8 +133,19 @@ export default function AdminNotifPreview() {
             <button onClick={() => setView("email")}  style={view === "email"   ? S.tabActive : S.tab}>📧 Email</button>
             <button onClick={() => setView("receipt")}style={view === "receipt" ? S.tabActive : S.tab}>🧾 Receipt</button>
           </div>
+          {view === "wa" && waCfg && (
+            <div style={{ display: "flex", gap: 6, marginTop: 8, alignItems: "center", flexWrap: "wrap" }}>
+              <span style={{ fontSize: 11, color: "#9ca3af", marginRight: 4 }}>Status:</span>
+              {Object.keys(waCfg.templates || { ready: 1, completed: 1 }).map(st => (
+                <button key={st} onClick={() => setWaStatus(st)}
+                  style={waStatus === st ? S.tabActive : S.tab}>
+                  {st === "ready" ? "🔔 Ready" : st === "completed" ? "✅ Completed" : st}
+                </button>
+              ))}
+            </div>
+          )}
           <div style={S.previewStage}>
-            {view === "wa"      && <WhatsAppPreview brand={active} />}
+            {view === "wa"      && <WhatsAppPreview brand={active} waCfg={waCfg} status={waStatus} />}
             {view === "email"   && <EmailPreview    brand={active} />}
             {view === "receipt" && <ReceiptPreview  brand={active} />}
           </div>
@@ -139,21 +156,43 @@ export default function AdminNotifPreview() {
 }
 
 // ─── WhatsApp phone-bubble mockup ──────────────────────────────────────
-function WhatsAppPreview({ brand }) {
+// Renders the actual template from /api/wa/config with vars substituted —
+// the same fillTemplate() logic the backend uses. Tenant sees exactly what
+// the customer will receive for each status (ready / completed / dll).
+function fillTpl(tpl, vars) {
+  return String(tpl || "").replace(/\{(\w+)\}/g, (_, k) => vars[k] !== undefined ? vars[k] : `{${k}}`);
+}
+
+function WhatsAppPreview({ brand, waCfg, status }) {
   const brandName = brand.brand_short || brand.name || "karyaos";
-  const phone = brand.contact_phone || "—";
   const address = brand.address || "";
   const signature = brand.wa_signature || `— ${brandName}\n${address}`.trim();
-  const lines = [
-    `Halo *${SAMPLE_ORDER.customer_name}*! 👋`,
-    "",
-    `Pesanan kamu *#${SAMPLE_ORDER.id}* sudah *SIAP DIAMBIL* 🔔`,
-    "",
-    `Total: *Rp ${SAMPLE_ORDER.total.toLocaleString("id-ID")}*`,
-    `Tunjukkan ID order ini ke kasir.`,
-    "",
-    signature,
-  ].join("\n");
+  const template = waCfg?.templates?.[status];
+  const vars = {
+    customerName: SAMPLE_ORDER.customer_name,
+    orderId:      SAMPLE_ORDER.id,
+    total:        SAMPLE_ORDER.total,
+    totalIDR:     SAMPLE_ORDER.total.toLocaleString("id-ID"),
+    trackingUrl:  `https://kiosk.karys.tech/?trackorder=${SAMPLE_ORDER.id}`,
+    date:         new Date().toLocaleDateString("id-ID"),
+    time:         new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+    brandName, brandPhone: brand.contact_phone || "", brandAddress: address, signature,
+  };
+  let lines;
+  if (template) {
+    let body = fillTpl(template, vars);
+    if (brand.wa_signature && !template.includes("{signature}")) body += `\n\n${brand.wa_signature}`;
+    else if (!brand.wa_signature && !template.includes("{brandName}")) body += `\n\n— ${brandName}`;
+    lines = body;
+  } else {
+    // Fallback when /api/wa/config unavailable
+    lines = [
+      `Halo *${SAMPLE_ORDER.customer_name}*! 👋`, "",
+      `Pesanan kamu *#${SAMPLE_ORDER.id}* sudah *SIAP DIAMBIL* 🔔`, "",
+      `Total: *Rp ${SAMPLE_ORDER.total.toLocaleString("id-ID")}*`,
+      `Tunjukkan ID order ini ke kasir.`, "", signature,
+    ].join("\n");
+  }
   return (
     <div style={W.phoneFrame}>
       <div style={W.notch} />

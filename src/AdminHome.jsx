@@ -708,29 +708,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       {/* Onboarding checklist — first-login walkthrough, auto-hides after all done */}
       <OnboardingChecklist onNavigate={(modId) => openRight("tools", modId)} />
 
-      {/* Impersonation banner — super-admin sedang drill-down ke company tertentu */}
-      {_adminCtx?._impersonating && (
-        <div style={{
-          background: "linear-gradient(90deg, rgba(168,85,247,0.18), rgba(251,191,36,0.18))",
-          borderBottom: "1px solid rgba(251,191,36,0.4)",
-          padding: "10px 22px", display: "flex", alignItems: "center", gap: 12,
-          fontSize: 12.5, color: "#fbbf24", fontWeight: 700,
-          boxShadow: "0 4px 12px rgba(168,85,247,0.15)",
-        }}>
-          <span style={{ fontSize: 16 }}>🎯</span>
-          <span style={{ fontFamily: "'Geist Mono',monospace", letterSpacing: 1, textTransform: "uppercase", fontSize: 10 }}>IMPERSONATING</span>
-          <span style={{ flex: 1, color: "#fff", fontWeight: 800 }}>{_adminCtx.company?.name || _adminCtx.company?.code}</span>
-          <button onClick={async () => {
-            const { stopImpersonate } = await import("./companyAuth.js");
-            stopImpersonate();
-            window.location.reload();
-          }} style={{
-            background: "rgba(0,0,0,0.4)", border: "1px solid rgba(251,191,36,0.4)",
-            color: "#fbbf24", padding: "6px 16px", borderRadius: 8,
-            fontSize: 11, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", letterSpacing: 0.5,
-          }}>✕ Exit Impersonation</button>
-        </div>
-      )}
+      {/* Impersonation banner moved to <ImpersonationBanner/> mounted in App.jsx */}
 
       {/* Topbar — polished with glow + brand pop */}
       <div style={S.topbar} className="no-print ah-topbar">

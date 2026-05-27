@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { api } from "./api.js";
+import PushPermissionPrompt from "./components/PushPermissionPrompt.jsx";
 
 import { fmtMoney as fIDR } from "./lib/currency.js";
 const fTime = (d) => new Date(d).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});
@@ -137,6 +138,8 @@ export default function OrderTracking({ onHome }) {
 
         {order && !loading && (
           <div style={{animation:"fadeUp 0.3s ease"}}>
+
+            <PushPermissionPrompt orderId={order.id} phone={order.customer_phone} />
 
             {/* Order header */}
             <div style={{...T.card,marginBottom:16}}>
