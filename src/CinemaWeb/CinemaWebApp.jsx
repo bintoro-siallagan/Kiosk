@@ -310,8 +310,9 @@ function OutletPicker({ onPick, brandPrimary }) {
           color: brandPrimary, fontSize: 11, fontWeight: 700, letterSpacing: 1.5,
           fontFamily: "'Geist Mono',monospace", marginBottom: 16, textTransform: "uppercase",
         }}>🎬 Online Booking · Skip Antrian</div>
-        <h1 className="cw-page-title" style={{ fontSize: 42, fontWeight: 800, letterSpacing: -1.5, margin: 0, marginBottom: 12, lineHeight: 1.1, background: `linear-gradient(135deg, #fff 0%, ${brandPrimary} 100%)`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
-          Pesan Tiket. Pilih Kursi.<br/>Langsung Nonton.
+        <h1 className="cw-page-title cw-hero-title" style={{ fontSize: 42, fontWeight: 800, letterSpacing: -1.5, margin: 0, marginBottom: 12, lineHeight: 1.1, color: "#fff" }}>
+          Pesan Tiket. Pilih Kursi.<br/>
+          <span style={{ color: brandPrimary, textShadow: `0 0 24px ${brandPrimary}66` }}>Langsung Nonton.</span>
         </h1>
         <p style={{ fontSize: 15, color: C.sub, maxWidth: 520, margin: "0 auto", lineHeight: 1.5 }}>
           Tiket bioskop online tanpa antri loket. Pilih lokasi, pick film, pesan kursi favorit, ambil di counter.
