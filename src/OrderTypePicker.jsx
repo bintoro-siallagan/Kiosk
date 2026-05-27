@@ -1,45 +1,113 @@
 export default function OrderTypePicker({ onPick, onCancel }) {
   return (
     <div style={S.root}>
+      <style>{OT_CSS}</style>
       <div style={S.card}>
-        <h1 style={S.title}>Pilih Tipe Order</h1>
-        <p style={S.subtitle}>Bagaimana customer akan menikmati pesanan?</p>
+        <h1 style={S.title}>Select order type</h1>
+        <p style={S.subtitle}>How will the customer enjoy their order?</p>
 
         <div style={S.grid}>
-          <button onClick={() => onPick("dine-in")} style={S.option}
-            onMouseEnter={e => e.currentTarget.style.borderColor = "#F59E0B"}
-            onMouseLeave={e => e.currentTarget.style.borderColor = "#2a2a2a"}>
+          <button onClick={() => onPick("dine-in")} className="lg ot-pop" style={S.option}>
             <div style={S.icon}>🍽️</div>
             <div style={S.optionTitle}>Dine-in</div>
-            <div style={S.optionHint}>Makan di restoran</div>
+            <div style={S.optionHint}>Eat at the restaurant</div>
           </button>
-          <button onClick={() => onPick("take-away")} style={S.option}
-            onMouseEnter={e => e.currentTarget.style.borderColor = "#F59E0B"}
-            onMouseLeave={e => e.currentTarget.style.borderColor = "#2a2a2a"}>
+          <button onClick={() => onPick("take-away")} className="lg ot-pop" style={S.option}>
             <div style={S.icon}>🛍️</div>
-            <div style={S.optionTitle}>Take-away</div>
-            <div style={S.optionHint}>Bawa pulang</div>
+            <div style={S.optionTitle}>Takeaway</div>
+            <div style={S.optionHint}>Bring it home</div>
           </button>
         </div>
 
-        <button onClick={onCancel} style={S.cancelLink}>✕ Batalkan Order</button>
+        <button onClick={onCancel} style={S.cancelLink}>✕ Cancel order</button>
       </div>
     </div>
   );
 }
 
+const OT_CSS = `
+  :root{color-scheme:dark}
+  *{box-sizing:border-box;margin:0;padding:0}
+  @keyframes otFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .lg{
+    position:relative;
+    background:linear-gradient(180deg,rgba(255,255,255,0.05) 0%,rgba(255,255,255,0.02) 60%,rgba(255,255,255,0.008) 100%);
+    backdrop-filter:blur(28px) saturate(180%);-webkit-backdrop-filter:blur(28px) saturate(180%);
+    border:1px solid rgba(255,255,255,0.07);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.14),inset 0 -1px 0 rgba(0,0,0,0.18),0 8px 24px rgba(0,0,0,0.24),0 24px 60px rgba(0,0,0,0.28);
+  }
+  .ot-pop{transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s ease;animation:otFadeIn .4s ease both}
+  .ot-pop:hover{transform:translateY(-3px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.18),inset 0 -1px 0 rgba(0,0,0,0.18),0 12px 32px rgba(0,0,0,0.32),0 32px 80px color-mix(in srgb,var(--brand-primary,#FF6B35) 22%,transparent)}
+  .ot-pop:active{transform:translateY(-1px) scale(.99)}
+  button{cursor:pointer;font-family:'Inter',sans-serif}
+`;
+
 const S = {
-  root: { minHeight:"100vh", background:"#111", color:"#fff", fontFamily:"'Inter',sans-serif",
-    display:"flex", alignItems:"center", justifyContent:"center", padding:24 },
-  card: { maxWidth:700, width:"100%", textAlign:"center" },
-  title: { fontFamily:"'Inter',sans-serif", fontSize:"min(52px,11vw)", letterSpacing:4, margin:"0 0 8px", color:"#F59E0B", whiteSpace:"nowrap" },
-  subtitle: { color:"#888", fontSize:16, marginBottom:48 },
-  grid: { display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:20, marginBottom:32 },
-  option: { background:"#1a1a1a", border:"2px solid #2a2a2a", borderRadius:20, padding:"48px 24px",
-    color:"#fff", fontFamily:"inherit", cursor:"pointer", transition:"all 0.2s",
-    display:"flex", flexDirection:"column", alignItems:"center", gap:12 },
-  icon: { fontSize:80, marginBottom:8 },
-  optionTitle: { fontSize:24, fontWeight:700 },
-  optionHint: { fontSize:13, color:"#888" },
-  cancelLink: { background:"transparent", border:"none", color:"#666", fontSize:13, cursor:"pointer", fontFamily:"inherit", padding:12 }
+  root: {
+    minHeight: "100vh",
+    background: "radial-gradient(ellipse 70% 55% at 50% 38%, rgba(40,44,58,0.5) 0%, transparent 70%), linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)",
+    backgroundAttachment: "fixed",
+    color: "#fff", fontFamily: "'Inter',sans-serif",
+    display: "flex", alignItems: "center", justifyContent: "center", padding: 24
+  },
+  card: { maxWidth: 640, width: "100%", textAlign: "center" },
+  title: {
+    fontFamily: "'Inter',sans-serif",
+    fontSize: "min(40px,8vw)",
+    fontWeight: 600,
+    letterSpacing: "-1.2px",
+    margin: "0 0 8px",
+    color: "rgba(255,255,255,0.95)",
+    lineHeight: 1.1
+  },
+  subtitle: {
+    color: "rgba(255,255,255,0.5)",
+    fontSize: 14,
+    marginBottom: 36,
+    fontWeight: 400,
+    letterSpacing: "-0.2px"
+  },
+  grid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2,1fr)",
+    gap: 16,
+    marginBottom: 28
+  },
+  option: {
+    border: "none",
+    borderRadius: 22,
+    padding: "44px 24px",
+    color: "#fff",
+    fontFamily: "inherit",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: 10
+  },
+  icon: {
+    fontSize: 64,
+    marginBottom: 4,
+    filter: "drop-shadow(0 8px 20px rgba(0,0,0,0.35))"
+  },
+  optionTitle: {
+    fontSize: 20,
+    fontWeight: 600,
+    letterSpacing: "-0.4px",
+    color: "rgba(255,255,255,0.95)"
+  },
+  optionHint: {
+    fontSize: 12,
+    color: "rgba(255,255,255,0.5)",
+    letterSpacing: "-0.1px"
+  },
+  cancelLink: {
+    background: "transparent",
+    border: "none",
+    color: "rgba(255,255,255,0.4)",
+    fontSize: 12,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    padding: 12,
+    letterSpacing: "-0.1px"
+  }
 };
