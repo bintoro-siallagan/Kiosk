@@ -209,7 +209,7 @@ function ModuleLoading() {
 
 // ── Styles ──
 const S = {
-  root: { fontFamily: "'Inter',sans-serif", background: "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)", color: "#fff", minHeight: "100%", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, overflowY: "auto", zIndex: 9999 },
+  root: { fontFamily: "'Inter',sans-serif", background: "linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", color: "#fff", minHeight: "100%", display: "flex", flexDirection: "column", position: "fixed", top: 0, left: 0, right: 0, bottom: 0, overflowY: "auto", zIndex: 9999 },
   body: { flex: 1, padding: "20px 28px", overflowY: "auto" },
   main: { display: "flex", flex: 1, overflow: "hidden", marginTop: 14, borderTop: "1px solid #0f1629" },
   card: { background: "#0d1117", border: "1px solid #161b22", borderRadius: 14, padding: 20, marginBottom: 16 },

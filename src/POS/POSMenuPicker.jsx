@@ -546,7 +546,7 @@ const styles = {
   // Outer shell with top header bar + body
   shell: {
     minHeight: "100vh", boxSizing: "border-box",
-    background: "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)",
+    background: "linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)",
     color: "#fff",
     fontFamily: "'Inter','SF Pro Display',system-ui,-apple-system,sans-serif",
     display: "flex", flexDirection: "column",

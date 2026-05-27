@@ -365,7 +365,7 @@ function DoneStep({ outletName, score, onAgain }) {
 // ───────── shared ─────────
 function Shell({ children }) {
   return (
-    <div style={{ position: "fixed", inset: 0, background: "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)", color: "#e6edf3", fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif", overflowY: "auto" }}>
+    <div style={{ position: "fixed", inset: 0, background: "linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", color: "#e6edf3", fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif", overflowY: "auto" }}>
       <div aria-hidden style={{ position: "fixed", inset: 0, background: "radial-gradient(700px 500px at 50% 0%, rgba(168,85,247,0.1), transparent 60%)", pointerEvents: "none" }} />
       <div style={{ position: "relative", width: "min(100%, 560px)", margin: "0 auto" }}>{children}</div>
     </div>

@@ -908,7 +908,7 @@ function CDSTrackQR({ state, pubConfig }) {
 const S = {
   root: {
     height:"100vh", width:"100vw",
-    background:"linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)",
+    background:"linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)",
     color:"#fff",
     fontFamily:"'Inter','SF Pro Display','-apple-system',system-ui,sans-serif",
     position:"fixed", top:0, left:0,
@@ -1164,7 +1164,7 @@ const S = {
   loader: { fontSize:64, marginBottom:12 },
   qrHint: { fontSize:18, color:"#aaa", marginTop:24, lineHeight:1.6 },
   qrAmountBox: { marginTop:32, padding:"20px 40px",
-    background: "radial-gradient(ellipse 70% 55% at 50% 38%, rgba(40,44,58,0.5) 0%, transparent 70%), linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)", border:"2px solid #F59E0B", borderRadius:16,
+    background: "radial-gradient(ellipse 70% 55% at 50% 38%, rgba(70,76,98,0.45) 0%, transparent 70%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", border:"2px solid #F59E0B", borderRadius:16,
     display:"flex", flexDirection:"column", alignItems:"center" },
   subLabel: { fontSize:14, color:"#888", letterSpacing:2, fontWeight:600 },
   qrAmount: { fontSize:72, fontFamily:"'Inter',sans-serif", color:"var(--brand-primary,#FF6B35)",

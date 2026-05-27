@@ -69,7 +69,7 @@ if (typeof window !== "undefined") {
 // THEME — MacBook-premium cinema palette
 // ═══════════════════════════════════════════════════════════════════
 const TH = {
-  bg: "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)",
+  bg: "linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)",
   mesh: "radial-gradient(900px 700px at 20% 5%, rgba(168,85,247,0.07), transparent 60%), radial-gradient(700px 500px at 85% 80%, color-mix(in srgb, var(--brand-primary,#FF6B35) 50%, transparent), transparent 60%)",
   panel: "linear-gradient(180deg,rgba(255,255,255,0.025),rgba(255,255,255,0.005))",
   panelGlass: "rgba(13,17,23,0.72)",

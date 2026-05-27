@@ -162,7 +162,7 @@ export default function ShiftGate({ children, cashier, onSwitchCashier, customer
 }
 
 const S = {
-  loading: { position: "fixed", inset: 0, background: "radial-gradient(ellipse 70% 55% at 50% 38%, rgba(40,44,58,0.5) 0%, transparent 70%), linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)", color: "#666", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", fontSize: 14 },
+  loading: { position: "fixed", inset: 0, background: "radial-gradient(ellipse 70% 55% at 50% 38%, rgba(70,76,98,0.45) 0%, transparent 70%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", color: "#666", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", fontSize: 14 },
   overlay: { position: "fixed", inset: 0, background: "linear-gradient(160deg,#0a0b0e 0%,#111317 100%)", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", padding: "40px", textAlign: "center", zIndex: 9999 },
   icon: { fontSize: 100, marginBottom: 16, opacity: 0.85, filter: "drop-shadow(0 0 20px color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent))" },
   title: { fontFamily: "'Inter',sans-serif", fontSize: 44, letterSpacing: 3, margin: "0 0 8px", color: "#F59E0B", fontWeight: 800 },

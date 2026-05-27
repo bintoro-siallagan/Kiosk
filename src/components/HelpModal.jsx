@@ -230,7 +230,7 @@ function Backdrop({ children, onClose }) {
 function Card({ children, onClose, title, accent }) {
   return (
     <div onClick={(e) => e.stopPropagation()} style={{
-      background: "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)",
+      background: "linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)",
       border: `1px solid ${accent}44`, borderRadius: 16,
       padding: 22, maxWidth: 560, width: "100%", maxHeight: "92vh", overflowY: "auto",
       color: "#e6edf3", fontFamily: "'Inter',sans-serif",

@@ -441,7 +441,7 @@ function PinModal({ staff, onCancel, onSuccess, verifyPin }) {
 const styles = {
   root: {
     minHeight: '100vh',
-    background: 'linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)',
+    background: 'linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)',
     backgroundAttachment: 'fixed',
     color: '#fff',
     padding: '20px 40px', fontFamily: "'Inter','SF Pro Display',system-ui,-apple-system,sans-serif",

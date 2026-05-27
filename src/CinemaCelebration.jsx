@@ -100,7 +100,7 @@ export default function CinemaCelebration({ order, apiBase = '', onDone }) {
 const S = {
   root: {
     position: 'fixed', inset: 0, zIndex: 10000,
-    background: 'linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)',
+    background: 'linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     fontFamily: "'Inter','system-ui',sans-serif", padding: 20, overflowY: 'auto',
     animation: 'karyaCelebrateFade 0.4s ease-out',

@@ -246,7 +246,7 @@ export default function POSCustomerPicker({ order, onContinue, onBack, onCancel 
 }
 
 const S = {
-  root: { minHeight:"100vh", background:"radial-gradient(ellipse 70% 55% at 50% 38%, rgba(40,44,58,0.5) 0%, transparent 70%), linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)", backgroundAttachment:"fixed", color:"#fff", fontFamily:"'Inter',sans-serif",
+  root: { minHeight:"100vh", background:"radial-gradient(ellipse 70% 55% at 50% 38%, rgba(70,76,98,0.45) 0%, transparent 70%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", backgroundAttachment:"fixed", color:"#fff", fontFamily:"'Inter',sans-serif",
     display:"flex", flexDirection:"column" },
   header: { display:"flex", alignItems:"center", gap:12,
     padding:"14px 24px", borderBottom:"1px solid rgba(255,255,255,0.06)", background:"rgba(13,17,23,0.7)", backdropFilter:"blur(20px) saturate(180%)", WebkitBackdropFilter:"blur(20px) saturate(180%)", position:"sticky", top:0, zIndex:10 },

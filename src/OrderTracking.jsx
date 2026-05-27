@@ -312,7 +312,7 @@ const T = {
     background:`
       radial-gradient(800px 600px at 30% 10%, rgba(245,158,11,0.04), transparent),
       radial-gradient(600px 400px at 80% 70%, rgba(52,211,153,0.03), transparent),
-      linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)
+      linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)
     `,
     backgroundAttachment:"fixed",
     color:"#fff",minHeight:"100vh",

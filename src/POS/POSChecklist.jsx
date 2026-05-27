@@ -145,7 +145,7 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
 }
 
 const S = {
-  root: { position: 'fixed', inset: 0, background: 'linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 10000, fontFamily: 'system-ui,-apple-system,sans-serif', padding: '24px 16px', overflowY: 'auto', WebkitOverflowScrolling: 'touch' },
+  root: { position: 'fixed', inset: 0, background: 'linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 10000, fontFamily: 'system-ui,-apple-system,sans-serif', padding: '24px 16px', overflowY: 'auto', WebkitOverflowScrolling: 'touch' },
   box: { background: "rgba(255,255,255,0.025)", borderRadius: 18, padding: '28px 30px', width: 'min(480px, 96vw)', border: '1px solid #2a2a2a', marginTop: 'max(20px, env(safe-area-inset-top))', marginBottom: 'max(40px, env(safe-area-inset-bottom))' },
   kicker: { fontSize: 12, fontWeight: 700, letterSpacing: 1.5 },
   title: { margin: '6px 0 2px', color: '#fff', fontSize: 24 },

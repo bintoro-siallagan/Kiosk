@@ -218,7 +218,7 @@ export default function CinemaStudioLayoutEditor({ studio, onClose, onSaved }) {
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)", zIndex: 20000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "'Inter',sans-serif" }}>
-      <div style={{ background: "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 22, width: "100%", maxWidth: 1200, maxHeight: "94vh", overflowY: "auto", color: "#e6edf3", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
+      <div style={{ background: "linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 22, width: "100%", maxWidth: 1200, maxHeight: "94vh", overflowY: "auto", color: "#e6edf3", boxShadow: "0 24px 64px rgba(0,0,0,0.6)" }}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18, gap: 12 }}>
           <div>

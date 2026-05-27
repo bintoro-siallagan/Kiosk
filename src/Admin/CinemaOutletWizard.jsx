@@ -158,7 +158,7 @@ export default function CinemaOutletWizard({ apiBase, onClose, onDone }) {
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(12px)", zIndex: 15000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "'Inter',sans-serif" }}>
-      <div style={{ background: "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 880, maxHeight: "94vh", overflowY: "auto", color: "#e6edf3" }}>
+      <div style={{ background: "linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16, padding: 24, width: "100%", maxWidth: 880, maxHeight: "94vh", overflowY: "auto", color: "#e6edf3" }}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
           <div>

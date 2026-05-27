@@ -22,8 +22,8 @@
   color: var(--text);
   /* Body bg = PREMIUM_BG (radial spotlight + linear charcoal navy gradient) — same as all surfaces */
   background:
-    radial-gradient(ellipse 70% 55% at 50% 38%, rgba(40,44,58,0.5) 0%, transparent 70%),
-    linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%);
+    radial-gradient(ellipse 70% 55% at 50% 38%, rgba(70,76,98,0.45) 0%, transparent 70%),
+    linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%);
   background-attachment: fixed;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -37,7 +37,13 @@
 
 html, body {
   margin: 0;
-  background: #08090f;
+  /* Layered PREMIUM_BG: warm spotlight + cool secondary + base charcoal gradient
+     — lighter than pure #08090f, gives depth without feeling pitch black */
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 20%, rgba(70,76,98,0.45) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 45% at 75% 80%, rgba(50,55,72,0.35) 0%, transparent 65%),
+    linear-gradient(160deg, #12141c 0%, #181b25 50%, #22253a 100%) fixed;
+  background-attachment: fixed;
   color: #cdd5df;
   color-scheme: dark;
 }

@@ -955,7 +955,7 @@ const KIOSK_CSS = `
   @keyframes bootFadeIn{0%{opacity:0;filter:brightness(0)}55%{opacity:.85}100%{opacity:1}}
   .boot-logo{animation:bootFadeIn 1.8s cubic-bezier(.4,0,.2,1) forwards,bootGlow 5.5s ease-in-out 1.8s infinite;will-change:filter,opacity}
   /* Match AdminHome background — deep navy charcoal, not pure black */
-  .boot-stage{background:radial-gradient(ellipse 70% 55% at 50% 38%,rgba(40,44,58,0.5) 0%,transparent 70%),linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)!important;background-attachment:fixed!important}
+  .boot-stage{background:radial-gradient(ellipse 70% 55% at 50% 38%,rgba(70,76,98,0.45) 0%,transparent 70%),linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)!important;background-attachment:fixed!important}
   .boot-stage > div{padding-top:6vh!important}
   .aurora-blob{position:absolute;border-radius:50%;filter:blur(100px);pointer-events:none;will-change:transform}
   .aurora-1{top:-15%;left:-15%;width:65%;height:65%;background:radial-gradient(circle,var(--brand-primary,#FF6B35) 0%,transparent 70%);opacity:.22;animation:aurora 22s ease-in-out infinite}
@@ -1032,7 +1032,7 @@ const KIOSK_CSS = `
 `;
 
 // ─── PREMIUM AESTHETIC TOKENS ─────────────────────────────────────────────────
-const PREMIUM_BG = "linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)";
+const PREMIUM_BG = "linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)";
 const PREMIUM_OVERLAY = "radial-gradient(800px 600px at 30% 10%,rgba(245,158,11,0.04),transparent),radial-gradient(600px 400px at 80% 70%,rgba(59,130,246,0.03),transparent)";
 const GLASS_BG = "rgba(13,17,23,0.7)";
 // Opaque dark card — fallback ke #0d1117 walaupun body putih (light-mode browser).
