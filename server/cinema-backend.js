@@ -5488,20 +5488,77 @@ function setupCinema(app, opts = {}) {
   });
 
   // ── FILM RATINGS ──────────────────────────────────────────────────────
+  // Auth: customer wajib punya purchase yg sudah lunas utk film ini
+  // Anti-spam: 1 purchase = 1 review per film
+  try { db.exec("ALTER TABLE cinema_film_ratings ADD COLUMN purchase_id TEXT"); } catch {}
+  try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_cfr_unique_purchase_film ON cinema_film_ratings(purchase_id, film_id) WHERE purchase_id IS NOT NULL AND purchase_id <> ''"); } catch {}
+
   router.post('/films/:id/rate', (req, res) => {
     const b = req.body || {};
     const r = parseInt(b.rating, 10);
     if (!r || r < 1 || r > 5) return res.status(400).json({ ok: false, error: 'Rating 1-5 wajib' });
-    const film = db.prepare(`SELECT id FROM cinema_films WHERE id = ?`).get(req.params.id);
+    const filmId = parseInt(req.params.id, 10);
+    const film = db.prepare(`SELECT id, title FROM cinema_films WHERE id = ?`).get(filmId);
     if (!film) return res.status(404).json({ ok: false, error: 'Film tidak ditemukan' });
-    const info = db.prepare(`INSERT INTO cinema_film_ratings (film_id, rating, comment, customer_name, customer_phone, ticket_code) VALUES (?,?,?,?,?,?)`)
-      .run(req.params.id, r, b.comment || '', b.customer_name || '', b.customer_phone || '', b.ticket_code || '');
+
+    const purchase_id = String(b.purchase_id || '').trim().toUpperCase();
+    const phone = String(b.customer_phone || '').trim();
+
+    // Strict: wajib purchase_id yg cocok phone + film + payment_status paid
+    if (!purchase_id) return res.status(400).json({ ok: false, error: 'purchase_id wajib (review hanya utk yg sudah nonton)' });
+    if (!phone) return res.status(400).json({ ok: false, error: 'customer_phone wajib' });
+    const own = db.prepare(`
+      SELECT COUNT(*) AS c FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      WHERE t.purchase_id = ? AND s.film_id = ? AND t.buyer_phone = ?
+        AND (t.payment_status IS NULL OR t.payment_status IN ('paid','settlement','capture'))
+    `).get(purchase_id, filmId, phone);
+    if (!own || !own.c) return res.status(403).json({ ok: false, error: 'Tidak menemukan booking sah utk film ini' });
+
+    // Anti double-review
+    const dup = db.prepare(`SELECT id FROM cinema_film_ratings WHERE purchase_id = ? AND film_id = ?`).get(purchase_id, filmId);
+    if (dup) return res.status(409).json({ ok: false, error: 'Review utk booking ini sudah pernah dikirim' });
+
+    const info = db.prepare(`INSERT INTO cinema_film_ratings
+      (film_id, rating, comment, customer_name, customer_phone, ticket_code, purchase_id)
+      VALUES (?,?,?,?,?,?,?)`)
+      .run(filmId, r, b.comment || '', b.customer_name || '', phone, b.ticket_code || '', purchase_id);
     res.json({ ok: true, id: info.lastInsertRowid });
   });
+
   router.get('/films/:id/ratings', (req, res) => {
-    const rows = db.prepare(`SELECT * FROM cinema_film_ratings WHERE film_id = ? ORDER BY created_at DESC LIMIT 100`).all(req.params.id);
-    const agg  = db.prepare(`SELECT ROUND(AVG(rating),2) avg, COUNT(*) total FROM cinema_film_ratings WHERE film_id = ?`).get(req.params.id);
-    res.json({ ratings: rows, avg: agg.avg, total: agg.total });
+    const rows = db.prepare(`
+      SELECT id, rating, comment, customer_name, created_at
+      FROM cinema_film_ratings WHERE film_id = ? AND rating IS NOT NULL
+      ORDER BY created_at DESC LIMIT 100
+    `).all(req.params.id);
+    const agg = db.prepare(`SELECT ROUND(AVG(rating),2) avg, COUNT(*) total FROM cinema_film_ratings WHERE film_id = ?`).get(req.params.id);
+    // Distribusi 1..5
+    const dist = { 1:0, 2:0, 3:0, 4:0, 5:0 };
+    db.prepare(`SELECT rating, COUNT(*) c FROM cinema_film_ratings WHERE film_id = ? GROUP BY rating`)
+      .all(req.params.id).forEach(r => { if (dist[r.rating] !== undefined) dist[r.rating] = r.c; });
+    res.json({ ratings: rows, avg: agg.avg, total: agg.total, distribution: dist });
+  });
+
+  // List film yg dpt di-review oleh customer (sudah nonton, belum direview)
+  router.get('/reviewable-films', (req, res) => {
+    const phone = String(req.query.phone || '').trim();
+    if (!phone) return res.status(400).json({ ok: false, error: 'phone required' });
+    const rows = db.prepare(`
+      SELECT DISTINCT t.purchase_id, s.film_id, f.title, f.poster_url, s.show_date, s.start_time
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_films f     ON f.id = s.film_id
+      WHERE t.buyer_phone = ?
+        AND t.purchase_id IS NOT NULL
+        AND (t.payment_status IS NULL OR t.payment_status IN ('paid','settlement','capture'))
+        AND NOT EXISTS (
+          SELECT 1 FROM cinema_film_ratings r
+          WHERE r.purchase_id = t.purchase_id AND r.film_id = s.film_id
+        )
+      ORDER BY s.show_date DESC, s.start_time DESC LIMIT 50
+    `).all(phone);
+    res.json({ ok: true, items: rows });
   });
 
   // ── STUDIO EVENT BOOKING ──────────────────────────────────────────────

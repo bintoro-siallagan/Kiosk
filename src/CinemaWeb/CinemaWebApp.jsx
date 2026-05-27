@@ -46,6 +46,40 @@ function FilmGridSkeleton({ count = 6 }) {
   );
 }
 
+// Star rating display (read-only). value 0..5 (decimals ok).
+function Stars({ value = 0, size = 14, color = "#fbbf24", muted = "#3f3f46" }) {
+  const v = Math.max(0, Math.min(5, Number(value) || 0));
+  return (
+    <span style={{ position: "relative", display: "inline-block", lineHeight: 1, fontSize: size, letterSpacing: 1, fontFamily: "sans-serif" }} aria-label={`Rating ${v.toFixed(1)} dari 5`}>
+      <span style={{ color: muted }}>★★★★★</span>
+      <span style={{ color, position: "absolute", inset: 0, overflow: "hidden", width: `${(v / 5) * 100}%`, whiteSpace: "nowrap" }}>★★★★★</span>
+    </span>
+  );
+}
+
+// Interactive star picker (1..5). onChange(n) called on click.
+function StarsPicker({ value = 0, onChange, size = 28, color = "#fbbf24" }) {
+  const [hover, setHover] = useState(0);
+  const shown = hover || value;
+  return (
+    <div style={{ display: "inline-flex", gap: 4 }} onMouseLeave={() => setHover(0)}>
+      {[1, 2, 3, 4, 5].map(n => (
+        <button key={n} type="button"
+          onClick={() => onChange(n)}
+          onMouseEnter={() => setHover(n)}
+          style={{
+            background: "transparent", border: "none", cursor: "pointer",
+            fontSize: size, lineHeight: 1, padding: 2,
+            color: n <= shown ? color : "#3f3f46",
+            transition: "transform 0.1s, color 0.15s",
+            transform: n === hover ? "scale(1.15)" : "scale(1)",
+          }}
+          aria-label={`Beri ${n} bintang`}>★</button>
+      ))}
+    </div>
+  );
+}
+
 // Load Midtrans Snap.js once per page lifecycle. Returns Promise resolved when
 // window.snap is ready. Idempotent — multiple calls share the same load.
 let _snapPromise = null;
@@ -83,7 +117,7 @@ const C = {
   red: "#ef4444",
 };
 
-const STEPS = ["outlet", "films", "filmDetail", "showtime", "seats", "bundles", "checkout", "success", "about", "history", "movies", "promo", "studio", "locations"];
+const STEPS = ["outlet", "films", "filmDetail", "showtime", "seats", "bundles", "checkout", "success", "about", "history", "movies", "promo", "studio", "locations", "faq"];
 
 export default function CinemaWebApp() {
   const [step, setStep] = useState(() => {
@@ -323,6 +357,9 @@ export default function CinemaWebApp() {
         {step === "locations" && (
           <LocationsPage brandPrimary={brandPrimary} onPick={pickOutlet} />
         )}
+        {step === "faq" && (
+          <FAQPage brandPrimary={brandPrimary} />
+        )}
       </main>
       <Footer brand={brand} brandPrimary={brandPrimary} onAbout={() => goTo("about")} onNav={(t) => goTo(t)} />
       {signInOpen && <SignInModal onClose={() => setSignInOpen(false)} onSignIn={handleSignIn} brandPrimary={brandPrimary} />}
@@ -460,14 +497,17 @@ function HistoryPage({ session, brandPrimary, onSignInClick }) {
   const [promos, setPromos] = useState([]);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  const [reviewable, setReviewable] = useState({});  // key: `${purchase_id}|${film_id}` => true if NOT reviewed yet
+
+  const loadAll = useCallback(() => {
     if (!session?.phone) return;
-    // Load 3 in parallel: bookings, fresh loyalty, active promos
+    // Load 4 in parallel: bookings, fresh loyalty, active promos, reviewable list
     Promise.all([
       fetch(`${API_HOST}/api/cinema/tickets?phone=${encodeURIComponent(session.phone)}`).then(r => r.json()).catch(() => []),
       fetch(`${API_HOST}/api/cinema/loyalty-points?phone=${encodeURIComponent(session.phone)}`).then(r => r.json()).catch(() => null),
       fetch(`${API_HOST}/api/cinema/promotions/active`).then(r => r.json()).catch(() => []),
-    ]).then(([t, l, p]) => {
+      fetch(`${API_HOST}/api/cinema/reviewable-films?phone=${encodeURIComponent(session.phone)}`).then(r => r.json()).catch(() => ({ items: [] })),
+    ]).then(([t, l, p, rv]) => {
       const list = Array.isArray(t.tickets) ? t.tickets : Array.isArray(t) ? t : [];
       const grouped = list.reduce((acc, x) => {
         const pid = x.purchase_id || `single-${x.id}`;
@@ -476,11 +516,21 @@ function HistoryPage({ session, brandPrimary, onSignInClick }) {
         acc[pid].total += (x.price || 0);
         return acc;
       }, {});
-      setBookings(Object.values(grouped).sort((a, b) => (b.sold_at || 0) - (a.sold_at || 0)));
+      // Mark reviewed = true kalau (purchase_id, film_id) TIDAK ada di reviewable list
+      const reviewableSet = new Set((rv.items || []).map(i => `${i.purchase_id}|${i.film_id}`));
+      const items = Object.values(grouped).map(b => ({ ...b, reviewed: b.film_id && b.purchase_id && !reviewableSet.has(`${b.purchase_id}|${b.film_id}`) }));
+      setBookings(items.sort((a, b) => (b.sold_at || 0) - (a.sold_at || 0)));
       setLoyalty(l);
       setPromos(p.promotions || p || []);
+      setReviewable(reviewableSet);
     }).catch(e => setError(e.message));
   }, [session?.phone]);
+
+  useEffect(() => { loadAll(); }, [loadAll]);
+
+  const onReviewed = useCallback((pid, fid) => {
+    setBookings(prev => (prev || []).map(b => (b.purchase_id === pid && b.film_id === fid) ? { ...b, reviewed: true } : b));
+  }, []);
 
   if (!session) return (
     <div style={{ padding: "60px 0", textAlign: "center", maxWidth: 480, margin: "0 auto" }}>
@@ -534,7 +584,7 @@ function HistoryPage({ session, brandPrimary, onSignInClick }) {
             <div style={{ marginBottom: 28 }}>
               <h2 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 12 }}>🎟️ Booking Aktif ({upcoming.length})</h2>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 320px), 1fr))", gap: 12 }}>
-                {upcoming.map(b => <BookingCard key={b.purchase_id} b={b} brandPrimary={brandPrimary} upcoming />)}
+                {upcoming.map(b => <BookingCard key={b.purchase_id} b={b} brandPrimary={brandPrimary} upcoming session={session} onReviewed={onReviewed} />)}
               </div>
             </div>
           )}
@@ -566,7 +616,7 @@ function HistoryPage({ session, brandPrimary, onSignInClick }) {
             <div>
               <h2 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 12 }}>📜 History Pembelian ({past.length})</h2>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {past.map(b => <BookingCard key={b.purchase_id} b={b} brandPrimary={brandPrimary} />)}
+                {past.map(b => <BookingCard key={b.purchase_id} b={b} brandPrimary={brandPrimary} session={session} onReviewed={onReviewed} />)}
               </div>
             </div>
           ) : upcoming.length === 0 && (
@@ -582,15 +632,16 @@ function HistoryPage({ session, brandPrimary, onSignInClick }) {
   );
 }
 
-// BookingCard with mini QR + re-order
-function BookingCard({ b, brandPrimary, upcoming }) {
+// BookingCard with mini QR + re-order + post-watch review
+function BookingCard({ b, brandPrimary, upcoming, session, onReviewed }) {
   const [qrSrc, setQrSrc] = useState(null);
+  const [showReview, setShowReview] = useState(false);
   useEffect(() => {
     if (!upcoming || !b.purchase_id) return;
     QRCode.toDataURL(`${window.location.origin}/?purchase=${b.purchase_id}`, { width: 140, margin: 1, color: { dark: "#000", light: "#fff" } })
       .then(setQrSrc).catch(() => {});
   }, [b.purchase_id, upcoming]);
-  const reorderUrl = b.film_id ? `/?movies=1&film=${b.film_id}` : null;
+  const canReview = !upcoming && b.film_id && b.purchase_id && session?.phone && !b.reviewed;
   return (
     <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14, display: "flex", gap: 14 }}>
       {upcoming && qrSrc && (
@@ -602,16 +653,23 @@ function BookingCard({ b, brandPrimary, upcoming }) {
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, gap: 8 }}>
           <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{b.film_title || "Booking"}</div>
           {upcoming && <span style={{ fontSize: 10, fontWeight: 800, color: "#10b981", background: "rgba(16,185,129,0.15)", padding: "2px 8px", borderRadius: 999, flexShrink: 0 }}>AKTIF</span>}
+          {b.reviewed && <span style={{ fontSize: 10, fontWeight: 800, color: "#fbbf24", background: "rgba(251,191,36,0.15)", padding: "2px 8px", borderRadius: 999, flexShrink: 0 }}>✓ REVIEWED</span>}
         </div>
         <div style={{ fontSize: 11, color: C.sub, marginBottom: 4 }}>📅 {b.show_date} · {b.start_time}</div>
         <div style={{ fontSize: 11, color: C.dim, marginBottom: 8, fontFamily: "'Geist Mono',monospace" }}>💺 {b.tickets.map(t => t.seat).join(", ")} · {b.purchase_id}</div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
           <div style={{ fontSize: 14, fontWeight: 800, color: brandPrimary, fontFamily: "'Geist Mono',monospace" }}>{rp(b.total)}</div>
-          <div style={{ display: "flex", gap: 6 }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             <a href={`/?purchase=${b.purchase_id}`} target="_blank" rel="noopener noreferrer" style={{
               padding: "5px 10px", background: brandPrimary + "22", border: `1px solid ${brandPrimary}55`, color: brandPrimary,
               borderRadius: 6, fontSize: 11, fontWeight: 700, textDecoration: "none", fontFamily: "inherit",
             }}>🎫 E-Ticket</a>
+            {canReview && (
+              <button onClick={() => setShowReview(true)} style={{
+                padding: "5px 10px", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.55)", color: "#fbbf24",
+                borderRadius: 6, fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+              }}>⭐ Beri Review</button>
+            )}
             {!upcoming && (
               <a href="/?movies=1" style={{
                 padding: "5px 10px", background: "rgba(255,255,255,0.06)", border: `1px solid ${C.border}`, color: C.text,
@@ -619,6 +677,99 @@ function BookingCard({ b, brandPrimary, upcoming }) {
               }}>🔁 Pesan Lagi</a>
             )}
           </div>
+        </div>
+      </div>
+      {showReview && (
+        <ReviewModal
+          booking={b}
+          session={session}
+          brandPrimary={brandPrimary}
+          onClose={() => setShowReview(false)}
+          onSubmitted={() => { setShowReview(false); onReviewed?.(b.purchase_id, b.film_id); }}
+        />
+      )}
+    </div>
+  );
+}
+
+// Modal: kirim review utk film yg sudah ditonton
+function ReviewModal({ booking, session, brandPrimary, onClose, onSubmitted }) {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const submit = async () => {
+    if (!rating) { setErr("Pilih bintang dulu (1-5)"); return; }
+    setBusy(true); setErr("");
+    try {
+      const res = await fetch(`${API_HOST}/api/cinema/films/${booking.film_id}/rate`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rating,
+          comment: comment.trim(),
+          customer_name: session?.name || "",
+          customer_phone: session?.phone || "",
+          purchase_id: booking.purchase_id,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      onSubmitted?.();
+    } catch (e) { setErr(e.message); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 20,
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: 24,
+        maxWidth: 440, width: "100%", boxShadow: "0 24px 60px rgba(0,0,0,0.6)",
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+          <div>
+            <div style={{ fontSize: 11, color: brandPrimary, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 4 }}>⭐ BERI REVIEW</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>{booking.film_title}</div>
+            <div style={{ fontSize: 11, color: C.dim, marginTop: 2, fontFamily: "'Geist Mono',monospace" }}>{booking.purchase_id}</div>
+          </div>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: C.dim, fontSize: 22, cursor: "pointer", padding: 0, lineHeight: 1 }}>×</button>
+        </div>
+        <div style={{ margin: "20px 0 16px", textAlign: "center" }}>
+          <div style={{ fontSize: 11, color: C.sub, marginBottom: 10, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>RATING ANDA</div>
+          <StarsPicker value={rating} onChange={setRating} size={36} />
+          {rating > 0 && (
+            <div style={{ marginTop: 10, fontSize: 12, color: "#fbbf24", fontWeight: 700 }}>
+              {["", "Kurang", "Lumayan", "Cukup Baik", "Bagus", "Luar Biasa"][rating]}
+            </div>
+          )}
+        </div>
+        <label style={{ display: "block", fontSize: 11, color: C.sub, marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>KOMENTAR (opsional)</label>
+        <textarea
+          value={comment}
+          onChange={e => setComment(e.target.value)}
+          placeholder="Ceritakan pengalaman menonton Anda…"
+          rows={4}
+          maxLength={500}
+          style={{
+            width: "100%", boxSizing: "border-box", background: "rgba(0,0,0,0.35)", border: `1px solid ${C.border}`,
+            color: "#fff", borderRadius: 8, padding: 10, fontSize: 13, fontFamily: "inherit", resize: "vertical",
+          }}
+        />
+        <div style={{ fontSize: 10, color: C.dim, textAlign: "right", marginTop: 4 }}>{comment.length}/500</div>
+        {err && <div style={{ marginTop: 10, padding: 10, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 8, color: "#fca5a5", fontSize: 12 }}>{err}</div>}
+        <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+          <button onClick={onClose} disabled={busy} style={{
+            flex: 1, padding: "12px 0", background: "rgba(255,255,255,0.06)", border: `1px solid ${C.border}`, color: C.text,
+            borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit",
+          }}>Batal</button>
+          <button onClick={submit} disabled={busy || !rating} style={{
+            flex: 2, padding: "12px 0", background: rating ? brandPrimary : "rgba(255,255,255,0.1)", color: "#fff", border: "none",
+            borderRadius: 10, fontSize: 13, fontWeight: 800, cursor: (busy || !rating) ? "not-allowed" : "pointer", fontFamily: "inherit",
+            opacity: busy ? 0.6 : 1,
+          }}>{busy ? "Mengirim…" : "Kirim Review"}</button>
         </div>
       </div>
     </div>
@@ -668,6 +819,12 @@ function FilmGroup({ title, films, onPick, brandPrimary }) {
             <div style={{ padding: "10px 12px 12px" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", marginBottom: 4 }}>{f.title}</div>
               <div style={{ fontSize: 11, color: C.dim }}>{f.genre || "—"} · {f.duration_min || 0}mnt</div>
+              {f.ratings_count > 0 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5 }}>
+                  <Stars value={f.avg_rating || 0} size={10} />
+                  <span style={{ fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{Number(f.avg_rating || 0).toFixed(1)} ({f.ratings_count})</span>
+                </div>
+              )}
             </div>
           </button>
         ))}
@@ -802,6 +959,125 @@ function LocationsPage({ brandPrimary, onPick }) {
             </div>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
+// FAQ PAGE — frequently asked questions dgn accordion
+// ════════════════════════════════════════════════════════════════════
+const FAQ_GROUPS = [
+  {
+    title: "🎟️ Pemesanan Tiket",
+    items: [
+      { q: "Bagaimana cara pesan tiket online?", a: "Pilih lokasi cinema → pilih film → pilih jadwal → pilih kursi → tambah F&B (opsional) → checkout & bayar. Tiket akan dikirim via WhatsApp dalam bentuk QR code." },
+      { q: "Bayar di mana saja?", a: "Bayar di counter cinema saat pengambilan tiket (cash/QRIS/kartu) atau via Midtrans online (QRIS, e-wallet, virtual account). Pilih metode saat checkout." },
+      { q: "Bisa pilih kursi sendiri?", a: "Ya, peta kursi real-time tersedia. Kursi yang sudah dibeli orang lain akan terblok otomatis sehingga tidak ada double-booking." },
+      { q: "Apakah harus print tiket?", a: "Tidak perlu. Cukup tunjukkan QR code di counter atau pintu masuk studio. Staff akan scan dan print tiket fisik untuk Anda." },
+      { q: "Berapa lama sebelum showtime saya bisa booking?", a: "Booking dibuka sampai 15 menit sebelum showtime dimulai. Kami sarankan booking lebih awal untuk dapat kursi terbaik." },
+    ],
+  },
+  {
+    title: "💳 Pembayaran & Refund",
+    items: [
+      { q: "Metode pembayaran apa saja?", a: "QRIS, kartu kredit/debit, e-wallet (GoPay, OVO, Dana, ShopeePay), Virtual Account (BCA, BNI, Mandiri, BRI, Permata), Alfamart/Indomaret." },
+      { q: "Apakah ada biaya admin?", a: "Tidak ada biaya tambahan. Harga yang Anda lihat sudah termasuk PPN 11%." },
+      { q: "Bisakah refund tiket?", a: "Tiket yang sudah dibeli tidak bisa di-refund dalam bentuk uang. Namun bisa reschedule ke jadwal lain di hari yang sama (subject to availability) dengan menghubungi customer service min. 2 jam sebelum showtime." },
+      { q: "Apa yang terjadi kalau film dibatalkan?", a: "Jika film dibatalkan dari pihak kami, Anda akan dihubungi langsung dan mendapatkan full refund atau pilihan reschedule." },
+    ],
+  },
+  {
+    title: "🎁 Promo & Loyalty",
+    items: [
+      { q: "Bagaimana cara pakai kode promo?", a: "Di halaman checkout, masukkan kode promo di kolom yang tersedia, lalu klik Apply. Diskon akan otomatis dihitung." },
+      { q: "Bagaimana cara dapat poin loyalty?", a: "Setiap booking otomatis dapat poin: Rp 5.000 = 1 poin. Tidak perlu daftar terpisah, cukup masukkan nomor HP yang sama setiap booking." },
+      { q: "Bagaimana cara tukar poin?", a: "100 poin = Rp 1.000 diskon. Saat checkout, pilih jumlah poin yang ingin di-redeem (kelipatan 100). Diskon akan langsung diterapkan." },
+      { q: "Apakah poin bisa kadaluarsa?", a: "Poin berlaku 12 bulan sejak transaksi terakhir. Tetap aktif booking untuk perpanjang masa berlaku." },
+    ],
+  },
+  {
+    title: "🎬 Film & Studio",
+    items: [
+      { q: "Format film apa saja yang tersedia?", a: "2D, 3D, IMAX, dan 4DX (tergantung outlet). Format tersedia per jadwal akan ditampilkan saat pilih showtime." },
+      { q: "Apa arti rating film (SU, 13+, 17+, D21)?", a: "SU = Semua Umur, 13+ = remaja 13 tahun ke atas, 17+ = remaja 17 tahun ke atas, D21 = dewasa 21 tahun ke atas. Mohon bawa identitas valid jika diminta." },
+      { q: "Apakah ada subtitle Indonesia?", a: "Sebagian besar film impor disediakan subtitle Indonesia. Info subtitle ada di halaman detail film." },
+      { q: "Bisakah booking studio untuk event privat?", a: "Ya, kami menyediakan booking studio penuh untuk event privat (corporate, ulang tahun, wedding). Cek menu Studio untuk request." },
+    ],
+  },
+  {
+    title: "📱 Akun & E-Ticket",
+    items: [
+      { q: "Apakah harus daftar akun dulu?", a: "Tidak perlu daftar terpisah. Cukup masukkan nomor HP saat booking; sistem otomatis buat profile member untuk Anda." },
+      { q: "Bagaimana akses booking history?", a: "Klik tombol Sign In di header → masukkan nomor HP yang digunakan saat booking. Anda akan lihat semua booking aktif & past, poin loyalty, dan promo." },
+      { q: "Tidak terima WhatsApp e-tiket?", a: "Cek folder spam atau pastikan nomor WA aktif. Jika tetap tidak terima, hubungi customer service via WA atau cek di halaman akun Anda untuk download manual." },
+      { q: "Bisakah transfer tiket ke orang lain?", a: "Tiket tidak diatasnamakan, jadi bisa dipakai siapa saja yang membawa QR code-nya. Pastikan jaga QR code dengan baik." },
+    ],
+  },
+];
+
+function FAQPage({ brandPrimary }) {
+  const [openKey, setOpenKey] = useState("0-0");  // group 0 item 0 default open
+  return (
+    <div style={{ padding: "40px 0 60px", maxWidth: 820, margin: "0 auto" }}>
+      <div style={{
+        textAlign: "center", marginBottom: 36, padding: "32px 20px",
+        background: `linear-gradient(135deg, ${brandPrimary}15, rgba(168,85,247,0.05))`,
+        border: `1px solid ${brandPrimary}33`, borderRadius: 18,
+      }}>
+        <div style={{ fontSize: 11, color: brandPrimary, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 8, textTransform: "uppercase" }}>FAQ · BANTUAN</div>
+        <h1 style={{ fontSize: 30, fontWeight: 900, letterSpacing: -1, margin: 0, marginBottom: 8, color: "#fff" }}>Pertanyaan Umum</h1>
+        <p style={{ fontSize: 13.5, color: C.sub, margin: 0, lineHeight: 1.6 }}>
+          Jawaban cepat untuk pertanyaan paling sering. Tidak menemukan jawaban? <a href="https://wa.me/6285190062368" target="_blank" rel="noopener noreferrer" style={{ color: brandPrimary, fontWeight: 700 }}>Hubungi CS via WhatsApp</a>.
+        </p>
+      </div>
+      {FAQ_GROUPS.map((group, gi) => (
+        <div key={gi} style={{ marginBottom: 28 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 12, letterSpacing: -0.3 }}>{group.title}</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {group.items.map((it, ii) => {
+              const key = `${gi}-${ii}`;
+              const open = openKey === key;
+              return (
+                <div key={key} style={{
+                  background: C.card, border: `1px solid ${open ? brandPrimary + "55" : C.border}`, borderRadius: 12,
+                  overflow: "hidden", transition: "border-color 0.15s",
+                }}>
+                  <button onClick={() => setOpenKey(open ? null : key)} style={{
+                    width: "100%", textAlign: "left", padding: "14px 16px",
+                    background: "transparent", border: "none", cursor: "pointer", color: "#fff",
+                    fontFamily: "inherit", fontSize: 13.5, fontWeight: 700,
+                    display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
+                  }}>
+                    <span>{it.q}</span>
+                    <span style={{
+                      fontSize: 18, color: open ? brandPrimary : C.dim, transition: "transform 0.2s",
+                      transform: open ? "rotate(45deg)" : "rotate(0)", lineHeight: 1, flexShrink: 0,
+                    }}>+</span>
+                  </button>
+                  {open && (
+                    <div style={{
+                      padding: "0 16px 16px", fontSize: 13, color: C.sub, lineHeight: 1.7,
+                      borderTop: `1px solid ${C.border}`, paddingTop: 14, marginTop: -1,
+                    }}>{it.a}</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+      <div style={{
+        marginTop: 30, padding: 24, background: `linear-gradient(135deg, ${brandPrimary}15, rgba(0,0,0,0.2))`,
+        border: `1px solid ${brandPrimary}44`, borderRadius: 14, textAlign: "center",
+      }}>
+        <div style={{ fontSize: 20, marginBottom: 8 }}>💬</div>
+        <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 6 }}>Masih ada pertanyaan?</div>
+        <p style={{ fontSize: 12.5, color: C.sub, margin: 0, marginBottom: 14 }}>Tim customer service kami siap bantu 24/7.</p>
+        <a href="https://wa.me/6285190062368" target="_blank" rel="noopener noreferrer" style={{
+          display: "inline-block", padding: "10px 22px", background: brandPrimary, color: "#fff", textDecoration: "none",
+          borderRadius: 10, fontSize: 13, fontWeight: 800, boxShadow: `0 6px 18px ${brandPrimary}55`,
+        }}>💬 Chat WhatsApp CS</a>
       </div>
     </div>
   );
@@ -991,10 +1267,10 @@ function Footer({ brand, brandPrimary, onAbout, onNav }) {
           {/* Column 3: Help */}
           <div>
             <FooterHeading>Bantuan</FooterHeading>
-            <FooterLink>FAQ</FooterLink>
-            <FooterLink>Cara Pesan Tiket</FooterLink>
-            <FooterLink>Kebijakan Refund</FooterLink>
-            <FooterLink>Loyalty Program</FooterLink>
+            <FooterLink onClick={() => onNav?.("faq")}>FAQ</FooterLink>
+            <FooterLink onClick={() => onNav?.("faq")}>Cara Pesan Tiket</FooterLink>
+            <FooterLink onClick={() => onNav?.("faq")}>Kebijakan Refund</FooterLink>
+            <FooterLink onClick={() => onNav?.("faq")}>Loyalty Program</FooterLink>
             <FooterLink href="https://wa.me/6285190062368">Customer Service</FooterLink>
           </div>
 
@@ -1748,6 +2024,12 @@ function FilmsGrid({ outlet, onPickFilm, brandPrimary }) {
                 <div style={{ padding: "12px 12px 14px" }}>
                   <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.title}</div>
                   <div style={{ fontSize: 11, color: C.dim }}>{f.genre || "—"} · {f.duration_min || 0} mnt</div>
+                  {f.ratings_count > 0 && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+                      <Stars value={f.avg_rating || 0} size={11} />
+                      <span style={{ fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{Number(f.avg_rating || 0).toFixed(1)} ({f.ratings_count})</span>
+                    </div>
+                  )}
                   <div style={{ marginTop: 8, fontSize: 11, color: brandPrimary, fontWeight: 700 }}>{showCount} jadwal hari ini →</div>
                 </div>
               </button>
@@ -1815,6 +2097,13 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary }) {
                 <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>·</span>
                 <span style={{ fontSize: 13, color: "rgba(255,255,255,0.85)" }}>🌐 {film.language}</span>
               </>}
+              {film.ratings_count > 0 && <>
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>·</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                  <Stars value={film.avg_rating || 0} size={13} />
+                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", fontFamily: "'Geist Mono',monospace" }}>{Number(film.avg_rating || 0).toFixed(1)} ({film.ratings_count})</span>
+                </span>
+              </>}
             </div>
             <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
               {formats.map(f => (
@@ -1881,6 +2170,80 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary }) {
           {film.subtitle && <MetaItem label="Subtitle" value={film.subtitle} />}
           <MetaItem label="Format" value={formats.join(" · ")} />
         </div>
+      </div>
+
+      {/* Reviews from penonton */}
+      <ReviewsSection filmId={film.id} brandPrimary={brandPrimary} />
+    </div>
+  );
+}
+
+// Reviews list + distribusi bintang, fetch per-film
+function ReviewsSection({ filmId, brandPrimary }) {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    setData(null); setError(null);
+    fetch(`${API_HOST}/api/cinema/films/${filmId}/ratings`)
+      .then(r => { if (!r.ok) throw new Error(`ratings ${r.status}`); return r.json(); })
+      .then(setData).catch(setError);
+  }, [filmId]);
+
+  if (error) return null;
+  if (!data) return (
+    <div style={{ marginTop: 20 }}>
+      <Skeleton h={16} w={200} style={{ marginBottom: 12 }} />
+      <Skeleton h={80} style={{ borderRadius: 14 }} />
+    </div>
+  );
+  if (!data.total) return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 18, marginTop: 20 }}>
+      <div style={{ fontSize: 11, color: brandPrimary, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 8, textTransform: "uppercase" }}>⭐ Ulasan Penonton</div>
+      <div style={{ fontSize: 13, color: C.dim }}>Belum ada review. Jadi yang pertama setelah nonton!</div>
+    </div>
+  );
+
+  const max = Math.max(1, ...Object.values(data.distribution || {}));
+  return (
+    <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 18, marginTop: 20 }}>
+      <div style={{ fontSize: 11, color: brandPrimary, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 14, textTransform: "uppercase" }}>⭐ Ulasan Penonton ({data.total})</div>
+      <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 24, marginBottom: 18, alignItems: "center" }}>
+        <div style={{ textAlign: "center", padding: "0 14px", borderRight: `1px solid ${C.border}` }}>
+          <div style={{ fontSize: 42, fontWeight: 900, color: "#fff", lineHeight: 1, fontFamily: "'Geist Mono',monospace" }}>{Number(data.avg || 0).toFixed(1)}</div>
+          <div style={{ marginTop: 6 }}><Stars value={data.avg || 0} size={14} /></div>
+          <div style={{ fontSize: 10, color: C.dim, marginTop: 4 }}>{data.total} review</div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {[5, 4, 3, 2, 1].map(n => {
+            const count = data.distribution?.[n] || 0;
+            const pct = (count / max) * 100;
+            return (
+              <div key={n} style={{ display: "grid", gridTemplateColumns: "20px 1fr 32px", gap: 8, alignItems: "center" }}>
+                <span style={{ fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{n}★</span>
+                <div style={{ height: 6, background: "rgba(255,255,255,0.06)", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ width: `${pct}%`, height: "100%", background: "#fbbf24", borderRadius: 4, transition: "width 0.3s" }} />
+                </div>
+                <span style={{ fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace", textAlign: "right" }}>{count}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 360, overflowY: "auto" }}>
+        {data.ratings.slice(0, 12).map(r => (
+          <div key={r.id} style={{ borderTop: `1px solid ${C.border}`, paddingTop: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <Stars value={r.rating} size={12} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: "#fff" }}>{r.customer_name || "Penonton"}</span>
+              </div>
+              <span style={{ fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>
+                {r.created_at ? new Date(r.created_at * 1000).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : ""}
+              </span>
+            </div>
+            {r.comment && <div style={{ fontSize: 12, color: C.text, lineHeight: 1.55 }}>{r.comment}</div>}
+          </div>
+        ))}
       </div>
     </div>
   );
