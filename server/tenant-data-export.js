@@ -43,11 +43,25 @@ function setupTenantDataExport(app, opts = {}) {
 
   const router = express.Router();
 
+  // Helper: resolve company_id dgn fallback chain:
+  // 1. req.companyScope.company_id (tenant login)
+  // 2. body/query company_id (super-admin override)
+  // 3. first active company (super-admin no-context fallback)
+  function resolveCompanyId(req) {
+    const sc = req.companyScope || {};
+    if (sc.company_id) return sc.company_id;
+    const explicit = parseInt(req.query?.company_id || req.body?.company_id, 10);
+    if (explicit && (sc.is_super_admin || !sc.company_id)) return explicit;
+    try {
+      const row = db.prepare(`SELECT id FROM companies WHERE status='active' ORDER BY id LIMIT 1`).get();
+      return row?.id || null;
+    } catch { return null; }
+  }
+
   // GET /manifest.json — list available exports + counts
   router.get('/manifest.json', (req, res) => {
-    const sc = req.companyScope || {};
-    const cid = sc.company_id;
-    if (!cid) return res.status(400).json({ error: 'no company scope' });
+    const cid = resolveCompanyId(req);
+    if (!cid) return res.status(400).json({ error: 'no company scope and no active company' });
     try {
       const counts = {
         orders: db.prepare(`SELECT COUNT(*) c FROM orders WHERE company_id = ?`).get(cid).c,
@@ -69,9 +83,8 @@ function setupTenantDataExport(app, opts = {}) {
 
   // GET /orders.csv
   router.get('/orders.csv', (req, res) => {
-    const sc = req.companyScope || {};
-    const cid = sc.company_id;
-    if (!cid) return res.status(400).send('no company scope');
+    const cid = resolveCompanyId(req);
+    if (!cid) return res.status(400).send('no company scope and no active company');
     try {
       const rows = db.prepare(`SELECT id, time, type, status, pay, "table",
                                       customer_id, customer_name, customer_phone,
@@ -91,9 +104,8 @@ function setupTenantDataExport(app, opts = {}) {
 
   // GET /customers.csv
   router.get('/customers.csv', (req, res) => {
-    const sc = req.companyScope || {};
-    const cid = sc.company_id;
-    if (!cid) return res.status(400).send('no company scope');
+    const cid = resolveCompanyId(req);
+    if (!cid) return res.status(400).send('no company scope and no active company');
     try {
       const rows = db.prepare(`SELECT id, name, phone, tags, visits, total_spend, points, created_at, last_visit
                                FROM customers WHERE company_id = ? ORDER BY visits DESC`).all(cid);
@@ -108,9 +120,8 @@ function setupTenantDataExport(app, opts = {}) {
 
   // GET /menu.csv
   router.get('/menu.csv', (req, res) => {
-    const sc = req.companyScope || {};
-    const cid = sc.company_id;
-    if (!cid) return res.status(400).send('no company scope');
+    const cid = resolveCompanyId(req);
+    if (!cid) return res.status(400).send('no company scope and no active company');
     try {
       const rows = db.prepare(`SELECT id, category_id, emoji, name, description, price,
                                       free_extras, is_popular, is_available, image_url, badge_text
@@ -125,9 +136,8 @@ function setupTenantDataExport(app, opts = {}) {
 
   // GET /sales-summary.csv — daily aggregates last 90 days
   router.get('/sales-summary.csv', (req, res) => {
-    const sc = req.companyScope || {};
-    const cid = sc.company_id;
-    if (!cid) return res.status(400).send('no company scope');
+    const cid = resolveCompanyId(req);
+    if (!cid) return res.status(400).send('no company scope and no active company');
     try {
       const since = Date.now() - 90 * 24 * 60 * 60 * 1000;
       const rows = db.prepare(`
