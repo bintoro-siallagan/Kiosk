@@ -116,15 +116,13 @@ const S = {
     fontFamily: FONT,
   },
   box: {
-    background: 'linear-gradient(180deg, rgba(40,44,58,0.92) 0%, rgba(20,22,32,0.95) 100%)',
-    backdropFilter: 'blur(40px) saturate(200%)',
-    WebkitBackdropFilter: 'blur(40px) saturate(200%)',
-    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'radial-gradient(ellipse 70% 55% at 50% 38%, rgba(40,44,58,0.5) 0%, transparent 70%), linear-gradient(160deg,#08090f 0%,#11131c 50%,#1a1d29 100%)',
+    border: '1px solid rgba(255,255,255,0.07)',
     borderRadius: 24,
     padding: '32px 36px 28px',
     width: 'min(440px, 92vw)',
     textAlign: 'center',
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 24px 60px rgba(0,0,0,0.45), 0 8px 24px rgba(0,0,0,0.3)',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 24px 60px rgba(0,0,0,0.55), 0 8px 24px rgba(0,0,0,0.36)',
     animation: 'pos-sat-slide 0.4s cubic-bezier(.2,.8,.2,1)',
   },
   kicker: {

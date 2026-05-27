@@ -193,9 +193,17 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
           <div style={successIcon}>✅</div>
         </div>
 
-        {/* Title amber gradient + Order ID kicker */}
-        <h1 style={successTitle}>PEMBAYARAN BERHASIL</h1>
-        <div style={successOrderId}>Order #{order.ref}</div>
+        {/* Title + Order ID kicker */}
+        <h1 style={successTitle}>Payment successful</h1>
+        <div style={successOrderId}>Order · #{order.ref}</div>
+
+        {order.queueNumber && (
+          <div style={queueBlock}>
+            <div style={queueLabel}>Queue number</div>
+            <div style={queueNumberStyle}>{order.queueNumber}</div>
+            <div style={queueHint}>Show this to the staff</div>
+          </div>
+        )}
 
         {/* Compact details card — match POSSuccess details */}
         <div style={detailsCard}>
@@ -248,9 +256,15 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
           <h1 className="center" style={{textAlign:'center', fontSize:18, margin:'8px 0'}}>{kioskName}</h1>
           <div className="center" style={{textAlign:'center', fontSize:11, color:'#666'}}>Receipt Pesanan</div>
           <hr style={dashLine}/>
+          {order.queueNumber && (
+            <div style={{textAlign:'center', fontSize:24, fontWeight:800, padding:'8px 0', letterSpacing:1}}>
+              QUEUE #{order.queueNumber}
+            </div>
+          )}
+          {order.queueNumber && <hr style={dashLine}/>}
           <div className="row" style={row}><span>No:</span><b>{order.ref}</b></div>
-          <div className="row" style={row}><span>Tanggal:</span><span>{fmtDateTime(order.paid_at || Math.floor(Date.now()/1000))}</span></div>
-          {order.cashier && <div className="row" style={row}><span>Kasir:</span><span>{order.cashier}</span></div>}
+          <div className="row" style={row}><span>Date:</span><span>{fmtDateTime(order.paid_at || Math.floor(Date.now()/1000))}</span></div>
+          {order.cashier && <div className="row" style={row}><span>Cashier:</span><span>{order.cashier}</span></div>}
           {order.customer?.name && <div className="row" style={row}><span>Customer:</span><span>{order.customer.name}</span></div>}
           <hr style={dashLine}/>
           {(order.items || []).map((it, i) => (
@@ -339,9 +353,34 @@ const successTitle = {
   filter: 'drop-shadow(0 0 24px rgba(251,191,36,0.25))',
 };
 const successOrderId = {
-  fontSize: 12, color: 'rgba(255,255,255,0.55)',
-  letterSpacing: 2, marginBottom: 36, marginTop: 0, fontWeight: 700,
-  fontFamily: "'Geist Mono',monospace", textTransform: 'uppercase',
+  fontSize: 11, color: 'rgba(255,255,255,0.45)',
+  letterSpacing: 2, marginBottom: 18, marginTop: 0, fontWeight: 500,
+  fontFamily: "'Inter',sans-serif", textTransform: 'uppercase',
+};
+const queueBlock = {
+  margin: '8px auto 28px',
+  padding: '20px 28px 22px',
+  borderRadius: 22,
+  background: 'radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, var(--brand-primary,#FF6B35) 55%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 38%, #1a1d29), color-mix(in srgb, var(--brand-secondary,#E55A2B) 30%, #0d0f14))',
+  border: '1px solid rgba(255,255,255,0.16)',
+  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 8px 24px color-mix(in srgb, var(--brand-primary,#FF6B35) 25%, transparent), 0 24px 60px color-mix(in srgb, var(--brand-primary,#FF6B35) 14%, transparent)',
+  display: 'inline-block',
+  minWidth: 220,
+};
+const queueLabel = {
+  fontSize: 10, fontWeight: 500, letterSpacing: 2.5,
+  color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase',
+  textShadow: '0 1px 2px rgba(0,0,0,0.45)', marginBottom: 6,
+};
+const queueNumberStyle = {
+  fontSize: 64, fontWeight: 700, letterSpacing: '-2px',
+  color: '#fff', fontFamily: "'Inter',sans-serif",
+  fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+  textShadow: '0 4px 16px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.55)',
+};
+const queueHint = {
+  fontSize: 10, color: 'rgba(255,255,255,0.55)', marginTop: 8, letterSpacing: 0.2,
+  textShadow: '0 1px 2px rgba(0,0,0,0.4)',
 };
 const detailsCard = {
   background: 'linear-gradient(180deg,#15171c 0%,#0d0f14 100%)',
