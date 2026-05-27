@@ -9,6 +9,7 @@ import { useMenu } from "./MenuContext.jsx";
 import { calcServiceCharge, loadServiceChargeConfig } from "./pricing.js";
 
 import { fmtMoney as fIDR } from "./lib/currency.js";
+import { loadGoogleFont, bgConfigToCss } from "./lib/tenantTheme.js";
 
 // ─── FOOD IMAGE ───────────────────────────────────────────────────────────────
 function FoodImage({ item, size = 140 }) {
@@ -241,12 +242,29 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
   const MENU_ITEMS = _menu.items;
 
   // Per-tenant brand override — fetch from /api/companies/branding (auto-scoped via outlet param or x-company-id)
-  const [tenantBrand, setTenantBrand] = useState({ primary: "#FF6B35", secondary: "#E55A2B", name: null, code: null, logoUrl: "/logo.png" });
+  const [tenantBrand, setTenantBrand] = useState({ primary: "#FF6B35", secondary: "#E55A2B", name: null, code: null, logoUrl: "/logo.png", fontFamily: null, bgConfig: null });
   useEffect(() => {
     fetch("/api/companies/branding").then(r => r.json()).then(b => {
-      if (b?.brand_color) setTenantBrand({ primary: b.brand_color, secondary: b.brand_secondary || b.brand_color, name: b.name, code: b.company_code, logoUrl: b.logo_url || "/logo.png" });
+      if (b?.brand_color) setTenantBrand({
+        primary: b.brand_color, secondary: b.brand_secondary || b.brand_color,
+        name: b.name, code: b.company_code, logoUrl: b.logo_url || "/logo.png",
+        fontFamily: b.font_family || null, bgConfig: b.bg_config || null,
+      });
     }).catch(() => {});
   }, []);
+  // P5b — apply font + bg dari tenant ke body (Kiosk pakai body bg, bukan div root)
+  useEffect(() => {
+    if (tenantBrand.fontFamily) loadGoogleFont(tenantBrand.fontFamily);
+    const fontStack = tenantBrand.fontFamily ? `'${tenantBrand.fontFamily}','Inter',sans-serif` : "";
+    const bg = bgConfigToCss(tenantBrand.bgConfig, "");
+    if (fontStack) document.body.style.fontFamily = fontStack;
+    if (bg) document.body.style.background = bg;
+    return () => {
+      // Cleanup kalau component unmount
+      document.body.style.fontFamily = "";
+      document.body.style.background = "";
+    };
+  }, [tenantBrand.fontFamily, tenantBrand.bgConfig]);
   // Inject CSS variables so existing #FF6B35 references auto-themed via root override.
   // Also compute a contrast-aware text color so .lg-brand buttons stay readable
   // on any brand color (white on lime would be invisible — flip to dark).

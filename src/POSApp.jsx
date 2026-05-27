@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import POSKasirLogin from "./POS/POSKasirLogin.jsx";
+import { useTenantTheme } from "./lib/tenantTheme.js";
 import POSHome from "./POSHome.jsx";
 import POSOrder from "./POSOrder.jsx";
 import POSSettle from "./POSSettle.jsx";
@@ -187,6 +188,7 @@ export default function POSApp() {
   }
 
   return (
+    <ThemedPOSWrapper>
     <ShiftGate cashier={cashier} onSwitchCashier={handleLogout}>
       <PromoBroadcastBanner />
       <OfflineBanner />
@@ -277,5 +279,20 @@ export default function POSApp() {
         />
       )}
     </ShiftGate>
+    </ThemedPOSWrapper>
+  );
+}
+
+// Wrapper utk apply tenant theme (font + bg) ke POS
+function ThemedPOSWrapper({ children }) {
+  const [brand, setBrand] = useState(null);
+  useEffect(() => {
+    fetch("/api/companies/branding").then(r => r.json()).then(setBrand).catch(() => {});
+  }, []);
+  const { fontFamily, background } = useTenantTheme(brand, { fallbackBg: "", fallbackFont: "" });
+  return (
+    <div style={{ minHeight: "100vh", fontFamily: fontFamily || undefined, background: background || undefined }}>
+      {children}
+    </div>
   );
 }

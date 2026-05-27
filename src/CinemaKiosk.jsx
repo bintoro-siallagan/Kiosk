@@ -8,6 +8,7 @@ import { useT, LocaleSwitcher } from "./i18n";
 // CinemaKiosk — customer-facing cinema ticket flow.
 // films → showtimes → seats → F&B bundles → confirmation. Uses /api/cinema/*.
 import { fmtMoney as rp } from "./lib/currency.js";
+import { useTenantTheme } from "./lib/tenantTheme.js";
 const BG = "#050810";
 // Cinematic gradient + radial mesh (amber + purple over deep black)
 const BG_GRADIENT = "linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)";
@@ -32,6 +33,12 @@ export default function CinemaKiosk({ apiBase }) {
     } catch { return ""; }
   })();
   const [outletInfo, setOutletInfo] = useState(null); // { code, name, area } from /api/outlet-master
+  // P5b — tenant theme (font + bg per tenant)
+  const [brand, setBrand] = useState(null);
+  useEffect(() => {
+    fetch(`${apiBase || ""}/api/companies/branding`).then(r => r.json()).then(setBrand).catch(() => {});
+  }, [apiBase]);
+  const { fontFamily: tenantFont, background: tenantBg } = useTenantTheme(brand, { fallbackBg: "", fallbackFont: "" });
   const [autoPromos, setAutoPromos] = useState([]);    // [{id,name,discount_type,discount_value,progress:{unlocked}}]
   // Auto-print state: idle | printing | success | error | unconfigured
   const [printState, setPrintState] = useState("idle");
@@ -554,7 +561,7 @@ export default function CinemaKiosk({ apiBase }) {
   const price = show ? (show.price || 0) : 0;
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: BG_GRADIENT, color: "#e6edf3", fontFamily: "'Inter',sans-serif", overflowY: "auto", display: "flex", flexDirection: "column" }}>
+    <div style={{ position: "fixed", inset: 0, background: tenantBg || BG_GRADIENT, color: "#e6edf3", fontFamily: tenantFont || "'Inter',sans-serif", overflowY: "auto", display: "flex", flexDirection: "column" }}>
       {/* Radial mesh overlay (cinematic depth) */}
       <div aria-hidden style={{ position: "fixed", inset: 0, background: BG_MESH, pointerEvents: "none", zIndex: 0 }} />
       <style>{`

@@ -11,6 +11,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from "react";
 import POSKasirLogin from "./POSKasirLogin.jsx";
+import { useTenantTheme } from "../lib/tenantTheme.js";
 import ShiftGate from "../ShiftGate.jsx";
 import POSChecklist from "./POSChecklist.jsx";
 import { LoadingState } from "../components/uiKit.jsx";
@@ -264,9 +265,7 @@ export default function POSCinemaApp() {
   return (
     <ShiftGate cashier={cashier} onSwitchCashier={handleLogout}>
       <TouchNumpad />
-      <div style={S.root}>
-        <style>{CSS}</style>
-        <div style={S.mesh} aria-hidden />
+      <ThemedRoot CSS={CSS} SMesh={S.mesh} SRoot={S.root}>
         <TopBar cashier={cashier} stage={stage} onLogout={handleLogout} onHome={resetSale} />
         <UpsellTicker vertical="cinema" />
 
@@ -325,7 +324,7 @@ export default function POSCinemaApp() {
         {stage === "success" && lastSale && (
           <Success sale={lastSale} onAnother={resetSale} />
         )}
-      </div>
+      </ThemedRoot>
       {closingChecklist && (
         <POSChecklist
           type="closing"
@@ -335,6 +334,24 @@ export default function POSCinemaApp() {
         />
       )}
     </ShiftGate>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// THEMED ROOT — apply tenant theme (font + bg) ke POS Cinema
+// ═══════════════════════════════════════════════════════════════════
+function ThemedRoot({ CSS, SMesh, SRoot, children }) {
+  const [brand, setBrand] = useState(null);
+  useEffect(() => {
+    fetch("/api/companies/branding").then(r => r.json()).then(setBrand).catch(() => {});
+  }, []);
+  const { fontFamily, background } = useTenantTheme(brand, { fallbackBg: "", fallbackFont: "" });
+  return (
+    <div style={{ ...SRoot, fontFamily: fontFamily || SRoot.fontFamily, background: background || SRoot.background }}>
+      <style>{CSS}</style>
+      <div style={SMesh} aria-hidden />
+      {children}
+    </div>
   );
 }
 

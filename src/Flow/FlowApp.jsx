@@ -8,6 +8,7 @@ import FlowHistory from "./FlowHistory";
 import FlowPromos from "./FlowPromos";
 import FlowRedeem from "./FlowRedeem.jsx";
 import { LocaleSwitcher } from "../i18n";
+import { useTenantTheme } from "../lib/tenantTheme.js";
 
 const SESSION_KEY = "flowos_session";
 const CART_KEY = "flowos_cart";
@@ -104,8 +105,15 @@ export default function FlowApp() {
   const cartTotal = cart.reduce((s, c) => s + (c.price + c.addonTotal) * c.qty, 0);
   const cartCount = cart.reduce((s, c) => s + c.qty, 0);
 
+  // P5b — Tenant Theme (font + bg) per tenant
+  const [brand, setBrand] = useState(null);
+  useEffect(() => {
+    fetch("/api/companies/branding").then(r => r.json()).then(setBrand).catch(() => {});
+  }, []);
+  const { fontFamily: tenantFont, background: tenantBg } = useTenantTheme(brand, { fallbackBg: S.app.background, fallbackFont: S.app.fontFamily });
+
   return (
-    <div style={S.app}>
+    <div style={{ ...S.app, fontFamily: tenantFont, background: tenantBg }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700;750;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
