@@ -57,59 +57,6 @@ app.use("/screensaver", express.static(require("path").join(__dirname, "screensa
 const uploadDir = require("path").join(__dirname, "uploads");
 try { fs.mkdirSync(uploadDir, { recursive: true }); } catch {}
 app.use("/uploads", express.static(uploadDir, { maxAge: "7d" }));
-
-// ─── DYNAMIC PWA MANIFEST (per-tenant) ─────────────────────────────────────────
-// Returns tenant-aware name, short_name, theme_color, icons. Auto-scopes via
-// req.companyScope (outlet param or x-company-id header). When PWA installed,
-// home-screen icon + label = tenant brand, not karyaos default.
-app.get("/manifest.webmanifest", (req, res) => {
-  res.setHeader("Content-Type", "application/manifest+json; charset=utf-8");
-  res.setHeader("Cache-Control", "public, max-age=3600");
-  try {
-    const sc = req.companyScope || {};
-    let companyId = sc.company_id;
-    if (!companyId) {
-      const row = db.rawDb.prepare(`SELECT id FROM companies WHERE status='active' ORDER BY id LIMIT 1`).get();
-      companyId = row?.id || 1;
-    }
-    const c = db.rawDb.prepare(`SELECT id, code, name, brand_color, logo_url FROM companies WHERE id = ?`).get(companyId);
-    const PLATFORM_CODES = ["BTS", "CMX", "KARYAOS"];
-    const isPlatform = !c?.code || PLATFORM_CODES.includes(c.code);
-    const displayName = isPlatform ? "karyaos" : (c?.name || "karyaos");
-    const brand = c?.brand_color || "#FF6B35";
-    const logoUrl = c?.logo_url || "/logo.png";
-    const proto = req.headers["x-forwarded-proto"] || req.protocol || "https";
-    const host = req.headers.host;
-    const absoluteLogo = logoUrl.startsWith("http") ? logoUrl : `${proto}://${host}${logoUrl}`;
-    res.json({
-      name: displayName + " — Self-order Kiosk",
-      short_name: displayName,
-      description: `${displayName} self-order kiosk on karyaos`,
-      start_url: "/?kiosk=1",
-      display: "standalone",
-      orientation: "landscape",
-      background_color: "#12141c",
-      theme_color: brand,
-      icons: [
-        { src: absoluteLogo, sizes: "192x192", type: "image/png", purpose: "any" },
-        { src: absoluteLogo, sizes: "512x512", type: "image/png", purpose: "any maskable" },
-      ],
-      categories: ["food", "business"],
-      lang: "en",
-    });
-  } catch (e) {
-    // Fallback minimal manifest if DB lookup fails
-    res.json({
-      name: "karyaos",
-      short_name: "karyaos",
-      start_url: "/?kiosk=1",
-      display: "standalone",
-      background_color: "#12141c",
-      theme_color: "#FF6B35",
-      icons: [{ src: "/logo.png", sizes: "512x512", type: "image/png" }],
-    });
-  }
-});
 const multer = require("multer");
 const uploadStorage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
@@ -252,7 +199,54 @@ app.use((req, _res, next) => {
   }
   // Priority 4: no scope (public/no-filter mode — backwards compat)
   req.companyScope = { company_id: null, is_super_admin: true, filter_sql: '1=1', filter_params: [], from: 'fallback' };
-  next();
+  return next();
+});
+
+// ─── DYNAMIC PWA MANIFEST (per-tenant) — must be AFTER companyScope middleware
+app.get("/manifest.webmanifest", (req, res) => {
+  res.setHeader("Content-Type", "application/manifest+json; charset=utf-8");
+  res.setHeader("Cache-Control", "public, max-age=3600");
+  try {
+    const sc = req.companyScope || {};
+    let companyId = sc.company_id;
+    if (!companyId) {
+      const row = db.rawDb.prepare(`SELECT id FROM companies WHERE status='active' ORDER BY id LIMIT 1`).get();
+      companyId = row?.id || 1;
+    }
+    const c = db.rawDb.prepare(`SELECT id, code, name, brand_color, logo_url FROM companies WHERE id = ?`).get(companyId);
+    const PLATFORM_CODES = ["BTS", "CMX", "KARYAOS"];
+    const isPlatform = !c?.code || PLATFORM_CODES.includes(c.code);
+    const displayName = isPlatform ? "karyaos" : (c?.name || "karyaos");
+    const brand = c?.brand_color || "#FF6B35";
+    const logoUrl = c?.logo_url || "/logo.png";
+    // Use X-Forwarded-Host (nginx) so manifest URLs are public, not localhost
+    const proto = req.headers["x-forwarded-proto"] || (req.secure ? "https" : "http");
+    const host = req.headers["x-forwarded-host"] || req.headers.host;
+    const absoluteLogo = logoUrl.startsWith("http") ? logoUrl : `${proto}://${host}${logoUrl}`;
+    return res.json({
+      name: displayName + " — Self-order Kiosk",
+      short_name: displayName,
+      description: `${displayName} self-order kiosk on karyaos`,
+      start_url: "/?kiosk=1",
+      display: "standalone",
+      orientation: "landscape",
+      background_color: "#12141c",
+      theme_color: brand,
+      icons: [
+        { src: absoluteLogo, sizes: "192x192", type: "image/png", purpose: "any" },
+        { src: absoluteLogo, sizes: "512x512", type: "image/png", purpose: "any maskable" },
+      ],
+      categories: ["food", "business"],
+      lang: "en",
+    });
+  } catch (e) {
+    return res.json({
+      name: "karyaos", short_name: "karyaos",
+      start_url: "/?kiosk=1", display: "standalone",
+      background_color: "#12141c", theme_color: "#FF6B35",
+      icons: [{ src: "/logo.png", sizes: "512x512", type: "image/png" }],
+    });
+  }
 });
 
 // Generic response filter — strip out items dengan company_id != tenant
