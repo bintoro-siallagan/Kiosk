@@ -708,8 +708,16 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           <div style={K.menuGrid5}>
             {filtered.map((item,i)=>{
               const inCart=cart.filter(e=>e.item.id===item.id).reduce((a,e)=>a+e.qty,0);
+              const handleOpen = () => {
+                if (item.avail === false) return;
+                audio.playTap();
+                if (item.freeToppings > 0) setToppingItem(item); else setAddonItem(item);
+              };
               return (
-                <div key={item.id} className="menu-card lg" style={{...K.editorialCard,animationDelay:`${i*0.025}s`,opacity:item.avail===false?0.5:1,pointerEvents:item.avail===false?"none":"auto"}}>
+                <div key={item.id} className="menu-card lg" role="button" tabIndex={0}
+                  onClick={handleOpen}
+                  onKeyDown={(e)=>{ if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleOpen(); } }}
+                  style={{...K.editorialCard,animationDelay:`${i*0.025}s`,opacity:item.avail===false?0.5:1,pointerEvents:item.avail===false?"none":"auto"}}>
                   {item.tag && (
                     <div style={{...K.tag,background:TAG_CLR[item.tag]?.bg,color:TAG_CLR[item.tag]?.tx}}>{item.tag}</div>
                   )}
@@ -725,7 +733,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
                         <span style={K.soldOutBadge}>SOLD OUT</span>
                       ) : (
                         <button className="add-btn" style={K.editorialAddBtn}
-                          onClick={()=>{audio.playTap();(item.freeToppings>0?setToppingItem(item):setAddonItem(item));}}
+                          onClick={(e)=>{ e.stopPropagation(); handleOpen(); }}
                           aria-label={inCart>0?"Add more":"Add"}>
                           {inCart>0?"+1":"+"}
                         </button>
