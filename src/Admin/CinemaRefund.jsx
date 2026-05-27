@@ -6,6 +6,7 @@ import { requireManagerPin } from "../components/ManagerPinGate.jsx";
 
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 import { fmtMoney as rp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const fmtTs = (s) => s ? new Date(s * 1000).toLocaleString("id-ID", { hour12: false }) : "—";
 
 const PERIODS = [
@@ -150,7 +151,7 @@ export default function CinemaRefund({ apiBase = "" }) {
         <div style={S.h}>
           TIKET AKTIF {pickedMeta ? `· ${pickedMeta.film_title} · ${pickedMeta.show_date} ${pickedMeta.start_time}` : ""}
         </div>
-        {loadingT ? <div style={S.empty}>Memuat…</div> :
+        {loadingT ? <LoadingState label="Memuat…" /> :
          tickets.length === 0 ? <div style={S.empty}>None tiket aktif.</div> : (
           <div style={S.card}>
             <div style={{ ...S.row, color: C.dim, fontSize: 11, letterSpacing: 1, padding: "8px 12px", borderBottom: `1px solid ${C.border}` }}>

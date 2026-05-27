@@ -9,6 +9,7 @@
 //   onDone  — dipanggil setelah checklist sukses disubmit
 
 import React, { useState, useEffect } from 'react';
+import { LoadingState } from "../components/uiKit.jsx";
 
 const COPY = {
   opening: { kicker: 'CHECKLIST BUKA TOKO', title: 'Sebelum Mulai Shift', cta: 'Mulai Shift →', accent: '#10b981' },
@@ -84,7 +85,7 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
         )}
 
         {loading ? (
-          <div style={S.muted}>Memuat checklist…</div>
+          <LoadingState label="Memuat checklist…" />
         ) : items.length === 0 ? (
           <div style={S.muted}>No items yet checklist. Hubungi admin buat nambahin.</div>
         ) : (

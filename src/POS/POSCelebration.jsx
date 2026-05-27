@@ -6,6 +6,7 @@
 // Props: { order, apiBase, onDone }
 
 import React, { useState, useEffect, useRef } from 'react';
+import { LoadingState } from "../components/uiKit.jsx";
 
 const fmtRp = (n) => 'Rp ' + Math.round(n || 0).toLocaleString('id-ID');
 const MEDAL = ['🥇', '🥈', '🥉'];
@@ -47,7 +48,7 @@ export default function POSCelebration({ order, apiBase = '', onDone }) {
       </div></div>
     );
   }
-  if (!d) return <div style={S.root}><div style={S.box}><div style={{ color: '#9ca3af', padding: 30 }}>Memuat…</div></div></div>;
+  if (!d) return <div style={S.root}><div style={S.box}><LoadingState label="Memuat…" /></div></div>;
 
   const t = d.title;
   return (

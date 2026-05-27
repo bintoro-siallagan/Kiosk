@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 import { fmtMoney as rp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const fmtTs = (s) => s ? new Date(s * 1000).toLocaleString("id-ID", { hour12: false }) : "—";
 const DS_LABEL = { scheduled: "Terjadwal", running: "Berlangsung", closed: "Close", sold_out: "Sold Out", cancelled: "Cancel" };
 const DS_COLOR = { scheduled: "#10b981", running: "#f59e0b", closed: "#6b7280", sold_out: "#ef4444", cancelled: "#dc2626" };
@@ -29,7 +30,7 @@ export default function CinemaCommandCenter({ apiBase = "" }) {
     return () => clearInterval(iv);
   }, [load]);
 
-  if (!data) return <div style={{ color: C.sub, fontFamily: "'Inter',sans-serif", padding: 30 }}>Memuat command center…</div>;
+  if (!data) return <LoadingState label="Memuat command center…" />;
 
   const t = data.revenue || {};
   const running   = (data.showtimes_today || []).filter(s => s.derived_status === "running");

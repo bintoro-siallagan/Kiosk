@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ErrorInline } from "./components/ConnectionError.jsx";
 import API_HOST from "./apiBase.js";
+import { LoadingState } from "./components/uiKit.jsx";
 
 const API = API_HOST;
 const MONO = "var(--m)";
@@ -48,7 +49,7 @@ export default function CommandExecutive() {
   }, [load]);
 
   if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} onRetry={load} /></div>;
-  if (!d) return <div style={S.msg}>Memuat executive dashboard…</div>;
+  if (!d) return <LoadingState label="Memuat executive dashboard…" />;
 
   const { health, summary, timeline } = d;
   const h = HEALTH[health.status] || HEALTH.attention;

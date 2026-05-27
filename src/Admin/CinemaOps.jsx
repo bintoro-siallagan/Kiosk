@@ -38,6 +38,7 @@ const FORMATS = ["2D", "3D", "IMAX", "4DX"];
 const TABS = [["film", "🎬 Film"], ["studio", "🏛️ Studio"], ["showtime", "🗓️ Schedule Showing"], ["templates", "🔁 Recurring Templates"], ["branding", "🎨 Branding CDS"]];
 const DAYS_OF_WEEK = [["0", "Min"], ["1", "Sen"], ["2", "Sel"], ["3", "Rab"], ["4", "Kam"], ["5", "Jum"], ["6", "Sab"]];
 import { fmtMoney as rp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const statusLabel = (s) => (STATUSES.find(x => x[0] === s) || [s, s])[1];
 const statusColor = (s) => s === "now_showing" ? "#10b981" : s === "coming_soon" ? "#eab308" : "#5b6470";
 // Derived showtime status (computed from time + sold + manual_closed_at)
@@ -1167,7 +1168,7 @@ function ShowtimeSlotSuggest({ base, filmId, studioId, date, onPick, onBulkCreat
       </div>
       {open && (
         <>
-          {loading && <div style={{ fontSize: 11, color: "#9ca3af", padding: 6 }}>Memuat slot…</div>}
+          {loading && <LoadingState label="Memuat slot…" />}
           {slots?.error && <div style={{ fontSize: 11, color: "#fca5a5", padding: 6 }}>{slots.error}</div>}
           {available.length > 0 && (
             <div style={{ marginBottom: 10 }}>

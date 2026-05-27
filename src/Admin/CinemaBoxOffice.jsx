@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 // karyaOS cinema vertical (admin side). Reads /api/cinema/box-office.
 const C = { card: "#0d1117", border: "#1b212c", sub: "#7d8590", dim: "#5b6470" };
 import { fmtMoney as rp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const DS_LABEL = { scheduled: "Terjadwal", running: "Berlangsung", closed: "Close", sold_out: "Sold Out", cancelled: "Cancel" };
 const DS_COLOR = { scheduled: "#10b981", running: "#f59e0b", closed: "#6b7280", sold_out: "#ef4444", cancelled: "#dc2626" };
 
@@ -41,7 +42,7 @@ export default function CinemaBoxOffice({ apiBase }) {
         </div>
       </div>
 
-      {loading ? <div style={{ color: C.dim, fontSize: 13, padding: "24px 0" }}>Memuat…</div> : !data ? (
+      {loading ? <LoadingState label="Memuat…" /> : !data ? (
         <div style={{ color: C.dim, fontSize: 13, padding: "24px 0" }}>Data box office tidak tersedia.</div>
       ) : (
         <>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { LoadingState } from "../components/uiKit.jsx";
 
 // KaryaOS Stage 4 (Escalation) — SLA-based escalation matrix with response chains.
 // Each tier: target response time, delivery channel, and an escalation chain
@@ -109,7 +110,7 @@ export default function EscalationMatrix({ apiBase }) {
       {/* Active escalations */}
       <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>ESKALASI AKTIF ({active.length})</div>
       {loading ? (
-        <div style={{ color: C.dim, fontSize: 13, padding: "24px 0" }}>Memuat…</div>
+        <LoadingState label="Memuat…" />
       ) : active.length === 0 ? (
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: "26px 18px", textAlign: "center", color: C.sub, fontSize: 13 }}>
           ✅ None eskalasi aktif — semua insiden tertangani.

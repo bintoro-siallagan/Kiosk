@@ -3,6 +3,7 @@ import { api, createSocket } from "./api.js";
 import API_HOST from "./apiBase.js";
 
 import { fmtMoney as fIDR } from "./lib/currency.js";
+import { LoadingState } from "./components/uiKit.jsx";
 const fTime = (d) => { if (!d) return "—"; const x = new Date(d); return isNaN(x) ? "—" : x.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"}); };
 const fDate = (d) => { if (!d) return "—"; const x = new Date(d); return isNaN(x) ? "—" : x.toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"}); };
 const elapsed = (from) => {
@@ -179,7 +180,7 @@ export default function ShiftManager({ onBack }) {
       </div>
 
       <div style={S.body}>
-        {loading ? <div style={{textAlign:"center",padding:48,color:"#555"}}>Memuat...</div> : (<>
+        {loading ? <LoadingState label="Memuat..." /> : (<>
 
         {/* ── SHIFT TAB ── */}
         {tab==="shift" && (

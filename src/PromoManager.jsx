@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { api } from "./api.js";
 
 import { fmtMoney as fIDR } from "./lib/currency.js";
+import { LoadingState } from "./components/uiKit.jsx";
 const fDate = (d) => new Date(d).toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"});
 
 const TYPE_CFG = {
@@ -248,7 +249,7 @@ export default function PromoManager({ onBack }) {
 
         {/* Promo list */}
         {loading ? (
-          <div style={{textAlign:"center",padding:48,color:"#555"}}>Memuat...</div>
+          <LoadingState label="Memuat..." />
         ) : (
           <div style={M.grid}>
             {filtered.length===0 && (

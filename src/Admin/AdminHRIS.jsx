@@ -6,6 +6,7 @@
  */
 import { useState, useEffect, useCallback } from "react";
 import { ErrorInline } from "../components/ConnectionError.jsx";
+import { LoadingState } from "../components/uiKit.jsx";
 
 const MONO = "'Geist Mono',monospace";
 const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -61,7 +62,7 @@ export default function AdminHRIS({ apiBase = "" }) {
   };
 
   if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} /></div>;
-  if (!recap) return <div style={{ padding: 30, color: "#888" }}>Memuat HRIS…</div>;
+  if (!recap) return <LoadingState label="Memuat HRIS…" />;
 
   const t = recap.totals;
   const st = talenta ? (TALENTA_STATE[talenta.state] || TALENTA_STATE.gagal) : null;

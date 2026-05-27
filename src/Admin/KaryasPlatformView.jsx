@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 
 import { fmtMoney as rp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const PALETTE = {
   card: "rgba(255,255,255,0.025)", border: "rgba(255,255,255,0.06)",
   amber: "#fbbf24", purple: "#a855f7", cyan: "#22d3ee", green: "#10b981",
@@ -93,7 +94,7 @@ export default function KaryasPlatformView({ apiBase = "" }) {
         <button onClick={() => setCreating(true)} style={B.add}>＋ New Company</button>
       </div>
 
-      {loading && <div style={{ padding: 30, textAlign: "center", color: PALETTE.dim }}>Memuat platform metrics…</div>}
+      {loading && <LoadingState label="Memuat platform metrics…" />}
       {err && !loading && <div style={{ padding: 16, background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 10, color: "#fca5a5", fontSize: 13 }}>{err}</div>}
 
       {data && !loading && (

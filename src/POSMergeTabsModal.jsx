@@ -3,6 +3,7 @@ import API_HOST from "./apiBase.js";
 
 const API = API_HOST;
 import { fmtMoney as fIDR } from "./lib/currency.js";
+import { LoadingState } from "./components/uiKit.jsx";
 
 export default function POSMergeTabsModal({ sourceTab, kasir, onClose, onSuccess }) {
   const [tabs, setTabs] = useState([]);
@@ -108,7 +109,7 @@ export default function POSMergeTabsModal({ sourceTab, kasir, onClose, onSuccess
         <div style={S.targetSection}>
           <div style={S.sectionLabel}>TARGET (Pilih tab tujuan)</div>
 
-          {loading && <div style={S.empty}>Memuat tabs...</div>}
+          {loading && <LoadingState label="Memuat tabs..." />}
 
           {!loading && tabs.length === 0 && (
             <div style={S.empty}>

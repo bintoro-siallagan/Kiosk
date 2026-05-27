@@ -15,6 +15,7 @@ const STAGES = [
 ];
 
 import { fmtMoney as fIDR } from "./lib/currency.js";
+import { LoadingState } from "./components/uiKit.jsx";
 
 export default function CustomerTrackingPage({ orderId }) {
   const [order, setOrder]   = useState(null);
@@ -74,7 +75,7 @@ export default function CustomerTrackingPage({ orderId }) {
   if (loading) return (
     <div style={S.root}>
       <div style={S.spinner}/>
-      <div style={S.muted}>Memuat pesanan…</div>
+      <LoadingState label="Memuat pesanan…" />
     </div>
   );
 

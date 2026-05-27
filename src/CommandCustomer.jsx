@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ErrorInline } from "./components/ConnectionError.jsx";
 import API_HOST from "./apiBase.js";
+import { LoadingState } from "./components/uiKit.jsx";
 
 const API = API_HOST;
 const MONO = "var(--m)";
@@ -26,7 +27,7 @@ export default function CommandCustomer() {
   useEffect(() => { load(); const t = setInterval(load, 20000); return () => clearInterval(t); }, [load]);
 
   if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} onRetry={load} /></div>;
-  if (!d) return <div style={S.msg}>Memuat Customer Experience…</div>;
+  if (!d) return <LoadingState label="Memuat Customer Experience…" />;
 
   return (
     <div style={S.wrap}>

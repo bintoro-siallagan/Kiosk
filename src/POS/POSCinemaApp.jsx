@@ -13,6 +13,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from "rea
 import POSKasirLogin from "./POSKasirLogin.jsx";
 import ShiftGate from "../ShiftGate.jsx";
 import POSChecklist from "./POSChecklist.jsx";
+import { LoadingState } from "../components/uiKit.jsx";
 import QRCode from "qrcode";
 import { HelpButton } from "../components/HelpModal.jsx";
 import TouchNumpad, { showNumpad } from "../components/TouchNumpad.jsx";
@@ -449,7 +450,7 @@ function Home({ onPick }) {
       </div>
 
       {loading ? (
-        <div style={{ padding: 60, textAlign: "center", color: TH.sub }}>⏳ Memuat jadwal…</div>
+        <LoadingState label="Memuat jadwal…" />
       ) : list.length === 0 ? (
         <div style={{ ...S.emptyCard }}>
           <div style={{ fontSize: 38, marginBottom: 8 }}>🎬</div>
@@ -626,7 +627,7 @@ function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, p
     onProceed({ ticketSubtotal, bundleSubtotal, total, seats: [...seats], bundles: bundles.map(b => ({ ...b })) });
   };
 
-  if (!seatData) return <div style={{ padding: 60, textAlign: "center", color: TH.sub }}>⏳ Memuat peta kursi…</div>;
+  if (!seatData) return <LoadingState label="Memuat peta kursi…" />;
 
   return (
     <div style={S.sellLayout}>

@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ErrorInline } from "./components/ConnectionError.jsx";
 import API_HOST from "./apiBase.js";
+import { LoadingState } from "./components/uiKit.jsx";
 
 const API = API_HOST;
 const MONO = "var(--m)";
@@ -27,7 +28,7 @@ export default function CommandPromo() {
   useEffect(() => { load(); const t = setInterval(load, 20000); return () => clearInterval(t); }, [load]);
 
   if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} onRetry={load} /></div>;
-  if (!d) return <div style={S.msg}>Memuat Promotion Effectiveness…</div>;
+  if (!d) return <LoadingState label="Memuat Promotion Effectiveness…" />;
   const s = d.summary;
 
   return (

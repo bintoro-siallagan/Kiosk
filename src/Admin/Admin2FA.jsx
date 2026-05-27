@@ -8,6 +8,7 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { api } from "../api.js";
+import { LoadingState } from "../components/uiKit.jsx";
 
 export default function Admin2FA() {
   const [status, setStatus] = useState({ enabled: false, loading: true });
@@ -87,7 +88,7 @@ export default function Admin2FA() {
   }
 
   if (status.loading) {
-    return <div style={S.page}><div style={S.muted}>Memuat status 2FA…</div></div>;
+    return <div style={S.page}><LoadingState label="Memuat status 2FA…" /></div>;
   }
 
   return (

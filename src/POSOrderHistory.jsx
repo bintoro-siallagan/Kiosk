@@ -16,6 +16,7 @@ const STATUS_LABELS = {
 };
 
 import { fmtMoney as fIDR } from "./lib/currency.js";
+import { LoadingState } from "./components/uiKit.jsx";
 
 export default function POSOrderHistory({ onClose, kasir = "Manager" }) {
   const [orders, setOrders] = useState([]);
@@ -137,7 +138,7 @@ export default function POSOrderHistory({ onClose, kasir = "Manager" }) {
 
         {/* Order List */}
         <div style={S.list}>
-          {loading && <div style={S.empty}>Memuat...</div>}
+          {loading && <LoadingState label="Memuat..." />}
           {!loading && filteredOrders.length === 0 && (
             <div style={S.empty}>Tidak ada order yang cocok.</div>
           )}

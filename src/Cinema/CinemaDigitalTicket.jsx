@@ -6,6 +6,7 @@ import { useState, useEffect } from "react";
 import QRCode from "qrcode";
 import API_HOST from "../apiBase.js";
 import { fmtMoney as rp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 
 export default function CinemaDigitalTicket() {
   const params = new URLSearchParams(window.location.search);
@@ -54,7 +55,7 @@ export default function CinemaDigitalTicket() {
   }, [code]);
 
   if (loading) {
-    return <Shell><div style={{ padding: 40, textAlign: "center", color: "#9ca3af" }}>⏳ Memuat tiket...</div></Shell>;
+    return <Shell><LoadingState label="Memuat tiket…" /></Shell>;
   }
   if (error || !ticket) {
     return (

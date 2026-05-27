@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { api } from "./api.js";
 
 import { fmtMoney as fIDR } from "./lib/currency.js";
+import { LoadingState } from "./components/uiKit.jsx";
 const fDate = (d) => d ? new Date(d).toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"}) : "–";
 const fAgo  = (d) => { if(!d) return "–"; const s=Math.floor((Date.now()-d)/86400000); return s===0?"Today":s===1?"Yesterday":`${s} hari lalu`; };
 
@@ -167,7 +168,7 @@ export default function MemberList({ onBack }) {
           </div>
 
           {loading ? (
-            <div style={{textAlign:"center",padding:48,color:"#555"}}>Memuat data...</div>
+            <LoadingState label="Memuat data..." />
           ) : (
             <div style={M.listWrap}>
               <div style={M.listHead}>

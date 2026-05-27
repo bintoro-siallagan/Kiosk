@@ -10,6 +10,7 @@ const OwnerDashboard       = lazy(() => import("./OwnerDashboard.jsx"));
 const CinemaOwnerDashboard = lazy(() => import("./CinemaOwnerDashboard.jsx"));
 
 import { fmtMoney as rp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const PALETTE = {
   card: "rgba(255,255,255,0.025)", border: "rgba(255,255,255,0.06)",
   amber: "#fbbf24", purple: "#a855f7", cyan: "#22d3ee", green: "#10b981",
@@ -184,5 +185,5 @@ function VerticalCard({ title, color, today, month, unitLabel }) {
 }
 
 function Loading() {
-  return <div style={{ padding: 40, textAlign: "center", color: PALETTE.dim }}>Memuat…</div>;
+  return <LoadingState label="Memuat…" />;
 }

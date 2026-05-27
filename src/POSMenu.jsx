@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import ToppingPicker from "./ToppingPicker.jsx";
 import API_HOST from "./apiBase.js";
+import { LoadingState } from "./components/uiKit.jsx";
 
 const API_BASE = API_HOST;
 
@@ -144,7 +145,7 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
             ))}
           </div>
 
-          {loading && <div style={S.loading}>Memuat menu...</div>}
+          {loading && <LoadingState label="Memuat menu..." />}
 
           <div style={S.grid}>
             {filtered.map(item => (

@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback } from "react";
 
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 import { fmtMoney as rp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const TIER_COLOR = { bronze: "#cd7f32", silver: "#94a3b8", gold: "#fbbf24", platinum: "#a855f7" };
 const TIER_ICON  = { bronze: "🥉", silver: "🥈", gold: "🥇", platinum: "👑" };
 
@@ -206,7 +207,7 @@ export default function CinemaLoyalty({ apiBase = "" }) {
         </div>
       )}
 
-      {loading && <div style={{ padding: 14, color: C.dim, textAlign: "center" }}>Memuat…</div>}
+      {loading && <LoadingState label="Memuat…" />}
       {msg && <div style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", background: msg.kind === "err" ? "#7f1d1d" : msg.kind === "warn" ? "#78350f" : "#14532d", border: `1px solid ${msg.kind === "err" ? "#ef4444" : msg.kind === "warn" ? "#fbbf24" : "#22c55e"}`, color: "#fff", padding: "10px 20px", borderRadius: 10, fontSize: 13, fontWeight: 600, zIndex: 9999 }}>{msg.m}</div>}
     </div>
   );

@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import API_HOST from "../apiBase.js";
+import { LoadingState } from "../components/uiKit.jsx";
 
 function headers() {
   const tok = localStorage.getItem("adminToken");
@@ -63,7 +64,7 @@ export default function AdminCustomDomain() {
     setMsg({ text: "Disalin ke clipboard.", kind: "ok" });
   }
 
-  if (state.loading) return <div style={S.page}><div style={S.muted}>Memuat…</div></div>;
+  if (state.loading) return <div style={S.page}><LoadingState label="Memuat…" /></div>;
 
   const dnsHost = state.domain || "your-domain.com";
   const cnameTarget = state.dns_target || "karyaos-app.com";

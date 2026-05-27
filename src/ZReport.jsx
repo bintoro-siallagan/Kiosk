@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { api } from "./api.js";
 
 import { fmtMoney as fmt } from "./lib/currency.js";
+import { LoadingState } from "./components/uiKit.jsx";
 const todayStr = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
@@ -426,7 +427,7 @@ export default function ZReport({ onClose }) {
           </div>
         )}
 
-        {loading && <div style={{textAlign:"center", padding:40, color:"#888"}}>Memuat laporan…</div>}
+        {loading && <LoadingState label="Memuat laporan…" />}
         {error && <div style={{...S.card, color:"#F87171"}}>❌ {error}</div>}
 
         {report && !loading && (

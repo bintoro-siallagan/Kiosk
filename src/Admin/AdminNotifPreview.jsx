@@ -9,6 +9,7 @@
 
 import { useEffect, useState } from "react";
 import API_HOST from "../apiBase.js";
+import { LoadingState } from "../components/uiKit.jsx";
 
 function headers() {
   const tok = localStorage.getItem("adminToken");
@@ -69,7 +70,7 @@ export default function AdminNotifPreview() {
     } finally { setBusy(false); }
   }
 
-  if (!brand) return <div style={S.page}><div style={S.muted}>Memuat…</div></div>;
+  if (!brand) return <div style={S.page}><LoadingState label="Memuat…" /></div>;
 
   // Active values use draft (live preview) if user is editing
   const active = { ...brand, ...draft };

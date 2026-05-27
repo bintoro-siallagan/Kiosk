@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import CommandOutletDetail from "./CommandOutletDetail.jsx";
 import { ErrorInline } from "./components/ConnectionError.jsx";
 import API_HOST from "./apiBase.js";
+import { LoadingState } from "./components/uiKit.jsx";
 
 const API = API_HOST;
 const MONO = "var(--m)";
@@ -30,7 +31,7 @@ export default function CommandOutlets() {
 
   if (selectedId) return <CommandOutletDetail outletId={selectedId} onBack={() => setSelectedId(null)} />;
   if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} onRetry={load} /></div>;
-  if (!d) return <div style={S.msg}>Memuat overview cabang…</div>;
+  if (!d) return <LoadingState label="Memuat overview cabang…" />;
   const s = d.summary;
 
   return (

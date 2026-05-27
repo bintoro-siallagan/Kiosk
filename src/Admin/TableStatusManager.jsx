@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import API_HOST from "../apiBase.js";
+import { LoadingState } from "../components/uiKit.jsx";
 
 const API = API_HOST;
 
@@ -99,7 +100,7 @@ export default function TableStatusManager() {
       )}
 
       {loading ? (
-        <div style={{ padding: 40, textAlign: "center", color: "#5b6470" }}>Memuat meja…</div>
+        <LoadingState label="Memuat meja…" />
       ) : tables.length === 0 ? (
         <div style={{ padding: 40, textAlign: "center", color: "#5b6470" }}>
           No meja terdaftar. Tambah meja di tab QR Meja.

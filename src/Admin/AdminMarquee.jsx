@@ -5,6 +5,7 @@
 // pesan auto (Sultan, promo, coming soon) di /api/marquee.
 
 import { useState, useEffect } from "react";
+import { LoadingState } from "../components/uiKit.jsx";
 
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 
@@ -128,7 +129,7 @@ export default function AdminMarquee({ apiBase = "" }) {
           <button onClick={addLine} style={B.add}>＋ Tambah baris</button>
         </div>
         {loading ? (
-          <div style={{ color: C.sub, fontSize: 13, padding: 16, textAlign: "center" }}>Memuat…</div>
+          <LoadingState label="Memuat…" />
         ) : lines.length === 0 ? (
           <div style={{ color: C.dim, fontSize: 13, padding: "30px 12px", textAlign: "center", border: `1px dashed ${C.border}`, borderRadius: 10 }}>
             No pesan custom. Klik <b>+ Tambah baris</b> untuk mulai.

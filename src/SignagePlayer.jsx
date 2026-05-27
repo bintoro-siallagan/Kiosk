@@ -7,6 +7,7 @@ import { useEffect, useState, useRef } from "react";
 import API_HOST from "./apiBase.js";
 
 import { fmtMoney as rp } from "./lib/currency.js";
+import { LoadingState } from "./components/uiKit.jsx";
 
 export default function SignagePlayer() {
   const [items, setItems] = useState([]);
@@ -74,7 +75,7 @@ export default function SignagePlayer() {
     return (
       <div style={S.errRoot}>
         <div style={{ fontSize: 80, marginBottom: 20 }}>⏳</div>
-        <div style={{ fontSize: 22, fontWeight: 800 }}>Memuat playlist…</div>
+        <LoadingState label="Memuat playlist…" />
       </div>
     );
   }

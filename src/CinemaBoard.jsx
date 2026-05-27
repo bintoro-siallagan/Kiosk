@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { fmtMoney as rp } from "./lib/currency.js";
+import { LoadingState } from "./components/uiKit.jsx";
 const BG = "#040611";
 const BG_GRADIENT = "linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)";
 const BG_MESH = "radial-gradient(1200px 800px at 20% 10%, rgba(168,85,247,0.07), transparent 70%), radial-gradient(900px 600px at 80% 90%, rgba(245,158,11,0.05), transparent 70%), radial-gradient(700px 500px at 50% 50%, rgba(34,211,238,0.025), transparent 70%)";
@@ -30,7 +31,7 @@ export default function CinemaBoard({ apiBase }) {
     return () => clearInterval(iv);
   }, []);
 
-  if (!data) return <div style={{ position: "fixed", inset: 0, background: BG_GRADIENT, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif" }}>Memuat…</div>;
+  if (!data) return <LoadingState label="Memuat…" />;
 
   const panels = [
     { id: "now",      label: "🎬 NOW SHOWING",    render: () => <NowShowing data={data} /> },

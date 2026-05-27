@@ -8,6 +8,7 @@ import API_HOST from "./apiBase.js";
 
 const API = API_HOST;
 import { fmtMoney as fmtRp } from "./lib/currency.js";
+import { LoadingState } from "./components/uiKit.jsx";
 const MEDAL = ["🥇", "🥈", "🥉"];
 
 export default function LeaderboardModal({ onClose }) {
@@ -28,7 +29,7 @@ export default function LeaderboardModal({ onClose }) {
         <div style={S.sub}>Jam ini {d?.window || ""} · reset tiap jam</div>
 
         {!d ? (
-          <div style={{ color: "#9ca3af", padding: 24, textAlign: "center" }}>Memuat…</div>
+          <LoadingState label="Memuat…" />
         ) : (
           <>
             <div style={S.statsRow}>

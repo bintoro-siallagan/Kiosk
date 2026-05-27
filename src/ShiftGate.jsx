@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import API_HOST from "./apiBase.js";
+import { LoadingState } from "./components/uiKit.jsx";
 const API_BASE = API_HOST;
 
 export default function ShiftGate({ children, cashier, onSwitchCashier, customerMode = false }) {
@@ -56,7 +57,7 @@ export default function ShiftGate({ children, cashier, onSwitchCashier, customer
     } catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
 
-  if (shift === undefined) return <div style={S.loading}>☕ Memuat…</div>;
+  if (shift === undefined) return <LoadingState label="Memuat shift…" />;
   // Day closed → show informational screen
   if (dayState?.closed) {
     // CUSTOMER mode: no "Open Day" button — customer gak boleh buka hari

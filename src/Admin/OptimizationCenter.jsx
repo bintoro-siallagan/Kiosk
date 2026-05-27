@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 
 // KaryaOS Stage 5 (Optimization) — pattern/anomaly detection + benchmark tracking.
 import { fmtMoney as rp } from "../lib/currency.js";
+import { LoadingState } from "../components/uiKit.jsx";
 const C = { card: "#0d1117", border: "#1b212c", sub: "#7d8590", dim: "#5b6470" };
 
 export default function OptimizationCenter({ apiBase }) {
@@ -52,7 +53,7 @@ export default function OptimizationCenter({ apiBase }) {
         </div>
       </div>
 
-      {loading ? <div style={{ color: C.dim, fontSize: 13, padding: "24px 0" }}>Memuat…</div> : (
+      {loading ? <LoadingState label="Memuat…" /> : (
         <>
           {/* Anomaly detection */}
           <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1, fontFamily: "'Geist Mono',monospace", marginBottom: 8 }}>

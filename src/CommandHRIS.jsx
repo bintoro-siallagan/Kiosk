@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ErrorInline } from "./components/ConnectionError.jsx";
 import API_HOST from "./apiBase.js";
+import { LoadingState } from "./components/uiKit.jsx";
 
 const API = API_HOST;
 const MONO = "var(--m)";
@@ -29,7 +30,7 @@ export default function CommandHRIS() {
   useEffect(() => { load(); const t = setInterval(load, 20000); return () => clearInterval(t); }, [load]);
 
   if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} onRetry={load} /></div>;
-  if (!d) return <div style={S.msg}>Memuat HRIS & Workforce…</div>;
+  if (!d) return <LoadingState label="Memuat HRIS & Workforce…" />;
 
   const staffCol = d.staffing.level >= 100 ? "#10b981" : d.staffing.level >= 80 ? "#f59e0b" : "#ef4444";
   const avgProd = d.productivity.avg_score;

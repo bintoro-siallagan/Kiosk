@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ErrorInline } from "./components/ConnectionError.jsx";
 import API_HOST from "./apiBase.js";
+import { LoadingState } from "./components/uiKit.jsx";
 
 const API = API_HOST;
 const MONO = "var(--m)";
@@ -63,7 +64,7 @@ export default function CommandOutletDetail({ outletId, onBack }) {
   };
 
   if (err) return <div style={{ padding: 20 }}><ErrorInline error={err} onRetry={() => { setErr(""); load && load(); }} /><button onClick={onBack} style={S.back}>← Kembali</button></div>;
-  if (!d) return <div style={S.msg}>Memuat detail outlet…</div>;
+  if (!d) return <LoadingState label="Memuat detail outlet…" />;
   const o = d.outlet;
   const st = STATUS[o.status] || STATUS.attention;
 

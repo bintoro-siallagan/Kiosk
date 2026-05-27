@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import API_HOST from "./apiBase.js";
+import { LoadingState } from "./components/uiKit.jsx";
 const API_BASE = API_HOST;
 
 export default function TableSelector({ onPick, onBack, onCancel }) {
@@ -29,7 +30,7 @@ export default function TableSelector({ onPick, onBack, onCancel }) {
       </header>
 
       <main style={S.main}>
-        {loading && <div style={S.loading}>Memuat meja...</div>}
+        {loading && <LoadingState label="Memuat meja..." />}
 
         {!loading && tables.length === 0 && (
           <div style={S.empty}>
