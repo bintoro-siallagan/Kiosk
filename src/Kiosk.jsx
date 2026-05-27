@@ -275,13 +275,16 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
   const isPlatformDefault = !tenantBrand.code || PLATFORM_TENANT_CODES.includes(tenantBrand.code);
   // Custom brand = real customer with their own brand identity (not bootstrap default, with brand color set)
   const isCustomBrand = !isPlatformDefault && tenantBrand.primary && tenantBrand.primary.toUpperCase() !== "#FF6B35";
+  // Tinted-glass override for brand buttons — mix brand 38% w/ dark surface so white text stays readable
+  // on any brand color (lime/yellow would be invisible if we used pure brand gradient).
+  const _brandBg = `radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, ${tenantBrand.primary} 60%, transparent) 0%, transparent 55%), linear-gradient(180deg, color-mix(in srgb, ${tenantBrand.primary} 38%, #1a1d29) 0%, color-mix(in srgb, ${tenantBrand.secondary} 30%, #0d0f14) 100%)`;
   const BRAND_OVERRIDE_CSS = isCustomBrand ? `
-    .add-btn { background: linear-gradient(135deg, ${tenantBrand.primary}, ${tenantBrand.secondary}) !important; }
-    .pay-btn-premium { background: linear-gradient(135deg, ${tenantBrand.primary}, ${tenantBrand.secondary}) !important; }
+    .add-btn { background: ${_brandBg} !important; color: #fff !important; text-shadow: 0 1px 2px rgba(0,0,0,0.45) !important; border: 1px solid rgba(255,255,255,0.16) !important; }
+    .pay-btn-premium { background: ${_brandBg} !important; color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,0.45) !important; }
     .order-btn-premium { color: ${tenantBrand.primary} !important; }
     .menu-card { border-top-color: ${tenantBrand.primary}33 !important; }
-    .add-btn:hover { box-shadow: 0 6px 20px ${tenantBrand.primary}59, inset 0 1px 0 rgba(255,255,255,0.15) !important; }
-    .pay-btn-premium:hover { box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 16px 40px ${tenantBrand.primary}66, inset 0 1px 0 rgba(255,255,255,0.18) !important; }
+    .add-btn:hover { box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 6px 20px color-mix(in srgb, ${tenantBrand.primary} 35%, transparent) !important; }
+    .pay-btn-premium:hover { box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 16px 40px color-mix(in srgb, ${tenantBrand.primary} 40%, transparent) !important; }
     ::-webkit-scrollbar-thumb { background: ${tenantBrand.primary}99 !important; }
   ` : "";
   const CATEGORIES = useMemo(() => [
@@ -1067,7 +1070,7 @@ const K = {
   editorialCardName:{fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,letterSpacing:"-0.2px",color:"rgba(255,255,255,0.95)",lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",minHeight:32},
   editorialCardBottom:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8},
   editorialCardPrice:{fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,color:"#fff",letterSpacing:"-0.2px",fontVariantNumeric:"tabular-nums"},
-  editorialAddBtn:  {width:30,height:30,minWidth:30,borderRadius:"50%",border:"none",background:"linear-gradient(180deg,var(--brand-primary,#FF6B35) 0%,var(--brand-secondary,#E55A2B) 100%)",color:"#fff",fontSize:16,fontWeight:700,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.3),0 4px 12px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent)",fontFamily:"'Inter',sans-serif"},
+  editorialAddBtn:  {width:30,height:30,minWidth:30,borderRadius:"50%",border:"1px solid rgba(255,255,255,0.16)",background:"radial-gradient(ellipse 90% 200% at 50% 100%,color-mix(in srgb,var(--brand-primary,#FF6B35) 60%,transparent) 0%,transparent 55%),linear-gradient(180deg,color-mix(in srgb,var(--brand-primary,#FF6B35) 38%,#1a1d29) 0%,color-mix(in srgb,var(--brand-secondary,#E55A2B) 30%,#0d0f14) 100%)",color:"#fff",textShadow:"0 1px 2px rgba(0,0,0,0.45)",fontSize:16,fontWeight:700,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.22),0 4px 12px color-mix(in srgb,var(--brand-primary,#FF6B35) 24%,transparent)",fontFamily:"'Inter',sans-serif"},
 
   // ── CART PANEL ──
   cartPanelHeader:{padding:"20px 22px 16px",borderBottom:BORDER_DEFAULT,flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-end",gap:12},
@@ -1161,7 +1164,7 @@ const K = {
 
   // ── CART QTY ──
   qtyMinus:   {background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:"50%",width:28,height:28,color:"rgba(255,255,255,0.7)",fontSize:14,fontWeight:500,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s ease",cursor:"pointer"},
-  qtyPlus:    {background:"linear-gradient(180deg,var(--brand-primary,#FF6B35),var(--brand-secondary,#E55A2B))",border:"1px solid rgba(255,255,255,0.18)",borderRadius:"50%",width:28,height:28,color:"#fff",fontSize:14,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.22),0 4px 12px color-mix(in srgb,var(--brand-primary,#FF6B35) 32%,transparent)",transition:"all 0.2s ease",cursor:"pointer"},
+  qtyPlus:    {background:"radial-gradient(ellipse 90% 200% at 50% 100%,color-mix(in srgb,var(--brand-primary,#FF6B35) 55%,transparent),transparent 55%),linear-gradient(180deg,color-mix(in srgb,var(--brand-primary,#FF6B35) 38%,#1a1d29),color-mix(in srgb,var(--brand-secondary,#E55A2B) 30%,#0d0f14))",border:"1px solid rgba(255,255,255,0.16)",borderRadius:"50%",width:28,height:28,color:"#fff",textShadow:"0 1px 2px rgba(0,0,0,0.45)",fontSize:14,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.22),0 4px 12px color-mix(in srgb,var(--brand-primary,#FF6B35) 24%,transparent)",transition:"all 0.2s ease",cursor:"pointer"},
   qtyVal:     {fontSize:14,fontWeight:600,minWidth:24,textAlign:"center",fontFamily:"'Inter',sans-serif",fontVariantNumeric:"tabular-nums",color:"rgba(255,255,255,0.92)"},
 
   // ── STAFF CALL ──
