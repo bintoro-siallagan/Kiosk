@@ -5655,7 +5655,8 @@ function setupCinema(app, opts = {}) {
   });
 
   // ── WEB CONFIG (per company) ──────────────────────────────────────────
-  // Phase 1: nav items + footer config editable lewat admin
+  // Phase 1: nav items + footer config
+  // Phase 2: + FAQ groups
   db.exec(`
     CREATE TABLE IF NOT EXISTS cinema_web_config (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -5666,6 +5667,8 @@ function setupCinema(app, opts = {}) {
       updated_by TEXT
     );
   `);
+  // Phase 2 ALTER — idempotent (try/catch karena ALTER ADD COLUMN bisa error kalau already exists)
+  try { db.exec("ALTER TABLE cinema_web_config ADD COLUMN faq_groups TEXT"); } catch {}
 
   router.get('/web-config', (req, res) => {
     // Auto-resolve company_id dari scope, atau dari query param (super admin)
@@ -5682,6 +5685,7 @@ function setupCinema(app, opts = {}) {
       config: {
         nav_items: row.nav_items ? JSON.parse(row.nav_items) : null,
         footer_config: row.footer_config ? JSON.parse(row.footer_config) : null,
+        faq_groups: row.faq_groups ? JSON.parse(row.faq_groups) : null,
       },
       company_id: companyId,
       updated_at: row.updated_at,
@@ -5697,16 +5701,18 @@ function setupCinema(app, opts = {}) {
     const b = req.body || {};
     const navJson = b.nav_items ? JSON.stringify(b.nav_items) : null;
     const footerJson = b.footer_config ? JSON.stringify(b.footer_config) : null;
+    const faqJson = b.faq_groups ? JSON.stringify(b.faq_groups) : null;
     const updatedBy = req.headers['x-admin-user'] || 'unknown';
     db.prepare(`
-      INSERT INTO cinema_web_config (company_id, nav_items, footer_config, updated_at, updated_by)
-      VALUES (?, ?, ?, strftime('%s','now'), ?)
+      INSERT INTO cinema_web_config (company_id, nav_items, footer_config, faq_groups, updated_at, updated_by)
+      VALUES (?, ?, ?, ?, strftime('%s','now'), ?)
       ON CONFLICT(company_id) DO UPDATE SET
         nav_items = COALESCE(excluded.nav_items, nav_items),
         footer_config = COALESCE(excluded.footer_config, footer_config),
+        faq_groups = COALESCE(excluded.faq_groups, faq_groups),
         updated_at = excluded.updated_at,
         updated_by = excluded.updated_by
-    `).run(companyId, navJson, footerJson, updatedBy);
+    `).run(companyId, navJson, footerJson, faqJson, updatedBy);
     res.json({ ok: true, company_id: companyId });
   });
 

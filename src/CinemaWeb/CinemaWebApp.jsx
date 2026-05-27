@@ -574,7 +574,7 @@ export default function CinemaWebApp() {
           <LocationsPage brandPrimary={brandPrimary} onPick={pickOutlet} />
         )}
         {step === "faq" && (
-          <FAQPage brandPrimary={brandPrimary} />
+          <FAQPage brandPrimary={brandPrimary} customFaqGroups={webConfig?.faq_groups} />
         )}
       </main>
       <Footer brand={brand} brandPrimary={brandPrimary} onAbout={() => goTo("about")} onNav={(t) => goTo(t)} footerConfig={resolvedFooterConfig} />
@@ -1596,8 +1596,12 @@ const FAQ_GROUPS = [
   },
 ];
 
-function FAQPage({ brandPrimary }) {
+function FAQPage({ brandPrimary, customFaqGroups }) {
   const [openKey, setOpenKey] = useState("0-0");  // group 0 item 0 default open
+  // Resolve: tenant custom FAQ kalau ada (>=1 grup dgn >=1 item), fallback default
+  const groups = (Array.isArray(customFaqGroups) && customFaqGroups.length > 0)
+    ? customFaqGroups
+    : FAQ_GROUPS;
   return (
     <div style={{ paddingBottom: 60 }}>
       <PageHero
@@ -1623,7 +1627,7 @@ function FAQPage({ brandPrimary }) {
           <strong style={{ color: "#fbbf24" }}>💡 Tips:</strong> Bawa KTP, SIM, atau Kartu Pelajar untuk film 13+, 17+, dan D21. Tanpa identitas resmi, staf berhak menolak masuk demi keamanan & kepatuhan regulasi.
         </div>
       </div>
-      {FAQ_GROUPS.map((group, gi) => (
+      {groups.map((group, gi) => (
         <div key={gi} style={{ marginBottom: 28 }}>
           <h2 style={{ fontSize: 16, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 12, letterSpacing: -0.3 }}>{group.title}</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
