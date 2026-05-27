@@ -254,6 +254,7 @@ export default function CinemaWebApp() {
         brand={brand} brandPrimary={brandPrimary}
         session={session} onSignInClick={() => setSignInOpen(true)} onSignOut={handleSignOut}
         onNav={(target) => goTo(target)}
+        onPickFilm={(f) => { setFilm(f); goTo(outlet ? "filmDetail" : "outlet"); }}
       />
       <main style={{ maxWidth: 1100, margin: "0 auto", padding: "0 20px" }}>
         {step === "outlet" && (
@@ -1060,11 +1061,12 @@ const NAV_ITEMS = [
   { key: "about",     label: "About" },
 ];
 
-function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrimary, session, onSignInClick, onSignOut, onNav }) {
+function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrimary, session, onSignInClick, onSignOut, onNav, onPickFilm }) {
   const brandName = brand?.brand_short || brand?.name || "karyaOS";
   const showBack = !["outlet", "success", "movies", "promo", "studio", "locations", "about", "history"].includes(step);
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   return (
     <header style={{
@@ -1128,6 +1130,13 @@ function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrima
           </button>
         )}
 
+        {/* Search button */}
+        <button onClick={() => setSearchOpen(true)} title="Cari film" style={{
+          background: "rgba(255,255,255,0.04)", border: `1px solid ${C.border}`,
+          color: C.text, borderRadius: 8, width: 34, height: 34, fontSize: 14, cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>🔍</button>
+
         {/* Sign in / Profile */}
         {session ? (
           <div style={{ position: "relative" }}>
@@ -1181,7 +1190,84 @@ function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrima
           ))}
         </div>
       )}
+
+      {/* Search modal */}
+      {searchOpen && (
+        <SearchModal onClose={() => setSearchOpen(false)} onPickFilm={(f) => { setSearchOpen(false); onPickFilm?.(f); }} brandPrimary={brandPrimary} />
+      )}
     </header>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
+// SEARCH MODAL — quick film search
+// ════════════════════════════════════════════════════════════════════
+function SearchModal({ onClose, onPickFilm, brandPrimary }) {
+  const [query, setQuery] = useState("");
+  const [films, setFilms] = useState([]);
+  useEffect(() => {
+    fetch(`${API_HOST}/api/cinema/films`).then(r => r.json()).then(d => setFilms(d.films || [])).catch(() => {});
+  }, []);
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return films.slice(0, 8);
+    return films.filter(f =>
+      (f.title || "").toLowerCase().includes(q) ||
+      (f.genre || "").toLowerCase().includes(q)
+    ).slice(0, 12);
+  }, [query, films]);
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, zIndex: 1000, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "60px 20px 20px",
+      animation: "cwFadeIn 0.2s ease",
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: "100%", maxWidth: 600, background: "#0d0d11",
+        border: `1px solid ${C.border}`, borderRadius: 14, overflow: "hidden",
+        animation: "cwFadeUp 0.3s ease", boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 18px", borderBottom: `1px solid ${C.border}` }}>
+          <span style={{ fontSize: 18 }}>🔍</span>
+          <input value={query} onChange={e => setQuery(e.target.value)} autoFocus
+            placeholder="Cari film by title atau genre…"
+            style={{
+              flex: 1, background: "transparent", border: "none", color: "#fff",
+              fontSize: 15, outline: "none", fontFamily: "inherit",
+            }} />
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: C.dim, fontSize: 20, cursor: "pointer", padding: 0, lineHeight: 1 }}>×</button>
+        </div>
+        <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
+          {filtered.length === 0 ? (
+            <div style={{ padding: 40, textAlign: "center", color: C.dim, fontSize: 13 }}>
+              {query ? `Tidak ada film cocok "${query}"` : "Belum ada film tersedia"}
+            </div>
+          ) : (
+            filtered.map(f => (
+              <button key={f.id} onClick={() => onPickFilm(f)} style={{
+                width: "100%", display: "flex", gap: 12, padding: "10px 18px",
+                background: "transparent", border: "none", borderBottom: `1px solid ${C.border}`,
+                color: C.text, cursor: "pointer", fontFamily: "inherit", textAlign: "left",
+                transition: "background 0.15s",
+              }}
+                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.04)"}
+                onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}>
+                {f.poster_url ? (
+                  <img src={f.poster_url} alt="" style={{ width: 44, aspectRatio: "2/3", objectFit: "cover", borderRadius: 4, flexShrink: 0 }} />
+                ) : (
+                  <div style={{ width: 44, aspectRatio: "2/3", background: "#1a1a22", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>🎬</div>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{f.title}</div>
+                  <div style={{ fontSize: 11, color: C.dim, marginBottom: 2 }}>{f.genre || "—"} · {f.duration_min || 0}mnt</div>
+                  <div style={{ display: "inline-block", fontSize: 9, fontWeight: 800, color: f.status === "coming_soon" ? brandPrimary : "#10b981", fontFamily: "'JetBrains Mono',monospace", letterSpacing: 1 }}>{f.status === "coming_soon" ? "COMING SOON" : "NOW SHOWING"}</div>
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -1326,6 +1412,9 @@ function OutletPicker({ onPick, onPickFeaturedFilm, pendingFilm, brandPrimary })
   const [error, setError] = useState(null);
   const [cityFilter, setCityFilter] = useState("all");
 
+  const [comingOutlets, setComingOutlets] = useState([]);
+  const [comingFilms, setComingFilms] = useState([]);
+
   const load = useCallback(() => {
     setError(null);
     Promise.all([
@@ -1333,12 +1422,23 @@ function OutletPicker({ onPick, onPickFeaturedFilm, pendingFilm, brandPrimary })
       fetch(`${API_HOST}/api/cinema/films`).then(r => r.ok ? r.json() : { films: [] }).catch(() => ({ films: [] })),
     ]).then(([d, fd]) => {
       const list = Array.isArray(d) ? d : (d.outlets || d.data || []);
-      const cinemaOutlets = list.filter(o =>
-        (o.primary_vertical === "cinema" || o.vertical === "cinema") &&
-        (o.status !== "inactive")
+      const cinemaOnly = list.filter(o => o.primary_vertical === "cinema" || o.vertical === "cinema");
+      const nowSec = Math.floor(Date.now() / 1000);
+      // Active: status active + opening_date passed (or null)
+      const active = cinemaOnly.filter(o =>
+        (o.status === "active" || o.status === undefined) &&
+        (!o.opening_date || o.opening_date <= nowSec)
       );
-      setOutlets(cinemaOutlets);
-      setFilms((fd.films || []).filter(f => f.poster_url).slice(0, 8));
+      // Coming soon: status='coming_soon' OR opening_date in future
+      const coming = cinemaOnly.filter(o =>
+        o.status === "coming_soon" ||
+        (o.opening_date && o.opening_date > nowSec)
+      );
+      setOutlets(active);
+      setComingOutlets(coming);
+      const allFilms = fd.films || [];
+      setFilms(allFilms.filter(f => f.poster_url && (f.status === "now_showing" || !f.status)).slice(0, 8));
+      setComingFilms(allFilms.filter(f => f.status === "coming_soon").slice(0, 8));
     }).catch(e => setError(e));
   }, []);
   useEffect(() => { load(); }, [load]);
@@ -1495,6 +1595,72 @@ function OutletPicker({ onPick, onPickFeaturedFilm, pendingFilm, brandPrimary })
               </button>
             );
           })}
+        </div>
+      )}
+
+      {/* COMING SOON LOCATIONS — teaser for upcoming outlets */}
+      {comingOutlets.length > 0 && (
+        <div style={{ marginTop: 50 }}>
+          <div style={{ textAlign: "center", marginBottom: 18 }}>
+            <div style={{ display: "inline-block", padding: "4px 12px", background: "rgba(251,191,36,0.15)", border: "1px solid rgba(251,191,36,0.4)", borderRadius: 999, fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: "#fbbf24", fontFamily: "'JetBrains Mono',monospace", textTransform: "uppercase" }}>🔜 Opening Soon</div>
+            <h3 style={{ fontSize: 20, fontWeight: 800, margin: "10px 0 4px", color: "#fff" }}>Cinema Baru Akan Buka</h3>
+            <p style={{ fontSize: 12, color: C.dim, margin: 0 }}>Tunggu pembukaan {comingOutlets.length} lokasi baru</p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))", gap: 14 }}>
+            {comingOutlets.map(o => {
+              const visual = getCityVisual(o);
+              const city = o.area || o.name?.replace("Karya Cinema ", "") || o.code;
+              const openDate = o.opening_date ? new Date(o.opening_date * 1000).toLocaleDateString("id-ID", { month: "long", year: "numeric" }) : "Segera";
+              return (
+                <div key={o.code} style={{
+                  position: "relative", minHeight: 200,
+                  background: visual.url ? `linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.95)), url(${visual.url}) center/cover, ${DEFAULT_CITY_GRADIENT}` : DEFAULT_CITY_GRADIENT,
+                  border: "1px solid rgba(251,191,36,0.4)", borderRadius: 16,
+                  display: "flex", flexDirection: "column", justifyContent: "flex-end",
+                  overflow: "hidden", boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
+                }}>
+                  <div style={{ position: "absolute", top: 14, right: 14, padding: "5px 10px", background: "rgba(251,191,36,0.95)", borderRadius: 6, fontSize: 9, fontWeight: 800, color: "#1a1205", letterSpacing: 1.5, fontFamily: "'JetBrains Mono',monospace" }}>OPENING SOON</div>
+                  <div style={{ padding: "16px 20px 18px" }}>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 4, textShadow: "0 2px 12px rgba(0,0,0,0.85)" }}>{visual.emoji} {city}</div>
+                    {o.name && <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginBottom: 8 }}>{o.name}</div>}
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 10px", background: "rgba(251,191,36,0.18)", border: "1px solid rgba(251,191,36,0.4)", borderRadius: 6, fontSize: 11, fontWeight: 700, color: "#fbbf24", fontFamily: "'JetBrains Mono',monospace" }}>📅 {openDate}</div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* COMING SOON FILMS — teaser carousel */}
+      {comingFilms.length > 0 && (
+        <div style={{ marginTop: 50 }}>
+          <div style={{ textAlign: "center", marginBottom: 18 }}>
+            <div style={{ display: "inline-block", padding: "4px 12px", background: `${brandPrimary}22`, border: `1px solid ${brandPrimary}66`, borderRadius: 999, fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: brandPrimary, fontFamily: "'JetBrains Mono',monospace", textTransform: "uppercase" }}>🔜 Coming Soon</div>
+            <h3 style={{ fontSize: 20, fontWeight: 800, margin: "10px 0 4px", color: "#fff" }}>Film yang Akan Tayang</h3>
+            <p style={{ fontSize: 12, color: C.dim, margin: 0 }}>Stay tuned · {comingFilms.length} film</p>
+          </div>
+          <div style={{ overflowX: "auto", paddingBottom: 12, margin: "0 -20px" }}>
+            <div style={{ display: "flex", gap: 14, padding: "8px 20px", minWidth: "fit-content" }}>
+              {comingFilms.map((f, i) => (
+                <div key={f.id} className="cw-film-poster" style={{
+                  flexShrink: 0, width: 170, aspectRatio: "2/3", borderRadius: 14,
+                  background: `linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.45) 60%, rgba(0,0,0,0.95) 100%), url(${f.poster_url}) center/cover, #1a1a22`,
+                  border: `1px solid ${brandPrimary}33`, position: "relative",
+                  display: "flex", flexDirection: "column", justifyContent: "flex-end",
+                  overflow: "hidden",
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+                  animation: `cwFadeUp 0.5s ease ${i * 0.05}s both`,
+                }}>
+                  <div style={{ position: "absolute", top: 10, right: 10, padding: "3px 8px", background: `${brandPrimary}dd`, borderRadius: 4, fontSize: 8, fontWeight: 800, color: "#fff", letterSpacing: 1, fontFamily: "'JetBrains Mono',monospace" }}>SOON</div>
+                  <div style={{ padding: "12px 12px" }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: "#fff", lineHeight: 1.2, marginBottom: 3, textShadow: "0 2px 8px rgba(0,0,0,0.8)" }}>{f.title}</div>
+                    <div style={{ fontSize: 10, color: "rgba(255,255,255,0.85)", fontFamily: "'JetBrains Mono',monospace", textShadow: "0 1px 4px rgba(0,0,0,0.8)" }}>{f.duration_min || 0} mnt · {f.genre || "—"}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       )}
     </div>
