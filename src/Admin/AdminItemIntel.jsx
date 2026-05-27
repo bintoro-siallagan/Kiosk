@@ -3,7 +3,7 @@
 // central kitchen & approval rule.
 
 import { useState, useEffect, useCallback } from "react";
-import { LoadingState } from "../components/uiKit.jsx";
+import { LoadingState, EmptyState } from "../components/uiKit.jsx";
 
 const AC = "#16a34a";
 const HEALTH_C = { Healthy: "#10b981", "Slow Moving": "#f59e0b", "Low Margin": "#fb923c", "High Waste": "#ef4444" };
@@ -61,6 +61,11 @@ export default function AdminItemIntel({ apiBase = "" }) {
             </tr>
           </thead>
           <tbody>
+            {d.items.length === 0 && (
+              <tr><td colSpan={6} style={{ padding: 0, background: 'transparent' }}>
+                <EmptyState icon="🧠" title="Belum ada data intelligence" desc="Data muncul setelah ada penjualan + tracking margin/waste minimal 1 minggu." />
+              </td></tr>
+            )}
             {d.items.map(it => (
               <tr key={it.item_code} style={{ borderTop: "1px solid #161b22", fontSize: 12 }}>
                 <td style={{ ...S.td, color: "#e6edf3", fontWeight: 600 }}>{it.name}</td>

@@ -2,6 +2,13 @@
 // Master Item tab — Categories, Menus, Extras, Groups, Units, BOM, COGS Report.
 // Auto-deduct stock on sale uses BOM defined here.
 import React, { useState, useEffect, useCallback } from 'react';
+import { EmptyState } from '../components/uiKit.jsx';
+
+const EmptyRow = ({ cols, icon, title, desc }) => (
+  <tr><td colSpan={cols} style={{ padding: 0, background: 'transparent' }}>
+    <EmptyState icon={icon} title={title} desc={desc} />
+  </td></tr>
+);
 
 const API = '/api/master';
 
@@ -140,6 +147,7 @@ function Menus() {
           </tr>
         </thead>
         <tbody>
+          {list.length === 0 && <EmptyRow cols={8} icon="🍽️" title="Belum ada menu" desc="Klik '+ Add Menu' untuk tambah item pertama, atau Bulk Import dari CSV." />}
           {list.map(m => (
             <tr key={m.id}>
               <td style={{ fontSize: 11, color: '#6b7280' }}>{m.id}</td>

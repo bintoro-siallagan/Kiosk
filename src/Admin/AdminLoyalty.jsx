@@ -1,6 +1,7 @@
 // client/src/Admin/AdminLoyalty.jsx
 // Loyalty program admin UI — customers, transactions, rewards CRUD, tier config, dashboard
 import React, { useState, useEffect, useCallback } from 'react';
+import { EmptyState } from '../components/uiKit.jsx';
 
 const fmtIDR = (n) => new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', maximumFractionDigits:0}).format(Math.round(n||0));
 const fmtDateTime = (sec) => sec ? new Date(sec*1000).toLocaleString('id-ID', {dateStyle:'short', timeStyle:'short'}) : '-';
@@ -290,7 +291,9 @@ export default function AdminLoyalty({ apiBase = '' }) {
               <th style={styles.th}></th>
             </tr></thead>
             <tbody>
-              {customers.length === 0 && <tr><td colSpan={8} style={{...styles.td, textAlign: 'center', color: '#6b7280', padding: 30}}>No customer</td></tr>}
+              {customers.length === 0 && <tr><td colSpan={8} style={{padding: 0, background: 'transparent'}}>
+                <EmptyState icon="🎯" title="Belum ada customer loyalty" desc="Customer auto-enroll saat menukar poin pertama. Atau tambah manual via tombol di atas." />
+              </td></tr>}
               {customers.map(c => (
                 <tr key={c.id} style={{borderBottom: '1px solid #2a2a2a', cursor: 'pointer'}} onClick={() => openDrill(c)}>
                   <td style={{...styles.td, fontFamily: 'monospace', fontSize: 12}}>{c.phone}</td>
@@ -399,6 +402,9 @@ export default function AdminLoyalty({ apiBase = '' }) {
             <button onClick={() => { setEditReward({}); setShowRewardForm(true); }} style={styles.btnPrimary}>+ New Reward</button>
           </div>
 
+          {rewards.length === 0 ? (
+            <EmptyState icon="🎁" title="Belum ada reward" desc="Klik '+ New Reward' untuk tambah reward pertama (mis. Free drink, Diskon 10%)." />
+          ) : (
           <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 10}}>
             {rewards.map(r => (
               <div key={r.id} style={{...styles.rewardCard, opacity: r.is_active ? 1 : 0.5}}>
@@ -425,6 +431,7 @@ export default function AdminLoyalty({ apiBase = '' }) {
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
 

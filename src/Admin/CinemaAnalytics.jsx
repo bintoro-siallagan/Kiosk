@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 
 const C = { card: "#0d1117", border: "#1b212c", sub: "#9ca3af", dim: "#5b6470" };
 import { fmtMoney as rp } from "../lib/currency.js";
+import { EmptyState } from "../components/uiKit.jsx";
 const DAY_NAMES = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 const TIME_BAND_LABEL = { morning: "🌅 Pagi <12h", matinee: "☀️ Matinee 12-17h", prime: "🌆 Prime 17-21h", late: "🌙 Late ≥21h" };
 const TABS = [
@@ -45,6 +46,7 @@ function MoviesTab({ base }) {
   return (
     <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: 14 }}>
       <div style={{ fontSize: 11, color: C.dim, marginBottom: 10, fontFamily: "'Geist Mono',monospace" }}>{data.from} → {data.to}</div>
+      {data.rows.length === 0 && <EmptyState icon="🎬" title="Belum ada data film" desc="Performa film akan muncul setelah ada showtime + tiket terjual di periode ini." />}
       {data.rows.map((r, i) => (
         <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 0", borderBottom: i < data.rows.length - 1 ? `1px solid ${C.border}` : "none", flexWrap: "wrap" }}>
           <span style={{ width: 26, fontFamily: "'Geist Mono',monospace", fontSize: 12, color: C.dim }}>#{i + 1}</span>

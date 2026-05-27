@@ -8,7 +8,7 @@
 //   4. Providers      — config commission rate, webhook secret, API key per provider
 //   5. Sync Log       — audit trail menu sync ke aggregator
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useUiKit } from '../components/uiKit.jsx';
+import { useUiKit, EmptyState } from '../components/uiKit.jsx';
 
 const fmtIDR = (n) => new Intl.NumberFormat('id-ID', {style:'currency', currency:'IDR', maximumFractionDigits:0}).format(Math.round(n||0));
 const fmtDateTime = (sec) => sec ? new Date(sec*1000).toLocaleString('id-ID', {dateStyle:'short', timeStyle:'short'}) : '-';
@@ -193,6 +193,9 @@ export default function AdminAggregator({ apiBase = '' }) {
           {/* Recent completed */}
           <h3 style={{...styles.sectionTitle, marginTop: 24}}>Recent Completed</h3>
           {msg ? <div style={{ fontSize: 12, margin: '6px 2px 8px', color: msg.startsWith('✓') ? '#10b981' : '#f87171' }}>{msg}</div> : null}
+          {orders.filter(o => ['completed','rejected'].includes(o.status)).length === 0 ? (
+            <EmptyState icon="📭" title="Belum ada order selesai" desc="Order yang sudah completed atau rejected akan muncul di sini." />
+          ) : (
           <div style={styles.completedList}>
             {orders.filter(o => ['completed','rejected'].includes(o.status)).slice(0, 10).map(o => (
               <div key={o.id} style={styles.completedRow}>
@@ -213,6 +216,7 @@ export default function AdminAggregator({ apiBase = '' }) {
               </div>
             ))}
           </div>
+          )}
         </div>
       )}
 
