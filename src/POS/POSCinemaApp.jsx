@@ -14,6 +14,7 @@ import POSKasirLogin from "./POSKasirLogin.jsx";
 import ShiftGate from "../ShiftGate.jsx";
 import POSChecklist from "./POSChecklist.jsx";
 import { LoadingState } from "../components/uiKit.jsx";
+import { ErrorInline } from "../components/ConnectionError.jsx";
 import QRCode from "qrcode";
 import { HelpButton } from "../components/HelpModal.jsx";
 import TouchNumpad, { showNumpad } from "../components/TouchNumpad.jsx";
@@ -565,9 +566,13 @@ function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, p
   const [bundleList, setBundleList] = useState([]);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [seatsError, setSeatsError] = useState(null);
 
   const loadSeats = useCallback(() => {
-    fetch(`${API_HOST}/api/cinema/showtimes/${picked.id}/seats`).then(r => r.json()).then(d => { setSeatData(d); onSeatData && onSeatData(d); }).catch(() => {});
+    fetch(`${API_HOST}/api/cinema/showtimes/${picked.id}/seats`)
+      .then(r => { if (!r.ok) throw new Error(`seats ${r.status}`); return r.json(); })
+      .then(d => { setSeatData(d); setSeatsError(null); onSeatData && onSeatData(d); })
+      .catch(e => setSeatsError(e));
   }, [picked.id]);
   useEffect(() => { loadSeats(); const iv = setInterval(loadSeats, 10000); return () => clearInterval(iv); }, [loadSeats]);
 
@@ -627,6 +632,7 @@ function Sell({ picked, seats, setSeats, bundles, setBundles, buyer, setBuyer, p
     onProceed({ ticketSubtotal, bundleSubtotal, total, seats: [...seats], bundles: bundles.map(b => ({ ...b })) });
   };
 
+  if (seatsError) return <ErrorInline error={seatsError} label="Gagal memuat peta kursi" onRetry={loadSeats} />;
   if (!seatData) return <LoadingState label="Memuat peta kursi…" />;
 
   return (

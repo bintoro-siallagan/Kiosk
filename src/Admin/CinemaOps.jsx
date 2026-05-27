@@ -1,5 +1,6 @@
 import { useState, useEffect, Component } from "react";
 import { useUiKit, EmptyState } from "../components/uiKit.jsx";
+import { ErrorInline } from "../components/ConnectionError.jsx";
 import CinemaStudioLayoutEditor from "./CinemaStudioLayoutEditor.jsx";
 import CinemaOutletWizard from "./CinemaOutletWizard.jsx";
 
@@ -74,11 +75,16 @@ function CinemaOpsInner({ apiBase }) {
   }, [apiBase]);
 
   const base = `${apiBase}/api/cinema`;
+  const [reloadError, setReloadError] = useState(null);
   const reload = () => {
-    fetch(`${base}/summary`).then(r => r.json()).then(setSummary).catch(() => {});
-    fetch(`${base}/films`).then(r => r.json()).then(d => setFilms(d.films || [])).catch(() => {});
-    fetch(`${base}/studios`).then(r => r.json()).then(d => setStudios(d.studios || [])).catch(() => {});
-    fetch(`${base}/showtimes${showArchived ? "?include_archived=1" : ""}`).then(r => r.json()).then(d => setShowtimes(d.showtimes || [])).catch(() => {});
+    setReloadError(null);
+    const ok = (r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); };
+    Promise.all([
+      fetch(`${base}/summary`).then(ok).then(setSummary),
+      fetch(`${base}/films`).then(ok).then(d => setFilms(d.films || [])),
+      fetch(`${base}/studios`).then(ok).then(d => setStudios(d.studios || [])),
+      fetch(`${base}/showtimes${showArchived ? "?include_archived=1" : ""}`).then(ok).then(d => setShowtimes(d.showtimes || [])),
+    ]).catch(e => setReloadError(e));
   };
   useEffect(() => { reload(); /* eslint-disable-next-line */ }, [apiBase, showArchived]);
 
@@ -186,6 +192,12 @@ function CinemaOpsInner({ apiBase }) {
             style={{ background: tab === id ? "#a855f72a" : "transparent", border: `1px solid ${tab === id ? "#a855f766" : C.border}`, borderRadius: 8, padding: "8px 14px", color: tab === id ? "#fff" : C.sub, fontSize: 12.5, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>{label}</button>
         ))}
       </div>
+
+      {reloadError && (
+        <div style={{ marginBottom: 14 }}>
+          <ErrorInline error={reloadError} label="Gagal memuat data cinema" onRetry={reload} />
+        </div>
+      )}
 
       {msg && <div style={{ background: "#ef444415", border: "1px solid #ef444433", borderRadius: 8, padding: "8px 12px", color: "#fca5a5", fontSize: 12, marginBottom: 12 }}>{msg}</div>}
 
