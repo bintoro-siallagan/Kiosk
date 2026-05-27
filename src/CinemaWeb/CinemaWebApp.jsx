@@ -165,7 +165,9 @@ const T = {
   mono: "'JetBrains Mono', 'SF Mono', Menlo, ui-monospace, monospace",
 };
 
-// Spacing scale (px) — 4px base. S.1=4, S.4=16, S.6=24, dst.
+// Spacing scale (px) — 4px base. S[1]=4, S[4]=16, S[6]=24, dst.
+// PENTING: numeric key >= 10 harus pakai bracket access: S[10], S[12], S[16]
+// (JS parser: S[10] invalid — `10` interpreted as number literal, bukan identifier)
 const S = { 0: 0, 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64, 20: 80, 24: 96 };
 
 // Built-in steps — custom slugs from admin akan auto-allowed via fallback
@@ -2049,21 +2051,21 @@ function Footer({ brand, brandPrimary, onAbout, onNav, footerConfig }) {
         opacity: 0.5,
       }} />
       <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: S.10, marginBottom: S.10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 200px), 1fr))", gap: S[10], marginBottom: S[10] }}>
           {/* Column 1: Brand */}
           <div>
-            <div style={{ display: "flex", alignItems: "center", gap: S.3, marginBottom: S.4 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: S[3], marginBottom: S[4] }}>
               {brand?.logo_url && <img src={brand.logo_url} alt="" style={{ height: 32, objectFit: "contain" }} />}
               <div>
                 <div style={{ fontSize: T.lg, fontWeight: T.bold, color: C.text, letterSpacing: T.tracking_tight, lineHeight: T.tight }}>{brandName}</div>
                 <div style={{ fontSize: T.xs, color: C.dim, fontFamily: T.mono, letterSpacing: T.tracking_wider, textTransform: "uppercase", fontWeight: T.medium, marginTop: 2 }}>Cinema Booking</div>
               </div>
             </div>
-            <p style={{ fontSize: T.sm, color: C.sub, lineHeight: T.relaxed, margin: 0, marginBottom: S.5, fontWeight: T.regular }}>
+            <p style={{ fontSize: T.sm, color: C.sub, lineHeight: T.relaxed, margin: 0, marginBottom: S[5], fontWeight: T.regular }}>
               {fc.description}
             </p>
             {/* Social icons */}
-            <div style={{ display: "flex", gap: S.2 }}>
+            <div style={{ display: "flex", gap: S[2] }}>
               {fc.social.map(s => (
                 <a key={s.name || s.url} href={s.url} target="_blank" rel="noopener noreferrer" title={s.name} style={{
                   width: 36, height: 36, borderRadius: 8,
@@ -2106,24 +2108,24 @@ function Footer({ brand, brandPrimary, onAbout, onNav, footerConfig }) {
 
         {/* Bottom bar */}
         <div style={{
-          paddingTop: S.6, borderTop: `1px solid ${C.borderSubtle}`,
-          display: "flex", justifyContent: "space-between", alignItems: "center", gap: S.4, flexWrap: "wrap",
+          paddingTop: S[6], borderTop: `1px solid ${C.borderSubtle}`,
+          display: "flex", justifyContent: "space-between", alignItems: "center", gap: S[4], flexWrap: "wrap",
           fontSize: T.xs, color: C.dim, fontFamily: T.sans, fontWeight: T.regular,
           letterSpacing: T.tracking_normal, lineHeight: T.normal,
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: S.4, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: S[4], flexWrap: "wrap" }}>
             <span>© {year} {brandName}. All rights reserved.</span>
-            <span style={{ display: "flex", alignItems: "center", gap: S.2, color: C.sub, fontFamily: T.mono, letterSpacing: T.tracking_wider, textTransform: "uppercase", fontWeight: T.medium }}>
+            <span style={{ display: "flex", alignItems: "center", gap: S[2], color: C.sub, fontFamily: T.mono, letterSpacing: T.tracking_wider, textTransform: "uppercase", fontWeight: T.medium }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.green, boxShadow: `0 0 8px ${C.green}` }} />
               Cinema Operational Intelligence
             </span>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: S.4 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: S.2 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: S[4] }}>
+            <div style={{ display: "flex", alignItems: "center", gap: S[2] }}>
               <span style={{ fontSize: T.xs, color: C.dim, fontFamily: T.mono, letterSpacing: T.tracking_wider, textTransform: "uppercase", fontWeight: T.medium }}>Secure Payment</span>
               <span style={{ fontSize: T.base }}>🔒</span>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: S.2 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: S[2] }}>
               <span style={{ fontSize: T.xs, color: C.dim, fontFamily: T.sans }}>Powered by</span>
               <span style={{ fontFamily: T.mono, color: brandPrimary, fontWeight: T.semibold, fontSize: T.xs, letterSpacing: T.tracking_wider, textTransform: "uppercase" }}>karya<span style={{ color: C.amber }}>OS</span></span>
             </div>
@@ -2137,13 +2139,13 @@ function Footer({ brand, brandPrimary, onAbout, onNav, footerConfig }) {
 function FooterHeading({ children }) {
   return <div style={{
     fontSize: T.xs, color: C.text, letterSpacing: T.tracking_wider,
-    fontFamily: T.mono, marginBottom: S.4, textTransform: "uppercase",
+    fontFamily: T.mono, marginBottom: S[4], textTransform: "uppercase",
     fontWeight: T.semibold,
   }}>{children}</div>;
 }
 
 const footerLinkStyle = {
-  display: "block", padding: `${S.1}px 0`, fontSize: T.sm, color: C.sub,
+  display: "block", padding: `${S[1]}px 0`, fontSize: T.sm, color: C.sub,
   textDecoration: "none", transition: "color 0.15s ease", fontFamily: T.sans,
   fontWeight: T.regular, lineHeight: T.normal, letterSpacing: T.tracking_normal,
 };
