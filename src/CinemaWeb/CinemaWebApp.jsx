@@ -103,8 +103,8 @@ function loadSnapScript() {
 }
 
 const C = {
-  bg: "#0a0a0f",
-  bgGrad: "radial-gradient(1200px 800px at 20% 0%, rgba(168,85,247,0.08), transparent 60%), radial-gradient(800px 600px at 80% 100%, rgba(251,191,36,0.06), transparent 60%), #0a0a0f",
+  bg: "#000000",
+  bgGrad: "radial-gradient(1200px 800px at 20% 0%, rgba(168,85,247,0.06), transparent 60%), radial-gradient(800px 600px at 80% 100%, rgba(251,191,36,0.04), transparent 60%), #000000",
   card: "rgba(255,255,255,0.04)",
   cardHover: "rgba(255,255,255,0.07)",
   border: "rgba(255,255,255,0.1)",
