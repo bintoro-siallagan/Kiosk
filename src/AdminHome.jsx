@@ -14,6 +14,12 @@ const ESBNotif      = lazy(() => import("./ESBNotif.jsx"));
 const MemberList    = lazy(() => import("./MemberList.jsx"));
 const PromoManager  = lazy(() => import("./PromoManager.jsx"));
 const ShiftManager  = lazy(() => import("./ShiftManager.jsx"));
+// White-label self-service portal pages (Phase 1+2)
+const AdminBranding     = lazy(() => import("./Admin/AdminBranding.jsx"));
+const AdminIntegrations = lazy(() => import("./Admin/AdminIntegrations.jsx"));
+const AdminQueueSettings= lazy(() => import("./Admin/AdminQueueSettings.jsx"));
+const AdminDataExport   = lazy(() => import("./Admin/AdminDataExport.jsx"));
+const AdminAuditLog     = lazy(() => import("./Admin/AdminAuditLog.jsx"));
 import { TABS, GROUPS as _RAW_GROUPS, filterGroupsForVertical, filterGroupsByFeatures, getModuleFeature, isModuleLocked, requiredPlanFor } from "./adminModules.js";
 
 // Multi-tenant: helper baca company ctx (dipakai oleh AdminHome di runtime, BUKAN module-load).
@@ -610,6 +616,12 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "Cinema Analytics",   icon: "📊", c: "#10b981", vertical: "cinema", on: () => openRight("tools", "cinema_analytics") },
       { label: "ESB Sync",           icon: "🔗", c: "#22d3ee", on: () => openRight("esb-sync") },
       { label: "Push Notifications", icon: "🔔", c: "#a855f7", on: () => openRight("esb-notif") },
+      // White-label tenant self-service (Phase 1+2)
+      { label: "Branding",           icon: "🎨", c: "#fb923c", on: () => openRight("branding") },
+      { label: "Integrations",       icon: "🔑", c: "#22d3ee", on: () => openRight("integrations") },
+      { label: "Queue Number",       icon: "🔢", c: "#34d399", on: () => openRight("queue-settings") },
+      { label: "Data Export (GDPR)", icon: "📦", c: "#a855f7", on: () => openRight("data-export") },
+      { label: "Audit Log",          icon: "📋", c: "#f87171", on: () => openRight("audit-log") },
       { label: "All Modules",        icon: "🛠️", c: "#f59e0b", searchable: true,
         getSub: (q) => q.trim()
           ? TABS.filter(t => _allowedTabIds.has(t.id) && t.label.toLowerCase().includes(q.trim().toLowerCase()) && canSee(moduleOf(t.id)))
@@ -821,6 +833,11 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
                 {rightView === "shift" && <ShiftManager onBack={closeRight} />}
                 {rightView === "esb-sync" && <ESBSync onBack={closeRight} />}
                 {rightView === "esb-notif" && <ESBNotif onBack={closeRight} />}
+                {rightView === "branding" && <AdminBranding onBack={closeRight} />}
+                {rightView === "integrations" && <AdminIntegrations onBack={closeRight} />}
+                {rightView === "queue-settings" && <AdminQueueSettings onBack={closeRight} />}
+                {rightView === "data-export" && <AdminDataExport onBack={closeRight} />}
+                {rightView === "audit-log" && <AdminAuditLog onBack={closeRight} />}
                 </Suspense>
               </div>
             </div>
