@@ -774,6 +774,114 @@ function setupCompanies(app, opts = {}) {
     });
   });
 
+  // ─── CUSTOM REPORT BUILDER — Phase 6 ──────────────────────────────
+  // POST /platform/custom-report
+  // Body: { metrics[], tenants[]|"all", date_from, date_to, group_by }
+  // metric keys: revenue, tickets_sold, orders_count, avg_ticket_price, fnb_attach_rate, loyalty_points
+  // group_by: tenant | outlet | day | week | month
+  router.post('/platform/custom-report', (req, res) => {
+    const isSuperAdmin = String(req.headers['x-super-admin'] || '') === 'true';
+    if (!isSuperAdmin) return res.status(403).json({ error: 'super-admin only' });
+    const b = req.body || {};
+    const metrics = Array.isArray(b.metrics) && b.metrics.length ? b.metrics : ['revenue', 'tickets_sold', 'orders_count'];
+    const tenantsFilter = b.tenants === 'all' ? null : (Array.isArray(b.tenants) ? b.tenants.map(Number).filter(Boolean) : null);
+    const dateFrom = b.date_from ? Math.floor(new Date(b.date_from).getTime() / 1000) : (Math.floor(Date.now() / 1000) - 30 * 86400);
+    const dateTo   = b.date_to   ? Math.floor(new Date(b.date_to).getTime() / 1000)   : Math.floor(Date.now() / 1000);
+    const groupBy  = ['tenant', 'outlet', 'day', 'week', 'month'].includes(b.group_by) ? b.group_by : 'tenant';
+
+    // Companies scope filter
+    const companyFilter = tenantsFilter
+      ? `AND c.id IN (${tenantsFilter.join(',')})`
+      : '';
+    const companies = db.prepare(`SELECT id, code, name, primary_vertical FROM companies WHERE 1=1 ${companyFilter} ORDER BY id`).all();
+
+    // Aggregate per tenant
+    const rows = companies.map(c => {
+      const row = { tenant_id: c.id, tenant_code: c.code, tenant_name: c.name, vertical: c.primary_vertical };
+
+      if (metrics.includes('revenue')) {
+        // F&B revenue (orders.total, ms ts)
+        const fnb = safeGet(db, `SELECT COALESCE(SUM(total),0) AS r FROM orders WHERE company_id = ? AND time BETWEEN ? AND ?`, [c.id, dateFrom * 1000, dateTo * 1000])?.r || 0;
+        // Cinema revenue (cinema_tickets.price, sold_at sec)
+        const cinema = safeGet(db, `SELECT COALESCE(SUM(price),0) AS r FROM cinema_tickets WHERE company_id = ? AND sold_at BETWEEN ? AND ? AND (payment_status IS NULL OR payment_status IN ('paid','settlement','capture'))`, [c.id, dateFrom, dateTo])?.r || 0;
+        row.revenue_fnb = fnb;
+        row.revenue_cinema = cinema;
+        row.revenue_total = fnb + cinema;
+      }
+
+      if (metrics.includes('tickets_sold')) {
+        const cnt = safeGet(db, `SELECT COUNT(*) AS c FROM cinema_tickets WHERE company_id = ? AND sold_at BETWEEN ? AND ? AND (payment_status IS NULL OR payment_status IN ('paid','settlement','capture'))`, [c.id, dateFrom, dateTo])?.c || 0;
+        row.tickets_sold = cnt;
+      }
+
+      if (metrics.includes('orders_count')) {
+        const cnt = safeGet(db, `SELECT COUNT(*) AS c FROM orders WHERE company_id = ? AND time BETWEEN ? AND ?`, [c.id, dateFrom * 1000, dateTo * 1000])?.c || 0;
+        row.orders_count = cnt;
+      }
+
+      if (metrics.includes('avg_ticket_price')) {
+        const avg = safeGet(db, `SELECT COALESCE(AVG(price),0) AS a FROM cinema_tickets WHERE company_id = ? AND sold_at BETWEEN ? AND ? AND (payment_status IS NULL OR payment_status IN ('paid','settlement','capture'))`, [c.id, dateFrom, dateTo])?.a || 0;
+        row.avg_ticket_price = Math.round(avg);
+      }
+
+      if (metrics.includes('fnb_attach_rate')) {
+        // % cinema purchases (unique purchase_id) yg ada F&B bundle
+        const totalPurchases = safeGet(db, `SELECT COUNT(DISTINCT purchase_id) AS c FROM cinema_tickets WHERE company_id = ? AND sold_at BETWEEN ? AND ? AND purchase_id IS NOT NULL`, [c.id, dateFrom, dateTo])?.c || 0;
+        const withFnb = safeGet(db, `SELECT COUNT(DISTINCT purchase_id) AS c FROM cinema_purchase_bundles WHERE purchase_id IN (SELECT DISTINCT purchase_id FROM cinema_tickets WHERE company_id = ? AND sold_at BETWEEN ? AND ?)`, [c.id, dateFrom, dateTo])?.c || 0;
+        row.fnb_attach_pct = totalPurchases > 0 ? Math.round((withFnb / totalPurchases) * 100) : 0;
+        row.fnb_attach_count = withFnb;
+        row.total_purchases = totalPurchases;
+      }
+
+      if (metrics.includes('loyalty_points')) {
+        // Try both F&B (point_transactions) and Cinema (cinema_loyalty_transactions)
+        let earned = 0;
+        try { earned += safeGet(db, `SELECT COALESCE(SUM(amount),0) AS s FROM point_transactions WHERE company_id = ? AND amount > 0 AND created_at BETWEEN ? AND ?`, [c.id, dateFrom, dateTo])?.s || 0; } catch {}
+        try { earned += safeGet(db, `SELECT COALESCE(SUM(amount),0) AS s FROM cinema_loyalty_transactions WHERE company_id = ? AND amount > 0 AND created_at BETWEEN ? AND ?`, [c.id, dateFrom, dateTo])?.s || 0; } catch {}
+        row.loyalty_points_earned = earned;
+      }
+
+      return row;
+    });
+
+    // Totals (sum across tenants)
+    const totals = {};
+    metrics.forEach(m => {
+      if (m === 'revenue') {
+        totals.revenue_fnb    = rows.reduce((s, r) => s + (r.revenue_fnb || 0), 0);
+        totals.revenue_cinema = rows.reduce((s, r) => s + (r.revenue_cinema || 0), 0);
+        totals.revenue_total  = rows.reduce((s, r) => s + (r.revenue_total || 0), 0);
+      } else if (m === 'tickets_sold')       totals.tickets_sold = rows.reduce((s, r) => s + (r.tickets_sold || 0), 0);
+      else if (m === 'orders_count')         totals.orders_count = rows.reduce((s, r) => s + (r.orders_count || 0), 0);
+      else if (m === 'avg_ticket_price') {
+        // Weighted avg
+        const cnt = rows.reduce((s, r) => s + (r.tickets_sold || 0), 0);
+        const sum = rows.reduce((s, r) => s + (r.avg_ticket_price || 0) * (r.tickets_sold || 0), 0);
+        totals.avg_ticket_price = cnt > 0 ? Math.round(sum / cnt) : 0;
+      }
+      else if (m === 'fnb_attach_rate') {
+        const t = rows.reduce((s, r) => s + (r.total_purchases || 0), 0);
+        const w = rows.reduce((s, r) => s + (r.fnb_attach_count || 0), 0);
+        totals.fnb_attach_pct = t > 0 ? Math.round((w / t) * 100) : 0;
+        totals.fnb_attach_count = w;
+        totals.total_purchases = t;
+      }
+      else if (m === 'loyalty_points') totals.loyalty_points_earned = rows.reduce((s, r) => s + (r.loyalty_points_earned || 0), 0);
+    });
+
+    res.json({
+      ok: true,
+      meta: {
+        metrics, group_by: groupBy,
+        date_from: new Date(dateFrom * 1000).toISOString(),
+        date_to: new Date(dateTo * 1000).toISOString(),
+        tenant_count: rows.length,
+      },
+      rows,
+      totals,
+    });
+  });
+
   return { router, db, resolveScope };
 }
 

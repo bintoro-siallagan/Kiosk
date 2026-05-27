@@ -28,6 +28,7 @@ const AdminAnnouncements = lazy(() => import("./Admin/AdminAnnouncements.jsx"));
 const AdminNotifPreview = lazy(() => import("./Admin/AdminNotifPreview.jsx"));
 const AdminCinemaWebConfig = lazy(() => import("./Admin/AdminCinemaWebConfig.jsx"));
 const AdminCompanies = lazy(() => import("./Admin/AdminCompanies.jsx"));
+const AdminCustomReport = lazy(() => import("./Admin/AdminCustomReport.jsx"));
 import { TABS, GROUPS as _RAW_GROUPS, filterGroupsForVertical, filterGroupsByFeatures, getModuleFeature, isModuleLocked, requiredPlanFor } from "./adminModules.js";
 
 // Multi-tenant: helper baca company ctx (dipakai oleh AdminHome di runtime, BUKAN module-load).
@@ -633,6 +634,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       { label: "Push Notifications", icon: "🔔", c: "#a855f7", on: () => openRight("esb-notif") },
       // White-label tenant self-service (Phase 1+2)
       { label: "Companies (Tenants)", icon: "🏢", c: "#3b82f6", on: () => openRight("companies") },
+      { label: "Custom Report",       icon: "📊", c: "#10b981", on: () => openRight("custom-report") },
       { label: "Branding",           icon: "🎨", c: "#fb923c", on: () => openRight("branding") },
       { label: "Cinema Web Config",  icon: "🌐", c: "#fb923c", vertical: "cinema", on: () => openRight("cinema-web-config") },
       { label: "Integrations",       icon: "🔑", c: "#22d3ee", on: () => openRight("integrations") },
@@ -856,6 +858,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
                 {rightView === "notif-preview" && <AdminNotifPreview onBack={closeRight} />}
                 {rightView === "cinema-web-config" && <AdminCinemaWebConfig onBack={closeRight} />}
                 {rightView === "companies" && <AdminCompanies onBack={closeRight} />}
+                {rightView === "custom-report" && <AdminCustomReport onBack={closeRight} />}
                 </Suspense>
               </div>
             </div>
