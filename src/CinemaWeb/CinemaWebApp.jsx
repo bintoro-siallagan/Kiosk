@@ -2114,13 +2114,15 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
   useEffect(() => { saveMuted(muted); }, [muted]);
   const trailerEmbed = current ? ytEmbedUrl(current.trailer_url) : null;
   const isTouch = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
+  const heroRef = useRef(null);
+  const inView = useInView(heroRef, 0.25);  // pause trailer kalau <25% hero visible
 
   useEffect(() => {
     setTrailerPlaying(false);
-    if (!trailerEmbed || isTouch) return;
+    if (!trailerEmbed || isTouch || !inView) return;
     const t = setTimeout(() => setTrailerPlaying(true), 3000);
     return () => clearTimeout(t);
-  }, [trailerEmbed, isTouch, idx]);
+  }, [trailerEmbed, isTouch, idx, inView]);
 
   if (!current) {
     // Fallback ringan saat film belum loaded — bg gradient brand subtle
@@ -2134,7 +2136,7 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
   }
 
   return (
-    <section className="cw-hero-billboard" style={{
+    <section ref={heroRef} className="cw-hero-billboard" style={{
       position: "relative", width: "100vw", minHeight: "85vh",
       overflow: "hidden",
       marginLeft: "calc(-50vw + 50%)", marginRight: "calc(-50vw + 50%)",
@@ -2945,6 +2947,22 @@ function saveMuted(m) {
   try { sessionStorage.setItem(MUTE_KEY, m ? "1" : "0"); } catch {}
 }
 
+// useInView — IntersectionObserver hook utk auto-pause trailer saat scroll
+function useInView(ref, threshold = 0.2) {
+  const [inView, setInView] = useState(true);  // assume visible, observer corrects
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof window === "undefined" || !window.IntersectionObserver) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { threshold }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [ref, threshold]);
+  return inView;
+}
+
 function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSignInClick }) {
   const [showtimeCount, setShowtimeCount] = useState(null);
   useEffect(() => {
@@ -2964,12 +2982,14 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSig
   const [muted, setMuted] = useState(loadMuted);
   useEffect(() => { saveMuted(muted); }, [muted]);
   const isTouch = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
+  const heroRef = useRef(null);
+  const heroInView = useInView(heroRef, 0.25);
   useEffect(() => {
     setTrailerPlaying(false);
-    if (!trailerEmbed || isTouch) return;
+    if (!trailerEmbed || isTouch || !heroInView) return;
     const t = setTimeout(() => setTrailerPlaying(true), 3000);
     return () => clearTimeout(t);
-  }, [trailerEmbed, isTouch, film.id]);
+  }, [trailerEmbed, isTouch, film.id, heroInView]);
   const trailerVideoId = trailerEmbed ? trailerEmbed.split("/embed/")[1]?.split("?")[0] : null;
 
   // My List toggle
@@ -3002,7 +3022,7 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSig
   return (
     <div style={{ padding: "20px 0 60px" }}>
       {/* Hero with poster backdrop + trailer autoplay overlay */}
-      <div style={{
+      <div ref={heroRef} style={{
         position: "relative", borderRadius: 18, overflow: "hidden",
         marginBottom: 24, minHeight: 360,
         background: film.poster_url ? `linear-gradient(180deg, rgba(10,10,15,0.4) 0%, rgba(10,10,15,0.95) 100%), url(${film.poster_url}) center/cover, #1a1a22` : DEFAULT_CITY_GRADIENT,
