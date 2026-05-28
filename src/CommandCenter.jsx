@@ -215,19 +215,41 @@ export default function CommandCenter(){
       @keyframes si{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
     `}</style>
 
-    {/* ═══ HEADER ═══ */}
-    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-      <div style={{display:"flex",alignItems:"center",gap:12}}>
-        <div style={{width:10,height:10,borderRadius:"50%",background:"#10b981",boxShadow:"0 0 10px #10b981",animation:"pp 2s infinite"}}/>
+    {/* ═══ NASA MISSION CONTROL HEADER ═══ */}
+    <div style={{
+      display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:18,
+      padding:"16px 20px",
+      background:"linear-gradient(180deg,#10161f,#0b1018)",
+      border:"1px solid #2d3b50",borderRadius:12,
+      boxShadow:`0 0 0 1px rgba(16,185,129,0.08), 0 8px 32px rgba(0,0,0,0.5)`,
+    }}>
+      <div style={{display:"flex",alignItems:"center",gap:14}}>
+        <div style={{width:12,height:12,borderRadius:"50%",background:"#10b981",boxShadow:"0 0 12px #10b981, 0 0 24px rgba(16,185,129,0.5)",animation:"pp 1.6s infinite"}}/>
         <div>
-          <h1 style={{fontSize:22,fontWeight:700,letterSpacing:-1,color:"#fafafa"}}>karyaOS Command Center</h1>
-          <p style={{fontSize:12,color:"#4a5568",fontFamily:"var(--m)",letterSpacing:1}}>REALTIME MONITORING DASHBOARD</p>
+          <div style={{fontSize:10,color:"#10b981",fontFamily:"var(--m)",fontWeight:800,letterSpacing:2.5,marginBottom:3}}>● LIVE · POLL 12s · WS CONNECTED</div>
+          <h1 style={{fontSize:24,fontWeight:900,letterSpacing:0.5,color:"#fff",fontFamily:"var(--m)",lineHeight:1}}>🛰 karyaOS COMMAND CENTER</h1>
+          <p style={{fontSize:11,color:"#7a8699",fontFamily:"var(--m)",letterSpacing:0.6,marginTop:3}}>F&B Hospitality OS · Mission Control v4</p>
         </div>
       </div>
-      <div style={{display:"flex",alignItems:"center",gap:16}}>
-        {critN>0&&<div style={{fontSize:13,fontFamily:"var(--m)",padding:"4px 12px",borderRadius:6,background:"#450a0a",border:"1px solid #dc262666",color:"#fca5a5",fontWeight:700}}>{critN} CRITICAL</div>}
-        <div style={{fontSize:24,fontWeight:600,fontFamily:"var(--m)",color:"#555",letterSpacing:3}}>{now}</div>
+      <div style={{display:"flex",alignItems:"center",gap:14}}>
+        {critN>0&&<div className="pp" style={{fontSize:12,fontFamily:"var(--m)",padding:"8px 16px",borderRadius:8,background:"rgba(239,68,68,0.15)",border:"1.5px solid #ef444488",color:"#fca5a5",fontWeight:800,letterSpacing:1.2,boxShadow:"0 0 16px rgba(239,68,68,0.3)"}}>⚠ {critN} CRITICAL ALERT{critN>1?"S":""}</div>}
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:32,fontWeight:800,fontFamily:"var(--m)",color:"#fbbf24",letterSpacing:1,lineHeight:1}}>{now}</div>
+          <div style={{fontSize:10,color:"#5b6470",fontFamily:"var(--m)",letterSpacing:1,marginTop:4}}>{new Date().toLocaleDateString("id-ID",{weekday:"short",day:"2-digit",month:"short",year:"numeric"})}</div>
+        </div>
       </div>
+    </div>
+
+    {/* ═══ SYSTEM STATUS BAR ═══ */}
+    <div style={{
+      display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))",gap:10,marginBottom:16,
+    }}>
+      <SysStat label="REVENUE TODAY" value={fK(zS.grossRevenue||0)} accent="#fbbf24" />
+      <SysStat label="TRANSACTIONS"  value={zS.transactionCount||0} accent="#22d3ee" />
+      <SysStat label="ANOMALIES" value={unr.length} accent={critN>0?"#ef4444":unr.length>0?"#fbbf24":"#10b981"} pulse={critN>0} />
+      <SysStat label="WH ALERTS"  value={whAlerts.length} accent={whAlerts.length>0?"#f59e0b":"#5b6470"} />
+      <SysStat label="OUTLETS LIVE" value={recon?.outlets?.length||"—"} accent="#a78bfa" />
+      <SysStat label="KPI ISSUES" value={kpiIssues.length} accent={kpiIssues.length>0?"#fb923c":"#10b981"} />
     </div>
 
     {/* ═══ TABS ═══ */}
@@ -557,4 +579,26 @@ export default function CommandCenter(){
       karyaOS COMMAND CENTER v4 · 12 RULES · REALTIME · LANDSCAPE
     </div>
   </div>);
+}
+
+// NASA SysStat tile — compact KPI utk status bar
+function SysStat({ label, value, accent, pulse }) {
+  return (
+    <div className={pulse ? "pp" : ""} style={{
+      background: `linear-gradient(180deg, ${accent}1a, ${accent}06)`,
+      border: `1px solid ${accent}44`, borderRadius: 8,
+      padding: "8px 14px",
+      boxShadow: pulse ? `0 0 16px ${accent}55` : "none",
+      display: "flex", flexDirection: "column", gap: 2,
+    }}>
+      <div style={{
+        fontSize: 22, fontWeight: 900, color: accent, lineHeight: 1,
+        fontFamily: "'Geist Mono','SF Mono',monospace", letterSpacing: -0.5,
+      }}>{value}</div>
+      <div style={{
+        fontSize: 9, color: "rgba(255,255,255,0.55)", letterSpacing: 1.2,
+        fontFamily: "'Geist Mono','SF Mono',monospace", fontWeight: 700,
+      }}>{label}</div>
+    </div>
+  );
 }
