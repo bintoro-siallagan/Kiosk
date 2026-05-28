@@ -445,6 +445,11 @@ function setupCinema(app, opts = {}) {
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN payment_method TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN payment_status TEXT"); } catch {}
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN paid_at INTEGER"); } catch {}
+  // Advance ticket Phase 2 — flag tiket pre-sale (bought sebelum film resmi tayang).
+  // Backend set auto pas insert tiket kalau film.status='coming_soon'. Refund H-1
+  // eligibility check (Phase 3) refer ke flag ini + showtime date.
+  try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN is_pre_sale INTEGER DEFAULT 0"); } catch {}
+  try { db.exec("CREATE INDEX IF NOT EXISTS idx_ctk_presale ON cinema_tickets(is_pre_sale) WHERE is_pre_sale = 1"); } catch {}
   try { db.exec("CREATE INDEX IF NOT EXISTS idx_cinema_ticket_paystatus ON cinema_tickets(payment_status)"); } catch {}
   // Auto-trigger promo: unlock saat daily sales / tickets reach threshold
   try { db.exec("ALTER TABLE cinema_promotions ADD COLUMN trigger_type TEXT DEFAULT 'code'"); } catch {}
@@ -3429,10 +3434,12 @@ function setupCinema(app, opts = {}) {
     const crypto = require('crypto');
     const purchaseId = 'CP-' + crypto.randomBytes(4).toString('hex').toUpperCase();
     // Multi-tenant: derive company dari showtime (or scope fallback)
+    // Pre-sale detection: kalau film masih status 'coming_soon' saat tiket dibeli → mark
     const _tktScope = req.companyScope || { is_super_admin: true };
-    const _tktShow = db.prepare(`SELECT company_id FROM cinema_showtimes WHERE id = ?`).get(req.body.showtime_id);
+    const _tktShow = db.prepare(`SELECT s.company_id, f.status AS film_status FROM cinema_showtimes s LEFT JOIN cinema_films f ON f.id = s.film_id WHERE s.id = ?`).get(req.body.showtime_id);
     const _tktCompanyId = _tktShow?.company_id || (_tktScope.is_super_admin ? 2 : _tktScope.company_id);
-    const ins   = db.prepare(`INSERT INTO cinema_tickets (showtime_id, seat, price, buyer, buyer_email, buyer_phone, code, purchase_id, payment_ref, payment_method, payment_status, paid_at, company_id) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`);
+    const _isPreSale = _tktShow?.film_status === 'coming_soon' ? 1 : 0;
+    const ins   = db.prepare(`INSERT INTO cinema_tickets (showtime_id, seat, price, buyer, buyer_email, buyer_phone, code, purchase_id, payment_ref, payment_method, payment_status, paid_at, company_id, is_pre_sale) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`);
     const insB  = db.prepare(`INSERT INTO cinema_purchase_bundles (purchase_id, bundle_id, bundle_name, qty, price) VALUES (?,?,?,?,?)`);
     const newTickets = [];
     const newBundles = [];
@@ -3441,8 +3448,8 @@ function setupCinema(app, opts = {}) {
         for (const s of seats) {
           const code = 'CT-' + crypto.randomBytes(4).toString('hex').toUpperCase();
           const seatPrice = priceForSeat(s);
-          const info = ins.run(st.id, s, seatPrice, b.buyer || '', b.buyer_email || '', b.buyer_phone || '', code, purchaseId, paymentRef || null, paymentMethod || null, payStatus, paidAt, _tktCompanyId);
-          newTickets.push({ id: info.lastInsertRowid, seat: s, price: seatPrice, type: seatTypeMap[s] || 'regular', code, purchase_id: purchaseId });
+          const info = ins.run(st.id, s, seatPrice, b.buyer || '', b.buyer_email || '', b.buyer_phone || '', code, purchaseId, paymentRef || null, paymentMethod || null, payStatus, paidAt, _tktCompanyId, _isPreSale);
+          newTickets.push({ id: info.lastInsertRowid, seat: s, price: seatPrice, type: seatTypeMap[s] || 'regular', code, purchase_id: purchaseId, is_pre_sale: _isPreSale });
         }
         for (const r of bundleRows) {
           const info = insB.run(purchaseId, r.bundle_id, r.bundle_name, r.qty, r.price);

@@ -3593,21 +3593,44 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSig
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {film.status === "coming_soon" ? (
-                // Coming Soon — countdown CTA (no booking yet, Phase 2 akan add Pre-Order)
-                <button disabled style={{
-                  background: `${brandPrimary}22`, color: brandPrimary,
-                  border: `1.5px solid ${brandPrimary}66`, borderRadius: 12,
-                  padding: "14px 28px", fontSize: 15, fontWeight: 800,
-                  cursor: "not-allowed", fontFamily: "inherit",
-                  display: "inline-flex", alignItems: "center", gap: 10,
-                }}>
-                  <span style={{ fontSize: 18 }}>📅</span>
-                  {film.release_date
-                    ? (daysUntil(film.release_date) > 0
-                        ? `Tayang ${fmtFullDate(film.release_date)} (${daysUntil(film.release_date)} hari lagi)`
-                        : `Tayang ${fmtFullDate(film.release_date)}`)
-                    : "Coming Soon"}
-                </button>
+                // Coming Soon — Phase 2: kalau showtimes > 0, allow PRE-ORDER (refundable H-1)
+                // Kalau belum ada showtime, tampil disabled countdown
+                showtimeCount > 0 ? (
+                  <button onClick={onPickShowtime} style={{
+                    background: brandPrimary, color: "#fff",
+                    border: "none", borderRadius: 12,
+                    padding: "14px 28px", fontSize: 15, fontWeight: 800, cursor: "pointer",
+                    fontFamily: "inherit",
+                    boxShadow: `0 8px 24px ${brandPrimary}66`,
+                    transition: "transform 0.15s",
+                    display: "inline-flex", alignItems: "center", gap: 10,
+                  }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = "translateY(-2px)"}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
+                    <span style={{ fontSize: 18 }}>🎟️</span>
+                    Pre-Order Sekarang
+                    {film.release_date && daysUntil(film.release_date) > 0 && (
+                      <span style={{ fontSize: 11, opacity: 0.85, marginLeft: 4, padding: "2px 8px", background: "rgba(0,0,0,0.25)", borderRadius: 12 }}>
+                        H-{daysUntil(film.release_date)}
+                      </span>
+                    )}
+                  </button>
+                ) : (
+                  <button disabled style={{
+                    background: `${brandPrimary}22`, color: brandPrimary,
+                    border: `1.5px solid ${brandPrimary}66`, borderRadius: 12,
+                    padding: "14px 28px", fontSize: 15, fontWeight: 800,
+                    cursor: "not-allowed", fontFamily: "inherit",
+                    display: "inline-flex", alignItems: "center", gap: 10,
+                  }}>
+                    <span style={{ fontSize: 18 }}>📅</span>
+                    {film.release_date
+                      ? (daysUntil(film.release_date) > 0
+                          ? `Tayang ${fmtFullDate(film.release_date)} (${daysUntil(film.release_date)} hari lagi)`
+                          : `Tayang ${fmtFullDate(film.release_date)}`)
+                      : "Coming Soon"}
+                  </button>
+                )
               ) : (
                 <button onClick={onPickShowtime} disabled={showtimeCount === 0} style={{
                   background: showtimeCount === 0 ? "rgba(255,255,255,0.1)" : brandPrimary,
@@ -4334,6 +4357,25 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, onEdit
     <div className="cw-checkout" style={{ padding: "30px 0", display: "grid", gridTemplateColumns: "1fr 360px", gap: 24 }}>
       {/* Left: Customer form */}
       <div>
+        {/* Pre-sale notice — film masih coming_soon, refundable H-1 */}
+        {film?.status === "coming_soon" && (
+          <div style={{
+            marginBottom: 18, padding: "14px 16px", borderRadius: 12,
+            background: `linear-gradient(135deg, ${brandPrimary}1a, ${brandPrimary}08)`,
+            border: `1px solid ${brandPrimary}55`,
+            display: "flex", alignItems: "flex-start", gap: 12,
+          }}>
+            <span style={{ fontSize: 22, lineHeight: 1 }}>🎬</span>
+            <div>
+              <div style={{ fontSize: 12, color: brandPrimary, fontWeight: 800, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.2, marginBottom: 4, textTransform: "uppercase" }}>
+                Pre-Sale Ticket
+              </div>
+              <div style={{ fontSize: 13, color: C.text, lineHeight: 1.55 }}>
+                Film ini <b>Coming Soon</b>{film.release_date ? <> · tayang <b>{fmtFullDate(film.release_date)}</b></> : ""}. Tiket bisa di-refund <b>100%</b> sampai H-1 tanggal showtime. Setelah itu, kebijakan refund reguler berlaku.
+              </div>
+            </div>
+          </div>
+        )}
         <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.3, margin: 0, marginBottom: 16 }}>Data Pemesan</h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <Field label="Nama Lengkap *" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="Nama sesuai identitas" />
