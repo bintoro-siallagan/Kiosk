@@ -128,7 +128,7 @@ app.patch("/api/admin/email-config", requireAdmin, express.json({ limit: "5mb" }
     res.json({ ok: true, config: emailModule.getMaskedConfig() });
   } catch (e) { res.status(500).json({ error: e.message }); }
 });
-app.post("/api/admin/email-test", express.json({ limit: "5mb" }), async (req, res) => {
+app.post("/api/admin/email-test", requireAdmin, express.json({ limit: "5mb" }), async (req, res) => {
   try {
     await emailModule.testConnection();
     // Also send a test email if recipient provided
@@ -1347,7 +1347,7 @@ console.log(`🖨  Printer mode: ${printerConfig.debug ? "DEBUG (file)" : "LIVE 
 
 app.get("/api/printer/config", (req, res) => res.json(printerConfig));
 
-app.patch("/api/printer/config", (req, res) => {
+app.patch("/api/printer/config", requireAdmin, (req, res) => {
   const { debug, kitchen, customer } = req.body || {};
   if (debug !== undefined) printerConfig.debug = Boolean(debug);
   if (kitchen) {
@@ -1386,7 +1386,7 @@ app.get("/api/customers/:id/loyalty", (req, res) => {
 
 app.get("/api/loyalty/config", (req, res) => res.json(loyalty.getConfig()));
 
-app.patch("/api/loyalty/config", (req, res) => {
+app.patch("/api/loyalty/config", requireAdmin, (req, res) => {
   const updated = loyalty.setConfig(req.body || {});
   broadcast("loyalty:config", updated);
   console.log(`🎁 Loyalty config updated: ${JSON.stringify(updated)}`);
@@ -1399,7 +1399,7 @@ app.get("/api/loyalty/history/:customerId", (req, res) => {
 });
 
 // Manual adjust (admin) — add/subtract points
-app.post("/api/loyalty/adjust", (req, res) => {
+app.post("/api/loyalty/adjust", requireAdmin, (req, res) => {
   const { customerId, amount, reason } = req.body || {};
   if (!customerId || typeof amount !== "number") return res.status(400).json({ error: "customerId & amount required" });
   const cust = customers.find(c => c.id === customerId);
@@ -1427,7 +1427,7 @@ app.patch("/api/wa/config", requireAdmin, (req, res) => {
   res.json({ ok: true, config: updated, provider: wa.detectProvider() });
 });
 
-app.post("/api/wa/test", async (req, res) => {
+app.post("/api/wa/test", requireAdmin, async (req, res) => {
   const { phone, message } = req.body || {};
   if (!phone) return res.status(400).json({ error: "phone required" });
   const result = await wa.sendMessage(phone, message || "Test message from KaryaOS Kiosk 🍦");
@@ -2562,7 +2562,7 @@ app.get("/api/esb/config", (req, res) => {
 });
 
 // POST /api/esb/config — update ESB config at runtime
-app.post("/api/esb/config", (req, res) => {
+app.post("/api/esb/config", requireAdmin, (req, res) => {
   const { baseUrl, apiKey, outletId, enabled } = req.body;
   if (baseUrl)  esbConfig.baseUrl  = baseUrl;
   if (apiKey)   esbConfig.apiKey   = apiKey;
@@ -2573,7 +2573,7 @@ app.post("/api/esb/config", (req, res) => {
 });
 
 // POST /api/esb/test — test push a dummy order
-app.post("/api/esb/test", async (req, res) => {
+app.post("/api/esb/test", requireAdmin, async (req, res) => {
   const dummy = {
     id: "TEST-01", time: Date.now(), type: "dine", table: "T1",
     pay: "QRIS", total: 55000, subtotal: 49550, tax: 5450,
@@ -2584,7 +2584,7 @@ app.post("/api/esb/test", async (req, res) => {
 });
 
 // POST /api/esb/retry — manual retry semua failed orders
-app.post("/api/esb/retry", (req, res) => {
+app.post("/api/esb/retry", requireAdmin, (req, res) => {
   const count = retryQueue.length;
   res.json({ ok: true, queued: count });
 });
@@ -2608,7 +2608,7 @@ app.get("/api/admin/audio", (_, res) => {
   }
 });
 
-app.post("/api/admin/audio/:name", (req, res) => {
+app.post("/api/admin/audio/:name", requireAdmin, (req, res) => {
   try {
     const name = req.params.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     const { dataBase64, mimeType } = req.body || {};
@@ -2629,7 +2629,7 @@ app.get("/api/admin/audio-config", (_, res) => {
   res.json(audioConfig.getConfig());
 });
 
-app.patch("/api/admin/audio-config", (req, res) => {
+app.patch("/api/admin/audio-config", requireAdmin, (req, res) => {
   try {
     const cur = audioConfig.getConfig();
     const patch = req.body || {};
@@ -2644,7 +2644,7 @@ app.patch("/api/admin/audio-config", (req, res) => {
   }
 });
 
-app.delete("/api/admin/audio/:name", (req, res) => {
+app.delete("/api/admin/audio/:name", requireAdmin, (req, res) => {
   try {
     const name = req.params.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     const fp = require("path").join(AUDIO_DIR, name);
@@ -2698,7 +2698,7 @@ app.get("/api/admin/screensaver-config", (_, res) => {
   res.json({ config: screensaver.getConfig(), images: screensaver.listImages() });
 });
 
-app.patch("/api/admin/screensaver-config", (req, res) => {
+app.patch("/api/admin/screensaver-config", requireAdmin, (req, res) => {
   try {
     const saved = screensaver.saveConfig({ ...screensaver.getConfig(), ...req.body });
     res.json({ ok: true, config: saved });
@@ -2707,7 +2707,7 @@ app.patch("/api/admin/screensaver-config", (req, res) => {
   }
 });
 
-app.post("/api/admin/screensaver-image/:name", (req, res) => {
+app.post("/api/admin/screensaver-image/:name", requireAdmin, (req, res) => {
   try {
     const name = req.params.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     const { dataBase64 } = req.body || {};
@@ -2723,7 +2723,7 @@ app.post("/api/admin/screensaver-image/:name", (req, res) => {
   }
 });
 
-app.delete("/api/admin/screensaver-image/:name", (req, res) => {
+app.delete("/api/admin/screensaver-image/:name", requireAdmin, (req, res) => {
   try {
     const name = req.params.name.replace(/[^a-zA-Z0-9._-]/g, "_");
     const fp = require("path").join(screensaver.IMAGES_DIR, name);
@@ -2762,7 +2762,7 @@ app.patch("/api/admin/midtrans-config", requireAdmin, (req, res) => {
   }
 });
 
-app.post("/api/admin/midtrans-test", async (_, res) => {
+app.post("/api/admin/midtrans-test", requireAdmin, async (_, res) => {
   const result = await midtrans.testConnection();
   res.json(result);
 });
