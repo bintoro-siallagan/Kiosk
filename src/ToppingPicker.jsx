@@ -72,6 +72,12 @@ export default function ToppingPicker({ item, onConfirm, onClose }) {
     onConfirm(item, selected, addonCost);
   };
 
+  // Quick-add: skip toppings, langsung tambah item polos (1 tap saving)
+  const handleSkipAdd = () => {
+    audio.playConfirm();
+    onConfirm(item, [], 0);
+  };
+
   if (!item) return null;
 
   return (
@@ -179,11 +185,28 @@ export default function ToppingPicker({ item, onConfirm, onClose }) {
           </div>
         )}
 
-        {/* ── FOOTER / CTA ────────────────── */}
+        {/* ── FOOTER / CTA — min-tap optimized ────────────────── */}
         <div style={S.footer}>
           <button style={S.cancelBtn} onClick={onClose}>
             Cancel
           </button>
+
+          {/* Skip-Add Quick action — kalau user gak mau topping, 1 tap done */}
+          {selected.length === 0 && (
+            <button onClick={handleSkipAdd} style={{
+              padding: "12px 18px", borderRadius: 12,
+              background: "rgba(255,255,255,0.05)",
+              border: "1.5px solid rgba(255,255,255,0.15)",
+              color: "rgba(255,255,255,0.85)",
+              fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: FONT,
+              letterSpacing: 0.2, transition: "all 0.15s",
+              whiteSpace: "nowrap",
+            }}
+              onMouseEnter={e => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.25)"; }}
+              onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.15)"; }}>
+              Skip Topping → Add
+            </button>
+          )}
 
           <div style={S.priceBreakdown}>
             {addonCost > 0 && (
@@ -197,7 +220,7 @@ export default function ToppingPicker({ item, onConfirm, onClose }) {
           </div>
 
           <button className="lg lg-brand order-pill" style={S.confirmBtn} onClick={handleConfirm}>
-            Add to cart
+            {selected.length > 0 ? `Add ${selected.length} Topping${selected.length > 1 ? "s" : ""}` : "Add to Cart"}
           </button>
         </div>
       </div>
@@ -361,23 +384,28 @@ const S = {
     gap: 10,
     alignContent: 'start',
   },
+  // BIG TAP TARGET — finger-friendly utk rush hour (min 80px height)
   toppingBtn: {
     position: 'relative',
-    padding: '14px 12px',
+    padding: '18px 14px',
     borderRadius: 14,
-    border: '1px solid rgba(255,255,255,0.06)',
-    background: 'rgba(255,255,255,0.025)',
+    border: '1.5px solid rgba(255,255,255,0.08)',
+    background: 'rgba(255,255,255,0.03)',
     color: 'rgba(255,255,255,0.92)',
     cursor: 'pointer',
     textAlign: 'left',
     transition: 'all 0.18s cubic-bezier(.2,.8,.2,1)',
-    minHeight: 66,
+    minHeight: 80,
     fontFamily: FONT,
+    fontSize: 14,
   },
+  // SELECTED — dramatic brand glow + scale boost
   toppingSelected: {
-    background: 'color-mix(in srgb,var(--brand-primary,#FF6B35) 10%,rgba(255,255,255,0.02))',
-    border: '1px solid color-mix(in srgb,var(--brand-primary,#FF6B35) 50%,transparent)',
+    background: 'linear-gradient(135deg, color-mix(in srgb,var(--brand-primary,#FF6B35) 20%,rgba(255,255,255,0.03)), color-mix(in srgb,var(--brand-primary,#FF6B35) 8%,transparent))',
+    border: '1.5px solid color-mix(in srgb,var(--brand-primary,#FF6B35) 70%,transparent)',
     color: '#fff',
+    boxShadow: '0 4px 14px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent), inset 0 1px 0 rgba(255,255,255,0.15)',
+    transform: 'scale(1.02)',
   },
   toppingName: {
     fontSize: 13,
