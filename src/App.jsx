@@ -119,9 +119,18 @@ function getScene() {
     if (q.includes("cinema")) return "pos-cinema";
     return "pos";
   }
-  // cinema.karyaos.tech → customer cinema booking web (CinemaWebApp).
+  // cinema.karyaos.tech → customer cinema booking web (CinemaWebApp) by default.
   // NOTE: scene "cinema" = CinemaKiosk (box office). Customer booking = scene "movies".
+  // Query params boleh override (so admin/internal flows tetap reachable di subdomain).
   if (host.startsWith("cinema.")) {
+    if (q.includes("cinema-kiosk") || q.includes("cinemakiosk")) return "cinema";
+    if (q.includes("cinema-snack"))    return "cinema-snack";
+    if (q.includes("cinema-board"))    return "cinema-board";
+    if (q.includes("cinema-kds") || q.includes("cinemakds")) return "cinema-kds";
+    if (q.includes("cinema-cds") || q.includes("cinemacds")) return "cinema-cds";
+    if (q.includes("cinema-feedback")) return "cinema-feedback";
+    if (new URLSearchParams(q).get("ticket"))    return "cinema-digital-ticket";
+    if (new URLSearchParams(q).has("purchase"))  return "cinema-digital-ticket";
     return "movies";
   }
   // qr.karyaos.tech → FlowApp (QR table-side ordering, customer scans QR di meja)
