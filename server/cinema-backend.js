@@ -4458,7 +4458,8 @@ function setupCinema(app, opts = {}) {
     for (const k of ['title', 'genre', 'duration_min', 'rating', 'status', 'synopsis',
                      'distributor_id', 'license_start', 'license_end', 'revenue_share_pct',
                      'min_run_days', 'distributor_notes',
-                     'poster_url', 'trailer_url', 'subtitle', 'language', 'available_formats']) {
+                     'poster_url', 'trailer_url', 'subtitle', 'language', 'available_formats',
+                     'release_date']) {
       if (k in b) {
         fields.push(`${k} = ?`);
         args.push(k === 'duration_min' || k === 'min_run_days' || k === 'distributor_id' ? (b[k] == null || b[k] === '' ? null : parseInt(b[k], 10))

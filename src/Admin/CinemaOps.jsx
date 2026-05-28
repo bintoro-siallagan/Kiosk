@@ -126,6 +126,7 @@ function CinemaOpsInner({ apiBase }) {
         title: data.title, genre: data.genre, duration_min: data.duration_min,
         rating: data.rating, status: data.status, synopsis: data.synopsis,
         poster_url: data.poster_url, trailer_url: data.trailer_url,
+        release_date: data.release_date || null,
       };
     } else if (type === "studio") {
       body = { name: data.name, studio_type: data.studio_type, rows: data.rows, cols: data.cols, outlet: data.outlet };
@@ -571,6 +572,11 @@ function CinemaOpsInner({ apiBase }) {
                     </select>
                   </Field>
                 </div>
+                {/* Release date — utk Coming Soon film: tampilkan countdown di customer Cinema Web */}
+                <Field label={editing.data.status === "coming_soon" ? "Tanggal Rilis (countdown coming soon)" : "Tanggal Rilis (opsional)"}>
+                  <input type="date" style={modalInp} value={editing.data.release_date || ""}
+                    onChange={e => setEditing({ ...editing, data: { ...editing.data, release_date: e.target.value } })} />
+                </Field>
                 <Field label="Sinopsis"><textarea rows={3} style={{ ...modalInp, resize: "vertical" }} value={editing.data.synopsis || ""} onChange={e => setEditing({ ...editing, data: { ...editing.data, synopsis: e.target.value } })} /></Field>
                 <Field label="Poster URL">
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>

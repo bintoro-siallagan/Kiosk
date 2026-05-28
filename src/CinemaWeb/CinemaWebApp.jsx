@@ -2678,6 +2678,26 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
             {current.status === "coming_soon" ? "Segera Tayang" : "Sedang Tayang"}
           </div>
 
+          {/* Release date countdown (only utk coming_soon film yg punya release_date) */}
+          {current.status === "coming_soon" && current.release_date && (() => {
+            const days = daysUntil(current.release_date);
+            return (
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 10, marginBottom: 18,
+                padding: "8px 14px", borderRadius: 4,
+                background: "rgba(0,0,0,0.55)", backdropFilter: "blur(6px)",
+                border: `1px solid ${brandPrimary}55`,
+                fontSize: 12, color: "#fff", fontWeight: 600,
+                fontFamily: "'JetBrains Mono',monospace",
+              }}>
+                <span style={{ fontSize: 14 }}>📅</span>
+                <span>Tayang {fmtFullDate(current.release_date)}</span>
+                {days > 0 && <span style={{ color: brandPrimary, fontWeight: 800 }}>· {days} hari lagi</span>}
+                {days === 0 && <span style={{ color: "#fbbf24", fontWeight: 800 }}>· Hari ini!</span>}
+              </div>
+            );
+          })()}
+
           {/* Title huge */}
           <h1 style={{
             fontSize: "clamp(40px, 7vw, 82px)", fontWeight: 900,
@@ -3572,20 +3592,38 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSig
               ))}
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              <button onClick={onPickShowtime} disabled={showtimeCount === 0} style={{
-                background: showtimeCount === 0 ? "rgba(255,255,255,0.1)" : brandPrimary,
-                color: "#fff", border: "none", borderRadius: 12,
-                padding: "14px 28px", fontSize: 15, fontWeight: 800, cursor: showtimeCount === 0 ? "not-allowed" : "pointer",
-                fontFamily: "inherit",
-                boxShadow: showtimeCount === 0 ? "none" : `0 8px 24px ${brandPrimary}66`,
-                transition: "transform 0.15s",
-              }}
-                onMouseEnter={(e) => { if (showtimeCount !== 0) e.currentTarget.style.transform = "translateY(-2px)"; }}
-                onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
-                {showtimeCount === null ? "⏳ Cek jadwal…"
-                  : showtimeCount === 0 ? "❌ Tidak ada jadwal"
-                  : `🎟️ Lihat ${showtimeCount} Jadwal →`}
-              </button>
+              {film.status === "coming_soon" ? (
+                // Coming Soon — countdown CTA (no booking yet, Phase 2 akan add Pre-Order)
+                <button disabled style={{
+                  background: `${brandPrimary}22`, color: brandPrimary,
+                  border: `1.5px solid ${brandPrimary}66`, borderRadius: 12,
+                  padding: "14px 28px", fontSize: 15, fontWeight: 800,
+                  cursor: "not-allowed", fontFamily: "inherit",
+                  display: "inline-flex", alignItems: "center", gap: 10,
+                }}>
+                  <span style={{ fontSize: 18 }}>📅</span>
+                  {film.release_date
+                    ? (daysUntil(film.release_date) > 0
+                        ? `Tayang ${fmtFullDate(film.release_date)} (${daysUntil(film.release_date)} hari lagi)`
+                        : `Tayang ${fmtFullDate(film.release_date)}`)
+                    : "Coming Soon"}
+                </button>
+              ) : (
+                <button onClick={onPickShowtime} disabled={showtimeCount === 0} style={{
+                  background: showtimeCount === 0 ? "rgba(255,255,255,0.1)" : brandPrimary,
+                  color: "#fff", border: "none", borderRadius: 12,
+                  padding: "14px 28px", fontSize: 15, fontWeight: 800, cursor: showtimeCount === 0 ? "not-allowed" : "pointer",
+                  fontFamily: "inherit",
+                  boxShadow: showtimeCount === 0 ? "none" : `0 8px 24px ${brandPrimary}66`,
+                  transition: "transform 0.15s",
+                }}
+                  onMouseEnter={(e) => { if (showtimeCount !== 0) e.currentTarget.style.transform = "translateY(-2px)"; }}
+                  onMouseLeave={(e) => e.currentTarget.style.transform = "translateY(0)"}>
+                  {showtimeCount === null ? "⏳ Cek jadwal…"
+                    : showtimeCount === 0 ? "❌ Tidak ada jadwal"
+                    : `🎟️ Lihat ${showtimeCount} Jadwal →`}
+                </button>
+              )}
               <button onClick={toggleList} disabled={listBusy} title={session ? (inList ? "Hapus dari My List" : "Tambah ke My List") : "Sign in dulu utk simpan ke My List"} style={{
                 background: inList ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.5)",
                 color: "#fff", border: `1.5px solid ${inList ? brandPrimary : "rgba(255,255,255,0.4)"}`,
@@ -3622,6 +3660,12 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSig
           <MetaItem label="Bahasa" value={film.language || "Indonesia"} />
           {film.subtitle && <MetaItem label="Subtitle" value={film.subtitle} />}
           <MetaItem label="Format" value={formats.join(" · ")} />
+          {film.release_date && (
+            <MetaItem
+              label={film.status === "coming_soon" ? "Tanggal Rilis" : "Tayang Sejak"}
+              value={fmtFullDate(film.release_date)}
+            />
+          )}
         </div>
       </div>
 
@@ -3782,6 +3826,21 @@ function fmtDate(yyyymmdd) {
   if (!yyyymmdd) return "";
   const d = new Date(yyyymmdd + "T00:00:00");
   return d.toLocaleDateString("id-ID", { weekday: "short", day: "numeric", month: "short" });
+}
+
+// Format full date dgn tahun. Pakai utk release_date display ("12 Juni 2026").
+function fmtFullDate(yyyymmdd) {
+  if (!yyyymmdd) return "";
+  const d = new Date(yyyymmdd + "T00:00:00");
+  return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+}
+
+// Days until target date (negative if past). Pakai utk countdown coming soon.
+function daysUntil(yyyymmdd) {
+  if (!yyyymmdd) return 0;
+  const target = new Date(yyyymmdd + "T00:00:00").getTime();
+  const today = new Date(); today.setHours(0,0,0,0);
+  return Math.ceil((target - today.getTime()) / 86400000);
 }
 
 function ShowtimesList({ outlet, film, onPickShowtime, brandPrimary }) {
