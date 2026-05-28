@@ -87,21 +87,39 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
     return () => clearInterval(t);
   }, [loadAll]);
 
-  // Play sound on new ticket
-  const playDing = useCallback(() => {
+  // ── KDS SOUND SYSTEM (Web Audio synth — no asset files needed) ──
+  // 3 distinct sounds for chef instant recognition tanpa lihat layar:
+  //   - playDingNew    : single 880Hz bell (new order ping)
+  //   - playDingReady  : ascending 2-tone (positive completion)
+  //   - playDingLate   : low-pitched urgent triple-pulse (warning)
+  const ensureCtx = () => {
+    if (!audioCtx.current) audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
+    return audioCtx.current;
+  };
+  const playTone = (freq, duration = 0.3, type = 'sine', startGain = 0.15) => {
     try {
-      if (!audioCtx.current) audioCtx.current = new (window.AudioContext || window.webkitAudioContext)();
-      const ctx = audioCtx.current;
+      const ctx = ensureCtx();
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
-      osc.frequency.value = 880;
-      osc.type = 'sine';
-      gain.gain.setValueAtTime(0.15, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.frequency.value = freq;
+      osc.type = type;
+      gain.gain.setValueAtTime(startGain, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
       osc.connect(gain).connect(ctx.destination);
       osc.start();
-      osc.stop(ctx.currentTime + 0.3);
+      osc.stop(ctx.currentTime + duration);
     } catch {}
+  };
+  const playDing = useCallback(() => playTone(880, 0.3, 'sine', 0.15), []);
+  const playDingReady = useCallback(() => {
+    playTone(659, 0.18, 'sine', 0.13);                                  // E5
+    setTimeout(() => playTone(880, 0.25, 'sine', 0.13), 180);          // A5 (ascending)
+  }, []);
+  const playDingLate = useCallback(() => {
+    // Urgent triple-pulse low-pitch (chef notice from across kitchen)
+    playTone(220, 0.12, 'square', 0.12);
+    setTimeout(() => playTone(220, 0.12, 'square', 0.12), 200);
+    setTimeout(() => playTone(220, 0.18, 'square', 0.14), 400);
   }, []);
 
   // WebSocket connection
@@ -132,6 +150,51 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
     if (activeStation === 'all') return tickets;
     return tickets.filter(t => t.station_id === activeStation);
   }, [tickets, activeStation]);
+
+  // ── LATE TICKET DETECTION → audio alert ──
+  // Compute tier per ticket. Compare prev set vs current. Kalau ticket baru masuk
+  // tier 'danger', play urgent late sound. Throttled per-ticket (alert sekali aja).
+  const lateAlertedRef = useRef(new Set());
+  useEffect(() => {
+    const nowSec = Math.floor(now / 1000);
+    const newlyLate = [];
+    for (const t of visibleTickets) {
+      if (t.status !== 'queued' && t.status !== 'preparing') continue;
+      const fromTs = t.status === 'preparing' ? (t.started_at || t.created_at) : t.created_at;
+      const elapsed = Math.max(0, nowSec - fromTs);
+      const tgt = stationMap?.[t.station_id]?.target_prep_seconds || 300;
+      if (elapsed / tgt > 1.5 && !lateAlertedRef.current.has(t.id)) {
+        lateAlertedRef.current.add(t.id);
+        newlyLate.push(t.id);
+      }
+    }
+    if (newlyLate.length > 0) playDingLate();
+    // Clean up alerted set kalau ticket sudah served/voided
+    const currentIds = new Set(visibleTickets.map(t => t.id));
+    for (const id of [...lateAlertedRef.current]) {
+      if (!currentIds.has(id)) lateAlertedRef.current.delete(id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [now, visibleTickets, playDingLate]);
+
+  // ── ANALYTICS COMPUTATION (client-side from tickets data) ──
+  const analytics = useMemo(() => {
+    const nowSec = Math.floor(now / 1000);
+    let queued = 0, preparing = 0, ready = 0, late = 0, warning = 0;
+    for (const t of visibleTickets) {
+      if (t.status === 'queued') queued++;
+      else if (t.status === 'preparing') preparing++;
+      else if (t.status === 'ready') ready++;
+      if (t.status === 'queued' || t.status === 'preparing') {
+        const fromTs = t.status === 'preparing' ? (t.started_at || t.created_at) : t.created_at;
+        const elapsed = nowSec - fromTs;
+        const tgt = (stations.find(s => s.id === t.station_id)?.target_prep_seconds) || 300;
+        if (elapsed / tgt > 1.5) late++;
+        else if (elapsed / tgt > 1.0) warning++;
+      }
+    }
+    return { queued, preparing, ready, late, warning, total: visibleTickets.length };
+  }, [visibleTickets, now, stations]);
 
   // Group by status
   const grouped = useMemo(() => {
@@ -219,6 +282,27 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
             86 ({items86.length})
           </button>
         </div>
+      </div>
+
+      {/* ── INDUSTRIAL ANALYTICS STRIP (Kitchen OS) ── */}
+      <div style={{
+        display: "flex", gap: 8, padding: "10px 16px",
+        background: "#0a0a0a", borderBottom: "1px solid rgba(255,255,255,0.05)",
+        flexWrap: "wrap",
+      }}>
+        <AnalyticsTile label="ACTIVE" value={analytics.total} color="#fff" />
+        <AnalyticsTile label="QUEUED" value={analytics.queued} color="#3b82f6" />
+        <AnalyticsTile label="COOKING" value={analytics.preparing} color="#fb923c" />
+        <AnalyticsTile label="READY" value={analytics.ready} color="#4ade80" />
+        {analytics.warning > 0 && <AnalyticsTile label="WARN" value={analytics.warning} color="#fbbf24" />}
+        {analytics.late > 0 && <AnalyticsTile label="LATE" value={analytics.late} color="#ef4444" pulse />}
+        <div style={{ flex: 1 }} />
+        {stats?.completed_today && (
+          <>
+            <AnalyticsTile label="DONE TODAY" value={stats.completed_today.total || 0} color="#10b981" />
+            <AnalyticsTile label="AVG PREP" value={stats.completed_today.avg_prep ? `${Math.round(stats.completed_today.avg_prep)}s` : "—"} color="#22d3ee" />
+          </>
+        )}
       </div>
 
       {/* MAIN CONTENT */}
@@ -430,6 +514,29 @@ function StatusColumn({ title, subtitle, count, color, children }) {
 
 function Empty({ children }) {
   return <div style={{padding: 30, textAlign: 'center', color: '#6b7280', fontSize: 12}}>{children}</div>;
+}
+
+// Kitchen analytics tile — compact KPI utk strip top
+function AnalyticsTile({ label, value, color, pulse }) {
+  return (
+    <div className={pulse ? "kds-card-pulse" : ""} style={{
+      background: `linear-gradient(180deg, ${color}1a, ${color}08)`,
+      border: `1px solid ${color}44`,
+      borderRadius: 8, padding: "6px 14px",
+      minWidth: 72,
+      boxShadow: pulse ? `0 0 14px ${color}55` : "none",
+      display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
+    }}>
+      <div style={{
+        fontSize: 20, fontWeight: 900, color, lineHeight: 1,
+        fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5,
+      }}>{value}</div>
+      <div style={{
+        fontSize: 9, color: "rgba(255,255,255,0.6)", letterSpacing: 1.2,
+        fontFamily: "'Geist Mono',monospace", fontWeight: 700,
+      }}>{label}</div>
+    </div>
+  );
 }
 
 // ============================================================
