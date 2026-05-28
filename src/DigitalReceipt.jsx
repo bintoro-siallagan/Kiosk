@@ -87,6 +87,92 @@ export default function DigitalReceipt({ orderId, onDone }) {
         <div className="no-print">
           <PushPermissionPrompt orderId={orderId} phone={receipt?.customer_phone} />
         </div>
+
+        {/* ── PICKUP HERO — BIG order number + status + ETA (no-print) ── */}
+        <div className="no-print" style={{
+          marginBottom: 22, padding: "28px 24px",
+          borderRadius: 24,
+          background: "linear-gradient(135deg, color-mix(in srgb,var(--brand-primary,#FF6B35) 18%,transparent), color-mix(in srgb,var(--brand-primary,#FF6B35) 4%,transparent))",
+          border: "1px solid color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent)",
+          boxShadow: "0 12px 48px color-mix(in srgb,var(--brand-primary,#FF6B35) 22%,rgba(0,0,0,0.35)), inset 0 1px 0 rgba(255,255,255,0.08)",
+          textAlign: "center",
+          maxWidth: 520, margin: "0 auto 22px",
+          position: "relative", overflow: "hidden",
+        }}>
+          {/* Eyebrow */}
+          <div style={{
+            fontSize: 11, color: "color-mix(in srgb,var(--brand-primary,#FF6B35) 85%,#fff)",
+            fontFamily: "'Geist Mono',monospace", fontWeight: 700, letterSpacing: 2.5,
+            textTransform: "uppercase", marginBottom: 8,
+            display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center",
+          }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: "50%",
+              background: "var(--brand-primary,#FF6B35)",
+              boxShadow: "0 0 10px var(--brand-primary,#FF6B35), 0 0 20px color-mix(in srgb,var(--brand-primary,#FF6B35) 60%,transparent)",
+              animation: "drGlowPulse 1.6s ease infinite",
+            }} />
+            ORDER NUMBER
+          </div>
+          {/* BIG Order # */}
+          <div style={{
+            fontSize: "clamp(72px, 14vw, 120px)", fontWeight: 900,
+            color: "#fff", fontFamily: "'Geist Mono',monospace",
+            letterSpacing: -4, lineHeight: 1,
+            textShadow: "0 4px 28px color-mix(in srgb,var(--brand-primary,#FF6B35) 50%,rgba(0,0,0,0.5))",
+            margin: "4px 0 14px",
+          }}>#{receipt.orderId}</div>
+          {/* Status pill */}
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 10,
+            padding: "9px 18px",
+            background: "rgba(0,0,0,0.35)",
+            border: "1px solid rgba(255,255,255,0.15)",
+            borderRadius: 999, backdropFilter: "blur(8px)",
+            fontSize: 13, color: "#fff", fontWeight: 700,
+            fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5,
+          }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: "50%",
+              background: "#10b981", boxShadow: "0 0 8px #10b981",
+              animation: "drGlowPulse 2s ease infinite",
+            }} />
+            <span>SEDANG DIPROSES</span>
+            <span style={{ color: "rgba(255,255,255,0.4)" }}>·</span>
+            <span style={{ color: "color-mix(in srgb,var(--brand-primary,#FF6B35) 90%,#fff)" }}>ESTIMASI 4 MENIT</span>
+          </div>
+          {/* Progress tracker */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center", marginTop: 18 }}>
+            {["✓ Diterima", "⏳ Disiapkan", "🍽 Siap Diambil"].map((label, i) => {
+              const done = i === 0;  // step 1 done, step 2 active, step 3 pending
+              const active = i === 1;
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <div style={{
+                    padding: "5px 12px", borderRadius: 999,
+                    background: done ? "rgba(16,185,129,0.18)" : active ? "color-mix(in srgb,var(--brand-primary,#FF6B35) 22%,transparent)" : "rgba(255,255,255,0.04)",
+                    border: `1px solid ${done ? "rgba(16,185,129,0.5)" : active ? "color-mix(in srgb,var(--brand-primary,#FF6B35) 50%,transparent)" : "rgba(255,255,255,0.08)"}`,
+                    color: done ? "#34d399" : active ? "#fff" : "rgba(255,255,255,0.4)",
+                    fontSize: 11, fontWeight: 700, fontFamily: "'Geist Mono',monospace",
+                    letterSpacing: 0.4,
+                  }}>{label}</div>
+                  {i < 2 && <span style={{ color: "rgba(255,255,255,0.2)", fontSize: 10 }}>→</span>}
+                </div>
+              );
+            })}
+          </div>
+          {/* Pickup hint */}
+          <div style={{
+            marginTop: 16, fontSize: 12, color: "rgba(255,255,255,0.55)",
+            fontFamily: "'Inter',sans-serif",
+          }}>
+            🔔 Kami akan panggil nomor Anda di counter saat pesanan siap
+          </div>
+        </div>
+        <style>{`
+          @keyframes drGlowPulse { 0%,100% { opacity:1 } 50% { opacity:0.4 } }
+        `}</style>
+
         {/* Receipt paper */}
         <div style={R.paper} className="receipt-paper">
           {/* Header */}

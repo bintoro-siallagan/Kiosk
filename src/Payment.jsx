@@ -19,10 +19,11 @@ const S = {
     justifyContent: 'center',
     fontFamily: "'Inter',sans-serif",
   },
-  title: { fontSize: 28, fontWeight: 600, letterSpacing: '-0.8px', margin: 0, color: 'rgba(255,255,255,0.95)' },
-  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.55)', marginTop: 6, marginBottom: 22, letterSpacing: '-0.2px' },
-  totalLabel: { fontSize: 11, color: 'rgba(255,255,255,0.5)', letterSpacing: 2, marginBottom: 8, textTransform: 'uppercase', fontWeight: 500 },
-  totalAmount: { fontSize: 56, fontWeight: 700, color: '#fff', marginBottom: 32, fontVariantNumeric: 'tabular-nums', letterSpacing: '-2px', textShadow: '0 4px 24px rgba(0,0,0,0.45)' },
+  title: { fontSize: 36, fontWeight: 800, letterSpacing: '-1.2px', margin: 0, color: '#fff', lineHeight: 1.1 },
+  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.6)', marginTop: 8, marginBottom: 28, letterSpacing: '-0.2px', fontFamily: "'Geist Mono',monospace" },
+  totalLabel: { fontSize: 11, color: 'color-mix(in srgb,var(--brand-primary,#FF6B35) 80%,#fff)', letterSpacing: 2.5, marginBottom: 10, textTransform: 'uppercase', fontWeight: 700, fontFamily: "'Geist Mono',monospace" },
+  // Drama total — bigger, brand-glow textShadow, mono variant
+  totalAmount: { fontSize: 68, fontWeight: 900, color: '#fff', marginBottom: 36, fontVariantNumeric: 'tabular-nums', letterSpacing: '-3px', textShadow: '0 4px 32px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,rgba(0,0,0,0.5))', fontFamily: "'Geist Mono','Inter',sans-serif" },
   methodGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
