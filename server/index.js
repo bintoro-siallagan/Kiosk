@@ -1929,8 +1929,20 @@ app.get("/api/marquee", (req, res) => {
     }
   } catch {}
 
-  // 3) Cinema auto-promo (unlocked = aktif, progress = belum, per-company)
+  // Detect company vertical to gate cinema-specific marquee items.
+  // F&B-only company shouldn't see cinema "coming soon film" di FNB CDS/Kiosk surface.
+  let companyVertical = null;
   try {
+    if (!scope.is_super_admin && scope.company_id) {
+      const c = db.rawDb.prepare(`SELECT primary_vertical FROM companies WHERE id = ?`).get(scope.company_id);
+      companyVertical = c?.primary_vertical || null;
+    }
+  } catch {}
+  const allowCinemaContent = scope.is_super_admin || companyVertical === 'cinema' || companyVertical === 'hybrid';
+
+  // 3) Cinema auto-promo (unlocked = aktif, progress = belum, per-company)
+  //    SKIP kalau company F&B-only — surface ini bukan cinema kiosk.
+  if (allowCinemaContent) try {
     const today = new Date().toISOString().slice(0, 10);
     const promos = db.rawDb.prepare(`
       SELECT * FROM cinema_promotions
@@ -1973,7 +1985,8 @@ app.get("/api/marquee", (req, res) => {
   } catch {}
 
   // 4) Film coming soon (top 3 by license_start, per-company)
-  if (surface === "kiosk" || surface === "cds") {
+  //    Hanya tampil kalau company vertical cinema/hybrid (skip FNB-only).
+  if (allowCinemaContent && (surface === "kiosk" || surface === "cds")) {
     try {
       const films = db.rawDb.prepare(`
         SELECT title, license_start, genre
