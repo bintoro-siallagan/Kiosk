@@ -5335,6 +5335,42 @@ function requireManager(req, res, next) {
 // Apply auth to all /api/audit/* routes
 app.use("/api/audit", requireAdmin);
 
+// ─── NAMESPACE-LEVEL ADMIN GATES (RBAC sweep round 2) ──────────────────
+// Routes di bawah path-path ini SEMUA admin-only. Apply guard di mount level
+// supaya gak perlu touch tiap router.post/put/patch/delete di setiap module file.
+// Public routes seperti POS/kiosk/auth tetap unguarded (path-nya beda).
+const ADMIN_NAMESPACES = [
+  // Financial / accounting
+  "/api/ap-aging", "/api/ar", "/api/budget", "/api/budget-plan",
+  "/api/cash-flow", "/api/coa", "/api/consolidation", "/api/core-tax",
+  "/api/finance-alerts", "/api/finance-center", "/api/financial-statements",
+  "/api/food-cost", "/api/food-cost-calc", "/api/general-ledger",
+  "/api/journal", "/api/billing",
+  // Operations / procurement
+  "/api/auto-reorder", "/api/batch-tracking", "/api/delivery-order",
+  "/api/goods-delivery", "/api/goods-received", "/api/internal-return",
+  // Compliance / audit / risk
+  "/api/anti-fraud", "/api/approval", "/api/compliance",
+  "/api/incidents", "/api/internal-audit",
+  // HR / staff intelligence
+  "/api/hr-command", "/api/hris", "/api/cashier-kpi", "/api/leaderboard",
+  "/api/motivation", "/api/departments",
+  // Master / catalog admin
+  "/api/master-category", "/api/master-unit", "/api/item-config",
+  "/api/item-intel", "/api/item-pricing", "/api/item-rules",
+  // Business intelligence
+  "/api/analytics", "/api/clv-churn", "/api/customer-intel",
+  "/api/demand-forecast", "/api/executive", "/api/feedback-segment",
+  "/api/geo-engagement", "/api/marketing-behavior", "/api/owner-dashboard",
+  // Other admin
+  "/api/asset-maintenance", "/api/campaign-impact", "/api/contract",
+  "/api/document-hub", "/api/franchise", "/api/helpdesk",
+  "/api/launch", "/api/notification-center", "/api/notifications",
+  "/api/onboarding", "/api/outlet-master", "/api/outlets",
+];
+for (const ns of ADMIN_NAMESPACES) app.use(ns, requireAdmin);
+console.log(`🔒 RBAC: ${ADMIN_NAMESPACES.length} namespaces now require admin`);
+
 // ─── COMMAND CENTER AUDIT MODULE ───────────────────────
 const { initAuditModule, registerAuditEndpoints, auditEngine } = require("./command-center-backend");
 initAuditModule(db);
