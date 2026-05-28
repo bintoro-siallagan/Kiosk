@@ -5,6 +5,7 @@ import { api, createSocket } from "./api.js";
 import ZReport from "./ZReport.jsx";
 import FlowQRGen from "./Flow/FlowQRGen.jsx";
 import TableStatusManager from "./Admin/TableStatusManager.jsx";
+import { isBridgeOnline, testPrintViaLocalBridge, scanPrintersViaLocalBridge } from "./lib/localPrint.js";
 import API_HOST from "./apiBase.js";
 
 import { fmtMoney as fIDR } from "./lib/currency.js";
@@ -23,6 +24,57 @@ const STATUS = {
 
 const MOCK_ORDERS = [];
 const MENU_MOCK = [];
+
+// ASCII preview generator untuk receipt — match logika escpos.js buildCustomerReceipt
+function generateReceiptPreview(template = {}) {
+  const W = template.paper_width === 32 ? 32 : 48;
+  const name = template.outlet_name || "KaryaOS";
+  const addr = template.outlet_address || "Jakarta, Indonesia";
+  const thanks = template.footer_thanks || "Terima kasih atas kunjungan Anda!";
+  const note = template.footer_note || "Simpan struk sebagai bukti pembayaran";
+  const showQr = template.show_qr !== false;
+  const center = (s) => {
+    const t = String(s).slice(0, W);
+    const pad = Math.max(0, Math.floor((W - t.length) / 2));
+    return " ".repeat(pad) + t;
+  };
+  const hr = (ch = "=") => ch.repeat(W);
+  return [
+    center(name.toUpperCase()),
+    center("(Auto: Kasir POS / Self Order / QR Order)"),
+    center(addr),
+    "",
+    hr("="),
+    center("No. Struk: RCP-A02-DEMO123"),
+    center("No. Order: #A02"),
+    center("Waktu: 28/5/2026 16:30"),
+    center("Kasir: (auto dari source)"),
+    center("Tipe: Dine In - Meja 5"),
+    hr("="),
+    center("DAFTAR PESANAN"),
+    hr("-"),
+    center("2x  Nasi Goreng"),
+    center("Rp 50.000"),
+    "",
+    center("1x  Es Teh"),
+    center("Rp 8.000"),
+    "",
+    hr("="),
+    center("Subtotal: Rp 58.000"),
+    center("PPN 11% (incl.): Rp 5.745"),
+    "",
+    center("TOTAL: Rp 58.000"),
+    hr("="),
+    center("Pembayaran: TUNAI"),
+    center("Status: LUNAS"),
+    "",
+    center(thanks),
+    center(note),
+    "",
+    ...(showQr ? [center("Scan untuk cek status pesanan:"), "", center("[ QR CODE ]"), ""] : []),
+    center("Order #A02"),
+  ].join("\n");
+}
 
 function Sparkline({ data, color, height=40 }) {
   if (!data?.length) return null;
@@ -120,7 +172,7 @@ const btnStyle = (color, bg) => ({
 export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembers, onPromo, onShift, onLogout, adminSession, onTools, initialTab }) {
   const [orders, setOrders]     = useState([]);
   const [showZReport, setShowZReport] = useState(false);
-  const [printerConfig, setPrinterConfig] = useState({ debug: true, kitchen: { ip:"", port:9100 }, customer: { ip:"", port:9100 } });
+  const [printerConfig, setPrinterConfig] = useState({ debug: true, kitchen: { ip:"", port:9100 }, customer: { ip:"", port:9100 }, template: { outlet_name:"", outlet_address:"", footer_thanks:"", footer_note:"", paper_width:48, show_qr:true } });
   const [midtransConfig, setMidtransConfig] = useState({ serverKey:"", serverKeyFull:"", clientKey:"", isProduction:false, enabledMethods:["qris","gopay"], merchantId:"", notificationUrl:"" });
   const [midtransTest, setMidtransTest] = useState(null);
   const [midtransSaving, setMidtransSaving] = useState(false);
@@ -140,6 +192,10 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
   const [audioUploading, setAudioUploading] = useState(false);
   const [backupInfo, setBackupInfo] = useState({ backups: [], retention: 24, intervalMin: 60 });
   const [printerTest, setPrinterTest] = useState({});
+  const [bridgeStatus, setBridgeStatus] = useState({ online: null, checking: false });
+  const [bridgeUrl, setBridgeUrl] = useState(() => { try { return localStorage.getItem("printBridgeUrl") || "http://localhost:9101"; } catch { return "http://localhost:9101"; } });
+  const [scanResult, setScanResult] = useState({ scanning: false, printers: [], error: null });
+  const [templateSaveStatus, setTemplateSaveStatus] = useState(null); // null | "saving" | "saved" | "error"
 
   useEffect(() => {
     api.getPrinterConfig().then(setPrinterConfig).catch(()=>{});
@@ -157,15 +213,59 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
       setPrinterConfig(result.config);
     } catch (e) { if (typeof notify === "function") notify("Gagal: "+e.message, "#F87171"); }
   };
+  // Test print via local bridge (bukan backend — backend VPS gak bisa reach LAN printer)
   const testPrint = async (role) => {
     const cfg = printerConfig[role];
     if (!cfg.ip) { setPrinterTest({...printerTest, [role]: "❌ IP belum diisi"}); return; }
     setPrinterTest({...printerTest, [role]: "Testing…"});
     try {
-      await api.testPrinter({ ip: cfg.ip, port: cfg.port });
-      setPrinterTest({...printerTest, [role]: "✅ Printer OK"});
+      const r = await testPrintViaLocalBridge(cfg.ip, cfg.port || 9100);
+      if (r && r.ok) {
+        setPrinterTest({...printerTest, [role]: "✅ Printer OK (printed test page)"});
+      } else {
+        setPrinterTest({...printerTest, [role]: "❌ " + (r?.error || "bridge unreachable")});
+      }
     } catch (e) {
-      setPrinterTest({...printerTest, [role]: "❌ "+(e.message||"failed")});
+      setPrinterTest({...printerTest, [role]: "❌ " + (e.message || "failed")});
+    }
+  };
+
+  const checkBridge = async () => {
+    setBridgeStatus({ online: null, checking: true });
+    const online = await isBridgeOnline();
+    setBridgeStatus({ online, checking: false });
+  };
+  // Auto-check bridge status on mount
+  useEffect(() => { checkBridge(); }, []);
+
+  const scanLanPrinters = async () => {
+    setScanResult({ scanning: true, printers: [], error: null });
+    const r = await scanPrintersViaLocalBridge(9100);
+    if (r && r.ok) {
+      setScanResult({ scanning: false, printers: r.printers || [], error: null });
+    } else {
+      setScanResult({ scanning: false, printers: [], error: r?.error || "bridge unreachable" });
+    }
+  };
+
+  const saveBridgeUrl = (url) => {
+    setBridgeUrl(url);
+    try { localStorage.setItem("printBridgeUrl", url); } catch {}
+    checkBridge();
+  };
+
+  // Eksplisit Save semua template fields — selain on-blur auto-save.
+  // Berikan visible feedback (Saved / Error) supaya user yakin perubahan tersimpan.
+  const saveTemplate = async () => {
+    setTemplateSaveStatus("saving");
+    try {
+      await api.setPrinterConfig({ template: printerConfig.template });
+      setTemplateSaveStatus("saved");
+      setTimeout(() => setTemplateSaveStatus(null), 2500);
+    } catch (e) {
+      setTemplateSaveStatus("error");
+      setTimeout(() => setTemplateSaveStatus(null), 4000);
+      if (typeof notify === "function") notify("Gagal save template: " + e.message, "#F87171");
     }
   };
   const updateMidtrans = async (patch) => {
@@ -709,38 +809,238 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                 </div>
               ))}
 
-              {/* 🖨 Printer */}
+              {/* 🖨 Printer Thermal ESC/POS — full operations panel */}
               <div style={{background:"#0d1117",border:"1px solid #161b22",borderRadius:14,padding:"20px",gridColumn:"span 2"}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14,gap:12,flexWrap:"wrap"}}>
                   <div>
                     <div style={{fontSize:32,marginBottom:6}}>🖨</div>
                     <div style={{fontSize:15,fontWeight:700,marginBottom:4}}>Printer Thermal ESC/POS</div>
-                    <div style={{fontSize:12,color:"#666",lineHeight:1.5}}>IP printer kitchen + customer untuk auto-print struk</div>
+                    <div style={{fontSize:12,color:"#666",lineHeight:1.5}}>Config + test printer kitchen & customer receipt</div>
                   </div>
-                  <button onClick={()=>updatePrinter({debug: !printerConfig.debug})}
-                    style={{background: printerConfig.debug ? "rgba(248,113,113,0.12)" : "rgba(52,211,153,0.12)", border:`1px solid ${printerConfig.debug ? "#F87171" : "#34D399"}`, borderRadius:8, padding:"6px 14px", color: printerConfig.debug ? "#F87171" : "#34D399", cursor:"pointer", fontSize:11, fontWeight:700, letterSpacing:1}}>
-                    {printerConfig.debug ? "DEBUG ON" : "PRODUKSI"}
-                  </button>
+                  <div style={{display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                    {/* Bridge status pill */}
+                    <div style={{
+                      display:"flex",alignItems:"center",gap:6,
+                      background: bridgeStatus.online === true ? "rgba(52,211,153,0.12)" : bridgeStatus.online === false ? "rgba(248,113,113,0.12)" : "rgba(107,114,128,0.1)",
+                      border: `1px solid ${bridgeStatus.online === true ? "#34D39966" : bridgeStatus.online === false ? "#F8717166" : "#6B728044"}`,
+                      borderRadius:8,padding:"6px 12px",fontSize:11,fontWeight:700,letterSpacing:0.5,
+                      color: bridgeStatus.online === true ? "#34D399" : bridgeStatus.online === false ? "#F87171" : "#6B7280",
+                    }}>
+                      <span style={{width:8,height:8,borderRadius:99,background:"currentColor",animation: bridgeStatus.online === true ? "pulse 1.4s ease-in-out infinite" : "none"}}/>
+                      BRIDGE {bridgeStatus.checking ? "..." : bridgeStatus.online === true ? "ONLINE" : bridgeStatus.online === false ? "OFFLINE" : "?"}
+                    </div>
+                    <button onClick={()=>updatePrinter({debug: !printerConfig.debug})}
+                      style={{background: printerConfig.debug ? "rgba(248,113,113,0.12)" : "rgba(52,211,153,0.12)", border:`1px solid ${printerConfig.debug ? "#F87171" : "#34D399"}`, borderRadius:8, padding:"6px 14px", color: printerConfig.debug ? "#F87171" : "#34D399", cursor:"pointer", fontSize:11, fontWeight:700, letterSpacing:1}}>
+                      {printerConfig.debug ? "DEBUG ON" : "PRODUKSI"}
+                    </button>
+                  </div>
                 </div>
+
+                {/* Bridge config row */}
+                <div style={{background:"#0a0e16",border:"1px solid #21262d",borderRadius:10,padding:12,marginBottom:14}}>
+                  <div style={{fontSize:11,color:"#888",marginBottom:8,fontWeight:600,letterSpacing:0.5}}>🌉 PRINT BRIDGE URL (jalan di PC kasir)</div>
+                  <div style={{display:"flex",gap:8,alignItems:"stretch",flexWrap:"wrap"}}>
+                    <input type="text" placeholder="http://localhost:9101"
+                      value={bridgeUrl}
+                      onChange={e=>setBridgeUrl(e.target.value)}
+                      onBlur={e=>saveBridgeUrl(e.target.value)}
+                      style={{flex:1,minWidth:200,background:"#000",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Geist Mono',monospace"}}/>
+                    <button onClick={checkBridge} disabled={bridgeStatus.checking}
+                      style={{background:"rgba(56,189,248,0.12)",border:"1px solid #38BDF866",color:"#38BDF8",borderRadius:8,padding:"10px 16px",cursor: bridgeStatus.checking?"wait":"pointer",fontSize:12,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>
+                      {bridgeStatus.checking ? "Checking…" : "↻ Test Connection"}
+                    </button>
+                    <button onClick={scanLanPrinters} disabled={scanResult.scanning || bridgeStatus.online !== true}
+                      title={bridgeStatus.online !== true ? "Bridge harus online untuk scan" : "Scan semua IP di subnet LAN cari printer"}
+                      style={{background: bridgeStatus.online === true ? "rgba(167,139,250,0.12)" : "rgba(107,114,128,0.08)",border:`1px solid ${bridgeStatus.online === true ? "#A78BFA66" : "#33333344"}`,color: bridgeStatus.online === true ? "#A78BFA" : "#555",borderRadius:8,padding:"10px 16px",cursor: scanResult.scanning?"wait": bridgeStatus.online === true ? "pointer":"not-allowed",fontSize:12,fontWeight:700,fontFamily:"'Inter',sans-serif"}}>
+                      {scanResult.scanning ? "Scanning…" : "🔍 Scan LAN"}
+                    </button>
+                  </div>
+                  {bridgeStatus.online === false && (
+                    <div style={{marginTop:8,padding:"8px 10px",background:"rgba(248,113,113,0.06)",border:"1px solid rgba(248,113,113,0.25)",borderRadius:6,fontSize:11,color:"#FCA5A5",lineHeight:1.5}}>
+                      ⚠ Bridge offline. Download + run <code style={{color:"#22d3ee"}}>https://app.karyaos.tech/downloads/print-bridge.zip</code> di PC kasir lalu double-click <code style={{color:"#22d3ee"}}>start-bridge.bat</code>.
+                    </div>
+                  )}
+                  {scanResult.printers.length > 0 && (
+                    <div style={{marginTop:10,padding:"10px 12px",background:"rgba(52,211,153,0.06)",border:"1px solid rgba(52,211,153,0.25)",borderRadius:6}}>
+                      <div style={{fontSize:11,color:"#34D399",fontWeight:700,marginBottom:6}}>🖨 PRINTER DI-DETECT ({scanResult.printers.length}):</div>
+                      <div style={{display:"flex",gap:6,flexWrap:"wrap"}}>
+                        {scanResult.printers.map(p => {
+                          const [ip] = p.split(":");
+                          return <button key={p} onClick={()=>{
+                            updatePrinter({kitchen:{ip, port: 9100}, customer:{ip, port: 9100}});
+                          }} style={{background:"rgba(52,211,153,0.1)",border:"1px solid #34D39966",color:"#34D399",borderRadius:6,padding:"4px 10px",fontSize:11,fontFamily:"'Geist Mono',monospace",cursor:"pointer",fontWeight:700}}>
+                            {p} · Use →
+                          </button>;
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {scanResult.error && (
+                    <div style={{marginTop:8,fontSize:11,color:"#F87171"}}>Scan error: {scanResult.error}</div>
+                  )}
+                </div>
+
+                {/* Printer config + test buttons */}
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+                  {[
+                    {role:"kitchen", icon:"🍳", label:"KITCHEN PRINTER", placeholder:"192.168.100.7"},
+                    {role:"customer", icon:"🧾", label:"CUSTOMER PRINTER", placeholder:"192.168.100.7"},
+                  ].map(({role, icon, label, placeholder}) => (
+                    <div key={role}>
+                      <div style={{fontSize:11,color:"#888",marginBottom:6,fontWeight:600}}>{icon} {label} IP</div>
+                      <div style={{display:"flex",gap:6}}>
+                        <input type="text" placeholder={placeholder}
+                          value={printerConfig[role]?.ip||""}
+                          onChange={e=>setPrinterConfig({...printerConfig, [role]:{...printerConfig[role], ip: e.target.value}})}
+                          onBlur={e=>updatePrinter({[role]:{...printerConfig[role], ip: e.target.value}})}
+                          style={{flex:1,background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Geist Mono',monospace"}}/>
+                        <input type="number" placeholder="9100"
+                          value={printerConfig[role]?.port||9100}
+                          onChange={e=>setPrinterConfig({...printerConfig, [role]:{...printerConfig[role], port: parseInt(e.target.value)||9100}})}
+                          onBlur={e=>updatePrinter({[role]:{...printerConfig[role], port: parseInt(e.target.value)||9100}})}
+                          style={{width:70,background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 8px",color:"#fff",fontSize:13,fontFamily:"'Geist Mono',monospace",textAlign:"center"}}/>
+                        <button onClick={()=>testPrint(role)}
+                          disabled={!printerConfig[role]?.ip || bridgeStatus.online !== true}
+                          title={bridgeStatus.online !== true ? "Bridge harus online" : "Cetak test page"}
+                          style={{background: bridgeStatus.online === true && printerConfig[role]?.ip ? "rgba(245,158,11,0.15)" : "rgba(107,114,128,0.08)",border:`1px solid ${bridgeStatus.online === true && printerConfig[role]?.ip ? "#F59E0B" : "#33333344"}`,color: bridgeStatus.online === true && printerConfig[role]?.ip ? "#F59E0B" : "#555",borderRadius:8,padding:"10px 12px",cursor: bridgeStatus.online === true && printerConfig[role]?.ip ? "pointer" : "not-allowed",fontSize:12,fontWeight:700,fontFamily:"'Inter',sans-serif",whiteSpace:"nowrap"}}>
+                          🖨 Test
+                        </button>
+                      </div>
+                      {printerTest[role] && (
+                        <div style={{
+                          marginTop:6,fontSize:11,padding:"6px 10px",borderRadius:6,
+                          background: printerTest[role].startsWith("✅") ? "rgba(52,211,153,0.08)" : printerTest[role].startsWith("❌") ? "rgba(248,113,113,0.08)" : "rgba(245,158,11,0.08)",
+                          border: `1px solid ${printerTest[role].startsWith("✅") ? "#34D39955" : printerTest[role].startsWith("❌") ? "#F8717155" : "#F59E0B55"}`,
+                          color: printerTest[role].startsWith("✅") ? "#34D399" : printerTest[role].startsWith("❌") ? "#F87171" : "#F59E0B",
+                        }}>{printerTest[role]}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div style={{fontSize:10,color:"#666",marginTop:12,lineHeight:1.6}}>
+                  💡 Single-printer setup: isi IP yang sama di kitchen + customer (cetak 2 ticket ke printer yang sama).<br/>
+                  💡 Default port 9100 (RAW). Kosongkan IP untuk skip print pada role itu.<br/>
+                  💡 Debug mode = save .bin file ke server (untuk troubleshoot, bukan cetak fisik).
+                </div>
+              </div>
+
+              {/* 🧾 Receipt Template — editable per outlet */}
+              <div style={{background:"#0d1117",border:"1px solid #161b22",borderRadius:14,padding:"20px",gridColumn:"span 2"}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14,gap:12,flexWrap:"wrap"}}>
                   <div>
-                    <div style={{fontSize:11,color:"#888",marginBottom:6,fontWeight:600}}>KITCHEN PRINTER IP</div>
-                    <input type="text" placeholder="192.168.1.106"
-                      value={printerConfig.kitchen?.ip||""}
-                      onChange={e=>setPrinterConfig({...printerConfig, kitchen:{...printerConfig.kitchen, ip: e.target.value}})}
-                      onBlur={e=>updatePrinter({kitchen:{...printerConfig.kitchen, ip: e.target.value}})}
-                      style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Inter',sans-serif"}}/>
+                    <div style={{fontSize:32,marginBottom:6}}>🧾</div>
+                    <div style={{fontSize:15,fontWeight:700,marginBottom:4}}>Receipt Template</div>
+                    <div style={{fontSize:12,color:"#666",lineHeight:1.5}}>Edit header outlet, address, footer, paper width — langsung kepake di struk berikutnya</div>
                   </div>
-                  <div>
-                    <div style={{fontSize:11,color:"#888",marginBottom:6,fontWeight:600}}>CUSTOMER PRINTER IP</div>
-                    <input type="text" placeholder="192.168.1.107"
-                      value={printerConfig.customer?.ip||""}
-                      onChange={e=>setPrinterConfig({...printerConfig, customer:{...printerConfig.customer, ip: e.target.value}})}
-                      onBlur={e=>updatePrinter({customer:{...printerConfig.customer, ip: e.target.value}})}
-                      style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Inter',sans-serif"}}/>
+                  {/* Paper width toggle */}
+                  <div style={{display:"flex",gap:6,alignItems:"center",background:"#0a0e16",border:"1px solid #21262d",borderRadius:10,padding:4}}>
+                    {[
+                      {w:48, label:"80mm", sub:"48 ch"},
+                      {w:32, label:"58mm", sub:"32 ch"},
+                    ].map(({w,label,sub}) => {
+                      const active = (printerConfig.template?.paper_width || 48) === w;
+                      return (
+                        <button key={w} onClick={()=>{
+                          const newT = {...printerConfig.template, paper_width:w};
+                          setPrinterConfig({...printerConfig, template:newT});
+                          updatePrinter({template:newT});
+                        }} style={{
+                          background: active ? "rgba(245,158,11,0.15)" : "transparent",
+                          border: `1px solid ${active ? "#F59E0B" : "transparent"}`,
+                          color: active ? "#F59E0B" : "#888", borderRadius:8,
+                          padding:"6px 12px", fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"'Inter',sans-serif",
+                          lineHeight:1.2,
+                        }}>
+                          <div>{label}</div>
+                          <div style={{fontSize:9,opacity:0.7,fontFamily:"'Geist Mono',monospace"}}>{sub}</div>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
-                <div style={{fontSize:10,color:"#666",marginTop:10,lineHeight:1.5}}>Default port 9100 (RAW). Leave IP empty to skip printing on that printer. Debug mode = save .bin file instead of actual printing.</div>
+
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:12}}>
+                  {[
+                    {key:"outlet_name", label:"NAMA OUTLET", placeholder:"Soursally Frozen Yogurt", maxLength:32, bold:true},
+                    {key:"outlet_address", label:"ALAMAT / KOTA", placeholder:"Jakarta Selatan, Indonesia", maxLength:40},
+                  ].map(({key, label, placeholder, maxLength, bold}) => (
+                    <div key={key}>
+                      <div style={{fontSize:11,color:"#888",marginBottom:6,fontWeight:600}}>{label}</div>
+                      <input type="text" placeholder={placeholder} maxLength={maxLength}
+                        value={printerConfig.template?.[key]||""}
+                        onChange={e=>setPrinterConfig({...printerConfig, template:{...printerConfig.template, [key]: e.target.value}})}
+                        onBlur={e=>updatePrinter({template:{...printerConfig.template, [key]: e.target.value}})}
+                        style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Inter',sans-serif",fontWeight: bold?700:400}}/>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:12}}>
+                  {[
+                    {key:"footer_thanks", label:"FOOTER · BARIS 1 (Thank-you)", placeholder:"Terima kasih atas kunjungan Anda!", maxLength:48},
+                    {key:"footer_note", label:"FOOTER · BARIS 2 (Note)", placeholder:"Simpan struk sebagai bukti pembayaran", maxLength:48},
+                  ].map(({key, label, placeholder, maxLength}) => (
+                    <div key={key}>
+                      <div style={{fontSize:11,color:"#888",marginBottom:6,fontWeight:600}}>{label}</div>
+                      <input type="text" placeholder={placeholder} maxLength={maxLength}
+                        value={printerConfig.template?.[key]||""}
+                        onChange={e=>setPrinterConfig({...printerConfig, template:{...printerConfig.template, [key]: e.target.value}})}
+                        onBlur={e=>updatePrinter({template:{...printerConfig.template, [key]: e.target.value}})}
+                        style={{width:"100%",background:"#0a0e16",border:"1px solid #21262d",borderRadius:8,padding:"10px 12px",color:"#fff",fontSize:13,fontFamily:"'Inter',sans-serif"}}/>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{display:"flex",gap:14,alignItems:"center",marginBottom:14}}>
+                  <button onClick={()=>{
+                    const next = !(printerConfig.template?.show_qr !== false);
+                    setPrinterConfig({...printerConfig, template:{...printerConfig.template, show_qr:next}});
+                    updatePrinter({template:{...printerConfig.template, show_qr:next}});
+                  }} style={{
+                    background: printerConfig.template?.show_qr !== false ? "rgba(52,211,153,0.12)" : "rgba(107,114,128,0.08)",
+                    border: `1px solid ${printerConfig.template?.show_qr !== false ? "#34D39966" : "#33333344"}`,
+                    color: printerConfig.template?.show_qr !== false ? "#34D399" : "#666",
+                    borderRadius:8,padding:"8px 14px",fontSize:12,fontWeight:700,cursor:"pointer",
+                  }}>
+                    {printerConfig.template?.show_qr !== false ? "📲 QR ORDER TRACKING: ON" : "📲 QR ORDER TRACKING: OFF"}
+                  </button>
+                  <div style={{fontSize:11,color:"#666",lineHeight:1.5,flex:1}}>QR di footer customer receipt — customer scan untuk cek status order.</div>
+                </div>
+
+                {/* Live ASCII Preview */}
+                <div style={{background:"#000",border:"1px dashed #333",borderRadius:10,padding:"14px 16px",marginTop:8}}>
+                  <div style={{fontSize:10,color:"#888",letterSpacing:2,fontWeight:700,marginBottom:8,fontFamily:"'Geist Mono',monospace"}}>PREVIEW · CUSTOMER RECEIPT</div>
+                  <pre style={{margin:0,fontFamily:"'Geist Mono','Courier New',monospace",fontSize:11,color:"#9ca3af",lineHeight:1.4,whiteSpace:"pre",overflow:"auto"}}>
+{generateReceiptPreview(printerConfig.template)}
+                  </pre>
+                </div>
+
+                {/* Save button + status feedback */}
+                <div style={{display:"flex",alignItems:"center",gap:12,marginTop:14,flexWrap:"wrap"}}>
+                  <button onClick={saveTemplate} disabled={templateSaveStatus === "saving"} style={{
+                    background: templateSaveStatus === "saved" ? "rgba(52,211,153,0.18)" : templateSaveStatus === "error" ? "rgba(248,113,113,0.18)" : "linear-gradient(135deg,#F59E0B,#FBBF24)",
+                    border: templateSaveStatus === "saved" ? "1px solid #34D399" : templateSaveStatus === "error" ? "1px solid #F87171" : "1px solid #F59E0B",
+                    color: templateSaveStatus === "saved" ? "#34D399" : templateSaveStatus === "error" ? "#F87171" : "#1a1205",
+                    borderRadius:10, padding:"12px 24px", fontSize:13, fontWeight:800, letterSpacing:0.5,
+                    cursor: templateSaveStatus === "saving" ? "wait" : "pointer", fontFamily:"'Inter',sans-serif",
+                    boxShadow: templateSaveStatus === null ? "0 6px 16px rgba(245,158,11,0.3)" : "none",
+                    transition: "all 0.2s ease",
+                  }}>
+                    {templateSaveStatus === "saving" ? "⏳ Menyimpan..."
+                      : templateSaveStatus === "saved" ? "✓ Tersimpan"
+                      : templateSaveStatus === "error" ? "✗ Gagal — coba lagi"
+                      : "💾 Simpan Template"}
+                  </button>
+                  <div style={{fontSize:11,color:"#666",lineHeight:1.5,flex:1,minWidth:200}}>
+                    Auto-save juga aktif saat input lepas fokus (tab/klik area lain). Tombol ini untuk konfirmasi visual.
+                  </div>
+                </div>
+
+                <div style={{fontSize:10,color:"#666",marginTop:12,lineHeight:1.6,paddingTop:12,borderTop:"1px solid #1a1f29"}}>
+                  💡 Subtitle (Kasir POS / Self Order Kiosk / QR Order) otomatis sesuai sumber order — gak perlu di-set manual.<br/>
+                  💡 Paper width 80mm = 48 karakter per baris · 58mm = 32 karakter (text-wrap otomatis).<br/>
+                  💡 Perubahan langsung berlaku di struk berikutnya, gak perlu restart server.
+                </div>
               </div>
 
               {/* 💵 Metode Pembayaran */}

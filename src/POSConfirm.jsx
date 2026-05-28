@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import POSSplitPayment from "./POSSplitPayment.jsx";
 import { calcServiceCharge, loadServiceChargeConfig } from "./pricing.js";
+import { printOrderBothViaLocalBridge } from "./lib/localPrint.js";
 import API_HOST from "./apiBase.js";
 
 const API_BASE = API_HOST;
@@ -352,6 +353,11 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
 
       // Broadcast complete order ke CDS
       cdsCast("pos:order_complete", { order: saved });
+
+      // Auto-print via local bridge (fire-and-forget, gak boleh hambat UX kalau bridge offline)
+      if (saved?.id) {
+        printOrderBothViaLocalBridge(saved.id).catch(() => {});
+      }
 
       onSuccess(saved);
     } catch (e) {

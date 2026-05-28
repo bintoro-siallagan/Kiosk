@@ -178,6 +178,11 @@ export default function Payment({ cart, orderType, promo, tableData, customerDat
       } catch {}
     }
 
+    // Bridge print: defer ke parent atau backend trigger.
+    // (sebelumnya panggil printOrderBothViaLocalBridge di sini, but rolled back —
+    //  parent App.jsx atau DigitalReceipt yang akan handle print sebagai gantinya,
+    //  supaya error di bridge gak hambat payment success render)
+
     onSuccess({ orderId: createdOrder?.id, ...payInfo });
   }, [cart, orderType, promo, tableData, customerData, onSuccess]);
 

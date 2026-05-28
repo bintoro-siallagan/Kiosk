@@ -3,6 +3,7 @@ import * as audio from "./audio.js";
 import { api } from "./api.js";
 import QRCode from "qrcode";
 import { subscribeToOrderPush, isPushSupported } from "./lib/push.js";
+import { printOrderBothViaLocalBridge } from "./lib/localPrint.js";
 import PushPermissionPrompt from "./components/PushPermissionPrompt.jsx";
 
 import { fmtMoney as fIDR } from "./lib/currency.js";
@@ -23,6 +24,9 @@ export default function DigitalReceipt({ orderId, onDone }) {
         if (isPushSupported() && Notification.permission === "granted") {
           subscribeToOrderPush({ orderId, phone: r?.customer_phone }).catch(() => {});
         }
+        // Trigger local bridge print AFTER receipt confirmed loaded — di sini supaya
+        // race condition di Payment success transition gak masalah (rolled back dari Payment.jsx)
+        printOrderBothViaLocalBridge(orderId).catch(() => {});
       })
       .catch(() => setReceipt(null))
       .finally(() => setLoading(false));

@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import POSSplitPayment from "./POSSplitPayment.jsx";
+import { printOrderBothViaLocalBridge } from "./lib/localPrint.js";
 import API_HOST from "./apiBase.js";
 const API_BASE = API_HOST;
 
@@ -25,6 +26,9 @@ export default function POSSettle({ tab, cashier, onBack, onSuccess }) {
         throw new Error(err.error || `HTTP ${res.status}`);
       }
       const settled = await res.json();
+      // Auto-print kitchen + customer ticket via local bridge (fire-and-forget)
+      const printId = settled?.id || tab.id;
+      if (printId) printOrderBothViaLocalBridge(printId).catch(() => {});
       onSuccess(settled);
     } catch (err) {
       setError(err.message);
@@ -131,7 +135,10 @@ export default function POSSettle({ tab, cashier, onBack, onSuccess }) {
           onClose={() => setShowSplit(false)}
           onSuccess={(result) => {
             setShowSplit(false);
-            onSuccess(result.order || tab);
+            const settled = result.order || tab;
+            const printId = settled?.id || tab.id;
+            if (printId) printOrderBothViaLocalBridge(printId).catch(() => {});
+            onSuccess(settled);
           }}
         />
       )}

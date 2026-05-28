@@ -561,13 +561,13 @@ async function _print(kind, order, bytes, envIpKey, envPortKey, dirName, emoji) 
 }
 
 async function printKitchenTicket(order) {
-  return _print("Kitchen ticket", order, buildKitchenTicket(order),
+  return _print("Kitchen ticket", order, buildKitchenTicket(order, printerConfig.template),
                 "KITCHEN_PRINTER_IP", "KITCHEN_PRINTER_PORT",
                 "kitchen-tickets", "🍳");
 }
 
 async function printCustomerReceipt(order) {
-  return _print("Customer receipt", order, buildCustomerReceipt(order),
+  return _print("Customer receipt", order, buildCustomerReceipt(order, printerConfig.template),
                 "CUSTOMER_PRINTER_IP", "CUSTOMER_PRINTER_PORT",
                 "customer-receipts", "🧾");
 }
@@ -1329,11 +1329,27 @@ function loadPrinterConfig() {
     debug: process.env.PRINTER_DEBUG !== "false",
     kitchen:  { ip: process.env.KITCHEN_PRINTER_IP  || "", port: parseInt(process.env.KITCHEN_PRINTER_PORT)  || 9100 },
     customer: { ip: process.env.CUSTOMER_PRINTER_IP || "", port: parseInt(process.env.CUSTOMER_PRINTER_PORT) || 9100 },
+    // Template — editable dari admin panel, di-read oleh escpos.js buildCustomerReceipt + buildKitchenTicket
+    template: {
+      outlet_name: "KaryaOS",
+      outlet_subtitle: "Self Order Kiosk",
+      outlet_address: "Jakarta, Indonesia",
+      paper_width: 48,                  // 48 = 80mm thermal, 32 = 58mm thermal
+      footer_thanks: "Terima kasih atas kunjungan Anda!",
+      footer_note: "Simpan struk sebagai bukti pembayaran",
+      show_qr: true,
+      show_logo: false,
+    },
   };
   try {
     if (fs.existsSync(PRINTER_CONFIG_FILE)) {
       const p = JSON.parse(fs.readFileSync(PRINTER_CONFIG_FILE, "utf-8"));
-      return { ...defaults, ...p, kitchen: { ...defaults.kitchen, ...(p.kitchen||{}) }, customer: { ...defaults.customer, ...(p.customer||{}) } };
+      return {
+        ...defaults, ...p,
+        kitchen:  { ...defaults.kitchen, ...(p.kitchen||{}) },
+        customer: { ...defaults.customer, ...(p.customer||{}) },
+        template: { ...defaults.template, ...(p.template||{}) },
+      };
     }
   } catch (e) { console.warn("printer-config.json corrupt:", e.message); }
   return defaults;
@@ -1350,7 +1366,7 @@ console.log(`🖨  Printer mode: ${printerConfig.debug ? "DEBUG (file)" : "LIVE 
 app.get("/api/printer/config", (req, res) => res.json(printerConfig));
 
 app.patch("/api/printer/config", requireAdmin, (req, res) => {
-  const { debug, kitchen, customer } = req.body || {};
+  const { debug, kitchen, customer, template } = req.body || {};
   if (debug !== undefined) printerConfig.debug = Boolean(debug);
   if (kitchen) {
     if (kitchen.ip   !== undefined) printerConfig.kitchen.ip   = String(kitchen.ip || "").trim();
@@ -1360,9 +1376,26 @@ app.patch("/api/printer/config", requireAdmin, (req, res) => {
     if (customer.ip   !== undefined) printerConfig.customer.ip   = String(customer.ip || "").trim();
     if (customer.port !== undefined) printerConfig.customer.port = parseInt(customer.port) || 9100;
   }
+  if (template && typeof template === "object") {
+    const allowed = ["outlet_name", "outlet_subtitle", "outlet_address", "paper_width",
+                     "footer_thanks", "footer_note", "show_qr", "show_logo"];
+    if (!printerConfig.template) printerConfig.template = {};
+    for (const k of allowed) {
+      if (k in template) {
+        if (k === "paper_width") {
+          const w = parseInt(template[k], 10);
+          if (w === 32 || w === 48) printerConfig.template[k] = w;
+        } else if (k === "show_qr" || k === "show_logo") {
+          printerConfig.template[k] = Boolean(template[k]);
+        } else {
+          printerConfig.template[k] = String(template[k] || "").slice(0, 80);
+        }
+      }
+    }
+  }
   savePrinterConfig();
   broadcast("printer:config", printerConfig);
-  console.log(`🖨  Printer config updated → debug:${printerConfig.debug} k:${printerConfig.kitchen.ip}:${printerConfig.kitchen.port} c:${printerConfig.customer.ip}:${printerConfig.customer.port}`);
+  console.log(`🖨  Printer config updated → debug:${printerConfig.debug} k:${printerConfig.kitchen.ip}:${printerConfig.kitchen.port} c:${printerConfig.customer.ip}:${printerConfig.customer.port} pw:${printerConfig.template?.paper_width}`);
   res.json({ ok: true, config: printerConfig });
 });
 
@@ -2449,6 +2482,32 @@ app.post("/api/print", async (req, res) => {
   } catch (e) {
     console.error(`🖨️  Print failed: ${e.message}`);
     res.status(500).json({ ok: false, error: e.message });
+  }
+});
+
+// GET /api/orders/:id/escpos?type=kitchen|customer
+// Build ESC/POS bytes untuk order tertentu. Frontend forward ke local print bridge.
+// Pakai ini supaya printer LAN bisa dicetak meski backend di VPS (gak bisa reach LAN langsung).
+app.get("/api/orders/:id/escpos", (req, res) => {
+  const order = orders.find(o => o.id === req.params.id);
+  if (!order) return res.status(404).json({ error: "order not found" });
+  const type = req.query.type === "kitchen" ? "kitchen" : "customer";
+  try {
+    const raw = type === "kitchen" ? buildKitchenTicket(order, printerConfig.template) : buildCustomerReceipt(order, printerConfig.template);
+    // raw could be Buffer (current builder returns Buffer.from(this.bytes)) OR array.
+    // JSON.stringify Buffer → {type:"Buffer",data:[...]}, which frontend can't use.
+    // Always serialize to plain int[] for bridge compat.
+    const bytes = Buffer.isBuffer(raw) ? Array.from(raw) : (Array.isArray(raw) ? raw : Array.from(raw || []));
+    res.json({
+      ok: true,
+      order_id: order.id,
+      type,
+      bytes,
+      target_ip:   type === "kitchen" ? (printerConfig.kitchen?.ip   || "") : (printerConfig.customer?.ip   || ""),
+      target_port: type === "kitchen" ? (printerConfig.kitchen?.port || 9100) : (printerConfig.customer?.port || 9100),
+    });
+  } catch (e) {
+    res.status(500).json({ error: "build failed: " + e.message });
   }
 });
 
