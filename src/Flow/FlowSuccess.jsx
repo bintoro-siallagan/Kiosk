@@ -112,11 +112,38 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
       </div>
 
       <div style={S.orderCard}>
+        {/* Eyebrow */}
+        <div style={{
+          fontSize: 10, color: "color-mix(in srgb,var(--brand-primary,#FF6B35) 90%,#fff)",
+          fontFamily: "'Geist Mono',monospace", fontWeight: 800, letterSpacing: 2.5,
+          textTransform: "uppercase", marginBottom: 4,
+          display: "inline-flex", alignItems: "center", gap: 6, justifyContent: "center",
+        }}>
+          <span style={{
+            width: 6, height: 6, borderRadius: "50%",
+            background: "var(--brand-primary,#FF6B35)",
+            boxShadow: "0 0 8px var(--brand-primary,#FF6B35)",
+            animation: "pulse 1.6s ease infinite",
+          }} />
+          ORDER NUMBER
+        </div>
         <div style={S.orderId}>#{order.id}</div>
         <div style={S.orderTotal}>{fIDR(orderData.total || order.total)}</div>
         <div style={S.orderMeta}>
-          {(orderData.type || order.type) === "dine" ? `🍽️ Dine In · Meja ${orderData.table || order.table || "-"}` : "🛍️ Bawa Pulang"}
+          {(orderData.type || order.type) === "dine" ? `🍽 Dine In · Meja ${orderData.table || order.table || "-"}` : "🛍 Bawa Pulang"}
         </div>
+        {currentStep < 2 && (
+          <div style={{
+            marginTop: 12, padding: "6px 14px",
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "rgba(0,0,0,0.35)", border: "1px solid rgba(255,255,255,0.15)",
+            borderRadius: 999, backdropFilter: "blur(8px)",
+            fontSize: 12, color: "#fff", fontWeight: 700, fontFamily: "'Geist Mono',monospace",
+          }}>
+            <span style={{ color: "#10b981" }}>●</span>
+            <span style={{ color: "color-mix(in srgb,var(--brand-primary,#FF6B35) 90%,#fff)" }}>EST. 4 MENIT</span>
+          </div>
+        )}
       </div>
 
       <PushPermissionPrompt orderId={order.id} phone={session?.phone} />
@@ -199,13 +226,15 @@ function StepLine({ done }) {
 const S = {
   container: { width: "min(440px, 100%)", minHeight: "100vh", padding: "32px 20px", display: "flex", flexDirection: "column", gap: 18, animation: "fadeUp 0.5s ease" },
   celebration: { textAlign: "center", padding: "20px 0" },
-  successIcon: { fontSize: 72, animation: "successPop 0.6s ease", marginBottom: 32 },
-  title: { fontSize: 24, fontWeight: 800, marginTop: 8 },
-  subtitle: { fontSize: 13, color: "#9CA3AF", marginTop: 4, padding: "0 20px" },
-  orderCard: { padding: "20px", borderRadius: 16, background: "linear-gradient(135deg, rgba(245,158,11,0.10), rgba(245,158,11,0.02))", border: "1px solid rgba(245,158,11,0.3)", textAlign: "center" },
-  orderId: { fontFamily: "'Inter', sans-serif", fontSize: 36, color: "var(--brand-primary,#FF6B35)", letterSpacing: 2 },
-  orderTotal: { fontSize: 20, fontWeight: 800, marginTop: 4 },
-  orderMeta: { fontSize: 12, color: "#9CA3AF", marginTop: 8 },
+  // PREMIUM celebration — bigger success icon dgn glow halo
+  successIcon: { fontSize: 92, animation: "successPop 0.6s cubic-bezier(.34,1.56,.64,1)", marginBottom: 24, filter: "drop-shadow(0 0 24px color-mix(in srgb,var(--brand-primary,#FF6B35) 50%,transparent))" },
+  title: { fontSize: "clamp(26px, 5vw, 32px)", fontWeight: 900, marginTop: 8, letterSpacing: -0.6, textShadow: "0 0 24px color-mix(in srgb,var(--brand-primary,#FF6B35) 30%,transparent)" },
+  subtitle: { fontSize: 14, color: "#9CA3AF", marginTop: 6, padding: "0 20px", fontFamily: "'Geist Mono',monospace", letterSpacing: 0.4 },
+  // PICKUP HERO order card — BIG # mono + brand drama
+  orderCard: { padding: "28px 22px", borderRadius: 20, background: "linear-gradient(135deg, color-mix(in srgb,var(--brand-primary,#FF6B35) 16%,transparent), color-mix(in srgb,var(--brand-primary,#FF6B35) 4%,transparent))", border: "1px solid color-mix(in srgb,var(--brand-primary,#FF6B35) 40%,transparent)", textAlign: "center", boxShadow: "0 8px 32px color-mix(in srgb,var(--brand-primary,#FF6B35) 20%,rgba(0,0,0,0.4)), inset 0 1px 0 rgba(255,255,255,0.06)" },
+  orderId: { fontFamily: "'Geist Mono',monospace", fontSize: "clamp(56px, 12vw, 92px)", fontWeight: 900, color: "var(--brand-primary,#FF6B35)", letterSpacing: -3, lineHeight: 1, textShadow: "0 4px 24px color-mix(in srgb,var(--brand-primary,#FF6B35) 50%,transparent)" },
+  orderTotal: { fontSize: 22, fontWeight: 800, marginTop: 10, fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5, color: "#fff" },
+  orderMeta: { fontSize: 11, color: "color-mix(in srgb,var(--brand-primary,#FF6B35) 80%,#fff)", marginTop: 8, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700, textTransform: "uppercase" },
   steps: { display: "flex", alignItems: "center", gap: 2, padding: "12px 0" },
   step: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, opacity: 0.3, transition: "opacity 0.3s ease" },
   stepActive: { opacity: 0.7 },
