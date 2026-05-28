@@ -23,6 +23,7 @@ if (typeof window !== "undefined") {
 import PromoBroadcastBanner from "./PromoBroadcastBanner.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
 import ImpersonationBanner from "./components/ImpersonationBanner.jsx";
+import DebugErrorBoundary from "./components/DebugErrorBoundary.jsx";
 import AdminLogin, { ResetPasswordPage } from "./AdminLogin.jsx";
 import Kiosk from "./Kiosk.jsx";
 import ShiftGate from "./ShiftGate.jsx";
@@ -353,7 +354,7 @@ export default function App() {
   }
 
   return (
-    <>
+    <DebugErrorBoundary label={`Scene: ${scene}`}>
       <ImpersonationBanner />
       <Suspense fallback={<SceneLoading />}>
         {node}
@@ -362,7 +363,7 @@ export default function App() {
       {forcePinChange && adminSession?.token && (
         <ForcePinChangeModal token={adminSession.token} onDone={() => setForcePinChange(false)} />
       )}
-    </>
+    </DebugErrorBoundary>
   );
 }
 

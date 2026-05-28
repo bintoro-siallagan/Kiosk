@@ -9,7 +9,7 @@
 // State diterima via WebSocket dari backend (POS Cinema POST /api/cinema/cds/state).
 // Auto-reconnect kalau WS drop.
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import API_HOST from "../apiBase.js";
 // HelpButton tidak di-import — CDS adalah TV display non-interactive (customer gak butuh help button)
 
@@ -30,6 +30,29 @@ export default function CinemaCDS() {
   const [branding, setBranding] = useState({ bgUrl: "", idleText: "" }); // custom CDS branding
   const wsRef = useRef(null);
   const reconnectRef = useRef(null);
+  const [needFullscreen, setNeedFullscreen] = useState(() => {
+    if (typeof document === "undefined") return false;
+    return !document.fullscreenElement && !window.matchMedia?.("(display-mode: standalone)").matches;
+  });
+
+  const goFullscreen = useCallback(async () => {
+    try {
+      const el = document.documentElement;
+      if (el.requestFullscreen) await el.requestFullscreen({ navigationUI: "hide" });
+      else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+      setNeedFullscreen(false);
+    } catch (e) { console.warn("[CinemaCDS] fullscreen denied:", e?.message); setNeedFullscreen(false); }
+  }, []);
+
+  useEffect(() => {
+    const onFs = () => { if (document.fullscreenElement) setNeedFullscreen(false); };
+    document.addEventListener("fullscreenchange", onFs);
+    document.addEventListener("webkitfullscreenchange", onFs);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFs);
+      document.removeEventListener("webkitfullscreenchange", onFs);
+    };
+  }, []);
 
   // Determine outlet from URL
   const outletCode = (() => {
@@ -149,7 +172,7 @@ export default function CinemaCDS() {
     // QRIS dengan QR ready → tampil QR gede
     if (state.qrUrl) {
       return (
-        <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl}>
+        <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl} needFullscreen={needFullscreen} goFullscreen={goFullscreen} dismissFs={() => setNeedFullscreen(false)}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: 40, textAlign: "center" }}>
             <div style={{ fontSize: 14, color: "#fbbf24", letterSpacing: 3, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 18 }}>📱 SCAN QRIS UNTUK BAYAR</div>
             <div style={{ background: "#fff", padding: 24, borderRadius: 24, boxShadow: "0 24px 80px rgba(245,158,11,0.3), 0 0 0 4px rgba(245,158,11,0.2)" }}>
@@ -166,7 +189,7 @@ export default function CinemaCDS() {
     }
     // Belum QRIS / belum generate / method lain → tampil card sesuai method
     return (
-      <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl}>
+      <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl} needFullscreen={needFullscreen} goFullscreen={goFullscreen} dismissFs={() => setNeedFullscreen(false)}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: 40, textAlign: "center", gap: 14 }}>
           <div style={{ fontSize: 14, color: PAYMENT_COLOR[method] || "#fbbf24", letterSpacing: 3, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>{(PAYMENT_LABEL[method] || method).toUpperCase()}</div>
           <div style={{ fontSize: 56, fontWeight: 900, color: "#fff", letterSpacing: -1.2, lineHeight: 1.1 }}>
@@ -200,7 +223,7 @@ export default function CinemaCDS() {
   // ═══════════════════════════════════════════════
   if (stage === "done") {
     return (
-      <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl}>
+      <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl} needFullscreen={needFullscreen} goFullscreen={goFullscreen} dismissFs={() => setNeedFullscreen(false)}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", flex: 1, padding: 30, textAlign: "center", gap: 10, overflowY: "auto" }}>
           <div style={{ fontSize: 64, lineHeight: 1, filter: "drop-shadow(0 0 32px rgba(16,185,129,0.5))" }}>🎬</div>
           <div style={{ fontSize: 14, color: "#10b981", letterSpacing: 3, fontFamily: "'Geist Mono',monospace", fontWeight: 800, lineHeight: 1 }}>TIKET BERHASIL DIBELI</div>
@@ -228,7 +251,7 @@ export default function CinemaCDS() {
   // ═══════════════════════════════════════════════
   if ((stage === "selling" || stage === "selected") && (state.film_title || state.poster_url)) {
     return (
-      <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl}>
+      <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl} needFullscreen={needFullscreen} goFullscreen={goFullscreen} dismissFs={() => setNeedFullscreen(false)}>
         <div style={{ display: "flex", flex: 1, padding: 30, gap: 30, alignItems: "center" }}>
           {/* Left: Poster */}
           <div style={{ flexShrink: 0 }}>
@@ -354,7 +377,7 @@ export default function CinemaCDS() {
     .slice(0, 16);
 
   return (
-    <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl}>
+    <Shell now={now} outlet={state.outlet} bgUrl={branding.bgUrl} needFullscreen={needFullscreen} goFullscreen={goFullscreen} dismissFs={() => setNeedFullscreen(false)}>
       <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "20px 30px 24px", overflowY: "auto", gap: 16 }}>
         {/* Welcome hero — compact */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 8, paddingTop: 6 }}>
@@ -445,18 +468,42 @@ export default function CinemaCDS() {
 }
 
 // ═══════════════════════════════════════════════════════════════════
-function Shell({ children, now, outlet, bgUrl }) {
+function Shell({ children, now, outlet, bgUrl, needFullscreen, goFullscreen, dismissFs }) {
   return (
     <div style={{
       position: "fixed", inset: 0,
-      background: bgUrl ? `url(${bgUrl}) center/cover fixed` : "linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)",
+      background: bgUrl ? `url(${bgUrl}) center/cover fixed` : "linear-gradient(160deg,#0a0613 0%,#15101f 40%,#1f1530 100%)",
       color: "#e6edf3", fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif",
       display: "flex", flexDirection: "column",
     }}>
+      {/* Fullscreen prompt — theatre TV display */}
+      {needFullscreen && (
+        <div onClick={goFullscreen} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.95)", zIndex: 99999,
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          color: "#fff", cursor: "pointer", padding: 20, backdropFilter: "blur(24px)",
+        }}>
+          <div style={{ fontSize: 96, marginBottom: 24, filter: "drop-shadow(0 0 32px rgba(168,85,247,0.4))" }}>🎬</div>
+          <div style={{ fontSize: 12, color: "#fbbf24", letterSpacing: 4, fontFamily: "'Geist Mono',monospace", fontWeight: 800, textTransform: "uppercase", marginBottom: 14 }}>● CINEMA CUSTOMER DISPLAY</div>
+          <div style={{ fontSize: "clamp(32px,4.5vw,48px)", fontWeight: 900, letterSpacing: -1, marginBottom: 14, textAlign: "center", textShadow: "0 0 32px rgba(251,191,36,0.4)" }}>Tap to Enter Fullscreen</div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", marginBottom: 30, textAlign: "center", maxWidth: 540, lineHeight: 1.55 }}>
+            Second display untuk customer — browser bar akan hidden, layar penuh untuk pengalaman bioskop yang lebih premium.<br />
+            <kbd style={{ padding: "2px 8px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 4, fontFamily: "monospace", fontSize: 13, marginTop: 8, display: "inline-block" }}>ESC</kbd> untuk exit.
+          </div>
+          <button onClick={(e) => { e.stopPropagation(); goFullscreen(); }} style={{ padding: "18px 40px", background: "linear-gradient(135deg,#fbbf24,#f59e0b)", color: "#1a1205", border: "none", borderRadius: 14, fontSize: 17, fontWeight: 900, cursor: "pointer", letterSpacing: 0.4, boxShadow: "0 12px 40px rgba(251,191,36,0.5)" }}>🎬 Aktifkan Fullscreen →</button>
+          <button onClick={(e) => { e.stopPropagation(); dismissFs(); }} style={{ marginTop: 18, padding: "8px 16px", background: "transparent", color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer" }}>Skip</button>
+          <div style={{ marginTop: 32, fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Geist Mono',monospace", letterSpacing: 1, textAlign: "center", lineHeight: 1.6 }}>
+            💡 Untuk permanent auto-fullscreen, jalankan:<br />
+            <code style={{ color: "#22d3ee" }}>chrome --kiosk https://app.karyaos.tech/?cinema-cds</code>
+          </div>
+        </div>
+      )}
       {/* Dark overlay biar text tetap readable di custom background */}
       {bgUrl && <div aria-hidden style={{ position: "fixed", inset: 0, background: "linear-gradient(180deg, rgba(5,8,16,0.45), rgba(5,8,16,0.7))", pointerEvents: "none" }} />}
-      {/* Mesh overlay */}
-      <div aria-hidden style={{ position: "fixed", inset: 0, background: "radial-gradient(900px 700px at 20% 5%, rgba(168,85,247,0.08), transparent 60%), radial-gradient(700px 500px at 85% 80%, rgba(245,158,11,0.06), transparent 60%)", pointerEvents: "none" }} />
+      {/* Cinematic spotlight overlay — gold + violet drama */}
+      <div aria-hidden style={{ position: "fixed", inset: 0, background: "radial-gradient(1100px 800px at 18% 0%, rgba(168,85,247,0.14), transparent 55%), radial-gradient(900px 700px at 88% 100%, rgba(245,158,11,0.1), transparent 60%), radial-gradient(600px 400px at 50% 110%, rgba(220,38,38,0.06), transparent 70%)", pointerEvents: "none" }} />
+      {/* Subtle vignette — theatre darkness at edges */}
+      <div aria-hidden style={{ position: "fixed", inset: 0, background: "radial-gradient(ellipse 130% 100% at 50% 50%, transparent 40%, rgba(0,0,0,0.45) 100%)", pointerEvents: "none" }} />
       {/* Topbar */}
       <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 26px", borderBottom: "1px solid rgba(255,255,255,0.05)", background: "rgba(8,9,15,0.5)", backdropFilter: "blur(12px)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>

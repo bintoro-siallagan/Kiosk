@@ -15,6 +15,8 @@ import POSChecklist from "./POS/POSChecklist.jsx";
 import POSCelebration from "./POS/POSCelebration.jsx";
 import PromoBroadcastBanner from "./PromoBroadcastBanner.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
+import TouchNumpad from "./components/TouchNumpad.jsx";
+import FullscreenPrompt from "./components/FullscreenPrompt.jsx";
 import API_HOST from "./apiBase.js";
 
 
@@ -280,6 +282,15 @@ export default function POSApp() {
         />
       )}
     </ShiftGate>
+    <TouchNumpad />
+    <FullscreenPrompt
+      icon="🍽️"
+      label="POS CASHIER"
+      title="Tap to Enter Fullscreen"
+      description="Header browser hidden — fokus penuh untuk kasir saat melayani customer."
+      kioskHint="chrome --kiosk https://app.karyaos.tech/?pos"
+      storageKey="pos-cashier"
+    />
     </ThemedPOSWrapper>
   );
 }

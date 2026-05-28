@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useMenu } from "./MenuContext.jsx";
 import PromoBroadcastBanner from "./PromoBroadcastBanner.jsx";
 import MarqueeTicker from "./components/MarqueeTicker.jsx";
@@ -23,8 +23,40 @@ export default function POSCDS() {
   const [state, setState] = useState({});
   const [pubConfig, setPubConfig] = useState({ trackingBaseUrl: null });
   const [connStatus, setConnStatus] = useState("connecting");
+  const [needFullscreen, setNeedFullscreen] = useState(() => {
+    if (typeof document === "undefined") return false;
+    // Already fullscreen via Chrome --kiosk flag atau standalone PWA → skip prompt
+    return !document.fullscreenElement && !window.matchMedia?.("(display-mode: standalone)").matches;
+  });
+
   const wsRef = useRef(null);
   const reconnectTimerRef = useRef(null);
+
+  // FULLSCREEN — auto-trigger di first user tap (browser security requires user gesture)
+  const goFullscreen = useCallback(async () => {
+    try {
+      const el = document.documentElement;
+      if (el.requestFullscreen) await el.requestFullscreen({ navigationUI: "hide" });
+      else if (el.webkitRequestFullscreen) await el.webkitRequestFullscreen();
+      setNeedFullscreen(false);
+    } catch (e) {
+      console.warn("[CDS] fullscreen denied:", e?.message);
+      setNeedFullscreen(false); // dismiss anyway — user can ignore
+    }
+  }, []);
+
+  // Auto-dismiss prompt kalau user manually masuk fullscreen (F11 dll)
+  useEffect(() => {
+    const onFsChange = () => {
+      if (document.fullscreenElement) setNeedFullscreen(false);
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    document.addEventListener("webkitfullscreenchange", onFsChange);
+    return () => {
+      document.removeEventListener("fullscreenchange", onFsChange);
+      document.removeEventListener("webkitfullscreenchange", onFsChange);
+    };
+  }, []);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/config/public`)
@@ -230,6 +262,46 @@ export default function POSCDS() {
 
   return (
     <>
+      {/* Fullscreen prompt — tampil di first visit kalau belum fullscreen */}
+      {needFullscreen && (
+        <div onClick={goFullscreen} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.92)", zIndex: 99999,
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          color: "#fff", cursor: "pointer", padding: 20,
+          fontFamily: "'Inter','SF Pro Text',system-ui,sans-serif",
+          backdropFilter: "blur(20px)",
+        }}>
+          <div style={{ fontSize: 80, marginBottom: 24, animation: "ssFadeIn 0.5s ease" }}>📺</div>
+          <div style={{
+            fontSize: 11, color: "#fbbf24", letterSpacing: 3, fontFamily: "'Geist Mono',monospace",
+            fontWeight: 800, textTransform: "uppercase", marginBottom: 12,
+          }}>● CUSTOMER DISPLAY</div>
+          <div style={{
+            fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 900, color: "#fff",
+            letterSpacing: -0.8, marginBottom: 14, textAlign: "center",
+            textShadow: "0 0 24px rgba(251,191,36,0.4)",
+          }}>Tap to Enter Fullscreen</div>
+          <div style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", marginBottom: 28, textAlign: "center", maxWidth: 480, lineHeight: 1.55 }}>
+            Klik / tap di mana saja untuk menyembunyikan browser bar.<br />
+            Tekan <kbd style={{ padding: "2px 8px", background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 4, fontFamily: "monospace", fontSize: 13 }}>ESC</kbd> kapan saja untuk keluar fullscreen.
+          </div>
+          <button onClick={(e) => { e.stopPropagation(); goFullscreen(); }} style={{
+            padding: "16px 36px", background: "linear-gradient(135deg,#fbbf24,#f59e0b)",
+            color: "#1a1205", border: "none", borderRadius: 14,
+            fontSize: 16, fontWeight: 900, cursor: "pointer", fontFamily: "inherit",
+            letterSpacing: 0.4, boxShadow: "0 10px 30px rgba(251,191,36,0.45)",
+          }}>📺 Aktifkan Fullscreen →</button>
+          <button onClick={(e) => { e.stopPropagation(); setNeedFullscreen(false); }} style={{
+            marginTop: 16, padding: "8px 16px", background: "transparent",
+            color: "rgba(255,255,255,0.5)", border: "1px solid rgba(255,255,255,0.15)",
+            borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+          }}>Skip (tetap dgn browser bar)</button>
+          <div style={{ marginTop: 32, fontSize: 11, color: "rgba(255,255,255,0.4)", fontFamily: "'Geist Mono',monospace", letterSpacing: 1, textAlign: "center", lineHeight: 1.6 }}>
+            💡 TIP: Untuk auto-fullscreen permanent, jalankan Chrome dengan flag<br />
+            <code style={{ color: "#22d3ee" }}>--kiosk https://app.karyaos.tech/?cds=1</code>
+          </div>
+        </div>
+      )}
       <PromoBroadcastBanner />
       <style>{`
         @keyframes ssFadeIn {
