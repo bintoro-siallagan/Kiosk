@@ -40,6 +40,7 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
   const [items86, setItems86] = useState([]);
   const [stats, setStats] = useState(null);
   const [activeStation, setActiveStation] = useState('all');
+  const [viewMode, setViewMode] = useState('status');  // 'status' (default 3-col by status) | 'station' (mission grid per-station)
   const [now, setNow] = useState(Date.now());
   const [showSidebar86, setShowSidebar86] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -251,6 +252,21 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
       <div style={styles.topBar}>
         <div style={{display: 'flex', alignItems: 'center', gap: 12}}>
           <span style={styles.brand}><img src="/logo.png" alt="" style={{ height: 24, verticalAlign: "middle", marginRight: 7 }} />KDS</span>
+          {/* VIEW MODE TOGGLE */}
+          <div style={{display:'flex',gap:4,padding:3,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,marginRight:4}}>
+            <button onClick={() => setViewMode('status')} title="Group by status (Queue/Cooking/Ready)" style={{
+              padding:'5px 11px', borderRadius:6, border:'none',
+              background: viewMode==='status' ? '#fbbf24' : 'transparent',
+              color: viewMode==='status' ? '#1a1205' : '#9ca3af',
+              fontSize:11, fontWeight:800, cursor:'pointer', fontFamily:'inherit', letterSpacing:0.5,
+            }}>BY STATUS</button>
+            <button onClick={() => setViewMode('station')} title="Mission grid — per-station columns" style={{
+              padding:'5px 11px', borderRadius:6, border:'none',
+              background: viewMode==='station' ? '#fbbf24' : 'transparent',
+              color: viewMode==='station' ? '#1a1205' : '#9ca3af',
+              fontSize:11, fontWeight:800, cursor:'pointer', fontFamily:'inherit', letterSpacing:0.5,
+            }}>BY STATION</button>
+          </div>
           <span style={styles.divider}>|</span>
           <div style={styles.stationTabs}>
             <button onClick={() => setActiveStation('all')} style={stationTabBtn(activeStation === 'all', '#6b7280')}>
@@ -307,34 +323,98 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
 
       {/* MAIN CONTENT */}
       <div style={styles.body}>
-        {/* Status columns */}
-        <div style={styles.columns}>
-          <StatusColumn title="QUEUE" subtitle="Queued" count={grouped.queued.length} color="#fbbf24">
-            {grouped.queued.map(t => (
-              <TicketCard key={t.id} ticket={t} station={stationMap[t.station_id]} now={now}
-                onAdvance={() => advance(t.id, t.status)} ctaLabel="Mulai Buat →" />
-            ))}
-            {grouped.queued.length === 0 && <Empty>Tidak ada antrian</Empty>}
-          </StatusColumn>
+        {viewMode === 'status' ? (
+          /* ── BY STATUS view (default 3-col) ── */
+          <div style={styles.columns}>
+            <StatusColumn title="QUEUE" subtitle="Queued" count={grouped.queued.length} color="#fbbf24">
+              {grouped.queued.map(t => (
+                <TicketCard key={t.id} ticket={t} station={stationMap[t.station_id]} now={now}
+                  onAdvance={() => advance(t.id, t.status)} ctaLabel="Mulai Buat →" />
+              ))}
+              {grouped.queued.length === 0 && <Empty>Tidak ada antrian</Empty>}
+            </StatusColumn>
 
-          <StatusColumn title="DIBUAT" subtitle="Preparing" count={grouped.preparing.length} color="#3b82f6">
-            {grouped.preparing.map(t => (
-              <TicketCard key={t.id} ticket={t} station={stationMap[t.station_id]} now={now}
-                onAdvance={() => advance(t.id, t.status)} ctaLabel="Selesai / Siap ✓"
-                onRecall={() => recall(t.id)} elapsedFrom={t.started_at} />
-            ))}
-            {grouped.preparing.length === 0 && <Empty>Belum ada yang dibuat</Empty>}
-          </StatusColumn>
+            <StatusColumn title="DIBUAT" subtitle="Preparing" count={grouped.preparing.length} color="#3b82f6">
+              {grouped.preparing.map(t => (
+                <TicketCard key={t.id} ticket={t} station={stationMap[t.station_id]} now={now}
+                  onAdvance={() => advance(t.id, t.status)} ctaLabel="Selesai / Siap ✓"
+                  onRecall={() => recall(t.id)} elapsedFrom={t.started_at} />
+              ))}
+              {grouped.preparing.length === 0 && <Empty>Belum ada yang dibuat</Empty>}
+            </StatusColumn>
 
-          <StatusColumn title="SIAP DIAMBIL" subtitle="Ready" count={grouped.ready.length} color="#4ade80">
-            {grouped.ready.map(t => (
-              <TicketCard key={t.id} ticket={t} station={stationMap[t.station_id]} now={now}
-                onAdvance={() => advance(t.id, t.status)} ctaLabel="Sudah Diserahkan"
-                onRecall={() => recall(t.id)} elapsedFrom={t.ready_at} pulsing />
-            ))}
-            {grouped.ready.length === 0 && <Empty>Belum ada yang siap</Empty>}
-          </StatusColumn>
-        </div>
+            <StatusColumn title="SIAP DIAMBIL" subtitle="Ready" count={grouped.ready.length} color="#4ade80">
+              {grouped.ready.map(t => (
+                <TicketCard key={t.id} ticket={t} station={stationMap[t.station_id]} now={now}
+                  onAdvance={() => advance(t.id, t.status)} ctaLabel="Sudah Diserahkan"
+                  onRecall={() => recall(t.id)} elapsedFrom={t.ready_at} pulsing />
+              ))}
+              {grouped.ready.length === 0 && <Empty>Belum ada yang siap</Empty>}
+            </StatusColumn>
+          </div>
+        ) : (
+          /* ── BY STATION view (Mission Grid — per-station column) ── */
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${Math.max(1, stations.length)}, minmax(280px, 1fr))`,
+            gap: 12, overflowX: "auto",
+          }}>
+            {stations.map(s => {
+              const stationTickets = visibleTickets
+                .filter(t => t.station_id === s.id)
+                .sort((a, b) => {
+                  // Sort: queued > preparing > ready (active first)
+                  const order = { queued: 0, preparing: 1, ready: 2 };
+                  return (order[a.status] || 9) - (order[b.status] || 9) || a.created_at - b.created_at;
+                });
+              const queued = stationTickets.filter(t => t.status === 'queued').length;
+              const prep   = stationTickets.filter(t => t.status === 'preparing').length;
+              const ready  = stationTickets.filter(t => t.status === 'ready').length;
+              return (
+                <div key={s.id} style={{
+                  background: "#0a0e16",
+                  border: `1px solid ${s.color}33`,
+                  borderTop: `4px solid ${s.color}`,
+                  borderRadius: 12, overflow: "hidden",
+                  display: "flex", flexDirection: "column", minHeight: 400,
+                }}>
+                  {/* Station header */}
+                  <div style={{
+                    padding: "12px 14px", borderBottom: `1px solid ${s.color}22`,
+                    background: `linear-gradient(180deg,${s.color}10,transparent)`,
+                  }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: s.color, fontFamily: "'Geist Mono',monospace", letterSpacing: 0.8, textTransform: "uppercase" }}>● {s.name}</div>
+                        <div style={{ fontSize: 10, color: "#7a8699", fontFamily: "'Geist Mono',monospace", marginTop: 3, letterSpacing: 0.5 }}>{s.id.toUpperCase()}</div>
+                      </div>
+                      <div style={{ display: "flex", gap: 4, fontFamily: "'Geist Mono',monospace", fontSize: 10, fontWeight: 800 }}>
+                        <span style={{ padding: "2px 7px", background: "rgba(251,191,36,0.15)", color: "#fbbf24", borderRadius: 4 }} title="Queue">{queued}Q</span>
+                        <span style={{ padding: "2px 7px", background: "rgba(59,130,246,0.15)", color: "#3b82f6", borderRadius: 4 }} title="Preparing">{prep}P</span>
+                        <span style={{ padding: "2px 7px", background: "rgba(74,222,128,0.15)", color: "#4ade80", borderRadius: 4 }} title="Ready">{ready}R</span>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Station tickets */}
+                  <div style={{ flex: 1, overflowY: "auto", padding: "10px 12px" }}>
+                    {stationTickets.length === 0 ? (
+                      <Empty>Idle</Empty>
+                    ) : stationTickets.map(t => {
+                      const ctaLabel = t.status === 'queued' ? "Mulai Buat →" : t.status === 'preparing' ? "Siap ✓" : "Sudah Diserahkan";
+                      const elapsedFrom = t.status === 'preparing' ? t.started_at : t.status === 'ready' ? t.ready_at : t.created_at;
+                      return (
+                        <TicketCard key={t.id} ticket={t} station={s} now={now}
+                          onAdvance={() => advance(t.id, t.status)} ctaLabel={ctaLabel}
+                          onRecall={t.status !== 'queued' ? () => recall(t.id) : null}
+                          elapsedFrom={elapsedFrom} pulsing={t.status === 'ready'} />
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* 86 Sidebar */}
         {showSidebar86 && (
