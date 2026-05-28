@@ -1056,6 +1056,7 @@ app.patch("/api/menu/:id", (req, res) => {
       db.setMenuOverride(menu[idx].id, menu[idx].avail);
 
   broadcast("menu:updated", menu[idx]);
+  if (typeof autoSyncMenuToESB === "function") autoSyncMenuToESB(menu[idx]);
   console.log(`🍔 Menu #${id} "${menu[idx].name}" updated — price:${menu[idx].price} avail:${menu[idx].avail}`);
   res.json(menu[idx]);
 });
@@ -1086,6 +1087,7 @@ app.post("/api/menu", (req, res) => {
   menu.push(newItem);
   db.setMenuOverride(newItem.id, true);
   broadcast("menu:updated", newItem);
+  if (typeof autoSyncMenuToESB === "function") autoSyncMenuToESB(newItem);
   console.log("[Master] New item:", newItem.name, "id:", newItem.id, "cat:", newItem.cat);
   res.json(newItem);
 });
@@ -2549,6 +2551,96 @@ setInterval(async () => {
   const result = await pushOrderToESB(order);
   if (!result.ok && !result.skipped) retryQueue.push(order); // put back if still fails
 }, 30000); // retry every 30s
+
+// ─── ESB MENU PUSH ──────────────────────────────────────────────
+// Format menu item → ESB Menu payload (mirror src/esbApi.js mapMenuToESB)
+function buildESBMenuPayload(item) {
+  let imageUrl = item.image_url || item.image || "";
+  if (imageUrl && imageUrl.startsWith("/")) {
+    imageUrl = (process.env.WA_TRACKING_BASE || "https://app.karyaos.tech") + imageUrl;
+  }
+  return {
+    item_code:    String(item.id),
+    item_name:    item.name || item.n,
+    category:     item.cat || item.category || "Uncategorized",
+    price:        Number(item.price) || 0,
+    is_available: item.avail !== false && item.is_available !== false,
+    description:  item.desc || item.description || "",
+    image_url:    imageUrl,
+    emoji:        item.emoji || item.e || "",
+    tags:         item.tag ? [item.tag] : (Array.isArray(item.tags) ? item.tags : []),
+    free_extras:  item.freeToppings || item.free_extras || 0,
+    is_popular:   !!item.popular,
+    is_bestseller: ["BESTSELLER","BEST SELLER","HOT TODAY","CHEF'S PICK"].includes((item.tag || "").toUpperCase()),
+  };
+}
+
+// Push menu (single or bulk) ke ESB POS
+async function pushMenuToESB(items) {
+  if (!esbConfig.enabled || !esbConfig.apiKey || !esbConfig.outletId) {
+    console.log("⚡ ESB menu push skipped (disabled or no config)");
+    return { ok: false, skipped: true };
+  }
+  if (!items || items.length === 0) {
+    return { ok: false, error: "no items to push" };
+  }
+  const payload = { outlet_id: esbConfig.outletId, items: items.map(buildESBMenuPayload) };
+  const endpoints = [
+    `/outlets/${esbConfig.outletId}/menus/bulk`,
+    `/outlets/${esbConfig.outletId}/menus`,
+    `/menus/bulk`,
+  ];
+  const fetch = (await import("node-fetch")).default;
+  for (const ep of endpoints) {
+    try {
+      const res = await fetch(`${esbConfig.baseUrl}${ep}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json",
+          "Authorization": `Bearer ${esbConfig.apiKey}`,
+          "X-Outlet-Id": esbConfig.outletId,
+        },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        console.log(`🔔 ESB menu push OK — ${items.length} items → ${ep}`);
+        return { ok: true, endpoint: ep, count: items.length, response: data };
+      }
+    } catch (e) {
+      console.warn(`⚠️  ESB menu push attempt ${ep} failed: ${e.message}`);
+    }
+  }
+  console.error(`❌ ESB menu push failed — all endpoints failed`);
+  return { ok: false, error: "All endpoints failed" };
+}
+
+// Auto-sync helper — fire-and-forget single item update ke ESB (used by menu PATCH/POST hooks)
+function autoSyncMenuToESB(item) {
+  if (!esbConfig.enabled) return;
+  Promise.resolve(pushMenuToESB([item])).catch(e => console.warn(`ESB auto-sync fail: ${e.message}`));
+}
+
+// POST /api/esb/menu/push — manual trigger menu sync (bulk or specific items)
+// Body: { items?: [...] } — kalau kosong, push semua menu items
+app.post("/api/esb/menu/push", requireAdmin, async (req, res) => {
+  let items = req.body?.items;
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    // Fetch all menu items from DB
+    try {
+      const rows = db.rawDb.prepare(`SELECT * FROM pos_menus WHERE company_id = ? OR ? IS NULL`)
+        .all(req.session?.companyId || null, req.session?.companyId || null);
+      items = rows;
+    } catch (e) {
+      // Fallback: ambil dari MENU_ITEMS in-memory kalau ada
+      items = typeof menuItems !== "undefined" ? menuItems : [];
+    }
+  }
+  if (items.length === 0) return res.status(400).json({ error: "no menu items to push" });
+  const result = await pushMenuToESB(items);
+  res.json(result);
+});
 
 // GET /api/esb/config — get current ESB config (mask api key)
 app.get("/api/esb/config", (req, res) => {
