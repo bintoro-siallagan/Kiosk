@@ -139,6 +139,7 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
         </div>
         <PosShiftPill apiBase={API_BASE} />
         <PosAlertPill apiBase={API_BASE} />
+        <PosStockPill apiBase={API_BASE} />
         <div style={S.kasir}>👤 {cashier.name}</div>
         <button onClick={onCancel} style={S.iconBtn}>✕</button>
       </header>
@@ -470,6 +471,104 @@ function PosAlertPill({ apiBase = "" }) {
         {total > 0 && <span style={{ fontSize: 10, opacity: 0.8 }}>· {total}</span>}
       </button>
       {open && <PosAlertModal alerts={alerts} apiBase={apiBase} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+// ─── POS STOCK PILL — Realtime inventory alerts ───
+// Poll /api/audit/warehouse setiap 60s. Hitung items low (<7 hari) + critical (<=min).
+// Click → modal showing low/critical stock items.
+function PosStockPill({ apiBase = "" }) {
+  const [items, setItems] = useState([]);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    let cancel = false;
+    const load = () => {
+      fetch(`${apiBase}/api/audit/warehouse`)
+        .then(r => r.json())
+        .then(d => { if (!cancel && Array.isArray(d?.items)) setItems(d.items); })
+        .catch(() => {});
+    };
+    load();
+    const t = setInterval(load, 60_000);
+    return () => { cancel = true; clearInterval(t); };
+  }, [apiBase]);
+
+  const critical = items.filter(w => (w.stock || 0) <= 0 || (w.stock || 0) <= (w.minStock || 0));
+  const low      = items.filter(w => w.dailyUse > 0 && w.stock / w.dailyUse <= 7 && (w.stock || 0) > (w.minStock || 0));
+  const total    = critical.length + low.length;
+  const tier     = critical.length > 0 ? "critical" : low.length > 0 ? "warning" : "normal";
+  const color    = { critical: "#ef4444", warning: "#fbbf24", normal: "#10b981" }[tier];
+  const label    = { critical: "STOCK", warning: "STOCK", normal: "STOCK" }[tier];
+
+  return (
+    <>
+      <button onClick={() => setOpen(true)} title={total > 0 ? `${critical.length} critical · ${low.length} low stock` : "Inventory aman"} style={{
+        display: "inline-flex", alignItems: "center", gap: 6,
+        padding: "5px 11px",
+        background: `${color}1a`, border: `1px solid ${color}55`, borderRadius: 999,
+        color, fontFamily: "'Geist Mono',monospace",
+        fontSize: 11, fontWeight: 800, letterSpacing: 1, cursor: "pointer",
+      }}>
+        <span style={{ width: 6, height: 6, borderRadius: "50%", background: color, boxShadow: `0 0 6px ${color}` }} />
+        <span>📦 {label}</span>
+        {total > 0 && <span style={{ fontSize: 10, opacity: 0.85 }}>· {total}</span>}
+      </button>
+      {open && (
+        <div onClick={() => setOpen(false)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)",
+          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20,
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            width: "min(560px, 100%)", maxHeight: "80vh",
+            background: "linear-gradient(180deg,#0d1117,#080a0f)",
+            border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16,
+            display: "flex", flexDirection: "column", overflow: "hidden",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+          }}>
+            <div style={{ padding: "18px 22px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontSize: 10, color: "#fbbf24", letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>📦 INVENTORY ALERTS</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginTop: 4 }}>{critical.length} critical · {low.length} low stock</div>
+              </div>
+              <button onClick={() => setOpen(false)} style={{ background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.7)", borderRadius: 8, padding: "6px 12px", fontSize: 14, cursor: "pointer", fontFamily: "inherit" }}>✕</button>
+            </div>
+            <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
+              {[...critical, ...low].length === 0 ? (
+                <div style={{ padding: "60px 20px", textAlign: "center", color: "#5b6470" }}>
+                  <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+                  <div style={{ fontWeight: 700, color: "#10b981" }}>Inventory aman</div>
+                  <div style={{ fontSize: 12, marginTop: 4 }}>Semua stok di atas threshold</div>
+                </div>
+              ) : [...critical, ...low].map((w, i) => {
+                const isCrit = (w.stock || 0) <= 0 || (w.stock || 0) <= (w.minStock || 0);
+                const c = isCrit ? "#ef4444" : "#fbbf24";
+                const daysLeft = w.dailyUse > 0 ? Math.floor((w.stock || 0) / w.dailyUse) : null;
+                return (
+                  <div key={i} style={{
+                    padding: "10px 14px", marginBottom: 8, borderRadius: 10,
+                    background: `${c}0d`, border: `1px solid ${c}44`,
+                    display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+                  }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 2 }}>
+                        <span style={{ padding: "2px 7px", borderRadius: 4, fontSize: 9, fontWeight: 900, color: c, background: `${c}22`, fontFamily: "'Geist Mono',monospace", letterSpacing: 0.8 }}>
+                          {isCrit ? "CRITICAL" : "LOW"}
+                        </span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{w.name || w.sku || "—"}</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: "'Geist Mono',monospace" }}>
+                        Stock: <b style={{ color: c }}>{w.stock} {w.unit || ""}</b> · Min: {w.minStock || 0} {w.unit || ""}
+                        {daysLeft !== null && <> · ~{daysLeft} hari lagi</>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
