@@ -233,6 +233,71 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
                 })}
               </div>
 
+              {/* ── POS COMBO UPSELL — 'Tambah lagi yuk!' strip (revenue lever) ── */}
+              {(() => {
+                const cartCatSet = new Set(cart.map(ci => ci.category));
+                const cartIds = new Set(cart.map(ci => ci.id));
+                const PAIRING = {
+                  "🍦 Frozen Yogurt": ["🥤 Smoothies", "📦 Take Home", "✨ Special"],
+                  "🥤 Smoothies":     ["🍦 Frozen Yogurt", "🍨 Yogulato"],
+                  "🍨 Yogulato":      ["🥤 Smoothies", "📦 Take Home"],
+                  "📦 Take Home":     ["✨ Special"],
+                  "✨ Special":       ["🥤 Smoothies", "🍦 Frozen Yogurt"],
+                };
+                const suggCats = new Set();
+                cartCatSet.forEach(c => (PAIRING[c] || []).forEach(s => suggCats.add(s)));
+                const sugg = menu
+                  .filter(m => suggCats.has(m.category) && !cartIds.has(m.id))
+                  .slice(0, 3);
+                if (sugg.length === 0) return null;
+                return (
+                  <div style={{
+                    padding: "12px 16px 14px",
+                    borderTop: "1px solid rgba(255,255,255,0.06)",
+                    background: "linear-gradient(180deg,color-mix(in srgb,var(--brand-primary,#FF6B35) 6%,transparent),transparent)",
+                  }}>
+                    <div style={{
+                      fontSize: 10, color: "color-mix(in srgb,var(--brand-primary,#FF6B35) 90%,#fff)",
+                      fontFamily: "'Geist Mono',monospace", fontWeight: 700, letterSpacing: 1.6,
+                      textTransform: "uppercase", marginBottom: 8,
+                      display: "flex", alignItems: "center", gap: 6,
+                    }}>
+                      <span>🎯</span> TAMBAH LAGI YUK?
+                    </div>
+                    <div style={{ display: "flex", gap: 6, overflowX: "auto" }}>
+                      {sugg.map(item => (
+                        <button key={item.id} onClick={() => handleItemClick(item)} style={{
+                          flexShrink: 0, display: "flex", alignItems: "center", gap: 7,
+                          padding: "6px 10px 6px 6px",
+                          background: "rgba(255,255,255,0.04)",
+                          border: "1px solid rgba(255,255,255,0.1)",
+                          borderRadius: 10, cursor: "pointer", color: "#fff", fontFamily: "inherit",
+                          transition: "all 0.15s",
+                        }}
+                          onMouseEnter={e => { e.currentTarget.style.background = "color-mix(in srgb,var(--brand-primary,#FF6B35) 14%,transparent)"; e.currentTarget.style.borderColor = "color-mix(in srgb,var(--brand-primary,#FF6B35) 50%,transparent)"; }}
+                          onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}>
+                          {(item.image_url || item.image) ? (
+                            <img src={item.image_url || item.image} alt="" style={{ width: 28, height: 28, borderRadius: 6, objectFit: "cover", flexShrink: 0 }} />
+                          ) : (
+                            <div style={{ width: 28, height: 28, borderRadius: 6, background: "#222", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>{item.emoji || "🍴"}</div>
+                          )}
+                          <div style={{ textAlign: "left", minWidth: 0 }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 90 }}>{item.name}</div>
+                            <div style={{ fontSize: 10, fontWeight: 800, color: "color-mix(in srgb,var(--brand-primary,#FF6B35) 95%,#fff)", fontFamily: "'Geist Mono',monospace", marginTop: 1 }}>+Rp {fmt(item.price)}</div>
+                          </div>
+                          <span style={{
+                            width: 20, height: 20, borderRadius: "50%",
+                            background: "linear-gradient(135deg,var(--brand-primary,#FF6B35),var(--brand-secondary,#E55A2B))",
+                            color: "#fff", fontSize: 13, fontWeight: 800, lineHeight: 1,
+                            display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                          }}>+</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div style={S.cartTotal}>
                 <div style={S.totalRow}>
                   <span>Subtotal</span>

@@ -597,6 +597,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
             <div style={S.payOptions}>
               <button
                 onClick={() => setPayMethod("CASH")}
+                data-pos-pay
                 style={{ ...S.payBtn, ...(payMethod === "CASH" ? S.payActive : {}) }}
               >
                 <span style={S.payIcon}>💵</span>
@@ -605,6 +606,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
               </button>
               <button
                 onClick={() => setPayMethod("QRIS")}
+                data-pos-pay
                 style={{ ...S.payBtn, ...(payMethod === "QRIS" ? S.payActive : {}) }}
               >
                 <span style={S.payIcon}>📱</span>
@@ -613,7 +615,8 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
               </button>
               <button
                 onClick={() => setShowSplitModal(true)}
-                style={{ ...S.payBtn, background: "rgba(139,92,246,0.10)", border: "1px solid rgba(139,92,246,0.35)" }}
+                data-pos-pay
+                style={{ ...S.payBtn, background: "rgba(139,92,246,0.10)", border: "1.5px solid rgba(139,92,246,0.35)" }}
               >
                 <span style={S.payIcon}>💸</span>
                 <span style={S.payName}>Split</span>
@@ -661,7 +664,7 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
           </div>
         )}
 
-        <button onClick={handleConfirm} disabled={busy} style={S.confirmBtn}>
+        <button onClick={handleConfirm} disabled={busy} data-pos-confirm style={S.confirmBtn}>
           {busy ? "..." :
            isResuming ? "✓ Update Tab" :
            isOpenTab ? "📋 Buka Tab (belum dibayar)" :
@@ -912,6 +915,18 @@ const CONFIRM_CSS = `
   button{cursor:pointer;font-family:'Inter',sans-serif}
   input,textarea{font-family:'Inter',sans-serif;outline:none}
   input::placeholder{color:rgba(255,255,255,0.3)}
+  /* POS payment polish — premium hover + tap feedback */
+  button[data-pos-pay]:hover{background:rgba(255,255,255,0.06)!important;border-color:rgba(255,255,255,0.15)!important;transform:translateY(-2px)}
+  button[data-pos-pay]:active{transform:translateY(0) scale(0.98)}
+  button[data-pos-confirm]{transition:all 0.2s cubic-bezier(.2,.8,.2,1)}
+  button[data-pos-confirm]:hover:not(:disabled){transform:translateY(-3px) scale(1.01);filter:brightness(1.08)}
+  button[data-pos-confirm]:active:not(:disabled){transform:translateY(-1px) scale(0.99)}
+  /* QR Cinemark-style pulse glow saat waiting payment */
+  @keyframes posQrPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,107,53,0.4),0 12px 36px rgba(0,0,0,0.4)}50%{box-shadow:0 0 0 16px rgba(255,107,53,0),0 12px 36px rgba(0,0,0,0.4)}}
+  .pos-qr-pulse{animation:posQrPulse 2.2s ease infinite}
+  /* Cash button quick tap feedback */
+  button[data-pos-cash]:hover{background:rgba(255,107,53,0.1)!important;border-color:rgba(255,107,53,0.35)!important}
+  button[data-pos-cash]:active{transform:scale(0.96)}
 `;
 
 const S = {
@@ -1036,23 +1051,26 @@ const S = {
   breakdownTotalAmount: { fontFamily: FONT, fontSize: 30, color: "#fff", letterSpacing: "-0.8px", fontWeight: 600, fontVariantNumeric: "tabular-nums" },
 
   // Payment selector
-  payCard: { borderRadius: 16, padding: 16 },
-  payTitle: { fontSize: 11, color: "rgba(255,255,255,0.45)", letterSpacing: 1.5, fontWeight: 500, marginBottom: 12, textTransform: "uppercase" },
-  payOptions: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 },
+  // PREMIUM PAYMENT CARDS — bigger touch target, brand glow active state
+  payCard: { borderRadius: 18, padding: 18 },
+  payTitle: { fontSize: 11, color: `color-mix(in srgb, ${BRAND} 80%, #fff)`, letterSpacing: 2, fontWeight: 700, marginBottom: 14, textTransform: "uppercase", fontFamily: "'Geist Mono',monospace" },
+  payOptions: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 },
   payBtn: {
-    background: "rgba(255,255,255,0.025)", border: "1px solid rgba(255,255,255,0.06)",
-    borderRadius: 14, padding: "14px 12px", cursor: "pointer", color: "#fff", fontFamily: FONT,
-    display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-    transition: "all 0.2s cubic-bezier(.2,.8,.2,1)"
+    background: "rgba(255,255,255,0.03)", border: "1.5px solid rgba(255,255,255,0.08)",
+    borderRadius: 14, padding: "18px 12px", cursor: "pointer", color: "#fff", fontFamily: FONT,
+    display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+    transition: "all 0.2s cubic-bezier(.2,.8,.2,1)",
+    minHeight: 110,
   },
   payActive: {
-    background: `color-mix(in srgb, ${BRAND} 10%, rgba(255,255,255,0.02))`,
-    border: `1px solid color-mix(in srgb, ${BRAND} 50%, transparent)`,
-    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.07), 0 4px 14px color-mix(in srgb, ${BRAND} 20%, transparent)`
+    background: `linear-gradient(180deg, color-mix(in srgb, ${BRAND} 18%, rgba(255,255,255,0.02)), color-mix(in srgb, ${BRAND} 4%, transparent))`,
+    border: `1.5px solid color-mix(in srgb, ${BRAND} 65%, transparent)`,
+    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 24px color-mix(in srgb, ${BRAND} 35%, transparent), 0 0 0 1px color-mix(in srgb, ${BRAND} 25%, transparent)`,
+    transform: "translateY(-2px)",
   },
-  payIcon: { fontSize: 28, filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.25))" },
-  payName: { fontSize: 13, fontWeight: 600, letterSpacing: "-0.2px" },
-  payHint: { fontSize: 10, color: "rgba(255,255,255,0.4)", textAlign: "center", letterSpacing: 0.2 },
+  payIcon: { fontSize: 36, filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.4))", lineHeight: 1 },
+  payName: { fontSize: 15, fontWeight: 800, letterSpacing: -0.3 },
+  payHint: { fontSize: 10.5, color: "rgba(255,255,255,0.45)", textAlign: "center", letterSpacing: 0.3, fontFamily: "'Geist Mono',monospace" },
 
   fullyPaidBanner: {
     padding: "14px 18px", borderRadius: 14,
