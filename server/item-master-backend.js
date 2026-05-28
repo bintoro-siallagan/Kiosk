@@ -37,7 +37,11 @@ function setupItemMaster(app, opts = {}) {
     if (!cols.some(c => c.name === 'image_url')) {
       db.exec(`ALTER TABLE item_master ADD COLUMN image_url TEXT`);
     }
-  } catch (e) { console.warn('[item-master] migrate image_url:', e.message); }
+    // ESB compat — description field (sesuai schema ESB item_name + description)
+    if (!cols.some(c => c.name === 'description')) {
+      db.exec(`ALTER TABLE item_master ADD COLUMN description TEXT`);
+    }
+  } catch (e) { console.warn('[item-master] migrate columns:', e.message); }
   const many = (s) => { try { return db.prepare(s).all(); } catch { return []; } };
 
   // Seed registry dari pos_menus (finished goods) + audit_warehouse (material)
