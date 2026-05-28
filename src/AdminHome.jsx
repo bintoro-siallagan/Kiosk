@@ -329,7 +329,18 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
 
   const hour = now.getHours();
   const greet = hour < 11 ? "Selamat pagi" : hour < 15 ? "Selamat siang" : hour < 19 ? "Selamat sore" : "Selamat malam";
-  const openTab = (q) => { window.open(window.location.pathname + q, "_blank"); setRailOpen(false); };
+  // openTab — buka surface customer-facing di new tab.
+  // Kalau current host = admin.karyaos.tech, redirect ke app.karyaos.tech (karena
+  // hostname routing di App.jsx force admin-only di admin.* subdomain).
+  // Kalau di app.karyaos.tech atau localhost, pakai path relatif.
+  const openTab = (q) => {
+    const host = typeof window !== "undefined" ? window.location.hostname : "";
+    const target = host.startsWith("admin.")
+      ? `https://app.${host.replace(/^admin\./, "")}/${q}`
+      : window.location.pathname + q;
+    window.open(target, "_blank");
+    setRailOpen(false);
+  };
 
   // FlowOS Stage 1 — role-customizable view: rail Tools modules filter by RBAC role.
   useEffect(() => {
