@@ -6,7 +6,7 @@
 // Reuses backend /api/cinema/* (films, showtimes, seats, tickets).
 // Premium dark theme, brand-aware via /api/companies/branding.
 
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, Fragment } from "react";
 import QRCode from "qrcode";
 import API_HOST from "../apiBase.js";
 import { fmtMoney as rp } from "../lib/currency.js";
@@ -526,6 +526,23 @@ export default function CinemaWebApp() {
         }
         .cw-row-card:hover .cw-card-play {
           opacity: 1; transform: scale(1) translateY(0);
+        }
+
+        /* Seat picker — hover + tap drama (premium cinema feel) */
+        .cw-seat:not(:disabled):hover {
+          transform: translateY(-2px) scale(1.08);
+          background: rgba(251,191,36,0.18) !important;
+          border-color: rgba(251,191,36,0.5) !important;
+          color: #fafafa !important;
+          box-shadow: 0 4px 12px rgba(251,191,36,0.35), inset 0 1px 0 rgba(255,255,255,0.15) !important;
+        }
+        @keyframes cwSeatTap {
+          0%   { transform: scale(1); }
+          40%  { transform: scale(1.25); }
+          100% { transform: scale(1); }
+        }
+        .cw-seat-tapped {
+          animation: cwSeatTap 0.28s cubic-bezier(.34,1.56,.64,1);
         }
         /* Ujung karena di-scale, kasih ruang lebih utk hover yg di edge */
         .cw-row-card:first-child:hover {
@@ -4066,6 +4083,7 @@ function SeatPicker({ showtime, film, initialSeats, onConfirm, brandPrimary }) {
   const [seatData, setSeatData] = useState(null);
   const [error, setError] = useState(null);
   const [selected, setSelected] = useState(new Set(initialSeats || []));
+  const [justTapped, setJustTapped] = useState(null);  // seat label utk bounce animation
 
   const load = useCallback(() => {
     setError(null);
@@ -4084,6 +4102,11 @@ function SeatPicker({ showtime, film, initialSeats, onConfirm, brandPrimary }) {
     if (next.has(seat)) next.delete(seat);
     else next.add(seat);
     setSelected(next);
+    // Trigger tap animation + light haptic on mobile
+    setJustTapped(seat); setTimeout(() => setJustTapped(null), 280);
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      try { navigator.vibrate(10); } catch {}
+    }
   };
 
   if (error) return <ErrorInline error={error} label="Gagal memuat peta kursi" onRetry={load} />;
@@ -4092,98 +4115,168 @@ function SeatPicker({ showtime, film, initialSeats, onConfirm, brandPrimary }) {
   const rows = seatData.rows || 0;
   const cols = seatData.cols || 0;
   const total = selected.size * (showtime.price || 0);
+  const totalSold = (seatData.sold || []).length;
+  const totalCapacity = rows * cols;
+  const seatsLeft = Math.max(0, totalCapacity - totalSold - (seatData.held_by_others?.length || 0));
 
-  // Generate seat IDs (row letter + col number, e.g. A1, B5)
+  // Generate seat IDs (row letter + col number)
   const rowLetters = Array.from({ length: rows }, (_, i) => String.fromCharCode(65 + i));
+  // Aisle position — middle column (cinema convention: aisle setelah ~40% kolom)
+  const aisleAfterCol = Math.floor(cols / 2);
 
   return (
-    <div style={{ padding: "30px 0 120px" }}>
-      <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.3, margin: 0, marginBottom: 4 }}>Pilih Kursi</h2>
-        <div style={{ fontSize: 12, color: C.sub }}>
-          {showtime.studio_name} · {showtime.start_time} · {showtime.format || "2D"}
+    <div style={{ padding: "30px 0 140px" }}>
+      {/* CINEMA SCREEN HEADER — film title + showtime context */}
+      <div style={{ marginBottom: S[5], textAlign: "center" }}>
+        <div style={{
+          fontSize: T.xs, color: C.gold, fontFamily: T.mono, fontWeight: T.semibold,
+          letterSpacing: T.tracking_wider, textTransform: "uppercase", marginBottom: S[2],
+        }}>🎬 Now Seating</div>
+        <h2 style={{
+          fontSize: "clamp(24px, 3vw, 32px)", fontWeight: 900,
+          letterSpacing: -0.8, lineHeight: 1.1, margin: 0, marginBottom: S[2], color: C.text,
+        }}>{film?.title || showtime.film_title || "Pilih Kursi"}</h2>
+        <div style={{
+          display: "inline-flex", alignItems: "center", gap: S[3], fontSize: T.sm, color: C.sub,
+          fontFamily: T.mono, letterSpacing: 0.4,
+        }}>
+          <span>{showtime.studio_name}</span>
+          <span style={{ color: C.dim }}>·</span>
+          <span style={{ color: C.gold, fontWeight: T.semibold }}>{showtime.start_time}</span>
+          <span style={{ color: C.dim }}>·</span>
+          <span style={{ color: FORMAT_COLOR[showtime.format] || C.text, fontWeight: T.semibold }}>{showtime.format || "2D"}</span>
+        </div>
+        {/* Realtime seats left counter */}
+        <div style={{ marginTop: S[3], fontSize: T.xs, color: seatsLeft <= 10 ? C.crimson : seatsLeft <= 30 ? C.gold : C.dim, fontFamily: T.mono, fontWeight: T.semibold, letterSpacing: 0.6 }}>
+          {seatsLeft <= 10 ? "🔥 " : seatsLeft <= 30 ? "⚡ " : ""}
+          {seatsLeft} of {totalCapacity} seats available
         </div>
       </div>
 
-      {/* Screen */}
-      <div style={{ textAlign: "center", marginBottom: 28 }}>
+      {/* CINEMA SCREEN VISUAL — curved arc + glow downward */}
+      <div style={{ textAlign: "center", marginBottom: S[10], position: "relative" }}>
         <div style={{
-          height: 8, maxWidth: 480, margin: "0 auto",
-          background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent)",
-          borderRadius: "50%", filter: "blur(2px)",
+          height: 10, maxWidth: 560, margin: "0 auto",
+          background: `linear-gradient(90deg, transparent, ${C.gold}cc 20%, ${C.text} 50%, ${C.gold}cc 80%, transparent)`,
+          borderRadius: "50%",
+          boxShadow: `0 0 24px ${C.gold}55, 0 0 60px ${C.gold}22`,
+          transform: "perspective(400px) rotateX(35deg)",
+          transformOrigin: "center bottom",
         }} />
-        <div style={{ fontSize: 10, color: C.dim, marginTop: 6, letterSpacing: 2, fontFamily: "'Geist Mono',monospace" }}>LAYAR</div>
+        {/* Light cone downward */}
+        <div style={{
+          position: "absolute", left: "50%", top: 10, transform: "translateX(-50%)",
+          width: "80%", maxWidth: 600, height: 60,
+          background: `linear-gradient(180deg, ${C.gold}1a 0%, transparent 100%)`,
+          clipPath: "polygon(15% 0, 85% 0, 100% 100%, 0 100%)",
+          pointerEvents: "none",
+        }} />
+        <div style={{
+          fontSize: T.xs, color: C.meta, marginTop: S[8],
+          letterSpacing: T.tracking_wider, fontFamily: T.mono, fontWeight: T.semibold, textTransform: "uppercase",
+        }}>S C R E E N</div>
       </div>
 
       {/* Seat grid */}
-      <div style={{ overflowX: "auto", paddingBottom: 10 }}>
+      <div style={{ overflowX: "auto", paddingBottom: S[3] }}>
         <div style={{ display: "inline-block", margin: "0 auto", minWidth: "100%" }}>
           {rowLetters.map(row => (
-            <div key={row} className="cw-seat-row" style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6, justifyContent: "center" }}>
-              <div style={{ width: 18, fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace", textAlign: "right" }}>{row}</div>
+            <div key={row} className="cw-seat-row" style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 7, justifyContent: "center" }}>
+              {/* Row label kiri */}
+              <div style={{ width: 22, fontSize: 11, color: C.meta, fontFamily: T.mono, fontWeight: T.semibold, textAlign: "right", letterSpacing: 0.5 }}>{row}</div>
               {Array.from({ length: cols }, (_, i) => i + 1).map(col => {
                 const seat = `${row}${col}`;
                 const isSold = seatData.sold.includes(seat);
                 const isHeldOther = seatData.held_by_others?.includes(seat);
                 const isMine = selected.has(seat);
-                const bg = isSold ? "rgba(239,68,68,0.4)" : isHeldOther ? "rgba(156,163,175,0.4)" : isMine ? brandPrimary : "rgba(255,255,255,0.06)";
-                const border = isMine ? brandPrimary : isSold ? "rgba(239,68,68,0.6)" : isHeldOther ? "rgba(156,163,175,0.4)" : "rgba(255,255,255,0.15)";
+                const isJustTapped = justTapped === seat;
+                // Aisle gap after middle col
+                const showAisleGap = col === aisleAfterCol;
                 return (
-                  <button key={seat} onClick={() => toggle(seat)}
-                    disabled={isSold || isHeldOther}
-                    title={isSold ? `${seat} (sold)` : isHeldOther ? `${seat} (held)` : seat}
-                    className="cw-seat"
-                    style={{
-                      width: 26, height: 26, borderRadius: 6,
-                      background: bg, border: `1px solid ${border}`,
-                      color: isMine ? "#fff" : isSold || isHeldOther ? C.dim : C.text,
-                      fontSize: 8, fontWeight: 700, fontFamily: "'Geist Mono',monospace",
-                      cursor: isSold || isHeldOther ? "not-allowed" : "pointer", padding: 0,
-                      flexShrink: 0,
-                    }}>{col}</button>
+                  <Fragment key={seat}>
+                    <button onClick={() => toggle(seat)}
+                      disabled={isSold || isHeldOther}
+                      title={isSold ? `${seat} · Terjual` : isHeldOther ? `${seat} · Ditahan user lain` : `${seat} · ${rp(showtime.price || 0)}`}
+                      className={`cw-seat${isJustTapped ? " cw-seat-tapped" : ""}`}
+                      style={{
+                        width: 30, height: 28, borderRadius: 8,
+                        // Cinema seat shape: top rounded (backrest), bottom flatter
+                        background: isSold ? "rgba(220,38,38,0.18)"
+                                  : isHeldOther ? "rgba(156,163,175,0.18)"
+                                  : isMine ? `linear-gradient(180deg, ${C.gold}, ${C.ember})`
+                                  : "rgba(255,255,255,0.05)",
+                        border: `1.5px solid ${isMine ? C.gold : isSold ? "rgba(220,38,38,0.5)" : isHeldOther ? "rgba(156,163,175,0.4)" : "rgba(255,255,255,0.12)"}`,
+                        color: isMine ? C.midnight : isSold || isHeldOther ? C.dim : C.sub,
+                        fontSize: 9, fontWeight: T.bold, fontFamily: T.mono,
+                        cursor: isSold || isHeldOther ? "not-allowed" : "pointer", padding: 0,
+                        flexShrink: 0,
+                        transition: "all 0.18s cubic-bezier(.2,.8,.2,1)",
+                        boxShadow: isMine ? `0 4px 12px ${C.gold}55, inset 0 1px 0 rgba(255,255,255,0.4)`
+                                          : isSold ? "none"
+                                          : "inset 0 1px 0 rgba(255,255,255,0.06)",
+                        position: "relative",
+                      }}>{col}</button>
+                    {showAisleGap && <div style={{ width: 16, flexShrink: 0 }} aria-hidden="true" />}
+                  </Fragment>
                 );
               })}
+              {/* Row label kanan (mirror) */}
+              <div style={{ width: 22, fontSize: 11, color: C.meta, fontFamily: T.mono, fontWeight: T.semibold, textAlign: "left", letterSpacing: 0.5 }}>{row}</div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Legend */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 18, marginTop: 18, fontSize: 11, color: C.sub, flexWrap: "wrap" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ width: 14, height: 14, borderRadius: 4, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.15)" }} />
+      {/* Legend — premium with seat icon */}
+      <div style={{ display: "flex", justifyContent: "center", gap: S[6], marginTop: S[6], fontSize: T.xs, color: C.sub, flexWrap: "wrap", fontFamily: T.mono, letterSpacing: 0.4 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: S[2] }}>
+          <span style={{ width: 18, height: 16, borderRadius: 5, background: "rgba(255,255,255,0.05)", border: "1.5px solid rgba(255,255,255,0.12)" }} />
           <span>Tersedia</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ width: 14, height: 14, borderRadius: 4, background: brandPrimary }} />
-          <span>Dipilih</span>
+        <div style={{ display: "flex", alignItems: "center", gap: S[2] }}>
+          <span style={{ width: 18, height: 16, borderRadius: 5, background: `linear-gradient(180deg, ${C.gold}, ${C.ember})`, boxShadow: `0 2px 8px ${C.gold}55` }} />
+          <span style={{ color: C.gold, fontWeight: T.semibold }}>Pilihan Saya</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ width: 14, height: 14, borderRadius: 4, background: "rgba(239,68,68,0.4)", border: "1px solid rgba(239,68,68,0.6)" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: S[2] }}>
+          <span style={{ width: 18, height: 16, borderRadius: 5, background: "rgba(220,38,38,0.18)", border: "1.5px solid rgba(220,38,38,0.5)" }} />
           <span>Terjual</span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: S[2] }}>
+          <span style={{ width: 18, height: 16, borderRadius: 5, background: "rgba(156,163,175,0.18)", border: "1.5px solid rgba(156,163,175,0.4)" }} />
+          <span>Sedang Dipilih</span>
         </div>
       </div>
 
-      {/* Bottom action bar (sticky) */}
+      {/* Bottom action bar (sticky) — premium glass effect dgn gold CTA */}
       {selected.size > 0 && (
-        <div style={{
+        <div className="cw-seat-actionbar" style={{
           position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
-          background: "rgba(10,10,15,0.95)", backdropFilter: "blur(20px)",
-          borderTop: `1px solid ${C.border}`, padding: "14px 20px",
+          background: "rgba(10,10,15,0.92)", backdropFilter: "blur(24px)",
+          borderTop: `1px solid ${C.gold}33`, padding: `${S[4]}px ${S[5]}px`,
+          boxShadow: `0 -8px 32px rgba(0,0,0,0.6), 0 -1px 0 ${C.gold}1a`,
         }}>
-          <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", gap: S[4] }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>
-                {selected.size} KURSI · {Array.from(selected).sort().join(", ")}
+              <div style={{ fontSize: T.xs, color: C.gold, fontFamily: T.mono, letterSpacing: T.tracking_wider, fontWeight: T.semibold, textTransform: "uppercase" }}>
+                {selected.size} {selected.size === 1 ? "Kursi" : "Kursi"} · {Array.from(selected).sort().join(", ")}
               </div>
-              <div style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: brandPrimary }}>{rp(total)}</div>
+              <div style={{ fontSize: 22, fontWeight: 900, fontFamily: T.mono, color: C.text, letterSpacing: -0.5, marginTop: 2 }}>{rp(total)}</div>
             </div>
             <button onClick={() => onConfirm(Array.from(selected))} style={{
-              background: brandPrimary, border: "none", color: "#fff",
-              padding: "12px 22px", borderRadius: 10,
-              fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-              boxShadow: `0 8px 20px ${brandPrimary}55`,
-            }}>Lanjut →</button>
+              background: `linear-gradient(135deg, ${C.gold}, ${C.ember})`,
+              border: "none", color: C.midnight,
+              padding: `${S[4]}px ${S[6]}px`, borderRadius: 10,
+              fontSize: 15, fontWeight: 900, cursor: "pointer", fontFamily: "inherit",
+              letterSpacing: 0.3,
+              boxShadow: `0 8px 24px ${C.gold}66, inset 0 1px 0 rgba(255,255,255,0.3)`,
+              transition: "all 0.18s cubic-bezier(.2,.8,.2,1)",
+              display: "inline-flex", alignItems: "center", gap: S[2],
+            }}
+              onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 12px 32px ${C.gold}99, inset 0 1px 0 rgba(255,255,255,0.4)`; }}
+              onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = `0 8px 24px ${C.gold}66, inset 0 1px 0 rgba(255,255,255,0.3)`; }}>
+              <span>Lanjut</span>
+              <span style={{ fontSize: 18 }}>→</span>
+            </button>
           </div>
         </div>
       )}
