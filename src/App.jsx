@@ -54,6 +54,7 @@ const OrderTracking          = lazy(() => import("./OrderTracking.jsx"));
 const POSApp                 = lazy(() => import("./POSApp.jsx"));
 const POSCinemaApp           = lazy(() => import("./POS/POSCinemaApp.jsx"));
 const KDS                    = lazy(() => import("./KDS/KDS.jsx"));
+const PickupMonitor          = lazy(() => import("./KDS/PickupMonitor.jsx"));
 const FlowApp                = lazy(() => import("./Flow/FlowApp.jsx"));
 const CinemaWebApp           = lazy(() => import("./CinemaWeb/CinemaWebApp.jsx"));
 const POSSatisfaction        = lazy(() => import("./POS/POSSatisfaction.jsx"));
@@ -114,6 +115,7 @@ function getScene() {
   if (new URLSearchParams(q).get("ticket")) return "cinema-digital-ticket";
   if (new URLSearchParams(q).has("purchase")) return "cinema-digital-ticket";
   if (new URLSearchParams(q).has("signage")) return "signage";
+  if (new URLSearchParams(q).has("pickup") || new URLSearchParams(q).has("expeditor")) return "pickup-monitor";
   if (new URLSearchParams(q).has("signup")) return "signup";
   if (new URLSearchParams(q).has("movies")) return "movies";
   if (q.includes("cinema-snack")) return "cinema-snack";
@@ -333,6 +335,8 @@ export default function App() {
     node = <POSCDS />;
   } else if (scene === "kds") {
     node = <KDS apiBase={API_HOST} wsUrl="/api/pos/broadcast/ws" />;
+  } else if (scene === "pickup-monitor") {
+    node = <PickupMonitor />;
   } else {
     // Default scene — customer Kiosk. Static, no lazy chunks needed.
     node = (
