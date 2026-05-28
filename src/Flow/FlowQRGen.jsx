@@ -112,7 +112,7 @@ export default function FlowQRGen() {
           value={host}
           onChange={e => setHost(e.target.value)}
           style={S.input}
-          placeholder="https://kiosk.karys.tech/"
+          placeholder="https://app.karyaos.tech/"
         />
         <div style={S.hint}>
           💡 Use LAN IP or production domain. Customers scan QR with their phone — cannot use "localhost".

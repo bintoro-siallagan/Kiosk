@@ -174,7 +174,7 @@ function WhatsAppPreview({ brand, waCfg, status }) {
     orderId:      SAMPLE_ORDER.id,
     total:        SAMPLE_ORDER.total,
     totalIDR:     SAMPLE_ORDER.total.toLocaleString("id-ID"),
-    trackingUrl:  `https://kiosk.karys.tech/?trackorder=${SAMPLE_ORDER.id}`,
+    trackingUrl:  `https://app.karyaos.tech/?trackorder=${SAMPLE_ORDER.id}`,
     date:         new Date().toLocaleDateString("id-ID"),
     time:         new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
     brandName, brandPhone: brand.contact_phone || "", brandAddress: address, signature,

@@ -1,5 +1,5 @@
 // AdminCinemaWebConfig — Phase 1: edit nav header + footer per company
-// Untuk cinema web (kiosk.karys.tech/?movies=1)
+// Untuk cinema web (app.karyaos.tech/?cinema)
 
 import { useState, useEffect } from "react";
 import API_HOST from "../apiBase.js";
@@ -290,7 +290,7 @@ export default function AdminCinemaWebConfig({ onBack }) {
       {showTemplate && <TemplatePickerModal onClose={() => setShowTemplate(false)} onApplied={() => { setShowTemplate(false); window.location.reload(); }} />}
 
       <p style={{ color: "#9ca3af", fontSize: 13, marginBottom: 20, lineHeight: 1.6 }}>
-        Atur nav header & footer di cinema booking web (<code style={{ color: "#fb923c" }}>kiosk.karys.tech/?movies=1</code>).
+        Atur nav header & footer di cinema booking web (<code style={{ color: "#fb923c" }}>app.karyaos.tech/?cinema</code>).
         Perubahan langsung kepakai setelah disimpan (user perlu hard refresh).
       </p>
 

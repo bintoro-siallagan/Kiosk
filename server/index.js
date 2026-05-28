@@ -2360,7 +2360,7 @@ app.post("/api/customers/send-wa", async (req, res) => {
   let trackingBase = process.env.WA_TRACKING_BASE || process.env.TRACKING_BASE_URL;
   if (!trackingBase) {
     const proto = (req.headers["x-forwarded-proto"] || "https").split(",")[0].trim();
-    const host = (req.headers["x-forwarded-host"] || req.headers.host || "kiosk.karys.tech").split(",")[0].trim();
+    const host = (req.headers["x-forwarded-host"] || req.headers.host || "app.karyaos.tech").split(",")[0].trim();
     trackingBase = `${proto}://${host}`;
   }
   const trackUrl = `${trackingBase}/track?order=${orderId}`;
