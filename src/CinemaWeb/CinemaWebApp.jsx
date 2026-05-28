@@ -105,6 +105,10 @@ function loadSnapScript() {
 }
 
 // Netflix-mood: flat dark #141414, no gradient (cinematic streaming standard)
+// Semantic cinema accents:
+//   - gold (NOW PLAYING, premium IMAX, ratings) — aspirational warmth
+//   - crimson (PREMIERE, urgent, limited) — alert/scarcity drama
+//   - brand (purple — secondary accent, customization)
 const C = {
   bg: "#141414",
   bgGrad: "#141414",
@@ -120,6 +124,13 @@ const C = {
   amber: "#fbbf24",
   green: "#10b981",
   red: "#ef4444",
+  // ─── CINEMA SEMANTIC PALETTE ───
+  gold:    "#fbbf24",   // NOW PLAYING, IMAX/premium, rating stars — aspirational
+  goldDim: "#92710a",   // gold accent at 30% opacity feel
+  crimson: "#dc2626",   // PREMIERE, urgent, last-show, sold-out — drama
+  ember:   "#f59e0b",   // PRE-SALE, COMING SOON warm accent (between gold + crimson)
+  premium: "#fbbf24",   // IMAX/4DX/Premium format badges
+  midnight: "#0a0a0f",  // deeper dark for vignettes/overlays
 };
 
 // ════════════════════════════════════════════════════════════════════
@@ -498,14 +509,23 @@ export default function CinemaWebApp() {
           will-change: transform;
         }
         .cw-row-card:hover {
-          transform: scale(1.12) translateY(-6px);
+          transform: scale(1.14) translateY(-8px);
           z-index: 10;
         }
+        /* Cinema premium hover — gold ring + deeper shadow + golden glow accent */
         .cw-row-card:hover > div {
-          box-shadow: 0 12px 30px rgba(0,0,0,0.6), 0 0 0 2px rgba(255,255,255,0.25);
+          box-shadow: 0 18px 42px rgba(0,0,0,0.72), 0 0 0 2px rgba(251,191,36,0.65), 0 0 28px rgba(251,191,36,0.18);
         }
         .cw-row-card:hover .cw-row-card-info {
           opacity: 1 !important;
+        }
+        /* Play button reveal — gold pill bounces in on hover */
+        .cw-row-card .cw-card-play {
+          opacity: 0; transform: scale(0.7) translateY(8px);
+          transition: opacity 0.28s ease, transform 0.32s cubic-bezier(.34,1.56,.64,1);
+        }
+        .cw-row-card:hover .cw-card-play {
+          opacity: 1; transform: scale(1) translateY(0);
         }
         /* Ujung karena di-scale, kasih ruang lebih utk hover yg di edge */
         .cw-row-card:first-child:hover {
@@ -1366,11 +1386,22 @@ function FilmRow({ title, titleExtra = null, films, onPick, brandPrimary, showRa
     <section className="cw-film-row" style={{ marginBottom: S[10] }}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: S[3], marginBottom: S[4], flexWrap: "wrap" }}>
-        {/* Section heading — Netflix-style bold row title (NOT SaaS-semibold) */}
+        {/* Section heading — cinema row title dgn gold accent bar (Netflix/AMC vibe) */}
         <h2 style={{
-          fontSize: 19, fontWeight: 800, color: C.text, margin: 0,
-          letterSpacing: -0.3, lineHeight: T.snug, fontFamily: T.sans,
-        }}>{title}</h2>
+          fontSize: "clamp(22px, 2.4vw, 28px)", fontWeight: 900, color: C.text, margin: 0,
+          letterSpacing: -0.5, lineHeight: 1.1, fontFamily: T.sans,
+          display: "flex", alignItems: "center", gap: S[3],
+          position: "relative",
+        }}>
+          {/* Left accent bar — gold (mostly) atau crimson kalau title contain "Premiere/Soon" */}
+          <span style={{
+            width: 4, height: "1.2em",
+            background: `linear-gradient(180deg, ${C.gold}, ${C.ember})`,
+            borderRadius: 2,
+            boxShadow: `0 0 12px ${C.gold}66`,
+          }} />
+          {title}
+        </h2>
         {titleExtra}
       </div>
       <div style={{ position: "relative" }}>
@@ -1432,11 +1463,25 @@ function FilmRow({ title, titleExtra = null, films, onPick, brandPrimary, showRa
                   {f.status === "coming_soon" && !numbered && (
                     <div style={{
                       position: "absolute", top: 8, left: 8,
-                      background: brandPrimary, color: "#fff",
-                      padding: "3px 8px", fontSize: 9, fontWeight: 800, letterSpacing: 1,
+                      background: `linear-gradient(135deg, ${C.gold}, ${C.ember})`, color: C.midnight,
+                      padding: "3px 8px", fontSize: 9, fontWeight: 900, letterSpacing: 1.2,
                       fontFamily: "'JetBrains Mono',monospace", borderRadius: 3,
+                      boxShadow: `0 2px 8px ${C.gold}55`,
                     }}>SOON</div>
                   )}
+
+                  {/* ▶ Play overlay (revealed on hover via .cw-card-play CSS class) */}
+                  <div className="cw-card-play" style={{
+                    position: "absolute", top: "50%", left: "50%",
+                    transform: "translate(-50%, -50%)",
+                    width: 56, height: 56, borderRadius: "50%",
+                    background: `linear-gradient(135deg, ${C.gold}, ${C.ember})`,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    boxShadow: `0 8px 22px rgba(0,0,0,0.6), 0 0 0 3px rgba(255,255,255,0.18)`,
+                    pointerEvents: "none",
+                  }}>
+                    <span style={{ fontSize: 22, color: C.midnight, marginLeft: 3 }}>▶</span>
+                  </div>
                   {/* Remove button utk My List */}
                   {onRemove && (
                     <button onClick={(e) => { e.stopPropagation(); onRemove(f); }} aria-label="Hapus dari My List" style={{
@@ -2658,10 +2703,18 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
 
       {/* Netflix dual gradient mask: dark dari kiri (text legibility) + bottom (fade ke row carousel) */}
       <div style={{ position: "absolute", inset: 0,
-        background: "linear-gradient(90deg, rgba(20,20,20,0.95) 0%, rgba(20,20,20,0.75) 30%, rgba(20,20,20,0.4) 60%, transparent 100%)",
+        background: "linear-gradient(90deg, rgba(10,10,15,0.96) 0%, rgba(10,10,15,0.78) 30%, rgba(10,10,15,0.42) 60%, transparent 100%)",
       }} />
       <div style={{ position: "absolute", inset: 0,
-        background: "linear-gradient(180deg, rgba(20,20,20,0.4) 0%, transparent 30%, transparent 60%, #141414 100%)",
+        background: "linear-gradient(180deg, rgba(10,10,15,0.5) 0%, transparent 30%, transparent 55%, #0a0a0f 100%)",
+      }} />
+      {/* CINEMA VIGNETTE — radial dark corners (premium movie-theater feel) */}
+      <div style={{ position: "absolute", inset: 0, pointerEvents: "none",
+        background: "radial-gradient(ellipse 110% 90% at 50% 50%, transparent 40%, rgba(0,0,0,0.55) 100%)",
+      }} />
+      {/* CINEMA SPOTLIGHT — subtle warm glow dari kiri-atas (key light) */}
+      <div style={{ position: "absolute", top: 0, left: 0, width: "55%", height: "65%", pointerEvents: "none",
+        background: `radial-gradient(ellipse 80% 90% at 25% 40%, ${C.gold}0a 0%, transparent 65%)`,
       }} />
 
       {/* Content — left-aligned Netflix style */}
@@ -2751,19 +2804,29 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
             }}>{current.synopsis}</p>
           )}
 
-          {/* CTAs Netflix style: Play + Info */}
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          {/* CTAs Netflix style: Play + Info — cinema drama dgn glow */}
+          <div style={{ display: "flex", gap: S[3], flexWrap: "wrap" }}>
             <button className="cw-hero-cta" onClick={() => onPickFilm?.(current)} style={{
-              display: "inline-flex", alignItems: "center", gap: 10,
-              padding: "12px 28px",
-              background: "#fff", color: "#0a0a0f",
-              border: "none", borderRadius: 4,
-              fontSize: 15, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-              transition: "all 0.2s",
+              display: "inline-flex", alignItems: "center", gap: S[3],
+              padding: `${S[4]}px ${S[8]}px`,
+              background: "#fff", color: C.midnight,
+              border: "none", borderRadius: 6,
+              fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+              transition: "all 0.25s cubic-bezier(.2,.8,.2,1)",
+              boxShadow: "0 8px 24px rgba(255,255,255,0.15), 0 0 0 1px rgba(255,255,255,0.1) inset",
+              letterSpacing: 0.2,
             }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.85)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "#fff"; }}>
-              <span style={{ fontSize: 18, lineHeight: 1 }}>▶</span>
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = C.gold;
+                e.currentTarget.style.transform = "translateY(-2px)";
+                e.currentTarget.style.boxShadow = `0 12px 32px ${C.gold}55, 0 0 0 1px rgba(0,0,0,0.1) inset`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "#fff";
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 8px 24px rgba(255,255,255,0.15), 0 0 0 1px rgba(255,255,255,0.1) inset";
+              }}>
+              <span style={{ fontSize: 20, lineHeight: 1 }}>▶</span>
               Pesan Tiket
             </button>
             <button className="cw-hero-cta" onClick={() => onPickFilm?.(current)} style={{
@@ -3940,20 +4003,23 @@ function ShowtimesList({ outlet, film, onPickShowtime, brandPrimary }) {
             <div className="cw-showtimes-grid" style={{ display: "grid", gridTemplateColumns: list.length === 1 ? "1fr" : "repeat(auto-fit, minmax(140px, 1fr))", gap: 8 }}>
               {list.map(s => {
                 const remaining = (s.capacity || 0) - (s.sold_count || 0);
-                const lowSeats = remaining <= 10 && remaining > 0;
+                const criticalSeats = remaining > 0 && remaining <= 5;      // 🔴 pulse animation
+                const lowSeats = remaining > 5 && remaining <= 15;          // 🟠 amber warning
+                const fillingFast = remaining > 15 && s.capacity > 0 && (s.sold_count || 0) / s.capacity >= 0.65;  // 🟡 momentum hint
                 const soldOut = remaining <= 0 || s.derived_status === "sold_out";
                 const pctSold = s.capacity > 0 ? Math.round((s.sold_count || 0) / s.capacity * 100) : 0;
                 return (
                   <button key={s.id} onClick={() => !soldOut && onPickShowtime(s)} disabled={soldOut} style={{
                     background: soldOut ? "rgba(239,68,68,0.06)" : "rgba(255,255,255,0.03)",
-                    border: `1px solid ${soldOut ? "rgba(239,68,68,0.25)" : "rgba(255,255,255,0.08)"}`,
+                    border: `1px solid ${soldOut ? "rgba(239,68,68,0.25)" : criticalSeats ? `${C.crimson}55` : "rgba(255,255,255,0.08)"}`,
                     borderRadius: 10, padding: "10px 11px", textAlign: "left",
                     color: soldOut ? C.dim : C.text, cursor: soldOut ? "not-allowed" : "pointer",
-                    fontFamily: "inherit", transition: "all 0.18s ease",
+                    fontFamily: "inherit", transition: "all 0.2s cubic-bezier(.2,.8,.2,1)",
                     position: "relative", overflow: "hidden",
+                    animation: criticalSeats ? "cwPulse 2s ease infinite" : undefined,
                   }}
-                    onMouseEnter={(e) => { if (!soldOut) { e.currentTarget.style.borderColor = brandPrimary; e.currentTarget.style.background = `${brandPrimary}1a`; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 6px 16px ${brandPrimary}33`; } }}
-                    onMouseLeave={(e) => { if (!soldOut) { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; } }}>
+                    onMouseEnter={(e) => { if (!soldOut) { e.currentTarget.style.borderColor = brandPrimary; e.currentTarget.style.background = `${brandPrimary}1a`; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 8px 22px ${brandPrimary}44`; } }}
+                    onMouseLeave={(e) => { if (!soldOut) { e.currentTarget.style.borderColor = criticalSeats ? `${C.crimson}55` : "rgba(255,255,255,0.08)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; } }}>
                     <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 3 }}>
                       <span style={{ fontSize: 17, fontWeight: 800, fontFamily: "'Geist Mono',monospace", letterSpacing: -0.3 }}>{s.start_time}</span>
                       <span style={{ fontSize: 9, color: FORMAT_COLOR[s.format] || C.dim, fontWeight: 800, fontFamily: "'Geist Mono',monospace", background: (FORMAT_COLOR[s.format] || "#9ca3af") + "22", padding: "1px 6px", borderRadius: 3, letterSpacing: 0.3 }}>{s.format || "2D"}</span>
@@ -3961,12 +4027,25 @@ function ShowtimesList({ outlet, film, onPickShowtime, brandPrimary }) {
                     <div style={{ fontSize: 10, color: C.sub, marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.studio_name}</div>
                     <div style={{ fontSize: 12, fontWeight: 800, color: brandPrimary, fontFamily: "'Geist Mono',monospace", letterSpacing: -0.2 }}>{rp(s.price)}</div>
                     {soldOut ? (
-                      <div style={{ marginTop: 6, fontSize: 9, color: "#ef4444", fontWeight: 800, letterSpacing: 1, fontFamily: "'Geist Mono',monospace" }}>SOLD OUT</div>
+                      <div style={{ marginTop: 6, fontSize: 9, color: C.crimson, fontWeight: 900, letterSpacing: 1.2, fontFamily: "'Geist Mono',monospace" }}>● SOLD OUT</div>
+                    ) : criticalSeats ? (
+                      <div style={{ marginTop: 6, fontSize: 9.5, color: C.crimson, fontWeight: 900, letterSpacing: 0.6, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase" }}>
+                        🔥 Last {remaining} {remaining === 1 ? "seat" : "seats"}!
+                      </div>
                     ) : lowSeats ? (
-                      <div style={{ marginTop: 6, fontSize: 9, color: "#fbbf24", fontWeight: 700 }}>⚠ Sisa {remaining}</div>
+                      <div style={{ marginTop: 6, fontSize: 9.5, color: C.gold, fontWeight: 800, letterSpacing: 0.4, fontFamily: "'Geist Mono',monospace" }}>
+                        ⚠ {remaining} seats left
+                      </div>
+                    ) : fillingFast ? (
+                      <div style={{ marginTop: 6, fontSize: 9.5, color: C.ember, fontWeight: 800, letterSpacing: 0.4, fontFamily: "'Geist Mono',monospace" }}>
+                        ⚡ Filling fast · {remaining} left
+                      </div>
                     ) : (
-                      <div style={{ marginTop: 6, height: 3, background: "rgba(255,255,255,0.05)", borderRadius: 2, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${pctSold}%`, background: pctSold > 70 ? "#fbbf24" : "#10b981", transition: "width 0.3s" }} />
+                      <div style={{ marginTop: 6, display: "flex", alignItems: "center", gap: 5 }}>
+                        <div style={{ flex: 1, height: 3, background: "rgba(255,255,255,0.05)", borderRadius: 2, overflow: "hidden" }}>
+                          <div style={{ height: "100%", width: `${pctSold}%`, background: pctSold > 70 ? C.gold : C.green, transition: "width 0.3s" }} />
+                        </div>
+                        <span style={{ fontSize: 9, color: C.dim, fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>{remaining}</span>
                       </div>
                     )}
                   </button>
