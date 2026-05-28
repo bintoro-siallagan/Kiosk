@@ -175,17 +175,20 @@ export default function CinemaKiosk({ apiBase }) {
         body: JSON.stringify({
           rating: rateValue, comment: rateComment,
           customer_name: done.email || "", customer_phone: done.phone || "",
+          purchase_id: done.purchase_id || "",
           ticket_code: done.tickets?.[0]?.code || "",
         }),
       });
-      const d = await r.json();
+      const d = await r.json().catch(() => ({}));
       if (d.ok) {
         setRateSent(true);
-        // Tampilkan Sultan celebration popup setelah rating dikirim — pakai delay kecil
-        // biar customer sempat liat konfirmasi rating dulu
         setTimeout(() => setShowCelebration(true), 600);
+      } else {
+        alert("Gagal kirim rating: " + (d.error || `HTTP ${r.status}`));
       }
-    } catch {}
+    } catch (e) {
+      alert("Gagal kirim rating: " + e.message);
+    }
   }
 
   const reloadSeats = (showtimeId) => {

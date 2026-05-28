@@ -5759,18 +5759,37 @@ function setupCinema(app, opts = {}) {
     const film = db.prepare(`SELECT id, title FROM cinema_films WHERE id = ?`).get(filmId);
     if (!film) return res.status(404).json({ ok: false, error: 'Film tidak ditemukan' });
 
-    const purchase_id = String(b.purchase_id || '').trim().toUpperCase();
-    const phone = String(b.customer_phone || '').trim();
+    // Accept both `purchase_id` and `ticket_code` (frontend legacy) — pick whichever is present
+    const purchase_id = String(b.purchase_id || b.ticket_code || '').trim().toUpperCase();
+    let phone = String(b.customer_phone || '').trim();
 
-    // Strict: wajib purchase_id yg cocok phone + film + payment_status paid
     if (!purchase_id) return res.status(400).json({ ok: false, error: 'purchase_id wajib (review hanya utk yg sudah nonton)' });
-    if (!phone) return res.status(400).json({ ok: false, error: 'customer_phone wajib' });
-    const own = db.prepare(`
-      SELECT COUNT(*) AS c FROM cinema_tickets t
-      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
-      WHERE t.purchase_id = ? AND s.film_id = ? AND t.buyer_phone = ?
-        AND (t.payment_status IS NULL OR t.payment_status IN ('paid','settlement','capture'))
-    `).get(purchase_id, filmId, phone);
+
+    // Phone optional — kalau tidak dikirim, derive dari purchase_id (kasus: QR feedback URL
+    // gak carry phone — customer scan dari CDS langsung tanpa phone input).
+    if (!phone) {
+      const derived = db.prepare(`
+        SELECT buyer_phone FROM cinema_tickets
+        WHERE purchase_id = ? AND buyer_phone IS NOT NULL
+        LIMIT 1
+      `).get(purchase_id);
+      phone = derived?.buyer_phone || '';
+    }
+
+    // Verify purchase belongs to a paid ticket for this film. Phone validation jadi extra layer
+    // kalau di-pass, tapi gak block kalau cuma derive (purchase_id valid sudah cukup proof).
+    const ownSql = phone
+      ? `SELECT COUNT(*) AS c FROM cinema_tickets t
+         LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+         WHERE t.purchase_id = ? AND s.film_id = ? AND t.buyer_phone = ?
+           AND (t.payment_status IS NULL OR t.payment_status IN ('paid','settlement','capture'))`
+      : `SELECT COUNT(*) AS c FROM cinema_tickets t
+         LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+         WHERE t.purchase_id = ? AND s.film_id = ?
+           AND (t.payment_status IS NULL OR t.payment_status IN ('paid','settlement','capture'))`;
+    const own = phone
+      ? db.prepare(ownSql).get(purchase_id, filmId, phone)
+      : db.prepare(ownSql).get(purchase_id, filmId);
     if (!own || !own.c) return res.status(403).json({ ok: false, error: 'Tidak menemukan booking sah utk film ini' });
 
     // Anti double-review

@@ -35,19 +35,23 @@ export default function CinemaFeedback() {
     try {
       // Rate film kalau ada rating
       if (rating && filmId) {
-        await fetch(`${API_HOST}/api/cinema/films/${filmId}/rate`, {
+        const r = await fetch(`${API_HOST}/api/cinema/films/${filmId}/rate`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             rating, comment: comment.trim() || null,
             customer_name: name.trim() || null,
-            ticket_code: purchaseId || null,
+            purchase_id: purchaseId || null,   // ← FIELD CORRECT: backend reads purchase_id
             source: "mobile",
           }),
         });
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok || !d.ok) {
+          throw new Error(d.error || `HTTP ${r.status}`);
+        }
       }
       // Rate cashier kalau ada
       if (cashierRating && cashierName) {
-        await fetch(`${API_HOST}/api/cinema/cashier-rating`, {
+        const r2 = await fetch(`${API_HOST}/api/cinema/cashier-rating`, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             cashier_name: cashierName,
@@ -58,9 +62,15 @@ export default function CinemaFeedback() {
             customer_name: name.trim() || null,
           }),
         });
+        const d2 = await r2.json().catch(() => ({}));
+        if (!r2.ok || !d2.ok) {
+          throw new Error(d2.error || `HTTP ${r2.status} (cashier rating)`);
+        }
       }
       setSent(true);
-    } catch (e) { setError(e.message); }
+    } catch (e) {
+      setError(e.message || "Gagal kirim rating");
+    }
     setSubmitting(false);
   };
 
