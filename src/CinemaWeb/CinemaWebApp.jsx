@@ -4418,12 +4418,13 @@ function BundlesStep({ outlet, cart, onChange, onContinue, brandPrimary }) {
 
   return (
     <div style={{ padding: "30px 0 120px" }}>
-      <div style={{ marginBottom: 24 }}>
-        <h2 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.4, margin: 0, marginBottom: 6 }}>
-          🍿 Tambah Snack?
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ ...TY.eyebrow, color: brandPrimary, marginBottom: 8 }}>🍿 Step 4 · F&B Combo</div>
+        <h2 style={{ ...TY.headline, fontSize: 28, margin: 0, marginBottom: 8, color: C.text }}>
+          Tambah Snack & Minuman?
         </h2>
-        <p style={{ fontSize: 13, color: C.sub, margin: 0 }}>
-          Pesan sekalian di sini, ambil di counter saat scan tiket. Bisa di-skip.
+        <p style={{ ...TY.bodySm, color: C.sub, margin: 0 }}>
+          Pesan sekalian di sini, ambil di counter saat scan tiket. Bisa di-skip kalau gak perlu.
         </p>
       </div>
 
@@ -4440,15 +4441,16 @@ function BundlesStep({ outlet, cart, onChange, onContinue, brandPrimary }) {
                 aspectRatio: "16/10", background: b.image_url ? `url(${b.image_url}) center/cover` : "rgba(255,255,255,0.04)",
                 display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, color: C.dim,
               }}>{!b.image_url && "🍿"}</div>
-              <div style={{ padding: "12px 14px 14px" }}>
-                <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{b.name}</div>
-                {b.description && <div style={{ fontSize: 11, color: C.sub, lineHeight: 1.4, marginBottom: 10, minHeight: 28 }}>{b.description}</div>}
+              <div style={{ padding: "14px 16px 16px" }}>
+                <div style={{ ...TY.subtitle, fontSize: 14, marginBottom: 4, color: C.text }}>{b.name}</div>
+                {b.description && <div style={{ ...TY.caption, color: C.sub, lineHeight: 1.45, marginBottom: 12, minHeight: 28 }}>{b.description}</div>}
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                  <div style={{ fontSize: 14, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: brandPrimary }}>{rp(b.price)}</div>
+                  <div style={{ ...TY.eyebrow, color: brandPrimary, fontSize: 13, letterSpacing: "0.06em", textTransform: "none" }}>{rp(b.price)}</div>
                   {qty === 0 ? (
                     <button onClick={() => setQty(b.id, 1)} style={{
+                      ...TY.button,
                       background: `${brandPrimary}22`, border: `1px solid ${brandPrimary}55`, color: brandPrimary,
-                      borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                      borderRadius: 8, padding: "7px 14px", fontSize: 12, cursor: "pointer",
                     }}>+ Tambah</button>
                   ) : (
                     <div style={{ display: "flex", alignItems: "center", gap: 8, background: brandPrimary, borderRadius: 8, padding: "2px 4px" }}>
@@ -4456,7 +4458,7 @@ function BundlesStep({ outlet, cart, onChange, onContinue, brandPrimary }) {
                         width: 28, height: 28, background: "transparent", border: "none", color: "#fff",
                         fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
                       }}>−</button>
-                      <span style={{ minWidth: 16, textAlign: "center", color: "#fff", fontWeight: 800, fontFamily: "'Geist Mono',monospace" }}>{qty}</span>
+                      <span style={{ ...TY.number, fontSize: 14, minWidth: 16, textAlign: "center", color: "#fff" }}>{qty}</span>
                       <button onClick={() => setQty(b.id, qty + 1)} style={{
                         width: 28, height: 28, background: "transparent", border: "none", color: "#fff",
                         fontSize: 16, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
@@ -4480,19 +4482,19 @@ function BundlesStep({ outlet, cart, onChange, onContinue, brandPrimary }) {
           <div style={{ flex: 1, minWidth: 0 }}>
             {totalQty > 0 ? (
               <>
-                <div style={{ fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace", letterSpacing: 1 }}>
-                  {totalQty} ITEM SNACK
+                <div style={{ ...TY.eyebrow, color: C.dim }}>
+                  {totalQty} Item Snack
                 </div>
-                <div style={{ fontSize: 18, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: brandPrimary }}>+ {rp(totalPrice)}</div>
+                <div style={{ ...TY.number, fontSize: 22, color: brandPrimary, marginTop: 2 }}>+ {rp(totalPrice)}</div>
               </>
             ) : (
-              <div style={{ fontSize: 12, color: C.sub }}>Tanpa snack juga OK — bisa beli di counter</div>
+              <div style={{ ...TY.bodySm, color: C.sub }}>Tanpa snack juga OK — bisa beli di counter</div>
             )}
           </div>
           <button onClick={onContinue} style={{
+            ...TY.button,
             background: brandPrimary, border: "none", color: "#fff",
-            padding: "12px 22px", borderRadius: 10,
-            fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+            padding: "14px 24px", borderRadius: 10, fontSize: 14, cursor: "pointer",
             boxShadow: `0 8px 20px ${brandPrimary}55`,
           }}>{totalQty > 0 ? "Lanjut →" : "Skip →"}</button>
         </div>
@@ -4642,16 +4644,17 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, onEdit
           }}>
             <span style={{ fontSize: 22, lineHeight: 1 }}>🎬</span>
             <div>
-              <div style={{ fontSize: 12, color: brandPrimary, fontWeight: 800, fontFamily: "'Geist Mono',monospace", letterSpacing: 1.2, marginBottom: 4, textTransform: "uppercase" }}>
+              <div style={{ ...TY.eyebrow, color: brandPrimary, marginBottom: 6 }}>
                 Pre-Sale Ticket
               </div>
-              <div style={{ fontSize: 13, color: C.text, lineHeight: 1.55 }}>
+              <div style={{ ...TY.bodySm, color: C.text, lineHeight: 1.6 }}>
                 Film ini <b>Coming Soon</b>{film.release_date ? <> · tayang <b>{fmtFullDate(film.release_date)}</b></> : ""}. Tiket bisa di-refund <b>100%</b> sampai H-1 tanggal showtime. Setelah itu, kebijakan refund reguler berlaku.
               </div>
             </div>
           </div>
         )}
-        <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: -0.3, margin: 0, marginBottom: 16 }}>Data Pemesan</h2>
+        <div style={{ ...TY.eyebrow, color: brandPrimary, marginBottom: 8 }}>👤 Step 5 · Checkout</div>
+        <h2 style={{ ...TY.headline, fontSize: 28, margin: 0, marginBottom: 18, color: C.text }}>Data Pemesan</h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <Field label="Nama Lengkap *" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="Nama sesuai identitas" />
           <Field label="No. WhatsApp *" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="08xxxxxxxxxx" type="tel" />
@@ -4785,13 +4788,13 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, onEdit
 
       {/* Right: Order summary */}
       <aside>
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 18, position: "sticky", top: 80 }}>
-          <h3 style={{ fontSize: 13, fontWeight: 700, letterSpacing: 1.5, color: C.dim, fontFamily: "'Geist Mono',monospace", margin: 0, marginBottom: 14, textTransform: "uppercase" }}>Ringkasan</h3>
-          <div style={{ display: "flex", gap: 10, marginBottom: 14, paddingBottom: 14, borderBottom: `1px solid ${C.border}` }}>
-            {film.poster_url && <img src={film.poster_url} alt="" style={{ width: 50, aspectRatio: "2/3", objectFit: "cover", borderRadius: 6 }} />}
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20, position: "sticky", top: 80 }}>
+          <h3 style={{ ...TY.eyebrow, color: C.dim, margin: 0, marginBottom: 16 }}>📋 Ringkasan Booking</h3>
+          <div style={{ display: "flex", gap: 12, marginBottom: 16, paddingBottom: 16, borderBottom: `1px solid ${C.border}` }}>
+            {film.poster_url && <img src={film.poster_url} alt="" style={{ width: 52, aspectRatio: "2/3", objectFit: "cover", borderRadius: 6 }} />}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, marginBottom: 4 }}>{film.title}</div>
-              <div style={{ fontSize: 11, color: C.sub }}>{film.duration_min}mnt · {film.genre || "—"}</div>
+              <div style={{ ...TY.subtitle, fontSize: 14, marginBottom: 4, color: C.text }}>{film.title}</div>
+              <div style={{ ...TY.caption, color: C.sub }}>{film.duration_min}mnt · {film.genre || "—"}</div>
             </div>
           </div>
           <Row label="📍 Lokasi" value={outlet.name?.replace("Karya Cinema ", "") || outlet.code} />
@@ -4846,9 +4849,9 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, onEdit
                 <span style={{ fontFamily: "'Geist Mono',monospace" }}>− {rp(pointsDiscount)}</span>
               </div>
             )}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 8 }}>
-              <span style={{ fontSize: 13, color: C.sub }}>Total</span>
-              <span style={{ fontSize: 22, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: brandPrimary }}>{rp(total)}</span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 10, paddingTop: 12, borderTop: `1px solid ${C.border}` }}>
+              <span style={{ ...TY.eyebrow, color: C.sub }}>Total Bayar</span>
+              <span style={{ ...TY.number, fontSize: 26, color: brandPrimary }}>{rp(total)}</span>
             </div>
           </div>
         </div>
@@ -4860,7 +4863,7 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, onEdit
 function Field({ label, value, onChange, placeholder, type = "text" }) {
   return (
     <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <span style={{ fontSize: 11, color: C.dim, fontWeight: 600, letterSpacing: 0.5 }}>{label}</span>
+      <span style={{ ...TY.eyebrow, color: C.dim, letterSpacing: "0.08em" }}>{label}</span>
       <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder}
         style={{
           background: C.card, border: `1px solid ${C.border}`, color: C.text,
@@ -4972,12 +4975,9 @@ function SuccessPage({ booking, film, showtime, seats, bundlesCart, onNewBooking
         }}>{isPaid ? "✅" : isCounter ? "🎫" : "⏳"}</div>
 
         {/* Eyebrow mono */}
-        <div style={{
-          fontSize: T.xs, color: C.gold, fontFamily: T.mono, fontWeight: T.semibold,
-          letterSpacing: T.tracking_wider, textTransform: "uppercase", marginBottom: S[2],
-        }}>🎬 Booking Confirmed</div>
+        <div style={{ ...TY.eyebrow, color: C.gold, marginBottom: S[2] }}>🎬 Booking Confirmed</div>
 
-        <h1 style={{ fontSize: "clamp(28px, 4vw, 38px)", fontWeight: 900, letterSpacing: -0.8, margin: 0, marginBottom: S[2],
+        <h1 style={{ ...TY.display, fontSize: "clamp(34px, 5vw, 52px)", margin: 0, marginBottom: S[2],
           color: isPaid ? "#10b981" : isCounter ? C.gold : "#fbbf24",
           textShadow: isPaid ? "0 0 24px rgba(16,185,129,0.3)" : `0 0 24px ${C.gold}33`,
         }}>
@@ -4986,19 +4986,18 @@ function SuccessPage({ booking, film, showtime, seats, bundlesCart, onNewBooking
 
         {/* Film + showtime mini-card */}
         <div style={{
-          margin: `${S[3]}px auto ${S[5]}px`, maxWidth: 360,
-          padding: `${S[3]}px ${S[4]}px`,
+          margin: `${S[3]}px auto ${S[5]}px`, maxWidth: 380,
+          padding: `${S[4]}px ${S[5]}px`,
           background: "rgba(255,255,255,0.04)", border: `1px solid ${C.borderSubtle}`,
           borderRadius: 12,
-          fontSize: T.sm, color: C.text, fontWeight: T.semibold,
         }}>
-          <div style={{ fontSize: T.md, fontWeight: T.bold, marginBottom: 4, letterSpacing: -0.2 }}>{film?.title || "Tiket Bioskop"}</div>
-          <div style={{ fontSize: T.xs, color: C.sub, fontFamily: T.mono, letterSpacing: 0.4 }}>
-            {fmtDate(showtime.show_date)} · <span style={{ color: C.gold }}>{showtime.start_time}</span> · {seats.sort().join(", ")}
+          <div style={{ ...TY.subtitle, fontSize: 16, marginBottom: 6, color: C.text }}>{film?.title || "Tiket Bioskop"}</div>
+          <div style={{ ...TY.caption, color: C.sub, fontFamily: T.mono, letterSpacing: "0.04em", fontVariantNumeric: "tabular-nums" }}>
+            {fmtDate(showtime.show_date)} · <span style={{ color: C.gold, fontWeight: 700 }}>{showtime.start_time}</span> · {seats.sort().join(", ")}
           </div>
         </div>
 
-        <p style={{ fontSize: T.sm, color: C.sub, margin: 0, marginBottom: S[6], fontFamily: T.sans }}>
+        <p style={{ ...TY.body, color: C.sub, margin: 0, marginBottom: S[6] }}>
           {isCounter
             ? "Tunjukkan QR ini di counter saat ambil tiket"
             : "Scan QR ini di pintu studio untuk masuk"}
@@ -5032,10 +5031,10 @@ function SuccessPage({ booking, film, showtime, seats, bundlesCart, onNewBooking
                 </div>
               )}
             </div>
-            <div style={{ fontSize: T.xs, color: C.meta, letterSpacing: T.tracking_wider, fontFamily: T.mono, marginBottom: 4, textTransform: "uppercase", fontWeight: T.semibold }}>Kode Tiket</div>
-            <div style={{ fontSize: 22, fontWeight: 900, fontFamily: T.mono, color: C.gold, marginBottom: S[2], letterSpacing: 1.2 }}>{primaryCode}</div>
+            <div style={{ ...TY.eyebrow, color: C.meta, marginBottom: 6 }}>Kode Tiket</div>
+            <div style={{ ...TY.number, fontSize: 24, color: C.gold, marginBottom: S[2], letterSpacing: "0.06em" }}>{primaryCode}</div>
             {allTicketCodes.length > 1 && (
-              <div style={{ fontSize: 11, color: C.dim, marginBottom: 22 }}>
+              <div style={{ ...TY.caption, color: C.dim, marginBottom: 22 }}>
                 {allTicketCodes.length} tiket — kode lain: {allTicketCodes.slice(1).join(", ")}
               </div>
             )}
