@@ -117,7 +117,7 @@ app.post("/api/upload", upload.single("file"), (req, res) => {
 // endpoint ini biar req.body terparsed walau urutan registrasi sebelum
 // global body parser. [[express-middleware-order]] gotcha.
 app.get("/api/admin/email-config", (_, res) => res.json(emailModule.getMaskedConfig()));
-app.patch("/api/admin/email-config", express.json({ limit: "5mb" }), (req, res) => {
+app.patch("/api/admin/email-config", requireAdmin, express.json({ limit: "5mb" }), (req, res) => {
   try {
     const cur = emailModule.getConfig();
     const patch = req.body || {};
@@ -281,6 +281,25 @@ try {
   const _path = require('path');
   global.featureEnforcement = setupFeatureEnforcement(app, { dbPath: _path.join(__dirname, 'data.db') });
 } catch (e) { console.warn('[feature-enforcement] skipped:', e.message); }
+
+// ─── AUTH HELPERS — reusable session + role guards utk admin endpoints ───
+// requireSession  → 401 kalau bearer token gak valid, attach req.session
+// requireAdmin    → requireSession + role check (admin/super-admin/owner/manager)
+function requireSession(req, res, next) {
+  const token = req.headers.authorization?.replace(/^Bearer\s+/i, '');
+  const session = token && adminSessions.get(token);
+  if (!session) return res.status(401).json({ error: 'Unauthorized — login required' });
+  req.session = session;
+  next();
+}
+function requireAdmin(req, res, next) {
+  return requireSession(req, res, () => {
+    const role = (req.session.role || '').toLowerCase();
+    const isAdminTier = role === 'super-admin' || role === 'admin' || role === 'owner' || role === 'manager' || role.endsWith('-manager');
+    if (!isAdminTier) return res.status(403).json({ error: `Role "${role}" tidak punya akses admin config` });
+    next();
+  });
+}
 
 // ─── CDS Cinema — second display state (NOW receives parsed body) ───
 // POS Cinema POST current sale state → backend broadcast via WS ke semua CDS terminal.
@@ -1402,7 +1421,7 @@ app.get("/api/wa/config", (req, res) => {
   res.json({ ...safe, provider: wa.detectProvider() });
 });
 
-app.patch("/api/wa/config", (req, res) => {
+app.patch("/api/wa/config", requireAdmin, (req, res) => {
   const updated = wa.setConfig(req.body || {});
   console.log(`📱 WA config updated → provider=${wa.detectProvider()||"none"} enabled=${JSON.stringify(updated.enabled)}`);
   res.json({ ok: true, config: updated, provider: wa.detectProvider() });
@@ -2729,7 +2748,7 @@ app.get("/api/admin/midtrans-config", (_, res) => {
   res.json(masked);
 });
 
-app.patch("/api/admin/midtrans-config", (req, res) => {
+app.patch("/api/admin/midtrans-config", requireAdmin, (req, res) => {
   try {
     const allowed = ["serverKey","clientKey","isProduction","enabledMethods","merchantId","notificationUrl"];
     const patch = {};
@@ -3238,7 +3257,7 @@ app.get("/api/payment/config", (req, res) => {
 });
 
 // POST /api/payment/midtrans-config — update keys at runtime
-app.post("/api/payment/midtrans-config", (req, res) => {
+app.post("/api/payment/midtrans-config", requireAdmin, (req, res) => {
   const { serverKey, clientKey, isProduction } = req.body;
   if (serverKey)    midtransConfig.serverKey    = serverKey;
   if (clientKey)    midtransConfig.clientKey    = clientKey;

@@ -63,11 +63,11 @@ export default function Screensaver({ onDismiss, brandName, brandLogo }) {
         setBestsellers(hot.length > 0 ? hot : items.slice(0, 4));
       })
       .catch(() => {});
-    // Load active promos
-    fetch(`${API_URL}/api/promotions`)
+    // Load active promos (path: /api/promo singular, bukan /api/promotions)
+    fetch(`${API_URL}/api/promo`)
       .then(r => r.ok ? r.json() : [])
       .then(data => {
-        const list = Array.isArray(data) ? data : (data?.items || []);
+        const list = Array.isArray(data) ? data : (data?.items || data?.promos || []);
         setPromos(list.filter(p => p.active !== false).slice(0, 3));
       })
       .catch(() => {});

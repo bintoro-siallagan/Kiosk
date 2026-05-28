@@ -424,8 +424,11 @@ function PosAlertPill({ apiBase = "" }) {
   useEffect(() => {
     let cancel = false;
     const fetchAlerts = () => {
-      fetch(`${apiBase}/api/audit/anomalies?limit=20&resolved=false`)
-        .then(r => r.json())
+      const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+      fetch(`${apiBase}/api/audit/anomalies?limit=20&resolved=false`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+        .then(r => r.ok ? r.json() : { items: [] })
         .then(d => { if (!cancel && Array.isArray(d?.items)) setAlerts(d.items); })
         .catch(() => {});
     };
@@ -484,8 +487,11 @@ function PosStockPill({ apiBase = "" }) {
   useEffect(() => {
     let cancel = false;
     const load = () => {
-      fetch(`${apiBase}/api/audit/warehouse`)
-        .then(r => r.json())
+      const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
+      fetch(`${apiBase}/api/audit/warehouse`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+        .then(r => r.ok ? r.json() : { items: [] })
         .then(d => { if (!cancel && Array.isArray(d?.items)) setItems(d.items); })
         .catch(() => {});
     };
@@ -633,8 +639,13 @@ function PosAlertModal({ alerts, apiBase, onClose }) {
   const resolve = async (id) => {
     setItems(prev => prev.filter(a => a.id !== id));
     try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("adminToken") : null;
       await fetch(`${apiBase}/api/audit/anomalies/${id}/resolve`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ resolvedBy: localStorage.getItem("kasir_name") || "kasir" }),
       });
     } catch {}
