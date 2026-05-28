@@ -21,6 +21,12 @@ export default function CinemaDigitalTicket() {
   const [loading, setLoading] = useState(true);
   const [printingThermal, setPrintingThermal] = useState(false);
   const [thermalMsg, setThermalMsg] = useState("");
+  // Phase 3 refund flow state
+  const [refundModalOpen, setRefundModalOpen] = useState(false);
+  const [refundReason, setRefundReason] = useState("");
+  const [refundPhone, setRefundPhone] = useState("");
+  const [refundBusy, setRefundBusy] = useState(false);
+  const [refundResult, setRefundResult] = useState(null);  // { ok, message } | { error }
 
   // Auto-print + close window setelah loaded (untuk Chrome --kiosk-printing flag)
   useEffect(() => {
@@ -119,7 +125,16 @@ export default function CinemaDigitalTicket() {
   }
 
   const isUsed = !!ticket.checked_in_at;
-  const isRefunded = ticket.payment_status === "refunded";
+  const isRefunded = ticket.payment_status === "refunded" || ticket.refund_status === "refunded";
+
+  // Phase 3 — refund eligibility (pre-sale tickets, H-1, not used/refunded)
+  const isPreSale = !!ticket.is_pre_sale;
+  const hoursUntilShow = (() => {
+    if (!ticket.show_date || !ticket.start_time) return null;
+    const showTs = new Date(`${ticket.show_date}T${ticket.start_time}:00+07:00`).getTime();
+    return (showTs - Date.now()) / 3600000;
+  })();
+  const refundEligible = isPreSale && !isUsed && !isRefunded && ticket.payment_status === "paid" && (hoursUntilShow === null || hoursUntilShow >= 24);
 
   return (
     <Shell>
@@ -182,7 +197,112 @@ export default function CinemaDigitalTicket() {
         )}
         {isRefunded && (
           <div style={{ padding: "10px 14px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 10, color: "#fca5a5", fontSize: 12, fontWeight: 800, textAlign: "center", marginBottom: 14 }}>
-            ⚠ Tiket sudah di-refund / void
+            ⚠ Tiket sudah di-refund {ticket.refund_amount ? `· Rp ${ticket.refund_amount.toLocaleString("id-ID")}` : ""}
+          </div>
+        )}
+
+        {/* Phase 3 — Refund eligibility banner (pre-sale + H-1 + paid) */}
+        {refundEligible && (
+          <div className="no-print" style={{
+            padding: "12px 14px",
+            background: "linear-gradient(135deg, rgba(168,85,247,0.12), rgba(251,191,36,0.05))",
+            border: "1px solid rgba(168,85,247,0.4)", borderRadius: 12, marginBottom: 14,
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap",
+          }}>
+            <div>
+              <div style={{ fontSize: 11, color: "#c084fc", fontWeight: 800, letterSpacing: 1.2, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase" }}>
+                🎬 Pre-Sale Ticket · Refundable
+              </div>
+              <div style={{ fontSize: 12, color: "#cbd5e1", marginTop: 4, lineHeight: 1.5 }}>
+                Tiket bisa di-refund <b>100%</b> sampai H-1{hoursUntilShow !== null && hoursUntilShow > 24 ? ` (${Math.floor(hoursUntilShow / 24)} hari lagi)` : ""}.
+              </div>
+            </div>
+            <button onClick={() => setRefundModalOpen(true)} style={{
+              padding: "9px 16px", background: "rgba(239,68,68,0.15)", color: "#fca5a5",
+              border: "1px solid rgba(239,68,68,0.5)", borderRadius: 8,
+              fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+              whiteSpace: "nowrap",
+            }}>↩️ Request Refund</button>
+          </div>
+        )}
+
+        {/* Refund confirm modal */}
+        {refundModalOpen && (
+          <div className="no-print" onClick={() => !refundBusy && setRefundModalOpen(false)} style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex",
+            alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20, backdropFilter: "blur(6px)",
+          }}>
+            <div onClick={e => e.stopPropagation()} style={{
+              width: "min(440px, 100%)", background: "#0a0a0f", border: "1px solid #a855f755",
+              borderRadius: 16, padding: 24,
+            }}>
+              {refundResult?.ok ? (
+                <>
+                  <div style={{ fontSize: 32, textAlign: "center", marginBottom: 12 }}>✅</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", textAlign: "center", marginBottom: 8 }}>Refund Berhasil</div>
+                  <div style={{ fontSize: 13, color: "#cbd5e1", textAlign: "center", lineHeight: 1.6, marginBottom: 18 }}>
+                    {refundResult.message}
+                  </div>
+                  <button onClick={() => { setRefundModalOpen(false); window.location.reload(); }} style={{
+                    width: "100%", padding: 12, background: "#a855f7", color: "#fff",
+                    border: "none", borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                  }}>OK</button>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: 11, color: "#fca5a5", fontFamily: "'Geist Mono',monospace", letterSpacing: 1.5, fontWeight: 800, textTransform: "uppercase" }}>↩️ Refund Tiket Pre-Sale</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginTop: 6, marginBottom: 4 }}>Tiket {ticket.code}</div>
+                  <div style={{ fontSize: 12, color: "#94a3b8", marginBottom: 16, lineHeight: 1.5 }}>
+                    {ticket.film_title} · {ticket.seat} · {ticket.show_date} {ticket.start_time}
+                    <br />Dana <b style={{ color: "#10b981" }}>Rp {(ticket.price || 0).toLocaleString("id-ID")}</b> akan dikembalikan ke metode pembayaran asal dalam 1-7 hari kerja.
+                  </div>
+
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'Geist Mono',monospace", marginBottom: 6, fontWeight: 700 }}>NO. WHATSAPP (verifikasi) *</div>
+                    <input value={refundPhone} onChange={e => setRefundPhone(e.target.value)} placeholder="08xxxxxxxxxx"
+                      style={{ width: "100%", padding: 10, background: "rgba(0,0,0,0.4)", border: "1px solid #30363d", borderRadius: 8, color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box", outline: "none" }} />
+                  </div>
+
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'Geist Mono',monospace", marginBottom: 6, fontWeight: 700 }}>ALASAN REFUND * (min 5 karakter)</div>
+                    <textarea value={refundReason} onChange={e => setRefundReason(e.target.value)} rows={3}
+                      placeholder="Contoh: Ada keperluan mendadak, tidak bisa hadir di tanggal showtime."
+                      style={{ width: "100%", padding: 10, background: "rgba(0,0,0,0.4)", border: "1px solid #30363d", borderRadius: 8, color: "#fff", fontSize: 13, fontFamily: "inherit", boxSizing: "border-box", outline: "none", resize: "vertical" }} />
+                  </div>
+
+                  {refundResult?.error && (
+                    <div style={{ padding: "10px 12px", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 12 }}>
+                      ⚠ {refundResult.error}
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <button onClick={() => setRefundModalOpen(false)} disabled={refundBusy} style={{
+                      flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 10, color: "#fff", fontWeight: 700, cursor: refundBusy ? "not-allowed" : "pointer", fontFamily: "inherit",
+                    }}>Batal</button>
+                    <button onClick={async () => {
+                      setRefundBusy(true); setRefundResult(null);
+                      try {
+                        const r = await fetch(`${API_HOST}/api/cinema/tickets/${ticket.id}/refund`, {
+                          method: "POST", headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ reason: refundReason.trim(), phone: refundPhone.trim() }),
+                        });
+                        const d = await r.json();
+                        if (!r.ok || !d.ok) throw new Error(d.error || `HTTP ${r.status}`);
+                        setRefundResult({ ok: true, message: d.message });
+                      } catch (e) {
+                        setRefundResult({ error: e.message });
+                      }
+                      setRefundBusy(false);
+                    }} disabled={refundBusy || refundReason.trim().length < 5 || !refundPhone.trim()} style={{
+                      flex: 2, padding: 12, background: refundBusy ? "rgba(239,68,68,0.3)" : "linear-gradient(135deg, #ef4444, #dc2626)",
+                      border: "none", borderRadius: 10, color: "#fff", fontWeight: 800, cursor: refundBusy || refundReason.trim().length < 5 || !refundPhone.trim() ? "not-allowed" : "pointer", fontFamily: "inherit",
+                    }}>{refundBusy ? "⏳ Memproses…" : "↩️ Refund Sekarang"}</button>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         )}
 

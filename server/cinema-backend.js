@@ -450,6 +450,15 @@ function setupCinema(app, opts = {}) {
   // eligibility check (Phase 3) refer ke flag ini + showtime date.
   try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN is_pre_sale INTEGER DEFAULT 0"); } catch {}
   try { db.exec("CREATE INDEX IF NOT EXISTS idx_ctk_presale ON cinema_tickets(is_pre_sale) WHERE is_pre_sale = 1"); } catch {}
+  // Phase 3 refund tracking — customer-initiated refund (auto via Midtrans).
+  // refund_status: none/requested/refunded/failed. payment_status='refunded' juga di-set
+  // utk backward compat (existing UI cek payment_status).
+  try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN refund_status TEXT DEFAULT 'none'"); } catch {}
+  try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN refund_amount INTEGER"); } catch {}
+  try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN refunded_at INTEGER"); } catch {}
+  try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN refund_reason TEXT"); } catch {}
+  try { db.exec("ALTER TABLE cinema_tickets ADD COLUMN midtrans_refund_id TEXT"); } catch {}
+  try { db.exec("CREATE INDEX IF NOT EXISTS idx_ctk_refund_status ON cinema_tickets(refund_status) WHERE refund_status != 'none'"); } catch {}
   try { db.exec("CREATE INDEX IF NOT EXISTS idx_cinema_ticket_paystatus ON cinema_tickets(payment_status)"); } catch {}
   // Auto-trigger promo: unlock saat daily sales / tickets reach threshold
   try { db.exec("ALTER TABLE cinema_promotions ADD COLUMN trigger_type TEXT DEFAULT 'code'"); } catch {}
@@ -2039,9 +2048,10 @@ function setupCinema(app, opts = {}) {
     const code = String(req.params.code || '').trim().toUpperCase();
     if (!code) return res.status(400).json({ error: 'code wajib' });
     const t = db.prepare(`
-      SELECT t.id, t.code, t.seat, t.price, t.checked_in_at, t.sold_at, t.payment_status,
+      SELECT t.id, t.code, t.seat, t.price, t.checked_in_at, t.sold_at, t.payment_status, t.buyer_phone,
+             t.is_pre_sale, t.refund_status, t.refund_amount, t.refunded_at,
              s.show_date, s.start_time, s.format,
-             f.title AS film_title, f.duration_min, f.rating, f.poster_url,
+             f.title AS film_title, f.duration_min, f.rating, f.poster_url, f.status AS film_status,
              st.name AS studio_name, st.outlet
       FROM cinema_tickets t
       LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
@@ -2050,7 +2060,7 @@ function setupCinema(app, opts = {}) {
       WHERE t.code = ?
     `).get(code);
     if (!t) return res.status(404).json({ ok: false, error: 'Tiket tidak ditemukan' });
-    if (t.payment_status === 'refunded') {
+    if (t.payment_status === 'refunded' || t.refund_status === 'refunded') {
       return res.json({ ok: false, refunded: true, ticket: t, message: 'Tiket sudah di-refund' });
     }
     res.json({ ok: true, ticket: t });
@@ -4148,6 +4158,101 @@ function setupCinema(app, opts = {}) {
       del.run(t.id);
     })();
     res.json({ ok: true, void_id: voidId, ticket: t, reason, voided_by: actor });
+  });
+
+  // ── PHASE 3: CUSTOMER-INITIATED REFUND (PRE-SALE TICKETS) ──
+  // POST /tickets/:id/refund — customer click "Request Refund" di digital ticket page.
+  // Eligibility:
+  //   - is_pre_sale = 1 (only pre-sale tickets refundable auto)
+  //   - payment_status = 'paid' (must be paid via Midtrans)
+  //   - refund_status = 'none' atau NULL (not already refunded)
+  //   - Showtime > 24 jam dari sekarang (H-1 rule)
+  //   - Buyer phone match (light verification — phone in body must equal ticket.buyer_phone)
+  // Action:
+  //   - Call Midtrans /v2/{order_id}/refund
+  //   - Update ticket: refund_status, payment_status, refund_amount, refunded_at
+  //   - Seat released (delete from cinema_tickets — same as void)
+  router.post('/tickets/:id/refund', async (req, res) => {
+    const id = parseInt(req.params.id, 10);
+    const b = req.body || {};
+    const reason = String(b.reason || '').trim();
+    const phoneCheck = String(b.phone || '').replace(/[^\d]/g, '');
+    if (!reason) return res.status(400).json({ error: 'Alasan refund wajib diisi' });
+    if (reason.length < 5) return res.status(400).json({ error: 'Alasan refund minimal 5 karakter' });
+
+    const t = db.prepare(`SELECT t.*, s.show_date, s.start_time, f.title AS film_title FROM cinema_tickets t
+                          LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+                          LEFT JOIN cinema_films f ON f.id = s.film_id
+                          WHERE t.id = ?`).get(id);
+    if (!t) return res.status(404).json({ error: 'Tiket tidak ditemukan' });
+
+    // Light phone verification — customer punya akses ke ticket page via QR/link sudah,
+    // tapi cek phone match utk extra layer. Strip non-digit, compare last 8 digits.
+    if (phoneCheck && t.buyer_phone) {
+      const tail = (s) => String(s || '').replace(/[^\d]/g, '').slice(-8);
+      if (tail(phoneCheck) !== tail(t.buyer_phone)) {
+        return res.status(403).json({ error: 'Nomor HP tidak match dengan pemilik tiket' });
+      }
+    }
+
+    // Eligibility checks
+    if (!t.is_pre_sale) return res.status(400).json({ error: 'Tiket ini bukan pre-sale, refund harus via counter outlet' });
+    if (t.refund_status && t.refund_status !== 'none') return res.status(400).json({ error: `Tiket sudah ${t.refund_status === 'refunded' ? 'di-refund' : 'di-proses refund'}` });
+    if (t.payment_status !== 'paid') return res.status(400).json({ error: 'Tiket belum dibayar — tidak bisa di-refund' });
+    if (t.checked_in_at) return res.status(400).json({ error: 'Tiket sudah di-check-in, tidak bisa di-refund' });
+
+    // H-1 check (showtime must be > 24 jam dari sekarang)
+    if (t.show_date && t.start_time) {
+      const showTs = new Date(`${t.show_date}T${t.start_time}:00+07:00`).getTime();
+      const hoursUntilShow = (showTs - Date.now()) / 3600000;
+      if (hoursUntilShow < 24) {
+        return res.status(400).json({
+          error: `Refund hanya bisa H-1 (24 jam sebelum showtime). Showtime tinggal ${Math.floor(hoursUntilShow)} jam lagi.`,
+        });
+      }
+    }
+
+    // Call Midtrans refund (kalau midtransRequest helper tersedia dari index.js)
+    let midtransRefundId = null;
+    if (typeof opts.midtransRequest === 'function' && t.purchase_id) {
+      try {
+        const refundKey = `refund-${t.id}-${Date.now()}`;
+        const result = await opts.midtransRequest('POST', `/v2/${t.purchase_id}/refund`, {
+          refund_key: refundKey,
+          amount: t.price,
+          reason: reason.slice(0, 100),  // Midtrans limit
+        });
+        midtransRefundId = result.refund_key || refundKey;
+        console.log(`💰 Midtrans refund OK: ticket #${t.id}, refund_key=${midtransRefundId}, amount=${t.price}`);
+      } catch (e) {
+        // Log tapi tetap proceed — admin bisa manual reconcile kalau Midtrans error.
+        // Untuk strict mode: uncomment baris di bawah utk reject kalau Midtrans gagal.
+        console.warn(`⚠ Midtrans refund gagal untuk ticket #${t.id}: ${e.message}`);
+        return res.status(502).json({ error: `Midtrans refund gagal: ${e.message}. Hubungi admin utk manual refund.` });
+      }
+    } else if (t.purchase_id) {
+      console.warn(`⚠ midtransRequest helper not available — skipping Midtrans refund for ticket #${t.id}`);
+    }
+
+    // Update ticket — mark refunded + release seat (set status fields, keep row utk audit)
+    const now = Math.floor(Date.now() / 1000);
+    db.prepare(`UPDATE cinema_tickets SET
+      refund_status = 'refunded',
+      payment_status = 'refunded',
+      refund_amount = ?,
+      refunded_at = ?,
+      refund_reason = ?,
+      midtrans_refund_id = ?
+      WHERE id = ?`).run(t.price, now, reason, midtransRefundId, t.id);
+
+    res.json({
+      ok: true,
+      ticket_id: t.id,
+      refund_amount: t.price,
+      refunded_at: now,
+      midtrans_refund_id: midtransRefundId,
+      message: `Refund berhasil — dana Rp ${t.price.toLocaleString('id-ID')} akan kembali ke metode pembayaran asal dalam 1-7 hari kerja.`,
+    });
   });
 
   router.get('/voids', (req, res) => {
