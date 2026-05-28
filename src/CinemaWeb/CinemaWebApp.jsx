@@ -177,6 +177,97 @@ const T = {
   mono: "'JetBrains Mono', 'SF Mono', Menlo, ui-monospace, monospace",
 };
 
+// ────────────────────────────────────────────────────────────────────
+// Typography PRESETS — composed style objects (size+weight+line-height+tracking).
+// Pakai ini daripada inline {fontSize: NN, fontWeight: 800, ...} berulang-ulang.
+// Hierarchy pyramid: display → headline → title → subtitle → body → caption → eyebrow.
+// Setiap preset adalah style object spreadable: <div style={{ ...TY.headline, color: "#fff" }}>
+// ────────────────────────────────────────────────────────────────────
+const TY = {
+  // DISPLAY — landing hero only (1 per page). Theatrical drama.
+  display: {
+    fontSize: 'clamp(40px, 6vw, 72px)',
+    fontWeight: 900,
+    lineHeight: 1.05,
+    letterSpacing: '-0.035em',
+    fontFamily: T.sans,
+  },
+  // HEADLINE — page heading, FilmDetail title. Strong but readable.
+  headline: {
+    fontSize: 'clamp(28px, 3.6vw, 44px)',
+    fontWeight: 800,
+    lineHeight: 1.1,
+    letterSpacing: '-0.025em',
+    fontFamily: T.sans,
+  },
+  // TITLE — card title, modal title, section heading.
+  title: {
+    fontSize: 22,
+    fontWeight: 700,
+    lineHeight: 1.25,
+    letterSpacing: '-0.012em',
+    fontFamily: T.sans,
+  },
+  // SUBTITLE — section sub, sub-card heading.
+  subtitle: {
+    fontSize: 16,
+    fontWeight: 600,
+    lineHeight: 1.4,
+    letterSpacing: '-0.005em',
+    fontFamily: T.sans,
+  },
+  // BODY — paragraph default, list item primary.
+  body: {
+    fontSize: 14,
+    fontWeight: 400,
+    lineHeight: 1.55,
+    letterSpacing: '0',
+    fontFamily: T.sans,
+  },
+  // BODY-SM — secondary text, footer body.
+  bodySm: {
+    fontSize: 13,
+    fontWeight: 400,
+    lineHeight: 1.55,
+    letterSpacing: '0',
+    fontFamily: T.sans,
+  },
+  // CAPTION — meta, helper text, fine print.
+  caption: {
+    fontSize: 11.5,
+    fontWeight: 500,
+    lineHeight: 1.45,
+    letterSpacing: '0.005em',
+    fontFamily: T.sans,
+  },
+  // EYEBROW — uppercase label di atas heading. Use mono for premium feel.
+  eyebrow: {
+    fontSize: 11,
+    fontWeight: 700,
+    lineHeight: 1,
+    letterSpacing: '0.16em',
+    textTransform: 'uppercase',
+    fontFamily: T.mono,
+  },
+  // NUMBER — large numeric display (price, stat) — mono for tabular feel.
+  number: {
+    fontSize: 28,
+    fontWeight: 800,
+    lineHeight: 1.05,
+    letterSpacing: '-0.02em',
+    fontVariantNumeric: 'tabular-nums',
+    fontFamily: T.mono,
+  },
+  // BUTTON — CTA label.
+  button: {
+    fontSize: 14,
+    fontWeight: 700,
+    lineHeight: 1,
+    letterSpacing: '-0.005em',
+    fontFamily: T.sans,
+  },
+};
+
 // Spacing scale (px) — 4px base. S[1]=4, S[4]=16, S[6]=24, dst.
 // PENTING: numeric key >= 10 harus pakai bracket access: S[10], S[12], S[16]
 // (JS parser: S[10] invalid — `10` interpreted as number literal, bukan identifier)
@@ -2205,11 +2296,11 @@ function Footer({ brand, brandPrimary, onAbout, onNav, footerConfig }) {
             <div style={{ display: "flex", alignItems: "center", gap: S[3], marginBottom: S[4] }}>
               {brand?.logo_url && <img src={brand.logo_url} alt="" style={{ height: 32, objectFit: "contain" }} />}
               <div>
-                <div style={{ fontSize: T.lg, fontWeight: T.bold, color: C.text, letterSpacing: T.tracking_tight, lineHeight: T.tight }}>{brandName}</div>
-                <div style={{ fontSize: T.xs, color: C.dim, fontFamily: T.mono, letterSpacing: T.tracking_wider, textTransform: "uppercase", fontWeight: T.medium, marginTop: 2 }}>Cinema Booking</div>
+                <div style={{ ...TY.title, fontSize: 18, color: C.text }}>{brandName}</div>
+                <div style={{ ...TY.eyebrow, color: C.dim, marginTop: 4 }}>Cinema Booking</div>
               </div>
             </div>
-            <p style={{ fontSize: T.sm, color: C.sub, lineHeight: T.relaxed, margin: 0, marginBottom: S[5], fontWeight: T.regular }}>
+            <p style={{ ...TY.bodySm, color: C.sub, lineHeight: 1.7, margin: 0, marginBottom: S[5] }}>
               {fc.description}
             </p>
             {/* Social icons */}
@@ -2261,22 +2352,19 @@ function Footer({ brand, brandPrimary, onAbout, onNav, footerConfig }) {
         <div style={{
           paddingTop: S[6], borderTop: `1px solid ${C.borderSubtle}`,
           display: "flex", justifyContent: "space-between", alignItems: "center", gap: S[4], flexWrap: "wrap",
-          fontSize: T.xs, color: C.dim, fontFamily: T.sans, fontWeight: T.regular,
-          letterSpacing: T.tracking_normal, lineHeight: T.normal,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: S[4], flexWrap: "wrap" }}>
-            <span>© {year} {brandName}. All rights reserved.</span>
-            <span style={{ display: "flex", alignItems: "center", gap: S[2], color: C.sub, fontFamily: T.mono, letterSpacing: T.tracking_wider, textTransform: "uppercase", fontWeight: T.medium }}>
+            <span style={{ ...TY.caption, color: C.dim }}>© {year} {brandName}. All rights reserved.</span>
+            <span style={{ ...TY.eyebrow, display: "inline-flex", alignItems: "center", gap: S[2], color: C.sub }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.green, boxShadow: `0 0 8px ${C.green}` }} />
               Cinema Operational Intelligence
             </span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: S[4], flexWrap: "wrap" }}>
-            {/* Language toggle */}
             <LocaleSwitcher compact />
             <div style={{ display: "flex", alignItems: "center", gap: S[2] }}>
-              <span style={{ fontSize: T.xs, color: C.dim, fontFamily: T.sans }}>Powered by</span>
-              <span style={{ fontFamily: T.mono, color: brandPrimary, fontWeight: T.semibold, fontSize: T.xs, letterSpacing: T.tracking_wider, textTransform: "uppercase" }}>karya<span style={{ color: C.amber }}>OS</span></span>
+              <span style={{ ...TY.caption, color: C.dim }}>Powered by</span>
+              <span style={{ ...TY.eyebrow, color: brandPrimary }}>karya<span style={{ color: C.amber }}>OS</span></span>
             </div>
           </div>
         </div>
@@ -2286,11 +2374,7 @@ function Footer({ brand, brandPrimary, onAbout, onNav, footerConfig }) {
 }
 
 function FooterHeading({ children }) {
-  return <div style={{
-    fontSize: T.xs, color: C.text, letterSpacing: T.tracking_wider,
-    fontFamily: T.mono, marginBottom: S[4], textTransform: "uppercase",
-    fontWeight: T.semibold,
-  }}>{children}</div>;
+  return <div style={{ ...TY.eyebrow, color: C.text, marginBottom: S[4] }}>{children}</div>;
 }
 
 // Payment partners — Midtrans, Xendit (gateway), GoPay (e-wallet), QRIS (universal QR).
@@ -3435,19 +3519,22 @@ function FilmsGrid({ outlet, onPickFilm, brandPrimary }) {
 
   return (
     <div style={{ padding: "30px 0" }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 6 }}>
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ ...TY.eyebrow, color: brandPrimary, marginBottom: 8 }}>● Now Showing</div>
+        <h1 style={{ ...TY.headline, margin: 0, marginBottom: 8, color: C.text }}>
           Sedang Tayang
         </h1>
-        <p style={{ fontSize: 13, color: C.sub, margin: 0 }}>
-          {filmsWithShowtimes.length} film · {showtimes.length} showtime di {outlet.name?.replace("Karya Cinema ", "") || outlet.code}
+        <p style={{ ...TY.bodySm, color: C.sub, margin: 0 }}>
+          <span style={{ fontFamily: T.mono, color: C.text, fontWeight: 600 }}>{filmsWithShowtimes.length}</span> film
+          {" · "}
+          <span style={{ fontFamily: T.mono, color: C.text, fontWeight: 600 }}>{showtimes.length}</span> jadwal di {outlet.name?.replace("Karya Cinema ", "") || outlet.code}
         </p>
       </div>
       {filmsWithShowtimes.length === 0 ? (
         <div style={{ textAlign: "center", padding: 60, color: C.dim }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>🎬</div>
-          <div style={{ fontSize: 15, marginBottom: 4 }}>Tidak ada film tayang hari ini</div>
-          <div style={{ fontSize: 12 }}>Cek lokasi lain atau besok</div>
+          <div style={{ ...TY.subtitle, color: C.text, marginBottom: 4 }}>Tidak ada film tayang hari ini</div>
+          <div style={{ ...TY.caption, color: C.sub }}>Cek lokasi lain atau besok</div>
         </div>
       ) : (
         <div className="cw-films-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 220px), 1fr))", gap: 16 }}>
@@ -3470,23 +3557,24 @@ function FilmsGrid({ outlet, onPickFilm, brandPrimary }) {
                   )}
                   {f.age_rating && (
                     <div style={{
+                      ...TY.eyebrow,
                       position: "absolute", top: 8, right: 8,
                       background: (RATING_COLOR[f.age_rating] || "#9ca3af") + "ee",
-                      color: "#fff", padding: "3px 8px", borderRadius: 6, fontSize: 10, fontWeight: 800,
-                      fontFamily: "'Geist Mono',monospace",
+                      color: "#fff", padding: "4px 8px", borderRadius: 6,
+                      letterSpacing: "0.08em",
                     }}>{f.age_rating}</div>
                   )}
                 </div>
-                <div style={{ padding: "12px 12px 14px" }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{f.title}</div>
-                  <div style={{ fontSize: 11, color: C.dim }}>{f.genre || "—"} · {f.duration_min || 0} mnt</div>
+                <div style={{ padding: "14px 14px 16px" }}>
+                  <div style={{ ...TY.subtitle, fontSize: 14, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: C.text }}>{f.title}</div>
+                  <div style={{ ...TY.caption, color: C.dim }}>{f.genre || "—"} · {f.duration_min || 0} mnt</div>
                   {f.ratings_count > 0 && (
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 8 }}>
                       <Stars value={f.avg_rating || 0} size={11} color={brandPrimary} />
-                      <span style={{ fontSize: 10, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{Number(f.avg_rating || 0).toFixed(1)} ({f.ratings_count})</span>
+                      <span style={{ ...TY.caption, color: C.dim, fontFamily: T.mono, fontVariantNumeric: "tabular-nums" }}>{Number(f.avg_rating || 0).toFixed(1)} ({f.ratings_count})</span>
                     </div>
                   )}
-                  <div style={{ marginTop: 8, fontSize: 11, color: brandPrimary, fontWeight: 700 }}>{showCount} jadwal hari ini →</div>
+                  <div style={{ ...TY.eyebrow, marginTop: 10, color: brandPrimary }}>{showCount} jadwal hari ini →</div>
                 </div>
               </button>
             );
@@ -3642,30 +3730,31 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSig
             }} />
           )}
           <div style={{ flex: 1, minWidth: 200 }}>
-            <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: -1, margin: 0, marginBottom: 8, color: "#fff", textShadow: "0 2px 12px rgba(0,0,0,0.8)" }}>{film.title}</h1>
+            <h1 style={{ ...TY.headline, margin: 0, marginBottom: 10, color: "#fff", textShadow: "0 2px 16px rgba(0,0,0,0.9)" }}>{film.title}</h1>
             <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap", marginBottom: 14 }}>
               {film.rating && (
                 <button onClick={() => setRatingModalOpen(true)} title={`Apa arti ${film.rating}?`} style={{
-                  padding: "3px 10px", borderRadius: 6, fontSize: 11, fontWeight: 800,
+                  ...TY.eyebrow,
+                  padding: "4px 10px", borderRadius: 6,
                   background: (RATING_COLOR[film.rating] || "#9ca3af") + "33",
                   color: RATING_COLOR[film.rating] || "#9ca3af",
                   border: `1px solid ${RATING_COLOR[film.rating] || "#9ca3af"}66`,
-                  fontFamily: "'Geist Mono',monospace",
                   cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 4,
+                  letterSpacing: "0.06em", textTransform: "none",
                 }}>{film.rating} <span style={{ fontSize: 9, opacity: 0.7 }}>ⓘ</span></button>
               )}
-              <span style={{ fontSize: 13, color: "rgba(255,255,255,0.85)" }}>{film.duration_min || 0} menit</span>
-              <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>·</span>
-              <span style={{ fontSize: 13, color: "rgba(255,255,255,0.85)" }}>{film.genre || "—"}</span>
+              <span style={{ ...TY.bodySm, color: "rgba(255,255,255,0.85)" }}>{film.duration_min || 0} menit</span>
+              <span style={{ ...TY.bodySm, color: "rgba(255,255,255,0.45)" }}>·</span>
+              <span style={{ ...TY.bodySm, color: "rgba(255,255,255,0.85)" }}>{film.genre || "—"}</span>
               {film.language && <>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>·</span>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.85)" }}>🌐 {film.language}</span>
+                <span style={{ ...TY.bodySm, color: "rgba(255,255,255,0.45)" }}>·</span>
+                <span style={{ ...TY.bodySm, color: "rgba(255,255,255,0.85)" }}>🌐 {film.language}</span>
               </>}
               {film.ratings_count > 0 && <>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.6)" }}>·</span>
+                <span style={{ ...TY.bodySm, color: "rgba(255,255,255,0.45)" }}>·</span>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
                   <Stars value={film.avg_rating || 0} size={13} color={brandPrimary} />
-                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", fontFamily: "'Geist Mono',monospace" }}>{Number(film.avg_rating || 0).toFixed(1)} ({film.ratings_count})</span>
+                  <span style={{ ...TY.bodySm, color: "rgba(255,255,255,0.85)", fontFamily: T.mono, fontVariantNumeric: "tabular-nums" }}>{Number(film.avg_rating || 0).toFixed(1)} ({film.ratings_count})</span>
                 </span>
               </>}
             </div>
@@ -3686,10 +3775,11 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSig
                 // Kalau belum ada showtime, tampil disabled countdown
                 showtimeCount > 0 ? (
                   <button onClick={onPickShowtime} style={{
+                    ...TY.button,
+                    fontSize: 15,
                     background: brandPrimary, color: "#fff",
                     border: "none", borderRadius: 12,
-                    padding: "14px 28px", fontSize: 15, fontWeight: 800, cursor: "pointer",
-                    fontFamily: "inherit",
+                    padding: "14px 28px", cursor: "pointer",
                     boxShadow: `0 8px 24px ${brandPrimary}66`,
                     transition: "transform 0.15s",
                     display: "inline-flex", alignItems: "center", gap: 10,
@@ -3722,10 +3812,11 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSig
                 )
               ) : (
                 <button onClick={onPickShowtime} disabled={showtimeCount === 0} style={{
+                  ...TY.button,
+                  fontSize: 15,
                   background: showtimeCount === 0 ? "rgba(255,255,255,0.1)" : brandPrimary,
                   color: "#fff", border: "none", borderRadius: 12,
-                  padding: "14px 28px", fontSize: 15, fontWeight: 800, cursor: showtimeCount === 0 ? "not-allowed" : "pointer",
-                  fontFamily: "inherit",
+                  padding: "14px 28px", cursor: showtimeCount === 0 ? "not-allowed" : "pointer",
                   boxShadow: showtimeCount === 0 ? "none" : `0 8px 24px ${brandPrimary}66`,
                   transition: "transform 0.15s",
                 }}
@@ -3737,11 +3828,12 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSig
                 </button>
               )}
               <button onClick={toggleList} disabled={listBusy} title={session ? (inList ? "Hapus dari My List" : "Tambah ke My List") : "Sign in dulu utk simpan ke My List"} style={{
+                ...TY.button,
                 background: inList ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.5)",
                 color: "#fff", border: `1.5px solid ${inList ? brandPrimary : "rgba(255,255,255,0.4)"}`,
                 borderRadius: 12,
-                padding: "14px 22px", fontSize: 14, fontWeight: 700,
-                cursor: listBusy ? "wait" : "pointer", fontFamily: "inherit",
+                padding: "14px 22px",
+                cursor: listBusy ? "wait" : "pointer",
                 backdropFilter: "blur(8px)", transition: "all 0.2s",
                 display: "inline-flex", alignItems: "center", gap: 8,
                 opacity: listBusy ? 0.6 : 1,
@@ -3756,9 +3848,9 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSig
 
       {/* Synopsis */}
       {film.synopsis && (
-        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 20, marginBottom: 20 }}>
-          <div style={{ fontSize: 11, color: brandPrimary, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 10, textTransform: "uppercase" }}>📖 Sinopsis</div>
-          <p style={{ fontSize: 14, color: C.text, lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>{film.synopsis}</p>
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 14, padding: 24, marginBottom: 20 }}>
+          <div style={{ ...TY.eyebrow, color: brandPrimary, marginBottom: 12 }}>📖 Sinopsis</div>
+          <p style={{ ...TY.body, fontSize: 15, lineHeight: 1.7, color: C.text, margin: 0, whiteSpace: "pre-wrap" }}>{film.synopsis}</p>
         </div>
       )}
 
@@ -3988,34 +4080,37 @@ function ShowtimesList({ outlet, film, onPickShowtime, brandPrimary }) {
   return (
     <div style={{ padding: "30px 0" }}>
       {/* Film hero */}
-      <div style={{ display: "flex", gap: 18, marginBottom: 30, padding: 18, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14 }}>
+      <div style={{ display: "flex", gap: 18, marginBottom: 30, padding: 20, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14 }}>
         {film.poster_url && (
           <img src={film.poster_url} alt="" style={{ width: 90, aspectRatio: "2/3", objectFit: "cover", borderRadius: 8, flexShrink: 0 }} />
         )}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h1 style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.4, margin: 0, marginBottom: 6 }}>{film.title}</h1>
-          <div style={{ fontSize: 12, color: C.sub, marginBottom: 8 }}>{film.genre || "—"} · {film.duration_min || 0} mnt</div>
+          <h1 style={{ ...TY.title, margin: 0, marginBottom: 6, color: C.text }}>{film.title}</h1>
+          <div style={{ ...TY.caption, color: C.sub, marginBottom: 10 }}>{film.genre || "—"} · {film.duration_min || 0} mnt</div>
           {film.age_rating && (
-            <span style={{ display: "inline-block", padding: "3px 9px", borderRadius: 6, fontSize: 10, fontWeight: 800, fontFamily: "'Geist Mono',monospace", background: (RATING_COLOR[film.age_rating] || "#9ca3af") + "33", color: RATING_COLOR[film.age_rating] || "#9ca3af" }}>{film.age_rating}</span>
+            <span style={{ ...TY.eyebrow, display: "inline-block", padding: "4px 9px", borderRadius: 6, background: (RATING_COLOR[film.age_rating] || "#9ca3af") + "33", color: RATING_COLOR[film.age_rating] || "#9ca3af", letterSpacing: "0.08em" }}>{film.age_rating}</span>
           )}
         </div>
       </div>
 
-      <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 6, letterSpacing: -0.4 }}>Pilih Jadwal</h2>
-      <p style={{ fontSize: 12, color: C.dim, margin: "0 0 18px" }}>{showtimes.length} jadwal tersedia · klik untuk pilih kursi</p>
+      <div style={{ ...TY.eyebrow, color: brandPrimary, marginBottom: 8 }}>📅 Step 3 of 5</div>
+      <h2 style={{ ...TY.headline, fontSize: 28, marginBottom: 8, color: C.text }}>Pilih Jadwal</h2>
+      <p style={{ ...TY.bodySm, color: C.dim, margin: "0 0 22px" }}>
+        <span style={{ fontFamily: T.mono, color: C.text, fontWeight: 600 }}>{showtimes.length}</span> jadwal tersedia · klik untuk pilih kursi
+      </p>
 
       {showtimes.length === 0 ? (
         <div style={{ textAlign: "center", padding: 60, color: C.dim, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14 }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>📅</div>
-          <div style={{ fontSize: 15, marginBottom: 4 }}>Tidak ada jadwal tersedia</div>
-          <div style={{ fontSize: 12 }}>Coba pilih film lain atau cek lokasi berbeda</div>
+          <div style={{ ...TY.subtitle, color: C.text, marginBottom: 4 }}>Tidak ada jadwal tersedia</div>
+          <div style={{ ...TY.caption, color: C.sub }}>Coba pilih film lain atau cek lokasi berbeda</div>
         </div>
       ) : (
         Object.entries(byDate).map(([date, list]) => (
-          <div key={date} style={{ marginBottom: 24, background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: "16px 18px" }}>
-            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14, paddingBottom: 10, borderBottom: `1px solid ${C.border}` }}>
-              <div style={{ fontSize: 14, fontWeight: 800, color: "#fff", letterSpacing: -0.2 }}>{fmtDate(date)}</div>
-              <div style={{ fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{list.length} jadwal</div>
+          <div key={date} style={{ marginBottom: 24, background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: "18px 20px" }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 14, paddingBottom: 12, borderBottom: `1px solid ${C.border}` }}>
+              <div style={{ ...TY.subtitle, color: C.text }}>{fmtDate(date)}</div>
+              <div style={{ ...TY.eyebrow, color: C.dim }}>{list.length} jadwal</div>
             </div>
             <div className="cw-showtimes-grid" style={{ display: "grid", gridTemplateColumns: list.length === 1 ? "1fr" : "repeat(auto-fit, minmax(140px, 1fr))", gap: 8 }}>
               {list.map(s => {
@@ -4037,12 +4132,12 @@ function ShowtimesList({ outlet, film, onPickShowtime, brandPrimary }) {
                   }}
                     onMouseEnter={(e) => { if (!soldOut) { e.currentTarget.style.borderColor = brandPrimary; e.currentTarget.style.background = `${brandPrimary}1a`; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 8px 22px ${brandPrimary}44`; } }}
                     onMouseLeave={(e) => { if (!soldOut) { e.currentTarget.style.borderColor = criticalSeats ? `${C.crimson}55` : "rgba(255,255,255,0.08)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; } }}>
-                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 3 }}>
-                      <span style={{ fontSize: 17, fontWeight: 800, fontFamily: "'Geist Mono',monospace", letterSpacing: -0.3 }}>{s.start_time}</span>
-                      <span style={{ fontSize: 9, color: FORMAT_COLOR[s.format] || C.dim, fontWeight: 800, fontFamily: "'Geist Mono',monospace", background: (FORMAT_COLOR[s.format] || "#9ca3af") + "22", padding: "1px 6px", borderRadius: 3, letterSpacing: 0.3 }}>{s.format || "2D"}</span>
+                    <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 4 }}>
+                      <span style={{ ...TY.number, fontSize: 18, fontWeight: 800, letterSpacing: -0.4 }}>{s.start_time}</span>
+                      <span style={{ ...TY.eyebrow, color: FORMAT_COLOR[s.format] || C.dim, background: (FORMAT_COLOR[s.format] || "#9ca3af") + "22", padding: "2px 6px", borderRadius: 3, fontSize: 9 }}>{s.format || "2D"}</span>
                     </div>
-                    <div style={{ fontSize: 10, color: C.sub, marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.studio_name}</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: brandPrimary, fontFamily: "'Geist Mono',monospace", letterSpacing: -0.2 }}>{rp(s.price)}</div>
+                    <div style={{ ...TY.caption, color: C.sub, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.studio_name}</div>
+                    <div style={{ ...TY.eyebrow, color: brandPrimary, fontSize: 12, letterSpacing: "0.06em", textTransform: "none" }}>{rp(s.price)}</div>
                     {soldOut ? (
                       <div style={{ marginTop: 6, fontSize: 9, color: C.crimson, fontWeight: 900, letterSpacing: 1.2, fontFamily: "'Geist Mono',monospace" }}>● SOLD OUT</div>
                     ) : criticalSeats ? (
@@ -4172,8 +4267,7 @@ function SeatPicker({ showtime, film, initialSeats, onConfirm, brandPrimary }) {
           pointerEvents: "none",
         }} />
         <div style={{
-          fontSize: T.xs, color: C.meta, marginTop: S[8],
-          letterSpacing: T.tracking_wider, fontFamily: T.mono, fontWeight: T.semibold, textTransform: "uppercase",
+          ...TY.eyebrow, color: C.meta, marginTop: S[8], letterSpacing: "0.5em",
         }}>S C R E E N</div>
       </div>
 
@@ -4228,22 +4322,22 @@ function SeatPicker({ showtime, film, initialSeats, onConfirm, brandPrimary }) {
       </div>
 
       {/* Legend — premium with seat icon */}
-      <div style={{ display: "flex", justifyContent: "center", gap: S[6], marginTop: S[6], fontSize: T.xs, color: C.sub, flexWrap: "wrap", fontFamily: T.mono, letterSpacing: 0.4 }}>
+      <div style={{ display: "flex", justifyContent: "center", gap: S[6], marginTop: S[6], flexWrap: "wrap" }}>
         <div style={{ display: "flex", alignItems: "center", gap: S[2] }}>
           <span style={{ width: 18, height: 16, borderRadius: 5, background: "rgba(255,255,255,0.05)", border: "1.5px solid rgba(255,255,255,0.12)" }} />
-          <span>Tersedia</span>
+          <span style={{ ...TY.caption, color: C.sub, textTransform: "uppercase", letterSpacing: "0.1em" }}>Tersedia</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: S[2] }}>
           <span style={{ width: 18, height: 16, borderRadius: 5, background: `linear-gradient(180deg, ${C.gold}, ${C.ember})`, boxShadow: `0 2px 8px ${C.gold}55` }} />
-          <span style={{ color: C.gold, fontWeight: T.semibold }}>Pilihan Saya</span>
+          <span style={{ ...TY.caption, color: C.gold, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>Pilihan Saya</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: S[2] }}>
           <span style={{ width: 18, height: 16, borderRadius: 5, background: "rgba(220,38,38,0.18)", border: "1.5px solid rgba(220,38,38,0.5)" }} />
-          <span>Terjual</span>
+          <span style={{ ...TY.caption, color: C.sub, textTransform: "uppercase", letterSpacing: "0.1em" }}>Terjual</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: S[2] }}>
           <span style={{ width: 18, height: 16, borderRadius: 5, background: "rgba(156,163,175,0.18)", border: "1.5px solid rgba(156,163,175,0.4)" }} />
-          <span>Sedang Dipilih</span>
+          <span style={{ ...TY.caption, color: C.sub, textTransform: "uppercase", letterSpacing: "0.1em" }}>Sedang Dipilih</span>
         </div>
       </div>
 
@@ -4257,10 +4351,10 @@ function SeatPicker({ showtime, film, initialSeats, onConfirm, brandPrimary }) {
         }}>
           <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", gap: S[4] }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: T.xs, color: C.gold, fontFamily: T.mono, letterSpacing: T.tracking_wider, fontWeight: T.semibold, textTransform: "uppercase" }}>
-                {selected.size} {selected.size === 1 ? "Kursi" : "Kursi"} · {Array.from(selected).sort().join(", ")}
+              <div style={{ ...TY.eyebrow, color: C.gold }}>
+                {selected.size} Kursi · {Array.from(selected).sort().join(", ")}
               </div>
-              <div style={{ fontSize: 22, fontWeight: 900, fontFamily: T.mono, color: C.text, letterSpacing: -0.5, marginTop: 2 }}>{rp(total)}</div>
+              <div style={{ ...TY.number, fontSize: 26, fontWeight: 900, color: C.text, marginTop: 4 }}>{rp(total)}</div>
             </div>
             <button onClick={() => onConfirm(Array.from(selected))} style={{
               background: `linear-gradient(135deg, ${C.gold}, ${C.ember})`,
