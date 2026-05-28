@@ -291,29 +291,81 @@ function TicketCard({ ticket, station, now, onAdvance, onRecall, ctaLabel, elaps
   const target = station?.target_prep_seconds || 300;
   const ratio = elapsed / target;
 
-  let urgencyColor = '#4ade80', urgencyBg = '#0f2419';
-  if (ratio > 1.5) { urgencyColor = '#ef4444'; urgencyBg = '#2d0f0f'; }
-  else if (ratio > 1.0) { urgencyColor = '#fb923c'; urgencyBg = '#2d1a0f'; }
-  else if (ratio > 0.5) { urgencyColor = '#fbbf24'; urgencyBg = '#2d240f'; }
+  // INDUSTRIAL TIER — 4 levels of escalation utk chef scan <1 detik
+  //   normal  (< 50% target)  — calm blue/green
+  //   watch   (50-100%)       — gold attention
+  //   warning (100-150%)      — orange urgent
+  //   danger  (> 150%)        — red CRITICAL pulse glow
+  let tier = "normal";
+  if (ratio > 1.5)      tier = "danger";
+  else if (ratio > 1.0) tier = "warning";
+  else if (ratio > 0.5) tier = "watch";
+
+  const TIER = {
+    normal:  { color: "#4ade80", bg: "rgba(74,222,128,0.12)",  border: "rgba(74,222,128,0.4)",  glow: "" },
+    watch:   { color: "#fbbf24", bg: "rgba(251,191,36,0.14)",  border: "rgba(251,191,36,0.45)", glow: "" },
+    warning: { color: "#fb923c", bg: "rgba(251,146,60,0.16)",  border: "rgba(251,146,60,0.55)", glow: "0 0 16px rgba(251,146,60,0.35)" },
+    danger:  { color: "#ef4444", bg: "rgba(239,68,68,0.18)",   border: "rgba(239,68,68,0.6)",   glow: "0 0 22px rgba(239,68,68,0.55)" },
+  }[tier];
 
   const items = Array.isArray(ticket.items) ? ticket.items : [];
+  const isDanger = tier === "danger";
 
   return (
-    <div style={{
+    <div className={`kds-card kds-card-${tier} ${pulsing ? "kds-card-pulse" : ""}`} style={{
       ...styles.card,
-      borderLeftColor: station?.color || '#6b7280',
-      animation: pulsing ? 'pulse 2s infinite' : 'none'
+      borderLeftColor: TIER.color,
+      borderLeftWidth: 6,
+      boxShadow: isDanger
+        ? `0 1px 2px rgba(0,0,0,0.3), 0 6px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04), ${TIER.glow}`
+        : styles.card.boxShadow,
     }}>
+      {/* TIER STRIPE — top horizontal bar utk extra visual signal */}
+      {(tier === "warning" || tier === "danger") && (
+        <div style={{ height: 3, background: `linear-gradient(90deg, transparent, ${TIER.color}, transparent)`, opacity: 0.9 }} />
+      )}
+
       <div style={styles.cardHeader}>
-        <div style={{flex: 1}}>
-          <div style={{fontSize: 11, color: '#9ca3af', fontWeight: 500, letterSpacing: '0.05em'}}>
-            {ticket.doc_no}
+        <div style={{flex: 1, minWidth: 0}}>
+          {/* BIG ORDER # — primary hierarchy */}
+          <div style={{
+            fontSize: 24, fontWeight: 900, color: "#fff",
+            fontFamily: "'Geist Mono',monospace", letterSpacing: -0.8,
+            lineHeight: 1, marginBottom: 4,
+          }}>
+            #{ticket.doc_no || ticket.order_ref || "—"}
           </div>
-          <div style={{fontSize: 10, color: '#6b7280', marginTop: 2}}>
-            {ticket.order_ref}{ticket.table_no ? ` · Meja ${ticket.table_no}` : ''}{ticket.customer_name ? ` · ${ticket.customer_name}` : ''}
+          {/* Meta: table + customer (smaller, dim) */}
+          <div style={{fontSize: 11, color: "rgba(255,255,255,0.45)", fontFamily: "'Geist Mono',monospace", letterSpacing: 0.3}}>
+            {ticket.table_no ? `🪑 Meja ${ticket.table_no}` : "🛍 Take Away"}
+            {ticket.customer_name ? ` · ${ticket.customer_name}` : ""}
           </div>
+          {/* Station chip kalau ada */}
+          {station && (
+            <div style={{
+              marginTop: 6, display: "inline-flex", alignItems: "center", gap: 5,
+              padding: "2px 8px", borderRadius: 4,
+              background: `${station.color || "#6b7280"}22`,
+              border: `1px solid ${station.color || "#6b7280"}55`,
+              fontSize: 10, fontWeight: 800, color: station.color || "#9ca3af",
+              fontFamily: "'Geist Mono',monospace", letterSpacing: 0.8, textTransform: "uppercase",
+            }}>
+              ● {station.name || station.code}
+            </div>
+          )}
         </div>
-        <div style={{...styles.timer, background: urgencyBg, color: urgencyColor}}>
+        {/* TIMER HERO — BIG dramatic dgn color escalation */}
+        <div className={isDanger ? "kds-timer-danger" : ""} style={{
+          padding: "8px 14px", borderRadius: 8,
+          background: TIER.bg,
+          border: `1.5px solid ${TIER.border}`,
+          color: TIER.color,
+          fontSize: 22, fontWeight: 900,
+          fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5,
+          lineHeight: 1, minWidth: 80, textAlign: "center",
+          boxShadow: TIER.glow,
+          flexShrink: 0,
+        }}>
           {fmtElapsed(elapsed)}
         </div>
       </div>
@@ -323,12 +375,12 @@ function TicketCard({ ticket, station, now, onAdvance, onRecall, ctaLabel, elaps
           <div key={i} style={styles.itemLine}>
             <span style={styles.itemQty}>{it.qty || 1}×</span>
             <div style={{flex: 1}}>
-              <div style={{color: '#fff', fontWeight: 500, fontSize: 13}}>{it.display_name || it.menu_id}</div>
+              <div style={{color: '#fff', fontWeight: 700, fontSize: 15, lineHeight: 1.25}}>{it.display_name || it.menu_id}</div>
               {it.size_name && <div style={styles.itemDetail}>Size: {it.size_name}</div>}
               {Array.isArray(it.extras) && it.extras.filter(e => e.qty > 0).map((e, j) => (
                 <div key={j} style={styles.itemDetail}>+ {e.name}{e.qty > 1 ? ` × ${e.qty}` : ''}</div>
               ))}
-              {it.notes && <div style={{...styles.itemDetail, color: '#fbbf24', fontStyle: 'italic'}}>Note: {it.notes}</div>}
+              {it.notes && <div style={{...styles.itemDetail, color: '#fbbf24', fontStyle: 'italic', fontWeight: 700}}>📌 {it.notes}</div>}
             </div>
           </div>
         ))}
@@ -341,7 +393,16 @@ function TicketCard({ ticket, station, now, onAdvance, onRecall, ctaLabel, elaps
         {onRecall && (
           <button onClick={onRecall} style={styles.recallBtn} title="Undo last status">↶</button>
         )}
-        <button onClick={onAdvance} style={{...styles.advanceBtn, background: urgencyColor + '22', color: urgencyColor, borderColor: urgencyColor}}>
+        <button onClick={onAdvance} className="kds-cta" style={{
+          flex: 1, padding: '13px 16px',
+          background: TIER.color,
+          color: tier === "watch" ? "#1a1205" : "#fff",
+          border: "none", borderRadius: 8,
+          cursor: "pointer", fontSize: 14, fontWeight: 900, fontFamily: "inherit",
+          letterSpacing: 0.4, textTransform: "uppercase",
+          boxShadow: `0 4px 16px ${TIER.color}66, inset 0 1px 0 rgba(255,255,255,0.25)`,
+          transition: "all 0.15s cubic-bezier(.2,.8,.2,1)",
+        }}>
           {ctaLabel}
         </button>
       </div>
@@ -524,10 +585,27 @@ const styles = {
   },
 };
 
-// Inject pulse animation
+// Inject industrial KDS animations — slide-in entrance, timer pulse, ready pulse
 if (typeof document !== 'undefined' && !document.getElementById('kds-pulse-style')) {
   const s = document.createElement('style');
   s.id = 'kds-pulse-style';
-  s.textContent = '@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(74,222,128,0.4); } 50% { box-shadow: 0 0 0 8px rgba(74,222,128,0); } }';
+  s.textContent = `
+    /* Ready ticket pulse (existing) */
+    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(74,222,128,0.4); } 50% { box-shadow: 0 0 0 8px rgba(74,222,128,0); } }
+    .kds-card-pulse { animation: pulse 2s infinite }
+    /* Slide-in entrance — visual urgency saat new ticket muncul */
+    @keyframes kdsSlideIn { from { opacity: 0; transform: translateY(-12px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    .kds-card { animation: kdsSlideIn 0.35s cubic-bezier(.2,.8,.2,1) both }
+    /* Danger tier timer — aggressive pulse glow utk over-SLA tickets */
+    @keyframes kdsTimerDanger { 0%,100% { filter: brightness(1) drop-shadow(0 0 8px rgba(239,68,68,0.5)); } 50% { filter: brightness(1.3) drop-shadow(0 0 16px rgba(239,68,68,0.9)); } }
+    .kds-timer-danger { animation: kdsTimerDanger 1s ease infinite }
+    /* Danger tier whole-card subtle shake-pulse */
+    @keyframes kdsDangerEdge { 0%,100% { box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 20px rgba(0,0,0,0.3), 0 0 22px rgba(239,68,68,0.55); } 50% { box-shadow: 0 1px 2px rgba(0,0,0,0.3), 0 6px 20px rgba(0,0,0,0.3), 0 0 32px rgba(239,68,68,0.85); } }
+    .kds-card-danger { animation: kdsSlideIn 0.35s cubic-bezier(.2,.8,.2,1) both, kdsDangerEdge 1.8s ease infinite 0.35s }
+    /* CTA hover lift */
+    .kds-cta { transition: transform 0.15s ease, box-shadow 0.15s ease }
+    .kds-cta:hover { transform: translateY(-2px); filter: brightness(1.08) }
+    .kds-cta:active { transform: translateY(0); filter: brightness(0.95) }
+  `;
   document.head.appendChild(s);
 }
