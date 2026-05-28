@@ -1363,10 +1363,14 @@ function FilmRow({ title, titleExtra = null, films, onPick, brandPrimary, showRa
     el.scrollBy({ left: dir * (el.clientWidth * 0.8), behavior: "smooth" });
   };
   return (
-    <section className="cw-film-row" style={{ marginBottom: 36 }}
+    <section className="cw-film-row" style={{ marginBottom: S[10] }}
       onMouseEnter={() => setHover(true)} onMouseLeave={() => setHover(false)}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 14, flexWrap: "wrap" }}>
-        <h2 style={{ fontSize: 19, fontWeight: 800, color: "#fff", margin: 0, letterSpacing: -0.3 }}>{title}</h2>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: S[3], marginBottom: S[4], flexWrap: "wrap" }}>
+        {/* Section heading — Netflix-style bold row title (NOT SaaS-semibold) */}
+        <h2 style={{
+          fontSize: 19, fontWeight: 800, color: C.text, margin: 0,
+          letterSpacing: -0.3, lineHeight: T.snug, fontFamily: T.sans,
+        }}>{title}</h2>
         {titleExtra}
       </div>
       <div style={{ position: "relative" }}>
@@ -1522,36 +1526,39 @@ function PageHero({ tag, title, subtitle, brandPrimary, accent = "🎬", bgImage
     <section style={{
       position: "relative", width: "100vw", minHeight: "min(40vh, 360px)",
       marginLeft: "calc(-50vw + 50%)", marginRight: "calc(-50vw + 50%)",
-      overflow: "hidden", marginBottom: 28,
+      overflow: "hidden", marginBottom: S[8],
       background: bgImage
-        ? `linear-gradient(180deg, rgba(20,20,20,0.6) 0%, rgba(20,20,20,0.92) 100%), url(${bgImage}) center/cover`
-        : `radial-gradient(ellipse 80% 70% at 30% 40%, ${brandPrimary}22, transparent 70%), #141414`,
+        ? `linear-gradient(180deg, rgba(20,20,20,0.55) 0%, rgba(20,20,20,0.94) 100%), url(${bgImage}) center/cover`
+        : `radial-gradient(ellipse 80% 70% at 30% 40%, ${brandPrimary}1f, transparent 70%), #141414`,
     }}>
       <div style={{
-        maxWidth: 1280, margin: "0 auto", padding: "90px 60px 50px",
+        maxWidth: 1280, margin: "0 auto", padding: `${S[16]}px ${S[12]}px ${S[10]}px`,
         minHeight: "min(40vh, 360px)",
         display: "flex", flexDirection: "column", justifyContent: "center",
       }}>
+        {/* Eyebrow tag — mono uppercase, brand color pill */}
         <div style={{
-          display: "inline-flex", alignSelf: "flex-start", alignItems: "center", gap: 8, marginBottom: 16,
-          padding: "5px 12px", borderRadius: 4,
+          display: "inline-flex", alignSelf: "flex-start", alignItems: "center", gap: S[2], marginBottom: S[5],
+          padding: `${S[1]}px ${S[3]}px`, borderRadius: 4,
           background: `${brandPrimary}cc`,
-          fontSize: 10, fontWeight: 800, letterSpacing: 2.5, color: "#fff",
-          fontFamily: "'JetBrains Mono',monospace", textTransform: "uppercase",
+          fontSize: T.xs, fontWeight: T.semibold, letterSpacing: T.tracking_wider, color: "#fff",
+          fontFamily: T.mono, textTransform: "uppercase",
         }}>
           <span>{accent}</span>
           {tag}
         </div>
+        {/* Title — CINEMA drama: heavy 900 weight + tight tracking (Netflix/AMC style) */}
         <h1 style={{
           fontSize: "clamp(32px, 5.5vw, 60px)", fontWeight: 900,
           letterSpacing: -1.8, lineHeight: 1.02,
-          margin: 0, marginBottom: 12, color: "#fff",
+          margin: 0, marginBottom: S[3], color: C.text, fontFamily: T.sans,
           textShadow: "0 4px 24px rgba(0,0,0,0.7)",
         }}>{title}</h1>
         {subtitle && (
           <p style={{
             fontSize: "clamp(13px, 1.2vw, 16px)", color: "rgba(255,255,255,0.85)",
-            lineHeight: 1.55, margin: 0, maxWidth: 580,
+            lineHeight: T.relaxed, margin: 0, maxWidth: 580,
+            fontWeight: T.regular, fontFamily: T.sans,
             textShadow: "0 2px 8px rgba(0,0,0,0.6)",
           }}>{subtitle}</p>
         )}
@@ -2698,34 +2705,35 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
             );
           })()}
 
-          {/* Title huge */}
+          {/* Title — CINEMA drama: heavy 900 weight, super-tight tracking, large shadow */}
+          {/* (Cinema brand feel — Netflix/AMC style, NOT Stripe/SaaS restraint) */}
           <h1 style={{
             fontSize: "clamp(40px, 7vw, 82px)", fontWeight: 900,
             letterSpacing: -2.5, lineHeight: 0.95,
-            margin: 0, marginBottom: 18, color: "#fff",
-            textShadow: "0 4px 30px rgba(0,0,0,0.8)",
+            margin: 0, marginBottom: S[5], color: C.text, fontFamily: T.sans,
+            textShadow: "0 4px 30px rgba(0,0,0,0.85)",
           }}>
             {current.title}
           </h1>
 
-          {/* Meta row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", marginBottom: 18, fontSize: 14, color: "rgba(255,255,255,0.95)" }}>
+          {/* Meta row — uniform sm size, regular weight, monospace utk rating badge + numerik */}
+          <div style={{ display: "flex", alignItems: "center", gap: S[4], flexWrap: "wrap", marginBottom: S[5], fontSize: T.base, color: "rgba(255,255,255,0.95)", fontFamily: T.sans, fontWeight: T.regular }}>
             {current.rating && (
               <span style={{
-                padding: "3px 10px", borderRadius: 4,
+                padding: `${S[1]}px ${S[3]}px`, borderRadius: 4,
                 background: "rgba(255,255,255,0.15)",
                 border: "1px solid rgba(255,255,255,0.3)",
-                fontSize: 11, fontWeight: 800, fontFamily: "'JetBrains Mono',monospace",
+                fontSize: T.xs, fontWeight: T.semibold, fontFamily: T.mono, letterSpacing: T.tracking_wide,
               }}>{current.rating}</span>
             )}
-            {current.duration_min > 0 && <span>{Math.floor(current.duration_min / 60)}j {current.duration_min % 60}m</span>}
-            {current.genre && <><span style={{ opacity: 0.5 }}>•</span><span>{current.genre}</span></>}
+            {current.duration_min > 0 && <span style={{ fontFamily: T.mono, fontSize: T.sm }}>{Math.floor(current.duration_min / 60)}j {current.duration_min % 60}m</span>}
+            {current.genre && <><span style={{ opacity: 0.4 }}>·</span><span>{current.genre}</span></>}
             {current.ratings_count > 0 && (
               <>
-                <span style={{ opacity: 0.5 }}>•</span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <span style={{ opacity: 0.4 }}>·</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: S[2] }}>
                   <Stars value={current.avg_rating || 0} size={13} color={brandPrimary} />
-                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12 }}>{Number(current.avg_rating || 0).toFixed(1)}</span>
+                  <span style={{ fontFamily: T.mono, fontSize: T.sm, fontWeight: T.medium }}>{Number(current.avg_rating || 0).toFixed(1)}</span>
                 </span>
               </>
             )}
@@ -2735,7 +2743,8 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
           {current.synopsis && (
             <p style={{
               fontSize: "clamp(13px, 1.3vw, 16px)", color: "rgba(255,255,255,0.88)",
-              lineHeight: 1.55, margin: 0, marginBottom: 28,
+              lineHeight: T.relaxed, margin: 0, marginBottom: S[8],
+              fontWeight: T.regular, fontFamily: T.sans,
               maxWidth: 540,
               display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden",
               textShadow: "0 2px 8px rgba(0,0,0,0.7)",
