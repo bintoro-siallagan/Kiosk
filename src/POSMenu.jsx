@@ -115,6 +115,21 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
 
   return (
     <div style={S.root}>
+      <style>{`
+        /* POS premium product tile hover — brand glow + image zoom (speed feel + bikin lapar) */
+        button[data-pos-tile]{will-change:transform}
+        button[data-pos-tile]:hover{transform:translateY(-4px) scale(1.015);border-color:color-mix(in srgb,var(--brand-primary,#FF6B35) 45%,transparent)!important;box-shadow:0 4px 12px rgba(0,0,0,0.4),0 16px 40px rgba(0,0,0,0.5),0 0 24px color-mix(in srgb,var(--brand-primary,#FF6B35) 25%,transparent)}
+        button[data-pos-tile]:hover img{transform:scale(1.08)}
+        button[data-pos-tile]:active{transform:translateY(-1px) scale(0.99);transition:transform 0.08s}
+        /* Add-to-cart bounce (optimistic feedback) */
+        @keyframes posAddBump{0%,100%{transform:scale(1)}40%{transform:scale(1.06)}}
+        .pos-add-bump{animation:posAddBump 0.32s cubic-bezier(.34,1.56,.64,1)}
+        /* Cart item slide-in */
+        @keyframes posCartSlide{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+        div[data-pos-cart-item]{animation:posCartSlide 0.28s cubic-bezier(.2,.8,.2,1)}
+        /* Cat tab hover lift */
+        button[data-pos-cat]:hover{background:rgba(255,255,255,0.06)!important;color:#fff!important}
+      `}</style>
       <header style={S.header}>
         <button onClick={onBack} style={S.iconBtn}>← Back</button>
         <div style={S.summary}>
@@ -138,7 +153,7 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
           </div>
           <div style={S.cats}>
             {categories.map(c => (
-              <button key={c} onClick={() => setActiveCat(c)}
+              <button key={c} data-pos-cat onClick={() => setActiveCat(c)}
                 style={{...S.catBtn, ...(activeCat === c ? S.catActive : {})}}>
                 {c}
               </button>
@@ -149,7 +164,7 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
 
           <div style={S.grid}>
             {filtered.map(item => (
-              <button key={item.id} onClick={() => handleItemClick(item)} style={S.itemCard}>
+              <button key={item.id} data-pos-tile onClick={() => handleItemClick(item)} style={S.itemCard}>
                 {(item.image_url || item.image) ? (
                   <img src={item.image_url || item.image} alt="" style={S.itemImg} onError={e => { e.target.style.display = "none"; e.target.nextSibling && (e.target.nextSibling.style.display = "flex"); }}/>
                 ) : null}
@@ -189,7 +204,7 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
                   const toppings = ci.addons?.toppings || [];
                   const linePrice = ((ci.price || 0) + (ci.addonTotal || 0)) * ci.qty;
                   return (
-                    <div key={ci.cartKey} style={S.cartItem}>
+                    <div key={ci.cartKey} data-pos-cart-item style={S.cartItem}>
                       <div style={S.cartItemTop}>
                         <div style={{flex:1}}>
                           <div style={S.cartItemName}>{ci.name}</div>
@@ -274,26 +289,34 @@ const S = {
     fontFamily:"inherit", whiteSpace:"nowrap" },
   catActive: { background:"radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, var(--brand-primary,#FF6B35) 55%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 38%, #1a1d29), color-mix(in srgb, var(--brand-secondary,#E55A2B) 30%, #0d0f14))", color:"#fff", borderColor:"rgba(255,255,255,0.16)", fontWeight:600, textShadow:"0 1px 2px rgba(0,0,0,0.45)" },
   loading: { textAlign:"center", color:"#666", padding:40 },
-  grid: { display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(150px, 1fr))", gap:12 },
-  itemCard: { background: "rgba(255,255,255,0.025)", border:"1px solid #2a2a2a", borderRadius:14,
-    padding:12, color:"#fff", fontFamily:"inherit", cursor:"pointer",
-    transition:"all 0.15s", textAlign:"left",
-    display:"flex", flexDirection:"column", gap:8, position:"relative" },
-  itemImg: { width:"100%", height:100, objectFit:"cover", borderRadius:8, background:"#222" },
-  itemImgPlaceholder: { width:"100%", height:100, borderRadius:8, background:"#222",
-    display:"flex", alignItems:"center", justifyContent:"center", fontSize:56 },
-  itemName: { fontSize:13, fontWeight:600, lineHeight:1.3 },
-  itemPrice: { fontSize:13, color:"#F59E0B", fontWeight:700 },
-  toppingTag: { fontSize:10, color:"#10B981", fontWeight:600, letterSpacing:0.5,
-    background:"rgba(16,185,129,0.1)", padding:"2px 6px", borderRadius:4,
-    alignSelf:"flex-start" },
+  // PREMIUM POS PRODUCT TILE — bigger image, sharper hierarchy, hover lift
+  grid: { display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(170px, 1fr))", gap:14 },
+  itemCard: { background:"linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))", border:"1px solid rgba(255,255,255,0.06)", borderRadius:16,
+    padding:0, color:"#fff", fontFamily:"inherit", cursor:"pointer",
+    transition:"transform 0.18s cubic-bezier(.2,.8,.2,1),border-color 0.18s,box-shadow 0.18s", textAlign:"left",
+    display:"flex", flexDirection:"column", position:"relative", overflow:"hidden" },
+  itemImg: { width:"100%", height:140, objectFit:"cover", background:"#0d0f14", display:"block",
+    transition:"transform 0.4s cubic-bezier(.2,.8,.2,1)" },
+  itemImgPlaceholder: { width:"100%", height:140, background:"radial-gradient(ellipse 80% 60% at 50% 35%,color-mix(in srgb,var(--brand-primary,#FF6B35) 18%,transparent),#0d0f14)",
+    display:"flex", alignItems:"center", justifyContent:"center", fontSize:64 },
+  itemName: { fontSize:15, fontWeight:700, lineHeight:1.25, padding:"12px 14px 0", color:"#fff",
+    overflow:"hidden", textOverflow:"ellipsis", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", minHeight:38 },
+  itemPrice: { fontSize:17, fontWeight:800, color:"var(--brand-primary,#FF6B35)", padding:"6px 14px 14px",
+    fontFamily:"'Geist Mono',monospace", letterSpacing:"-0.3px", fontVariantNumeric:"tabular-nums",
+    textShadow:"0 0 12px color-mix(in srgb,var(--brand-primary,#FF6B35) 25%,transparent)" },
+  toppingTag: { fontSize:10, color:"#10B981", fontWeight:700, letterSpacing:0.5,
+    background:"rgba(16,185,129,0.12)", padding:"3px 8px", borderRadius:4,
+    position:"absolute", top:8, right:8, border:"1px solid rgba(16,185,129,0.3)" },
   emptyState: { textAlign:"center", color:"#555", padding:40 },
-  cartSide: { width:340, background:"rgba(13,17,23,0.6)", backdropFilter:"blur(20px) saturate(180%)", WebkitBackdropFilter:"blur(20px) saturate(180%)", borderLeft:"1px solid #222",
+  // CART HERO — bigger panel, premium dark, brand-tinted header
+  cartSide: { width:380, background:"linear-gradient(180deg,rgba(13,17,23,0.85),rgba(8,9,15,0.92))", backdropFilter:"blur(24px) saturate(180%)", WebkitBackdropFilter:"blur(24px) saturate(180%)", borderLeft:"1px solid rgba(255,255,255,0.08)",
     display:"flex", flexDirection:"column", maxHeight:"calc(100vh - 60px)", position:"sticky", top:60 },
-  cartHeader: { padding:"16px 20px", borderBottom:"1px solid #222",
-    display:"flex", alignItems:"center", gap:8, fontSize:15, fontWeight:700 },
-  cartBadge: { background:"linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 38%, #1a1d29), color-mix(in srgb, var(--brand-secondary,#E55A2B) 30%, #0d0f14))", color:"#fff", padding:"2px 10px", borderRadius:100,
-    fontSize:11, fontWeight:700 },
+  cartHeader: { padding:"20px 22px 18px", borderBottom:"1px solid rgba(255,255,255,0.08)",
+    display:"flex", alignItems:"center", gap:10, fontSize:20, fontWeight:800, letterSpacing:-0.5,
+    background:"linear-gradient(180deg,color-mix(in srgb,var(--brand-primary,#FF6B35) 6%,transparent),transparent)" },
+  cartBadge: { background:"linear-gradient(135deg,var(--brand-primary,#FF6B35),var(--brand-secondary,#E55A2B))", color:"#fff", padding:"3px 12px", borderRadius:100,
+    fontSize:12, fontWeight:800, fontFamily:"'Geist Mono',monospace", letterSpacing:0.5,
+    boxShadow:"0 4px 14px color-mix(in srgb,var(--brand-primary,#FF6B35) 40%,transparent)" },
   cartEmpty: { flex:1, display:"flex", flexDirection:"column", alignItems:"center",
     justifyContent:"center", color:"#666", padding:20, textAlign:"center" },
   cartItems: { flex:1, overflowY:"auto", padding:"8px 16px" },
