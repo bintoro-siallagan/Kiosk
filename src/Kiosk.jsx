@@ -229,9 +229,20 @@ const AM = {
   confirmAmount:{fontSize:16,fontWeight:600,letterSpacing:"-0.4px",fontVariantNumeric:"tabular-nums"},
 };
 
+// FNB realtime tags — bigger, semantic, food-appetizing colors. Glow on hot tags.
+// Match exact (case-insensitive) atau tags TAG_CLR.DEFAULT fallback.
 const TAG_CLR = {
-  "BESTSELLER":{bg:"#FF6B35",tx:"#000"},"NEW":{bg:"#00C896",tx:"#fff"},"HOT 🔥":{bg:"#FF3B30",tx:"#fff"},
-  "CHEF'S PICK":{bg:"#FF6B35",tx:"#111"},"FRESH":{bg:"#4CD964",tx:"#fff"},"HEALTHY":{bg:"#5AC8FA",tx:"#fff"},
+  "BESTSELLER":   { bg:"linear-gradient(135deg,#FF6B35,#FFA94D)", tx:"#1a0e00", icon:"🏆", glow:true },
+  "BEST SELLER":  { bg:"linear-gradient(135deg,#FF6B35,#FFA94D)", tx:"#1a0e00", icon:"🏆", glow:true },
+  "HOT TODAY":    { bg:"linear-gradient(135deg,#FF3B30,#FF6B35)", tx:"#fff",   icon:"🔥", glow:true },
+  "HOT 🔥":       { bg:"linear-gradient(135deg,#FF3B30,#FF6B35)", tx:"#fff",   icon:"🔥", glow:true },
+  "NEW":          { bg:"linear-gradient(135deg,#00C896,#10B981)", tx:"#fff",   icon:"✨" },
+  "FRESH":        { bg:"linear-gradient(135deg,#4CD964,#10B981)", tx:"#fff",   icon:"🌿" },
+  "FRESHLY MADE": { bg:"linear-gradient(135deg,#4CD964,#10B981)", tx:"#fff",   icon:"🌿" },
+  "CHEF'S PICK":  { bg:"linear-gradient(135deg,#A855F7,#7C3AED)", tx:"#fff",   icon:"👨‍🍳" },
+  "HEALTHY":      { bg:"linear-gradient(135deg,#5AC8FA,#0EA5E9)", tx:"#fff",   icon:"💚" },
+  "LIMITED":      { bg:"linear-gradient(135deg,#FBBF24,#F59E0B)", tx:"#1a0e00", icon:"⏳", glow:true },
+  "SPICY":        { bg:"linear-gradient(135deg,#DC2626,#7F1D1D)", tx:"#fff",   icon:"🌶️" },
 };
 
 const IDLE_TIMEOUT = 45;
@@ -740,9 +751,22 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
                   onClick={handleOpen}
                   onKeyDown={(e)=>{ if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleOpen(); } }}
                   style={{...K.editorialCard,animationDelay:`${i*0.025}s`,opacity:item.avail===false?0.5:1,pointerEvents:item.avail===false?"none":"auto"}}>
-                  {item.tag && (
-                    <div style={{...K.tag,background:TAG_CLR[item.tag]?.bg,color:TAG_CLR[item.tag]?.tx}}>{item.tag}</div>
-                  )}
+                  {item.tag && (() => {
+                    const tagDef = TAG_CLR[item.tag?.toUpperCase()] || TAG_CLR[item.tag];
+                    if (!tagDef) return <div style={{...K.tag,background:"#333",color:"#fff"}}>{item.tag}</div>;
+                    return (
+                      <div className={tagDef.glow ? "kiosk-tag-glow" : ""} style={{
+                        ...K.tag,
+                        background: tagDef.bg,
+                        color: tagDef.tx,
+                        display: "inline-flex", alignItems: "center", gap: 4,
+                        boxShadow: tagDef.glow ? `0 4px 14px ${(tagDef.bg.match(/#[0-9A-Fa-f]+/g) || ["#000"])[0]}66` : "0 2px 6px rgba(0,0,0,0.4)",
+                      }}>
+                        {tagDef.icon && <span style={{ fontSize: "1.05em" }}>{tagDef.icon}</span>}
+                        <span>{item.tag}</span>
+                      </div>
+                    );
+                  })()}
                   {inCart>0 && <div style={K.inCartBadge}>{inCart}</div>}
                   <div style={K.editorialCardImg}>
                     <div className="card-emoji"><FoodImage item={item} size={200}/></div>
@@ -775,9 +799,12 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
         {/* Cart header */}
         <div style={K.cartPanelHeader}>
           <div>
-            <h2 style={K.cartPanelTitle}>Your order</h2>
+            <h2 style={K.cartPanelTitle}>
+              <span style={{ fontSize: 22 }}>🛒</span>
+              Your Order
+            </h2>
             <div key={cartCount} className={cartCount>0?"cart-bump":""} style={K.cartPanelSub}>
-              {cartCount>0 ? `${cartCount} item${cartCount===1?"":"s"}` : "No items yet"}
+              {cartCount>0 ? `${cartCount} item${cartCount===1?"":"s"} · ready to order` : "No items yet · pick favorites"}
             </div>
           </div>
           {cart.length>0 && (
@@ -1038,11 +1065,17 @@ const KIOSK_CSS = `
   .cat-active-ind{position:absolute;bottom:-1px;left:20%;right:20%;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--brand-primary,#FF6B35),transparent);opacity:0;transition:opacity .25s ease}
   /* Hero specific brand glow tint */
   section[data-hero]>.lg{box-shadow:inset 0 1px 0 rgba(255,255,255,0.18),inset 0 -1px 0 rgba(0,0,0,0.22),inset 0 12px 28px rgba(255,255,255,0.05),inset 0 -16px 28px rgba(0,0,0,0.18),0 18px 40px rgba(0,0,0,0.35),0 30px 80px color-mix(in srgb,var(--brand-primary,#FF6B35) 18%,transparent)}
-  .menu-card{animation:fadeIn 0.3s cubic-bezier(0.4,0,0.2,1) forwards;transition:transform 0.25s cubic-bezier(0.4,0,0.2,1),border-color 0.25s ease,box-shadow 0.25s ease}
-  .menu-card:hover{transform:translateY(-2px);border-color:rgba(255,255,255,0.12)!important;box-shadow:0 1px 2px rgba(0,0,0,0.3),0 12px 40px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.05)}
-  .add-btn{transition:all 0.2s cubic-bezier(0.4,0,0.2,1)}
-  .add-btn:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(255,107,53,0.35),inset 0 1px 0 rgba(255,255,255,0.15)}
-  .add-btn:active{animation:pop 0.3s ease;transform:scale(0.93)!important}
+  .menu-card{animation:fadeIn 0.3s cubic-bezier(0.4,0,0.2,1) forwards;transition:transform 0.28s cubic-bezier(0.2,0.8,0.2,1),border-color 0.25s ease,box-shadow 0.28s ease}
+  /* F&B premium hover — bigger lift + appetizing brand glow + subtle image zoom inside */
+  .menu-card:hover{transform:translateY(-6px) scale(1.02);border-color:color-mix(in srgb,var(--brand-primary,#FF6B35) 50%,transparent)!important;box-shadow:0 4px 12px rgba(0,0,0,0.35),0 24px 60px rgba(0,0,0,0.55),0 0 0 1px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent),0 0 32px color-mix(in srgb,var(--brand-primary,#FF6B35) 28%,transparent)}
+  .menu-card:hover img{transform:scale(1.08)}
+  .menu-card img{transition:transform 0.4s cubic-bezier(0.2,0.8,0.2,1)}
+  .add-btn{transition:all 0.18s cubic-bezier(.34,1.56,.64,1)}
+  .add-btn:hover{transform:translateY(-2px) scale(1.08);box-shadow:0 10px 28px color-mix(in srgb,var(--brand-primary,#FF6B35) 60%,transparent),inset 0 1px 0 rgba(255,255,255,0.3)}
+  .add-btn:active{animation:pop 0.28s ease;transform:scale(0.92)!important}
+  /* Realtime tag glow — pulses gently utk attention */
+  @keyframes kioskTagGlow{0%,100%{filter:brightness(1) drop-shadow(0 2px 8px rgba(255,107,53,0.3))}50%{filter:brightness(1.15) drop-shadow(0 2px 14px rgba(255,107,53,0.55))}}
+  .kiosk-tag-glow{animation:kioskTagGlow 2.4s ease infinite}
   .cat-btn-premium{transition:all 0.2s cubic-bezier(0.4,0,0.2,1)}
   .cat-btn-premium:hover{background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.12)}
   .order-btn-premium{transition:all 0.25s cubic-bezier(0.4,0,0.2,1)}
@@ -1094,18 +1127,22 @@ const K = {
   editorialTitle:   {fontFamily:"'Inter',sans-serif",fontSize:19,fontWeight:600,letterSpacing:"-0.4px",color:"rgba(255,255,255,0.92)",margin:0,lineHeight:1.1,display:"inline-flex",alignItems:"center",gap:6},
   editorialSub:     {fontSize:11,color:"rgba(255,255,255,0.35)",fontWeight:400,letterSpacing:0.3,fontFamily:"'Inter',sans-serif",display:"inline-flex",alignItems:"center",gap:4},
   editorialGrid:    {display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(190px,1fr))",gap:14,padding:"6px 20px 16px"},
-  editorialCard:    {borderRadius:16,display:"flex",flexDirection:"column",position:"relative",cursor:"pointer"},
-  editorialCardImg: {height:130,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",borderTopLeftRadius:16,borderTopRightRadius:16,background:"radial-gradient(ellipse 80% 60% at 50% 30%,rgba(255,255,255,0.04),transparent 70%)"},
-  editorialCardInfo:{padding:"10px 12px 12px",display:"flex",flexDirection:"column",gap:8},
-  editorialCardName:{fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,letterSpacing:"-0.2px",color:"rgba(255,255,255,0.95)",lineHeight:1.3,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",minHeight:32},
-  editorialCardBottom:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8},
-  editorialCardPrice:{fontFamily:"'Inter',sans-serif",fontSize:13,fontWeight:600,color:"#fff",letterSpacing:"-0.2px",fontVariantNumeric:"tabular-nums"},
-  editorialAddBtn:  {width:30,height:30,minWidth:30,borderRadius:"50%",border:"1px solid rgba(255,255,255,0.16)",background:"radial-gradient(ellipse 90% 200% at 50% 100%,color-mix(in srgb,var(--brand-primary,#FF6B35) 60%,transparent) 0%,transparent 55%),linear-gradient(180deg,color-mix(in srgb,var(--brand-primary,#FF6B35) 38%,#1a1d29) 0%,color-mix(in srgb,var(--brand-secondary,#E55A2B) 30%,#0d0f14) 100%)",color:"#fff",textShadow:"0 1px 2px rgba(0,0,0,0.45)",fontSize:16,fontWeight:700,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.22),0 4px 12px color-mix(in srgb,var(--brand-primary,#FF6B35) 24%,transparent)",fontFamily:"'Inter',sans-serif"},
+  // Premium F&B card — image-first, appetizing glow, bigger sizing utk "bikin lapar"
+  editorialCard:    {borderRadius:20,display:"flex",flexDirection:"column",position:"relative",cursor:"pointer",overflow:"hidden",background:"linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))",border:"1px solid rgba(255,255,255,0.06)",transition:"transform 0.25s cubic-bezier(.2,.8,.2,1),box-shadow 0.25s,border-color 0.25s"},
+  editorialCardImg: {height:180,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",background:"radial-gradient(ellipse 90% 70% at 50% 35%,color-mix(in srgb,var(--brand-primary,#FF6B35) 18%,transparent),transparent 75%)"},
+  editorialCardInfo:{padding:"14px 16px 16px",display:"flex",flexDirection:"column",gap:10},
+  editorialCardName:{fontFamily:"'Inter',sans-serif",fontSize:16,fontWeight:700,letterSpacing:"-0.3px",color:"#fff",lineHeight:1.25,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",minHeight:40},
+  editorialCardBottom:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10},
+  // Price — bigger appetizing accent (brand color, bold)
+  editorialCardPrice:{fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:800,color:"var(--brand-primary,#FF6B35)",letterSpacing:"-0.4px",fontVariantNumeric:"tabular-nums",textShadow:"0 0 12px color-mix(in srgb,var(--brand-primary,#FF6B35) 30%,transparent)"},
+  // Add button — bigger tap target (40px), branded gradient, pulse-ready
+  editorialAddBtn:  {width:40,height:40,minWidth:40,borderRadius:"50%",border:"none",background:"linear-gradient(135deg,var(--brand-primary,#FF6B35),var(--brand-secondary,#E55A2B))",color:"#fff",fontSize:20,fontWeight:800,lineHeight:1,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.3),0 6px 18px color-mix(in srgb,var(--brand-primary,#FF6B35) 45%,transparent)",fontFamily:"'Inter',sans-serif",transition:"transform 0.18s cubic-bezier(.34,1.56,.64,1),box-shadow 0.18s"},
 
   // ── CART PANEL ──
-  cartPanelHeader:{padding:"20px 22px 16px",borderBottom:BORDER_DEFAULT,flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-end",gap:12},
-  cartPanelTitle:{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:600,color:"rgba(255,255,255,0.95)",letterSpacing:"-0.6px",lineHeight:1,margin:0},
-  cartPanelSub:  {fontSize:11,color:"rgba(255,255,255,0.4)",marginTop:5,fontWeight:400,letterSpacing:0.2,fontFamily:"'Inter',sans-serif"},
+  // Premium cart header — bigger, brand-color count badge
+  cartPanelHeader:{padding:"22px 24px 18px",borderBottom:BORDER_DEFAULT,flexShrink:0,display:"flex",justifyContent:"space-between",alignItems:"flex-end",gap:12,background:"linear-gradient(180deg,color-mix(in srgb,var(--brand-primary,#FF6B35) 6%,transparent),transparent)"},
+  cartPanelTitle:{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:800,color:"#fff",letterSpacing:"-0.8px",lineHeight:1,margin:0,display:"inline-flex",alignItems:"center",gap:10},
+  cartPanelSub:  {fontSize:12,color:"color-mix(in srgb,var(--brand-primary,#FF6B35) 70%,#fff)",marginTop:6,fontWeight:700,letterSpacing:0.3,fontFamily:"'Inter',sans-serif",textTransform:"uppercase"},
   cartPanelBody:{flex:1,overflowY:"auto",padding:"0 14px"},
   // bg/border/shadow handled by .lg class on element
   cartPanelRow:{borderRadius:16,padding:"13px",marginTop:8,transition:"all 0.2s cubic-bezier(0.4,0,0.2,1)"},
