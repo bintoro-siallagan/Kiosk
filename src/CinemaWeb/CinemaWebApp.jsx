@@ -4669,12 +4669,21 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, onEdit
         )}
 
         <button onClick={submit} disabled={!valid || submitting} style={{
-          marginTop: 24, width: "100%", padding: "14px",
-          background: valid && !submitting ? brandPrimary : "rgba(255,255,255,0.1)",
-          border: "none", color: "#fff", borderRadius: 10,
-          fontSize: 14, fontWeight: 800, cursor: valid && !submitting ? "pointer" : "not-allowed", fontFamily: "inherit",
-          boxShadow: valid && !submitting ? `0 8px 20px ${brandPrimary}55` : "none",
-        }}>{submitLabel}</button>
+          marginTop: S[6], width: "100%", padding: `${S[5]}px ${S[6]}px`,
+          background: valid && !submitting ? `linear-gradient(135deg, ${C.gold}, ${C.ember})` : "rgba(255,255,255,0.1)",
+          border: "none", color: valid && !submitting ? C.midnight : C.dim, borderRadius: 12,
+          fontSize: 16, fontWeight: 900, cursor: valid && !submitting ? "pointer" : "not-allowed", fontFamily: "inherit",
+          letterSpacing: 0.3,
+          boxShadow: valid && !submitting ? `0 10px 28px ${C.gold}55, inset 0 1px 0 rgba(255,255,255,0.3)` : "none",
+          transition: "all 0.2s cubic-bezier(.2,.8,.2,1)",
+          display: "inline-flex", alignItems: "center", justifyContent: "center", gap: S[3],
+        }}
+          onMouseEnter={(e) => { if (valid && !submitting) { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = `0 14px 36px ${C.gold}88, inset 0 1px 0 rgba(255,255,255,0.4)`; } }}
+          onMouseLeave={(e) => { if (valid && !submitting) { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = `0 10px 28px ${C.gold}55, inset 0 1px 0 rgba(255,255,255,0.3)`; } }}>
+          {submitting && <span style={{ display: "inline-block", animation: "cwPulse 1.4s ease infinite" }}>⏳</span>}
+          {!submitting && <span style={{ fontSize: 18 }}>🎟️</span>}
+          {submitLabel}
+        </button>
         <div style={{ marginTop: 10, fontSize: 11, color: C.dim, textAlign: "center" }}>
           💵 Bayar di counter saat pengambilan tiket
         </div>
@@ -4853,32 +4862,74 @@ function SuccessPage({ booking, film, showtime, seats, bundlesCart, onNewBooking
       )}
 
       <div style={{ padding: "30px 0 60px", maxWidth: 540, margin: "0 auto", textAlign: "center" }}>
-        {/* Hero status */}
+        {/* Hero status — dramatic gold/green check dgn spring entrance */}
         <div style={{
-          width: 70, height: 70, margin: "0 auto 16px",
+          width: 96, height: 96, margin: "0 auto 20px",
           borderRadius: "50%",
-          background: isPaid ? "rgba(16,185,129,0.15)" : isCounter ? `${brandPrimary}26` : "rgba(251,191,36,0.15)",
+          background: isPaid
+            ? `radial-gradient(circle, rgba(16,185,129,0.25) 30%, rgba(16,185,129,0.08) 70%, transparent)`
+            : isCounter
+              ? `radial-gradient(circle, ${C.gold}3a 30%, ${C.gold}10 70%, transparent)`
+              : `radial-gradient(circle, rgba(251,191,36,0.25) 30%, rgba(251,191,36,0.08) 70%, transparent)`,
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: 36,
-        }}>{isPaid ? "✓" : isCounter ? "🎫" : "⏳"}</div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 6,
-          color: isPaid ? "#10b981" : isCounter ? brandPrimary : "#fbbf24" }}>
+          fontSize: 52,
+          animation: "cwFadeUp 0.6s cubic-bezier(.34,1.56,.64,1) both",
+          filter: isPaid ? "drop-shadow(0 0 20px rgba(16,185,129,0.5))" : `drop-shadow(0 0 20px ${C.gold}55)`,
+        }}>{isPaid ? "✅" : isCounter ? "🎫" : "⏳"}</div>
+
+        {/* Eyebrow mono */}
+        <div style={{
+          fontSize: T.xs, color: C.gold, fontFamily: T.mono, fontWeight: T.semibold,
+          letterSpacing: T.tracking_wider, textTransform: "uppercase", marginBottom: S[2],
+        }}>🎬 Booking Confirmed</div>
+
+        <h1 style={{ fontSize: "clamp(28px, 4vw, 38px)", fontWeight: 900, letterSpacing: -0.8, margin: 0, marginBottom: S[2],
+          color: isPaid ? "#10b981" : isCounter ? C.gold : "#fbbf24",
+          textShadow: isPaid ? "0 0 24px rgba(16,185,129,0.3)" : `0 0 24px ${C.gold}33`,
+        }}>
           {isPaid ? "Pembayaran Sukses!" : isCounter ? "Booking Berhasil!" : "Pembayaran Diverifikasi"}
         </h1>
-        <p style={{ fontSize: 13, color: C.sub, margin: 0, marginBottom: 22 }}>
+
+        {/* Film + showtime mini-card */}
+        <div style={{
+          margin: `${S[3]}px auto ${S[5]}px`, maxWidth: 360,
+          padding: `${S[3]}px ${S[4]}px`,
+          background: "rgba(255,255,255,0.04)", border: `1px solid ${C.borderSubtle}`,
+          borderRadius: 12,
+          fontSize: T.sm, color: C.text, fontWeight: T.semibold,
+        }}>
+          <div style={{ fontSize: T.md, fontWeight: T.bold, marginBottom: 4, letterSpacing: -0.2 }}>{film?.title || "Tiket Bioskop"}</div>
+          <div style={{ fontSize: T.xs, color: C.sub, fontFamily: T.mono, letterSpacing: 0.4 }}>
+            {fmtDate(showtime.show_date)} · <span style={{ color: C.gold }}>{showtime.start_time}</span> · {seats.sort().join(", ")}
+          </div>
+        </div>
+
+        <p style={{ fontSize: T.sm, color: C.sub, margin: 0, marginBottom: S[6], fontFamily: T.sans }}>
           {isCounter
             ? "Tunjukkan QR ini di counter saat ambil tiket"
             : "Scan QR ini di pintu studio untuk masuk"}
         </p>
 
-        {/* QR CODE — main attraction (only render kalau primaryCode valid) */}
+        {/* QR CODE — gold frame premium */}
         {primaryCode ? (
           <>
             <div style={{
-              background: "#fff", padding: 16, borderRadius: 16, marginBottom: 14,
-              boxShadow: `0 12px 36px ${brandPrimary}22, 0 0 0 1px ${C.border}`,
+              background: "#fff",
+              padding: 18, borderRadius: 18, marginBottom: 14,
+              boxShadow: `0 12px 40px ${C.gold}33, 0 0 0 3px ${C.gold}55, 0 0 0 1px rgba(0,0,0,0.2)`,
               display: "inline-block",
+              position: "relative",
             }}>
+              {/* Corner brackets — cinema-ticket vibe */}
+              {["topLeft", "topRight", "bottomLeft", "bottomRight"].map(corner => {
+                const pos = {
+                  topLeft:     { top: -2, left: -2, borderTop: `3px solid ${C.gold}`, borderLeft: `3px solid ${C.gold}` },
+                  topRight:    { top: -2, right: -2, borderTop: `3px solid ${C.gold}`, borderRight: `3px solid ${C.gold}` },
+                  bottomLeft:  { bottom: -2, left: -2, borderBottom: `3px solid ${C.gold}`, borderLeft: `3px solid ${C.gold}` },
+                  bottomRight: { bottom: -2, right: -2, borderBottom: `3px solid ${C.gold}`, borderRight: `3px solid ${C.gold}` },
+                }[corner];
+                return <span key={corner} style={{ position: "absolute", width: 14, height: 14, ...pos, borderRadius: 3 }} aria-hidden />;
+              })}
               {qrSrc ? (
                 <img src={qrSrc} alt={`QR ${primaryCode}`} style={{ width: 220, height: 220, display: "block" }} />
               ) : (
@@ -4887,8 +4938,8 @@ function SuccessPage({ booking, film, showtime, seats, bundlesCart, onNewBooking
                 </div>
               )}
             </div>
-            <div style={{ fontSize: 11, color: C.dim, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 4, textTransform: "uppercase" }}>Kode Tiket</div>
-            <div style={{ fontSize: 20, fontWeight: 800, fontFamily: "'Geist Mono',monospace", color: brandPrimary, marginBottom: 8, letterSpacing: 0.5 }}>{primaryCode}</div>
+            <div style={{ fontSize: T.xs, color: C.meta, letterSpacing: T.tracking_wider, fontFamily: T.mono, marginBottom: 4, textTransform: "uppercase", fontWeight: T.semibold }}>Kode Tiket</div>
+            <div style={{ fontSize: 22, fontWeight: 900, fontFamily: T.mono, color: C.gold, marginBottom: S[2], letterSpacing: 1.2 }}>{primaryCode}</div>
             {allTicketCodes.length > 1 && (
               <div style={{ fontSize: 11, color: C.dim, marginBottom: 22 }}>
                 {allTicketCodes.length} tiket — kode lain: {allTicketCodes.slice(1).join(", ")}
