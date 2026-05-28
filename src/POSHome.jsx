@@ -78,16 +78,32 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
   const [loading, setLoading] = useState(true);
   // Detect outlet vertical (fnb | cinema | hybrid) — bisa load Jual Tiket button kalau hybrid
   const [outletVertical, setOutletVertical] = useState("fnb");
+  const [outletInfo, setOutletInfo] = useState({ code: null, name: null, area: null });
+  const [allOutlets, setAllOutlets] = useState([]);
+  const [showOutletPicker, setShowOutletPicker] = useState(false);
   const [brand, setBrand] = useState({ name: null, code: null, logoUrl: "/logo.png" });
   useEffect(() => {
     const outletCode = new URLSearchParams(window.location.search).get("outlet")
       || localStorage.getItem("posOutlet") || "";
-    if (!outletCode) return;
+    // Fetch outlets selalu buat picker + resolve current code
     fetch(`/api/outlet-master`).then(r => r.json()).then(d => {
-      const o = (d.outlets || []).find(x => x.code === outletCode || x.name === outletCode);
-      if (o?.vertical) setOutletVertical(o.vertical);
+      const outlets = d.outlets || [];
+      // F&B POS — prefer fnb + hybrid outlets
+      const fnbOutlets = outlets.filter(o => o.vertical === "fnb" || o.vertical === "hybrid");
+      setAllOutlets(fnbOutlets.length > 0 ? fnbOutlets : outlets);
+      if (outletCode) {
+        const o = outlets.find(x => x.code === outletCode || x.name === outletCode);
+        if (o) {
+          if (o.vertical) setOutletVertical(o.vertical);
+          setOutletInfo({ code: o.code, name: o.name, area: o.area });
+        }
+      }
     }).catch(() => {});
   }, []);
+  const pickOutlet = (code) => {
+    localStorage.setItem("posOutlet", code);
+    location.reload();
+  };
   useEffect(() => {
     fetch(`${API_BASE}/api/companies/branding`).then(r => r.json()).then(b => {
       if (b?.brand_color) setBrand({ name: b.name, code: b.company_code, logoUrl: b.logo_url || "/logo.png" });
@@ -140,10 +156,10 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
   async function handleCloseDay() {
     if (!window.confirm("TUTUP HARI?\n\nShift aktif ikut ditutup, dan TIDAK ADA yang bisa order sampai Manager 'Open Day'. Summary transaksi today akan dicetak" + " (& dikirim email bila email aktif).")) return;
     try {
-      const r = await fetch(`${API_BASE}/api/day/close`, {
+      const r = await fetch(`${API_BASE}/api/day/close?vertical=fnb`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ by: cashier.name || "Manager" }),
+        body: JSON.stringify({ by: cashier.name || "Manager", vertical: "fnb" }),
       });
       const data = await r.json();
       if (data.reportHtml) {
@@ -228,7 +244,61 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
       <header style={S.header}>
         <div style={S.brand}>
           <img src={brand.logoUrl || "/logo.png"} alt="" style={{ height: 26, verticalAlign: "middle", marginRight: 7 }} />
-          {brand.name && !["BTS","CMX","KARYAOS"].includes(brand.code) ? `${brand.name} POS` : "karyaos POS"}
+          <span>{brand.name && !["BTS","CMX","KARYAOS"].includes(brand.code) ? `${brand.name} POS` : "karyaos POS"}</span>
+          {/* Branch / outlet picker — kasir bisa ganti outlet 1-klik dari header */}
+          <div style={{ position: "relative", marginLeft: 12, display: "inline-block" }}>
+            <button onClick={() => setShowOutletPicker(s => !s)} style={{
+              padding: "4px 10px", borderRadius: 999,
+              background: outletInfo.name ? "rgba(56,189,248,0.12)" : "rgba(245,158,11,0.1)",
+              border: outletInfo.name ? "1px solid rgba(56,189,248,0.35)" : "1px solid rgba(245,158,11,0.3)",
+              color: outletInfo.name ? "#38BDF8" : "#fbbf24",
+              fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+              fontFamily: "'Geist Mono',monospace",
+              display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer",
+            }} title={outletInfo.name ? `Klik ganti outlet · current: ${outletInfo.code}` : "Klik pilih outlet"}>
+              {outletInfo.name ? (
+                <>
+                  <span>📍</span>
+                  <span>{outletInfo.name}</span>
+                  {outletInfo.area && outletInfo.area !== "-" && <span style={{ color: "#7d8590", fontWeight: 500 }}>· {outletInfo.area}</span>}
+                  <span style={{ opacity: 0.6, marginLeft: 4 }}>▾</span>
+                </>
+              ) : (
+                <>⚠ PILIH OUTLET ▾</>
+              )}
+            </button>
+            {showOutletPicker && allOutlets.length > 0 && (
+              <div style={{
+                position: "absolute", top: "100%", left: 0, marginTop: 6,
+                background: "rgba(15,17,23,0.97)", border: "1px solid rgba(56,189,248,0.35)",
+                borderRadius: 12, padding: 6, minWidth: 280, maxHeight: 360, overflowY: "auto",
+                boxShadow: "0 12px 36px rgba(0,0,0,0.6), 0 0 0 1px rgba(56,189,248,0.2)",
+                zIndex: 99999, backdropFilter: "blur(20px)",
+              }}>
+                <div style={{ padding: "8px 12px 6px", fontSize: 10, color: "#9ca3af", fontWeight: 700, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                  🍦 Pilih Outlet F&B
+                </div>
+                {allOutlets.map(o => (
+                  <button key={o.code} onClick={() => pickOutlet(o.code)} style={{
+                    display: "flex", width: "100%", textAlign: "left",
+                    padding: "8px 12px", marginTop: 2,
+                    background: outletInfo.code === o.code ? "rgba(56,189,248,0.18)" : "transparent",
+                    border: "none", color: "#fff", fontSize: 13,
+                    borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
+                    justifyContent: "space-between", alignItems: "center", gap: 8,
+                  }}
+                    onMouseEnter={(e) => { if (outletInfo.code !== o.code) e.currentTarget.style.background = "rgba(56,189,248,0.08)"; }}
+                    onMouseLeave={(e) => { if (outletInfo.code !== o.code) e.currentTarget.style.background = "transparent"; }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.name}</div>
+                      <div style={{ fontSize: 10, color: "#9ca3af", fontFamily: "'Geist Mono',monospace", marginTop: 2 }}>{o.code}{o.area ? ` · ${o.area}` : ""}</div>
+                    </div>
+                    {outletInfo.code === o.code && <span style={{ color: "#38BDF8", fontSize: 16 }}>✓</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <div style={S.user}>
           <span style={S.userIcon}>👤</span>

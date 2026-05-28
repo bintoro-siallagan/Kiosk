@@ -263,7 +263,7 @@ export default function POSCinemaApp() {
   }
 
   return (
-    <ShiftGate cashier={cashier} onSwitchCashier={handleLogout}>
+    <ShiftGate cashier={cashier} onSwitchCashier={handleLogout} vertical="cinema">
       <TouchNumpad />
       <ThemedRoot CSS={CSS} SMesh={S.mesh} SRoot={S.root}>
         <TopBar cashier={cashier} stage={stage} onLogout={handleLogout} onHome={resetSale} />
@@ -361,7 +361,29 @@ function ThemedRoot({ CSS, SMesh, SRoot, children }) {
 // ═══════════════════════════════════════════════════════════════════
 function TopBar({ cashier, stage, onLogout, onHome }) {
   const [now, setNow] = useState(new Date());
+  const [outletInfo, setOutletInfo] = useState({ code: null, name: null, area: null });
+  const [showOutletPicker, setShowOutletPicker] = useState(false);
+  const [allOutlets, setAllOutlets] = useState([]);
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id); }, []);
+  useEffect(() => {
+    const outletCode = new URLSearchParams(window.location.search).get("outlet")
+      || localStorage.getItem("posOutlet") || "";
+    // Fetch outlets selalu — buat picker dropdown + buat resolve current code
+    fetch(`${API_HOST}/api/outlet-master`).then(r => r.json()).then(d => {
+      const outlets = d.outlets || [];
+      // Cinema POS — filter ke vertical cinema saja (lebih relevan)
+      const cinemaOutlets = outlets.filter(o => o.vertical === "cinema" || o.vertical === "hybrid");
+      setAllOutlets(cinemaOutlets.length > 0 ? cinemaOutlets : outlets);
+      if (outletCode) {
+        const o = outlets.find(x => x.code === outletCode || x.name === outletCode);
+        if (o) setOutletInfo({ code: o.code, name: o.name, area: o.area });
+      }
+    }).catch(() => {});
+  }, []);
+  const pickOutlet = (code) => {
+    localStorage.setItem("posOutlet", code);
+    location.reload();
+  };
   return (
     <div style={S.topbar} className="topbar-glass">
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -369,6 +391,61 @@ function TopBar({ cashier, stage, onLogout, onHome }) {
         <div>
           <div style={{ fontSize: 19, fontWeight: 750, color: "#fff", letterSpacing: -0.4 }}>POS Cinema</div>
           <div style={{ fontSize: 9.5, color: TH.dim, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase" }}>karyaOS · Ticketing Counter</div>
+        </div>
+        {/* Branch/outlet badge — kasir tau di mana lokasinya. Klik → outlet picker dropdown */}
+        <div style={{ position: "relative" }}>
+          <button onClick={() => setShowOutletPicker(s => !s)} style={{
+            padding: "5px 11px", borderRadius: 999,
+            background: outletInfo.name ? "rgba(168,85,247,0.12)" : "rgba(245,158,11,0.1)",
+            border: outletInfo.name ? "1px solid rgba(168,85,247,0.4)" : "1px solid rgba(245,158,11,0.3)",
+            color: outletInfo.name ? "#c084fc" : "#fbbf24",
+            fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
+            fontFamily: "'Geist Mono',monospace",
+            display: "inline-flex", alignItems: "center", gap: 6,
+            cursor: "pointer",
+          }} title={outletInfo.name ? `Klik ganti outlet · current: ${outletInfo.code}` : "Klik pilih outlet"}>
+            {outletInfo.name ? (
+              <>
+                <span>📍</span>
+                <span>{outletInfo.name}</span>
+                {outletInfo.area && outletInfo.area !== "-" && <span style={{ color: "#9ca3af", fontWeight: 500 }}>· {outletInfo.area}</span>}
+                <span style={{ opacity: 0.6, marginLeft: 4 }}>▾</span>
+              </>
+            ) : (
+              <>⚠ PILIH OUTLET ▾</>
+            )}
+          </button>
+          {showOutletPicker && allOutlets.length > 0 && (
+            <div style={{
+              position: "absolute", top: "100%", left: 0, marginTop: 6,
+              background: "rgba(15,17,23,0.97)", border: "1px solid rgba(168,85,247,0.35)",
+              borderRadius: 12, padding: 6, minWidth: 280, maxHeight: 360, overflowY: "auto",
+              boxShadow: "0 12px 36px rgba(0,0,0,0.6), 0 0 0 1px rgba(168,85,247,0.2)",
+              zIndex: 99999, backdropFilter: "blur(20px)",
+            }}>
+              <div style={{ padding: "8px 12px 6px", fontSize: 10, color: "#9ca3af", fontWeight: 700, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                🎬 Pilih Outlet Cinema
+              </div>
+              {allOutlets.map(o => (
+                <button key={o.code} onClick={() => pickOutlet(o.code)} style={{
+                  display: "block", width: "100%", textAlign: "left",
+                  padding: "8px 12px", marginTop: 2,
+                  background: outletInfo.code === o.code ? "rgba(168,85,247,0.18)" : "transparent",
+                  border: "none", color: "#fff", fontSize: 13,
+                  borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
+                  display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8,
+                }}
+                  onMouseEnter={(e) => { if (outletInfo.code !== o.code) e.currentTarget.style.background = "rgba(168,85,247,0.08)"; }}
+                  onMouseLeave={(e) => { if (outletInfo.code !== o.code) e.currentTarget.style.background = "transparent"; }}>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.name}</div>
+                    <div style={{ fontSize: 10, color: "#9ca3af", fontFamily: "'Geist Mono',monospace", marginTop: 2 }}>{o.code}{o.area ? ` · ${o.area}` : ""}</div>
+                  </div>
+                  {outletInfo.code === o.code && <span style={{ color: "#c084fc", fontSize: 16 }}>✓</span>}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         {stage !== "home" && (
           <button onClick={onHome} className="ghost-btn" style={S.ghostBtn}>← Home</button>
@@ -391,7 +468,7 @@ function TopBar({ cashier, stage, onLogout, onHome }) {
         <button onClick={async () => {
           if (!window.confirm("TUTUP HARI?\n\nShift aktif ikut ditutup. Customer tidak bisa beli tiket sampai Manager 'Open Day' lagi. Pastikan semua transaksi cinema today sudah ditutup.")) return;
           try {
-            const r = await fetch('/api/day/close', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ by: cashier?.name || 'Manager Cinema' }) });
+            const r = await fetch('/api/day/close?vertical=cinema', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ by: cashier?.name || 'Manager Cinema', vertical: 'cinema' }) });
             const j = await r.json();
             if (!r.ok) throw new Error(j?.error || 'Gagal tutup hari');
             alert('✅ Hari berhasil ditutup.\nCinema sekarang offline sampai Manager buka hari berikutnya.');

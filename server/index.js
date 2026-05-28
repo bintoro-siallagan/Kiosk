@@ -723,10 +723,12 @@ app.post("/api/orders", (req, res) => {
     if (ti >= 0) { tables[ti].status = "occupied"; broadcast("table:updated", tables[ti]); }
   }
 
-  // Add to active shift
-  if (activeShift) {
-    activeShift.totalOrders++;
-    activeShift.totalRevenue += order.total;
+  // Add to active shift (vertical-aware — order source decides slot)
+  const _orderVertical = _vertFromSource(order.source || source);
+  const _activeShift = activeShifts[_orderVertical];
+  if (_activeShift) {
+    _activeShift.totalOrders++;
+    _activeShift.totalRevenue += order.total;
   }
 
   // ── ATOMIC: persist order + customer (with redeem) + point tx in one transaction ──
@@ -4125,8 +4127,28 @@ app.delete("/api/tables/:id", requireAdmin, (req, res) => {
 
 // ─── SHIFT / KASIR MANAGEMENT ─────────────────────────────────────────────────
 let shifts = db.loadAllShifts();
-let activeShift = db.loadActiveShift();
-if (activeShift) console.log(`🕐 Resumed active shift: ${activeShift.id} (opened by ${activeShift.openedBy})`);
+// Per-vertical active shift map. Sebelumnya singleton activeShift → bug:
+// F&B close shift juga close Cinema (shared state). Sekarang fnb + cinema independen.
+const activeShifts = { fnb: null, cinema: null };
+// Migrate existing single shift dari DB ke fnb slot (default), preserve backward compat.
+{
+  const _legacyActive = db.loadActiveShift();
+  if (_legacyActive) {
+    const v = _legacyActive.vertical || 'fnb';
+    activeShifts[v] = _legacyActive;
+    console.log(`🕐 Resumed active shift: ${_legacyActive.id} (vertical: ${v}, opened by ${_legacyActive.openedBy})`);
+  }
+}
+// Helper — derive vertical dari request (query, body, atau header).
+function _vertOf(req) {
+  const v = (req?.query?.vertical || req?.body?.vertical || req?.headers?.['x-vertical'] || 'fnb');
+  return String(v).toLowerCase() === 'cinema' ? 'cinema' : 'fnb';
+}
+// Helper — derive vertical dari order source. Pos cinema source = "cinema_pos" / "pos_cinema".
+function _vertFromSource(source) {
+  const s = String(source || '').toLowerCase();
+  return (s.includes('cinema') || s === 'cinema_pos' || s === 'pos_cinema') ? 'cinema' : 'fnb';
+}
 
 // Normalize SQLite field names (openedAt/closedAt) to API names (openAt/closeAt)
 function normalizeShift(s) {
@@ -4145,17 +4167,31 @@ function normalizeShift(s) {
   };
 }
 
-// ── BUSINESS DAY (End Day) — the day must be open before any shift can start ──
+// ── BUSINESS DAY (End Day) — per-vertical. F&B + Cinema independent.
+// Sebelumnya singleton dayState bikin tutup F&B juga tutup Cinema.
 const DAY_STATE_FILE = require("path").join(__dirname, "day-state.json");
-let dayState = { closed: false, closedAt: null, closedBy: null };
-try { dayState = { ...dayState, ...JSON.parse(require("fs").readFileSync(DAY_STATE_FILE, "utf8")) }; } catch {}
+const dayStates = {
+  fnb:    { closed: false, closedAt: null, closedBy: null },
+  cinema: { closed: false, closedAt: null, closedBy: null },
+};
+try {
+  const loaded = JSON.parse(require("fs").readFileSync(DAY_STATE_FILE, "utf8"));
+  // Migrate legacy single-object to fnb slot (backward compat)
+  if (loaded && (loaded.fnb || loaded.cinema)) {
+    if (loaded.fnb)    dayStates.fnb    = { ...dayStates.fnb,    ...loaded.fnb    };
+    if (loaded.cinema) dayStates.cinema = { ...dayStates.cinema, ...loaded.cinema };
+  } else if (loaded) {
+    dayStates.fnb = { ...dayStates.fnb, ...loaded };
+  }
+} catch {}
 function saveDayState() {
-  try { require("fs").writeFileSync(DAY_STATE_FILE, JSON.stringify(dayState)); }
+  try { require("fs").writeFileSync(DAY_STATE_FILE, JSON.stringify(dayStates)); }
   catch (e) { console.warn("[day] save failed:", e.message); }
 }
-console.log(`📅 Business day: ${dayState.closed ? "CLOSED" : "open"}`);
+console.log(`📅 Business day F&B: ${dayStates.fnb.closed ? "CLOSED" : "open"} · Cinema: ${dayStates.cinema.closed ? "CLOSED" : "open"}`);
 
-app.get("/api/day/status", (_, res) => res.json(dayState));
+app.get("/api/day/status", (req, res) => res.json(dayStates[_vertOf(req)]));
+app.get("/api/day/status/all", (_, res) => res.json(dayStates));
 
 function dayReportHtml(r) {
   const f = n => "Rp " + Math.round(n || 0).toLocaleString("id-ID");
@@ -4184,24 +4220,26 @@ function dayReportHtml(r) {
 }
 
 app.post("/api/day/close", requireAdmin, async (req, res) => {
-  dayState = { closed: true, closedAt: Date.now(), closedBy: (req.body && req.body.by) || "Manager" };
+  const vertical = _vertOf(req);
+  dayStates[vertical] = { closed: true, closedAt: Date.now(), closedBy: (req.body && req.body.by) || "Manager" };
   saveDayState();
-  // Closing the day also ends any active shift so ordering is fully blocked.
-  if (activeShift) {
-    activeShift = { ...activeShift, closeAt: Date.now(), active: false, note: "auto-closed (tutup hari)" };
-    shifts.push({ ...activeShift });
-    try { db.insertShift(activeShift); } catch {}
-    activeShift = null;
+  // Closing the day for this vertical also ends its active shift — vertical lain TIDAK terganggu.
+  const active = activeShifts[vertical];
+  if (active) {
+    const closing = { ...active, closeAt: Date.now(), active: false, note: "auto-closed (tutup hari)", vertical };
+    shifts.push({ ...closing });
+    try { db.insertShift(closing); } catch {}
+    activeShifts[vertical] = null;
   }
-  // End-of-day summary report (today's transactions)
+  // End-of-day summary report (today's transactions) — masih global (all orders).
+  // Future: filter by vertical kalau report dipisah.
   let report = null, reportHtml = "", emailed = false;
   try {
     const ds = new Date(); ds.setHours(0, 0, 0, 0);
-    report = generateZReport(ds.getTime(), Date.now(), "Tutup Hari " + new Date().toLocaleDateString("id-ID"));
-    report._closedBy = dayState.closedBy;
+    report = generateZReport(ds.getTime(), Date.now(), `Tutup Hari ${vertical.toUpperCase()} ${new Date().toLocaleDateString("id-ID")}`);
+    report._closedBy = dayStates[vertical].closedBy;
     reportHtml = dayReportHtml(report);
   } catch (e) { console.warn("[day] report failed:", e.message); }
-  // Email the summary — only if email is enabled & has recipients
   try {
     const cfg = emailModule.getConfig();
     const recipients = (req.body && Array.isArray(req.body.recipients) && req.body.recipients.length)
@@ -4209,40 +4247,43 @@ app.post("/api/day/close", requireAdmin, async (req, res) => {
     if (cfg.enabled && recipients.length && reportHtml) {
       await emailModule.sendEmail({
         to: recipients,
-        subject: `Tutup Hari — KaryaOS — ${new Date().toLocaleDateString("id-ID")}`,
+        subject: `Tutup Hari ${vertical.toUpperCase()} — KaryaOS — ${new Date().toLocaleDateString("id-ID")}`,
         html: reportHtml,
       });
       emailed = true;
     }
   } catch (e) { console.warn("[day] email failed:", e.message); }
-  console.log(`🌙 Hari ditutup oleh ${dayState.closedBy} — emailed: ${emailed}`);
-  res.json({ ...dayState, report, reportHtml, emailed });
+  console.log(`🌙 Hari ${vertical} ditutup oleh ${dayStates[vertical].closedBy} — emailed: ${emailed}`);
+  res.json({ ...dayStates[vertical], vertical, report, reportHtml, emailed });
 });
 
 app.post("/api/day/open", requireAdmin, (req, res) => {
-  dayState = { closed: false, closedAt: null, closedBy: null, openedAt: Date.now(), openedBy: (req.body && req.body.by) || "Manager" };
+  const vertical = _vertOf(req);
+  dayStates[vertical] = { closed: false, closedAt: null, closedBy: null, openedAt: Date.now(), openedBy: (req.body && req.body.by) || "Manager" };
   saveDayState();
-  console.log(`☀️ Hari dibuka oleh ${dayState.openedBy}`);
-  res.json(dayState);
+  console.log(`☀️ Hari ${vertical} dibuka oleh ${dayStates[vertical].openedBy}`);
+  res.json({ ...dayStates[vertical], vertical });
 });
 
 app.get("/api/shifts", (req, res) => res.json(shifts.map(normalizeShift)));
 app.get("/api/shifts/active", (req, res) => {
-  if (!activeShift) return res.json({ active: false });
-  // Live aggregate stats from orders in shift window
-  // Defensive: handle both camelCase (API-opened) and snake_case (DB-hydrated)
-  const openTs = activeShift.openAt || activeShift.openedAt || activeShift.opened_at || 0;
-  const shiftOrders = orders.filter(o => o.time >= openTs && o.status !== "cancelled");
+  const vertical = _vertOf(req);
+  const active = activeShifts[vertical];
+  if (!active) return res.json({ active: false, vertical });
+  // Live aggregate stats from orders in shift window — filtered per-vertical via source
+  const openTs = active.openAt || active.openedAt || active.opened_at || 0;
+  const shiftOrders = orders.filter(o => o.time >= openTs && o.status !== "cancelled" && _vertFromSource(o.source) === vertical);
   const totalRevenue = shiftOrders.reduce((s,o) => s + (o.total||0), 0);
   const byPayment = shiftOrders.reduce((acc,o) => {
     const k = o.pay || "UNKNOWN";
     acc[k] = (acc[k]||0) + (o.total||0);
     return acc;
   }, {});
-  const expectedCash = (activeShift.openingCash||0) + (byPayment.CASH||0);
+  const expectedCash = (active.openingCash||0) + (byPayment.CASH||0);
   res.json({
-    ...normalizeShift(activeShift),
+    ...normalizeShift(active),
     active: true,
+    vertical,
     totalOrders: shiftOrders.length,
     totalRevenue,
     byPayment,
@@ -4252,29 +4293,32 @@ app.get("/api/shifts/active", (req, res) => {
 
 // 🔧 Emergency force-close (clears active shift state without strict validation)
 app.post("/api/shifts/force-close", requireAdmin, (req, res) => {
-  if (!activeShift) return res.status(404).json({ error: "Tidak ada shift aktif" });
+  const vertical = _vertOf(req);
+  const active = activeShifts[vertical];
+  if (!active) return res.status(404).json({ error: `Tidak ada shift ${vertical} aktif` });
   const closed = {
-    ...normalizeShift(activeShift),
+    ...normalizeShift(active),
     closeAt: Date.now(),
     closingCash: 0,
     note: "FORCE CLOSE — " + (req.body?.reason || "Manual reset by admin"),
     active: false,
+    vertical,
   };
-  // Persist if db has updater
   try { db.updateShift?.(closed.id, { closedAt: closed.closeAt, closingCash: 0, sales: 0 }); } catch {}
   shifts = shifts.map(s => s.id === closed.id ? closed : s);
   if (!shifts.find(s => s.id === closed.id)) shifts.push(closed);
-  activeShift = null;
-  console.log(`⚠️  Shift ${closed.id} force-closed`);
+  activeShifts[vertical] = null;
+  console.log(`⚠️  Shift ${closed.id} (${vertical}) force-closed`);
   res.json({ ok: true, shift: closed });
 });
 
 app.post("/api/shifts/open", (req, res) => {
-  if (dayState.closed) return res.status(403).json({ error: "Hari sudah ditutup. Manager harus Buka Hari dulu." });
-  if (activeShift) return res.status(409).json({ error: "Shift sudah terbuka" });
+  const vertical = _vertOf(req);
+  if (dayStates[vertical].closed) return res.status(403).json({ error: `Hari ${vertical} sudah ditutup. Manager harus Buka Hari dulu.` });
+  if (activeShifts[vertical]) return res.status(409).json({ error: `Shift ${vertical} sudah terbuka` });
   const { kasirName, openingCash } = req.body;
   const openedAtTs = Date.now();
-  activeShift = {
+  const shift = {
     id:          `SH${String(shifts.length+1).padStart(3,"0")}`,
     kasirName:   kasirName || "Kasir",
     openedBy:    kasirName || "Kasir",
@@ -4287,21 +4331,25 @@ app.post("/api/shifts/open", (req, res) => {
     totalOrders: 0,
     totalRevenue:0,
     active:      true,
+    vertical,
   };
-  db.insertShift(activeShift);
-  console.log(`🟢 Shift dibuka: ${activeShift.kasirName}`);
-  res.json(activeShift);
+  activeShifts[vertical] = shift;
+  db.insertShift(shift);
+  console.log(`🟢 Shift dibuka: ${shift.kasirName} (vertical: ${vertical})`);
+  res.json(shift);
 });
 
 app.post("/api/shifts/close", (req, res) => {
-  if (!activeShift) return res.status(404).json({ error: "Tidak ada shift aktif" });
+  const vertical = _vertOf(req);
+  const active = activeShifts[vertical];
+  if (!active) return res.status(404).json({ error: `Tidak ada shift ${vertical} aktif` });
   const { closingCash, note } = req.body;
-  // Collect orders in this shift
-  const openTs = activeShift.openAt || activeShift.openedAt || activeShift.opened_at || 0;
-  const shiftOrders = orders.filter(o => o.time >= openTs && o.status !== "cancelled");
+  // Collect orders in this shift — filter by vertical via source
+  const openTs = active.openAt || active.openedAt || active.opened_at || 0;
+  const shiftOrders = orders.filter(o => o.time >= openTs && o.status !== "cancelled" && _vertFromSource(o.source) === vertical);
   const totalRevenue = shiftOrders.reduce((s,o) => s+o.total, 0);
-  activeShift = {
-    ...activeShift,
+  const closingShift = {
+    ...active,
     closeAt:      Date.now(),
     closingCash:  Number(closingCash)||0,
     note:         note||"",
@@ -4309,12 +4357,13 @@ app.post("/api/shifts/close", (req, res) => {
     totalOrders:  shiftOrders.length,
     totalRevenue,
     active:       false,
+    vertical,
   };
-  shifts.push({ ...activeShift });
-  const closed = { ...activeShift };
-  if (activeShift) db.insertShift(activeShift);
-  activeShift = null;
-  console.log(`🔴 Shift ditutup: ${closed.kasirName} — ${shiftOrders.length} order, Rp ${totalRevenue.toLocaleString()}`);
+  shifts.push({ ...closingShift });
+  const closed = { ...closingShift };
+  db.insertShift(closingShift);
+  activeShifts[vertical] = null;
+  console.log(`🔴 Shift ditutup: ${closed.kasirName} (${vertical}) — ${shiftOrders.length} order, Rp ${totalRevenue.toLocaleString()}`);
 
   // ── AUTO-REPORT: Send shift summary via WhatsApp ──
   (async () => {

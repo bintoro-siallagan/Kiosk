@@ -4,7 +4,7 @@ import API_HOST from "./apiBase.js";
 import { LoadingState } from "./components/uiKit.jsx";
 const API_BASE = API_HOST;
 
-export default function ShiftGate({ children, cashier, onSwitchCashier, customerMode = false }) {
+export default function ShiftGate({ children, cashier, onSwitchCashier, customerMode = false, vertical = "fnb" }) {
   const [shift, setShift]   = useState(undefined); // undefined=loading, null=closed, obj=active
   const [dayState, setDay]  = useState(null);      // { closed, closedAt, closedBy }
   const [busy, setBusy]     = useState(false);
@@ -12,11 +12,14 @@ export default function ShiftGate({ children, cashier, onSwitchCashier, customer
   const [step, setStep]     = useState(null);       // null | "day" | "shift"
   const [openingCash, setOpeningCash] = useState("0");
 
+  // Pass vertical via query param — backend reads to fetch per-vertical state
+  const _vq = `?vertical=${encodeURIComponent(vertical)}`;
+
   const check = useCallback(async () => {
     try {
       const [s, d] = await Promise.all([
-        fetch(`${API_BASE}/api/shifts/active`).then(r => r.json()).catch(() => null),
-        fetch(`${API_BASE}/api/day/status`).then(r => r.json()).catch(() => ({ closed: false })),
+        fetch(`${API_BASE}/api/shifts/active${_vq}`).then(r => r.json()).catch(() => null),
+        fetch(`${API_BASE}/api/day/status${_vq}`).then(r => r.json()).catch(() => ({ closed: false })),
       ]);
       setDay(d || { closed: false });
       setShift((s && s.id) ? s : null);
@@ -24,16 +27,16 @@ export default function ShiftGate({ children, cashier, onSwitchCashier, customer
       console.warn("[ShiftGate] check failed:", e);
       setShift(null);
     }
-  }, []);
+  }, [_vq]);
 
   useEffect(() => { check(); const id = setInterval(check, 20000); return () => clearInterval(id); }, [check]);
 
   const openDay = async () => {
     setBusy(true); setErr("");
     try {
-      const r = await fetch(`${API_BASE}/api/day/open`, {
+      const r = await fetch(`${API_BASE}/api/day/open${_vq}`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ by: cashier?.name || "Manager" }),
+        body: JSON.stringify({ by: cashier?.name || "Manager", vertical }),
       });
       if (!r.ok) throw new Error("Gagal buka hari");
       await check();
@@ -43,11 +46,12 @@ export default function ShiftGate({ children, cashier, onSwitchCashier, customer
   const openShift = async () => {
     setBusy(true); setErr("");
     try {
-      const r = await fetch(`${API_BASE}/api/shifts/open`, {
+      const r = await fetch(`${API_BASE}/api/shifts/open${_vq}`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           kasirName: cashier?.name || "Cashier",
           openingCash: parseInt(openingCash, 10) || 0,
+          vertical,
         }),
       });
       const j = await r.json();
