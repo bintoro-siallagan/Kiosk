@@ -224,6 +224,18 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
     } catch (e) { console.error(e); }
   };
 
+  // ACK — chef acknowledge (intermediate step, ticket tetap di queued)
+  const acknowledge = async (ticketId) => {
+    try {
+      await fetch(`${apiBase}/api/kds/tickets/${ticketId}/acknowledge`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ actor: localStorage.getItem('kasir_name') || 'kds' })
+      });
+      loadAll();
+    } catch (e) { console.error(e); }
+  };
+
   const recall = async (ticketId) => {
     try {
       await fetch(`${apiBase}/api/kds/tickets/${ticketId}/recall`, {
@@ -329,7 +341,8 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
             <StatusColumn title="QUEUE" subtitle="Queued" count={grouped.queued.length} color="#fbbf24">
               {grouped.queued.map(t => (
                 <TicketCard key={t.id} ticket={t} station={stationMap[t.station_id]} now={now}
-                  onAdvance={() => advance(t.id, t.status)} ctaLabel="Mulai Buat →" />
+                  onAdvance={() => advance(t.id, t.status)} ctaLabel="Mulai Buat →"
+                  onAcknowledge={!t.acknowledged_at ? () => acknowledge(t.id) : null} />
               ))}
               {grouped.queued.length === 0 && <Empty>Tidak ada antrian</Empty>}
             </StatusColumn>
@@ -406,6 +419,7 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
                         <TicketCard key={t.id} ticket={t} station={s} now={now}
                           onAdvance={() => advance(t.id, t.status)} ctaLabel={ctaLabel}
                           onRecall={t.status !== 'queued' ? () => recall(t.id) : null}
+                          onAcknowledge={t.status === 'queued' && !t.acknowledged_at ? () => acknowledge(t.id) : null}
                           elapsedFrom={elapsedFrom} pulsing={t.status === 'ready'} />
                       );
                     })}
@@ -449,7 +463,7 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
 // ============================================================
 // TICKET CARD
 // ============================================================
-function TicketCard({ ticket, station, now, onAdvance, onRecall, ctaLabel, elapsedFrom, pulsing }) {
+function TicketCard({ ticket, station, now, onAdvance, onRecall, ctaLabel, elapsedFrom, pulsing, onAcknowledge }) {
   const fromTs = elapsedFrom || ticket.created_at;
   const elapsed = Math.max(0, Math.floor(now/1000) - fromTs);
   const target = station?.target_prep_seconds || 300;
@@ -504,19 +518,31 @@ function TicketCard({ ticket, station, now, onAdvance, onRecall, ctaLabel, elaps
             {ticket.table_no ? `🪑 Meja ${ticket.table_no}` : "🛍 Take Away"}
             {ticket.customer_name ? ` · ${ticket.customer_name}` : ""}
           </div>
-          {/* Station chip kalau ada */}
-          {station && (
-            <div style={{
-              marginTop: 6, display: "inline-flex", alignItems: "center", gap: 5,
-              padding: "2px 8px", borderRadius: 4,
-              background: `${station.color || "#6b7280"}22`,
-              border: `1px solid ${station.color || "#6b7280"}55`,
-              fontSize: 10, fontWeight: 800, color: station.color || "#9ca3af",
-              fontFamily: "'Geist Mono',monospace", letterSpacing: 0.8, textTransform: "uppercase",
-            }}>
-              ● {station.name || station.code}
-            </div>
-          )}
+          {/* Station chip + ACK badge */}
+          <div style={{ marginTop: 6, display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {station && (
+              <div style={{
+                display: "inline-flex", alignItems: "center", gap: 5,
+                padding: "2px 8px", borderRadius: 4,
+                background: `${station.color || "#6b7280"}22`,
+                border: `1px solid ${station.color || "#6b7280"}55`,
+                fontSize: 10, fontWeight: 800, color: station.color || "#9ca3af",
+                fontFamily: "'Geist Mono',monospace", letterSpacing: 0.8, textTransform: "uppercase",
+              }}>
+                ● {station.name || station.code}
+              </div>
+            )}
+            {ticket.acknowledged_at && ticket.status === 'queued' && (
+              <div title={`Acknowledged ${new Date(ticket.acknowledged_at * 1000).toLocaleTimeString('id-ID')}`} style={{
+                display: "inline-flex", alignItems: "center", gap: 4,
+                padding: "2px 8px", borderRadius: 4,
+                background: "rgba(34,211,238,0.18)",
+                border: "1px solid rgba(34,211,238,0.5)",
+                fontSize: 10, fontWeight: 800, color: "#22d3ee",
+                fontFamily: "'Geist Mono',monospace", letterSpacing: 0.8, textTransform: "uppercase",
+              }}>👀 ACK</div>
+            )}
+          </div>
         </div>
         {/* TIMER HERO — BIG dramatic dgn color escalation */}
         <div className={isDanger ? "kds-timer-danger" : ""} style={{
@@ -556,6 +582,15 @@ function TicketCard({ ticket, station, now, onAdvance, onRecall, ctaLabel, elaps
       <div style={styles.cardActions}>
         {onRecall && (
           <button onClick={onRecall} style={styles.recallBtn} title="Undo last status">↶</button>
+        )}
+        {onAcknowledge && (
+          <button onClick={onAcknowledge} title="Acknowledge — kasih sinyal kasir bahwa ticket sudah dilihat" style={{
+            padding: '12px 14px', background: 'rgba(34,211,238,0.12)',
+            border: '1px solid rgba(34,211,238,0.4)', color: '#22d3ee',
+            borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 800, fontFamily: 'inherit',
+            letterSpacing: 0.4, textTransform: 'uppercase', flexShrink: 0,
+            transition: 'all 0.15s cubic-bezier(.2,.8,.2,1)',
+          }}>👀 ACK</button>
         )}
         <button onClick={onAdvance} className="kds-cta" style={{
           flex: 1, padding: '13px 16px',

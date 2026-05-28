@@ -132,6 +132,11 @@ function setupKDS(app, opts = {}) {
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA_SQL);
 
+  // Migration: acknowledged_at — chef acknowledge step (mid-queue visibility).
+  // 5-stage workflow operational tracking: created → ack → start → ready → served.
+  // Tanpa change CHECK constraint utk hindari table-recreate risk.
+  try { db.exec(`ALTER TABLE kds_tickets ADD COLUMN acknowledged_at INTEGER`); } catch {}
+
   // Seed default stations
   const cnt = db.prepare(`SELECT COUNT(*) c FROM kds_stations`).get().c;
   if (cnt === 0) {
@@ -334,6 +339,20 @@ function setupKDS(app, opts = {}) {
   };
 
   // Status transitions
+  // Acknowledge — chef seen ticket but not started cooking yet (intermediate ACK step).
+  // Tetap di status 'queued' tapi acknowledged_at set utk operational visibility.
+  router.put('/tickets/:id/acknowledge', (req, res) => {
+    const { actor } = req.body || {};
+    const t = db.prepare(`SELECT * FROM kds_tickets WHERE id = ?`).get(req.params.id);
+    if (!t) return res.status(404).json({ error: 'not found' });
+    if (t.status !== 'queued') return res.status(409).json({ error: `cannot acknowledge from status: ${t.status}` });
+    if (t.acknowledged_at) return res.json({ ok: true, already: true });
+    db.prepare(`UPDATE kds_tickets SET acknowledged_at=? WHERE id=?`).run(nowSec(), req.params.id);
+    broadcast('kds:ticket-updated', { ticket_id: t.id, status: 'queued', acknowledged: true, station_id: t.station_id });
+    logEvent({ type: 'kds_ticket_acknowledge', payload: { ticket_id: t.id }, order_ref: t.order_ref, actor });
+    res.json({ ok: true });
+  });
+
   router.put('/tickets/:id/start', (req, res) => {
     const { actor } = req.body || {};
     const t = db.prepare(`SELECT * FROM kds_tickets WHERE id = ?`).get(req.params.id);
