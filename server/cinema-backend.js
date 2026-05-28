@@ -4245,14 +4245,59 @@ function setupCinema(app, opts = {}) {
       midtrans_refund_id = ?
       WHERE id = ?`).run(t.price, now, reason, midtransRefundId, t.id);
 
+    // WA notification ke customer — refund confirmed
+    if (t.buyer_phone && _waMod && typeof _waMod.sendMessage === 'function') {
+      const waMsg = `✅ *Refund Berhasil*\n\n` +
+        `Halo${t.buyer ? ' ' + t.buyer : ''},\n\n` +
+        `Refund tiket *${t.film_title || 'Pre-Sale'}* (${t.code}) sudah kami proses.\n\n` +
+        `🎫 Kursi: *${t.seat}*\n` +
+        `💰 Dana: *Rp ${t.price.toLocaleString('id-ID')}*\n` +
+        `📅 Showtime asal: ${t.show_date} ${t.start_time}\n\n` +
+        `Dana akan kembali ke metode pembayaran asal Anda dalam *1-7 hari kerja*.\n\n` +
+        `Terima kasih sudah memilih karyaOS Cinema 🎬`;
+      Promise.resolve(_waMod.sendMessage(t.buyer_phone, waMsg))
+        .catch(e => console.warn(`WA refund notif fail #${t.id}: ${e.message}`));
+    }
+
     res.json({
       ok: true,
       ticket_id: t.id,
       refund_amount: t.price,
       refunded_at: now,
       midtrans_refund_id: midtransRefundId,
+      wa_sent: !!(t.buyer_phone && _waMod),
       message: `Refund berhasil — dana Rp ${t.price.toLocaleString('id-ID')} akan kembali ke metode pembayaran asal dalam 1-7 hari kerja.`,
     });
+  });
+
+  // ── PHASE 4: ADMIN REFUND MANAGEMENT ──
+  // GET /tickets/refunds — list semua tiket yg refund_status != 'none' (dashboard widget)
+  router.get('/tickets/refunds', (req, res) => {
+    const rows = db.prepare(`
+      SELECT t.id, t.code, t.seat, t.price, t.buyer, t.buyer_phone,
+             t.refund_status, t.refund_amount, t.refunded_at, t.refund_reason, t.midtrans_refund_id,
+             t.is_pre_sale, t.sold_at,
+             s.show_date, s.start_time,
+             f.title AS film_title,
+             st.name AS studio_name, st.outlet
+      FROM cinema_tickets t
+      LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+      LEFT JOIN cinema_films f ON f.id = s.film_id
+      LEFT JOIN cinema_studios st ON st.id = s.studio_id
+      WHERE t.refund_status IS NOT NULL AND t.refund_status != 'none'
+      ORDER BY t.refunded_at DESC NULLS LAST, t.id DESC
+      LIMIT 200
+    `).all();
+    const summary = db.prepare(`
+      SELECT
+        COUNT(*) AS total,
+        COALESCE(SUM(refund_amount), 0) AS total_refunded,
+        SUM(CASE WHEN refund_status = 'refunded' THEN 1 ELSE 0 END) AS refunded,
+        SUM(CASE WHEN refund_status = 'requested' THEN 1 ELSE 0 END) AS pending
+      FROM cinema_tickets
+      WHERE refund_status IS NOT NULL AND refund_status != 'none'
+    `).get();
+    res.json({ refunds: rows, summary });
   });
 
   router.get('/voids', (req, res) => {

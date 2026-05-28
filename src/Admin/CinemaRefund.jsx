@@ -75,9 +75,20 @@ export default function CinemaRefund({ apiBase = "" }) {
     } catch (e) { setVoids({ rows: [], summary: { count: 0, refunded: 0 } }); }
   }, [base, period]);
 
+  // Phase 4 — Pre-sale refund history (customer-initiated via Midtrans auto)
+  const [preSaleRefunds, setPreSaleRefunds] = useState({ refunds: [], summary: { total: 0, total_refunded: 0, refunded: 0, pending: 0 } });
+  const loadPreSaleRefunds = useCallback(async () => {
+    try {
+      const r = await fetch(`${base}/tickets/refunds`);
+      const d = await r.json();
+      setPreSaleRefunds({ refunds: d.refunds || [], summary: d.summary || { total: 0, total_refunded: 0, refunded: 0, pending: 0 } });
+    } catch { setPreSaleRefunds({ refunds: [], summary: { total: 0, total_refunded: 0, refunded: 0, pending: 0 } }); }
+  }, [base]);
+
   useEffect(() => { loadShowtimes(); }, [loadShowtimes]);
   useEffect(() => { loadTickets(); }, [loadTickets]);
   useEffect(() => { loadVoids(); }, [loadVoids]);
+  useEffect(() => { loadPreSaleRefunds(); const t = setInterval(loadPreSaleRefunds, 30_000); return () => clearInterval(t); }, [loadPreSaleRefunds]);
 
   const pickedMeta = useMemo(() => showtimes.find(s => String(s.id) === String(picked)), [showtimes, picked]);
 
@@ -220,6 +231,49 @@ export default function CinemaRefund({ apiBase = "" }) {
                 <span style={{ width: 110, fontSize: 12, color: C.sub }}>{v.voided_by || "—"}</span>
                 <span style={{ width: 130, fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{fmtTs(v.voided_at)}</span>
                 <span style={{ width: 100, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "#f59e0b" }}>{rp(v.price)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Phase 4 — Customer Pre-Sale Refunds (auto via Midtrans) */}
+      <div style={S.section}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 10 }}>
+          <div>
+            <div style={{ fontSize: 12, color: "#c084fc", letterSpacing: 1.2, fontFamily: "'Geist Mono',monospace", fontWeight: 800, textTransform: "uppercase" }}>
+              🎬 Pre-Sale Refund (Customer-Initiated · Midtrans Auto)
+            </div>
+            <div style={{ fontSize: 11, color: C.sub, marginTop: 4 }}>
+              Refund tiket pre-sale yg di-request langsung oleh customer dari halaman digital ticket (H-1 sebelum showtime).
+            </div>
+          </div>
+          <div style={S.row}>
+            <Stat label="TOTAL" value={preSaleRefunds.summary.total} color="#22d3ee" />
+            <Stat label="REFUNDED" value={preSaleRefunds.summary.refunded} color="#10b981" />
+            {preSaleRefunds.summary.pending > 0 && <Stat label="PENDING" value={preSaleRefunds.summary.pending} color="#fbbf24" />}
+            <Stat label="DANA" value={rp(preSaleRefunds.summary.total_refunded || 0)} color="#a855f7" />
+          </div>
+        </div>
+        {preSaleRefunds.refunds.length === 0 ? (
+          <div style={S.empty}>Belum ada refund customer pre-sale.</div>
+        ) : (
+          <div style={{ ...S.card, padding: 10 }}>
+            {preSaleRefunds.refunds.map(r => (
+              <div key={r.id} style={{
+                display: "flex", alignItems: "center", gap: 10, padding: "10px 12px",
+                borderBottom: `1px solid ${C.border}`, fontSize: 12,
+              }}>
+                <span style={{ width: 90, fontFamily: "'Geist Mono',monospace", color: C.sub, fontSize: 11 }}>{r.code}</span>
+                <span style={{ flex: 1, minWidth: 130, color: "#fff", fontWeight: 600 }}>{r.film_title || "—"}</span>
+                <span style={{ width: 60, fontFamily: "'Geist Mono',monospace", color: "#fbbf24", fontWeight: 700, textAlign: "center" }}>{r.seat}</span>
+                <span style={{ width: 140, fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{r.show_date} {r.start_time}</span>
+                <span style={{ width: 130, fontSize: 11, color: C.sub }}>{r.buyer || "—"}<br/><span style={{ color: C.dim, fontFamily: "'Geist Mono',monospace", fontSize: 10 }}>{r.buyer_phone || ""}</span></span>
+                <span style={{ width: 100 }}>
+                  <span style={S.pill(r.refund_status === "refunded" ? "#10b981" : "#fbbf24")}>{r.refund_status?.toUpperCase()}</span>
+                </span>
+                <span style={{ width: 130, fontSize: 11, color: C.dim, fontFamily: "'Geist Mono',monospace" }}>{fmtTs(r.refunded_at)}</span>
+                <span style={{ width: 100, textAlign: "right", fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "#c084fc" }}>{rp(r.refund_amount || r.price)}</span>
               </div>
             ))}
           </div>
