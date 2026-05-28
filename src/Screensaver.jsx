@@ -33,6 +33,8 @@ export default function Screensaver({ onDismiss, brandName, brandLogo }) {
   const [config, setConfig] = useState(DEFAULT_CONFIG);
   const [images, setImages] = useState([]);
   const [menu, setMenu] = useState([]);
+  const [bestsellers, setBestsellers] = useState([]);  // items dgn BESTSELLER/HOT tag
+  const [promos, setPromos] = useState([]);            // active promo list
   const [phase, setPhase] = useState(0);
   const [now, setNow] = useState(() => new Date());
 
@@ -51,9 +53,22 @@ export default function Screensaver({ onDismiss, brandName, brandLogo }) {
       .then(r => r.ok ? r.json() : null)
       .then(data => {
         const items = (data?.items || data || [])
-          .filter(m => m && (m.image_url || m.image) && m.is_available !== 0 && m.is_available !== false)
-          .slice(0, 8);
-        setMenu(items);
+          .filter(m => m && (m.image_url || m.image) && m.is_available !== 0 && m.is_available !== false);
+        setMenu(items.slice(0, 8));
+        // Extract bestsellers: items dgn tag BESTSELLER/HOT/CHEF'S PICK
+        const hot = items.filter(m => {
+          const t = (m.tag || "").toUpperCase();
+          return ["BESTSELLER", "BEST SELLER", "HOT TODAY", "HOT 🔥", "CHEF'S PICK"].includes(t);
+        }).slice(0, 4);
+        setBestsellers(hot.length > 0 ? hot : items.slice(0, 4));
+      })
+      .catch(() => {});
+    // Load active promos
+    fetch(`${API_URL}/api/promotions`)
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        const list = Array.isArray(data) ? data : (data?.items || []);
+        setPromos(list.filter(p => p.active !== false).slice(0, 3));
       })
       .catch(() => {});
   }, []);
@@ -81,8 +96,11 @@ export default function Screensaver({ onDismiss, brandName, brandLogo }) {
   if (effectiveMode === "images" && images.length > 0) slideKinds.push("image");
   else if (effectiveMode === "menu" && menu.length > 0) slideKinds.push("menu");
   else {
+    // Auto mode — cinematic billboard rotation
     slideKinds.push("hero");
+    if (bestsellers.length > 0) slideKinds.push("bestseller");  // 🔥 HOT TODAY drama
     if (menu.length > 0) slideKinds.push("menu");
+    if (promos.length > 0) slideKinds.push("combo");            // 🎁 promo card
     if (images.length > 0) slideKinds.push("image");
   }
   if (slideKinds.length === 0) slideKinds.push("hero");
@@ -115,6 +133,8 @@ export default function Screensaver({ onDismiss, brandName, brandLogo }) {
       <div style={S.stage} key={phase /* re-mount for fade-in */}>
         {kind === "hero" && <HeroSlide brandName={brandName} brandLogo={brandLogo} />}
         {kind === "menu" && <MenuSlide items={menu} phase={phase} />}
+        {kind === "bestseller" && <BestsellerSlide items={bestsellers} phase={phase} />}
+        {kind === "combo" && <ComboSlide promos={promos} phase={phase} />}
         {kind === "image" && (
           <img src={images[phase % images.length]} alt="" draggable={false}
             style={{
@@ -129,6 +149,110 @@ export default function Screensaver({ onDismiss, brandName, brandLogo }) {
         <div style={S.fingerEmoji}>👆</div>
         <div style={S.tapText}>{config.tagline || "SENTUH UNTUK MEMESAN"}</div>
       </div>
+    </div>
+  );
+}
+
+// 🔥 BESTSELLER slide — dramatic "HOT TODAY" + single big food card
+function BestsellerSlide({ items, phase }) {
+  if (!items.length) return null;
+  const item = items[phase % items.length];
+  return (
+    <div style={{
+      position: "absolute", inset: 0, display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center", padding: "60px",
+      animation: "screensaverFade 0.9s ease-out",
+    }}>
+      <div style={{
+        fontSize: "clamp(20px, 2.6vw, 32px)", fontWeight: 900,
+        color: "#fbbf24", letterSpacing: 3, fontFamily: "'Geist Mono',monospace",
+        textTransform: "uppercase", marginBottom: 14,
+        textShadow: "0 0 24px rgba(251,191,36,0.55)",
+        animation: "screensaverFade 0.6s ease",
+      }}>🔥 BESTSELLER · HOT TODAY</div>
+      {(item.image_url || item.image) ? (
+        <img src={item.image_url || item.image} alt={item.name}
+          style={{
+            width: "min(440px, 50vw)", aspectRatio: "1/1", objectFit: "cover",
+            borderRadius: 28, marginBottom: 28,
+            boxShadow: "0 20px 60px rgba(0,0,0,0.7), 0 0 80px color-mix(in srgb,var(--brand-primary,#FF6B35) 30%,transparent), 0 0 0 4px rgba(251,191,36,0.4)",
+            animation: "screensaverFade 1.2s ease",
+          }}
+          onError={(e) => { e.currentTarget.style.display = "none"; }} />
+      ) : (
+        <div style={{ fontSize: 120, marginBottom: 28 }}>{item.emoji || "🍴"}</div>
+      )}
+      <div style={{
+        fontSize: "clamp(36px, 5vw, 68px)", fontWeight: 900, color: "#fff",
+        letterSpacing: -1.5, marginBottom: 12, textAlign: "center", lineHeight: 1,
+        textShadow: "0 4px 20px rgba(0,0,0,0.6)",
+      }}>{item.name}</div>
+      <div style={{
+        fontSize: "clamp(20px, 2.5vw, 32px)", fontWeight: 800,
+        color: "color-mix(in srgb,var(--brand-primary,#FF6B35) 90%,#fff)",
+        fontFamily: "'Geist Mono',monospace", letterSpacing: -0.5,
+        textShadow: "0 0 20px color-mix(in srgb,var(--brand-primary,#FF6B35) 50%,transparent)",
+      }}>{fmtMoney(item.price || 0)}</div>
+    </div>
+  );
+}
+
+// 🎁 COMBO PROMO slide — dramatic active-promo card
+function ComboSlide({ promos, phase }) {
+  if (!promos.length) return null;
+  const p = promos[phase % promos.length];
+  const valLabel = p.type === "percentage" ? `${p.value}% OFF`
+                 : p.type === "fixed" ? `Rp ${(p.value || 0).toLocaleString("id-ID")} OFF`
+                 : p.type === "bogo" ? "BELI 1 GRATIS 1"
+                 : p.value;
+  return (
+    <div style={{
+      position: "absolute", inset: 0, display: "flex", flexDirection: "column",
+      alignItems: "center", justifyContent: "center", padding: "60px",
+      animation: "screensaverFade 0.9s ease-out",
+    }}>
+      <div style={{
+        fontSize: "clamp(20px, 2.6vw, 32px)", fontWeight: 900,
+        color: "#fbbf24", letterSpacing: 3, fontFamily: "'Geist Mono',monospace",
+        textTransform: "uppercase", marginBottom: 18,
+        textShadow: "0 0 24px rgba(251,191,36,0.55)",
+      }}>🎁 PROMO HARI INI</div>
+
+      {/* Big discount value */}
+      <div style={{
+        fontSize: "clamp(80px, 12vw, 160px)", fontWeight: 900,
+        background: "linear-gradient(180deg, #fbbf24, #f59e0b)",
+        WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+        backgroundClip: "text",
+        letterSpacing: -5, lineHeight: 0.9, marginBottom: 14,
+        textAlign: "center", fontFamily: "'Inter',sans-serif",
+        filter: "drop-shadow(0 4px 30px rgba(251,191,36,0.5))",
+      }}>{valLabel}</div>
+
+      {/* Promo name */}
+      <div style={{
+        fontSize: "clamp(24px, 3vw, 40px)", fontWeight: 800, color: "#fff",
+        letterSpacing: -0.6, marginBottom: 10, textAlign: "center",
+        textShadow: "0 2px 14px rgba(0,0,0,0.6)",
+      }}>{p.name || p.desc || "Promo Spesial"}</div>
+
+      {/* Promo code */}
+      <div style={{
+        padding: "10px 26px", borderRadius: 999,
+        background: "rgba(0,0,0,0.55)", backdropFilter: "blur(8px)",
+        border: "2px dashed color-mix(in srgb,var(--brand-primary,#FF6B35) 60%,transparent)",
+        fontSize: "clamp(16px, 2vw, 22px)", fontWeight: 800,
+        color: "color-mix(in srgb,var(--brand-primary,#FF6B35) 95%,#fff)",
+        fontFamily: "'Geist Mono',monospace", letterSpacing: 2,
+        marginTop: 8,
+      }}>KODE: {p.code}</div>
+
+      {p.desc && p.desc !== p.name && (
+        <div style={{
+          fontSize: 16, color: "rgba(255,255,255,0.7)", marginTop: 16,
+          textAlign: "center", maxWidth: 600, lineHeight: 1.4,
+        }}>{p.desc}</div>
+      )}
     </div>
   );
 }
