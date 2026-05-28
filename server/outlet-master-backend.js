@@ -36,6 +36,9 @@ function setupOutletMaster(app, opts = {}) {
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
   for (const m of MIGRATIONS) { try { db.exec(m); } catch {} }
+  // requireAdmin di-inject via opts (dari index.js). Kalau gak diset, fallback ke pass-through
+  // — gak ideal tapi lebih aman daripada crash.
+  const requireAdmin = opts.requireAdmin || ((req, res, next) => next());
 
   if (db.prepare(`SELECT COUNT(*) c FROM outlet_master`).get().c === 0) {
     const ins = db.prepare(`INSERT INTO outlet_master
@@ -84,7 +87,7 @@ function setupOutletMaster(app, opts = {}) {
     });
   });
 
-  router.post('/', (req, res) => {
+  router.post('/', requireAdmin, (req, res) => {
     const b = req.body || {};
     if (!b.name || !String(b.name).trim()) return res.status(400).json({ error: 'nama outlet wajib' });
     const n = db.prepare(`SELECT COUNT(*) c FROM outlet_master`).get().c;
@@ -96,7 +99,7 @@ function setupOutletMaster(app, opts = {}) {
     res.json({ ok: true });
   });
 
-  router.post('/:id/status', (req, res) => {
+  router.post('/:id/status', requireAdmin, (req, res) => {
     const o = db.prepare(`SELECT * FROM outlet_master WHERE id = ?`).get(req.params.id);
     if (!o) return res.status(404).json({ error: 'outlet tidak ditemukan' });
     const st = (req.body || {}).status;
@@ -105,7 +108,7 @@ function setupOutletMaster(app, opts = {}) {
     res.json({ ok: true });
   });
 
-  router.patch('/:id', (req, res) => {
+  router.patch('/:id', requireAdmin, (req, res) => {
     const o = db.prepare(`SELECT * FROM outlet_master WHERE id = ?`).get(req.params.id);
     if (!o) return res.status(404).json({ error: 'outlet tidak ditemukan' });
     const b = req.body || {};
@@ -129,7 +132,7 @@ function setupOutletMaster(app, opts = {}) {
     res.json({ ok: true });
   });
 
-  router.delete('/:id', (req, res) => {
+  router.delete('/:id', requireAdmin, (req, res) => {
     const info = db.prepare(`DELETE FROM outlet_master WHERE id = ?`).run(req.params.id);
     if (!info.changes) return res.status(404).json({ error: 'outlet tidak ditemukan' });
     res.json({ ok: true });

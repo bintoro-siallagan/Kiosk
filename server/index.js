@@ -5366,7 +5366,11 @@ const ADMIN_NAMESPACES = [
   "/api/asset-maintenance", "/api/campaign-impact", "/api/contract",
   "/api/document-hub", "/api/franchise", "/api/helpdesk",
   "/api/launch", "/api/notification-center", "/api/notifications",
-  "/api/onboarding", "/api/outlet-master", "/api/outlets",
+  "/api/onboarding",
+  // NOTE: /api/outlet-master + /api/outlets dikeluarkan dari namespace gate
+  // karena Cinema Web public butuh GET listing outlet (pilih lokasi).
+  // Mutation endpoints (POST/PUT/PATCH/DELETE) di outlet-master-backend.js
+  // pakai requireAdmin per-route — lihat module file.
 ];
 for (const ns of ADMIN_NAMESPACES) app.use(ns, requireAdmin);
 console.log(`🔒 RBAC: ${ADMIN_NAMESPACES.length} namespaces now require admin`);
@@ -5654,7 +5658,7 @@ const stockOpname = setupStockOpname(app, { dbPath: DB_PATH });
 const production = setupProduction(app, { dbPath: DB_PATH });
 const stockTransfer = setupStockTransfer(app, { dbPath: DB_PATH });
 const batchTracking = setupBatchTracking(app, { dbPath: DB_PATH });
-const outletMaster = setupOutletMaster(app, { dbPath: DB_PATH });
+const outletMaster = setupOutletMaster(app, { dbPath: DB_PATH, requireAdmin });
 const incidents = setupIncidents(app, { dbPath: DB_PATH });
 const signage = setupSignage(app, { dbPath: DB_PATH });
 const demandForecast = setupDemandForecast(app, { dbPath: DB_PATH });
