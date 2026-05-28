@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import API_HOST from "../apiBase.js";
 import { fmtMoney as fIDR } from "../lib/currency.js";
+import { cinemaAudio } from "../lib/cinemaAudio.js";
 
 // Same-origin in production (HTTPS via nginx), VITE_API_URL only respected on localhost dev
 const API = API_HOST;
@@ -284,8 +285,10 @@ export default function FlowCheckout({
       if (setActivePromo) setActivePromo(null);
       if (setPointsToRedeem) setPointsToRedeem(0);
 
+      try { cinemaAudio.bookingConfirmed(); } catch {}
       onPlaced(data.order || data);
     } catch (e) {
+      try { cinemaAudio.error(); } catch {}
       setError("Gagal menyimpan: " + e.message);
       setQrStep("error");
       setSubmitting(false);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import API_HOST from "../apiBase.js";
 import { fmtMoney } from "../lib/currency.js";
+import { cinemaAudio } from "../lib/cinemaAudio.js";
 
 const BRAND = "var(--brand-primary,#FF6B35)";
 const BG = "#0A0A0A";
@@ -146,6 +147,7 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
       addonTotal,
     };
     for (let i = 0; i < detailQty; i++) addToCart(item);
+    try { cinemaAudio.seatPick(); } catch {}
     closeDetail();
   }
 
