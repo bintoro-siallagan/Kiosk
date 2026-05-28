@@ -465,6 +465,9 @@ function setupCinema(app, opts = {}) {
   try { db.exec("ALTER TABLE cinema_films ADD COLUMN min_run_days INTEGER DEFAULT 0"); } catch {}
   try { db.exec("ALTER TABLE cinema_films ADD COLUMN distributor_notes TEXT"); } catch {}
   try { db.exec("CREATE INDEX IF NOT EXISTS idx_cinema_films_distributor ON cinema_films(distributor_id)"); } catch {}
+  // Advance ticket — release_date utk film coming_soon (countdown + refund eligibility ref).
+  // Format: 'YYYY-MM-DD'. Untuk now_showing film, optional (informasional saja).
+  try { db.exec("ALTER TABLE cinema_films ADD COLUMN release_date TEXT"); } catch {}
   // VAT pct on distributors (idempotent for existing DBs)
   try { db.exec("ALTER TABLE cinema_distributors ADD COLUMN vat_pct REAL DEFAULT 11"); } catch {}
   // Format (2D/3D/IMAX/4DX) — showtime-level (1 film bisa multi-format jadwal)
