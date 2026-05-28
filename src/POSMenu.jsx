@@ -137,6 +137,7 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
           {order.table && <><span style={S.dot}>·</span><span>{order.table.name}</span></>}
           {order.customerName && <><span style={S.dot}>·</span><span>{order.customerName}</span></>}
         </div>
+        <PosShiftPill apiBase={API_BASE} />
         <PosAlertPill apiBase={API_BASE} />
         <div style={S.kasir}>👤 {cashier.name}</div>
         <button onClick={onCancel} style={S.iconBtn}>✕</button>
@@ -470,6 +471,61 @@ function PosAlertPill({ apiBase = "" }) {
       </button>
       {open && <PosAlertModal alerts={alerts} apiBase={apiBase} onClose={() => setOpen(false)} />}
     </>
+  );
+}
+
+// ─── POS SHIFT PILL — Live shift status di top bar (operational visibility) ───
+// Polls /api/shifts/active → /api/pos/shifts/{id}/summary. Shows duration · revenue · orders.
+function PosShiftPill({ apiBase = "" }) {
+  const [shift, setShift] = useState(null);
+  const [sum, setSum] = useState(null);
+  const [now, setNow] = useState(Date.now());
+
+  useEffect(() => {
+    let cancel = false;
+    const load = async () => {
+      try {
+        const s = await fetch(`${apiBase}/api/shifts/active`).then(r => r.json()).catch(() => null);
+        if (cancel) return;
+        if (s?.id) {
+          setShift(s);
+          const sm = await fetch(`${apiBase}/api/pos/shifts/${s.id}/summary`).then(r => r.json()).catch(() => null);
+          if (!cancel && sm) setSum(sm);
+        } else {
+          setShift(null); setSum(null);
+        }
+      } catch {}
+    };
+    load();
+    const t1 = setInterval(load, 20_000);
+    const t2 = setInterval(() => setNow(Date.now()), 30_000);  // tick utk duration
+    return () => { cancel = true; clearInterval(t1); clearInterval(t2); };
+  }, [apiBase]);
+
+  if (!shift) return null;
+  const elapsedMin = Math.floor((now / 1000 - shift.opened_at) / 60);
+  const dur = elapsedMin >= 60 ? `${Math.floor(elapsedMin / 60)}h ${elapsedMin % 60}m` : `${elapsedMin}m`;
+  const revenue = sum?.revenue || 0;
+  const orders = sum?.orders || 0;
+
+  return (
+    <div style={{
+      display: "inline-flex", alignItems: "center", gap: 8,
+      padding: "5px 12px",
+      background: "rgba(16,185,129,0.1)",
+      border: "1px solid rgba(16,185,129,0.35)",
+      borderRadius: 999, fontFamily: "'Geist Mono',monospace",
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", boxShadow: "0 0 6px #10b981" }} />
+      <span style={{ fontSize: 10, color: "#10b981", fontWeight: 800, letterSpacing: 1 }}>SHIFT</span>
+      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.85)", fontWeight: 700 }}>{dur}</span>
+      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>·</span>
+      <span style={{ fontSize: 11, color: "#fbbf24", fontWeight: 800 }}>
+        {revenue > 0 ? `Rp ${Math.round(revenue/1000)}k` : "—"}
+      </span>
+      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>·</span>
+      <span style={{ fontSize: 11, color: "rgba(255,255,255,0.85)", fontWeight: 700 }}>{orders}×</span>
+    </div>
   );
 }
 
