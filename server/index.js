@@ -144,7 +144,7 @@ app.post("/api/admin/email-test", requireAdmin, express.json({ limit: "5mb" }), 
 });
 
 // ─── Z-Report email (frontend POSTs xlsx as base64) ──────────────────
-app.post("/api/reports/z/email", async (req, res) => {
+app.post("/api/reports/z/email", requireAdmin, async (req, res) => {
   try {
     const { recipients, subject, attachmentBase64, attachmentFilename, periodLabel } = req.body || {};
     if (!recipients || (Array.isArray(recipients) && !recipients.length)) {
@@ -951,7 +951,7 @@ app.patch("/api/orders/:id/status", (req, res) => {
 });
 
 // DELETE cancel order
-app.delete("/api/orders/:id", (req, res) => {
+app.delete("/api/orders/:id", requireAdmin, (req, res) => {
   // RBAC: cuma Manager+ atau Finance Manager bisa cancel/delete order
   const token = req.headers.authorization?.replace("Bearer ", "");
   const session = token && adminSessions.get(token);
@@ -1040,7 +1040,7 @@ app.get("/api/menu/available", (req, res) => {
 });
 
 // PATCH update menu item (price / availability)
-app.patch("/api/menu/:id", (req, res) => {
+app.patch("/api/menu/:id", requireAdmin, (req, res) => {
   const id  = parseInt(req.params.id);
   const idx = menu.findIndex(m => m.id === id);
   if (idx === -1) return res.status(404).json({ error: "Menu item not found" });
@@ -1062,7 +1062,7 @@ app.patch("/api/menu/:id", (req, res) => {
 });
 
 // ── MASTER ITEM: Create new menu item ──
-app.post("/api/menu", (req, res) => {
+app.post("/api/menu", requireAdmin, (req, res) => {
   const { cat, emoji, name, desc, price, freeToppings, popular } = req.body;
   if (!name || !price || !cat) return res.status(400).json({ error: "name, price, cat required" });
 
@@ -1093,7 +1093,7 @@ app.post("/api/menu", (req, res) => {
 });
 
 // ── MASTER ITEM: Delete menu item ──
-app.delete("/api/menu/:id", (req, res) => {
+app.delete("/api/menu/:id", requireAdmin, (req, res) => {
   const id = parseInt(req.params.id);
   const idx = menu.findIndex(m => m.id === id);
   if (idx === -1) return res.status(404).json({ error: "Item not found" });
@@ -1184,7 +1184,7 @@ app.put("/api/menu/:id", (req, res) => {
 // ── MASTER TOPPINGS: CRUD ──
 app.get("/api/toppings", (req, res) => res.json({ items: toppings, extraPrice: EXTRA_TOPPING_PRICE }));
 
-app.post("/api/toppings", (req, res) => {
+app.post("/api/toppings", requireAdmin, (req, res) => {
   const { id, name, group, price } = req.body;
   if (!name || !group) return res.status(400).json({ error: "name, group required" });
   const newId = id || (group[0].toLowerCase() + String(toppings.filter(t => t.group === group).length + 1).padStart(2, "0"));
@@ -1193,7 +1193,7 @@ app.post("/api/toppings", (req, res) => {
   res.json(topping);
 });
 
-app.delete("/api/toppings/:id", (req, res) => {
+app.delete("/api/toppings/:id", requireAdmin, (req, res) => {
   const idx = toppings.findIndex(t => t.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Topping not found" });
   const removed = toppings.splice(idx, 1)[0];
@@ -1203,7 +1203,7 @@ app.delete("/api/toppings/:id", (req, res) => {
 // ── MASTER CATEGORIES ──
 app.get("/api/categories", (req, res) => res.json(categories));
 
-app.post("/api/categories", (req, res) => {
+app.post("/api/categories", requireAdmin, (req, res) => {
   const { id, name, emoji, color } = req.body;
   if (!id || !name) return res.status(400).json({ error: "id, name required" });
   if (categories.find(c => c.id === id)) return res.status(409).json({ error: "Category already exists" });
@@ -1216,7 +1216,7 @@ app.post("/api/categories", (req, res) => {
 const expenses = [];
 let expenseCounter = 0;
 
-app.post("/api/finance/expenses", (req, res) => {
+app.post("/api/finance/expenses", requireAdmin, (req, res) => {
   const { category, description, amount, date, notes } = req.body;
   if (!category || !amount) return res.status(400).json({ error: "category, amount required" });
   expenseCounter++;
@@ -1538,7 +1538,7 @@ console.log(`🎁 Loyalty: ${loyalty.getConfig().enabled ? 'ON (1pt/Rp'+loyalty.
 
 // API endpoints
 app.get("/api/backup", (req, res) => res.json({ backups: listBackups(), retention: BACKUP_RETENTION, intervalMin: Math.round(BACKUP_INTERVAL_MS/60000) }));
-app.post("/api/backup", (req, res) => res.json(backupNow("manual")));
+app.post("/api/backup", requireAdmin, (req, res) => res.json(backupNow("manual")));
 
 
 // ═══════════════════════════════════════════════════════════════
@@ -2087,7 +2087,7 @@ app.get("/api/marquee", (req, res) => {
 
 
 // POST /api/promo — create new promo (admin)
-app.post("/api/promo", (req, res) => {
+app.post("/api/promo", requireAdmin, (req, res) => {
   const { code, type, value, desc, minOrder, maxDiscount, usageLimit, validUntil, active, forMember, bogoConfig, requiredPaymentHint } = req.body;
   if (!code || !type) return res.status(400).json({ error: "code & type required" });
   if (type !== "bogo" && !value) return res.status(400).json({ error: "value required" });
@@ -2135,7 +2135,7 @@ app.get("/api/promo/:id", (req, res) => {
 });
 
 // PATCH /api/promo/:id — update promo (SECURITY: whitelist fields)
-app.patch("/api/promo/:id", (req, res) => {
+app.patch("/api/promo/:id", requireAdmin, (req, res) => {
   const idx = promoCodes.findIndex(p => p.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Promo not found" });
   const ALLOWED = ['code', 'name', 'description', 'discount_type', 'discount_value', 'min_purchase', 'max_discount', 'valid_from', 'valid_to', 'usage_limit', 'is_active'];
@@ -2156,7 +2156,7 @@ app.patch("/api/promo/:id", (req, res) => {
 });
 
 // DELETE /api/promo/:id — delete promo (RBAC: Marketing Manager / Manager+)
-app.delete("/api/promo/:id", (req, res) => {
+app.delete("/api/promo/:id", requireAdmin, (req, res) => {
   const token = req.headers.authorization?.replace("Bearer ", "");
   const session = token && adminSessions.get(token);
   if (!session) return res.status(401).json({ error: "Not authenticated" });
@@ -2271,7 +2271,7 @@ app.post("/api/customers", (req, res) => {
 //   mode: "dry_run" | "commit",
 //   dedup_strategy: "skip" | "merge" | "overwrite",   // kalau phone duplicate
 // }
-app.post("/api/customers/import", (req, res) => {
+app.post("/api/customers/import", requireAdmin, (req, res) => {
   const b = req.body || {};
   const rows = Array.isArray(b.rows) ? b.rows : [];
   const mode = b.mode === "commit" ? "commit" : "dry_run";
@@ -2360,7 +2360,7 @@ app.post("/api/customers/import", (req, res) => {
 
 // SECURITY: WHITELIST fields — sebelumnya {...req.body} → mass assignment risk.
 // Bug hunter bisa set company_id, role, premium_until, dll via PATCH.
-app.patch("/api/customers/:id", (req, res) => {
+app.patch("/api/customers/:id", requireAdmin, (req, res) => {
   const idx = customers.findIndex(c => c.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Customer not found" });
   // Scope check: tenant cuma boleh edit customer own company
@@ -2385,7 +2385,7 @@ app.patch("/api/customers/:id", (req, res) => {
 });
 
 // DELETE customer — REQUIRE Manager+ level (canDo: customers.delete)
-app.delete("/api/customers/:id", (req, res) => {
+app.delete("/api/customers/:id", requireAdmin, (req, res) => {
   const token = req.headers.authorization?.replace("Bearer ", "");
   const session = token && adminSessions.get(token);
   if (!session) return res.status(401).json({ error: "Not authenticated" });
@@ -2410,7 +2410,7 @@ app.get("/api/customers/stats", (req, res) => {
 });
 
 // POST send WhatsApp tracking link
-app.post("/api/customers/send-wa", async (req, res) => {
+app.post("/api/customers/send-wa", requireAdmin, async (req, res) => {
   const { phone, orderId, customerName } = req.body;
   if (!phone || !orderId) return res.status(400).json({ error: "phone and orderId required" });
 
@@ -3380,7 +3380,7 @@ app.get("/api/payment/methods", (req, res) => {
 });
 
 // PATCH toggle (admin only - requireAdmin should be applied but for now open)
-app.patch("/api/payment/methods", (req, res) => {
+app.patch("/api/payment/methods", requireAdmin, (req, res) => {
   const updates = req.body || {};
   const validKeys = ["cash", "qris"];
   for (const key of Object.keys(updates)) {
@@ -3695,7 +3695,7 @@ app.post("/api/auth/change-password", (req, res) => {
 });
 
 // ── Set password (admin sets for another user) ────────────────────────
-app.post("/api/auth/users/:id/set-password", (req, res) => {
+app.post("/api/auth/users/:id/set-password", requireAdmin, (req, res) => {
   const token = req.headers.authorization?.replace("Bearer ", "");
   const session = token && adminSessions.get(token);
   if (!session || !["super-admin", "owner"].includes(session.role)) return res.status(403).json({ error: "Hanya super-admin/owner yang boleh reset password" });
@@ -3795,7 +3795,7 @@ app.get("/api/auth/users", (req, res) => {
   })));
 });
 
-app.post("/api/auth/users", (req, res) => {
+app.post("/api/auth/users", requireAdmin, (req, res) => {
   const { isSuperAdmin, companyId } = _authScope(req);
   const { name, pin, role } = req.body;
   if (!name || !pin || !role) return res.status(400).json({ error: "name, pin, role required" });
@@ -3814,7 +3814,7 @@ app.post("/api/auth/users", (req, res) => {
   res.status(201).json({ ...user, pin: "••••••" });
 });
 
-app.patch("/api/auth/users/:id", (req, res) => {
+app.patch("/api/auth/users/:id", requireAdmin, (req, res) => {
   const { isSuperAdmin, companyId } = _authScope(req);
   const idx = adminUsers.findIndex(u => u.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "User not found" });
@@ -3897,7 +3897,7 @@ function isWeakPin(pin) {
   return false;
 }
 
-app.delete("/api/auth/users/:id", (req, res) => {
+app.delete("/api/auth/users/:id", requireAdmin, (req, res) => {
   const { isSuperAdmin, companyId } = _authScope(req);
   const user = adminUsers.find(u => u.id === req.params.id);
   if (!user) return res.status(404).json({ error: "User not found" });
@@ -3914,7 +3914,7 @@ app.delete("/api/auth/users/:id", (req, res) => {
 
 // Unlock a locked account — clears failed_login_count + locked_until.
 // Multi-tenant: tenant scope hanya bisa unlock user-nya sendiri.
-app.post("/api/auth/users/:id/unlock", (req, res) => {
+app.post("/api/auth/users/:id/unlock", requireAdmin, (req, res) => {
   const { isSuperAdmin, companyId } = _authScope(req);
   adminUsers = db.loadAllAdminUsers();
   const user = adminUsers.find(u => u.id === req.params.id);
@@ -3930,7 +3930,7 @@ app.post("/api/auth/users/:id/unlock", (req, res) => {
 
 // Unlock ALL locked accounts — super-admin emergency button (cross-tenant).
 // Tenant scope: scoped to own company.
-app.post("/api/auth/users/unlock-all", (req, res) => {
+app.post("/api/auth/users/unlock-all", requireAdmin, (req, res) => {
   const { isSuperAdmin, companyId } = _authScope(req);
   adminUsers = db.loadAllAdminUsers();
   let locked = adminUsers.filter(u => u.locked_until || u.failed_login_count > 0);
@@ -4077,7 +4077,7 @@ app.get("/api/tables/:id", (req, res) => {
   res.json(table);
 });
 
-app.patch("/api/tables/:id", (req, res) => {
+app.patch("/api/tables/:id", requireAdmin, (req, res) => {
   const idx = tables.findIndex(t => t.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: "Table not found" });
   // SECURITY: whitelist fields
@@ -4092,7 +4092,7 @@ app.patch("/api/tables/:id", (req, res) => {
   res.json(tables[idx]);
 });
 
-app.post("/api/tables", (req, res) => {
+app.post("/api/tables", requireAdmin, (req, res) => {
   const { name, zone, capacity } = req.body;
   const id = `T${String(tables.length+1).padStart(2,"0")}`;
   const table = { id, name: name||id, zone: zone||"A", capacity: Number(capacity)||4, status:"available", qrCode:id };
@@ -4100,7 +4100,7 @@ app.post("/api/tables", (req, res) => {
   res.status(201).json(table);
 });
 
-app.delete("/api/tables/:id", (req, res) => {
+app.delete("/api/tables/:id", requireAdmin, (req, res) => {
   tables = tables.filter(t => t.id !== req.params.id);
   db.deleteTable(req.params.id);
   res.json({ ok: true });
@@ -4166,7 +4166,7 @@ function dayReportHtml(r) {
   </div>`;
 }
 
-app.post("/api/day/close", async (req, res) => {
+app.post("/api/day/close", requireAdmin, async (req, res) => {
   dayState = { closed: true, closedAt: Date.now(), closedBy: (req.body && req.body.by) || "Manager" };
   saveDayState();
   // Closing the day also ends any active shift so ordering is fully blocked.
@@ -4202,7 +4202,7 @@ app.post("/api/day/close", async (req, res) => {
   res.json({ ...dayState, report, reportHtml, emailed });
 });
 
-app.post("/api/day/open", (req, res) => {
+app.post("/api/day/open", requireAdmin, (req, res) => {
   dayState = { closed: false, closedAt: null, closedBy: null, openedAt: Date.now(), openedBy: (req.body && req.body.by) || "Manager" };
   saveDayState();
   console.log(`☀️ Hari dibuka oleh ${dayState.openedBy}`);
@@ -4234,7 +4234,7 @@ app.get("/api/shifts/active", (req, res) => {
 });
 
 // 🔧 Emergency force-close (clears active shift state without strict validation)
-app.post("/api/shifts/force-close", (req, res) => {
+app.post("/api/shifts/force-close", requireAdmin, (req, res) => {
   if (!activeShift) return res.status(404).json({ error: "Tidak ada shift aktif" });
   const closed = {
     ...normalizeShift(activeShift),
@@ -4388,7 +4388,7 @@ app.post("/api/shifts/close", (req, res) => {
 
 // ─── STOCK / AVAILABILITY REAL-TIME ──────────────────────────────────────────
 // Broadcast menu update to all kiosks
-app.post("/api/menu/:id/stock", (req, res) => {
+app.post("/api/menu/:id/stock", requireSession, (req, res) => {
   const id  = parseInt(req.params.id);
   const idx = menu.findIndex(m => m.id === id);
   if (idx === -1) return res.status(404).json({ error: "Item not found" });
@@ -4403,7 +4403,7 @@ app.post("/api/menu/:id/stock", (req, res) => {
 });
 
 // Bulk stock update
-app.post("/api/menu/stock/bulk", (req, res) => {
+app.post("/api/menu/stock/bulk", requireAdmin, (req, res) => {
   const { updates } = req.body; // [{ id, avail }]
   const changed = [];
   (updates||[]).forEach(u => {
@@ -4853,7 +4853,7 @@ function _persistRefund(order) {
 
 // POST cancel order
 // body: { reason, cancelledBy }
-app.post("/api/orders/:id/cancel", (req, res) => {
+app.post("/api/orders/:id/cancel", requireSession, (req, res) => {
   try {
     const { reason, cancelledBy, managerPin } = req.body || {};
 
@@ -4937,7 +4937,7 @@ app.post("/api/orders/:id/cancel", (req, res) => {
 
 // POST refund order
 // body: { amount, reason, refundedBy, fullRefund? }
-app.post("/api/orders/:id/refund", (req, res) => {
+app.post("/api/orders/:id/refund", requireAdmin, (req, res) => {
   try {
     const { amount, reason, refundedBy, fullRefund, managerPin } = req.body || {};
 
@@ -5069,7 +5069,7 @@ app.get("/api/order-audit", (req, res) => {
 // ═══════════════════════════════════════════════════════════
 // PATCH ORDER ITEMS (for adding/updating items in tab_open order)
 // ═══════════════════════════════════════════════════════════
-app.patch("/api/orders/:id/items", (req, res) => {
+app.patch("/api/orders/:id/items", requireSession, (req, res) => {
   try {
     const order = orders.find(o => o.id === req.params.id);
     if (!order) return res.status(404).json({ error: "Order not found" });
