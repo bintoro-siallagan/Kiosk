@@ -3326,14 +3326,23 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: info.changes > 0, expires_at: expiresAt, refreshed: info.changes });
   });
   router.get('/tickets', (req, res) => {
-    let sql = `SELECT t.*, f.title AS film_title, st.name AS studio_name,
+    let sql = `SELECT t.*, f.title AS film_title, st.name AS studio_name, st.outlet AS outlet,
                       s.show_date, s.start_time
                FROM cinema_tickets t
                LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
                LEFT JOIN cinema_films    f ON f.id = s.film_id
                LEFT JOIN cinema_studios  st ON st.id = s.studio_id`;
     const p = [];
-    if (req.query.showtime) { sql += ` WHERE t.showtime_id = ?`; p.push(req.query.showtime); }
+    const conditions = [];
+    if (req.query.showtime) { conditions.push(`t.showtime_id = ?`); p.push(req.query.showtime); }
+    // Outlet scope from session — manager bound to outlet hanya lihat tickets outlet itu.
+    // Admin/owner/HQ-access (no outlet_code) → see all.
+    const scope = typeof global.getSessionOutlet === 'function' ? global.getSessionOutlet(req) : { isHQ: true };
+    if (!scope.isHQ && scope.outletCode) {
+      conditions.push(`st.outlet = ?`);
+      p.push(scope.outletCode);
+    }
+    if (conditions.length) sql += ` WHERE ` + conditions.join(' AND ');
     sql += ` ORDER BY t.sold_at DESC`;
     res.json({ tickets: db.prepare(sql).all(...p) });
   });
@@ -3343,6 +3352,29 @@ function setupCinema(app, opts = {}) {
     if (!b.showtime_id || !seats.length) return res.status(400).json({ error: 'showtime_id + seats wajib diisi' });
     const st = db.prepare(`SELECT * FROM cinema_showtimes WHERE id = ?`).get(b.showtime_id);
     if (!st) return res.status(404).json({ error: 'showtime tidak ditemukan' });
+
+    // FRAUD CHECK: cross-outlet selling block.
+    // Kalau cashier bound ke outlet via admin_users.outlet_code, dan body kirim outlet_code,
+    // kedua HARUS match. Sekaligus prevent kasir jual tiket dari outlet lain.
+    if (b.outlet_code && b.cashier_name) {
+      try {
+        const kasir = db.prepare(`SELECT outlet_code FROM admin_users WHERE name = ?`).get(b.cashier_name);
+        if (kasir && kasir.outlet_code && kasir.outlet_code !== b.outlet_code) {
+          console.warn(`🚨 CINEMA OUTLET MISMATCH: ${b.cashier_name} (bound ${kasir.outlet_code}) sell from ${b.outlet_code}`);
+          return res.status(403).json({
+            ok: false,
+            error: `Kasir ${b.cashier_name} terikat ke outlet ${kasir.outlet_code}, tapi jual dari ${b.outlet_code}. Hubungi Manager.`,
+          });
+        }
+      } catch (e) { console.warn('[cinema outlet-check]', e.message); }
+    }
+    // Also block: showtime.outlet != body.outlet_code (kasir Bandung gak boleh jual showtime Jakarta)
+    if (b.outlet_code && st.outlet && st.outlet !== b.outlet_code) {
+      return res.status(403).json({
+        ok: false,
+        error: `Showtime ini di outlet ${st.outlet}, bukan ${b.outlet_code}. Pilih showtime outlet yg benar.`,
+      });
+    }
 
     // Lock: refuse sale only when showtime fully closed / sold_out / cancelled.
     // Allow 'running' — walk-in / late-entry customer masih bisa beli tiket

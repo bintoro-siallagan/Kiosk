@@ -154,6 +154,9 @@ try { db.exec("ALTER TABLE admin_users ADD COLUMN locked_until INTEGER"); } catc
 try { db.exec("ALTER TABLE admin_users ADD COLUMN company_id INTEGER"); } catch {}
 // P6 — Per-user vertical filter (fnb|cinema|hybrid|null=inherit company)
 try { db.exec("ALTER TABLE admin_users ADD COLUMN vertical TEXT"); } catch {}
+// Per-user outlet binding — kasir login → POS auto-scope ke outlet ini.
+// Cinema POS filter showtimes per outlet, F&B POS context-aware reports, dll.
+try { db.exec("ALTER TABLE admin_users ADD COLUMN outlet_code TEXT"); } catch {}
 try { db.exec("ALTER TABLE orders ADD COLUMN company_id INTEGER"); } catch {}
 try { db.exec("CREATE INDEX IF NOT EXISTS idx_orders_company ON orders(company_id)"); } catch {}
 try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users(username) WHERE username IS NOT NULL"); } catch {}
@@ -516,11 +519,11 @@ const adminUserStmts = {
     (id, name, pin, role, active, created_at,
      username, email, password_hash, password_salt, password_changed_at,
      must_change_password, last_login_at, last_login_ip,
-     failed_login_count, locked_until, company_id, vertical)
+     failed_login_count, locked_until, company_id, vertical, outlet_code)
     VALUES (@id, @name, @pin, @role, @active, @created_at,
      @username, @email, @password_hash, @password_salt, @password_changed_at,
      @must_change_password, @last_login_at, @last_login_ip,
-     @failed_login_count, @locked_until, @company_id, @vertical)`),
+     @failed_login_count, @locked_until, @company_id, @vertical, @outlet_code)`),
   selectAll: db.prepare(`SELECT * FROM admin_users ORDER BY id`),
   delete:    db.prepare(`DELETE FROM admin_users WHERE id = ?`),
 };
@@ -546,6 +549,7 @@ const adminUserToRow = u => {
     locked_until: u.locked_until || null,
     company_id: companyId,
     vertical,
+    outlet_code: u.outlet_code || null,
   };
 };
 const rowToAdminUser = r => ({
@@ -561,6 +565,7 @@ const rowToAdminUser = r => ({
   // Multi-tenant: company_id (NULL = karys super-admin)
   company_id: r.company_id ?? null,
   vertical: r.vertical || null,
+  outlet_code: r.outlet_code || null,
 });
 function loadAllAdminUsers() { return adminUserStmts.selectAll.all().map(rowToAdminUser); }
 function insertAdminUser(u)  { adminUserStmts.insert.run(adminUserToRow(u)); }

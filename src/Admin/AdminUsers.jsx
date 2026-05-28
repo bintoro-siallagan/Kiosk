@@ -195,6 +195,23 @@ export default function AdminUsers({ apiBase = "" }) {
               <button onClick={() => setEditVerticalUser(u)} title="Set vertical access" style={verticalBadge(u.vertical)}>
                 {u.vertical === "fnb" ? "🍔 FNB" : u.vertical === "cinema" ? "🎬 Cinema" : u.vertical === "hybrid" ? "🌐 Hybrid" : "⤵ Inherit"}
               </button>
+              {/* Branch / Outlet code badge — visible at glance */}
+              {u.outlet_code ? (
+                <span title={`Outlet binding: ${u.outlet_code}`} style={{
+                  display: "inline-flex", alignItems: "center", gap: 4,
+                  padding: "3px 8px", borderRadius: 4,
+                  background: "rgba(56,189,248,0.12)", border: "1px solid rgba(56,189,248,0.35)",
+                  color: "#38BDF8", fontSize: 10, fontWeight: 800,
+                  fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5,
+                }}>📍 {u.outlet_code}</span>
+              ) : (
+                <span title="HQ Access — user lihat data semua outlet" style={{
+                  padding: "3px 8px", borderRadius: 4,
+                  background: "rgba(168,85,247,0.1)", border: "1px solid rgba(168,85,247,0.3)",
+                  color: "#c4b5fd", fontSize: 10, fontWeight: 800,
+                  fontFamily: "'Geist Mono',monospace", letterSpacing: 0.5,
+                }}>🌐 HQ ALL</span>
+              )}
               {u.is_locked && (
                 <button onClick={() => unlockOne(u)} disabled={busy} style={{...actionBtn, background: RED, color: "#fff", borderColor: RED}}>🔓 Unlock</button>
               )}
@@ -313,13 +330,26 @@ function EditVerticalModal({ user, API, token, onClose, onSaved }) {
   );
 }
 
-// Edit user: nama, role, vertical (3-in-1, biar gak perlu klik 3 modal terpisah)
+// Edit user: nama, role, vertical, outlet binding (4-in-1)
 function EditUserModal({ user, API, token, roles, onClose, onSaved }) {
   const [name, setName] = useState(user.name || "");
   const [role, setRole] = useState(user.role || "");
   const [vertical, setVertical] = useState(user.vertical || "");
+  const [outletCode, setOutletCode] = useState(user.outlet_code || "");
+  const [outlets, setOutlets] = useState([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+
+  // Load outlets — filter by selected vertical (kalau ada)
+  useEffect(() => {
+    fetch(`${API}/api/outlet-master`).then(r => r.json()).then(d => {
+      setOutlets(d.outlets || []);
+    }).catch(() => {});
+  }, [API]);
+
+  const filteredOutlets = vertical
+    ? outlets.filter(o => o.vertical === vertical || o.vertical === "hybrid")
+    : outlets;
 
   const save = async () => {
     setErr("");
@@ -330,16 +360,19 @@ function EditUserModal({ user, API, token, roles, onClose, onSaved }) {
       const r = await fetch(`${API}/api/auth/users/${user.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: token ? `Bearer ${token}` : undefined },
-        body: JSON.stringify({ name: name.trim(), role, vertical: vertical || null }),
+        body: JSON.stringify({ name: name.trim(), role, vertical: vertical || null, outlet_code: outletCode || null }),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j?.error || "Gagal update user");
-      onSaved(`✓ ${name} updated — role: ${role}${vertical ? `, vertical: ${vertical}` : ""}`);
+      onSaved(`✓ ${name} updated — role: ${role}${vertical ? `, vertical: ${vertical}` : ""}${outletCode ? `, outlet: ${outletCode}` : ""}`);
     } catch (e) { setErr(e.message); }
     setBusy(false);
   };
 
-  const dirty = name.trim() !== (user.name || "") || role !== (user.role || "") || (vertical || "") !== (user.vertical || "");
+  const dirty = name.trim() !== (user.name || "")
+    || role !== (user.role || "")
+    || (vertical || "") !== (user.vertical || "")
+    || (outletCode || "") !== (user.outlet_code || "");
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20, backdropFilter: "blur(6px)" }}>
@@ -372,15 +405,41 @@ function EditUserModal({ user, API, token, roles, onClose, onSaved }) {
           </select>
         </div>
 
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>VERTICAL ACCESS</div>
-          <select value={vertical} onChange={e => setVertical(e.target.value)}
+          <select value={vertical} onChange={e => { setVertical(e.target.value); /* reset outlet kalau switch vertical */ if (outletCode) { const o = outlets.find(x => x.code === outletCode); if (o && o.vertical !== e.target.value && o.vertical !== "hybrid" && e.target.value) setOutletCode(""); } }}
             style={{ width: "100%", padding: 10, background: "rgba(0,0,0,0.4)", border: BORDER, borderRadius: 8, color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box", outline: "none", cursor: "pointer" }}>
             <option value="">⤵ Inherit dari company (default)</option>
             <option value="fnb">🍔 F&B Only</option>
             <option value="cinema">🎬 Cinema Only</option>
             <option value="hybrid">🌐 Hybrid — F&B + Cinema</option>
           </select>
+        </div>
+
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>
+            🏬 OUTLET ACCESS
+          </div>
+          <select value={outletCode} onChange={e => setOutletCode(e.target.value)}
+            style={{ width: "100%", padding: 10, background: "rgba(0,0,0,0.4)", border: BORDER, borderRadius: 8, color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box", outline: "none", cursor: "pointer" }}>
+            <option value="">🌐 SEMUA OUTLET (HQ Access — lihat data semua lokasi)</option>
+            <optgroup label="── Outlet Spesifik ──">
+              {filteredOutlets.map(o => (
+                <option key={o.code} value={o.code}>
+                  📍 {o.code} · {o.name}{o.area ? ` (${o.area})` : ""}
+                </option>
+              ))}
+            </optgroup>
+          </select>
+          {outletCode ? (
+            <div style={{ marginTop: 6, padding: "8px 12px", background: "rgba(56,189,248,0.08)", border: "1px solid rgba(56,189,248,0.25)", borderRadius: 6, fontSize: 11.5, color: "#7dd3fc", lineHeight: 1.55 }}>
+              📍 <strong>Outlet-bound:</strong> User hanya lihat data outlet ini (sales, tickets, reports). Cocok untuk Outlet Manager / Cashier.
+            </div>
+          ) : (
+            <div style={{ marginTop: 6, padding: "8px 12px", background: "rgba(168,85,247,0.08)", border: "1px solid rgba(168,85,247,0.25)", borderRadius: 6, fontSize: 11.5, color: "#c4b5fd", lineHeight: 1.55 }}>
+              🌐 <strong>HQ Access:</strong> User lihat data semua outlet. Cocok untuk Owner / Regional Manager / Auditor.
+            </div>
+          )}
         </div>
 
         {err && <div style={{ padding: "10px 12px", background: "rgba(239,68,68,0.1)", border: `1px solid ${RED}55`, borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 12 }}>⚠ {err}</div>}

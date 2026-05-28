@@ -333,10 +333,15 @@ export default function POSConfirm({ order, cashier, onBack, onCancel, onSuccess
           status,
           kasir: cashier?.name || null,
           source: "pos",
+          // Outlet tag — backend validates kasir.outlet_code match (anti-fraud)
+          outlet_code: (typeof localStorage !== "undefined") ? (localStorage.getItem("posOutletDevice") || localStorage.getItem("posOutlet") || null) : null,
           midtransId: midtransOrderId || null
         })
       });
-      if (!r.ok) throw new Error("Server error " + r.status);
+      if (!r.ok) {
+        const errData = await r.json().catch(() => ({}));
+        throw new Error(errData.error || "Server error " + r.status);
+      }
       const saved = await r.json();
 
       // Mark table occupied for dine-in

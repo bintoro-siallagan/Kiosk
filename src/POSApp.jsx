@@ -17,6 +17,7 @@ import PromoBroadcastBanner from "./PromoBroadcastBanner.jsx";
 import OfflineBanner from "./OfflineBanner.jsx";
 import TouchNumpad from "./components/TouchNumpad.jsx";
 import FullscreenPrompt from "./components/FullscreenPrompt.jsx";
+import DeviceOutletSetup, { getDeviceOutlet } from "./components/DeviceOutletSetup.jsx";
 import API_HOST from "./apiBase.js";
 
 
@@ -136,9 +137,12 @@ export default function POSApp() {
 
   const handleLogin = (user) => {
     sessionStorage.setItem("posCashier", JSON.stringify(user));
+    // Auto-bind outlet dari user record kalau admin sudah set
+    if (user?.outlet_code) {
+      localStorage.setItem("posOutlet", user.outlet_code);
+    }
     setCashier(user);
     setView("home");
-    // HRIS — auto check-in absensi pas kasir login POS (409 = sudah check-in, diabaikan)
     fetch(`${API_HOST}/api/hris/checkin`, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ staff_name: user?.name, role: user?.role }),
@@ -181,6 +185,12 @@ export default function POSApp() {
     if (checklist && !checklist.closing?.done) { setClosingChecklist(true); return; }
     proceedCloseShift();
   };
+
+  // GATE: device outlet setup wajib done dulu sebelum login.
+  // Once set, semua kasir di device ini auto-bind ke outlet sama.
+  if (!getDeviceOutlet()) {
+    return <DeviceOutletSetup vertical="fnb" />;
+  }
 
   if (!cashier) return <POSKasirLogin apiBase={API_HOST} onSelectKasir={handleLogin} />;
 

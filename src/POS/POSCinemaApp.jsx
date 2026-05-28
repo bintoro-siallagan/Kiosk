@@ -20,6 +20,7 @@ import QRCode from "qrcode";
 import { HelpButton } from "../components/HelpModal.jsx";
 import TouchNumpad, { showNumpad } from "../components/TouchNumpad.jsx";
 import UpsellTicker from "../components/UpsellTicker.jsx";
+import DeviceOutletSetup, { getDeviceOutlet } from "../components/DeviceOutletSetup.jsx";
 import API_HOST from "../apiBase.js";
 
 
@@ -172,6 +173,10 @@ export default function POSCinemaApp() {
 
   const handleLogin = (kasir) => {
     sessionStorage.setItem("posCashier", JSON.stringify(kasir));
+    // Auto-bind outlet dari user record kalau admin sudah set
+    if (kasir?.outlet_code) {
+      localStorage.setItem("posOutlet", kasir.outlet_code);
+    }
     setCashier(kasir);
   };
   const handleLogout = () => {
@@ -254,6 +259,11 @@ export default function POSCinemaApp() {
       }).catch(() => {});
     }
   }, [stage]);
+
+  // GATE: device outlet setup wajib done dulu sebelum login.
+  if (!getDeviceOutlet()) {
+    return <DeviceOutletSetup vertical="cinema" />;
+  }
 
   if (!cashier) return <POSKasirLogin apiBase={API_HOST} onSelectKasir={handleLogin} />;
 
@@ -364,14 +374,19 @@ function TopBar({ cashier, stage, onLogout, onHome }) {
   const [outletInfo, setOutletInfo] = useState({ code: null, name: null, area: null });
   const [showOutletPicker, setShowOutletPicker] = useState(false);
   const [allOutlets, setAllOutlets] = useState([]);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [unlockPin, setUnlockPin] = useState("");
+  const [unlockErr, setUnlockErr] = useState("");
+  // Device-locked: outlet di-set via wizard. Kasir gak bisa ganti tanpa Manager PIN.
+  const isDeviceLocked = typeof window !== "undefined" && !!localStorage.getItem("posOutletDevice");
   useEffect(() => { const id = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(id); }, []);
   useEffect(() => {
+    // Priority: device-level → legacy posOutlet
     const outletCode = new URLSearchParams(window.location.search).get("outlet")
+      || localStorage.getItem("posOutletDevice")
       || localStorage.getItem("posOutlet") || "";
-    // Fetch outlets selalu — buat picker dropdown + buat resolve current code
     fetch(`${API_HOST}/api/outlet-master`).then(r => r.json()).then(d => {
       const outlets = d.outlets || [];
-      // Cinema POS — filter ke vertical cinema saja (lebih relevan)
       const cinemaOutlets = outlets.filter(o => o.vertical === "cinema" || o.vertical === "hybrid");
       setAllOutlets(cinemaOutlets.length > 0 ? cinemaOutlets : outlets);
       if (outletCode) {
@@ -380,9 +395,36 @@ function TopBar({ cashier, stage, onLogout, onHome }) {
       }
     }).catch(() => {});
   }, []);
+  // Device-bound: changing outlet via picker rebinds device (gak cuma session)
   const pickOutlet = (code) => {
-    localStorage.setItem("posOutlet", code);
+    localStorage.setItem("posOutletDevice", code);
+    localStorage.setItem("posOutlet", code); // legacy compat
     location.reload();
+  };
+  // Manager PIN unlock — validate via /api/auth/login dgn role check
+  const tryUnlock = async () => {
+    setUnlockErr("");
+    if (unlockPin.length !== 6) { setUnlockErr("PIN harus 6 digit"); return; }
+    try {
+      const r = await fetch(`${API_HOST}/api/auth/login`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: unlockPin }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.ok) throw new Error(j?.error || "PIN salah");
+      // Only manager+ roles can reset device outlet
+      const role = (j.user?.role || j.role || "").toLowerCase();
+      if (!["super-admin","superadmin","admin","manager","owner","manager-cinema"].some(r => role.includes(r))) {
+        throw new Error(`Role "${role}" tidak punya akses reset outlet`);
+      }
+      // Pass — open picker for 60s
+      setShowUnlockModal(false);
+      setShowOutletPicker(true);
+      setUnlockPin("");
+      setTimeout(() => setShowOutletPicker(false), 60_000);
+    } catch (e) {
+      setUnlockErr(e.message || "PIN salah");
+    }
   };
   return (
     <div style={S.topbar} className="topbar-glass">
@@ -392,9 +434,16 @@ function TopBar({ cashier, stage, onLogout, onHome }) {
           <div style={{ fontSize: 19, fontWeight: 750, color: "#fff", letterSpacing: -0.4 }}>POS Cinema</div>
           <div style={{ fontSize: 9.5, color: TH.dim, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase" }}>karyaOS · Ticketing Counter</div>
         </div>
-        {/* Branch/outlet badge — kasir tau di mana lokasinya. Klik → outlet picker dropdown */}
+        {/* Branch/outlet badge — kalau device-locked: read-only + 🔒, klik → Manager PIN modal */}
         <div style={{ position: "relative" }}>
-          <button onClick={() => setShowOutletPicker(s => !s)} style={{
+          <button onClick={() => {
+            if (isDeviceLocked && !showOutletPicker) {
+              // Locked — minta Manager PIN dulu
+              setShowUnlockModal(true);
+            } else {
+              setShowOutletPicker(s => !s);
+            }
+          }} style={{
             padding: "5px 11px", borderRadius: 999,
             background: outletInfo.name ? "rgba(168,85,247,0.12)" : "rgba(245,158,11,0.1)",
             border: outletInfo.name ? "1px solid rgba(168,85,247,0.4)" : "1px solid rgba(245,158,11,0.3)",
@@ -403,13 +452,13 @@ function TopBar({ cashier, stage, onLogout, onHome }) {
             fontFamily: "'Geist Mono',monospace",
             display: "inline-flex", alignItems: "center", gap: 6,
             cursor: "pointer",
-          }} title={outletInfo.name ? `Klik ganti outlet · current: ${outletInfo.code}` : "Klik pilih outlet"}>
+          }} title={isDeviceLocked ? "🔒 Device-locked outlet. Klik untuk reset (Manager PIN)" : (outletInfo.name ? `Klik ganti outlet · current: ${outletInfo.code}` : "Klik pilih outlet")}>
             {outletInfo.name ? (
               <>
-                <span>📍</span>
+                <span>{isDeviceLocked ? "🔒" : "📍"}</span>
                 <span>{outletInfo.name}</span>
                 {outletInfo.area && outletInfo.area !== "-" && <span style={{ color: "#9ca3af", fontWeight: 500 }}>· {outletInfo.area}</span>}
-                <span style={{ opacity: 0.6, marginLeft: 4 }}>▾</span>
+                {!isDeviceLocked && <span style={{ opacity: 0.6, marginLeft: 4 }}>▾</span>}
               </>
             ) : (
               <>⚠ PILIH OUTLET ▾</>
@@ -449,6 +498,61 @@ function TopBar({ cashier, stage, onLogout, onHome }) {
         </div>
         {stage !== "home" && (
           <button onClick={onHome} className="ghost-btn" style={S.ghostBtn}>← Home</button>
+        )}
+
+        {/* Manager PIN unlock modal — show when device-locked + user clicks badge */}
+        {showUnlockModal && (
+          <div onClick={() => setShowUnlockModal(false)} style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)",
+            display: "flex", alignItems: "center", justifyContent: "center", zIndex: 99999, padding: 20,
+          }}>
+            <div onClick={e => e.stopPropagation()} style={{
+              width: "min(420px, 100%)", background: "rgba(13,17,23,0.97)",
+              border: "1px solid rgba(239,68,68,0.4)", borderRadius: 16, padding: 28,
+              boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+            }}>
+              <div style={{ textAlign: "center", marginBottom: 18 }}>
+                <div style={{ fontSize: 56, marginBottom: 10 }}>🔒</div>
+                <div style={{ fontSize: 11, color: "#f87171", letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 6 }}>● DEVICE LOCKED</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", marginBottom: 6 }}>Manager PIN Required</div>
+                <div style={{ fontSize: 12, color: "#9ca3af", lineHeight: 1.5 }}>
+                  Outlet device terkunci. Hanya Manager/Admin yang boleh reset outlet device ini.
+                </div>
+              </div>
+              <input
+                type="password" inputMode="numeric" maxLength={6}
+                value={unlockPin}
+                onChange={e => setUnlockPin(e.target.value.replace(/\D/g, ""))}
+                onKeyDown={e => e.key === "Enter" && tryUnlock()}
+                placeholder="• • • • • •"
+                autoFocus
+                style={{
+                  width: "100%", padding: "14px 18px", marginBottom: 12,
+                  background: "rgba(0,0,0,0.5)", border: "1px solid rgba(239,68,68,0.3)",
+                  borderRadius: 10, color: "#fff", fontSize: 22, textAlign: "center",
+                  letterSpacing: 14, fontFamily: "'Geist Mono',monospace", fontWeight: 800,
+                  boxSizing: "border-box", outline: "none",
+                }} />
+              {unlockErr && <div style={{ padding: "8px 12px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, fontSize: 12, color: "#fca5a5", marginBottom: 12 }}>⚠ {unlockErr}</div>}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button onClick={() => { setShowUnlockModal(false); setUnlockPin(""); setUnlockErr(""); }} style={{
+                  flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
+                  borderRadius: 10, color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                }}>Batal</button>
+                <button onClick={tryUnlock} disabled={unlockPin.length !== 6} style={{
+                  flex: 2, padding: 12,
+                  background: unlockPin.length === 6 ? "linear-gradient(135deg,#dc2626,#ef4444)" : "rgba(255,255,255,0.08)",
+                  border: "none", borderRadius: 10,
+                  color: unlockPin.length === 6 ? "#fff" : "#64748b",
+                  fontSize: 13, fontWeight: 900, cursor: unlockPin.length === 6 ? "pointer" : "not-allowed", fontFamily: "inherit",
+                  letterSpacing: 0.4,
+                }}>🔓 Unlock</button>
+              </div>
+              <div style={{ marginTop: 14, fontSize: 10, color: "#475569", textAlign: "center", lineHeight: 1.5 }}>
+                Picker akan auto-lock kembali setelah 60 detik.
+              </div>
+            </div>
+          </div>
         )}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
@@ -503,14 +607,29 @@ function Home({ onPick }) {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("today"); // today | upcoming | all
   const [search, setSearch] = useState("");
+  // Outlet scope — Cinema POS hanya menampilkan showtimes outlet kasir.
+  // Priority: ?outlet → posOutletDevice (device-level) → posOutlet (legacy).
+  const outletCode = (typeof window !== "undefined")
+    ? (new URLSearchParams(window.location.search).get("outlet")
+       || localStorage.getItem("posOutletDevice")
+       || localStorage.getItem("posOutlet")
+       || "")
+    : "";
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${API_HOST}/api/cinema/showtimes`).then(r => r.json())
-      .then(d => setShowtimes(d.showtimes || []))
+    const url = outletCode
+      ? `${API_HOST}/api/cinema/showtimes?outlet=${encodeURIComponent(outletCode)}`
+      : `${API_HOST}/api/cinema/showtimes`;
+    fetch(url).then(r => r.json())
+      .then(d => {
+        // Defensive: kalau backend gak honor outlet filter, filter di client juga
+        const all = d.showtimes || [];
+        setShowtimes(outletCode ? all.filter(s => !s.outlet || s.outlet === outletCode) : all);
+      })
       .catch(() => setShowtimes([]))
       .finally(() => setLoading(false));
-  }, []);
+  }, [outletCode]);
 
   const today = new Date().toISOString().slice(0, 10);
   const list = useMemo(() => {
@@ -1158,8 +1277,9 @@ function Pay({ picked, saleData, paymentMethod, buyer, setBuyer, cashier, onBack
           discount_code: discount?.code || null,
           discount_amount: discount?.amount || 0,
           discount_type: discount?.type || null,
-          // Auto-member: kalau ada phone → backend create loyalty customer + earn points
           auto_member: !!buyer.phone,
+          // Outlet tag — kasir bisa jual kalau outlet match (backend cross-check)
+          outlet_code: (typeof localStorage !== "undefined") ? (localStorage.getItem("posOutletDevice") || localStorage.getItem("posOutlet") || null) : null,
         }),
       });
       const d = await res.json();

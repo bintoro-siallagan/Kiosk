@@ -301,6 +301,29 @@ function requireAdmin(req, res, next) {
   });
 }
 
+// Helper: derive outlet scope dari session user.
+// Returns:
+//   { outletCode: null, all: true }   — user lihat semua outlet (super-admin/admin/owner/no binding)
+//   { outletCode: 'CMX-BDG01', all: false } — user terikat outlet, hanya lihat outlet itu
+// Pakai di GET endpoints buat filter list/report data per outlet.
+function getOutletScope(req) {
+  const session = req.session;
+  if (!session) return { outletCode: null, all: true };
+  const role = (session.role || '').toLowerCase();
+  // Super-admin tier: selalu lihat semua (cross-outlet visibility)
+  if (role === 'super-admin' || role === 'superadmin' || role === 'admin' || role === 'owner') {
+    return { outletCode: null, all: true };
+  }
+  // Manager/cashier: lookup user record, kalau outlet_code di-set → scope ke situ
+  try {
+    const userRow = db.rawDb.prepare(`SELECT outlet_code FROM admin_users WHERE id = ?`).get(session.userId);
+    const outletCode = userRow?.outlet_code || null;
+    return { outletCode, all: !outletCode };
+  } catch {
+    return { outletCode: null, all: true };
+  }
+}
+
 // ─── CDS Cinema — second display state (NOW receives parsed body) ───
 // POS Cinema POST current sale state → backend broadcast via WS ke semua CDS terminal.
 app.post("/api/cinema/cds/state", (req, res) => {
@@ -516,6 +539,12 @@ app.get("/api/orders", (req, res) => {
   if (!scope.is_super_admin) {
     result = result.filter(o => o.companyId == null || o.companyId === scope.company_id);
   }
+  // Outlet-scope: manager bound ke outlet hanya lihat order outlet itu.
+  // Admin/owner/HQ-access (no binding) → lihat semua.
+  const outletScope = global.getSessionOutlet?.(req) || { isHQ: true };
+  if (!outletScope.isHQ && outletScope.outletCode) {
+    result = result.filter(o => !o.outlet_code || o.outlet_code === outletScope.outletCode);
+  }
   res.json(result);
 });
 
@@ -690,7 +719,29 @@ app.post("/api/orders", (req, res) => {
     pointsDiscount,
     cashReceived: cashReceived ?? null,
     cashChange:   cashChange ?? null,
+    // Outlet tag — important untuk audit + fraud prevention.
+    outlet_code: req.body.outlet_code || req.body.outletCode || null,
   };
+
+  // SECURITY: kalau order datang dari POS dgn kasir yg outlet_code di admin_users,
+  // outlet_code di body HARUS match. Mencegah kasir di outlet A jual untuk outlet B.
+  // Kalau user.outlet_code = null (gak bound), skip check (multi-outlet manager).
+  if (order.source === "pos" || order.source === "cinema_pos" || order.source === "pos_cinema") {
+    try {
+      const kasirName = order.kasir;
+      if (kasirName) {
+        adminUsers = adminUsers.length > 0 ? adminUsers : db.loadAllAdminUsers();
+        const u = adminUsers.find(x => x.name === kasirName);
+        if (u && u.outlet_code && order.outlet_code && u.outlet_code !== order.outlet_code) {
+          console.warn(`🚨 OUTLET MISMATCH: kasir ${kasirName} (bound to ${u.outlet_code}) submit order from ${order.outlet_code}`);
+          return res.status(403).json({
+            error: `Kasir ${kasirName} terikat ke outlet ${u.outlet_code}, tapi order dari ${order.outlet_code}. Hubungi Manager.`,
+            kasir_outlet: u.outlet_code, order_outlet: order.outlet_code,
+          });
+        }
+      }
+    } catch (e) { console.warn("[outlet-check]", e.message); }
+  }
 
   // Update customer visit count & spend
   if (customerId) {
@@ -3555,6 +3606,23 @@ const _sessionDb = {
 };
 
 const adminSessions = new Map(); // token → { userId, role, loginAt, expiresAt }
+// Expose untuk modules lain (cinema-backend dll) bisa cek session manually
+// untuk per-outlet scope filtering tanpa harus requireSession middleware
+global.adminSessions = adminSessions;
+// Helper untuk modules — derive outlet_code dari session token di Authorization header.
+// Returns null kalau no session, atau outlet_code dari user record kalau bound.
+global.getSessionOutlet = (req) => {
+  try {
+    const token = req.headers?.authorization?.replace(/^Bearer\s+/i, '');
+    const session = token && adminSessions.get(token);
+    if (!session) return { outletCode: null, role: null, isHQ: true };
+    const role = String(session.role || '').toLowerCase();
+    if (['super-admin','superadmin','admin','owner'].includes(role)) return { outletCode: null, role, isHQ: true };
+    const u = db.rawDb.prepare(`SELECT outlet_code FROM admin_users WHERE id = ?`).get(session.userId);
+    const outletCode = u?.outlet_code || null;
+    return { outletCode, role, isHQ: !outletCode };
+  } catch { return { outletCode: null, role: null, isHQ: true }; }
+};
 // Load valid sessions from DB at startup (survive restart)
 try {
   const rows = _sessionDb.loadValid();
@@ -3769,7 +3837,8 @@ app.post("/api/auth/login", (req, res) => {
     force_pin_change: isWeakPin(user.pin),  // SECURITY: force ganti kalau PIN weak
     user: { id: user.id, name: user.name, role: user.role,
             company_id: user.company_id ?? null, is_super_admin: user.company_id == null,
-            vertical: user.vertical || null },
+            vertical: user.vertical || null,
+            outlet_code: user.outlet_code || null },
     company: companyInfo,
   });
 });
@@ -3816,7 +3885,7 @@ app.get("/api/auth/users", (req, res) => {
 
 app.post("/api/auth/users", requireAdmin, (req, res) => {
   const { isSuperAdmin, companyId } = _authScope(req);
-  const { name, pin, role } = req.body;
+  const { name, pin, role, vertical, outlet_code } = req.body;
   if (!name || !pin || !role) return res.status(400).json({ error: "name, pin, role required" });
   if (pin.length !== 6) return res.status(400).json({ error: "PIN harus 6 digit" });
   // Multi-tenant guard: tenant gak boleh bikin role super-admin
@@ -3827,7 +3896,14 @@ app.post("/api/auth/users", requireAdmin, (req, res) => {
   const targetCompanyId = isSuperAdmin
     ? (req.body.company_id != null ? Number(req.body.company_id) : null)
     : companyId;
-  const user = { id: `U${String(adminUsers.length+1).padStart(3,"0")}`, name, pin, role, active: true, company_id: targetCompanyId };
+  // Validate vertical
+  let v = vertical || null;
+  if (v && !['fnb', 'cinema', 'hybrid'].includes(v)) v = null;
+  const user = {
+    id: `U${String(adminUsers.length+1).padStart(3,"0")}`,
+    name, pin, role, active: true, company_id: targetCompanyId,
+    vertical: v, outlet_code: outlet_code || null,
+  };
   adminUsers.push(user);
   db.insertAdminUser(user);
   res.status(201).json({ ...user, pin: "••••••" });
@@ -3841,7 +3917,7 @@ app.patch("/api/auth/users/:id", requireAdmin, (req, res) => {
   if (!isSuperAdmin && adminUsers[idx].company_id !== companyId) {
     return res.status(403).json({ error: "Tidak punya akses user ini" });
   }
-  const { name, pin, role, active, vertical } = req.body;
+  const { name, pin, role, active, vertical, outlet_code } = req.body;
   // Guard: tenant gak boleh ubah ke super-admin
   if (!isSuperAdmin && (role === "super-admin" || role === "superadmin")) {
     return res.status(403).json({ error: "Tidak boleh assign role super-admin" });
@@ -3867,6 +3943,10 @@ app.patch("/api/auth/users/:id", requireAdmin, (req, res) => {
     } else {
       return res.status(400).json({ error: "Vertical harus salah satu: fnb, cinema, hybrid, atau kosong (inherit company)" });
     }
+  }
+  // Outlet binding — set/clear outlet_code per user
+  if (outlet_code !== undefined) {
+    adminUsers[idx].outlet_code = outlet_code || null;
   }
   db.insertAdminUser(adminUsers[idx]); // persist
   res.json({ ...adminUsers[idx], pin: "••••••" });
