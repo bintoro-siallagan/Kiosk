@@ -119,9 +119,10 @@ function getScene() {
     if (q.includes("cinema")) return "pos-cinema";
     return "pos";
   }
-  // cinema.karyaos.tech → customer cinema booking web
+  // cinema.karyaos.tech → customer cinema booking web (CinemaWebApp).
+  // NOTE: scene "cinema" = CinemaKiosk (box office). Customer booking = scene "movies".
   if (host.startsWith("cinema.")) {
-    return "cinema";
+    return "movies";
   }
   // qr.karyaos.tech → FlowApp (QR table-side ordering, customer scans QR di meja)
   if (host.startsWith("qr.")) {
