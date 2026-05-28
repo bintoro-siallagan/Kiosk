@@ -137,6 +137,7 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
           {order.table && <><span style={S.dot}>·</span><span>{order.table.name}</span></>}
           {order.customerName && <><span style={S.dot}>·</span><span>{order.customerName}</span></>}
         </div>
+        <PosAlertPill apiBase={API_BASE} />
         <div style={S.kasir}>👤 {cashier.name}</div>
         <button onClick={onCancel} style={S.iconBtn}>✕</button>
       </header>
@@ -411,3 +412,146 @@ const S = {
   tabBtn: { background:"transparent", color:"#aaa", border:"1px solid #444", borderRadius:12,
     padding:"12px", fontFamily:"inherit", fontSize:13, fontWeight:600, cursor:"pointer" }
 };
+
+// ─── POS ALERT PILL — Operational Intelligence indicator di top bar ───
+// Auto-poll /api/audit/anomalies tiap 30 detik. Pulse merah kalau ada critical alerts.
+// Click → modal panel showing recent anomalies dgn severity color.
+function PosAlertPill({ apiBase = "" }) {
+  const [alerts, setAlerts] = useState([]);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    let cancel = false;
+    const fetchAlerts = () => {
+      fetch(`${apiBase}/api/audit/anomalies?limit=20&resolved=false`)
+        .then(r => r.json())
+        .then(d => { if (!cancel && Array.isArray(d?.items)) setAlerts(d.items); })
+        .catch(() => {});
+    };
+    fetchAlerts();
+    const t = setInterval(fetchAlerts, 30_000);
+    return () => { cancel = true; clearInterval(t); };
+  }, [apiBase]);
+
+  const criticalN = alerts.filter(a => (a.severity || a.sev) === "critical").length;
+  const warnN     = alerts.filter(a => ["warning","warn","high"].includes((a.severity || a.sev || "").toLowerCase())).length;
+  const total     = alerts.length;
+  const tier      = criticalN > 0 ? "critical" : warnN > 0 ? "warning" : "normal";
+  const tierColor = { critical: "#ef4444", warning: "#fbbf24", normal: "#10b981" }[tier];
+  const tierLabel = { critical: "ALERT", warning: "WATCH", normal: "OK" }[tier];
+
+  return (
+    <>
+      <style>{`
+        @keyframes posAlertPulse{0%,100%{opacity:1}50%{opacity:0.35}}
+        @keyframes posAlertGlow{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.45)}50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}}
+        .pos-alert-critical{animation:posAlertGlow 1.6s ease infinite}
+      `}</style>
+      <button
+        onClick={() => setOpen(true)}
+        title={total > 0 ? `${total} anomali aktif (${criticalN} critical, ${warnN} warning)` : "Semua sistem normal"}
+        className={tier === "critical" ? "pos-alert-critical" : ""}
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 6,
+          padding: "6px 12px",
+          background: `${tierColor}1a`,
+          border: `1px solid ${tierColor}55`,
+          borderRadius: 999,
+          color: tierColor, fontFamily: "'Geist Mono',monospace",
+          fontSize: 11, fontWeight: 800, letterSpacing: 1, cursor: "pointer",
+          transition: "all 0.2s",
+        }}>
+        <span style={{
+          width: 6, height: 6, borderRadius: "50%",
+          background: tierColor, boxShadow: `0 0 6px ${tierColor}`,
+          animation: "posAlertPulse 1.6s ease infinite",
+        }} />
+        <span>● {tierLabel}</span>
+        {total > 0 && <span style={{ fontSize: 10, opacity: 0.8 }}>· {total}</span>}
+      </button>
+      {open && <PosAlertModal alerts={alerts} apiBase={apiBase} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
+function PosAlertModal({ alerts, apiBase, onClose }) {
+  const [items, setItems] = useState(alerts);
+  const resolve = async (id) => {
+    setItems(prev => prev.filter(a => a.id !== id));
+    try {
+      await fetch(`${apiBase}/api/audit/anomalies/${id}/resolve`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resolvedBy: localStorage.getItem("kasir_name") || "kasir" }),
+      });
+    } catch {}
+  };
+  const sevColor = (s) => ({ critical: "#ef4444", warning: "#fbbf24", high: "#fb923c", info: "#22d3ee" }[(s || "info").toLowerCase()] || "#9ca3af");
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20,
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        width: "min(560px, 100%)", maxHeight: "80vh",
+        background: "linear-gradient(180deg,#0d1117,#080a0f)",
+        border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16,
+        display: "flex", flexDirection: "column", overflow: "hidden",
+        boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+      }}>
+        <div style={{
+          padding: "18px 22px", borderBottom: "1px solid rgba(255,255,255,0.08)",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          background: "linear-gradient(180deg,rgba(239,68,68,0.08),transparent)",
+        }}>
+          <div>
+            <div style={{ fontSize: 10, color: "#ef4444", letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>● OPERATIONAL INTELLIGENCE</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", marginTop: 4 }}>System Alerts ({items.length})</div>
+          </div>
+          <button onClick={onClose} style={{
+            background: "transparent", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.7)",
+            borderRadius: 8, padding: "6px 12px", fontSize: 14, cursor: "pointer", fontFamily: "inherit",
+          }}>✕</button>
+        </div>
+        <div style={{ flex: 1, overflowY: "auto", padding: "12px 16px" }}>
+          {items.length === 0 ? (
+            <div style={{ padding: "60px 20px", textAlign: "center", color: "#5b6470", fontSize: 14 }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+              <div style={{ fontWeight: 700, color: "#10b981", marginBottom: 4 }}>Semua sistem normal</div>
+              <div style={{ fontSize: 12 }}>Tidak ada anomali yg perlu attention</div>
+            </div>
+          ) : items.map(a => {
+            const sev = a.severity || a.sev || "info";
+            const color = sevColor(sev);
+            return (
+              <div key={a.id} style={{
+                padding: "12px 14px", marginBottom: 8, borderRadius: 10,
+                background: `${color}0d`, border: `1px solid ${color}44`,
+                display: "flex", alignItems: "flex-start", gap: 12,
+              }}>
+                <span style={{
+                  flexShrink: 0, padding: "3px 8px", borderRadius: 4,
+                  fontSize: 9, fontWeight: 900, color, background: `${color}22`,
+                  fontFamily: "'Geist Mono',monospace", letterSpacing: 0.8, textTransform: "uppercase",
+                }}>{sev}</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#fff" }}>{a.type || a.event_type || "Anomaly"}</div>
+                  <div style={{ fontSize: 11.5, color: "rgba(255,255,255,0.65)", marginTop: 3, lineHeight: 1.45 }}>
+                    {a.description || a.message || a.details || JSON.stringify(a.payload || {}).slice(0, 100)}
+                  </div>
+                  {(a.amount || a.amt) && <div style={{ fontSize: 11, color, fontFamily: "'Geist Mono',monospace", marginTop: 4, fontWeight: 700 }}>Rp {(a.amount || a.amt).toLocaleString("id-ID")}</div>}
+                  <div style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 4, fontFamily: "'Geist Mono',monospace" }}>
+                    {a.created_at ? new Date(a.created_at).toLocaleString("id-ID", { hour12: false }) : ""}
+                  </div>
+                </div>
+                <button onClick={() => resolve(a.id)} style={{
+                  flexShrink: 0, padding: "5px 12px", borderRadius: 6,
+                  background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.4)",
+                  color: "#10b981", fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+                }}>✓ Resolve</button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
