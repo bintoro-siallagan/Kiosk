@@ -146,6 +146,43 @@ function setupItemMaster(app, opts = {}) {
     });
   });
 
+  // PATCH /:itemCode — update editable fields (name, description, item_code rename, category, price, status)
+  // Mirror perubahan ke pos_menus juga kalau name matched (untuk konsistensi kiosk/POS display).
+  router.patch('/:itemCode', (req, res) => {
+    try {
+      const orig = db.prepare(`SELECT * FROM item_master WHERE item_code = ?`).get(req.params.itemCode);
+      if (!orig) return res.status(404).json({ error: 'item not found' });
+      const b = req.body || {};
+      const fields = [];
+      const args = [];
+      const allowed = ['name', 'description', 'category', 'subcategory', 'base_price', 'uom', 'status', 'barcode', 'item_code'];
+      for (const k of allowed) {
+        if (k in b) {
+          fields.push(`${k} = ?`);
+          args.push(b[k]);
+        }
+      }
+      if (!fields.length) return res.json({ ok: true, noop: true });
+      args.push(req.params.itemCode);
+      db.prepare(`UPDATE item_master SET ${fields.join(', ')} WHERE item_code = ?`).run(...args);
+      // Mirror name + description + price ke pos_menus (kiosk visibility)
+      try {
+        const updates = [];
+        const pargs = [];
+        if (b.name) { updates.push('name = ?'); pargs.push(b.name); }
+        if (b.description) { updates.push('description = ?'); pargs.push(b.description); }
+        if (b.base_price !== undefined) { updates.push('price = ?'); pargs.push(Number(b.base_price) || 0); }
+        if (updates.length > 0) {
+          updates.push("updated_at = strftime('%s','now')");
+          pargs.push(orig.name.toLowerCase().trim());
+          db.prepare(`UPDATE pos_menus SET ${updates.join(', ')} WHERE LOWER(TRIM(name)) = ?`).run(...pargs);
+        }
+      } catch {}
+      const updated = db.prepare(`SELECT * FROM item_master WHERE item_code = ?`).get(b.item_code || req.params.itemCode);
+      res.json({ ok: true, item: updated });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  });
+
   // DELETE /:itemCode/image — remove image association
   router.delete('/:itemCode/image', (req, res) => {
     try {
