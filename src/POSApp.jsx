@@ -184,7 +184,7 @@ export default function POSApp() {
 
   // GATE: opening checklist wajib kelar sebelum kasir bisa mulai transaksi
   if (checklist && !checklist.opening?.done) {
-    return <POSChecklist type="opening" apiBase={API_HOST} cashier={cashier} onDone={reloadChecklist} />;
+    return <POSChecklist type="opening" vertical="fnb" apiBase={API_HOST} cashier={cashier} onDone={reloadChecklist} />;
   }
 
   return (
@@ -273,6 +273,7 @@ export default function POSApp() {
       {closingChecklist && (
         <POSChecklist
           type="closing"
+          vertical="fnb"
           apiBase={API_HOST}
           cashier={cashier}
           onDone={() => { setClosingChecklist(false); reloadChecklist(); proceedCloseShift(); }}

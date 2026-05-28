@@ -24,7 +24,7 @@ const MOODS = [
   { v: 5, emoji: '🤩', label: 'Semangat' },
 ];
 
-export default function POSChecklist({ type = 'opening', apiBase = '', cashier, onDone }) {
+export default function POSChecklist({ type = 'opening', apiBase = '', cashier, onDone, vertical = 'fnb' }) {
   const [items, setItems] = useState([]);
   const [checked, setChecked] = useState({});
   const [notes, setNotes] = useState('');
@@ -37,11 +37,11 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
 
   useEffect(() => {
     setLoading(true);
-    fetch(`${apiBase}/api/checklist/items?type=${type}`)
+    fetch(`${apiBase}/api/checklist/items?type=${type}&vertical=${encodeURIComponent(vertical)}`)
       .then(r => r.json())
       .then(rows => { setItems(Array.isArray(rows) ? rows : []); setLoading(false); })
       .catch(() => { setError('Checklist sedang dipersiapkan, mohon menunggu sebentar.'); setLoading(false); });
-  }, [apiBase, type]);
+  }, [apiBase, type, vertical]);
 
   const doneCount = items.filter(i => checked[i.id]).length;
   const allChecked = items.length > 0 && doneCount === items.length;

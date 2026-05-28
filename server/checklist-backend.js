@@ -123,33 +123,44 @@ function setupChecklist(app, opts = {}) {
   // Migration DB lama: kolom target (sales target harian dari opening checklist)
   try { db.exec(`ALTER TABLE checklist_submissions ADD COLUMN target REAL`); } catch {}
   try { db.exec(`ALTER TABLE checklist_submissions ADD COLUMN mood INTEGER`); } catch {}
+  // Vertical scoping — fnb / cinema / null (shared). F&B kasir gak lihat cinema items.
+  try { db.exec(`ALTER TABLE checklist_items ADD COLUMN vertical TEXT`); } catch {}
+
+  // Cinema emoji prefixes utk auto-tag existing items (one-time migration)
+  const CINEMA_EMOJIS = ['🎬', '🍿', '🥤', '🧊', '💻', '🌐', '🖨️', '💳', '📲', '🚪', '🚨', '🚻', '🌡️', '🎵', '👥', '👔', '🪪', '💰', '📊', '💾', '💡', '🔐', '📅', '📦', '📋'];
+  const isCinemaLabel = (label) => CINEMA_EMOJIS.some(e => String(label || '').startsWith(e));
 
   if (db.prepare(`SELECT COUNT(*) c FROM checklist_items`).get().c === 0) {
-    const s = db.prepare(`INSERT INTO checklist_items (type, label, sort_order) VALUES (?,?,?)`);
-    for (const [t, l, o] of DEFAULT_ITEMS) s.run(t, l, o);
+    const s = db.prepare(`INSERT INTO checklist_items (type, label, sort_order, vertical) VALUES (?,?,?,?)`);
+    for (const [t, l, o] of DEFAULT_ITEMS) s.run(t, l, o, isCinemaLabel(l) ? 'cinema' : 'fnb');
   } else {
-    // Backfill cinema-specific items kalau belum ada (idempotent)
-    // Identify by emoji prefix yang khusus cinema operations (bukan base F&B)
-    const has = (label) => db.prepare(`SELECT id FROM checklist_items WHERE label = ?`).get(label);
-    const ins = db.prepare(`INSERT INTO checklist_items (type, label, sort_order) VALUES (?,?,?)`);
-    const cinemaEmojis = ['🎬', '🍿', '🥤', '🧊', '💻', '🌐', '🖨️', '💳', '📲', '🚪', '🚨', '🚻', '🌡️', '🎵', '👥', '👔', '🪪', '💰', '📊', '💾', '💡', '🔐', '📅', '📦', '📋'];
-    let added = 0;
-    for (const [t, l, o] of DEFAULT_ITEMS) {
-      const isCinema = cinemaEmojis.some(e => l.startsWith(e));
-      if (isCinema && !has(l)) { ins.run(t, l, o); added++; }
-    }
-    if (added > 0) console.log(`[checklist] seeded ${added} cinema-specific items (start/close day)`);
+    // Auto-tag existing items yg masih NULL vertical (one-time backfill)
+    try {
+      const untagged = db.prepare(`SELECT id, label FROM checklist_items WHERE vertical IS NULL`).all();
+      if (untagged.length > 0) {
+        const upd = db.prepare(`UPDATE checklist_items SET vertical = ? WHERE id = ?`);
+        let tagged = 0;
+        for (const item of untagged) {
+          upd.run(isCinemaLabel(item.label) ? 'cinema' : 'fnb', item.id);
+          tagged++;
+        }
+        if (tagged > 0) console.log(`[checklist] auto-tagged ${tagged} items by emoji prefix (cinema/fnb)`);
+      }
+    } catch (e) { console.warn('[checklist] auto-tag fail:', e.message); }
   }
 
   const router = express.Router();
   router.use(express.json());
 
   // ── ITEMS (admin CRUD) ──────────────────────────────────
+  // ?vertical=fnb|cinema  → filter items per vertical (selain NULL = shared)
+  // Tanpa filter = return semua (admin master view).
   router.get('/items', (req, res) => {
-    const { type } = req.query;
+    const { type, vertical } = req.query;
     let sql = `SELECT * FROM checklist_items WHERE is_active = 1`;
     const p = [];
     if (type) { sql += ` AND type = ?`; p.push(type); }
+    if (vertical) { sql += ` AND (vertical = ? OR vertical IS NULL)`; p.push(vertical); }
     sql += ` ORDER BY type, sort_order`;
     res.json(db.prepare(sql).all(...p));
   });

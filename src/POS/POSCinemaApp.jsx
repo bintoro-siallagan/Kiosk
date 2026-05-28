@@ -259,7 +259,7 @@ export default function POSCinemaApp() {
 
   // GATE: opening checklist WAJIB kelar sebelum kasir bisa transaksi
   if (checklist && !checklist.opening?.done) {
-    return <POSChecklist type="opening" apiBase={API_HOST} cashier={cashier} onDone={reloadChecklist} />;
+    return <POSChecklist type="opening" vertical="cinema" apiBase={API_HOST} cashier={cashier} onDone={reloadChecklist} />;
   }
 
   return (
@@ -328,6 +328,7 @@ export default function POSCinemaApp() {
       {closingChecklist && (
         <POSChecklist
           type="closing"
+          vertical="cinema"
           apiBase={API_HOST}
           cashier={cashier}
           onDone={() => { setClosingChecklist(false); reloadChecklist(); forceLogout(); }}
