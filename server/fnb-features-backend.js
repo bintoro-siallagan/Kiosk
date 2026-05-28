@@ -413,6 +413,7 @@ function setupFnbFeatures(app, opts = {}) {
   const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
+  const requireAdmin = opts.requireAdmin || ((req, res, next) => next());
   // ALTER: driver realtime location (idempotent)
   try { db.exec("ALTER TABLE fnb_drivers ADD COLUMN last_lat REAL"); } catch {}
   try { db.exec("ALTER TABLE fnb_drivers ADD COLUMN last_lng REAL"); } catch {}
@@ -515,7 +516,7 @@ function setupFnbFeatures(app, opts = {}) {
     const W = where.length ? `WHERE ${where.join(' AND ')}` : '';
     res.json({ recipes: db.prepare(`SELECT * FROM fnb_recipes ${W} ORDER BY menu_item_id, ingredient_name`).all(params) });
   });
-  router.post('/recipes', (req, res) => {
+  router.post('/recipes', requireAdmin, (req, res) => {
     const b = req.body || {};
     if (!b.menu_item_id || !b.ingredient_name || !b.qty) return res.status(400).json({ ok: false, error: 'menu_item_id, ingredient_name, qty wajib' });
     try {
@@ -524,7 +525,7 @@ function setupFnbFeatures(app, opts = {}) {
       res.json({ ok: true, id: info.lastInsertRowid });
     } catch (e) { res.status(409).json({ ok: false, error: 'Ingredient sudah ada untuk menu item ini' }); }
   });
-  router.patch('/recipes/:id', (req, res) => {
+  router.patch('/recipes/:id', requireAdmin, (req, res) => {
     const b = req.body || {};
     const fields = []; const args = [];
     for (const k of ['ingredient_name', 'inventory_link_id', 'qty', 'unit', 'notes']) {
@@ -540,7 +541,7 @@ function setupFnbFeatures(app, opts = {}) {
     db.prepare(`UPDATE fnb_recipes SET ${fields.join(', ')} WHERE id = ?`).run(...args);
     res.json({ ok: true });
   });
-  router.delete('/recipes/:id', (req, res) => {
+  router.delete('/recipes/:id', requireAdmin, (req, res) => {
     db.prepare(`DELETE FROM fnb_recipes WHERE id = ?`).run(req.params.id);
     res.json({ ok: true });
   });
@@ -566,7 +567,7 @@ function setupFnbFeatures(app, opts = {}) {
     }
     res.json({ combos });
   });
-  router.post('/combos', (req, res) => {
+  router.post('/combos', requireAdmin, (req, res) => {
     const b = req.body || {};
     if (!b.name) return res.status(400).json({ ok: false, error: 'name wajib' });
     const info = db.prepare(`INSERT INTO fnb_combos (name, description, combo_price, category, image_url, available_from, available_to, applicable_days, is_active) VALUES (?,?,?,?,?,?,?,?,?)`)
@@ -581,7 +582,7 @@ function setupFnbFeatures(app, opts = {}) {
     }
     res.json({ ok: true, id: info.lastInsertRowid });
   });
-  router.patch('/combos/:id', (req, res) => {
+  router.patch('/combos/:id', requireAdmin, (req, res) => {
     const b = req.body || {};
     const fields = []; const args = [];
     for (const k of ['name', 'description', 'combo_price', 'category', 'image_url', 'available_from', 'available_to', 'applicable_days', 'is_active']) {
@@ -605,7 +606,7 @@ function setupFnbFeatures(app, opts = {}) {
     }
     res.json({ ok: true });
   });
-  router.delete('/combos/:id', (req, res) => {
+  router.delete('/combos/:id', requireAdmin, (req, res) => {
     db.prepare(`DELETE FROM fnb_combo_items WHERE combo_id = ?`).run(req.params.id);
     db.prepare(`DELETE FROM fnb_combos WHERE id = ?`).run(req.params.id);
     res.json({ ok: true });
@@ -623,7 +624,7 @@ function setupFnbFeatures(app, opts = {}) {
     const active = periods.find(p => p.is_active && p.start_time <= hhmm && hhmm <= p.end_time);
     res.json({ periods, current_period: active || null, current_time: hhmm });
   });
-  router.post('/menu-periods', (req, res) => {
+  router.post('/menu-periods', requireAdmin, (req, res) => {
     const b = req.body || {};
     if (!b.name || !b.start_time || !b.end_time) return res.status(400).json({ ok: false, error: 'name + start + end wajib' });
     const info = db.prepare(`INSERT INTO fnb_menu_periods (name, icon, start_time, end_time, applicable_days, sort_order, notes, is_active) VALUES (?,?,?,?,?,?,?,?)`)

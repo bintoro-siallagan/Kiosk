@@ -92,6 +92,9 @@ function setupCompanies(app, opts = {}) {
   const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
+  // requireAdmin di-inject dari index.js. Fallback pass-through kalau gak di-set
+  // (safer than crash, but check that opts.requireAdmin disuplai for production).
+  const requireAdmin = opts.requireAdmin || ((req, res, next) => next());
 
   // 1) Add company_id columns ke semua tabel related (idempotent)
   for (const m of COMPANY_COLUMN_MIGRATIONS) { try { db.exec(m); } catch (e) { /* column exists or table missing */ } }
@@ -265,7 +268,7 @@ function setupCompanies(app, opts = {}) {
 
   // POST /branding/logo — upload tenant logo (multipart, field "logo").
   // Auto-scopes to current company via req.companyScope; super-admin can pass ?company_id=X.
-  router.post('/branding/logo', (req, res) => {
+  router.post('/branding/logo', requireAdmin, (req, res) => {
     const upload = opts.uploadMiddleware;
     if (!upload) return res.status(500).json({ error: 'upload middleware not configured' });
     upload.single('logo')(req, res, (err) => {
@@ -291,7 +294,7 @@ function setupCompanies(app, opts = {}) {
   });
 
   // DELETE /branding/logo — remove tenant logo (fallback to platform default)
-  router.delete('/branding/logo', (req, res) => {
+  router.delete('/branding/logo', requireAdmin, (req, res) => {
     const sc = req.companyScope || {};
     let companyId = sc.company_id;
     const reqCid = parseInt(req.query.company_id, 10);
@@ -308,7 +311,7 @@ function setupCompanies(app, opts = {}) {
   });
 
   // PUT /branding — update brand color / name (no logo here; use /branding/logo for that)
-  router.put('/branding', (req, res) => {
+  router.put('/branding', requireAdmin, (req, res) => {
     const sc = req.companyScope || {};
     let companyId = sc.company_id;
     // Super-admin bisa override via body. Also: kalau no scope, accept body.company_id
@@ -357,7 +360,7 @@ function setupCompanies(app, opts = {}) {
     });
   });
 
-  router.put('/custom-domain', (req, res) => {
+  router.put('/custom-domain', requireAdmin, (req, res) => {
     const cid = parseInt(req.headers['x-company-id'], 10);
     if (!cid) return res.status(401).json({ error: 'company scope required' });
     const raw = String(req.body?.domain || '').trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/.*$/, '');
@@ -380,7 +383,7 @@ function setupCompanies(app, opts = {}) {
     res.json({ ok: true, domain: raw, verification_token: token });
   });
 
-  router.post('/custom-domain/verify', async (req, res) => {
+  router.post('/custom-domain/verify', requireAdmin, async (req, res) => {
     const cid = parseInt(req.headers['x-company-id'], 10);
     if (!cid) return res.status(401).json({ error: 'company scope required' });
     const row = db.prepare(`SELECT custom_domain, custom_domain_token FROM companies WHERE id = ?`).get(cid);
@@ -411,7 +414,7 @@ function setupCompanies(app, opts = {}) {
   });
 
   // Create (super-admin only)
-  router.post('/', (req, res) => {
+  router.post('/', requireAdmin, (req, res) => {
     const isSuperAdmin = String(req.headers['x-super-admin'] || '') === 'true';
     if (!isSuperAdmin) return res.status(403).json({ error: 'super-admin only' });
     const b = req.body || {};
@@ -431,7 +434,7 @@ function setupCompanies(app, opts = {}) {
   });
 
   // PUT /:id — update company fields (super-admin only)
-  router.put('/:id', (req, res) => {
+  router.put('/:id', requireAdmin, (req, res) => {
     const isSuperAdmin = String(req.headers['x-super-admin'] || '') === 'true';
     if (!isSuperAdmin) return res.status(403).json({ error: 'super-admin only' });
     const id = parseInt(req.params.id, 10);
@@ -456,7 +459,7 @@ function setupCompanies(app, opts = {}) {
 
   // DELETE /:id — soft delete (set status='inactive'). Hard delete dgn ?hard=1
   // Super-admin only. Tidak bisa delete diri sendiri / company id 1 (root tenant)
-  router.delete('/:id', (req, res) => {
+  router.delete('/:id', requireAdmin, (req, res) => {
     const isSuperAdmin = String(req.headers['x-super-admin'] || '') === 'true';
     if (!isSuperAdmin) return res.status(403).json({ error: 'super-admin only' });
     const id = parseInt(req.params.id, 10);

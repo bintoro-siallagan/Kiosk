@@ -309,6 +309,7 @@ function setupPaymentGateway(app, opts = {}) {
   const db = new Database(opts.dbPath || DEFAULT_DB);
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA_SQL);
+  const requireAdmin = opts.requireAdmin || ((req, res, next) => next());
   // Migration for existing DBs: items column (stock deduction + kitchen tickets on paid intents)
   try { db.exec(`ALTER TABLE payment_intents ADD COLUMN items TEXT`); } catch {}
 
@@ -582,7 +583,7 @@ function setupPaymentGateway(app, opts = {}) {
     res.json(rows);
   });
 
-  router.post('/providers', (req, res) => {
+  router.post('/providers', requireAdmin, (req, res) => {
     const b = req.body || {};
     const code = String(b.code || '').trim().toLowerCase();
     const name = String(b.name || '').trim();
@@ -604,7 +605,7 @@ function setupPaymentGateway(app, opts = {}) {
     } catch (e) { res.status(500).json({ error: e.message }); }
   });
 
-  router.put('/providers/:code', (req, res) => {
+  router.put('/providers/:code', requireAdmin, (req, res) => {
     const b = req.body || {};
     const allowed = ['server_key', 'client_key', 'callback_token', 'merchant_id', 'environment', 'is_active', 'supported_methods'];
     const sets = [], params = [];
@@ -619,7 +620,7 @@ function setupPaymentGateway(app, opts = {}) {
     res.json({ ok: true });
   });
 
-  router.delete('/providers/:code', (req, res) => {
+  router.delete('/providers/:code', requireAdmin, (req, res) => {
     const used = db.prepare(`SELECT COUNT(*) c FROM payment_intents WHERE provider_code = ?`).get(req.params.code);
     if (used && used.c > 0) {
       return res.status(409).json({ error: `Provider masih dipakai ${used.c} intent — nonaktifkan saja` });

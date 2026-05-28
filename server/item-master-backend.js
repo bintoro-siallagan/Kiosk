@@ -31,6 +31,7 @@ function setupItemMaster(app, opts = {}) {
   const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
+  const requireAdmin = opts.requireAdmin || ((req, res, next) => next());
   // Migrate: add image_url if missing
   try {
     const cols = db.prepare(`PRAGMA table_info(item_master)`).all();
@@ -123,7 +124,7 @@ function setupItemMaster(app, opts = {}) {
   });
 
   // POST /sync — force re-sync from pos_menus (called after bulk upload)
-  router.post('/sync', (req, res) => {
+  router.post('/sync', requireAdmin, (req, res) => {
     try {
       const added = syncFromPosMenus();
       res.json({ ok: true, added });
@@ -132,7 +133,7 @@ function setupItemMaster(app, opts = {}) {
 
   // POST /:itemCode/image — upload/replace image for an item.
   // Stores file via multer, updates item_master + matching pos_menus (by name) for kiosk consistency.
-  router.post('/:itemCode/image', (req, res) => {
+  router.post('/:itemCode/image', requireAdmin, (req, res) => {
     const upload = opts.uploadMiddleware;
     if (!upload) return res.status(500).json({ error: 'upload middleware not configured' });
     upload.single('image')(req, res, (err) => {
@@ -152,7 +153,7 @@ function setupItemMaster(app, opts = {}) {
 
   // PATCH /:itemCode — update editable fields (name, description, item_code rename, category, price, status)
   // Mirror perubahan ke pos_menus juga kalau name matched (untuk konsistensi kiosk/POS display).
-  router.patch('/:itemCode', (req, res) => {
+  router.patch('/:itemCode', requireAdmin, (req, res) => {
     try {
       const orig = db.prepare(`SELECT * FROM item_master WHERE item_code = ?`).get(req.params.itemCode);
       if (!orig) return res.status(404).json({ error: 'item not found' });
@@ -188,7 +189,7 @@ function setupItemMaster(app, opts = {}) {
   });
 
   // DELETE /:itemCode/image — remove image association
-  router.delete('/:itemCode/image', (req, res) => {
+  router.delete('/:itemCode/image', requireAdmin, (req, res) => {
     try {
       const item = db.prepare(`SELECT name FROM item_master WHERE item_code = ?`).get(req.params.itemCode);
       if (!item) return res.status(404).json({ error: 'item not found' });

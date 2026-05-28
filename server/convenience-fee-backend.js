@@ -23,6 +23,7 @@ function setupConvenienceFee(app, opts = {}) {
   const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
+  const requireAdmin = opts.requireAdmin || ((req, res, next) => next());
   if (!db.prepare(`SELECT id FROM convenience_fee_config WHERE id = 1`).get()) {
     db.prepare(`INSERT INTO convenience_fee_config (id, enabled, amount, label) VALUES (1,1,2500,'Biaya Layanan QRIS')`).run();
   }
@@ -44,7 +45,7 @@ function setupConvenienceFee(app, opts = {}) {
 
   router.get('/', (req, res) => res.json(getConfig()));
 
-  router.post('/', (req, res) => {
+  router.post('/', requireAdmin, (req, res) => {
     const b = req.body || {};
     db.prepare(`UPDATE convenience_fee_config
       SET enabled = ?, amount = ?, label = ?, updated_at = strftime('%s','now') WHERE id = 1`).run(
@@ -53,7 +54,7 @@ function setupConvenienceFee(app, opts = {}) {
     res.json({ ok: true, ...getConfig() });
   });
 
-  router.patch('/:id', (req, res) => {
+  router.patch('/:id', requireAdmin, (req, res) => {
     const row = db.prepare(`SELECT * FROM convenience_fee_config WHERE id = ?`).get(req.params.id);
     if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
     const b = req.body || {};
@@ -73,7 +74,7 @@ function setupConvenienceFee(app, opts = {}) {
   });
 
   // DELETE = reset config ke default (enabled=0, amount=0). Karena singleton, baris tidak dihapus.
-  router.delete('/:id', (req, res) => {
+  router.delete('/:id', requireAdmin, (req, res) => {
     const row = db.prepare(`SELECT * FROM convenience_fee_config WHERE id = ?`).get(req.params.id);
     if (!row) return res.status(404).json({ error: 'tidak ditemukan' });
     db.prepare(`UPDATE convenience_fee_config
