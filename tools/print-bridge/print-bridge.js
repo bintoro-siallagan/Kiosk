@@ -23,7 +23,8 @@ const net  = require("net");
 const url  = require("url");
 
 const PORT = parseInt(process.env.PRINT_BRIDGE_PORT, 10) || 9101;
-const VERSION = "1.0.0";
+const VERSION = "1.1.0";
+const VERSION_CHANNEL = "https://app.karyaos.tech/api/bridge/latest-version";
 
 // CORS — allow all origins (POS bisa dari berbagai domain: app.karyaos.tech, localhost, dll)
 // + Private Network Access — Chrome 94+ butuh header ini saat public site (https://app.karyaos.tech)
@@ -177,8 +178,13 @@ const server = http.createServer(async (req, res) => {
         version: VERSION,
         host: require("os").hostname(),
         subnets: getLocalSubnets().map(s => `${s}.0/24`),
-        endpoints: ["GET /", "POST /print", "POST /print/test", "GET /scan"],
+        endpoints: ["GET /", "GET /version", "POST /print", "POST /print/test", "GET /scan"],
       });
+    }
+
+    // GET /version — light endpoint untuk update check (no LAN scan, no overhead)
+    if (req.method === "GET" && u.pathname === "/version") {
+      return sendJson(res, 200, { version: VERSION, channel: VERSION_CHANNEL });
     }
 
     // POST /print — { ip, port, data: [bytes...] }

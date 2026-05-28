@@ -1365,6 +1365,23 @@ console.log(`🖨  Printer mode: ${printerConfig.debug ? "DEBUG (file)" : "LIVE 
 
 app.get("/api/printer/config", (req, res) => res.json(printerConfig));
 
+// GET /api/bridge/latest-version — print bridge update channel.
+// Bridge agent + admin panel poll ini untuk detect new bridge version.
+// Bump BRIDGE_LATEST_VERSION saat ada changes di tools/print-bridge/.
+const BRIDGE_LATEST_VERSION = "1.1.0";
+const BRIDGE_DOWNLOAD_URL = "https://app.karyaos.tech/downloads/print-bridge.zip";
+const BRIDGE_CHANGELOG = [
+  { version: "1.1.0", date: "2026-05-29", notes: "Added GET /version endpoint for update detection. Per-IP print queue. PNA CORS header for Chrome multi-monitor." },
+  { version: "1.0.0", date: "2026-05-27", notes: "Initial release. POST /print + scan LAN + test page." },
+];
+app.get("/api/bridge/latest-version", (req, res) => {
+  res.json({
+    version: BRIDGE_LATEST_VERSION,
+    download_url: BRIDGE_DOWNLOAD_URL,
+    changelog: BRIDGE_CHANGELOG,
+  });
+});
+
 app.patch("/api/printer/config", requireAdmin, (req, res) => {
   const { debug, kitchen, customer, template } = req.body || {};
   if (debug !== undefined) printerConfig.debug = Boolean(debug);

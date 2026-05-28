@@ -26,6 +26,17 @@ const STATUS = {
 const MOCK_ORDERS = [];
 const MENU_MOCK = [];
 
+// Semantic version compare — return >0 if a > b, <0 if a < b, 0 if equal.
+function compareVer(a, b) {
+  const pa = String(a || "0").split(".").map(n => parseInt(n, 10) || 0);
+  const pb = String(b || "0").split(".").map(n => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    if ((pa[i] || 0) > (pb[i] || 0)) return 1;
+    if ((pa[i] || 0) < (pb[i] || 0)) return -1;
+  }
+  return 0;
+}
+
 // ASCII preview generator untuk receipt — match logika escpos.js buildCustomerReceipt
 function generateReceiptPreview(template = {}) {
   const W = template.paper_width === 32 ? 32 : 48;
@@ -194,6 +205,7 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
   const [backupInfo, setBackupInfo] = useState({ backups: [], retention: 24, intervalMin: 60 });
   const [printerTest, setPrinterTest] = useState({});
   const [bridgeStatus, setBridgeStatus] = useState({ online: null, checking: false });
+  const [bridgeVersion, setBridgeVersion] = useState({ local: null, latest: null, hasUpdate: false, downloadUrl: null, changelog: [] });
   const [bridgeUrl, setBridgeUrl] = useState(() => { try { return localStorage.getItem("printBridgeUrl") || "http://localhost:9101"; } catch { return "http://localhost:9101"; } });
   const [scanResult, setScanResult] = useState({ scanning: false, printers: [], error: null });
   const [templateSaveStatus, setTemplateSaveStatus] = useState(null); // null | "saving" | "saved" | "error"
@@ -235,6 +247,26 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
     setBridgeStatus({ online: null, checking: true });
     const online = await isBridgeOnline();
     setBridgeStatus({ online, checking: false });
+    // Saat bridge online, juga cek versi (untuk auto-update notice)
+    if (online) {
+      try {
+        const bridgeRoot = (localStorage.getItem("printBridgeUrl") || "http://localhost:9101").replace(/\/$/, "");
+        const [localRes, latestRes] = await Promise.all([
+          fetch(`${bridgeRoot}/version`).then(r => r.json()).catch(() => null),
+          fetch(`${API_HOST}/api/bridge/latest-version`).then(r => r.json()).catch(() => null),
+        ]);
+        if (localRes?.version && latestRes?.version) {
+          const cmp = compareVer(latestRes.version, localRes.version);
+          setBridgeVersion({
+            local: localRes.version,
+            latest: latestRes.version,
+            hasUpdate: cmp > 0,
+            downloadUrl: latestRes.download_url,
+            changelog: latestRes.changelog || [],
+          });
+        }
+      } catch {}
+    }
   };
   // Auto-check bridge status on mount
   useEffect(() => { checkBridge(); }, []);
@@ -837,9 +869,52 @@ export default function Admin({ onExit, onReport, onESBSync, onESBNotif, onMembe
                   </div>
                 </div>
 
+                {/* Update banner — kalau ada bridge update */}
+                {bridgeVersion.hasUpdate && (
+                  <div style={{
+                    background: "linear-gradient(135deg, rgba(56,189,248,0.12), rgba(168,85,247,0.08))",
+                    border: "1px solid #38BDF866",
+                    borderRadius: 10, padding: 14, marginBottom: 14,
+                    display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap",
+                  }}>
+                    <div style={{ fontSize: 28 }}>🔔</div>
+                    <div style={{ flex: 1, minWidth: 200 }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#38BDF8", marginBottom: 4, letterSpacing: 0.3 }}>
+                        Bridge update tersedia: <span style={{ fontFamily: "'Geist Mono',monospace" }}>v{bridgeVersion.local} → v{bridgeVersion.latest}</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: "#9ca3af", lineHeight: 1.5 }}>
+                        Download zip baru, replace folder di PC kasir, restart bridge. Service mode: `nssm stop KaryaOSPrintBridge` lalu re-install.
+                      </div>
+                      {bridgeVersion.changelog && bridgeVersion.changelog[0] && (
+                        <div style={{ fontSize: 10, color: "#7d8590", marginTop: 4, fontFamily: "'Geist Mono',monospace" }}>
+                          v{bridgeVersion.changelog[0].version}: {bridgeVersion.changelog[0].notes}
+                        </div>
+                      )}
+                    </div>
+                    <a href={bridgeVersion.downloadUrl || "https://app.karyaos.tech/downloads/print-bridge.zip"}
+                       download
+                       style={{
+                         background: "linear-gradient(135deg, #38BDF8, #A855F7)",
+                         color: "#fff", border: "none", borderRadius: 8,
+                         padding: "10px 18px", fontSize: 12, fontWeight: 800,
+                         cursor: "pointer", textDecoration: "none", whiteSpace: "nowrap",
+                         boxShadow: "0 6px 16px rgba(56,189,248,0.35)",
+                       }}>
+                      ⬇ Download Update
+                    </a>
+                  </div>
+                )}
+
                 {/* Bridge config row */}
                 <div style={{background:"#0a0e16",border:"1px solid #21262d",borderRadius:10,padding:12,marginBottom:14}}>
-                  <div style={{fontSize:11,color:"#888",marginBottom:8,fontWeight:600,letterSpacing:0.5}}>🌉 PRINT BRIDGE URL (jalan di PC kasir)</div>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8,gap:8,flexWrap:"wrap"}}>
+                    <div style={{fontSize:11,color:"#888",fontWeight:600,letterSpacing:0.5}}>🌉 PRINT BRIDGE URL (jalan di PC kasir)</div>
+                    {bridgeVersion.local && (
+                      <div style={{fontSize:10,color: bridgeVersion.hasUpdate ? "#38BDF8" : "#34D399",fontFamily:"'Geist Mono',monospace",fontWeight:700,letterSpacing:0.5}}>
+                        v{bridgeVersion.local}{bridgeVersion.hasUpdate ? ` → v${bridgeVersion.latest}` : " ✓ up to date"}
+                      </div>
+                    )}
+                  </div>
                   <div style={{display:"flex",gap:8,alignItems:"stretch",flexWrap:"wrap"}}>
                     <input type="text" placeholder="http://localhost:9101"
                       value={bridgeUrl}
