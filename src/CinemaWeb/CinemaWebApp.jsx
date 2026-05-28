@@ -15,6 +15,7 @@ import { ErrorInline } from "../components/ConnectionError.jsx";
 import CinemaCelebration from "../CinemaCelebration.jsx";
 import { useTenantTheme } from "../lib/tenantTheme.js";
 import { LocaleSwitcher } from "../i18n";
+import { cinemaAudio } from "../lib/cinemaAudio.js";
 
 // ════════════════════════════════════════════════════════════════════
 // PREMIUM SKELETON COMPONENTS
@@ -4194,9 +4195,12 @@ function SeatPicker({ showtime, film, initialSeats, onConfirm, brandPrimary }) {
     if (seatData.sold.includes(seat)) return;
     if (seatData.held_by_others?.includes(seat)) return;
     const next = new Set(selected);
+    const isPick = !next.has(seat);
     if (next.has(seat)) next.delete(seat);
     else next.add(seat);
     setSelected(next);
+    // Audio cue — premium feedback (subtle chime saat pick, lower tone saat un-pick)
+    try { isPick ? cinemaAudio.seatPick() : cinemaAudio.seatUnpick(); } catch {}
     // Trigger tap animation + light haptic on mobile
     setJustTapped(seat); setTimeout(() => setJustTapped(null), 280);
     if (typeof navigator !== "undefined" && navigator.vibrate) {
@@ -4924,6 +4928,11 @@ function SuccessPage({ booking, film, showtime, seats, bundlesCart, onNewBooking
 
   const [showCelebration, setShowCelebration] = useState(true);
   const [qrSrc, setQrSrc] = useState(null);
+
+  // Cinema audio — play booking confirmed victory cue once on mount
+  useEffect(() => {
+    try { cinemaAudio.bookingConfirmed(); } catch {}
+  }, []);
 
   // Generate QR code for the ticket URL (link to digital ticket page).
   // Prefer purchase_id URL so single scan di counter → muncul semua tiket
