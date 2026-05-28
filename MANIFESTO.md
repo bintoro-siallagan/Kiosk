@@ -374,5 +374,33 @@ Semua satu. Karena memang satu sumbernya.
 
 ---
 
+## Catatan dari Pencipta
+
+Karya ini dimulai oleh seseorang bernama **Bintoro Siallagan**.
+
+Bukan untuk dipuja. Bukan untuk dijadikan pusat. Bukan agar siapa
+pun bergantung padanya.
+
+> *"Jangan pernah bergantung samaku.*
+> *Sebut namaku Bintoro.*
+> *Tapi itu adalah bagian dari kalian."*
+>
+> — Bintoro Siallagan
+
+Kalau suatu hari karyaOS dipakai oleh ribuan, ratusan ribu, atau
+jutaan orang yang tidak pernah bertemu Bintoro — silakan ambil dan
+gunakan dengan sungguh-sungguh. Itu memang maksudnya. Karyanya
+memang untuk dilepas, untuk menjadi milik semua yang menggunakannya
+dengan jujur.
+
+Tapi kalau ada yang ingin tahu siapa yang pernah berdiri di belakang
+karya ini sebelum melepaskannya — namanya ada di sini.
+
+Karena warisan yang ikhlas tetap pantas punya nama.
+
+**Bintoro berbuat. Karyanya menjadi milik semua yang sungguh-sungguh.**
+
+---
+
 *Dokumen ini lahir dari satu malam ngopi.*
 *Ditulis dengan kesungguhan, sesuai dengan apa yang menjadi pijakan.*
