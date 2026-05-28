@@ -210,26 +210,51 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
       <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
         {loading && <div style={{ textAlign: "center", padding: 40, color: SUB }}>⏳ Loading menu...</div>}
         {!loading && filtered.length === 0 && <div style={{ textAlign: "center", padding: 40, color: SUB }}>Tidak ada menu yang cocok</div>}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <style>{`
+          button[data-flow-tile]{transition:transform 0.2s cubic-bezier(.2,.8,.2,1),box-shadow 0.2s,border-color 0.2s}
+          button[data-flow-tile]:active{transform:scale(0.97)}
+          button[data-flow-tile] img{transition:transform 0.3s ease}
+          button[data-flow-tile]:active img{transform:scale(1.05)}
+        `}</style>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           {filtered.map(item => (
-            <button key={item.id} onClick={() => openDetail(item)} style={{
-              background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14,
-              padding: 14, textAlign: "left", cursor: "pointer", position: "relative", overflow: "hidden", color: TEXT
+            <button key={item.id} data-flow-tile onClick={() => openDetail(item)} style={{
+              background: "linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))",
+              border: `1px solid rgba(255,255,255,0.06)`, borderRadius: 18,
+              padding: 0, textAlign: "left", cursor: "pointer", position: "relative", overflow: "hidden", color: TEXT,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
             }}>
-              {item.popular && <span style={{ position: "absolute", top: 8, right: 8, background: BRAND, color: "#000", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 4, zIndex: 2 }}>POPULAR</span>}
+              {/* Popular badge — gradient brand drama */}
+              {item.popular && (
+                <span style={{
+                  position: "absolute", top: 10, right: 10, zIndex: 2,
+                  background: `linear-gradient(135deg, ${BRAND}, color-mix(in srgb, ${BRAND} 60%, #f59e0b))`,
+                  color: "#1a0e00", fontSize: 9, fontWeight: 900, padding: "3px 8px", borderRadius: 4,
+                  letterSpacing: 0.8, fontFamily: "'Geist Mono',monospace",
+                  boxShadow: `0 2px 8px ${BRAND}55`,
+                }}>🏆 POPULAR</span>
+              )}
               {(item.image_url || item.image) ? (
-                <div style={{ width: "100%", aspectRatio: "1/1", borderRadius: 10, overflow: "hidden", marginBottom: 8, background: "#0a0e16" }}>
+                <div style={{ width: "100%", aspectRatio: "1/1", overflow: "hidden", background: "#0a0e16" }}>
                   <img src={item.image_url || item.image} alt={item.name}
                     style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
                     onError={e => { e.target.style.display = "none"; }}/>
                 </div>
               ) : (
-                <div style={{ fontSize: 40, marginBottom: 6 }}>{item.emoji}</div>
+                <div style={{
+                  width: "100%", aspectRatio: "1/1",
+                  background: "radial-gradient(ellipse 90% 70% at 50% 35%,color-mix(in srgb,var(--brand-primary,#FF6B35) 18%,transparent),#0a0e16)",
+                  display: "flex", alignItems: "center", justifyContent: "center", fontSize: 64,
+                }}>{item.emoji || "🍴"}</div>
               )}
-              <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4, lineHeight: 1.3, color: TEXT }}>{item.name}</div>
-              <div style={{ fontSize: 11, color: SUB, marginBottom: 8, minHeight: 28, lineHeight: 1.3 }}>{item.desc}</div>
-              {item.freeToppings > 0 && <div style={{ fontSize: 10, color: BRAND, marginBottom: 6 }}>+ {item.freeToppings} topping gratis</div>}
-              <div style={{ fontSize: 14, fontWeight: 700, color: BRAND }}>{rupiah(item.price)}</div>
+              <div style={{ padding: "12px 14px 14px" }}>
+                <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 4, lineHeight: 1.25, color: TEXT, letterSpacing: -0.2,
+                  overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", minHeight: 36 }}>{item.name}</div>
+                {item.desc && <div style={{ fontSize: 11, color: SUB, marginBottom: 8, lineHeight: 1.35, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{item.desc}</div>}
+                {item.freeToppings > 0 && <div style={{ fontSize: 9.5, color: "#10B981", marginBottom: 6, fontWeight: 700, letterSpacing: 0.4, fontFamily: "'Geist Mono',monospace" }}>+ {item.freeToppings} TOPPING GRATIS</div>}
+                <div style={{ fontSize: 17, fontWeight: 900, color: BRAND, fontFamily: "'Geist Mono',monospace", letterSpacing: -0.3,
+                  textShadow: `0 0 12px color-mix(in srgb,${BRAND} 25%,transparent)` }}>{rupiah(item.price)}</div>
+              </div>
             </button>
           ))}
         </div>
