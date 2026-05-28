@@ -535,8 +535,25 @@ export default function FlowCheckout({
 
       {error && <div style={S.errorBox}>{error}</div>}
 
-      <button onClick={handlePlaceOrder} disabled={submitting || finalTotal <= 0} style={S.payBtn}>
-        {submitting ? "Processing..." : `Pay QRIS · ${fIDR(finalTotal)} →`}
+      <style>{`
+        button[data-flow-pay]{transition:transform 0.18s cubic-bezier(.2,.8,.2,1),box-shadow 0.18s,filter 0.18s}
+        button[data-flow-pay]:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.08);box-shadow:0 14px 36px color-mix(in srgb,var(--brand-primary,#FF6B35) 60%,transparent), inset 0 1px 0 rgba(255,255,255,0.4)!important}
+        button[data-flow-pay]:active:not(:disabled){transform:translateY(0) scale(0.99)}
+        @keyframes flowPaySpinner{0%,100%{opacity:1}50%{opacity:0.4}}
+      `}</style>
+      <button data-flow-pay onClick={handlePlaceOrder} disabled={submitting || finalTotal <= 0} style={S.payBtn}>
+        {submitting ? (
+          <>
+            <span style={{ animation: "flowPaySpinner 1.2s ease infinite" }}>⏳</span>
+            Processing…
+          </>
+        ) : (
+          <>
+            <span style={{ fontSize: 20 }}>🎟️</span>
+            Pay QRIS · {fIDR(finalTotal)}
+            <span style={{ fontSize: 18 }}>→</span>
+          </>
+        )}
       </button>
 
       <div style={S.disclaimer}>
@@ -618,15 +635,17 @@ const S = {
   payDesc: { fontSize: 11, color: "#9CA3AF", marginTop: 2 },
 
   // Totals
-  totalCard: { padding: "14px 16px", borderRadius: 14, background: "linear-gradient(135deg, rgba(245,158,11,0.10), rgba(245,158,11,0.02))", border: "1px solid rgba(245,158,11,0.3)" },
-  totalRow: { display: "flex", justifyContent: "space-between", padding: "4px 0", fontSize: 13, color: "#D1D5DB" },
-  totalRowBig: { display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, paddingTop: 10, borderTop: "1px solid rgba(245,158,11,0.2)" },
+  // PREMIUM TOTAL CARD — brand-tinted dramatic
+  totalCard: { padding: "16px 18px", borderRadius: 16, background: "linear-gradient(135deg, color-mix(in srgb,var(--brand-primary,#FF6B35) 14%,transparent), color-mix(in srgb,var(--brand-primary,#FF6B35) 4%,transparent))", border: "1px solid color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent)", boxShadow: "0 4px 14px color-mix(in srgb,var(--brand-primary,#FF6B35) 12%,transparent)" },
+  totalRow: { display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: 13, color: "#D1D5DB" },
+  totalRowBig: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 10, paddingTop: 12, borderTop: "1px solid color-mix(in srgb,var(--brand-primary,#FF6B35) 28%,transparent)" },
   totalLabel: { fontSize: 13 },
-  totalValue: { fontFamily: "'Inter', sans-serif", fontSize: 16, color: "white", letterSpacing: 0.5 },
-  totalBigLabel: { fontSize: 14, fontWeight: 800, letterSpacing: 1 },
-  totalBigValue: { fontFamily: "'Inter', sans-serif", fontSize: 32, color: "var(--brand-primary,#FF6B35)", letterSpacing: 1 },
+  totalValue: { fontFamily: "'Geist Mono',monospace", fontSize: 15, color: "white", letterSpacing: -0.3, fontVariantNumeric: "tabular-nums", fontWeight: 700 },
+  totalBigLabel: { fontSize: 12, fontWeight: 800, letterSpacing: 2.5, color: "color-mix(in srgb,var(--brand-primary,#FF6B35) 90%,#fff)", fontFamily: "'Geist Mono',monospace", textTransform: "uppercase" },
+  totalBigValue: { fontFamily: "'Geist Mono',monospace", fontSize: 38, color: "var(--brand-primary,#FF6B35)", letterSpacing: -1, fontWeight: 900, textShadow: "0 0 24px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent)" },
   errorBox: { padding: "10px 12px", borderRadius: 8, background: "rgba(248,113,113,0.10)", color: "#F87171", fontSize: 12 },
-  payBtn: { width: "100%", padding: "16px", borderRadius: 14, background: "linear-gradient(135deg, #10B981, #059669)", border: "none", color: "white", fontSize: 15, fontWeight: 800, fontFamily: "inherit", cursor: "pointer", boxShadow: "0 8px 24px rgba(16,185,129,0.3)" },
+  // PREMIUM PAY BUTTON — gold gradient drama (Cinema OS pattern)
+  payBtn: { width: "100%", padding: "18px 20px", borderRadius: 14, background: "linear-gradient(135deg, var(--brand-primary,#FF6B35), var(--brand-secondary,#E55A2B))", border: "none", color: "white", fontSize: 16, fontWeight: 900, fontFamily: "inherit", cursor: "pointer", boxShadow: "0 10px 28px color-mix(in srgb,var(--brand-primary,#FF6B35) 45%,transparent), inset 0 1px 0 rgba(255,255,255,0.3)", letterSpacing: 0.4, transition: "all 0.2s cubic-bezier(.2,.8,.2,1)", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 10 },
   disclaimer: { textAlign: "center", fontSize: 10, color: "#6B7280", padding: "10px 0", lineHeight: 1.5 },
 
   // QR
