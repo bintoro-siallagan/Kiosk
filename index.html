@@ -1,7 +1,13 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" translate="no">
   <head>
     <meta charset="UTF-8" />
+    <!-- Disable Google Translate auto-translate. Required karena translate-extension
+         mutates DOM nodes yang React lagi reconcile → throw NotFoundError removeChild
+         (klasik React + Google Translate bug). Symptom: Cash payment di kiosk
+         crash di Chrome Windows dgn Indonesian locale. -->
+    <meta name="google" content="notranslate" />
+    <meta name="google-translate-customization" content="" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

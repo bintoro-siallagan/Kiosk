@@ -120,6 +120,9 @@ function getDb() {
   if (!_auditDb) {
     _auditDb = new Database(DB_PATH);
     _auditDb.pragma("journal_mode = WAL");
+    _auditDb.pragma("synchronous = NORMAL");
+    _auditDb.pragma("busy_timeout = 8000");
+    _auditDb.pragma("cache_size = -16384");  // 16MB cache for audit reads
   }
   return _auditDb;
 }
@@ -128,6 +131,21 @@ function initAuditModule(/* db wrapper — unused, we use our own connection */)
   const raw = getDb();
   raw.exec(AUDIT_SCHEMA);
   console.log("[Audit] Tables initialized");
+
+  // Auto-prune pos_events older than 60 days — table balloons from every broadcast event.
+  // Was hanging POS checkouts (2.3k+ rows after 1 week, write amplification).
+  try {
+    const res = raw.prepare("DELETE FROM pos_events WHERE created_at < datetime('now','-60 days')").run();
+    if (res.changes > 0) console.log(`[Audit] Pruned ${res.changes} old pos_events rows (>60 days)`);
+  } catch (e) { console.warn("[Audit] pos_events prune failed:", e.message); }
+
+  // Daily prune job — runs every 24h to keep table lean
+  setInterval(() => {
+    try {
+      const res = raw.prepare("DELETE FROM pos_events WHERE created_at < datetime('now','-60 days')").run();
+      if (res.changes > 0) console.log(`[Audit] Daily prune: ${res.changes} pos_events rows removed`);
+    } catch {}
+  }, 24 * 60 * 60 * 1000).unref();
 
   // Seed config defaults
   try {
@@ -213,21 +231,36 @@ const auditEngine = {
     this.empDiscCounts = {};
   },
 
-  // Log EVERY event to pos_events for forensic audit trail
+  // Log EVERY event to pos_events — buffered + flushed every 1s.
+  // Was sync per-broadcast write → blocking POS response path. Now: enqueue in memory,
+  // batch insert in background. Forensic data still captured, just delayed up to ~1s.
+  _eventBuffer: [],
+  _flushScheduled: false,
   logEvent(eventType, data) {
     try {
-      const db = getDb();
       const cashierId = data.cashierId || data.cashier_id || data.kasir || null;
       const cashierName = data.cashierName || data.cashier_name || null;
       const orderId = data.orderId || data.order_id || data.id || null;
       const amount = data.amount || data.total || 0;
-      db.prepare(`
+      this._eventBuffer.push([eventType, JSON.stringify(data), cashierId, cashierName, orderId, amount]);
+      if (!this._flushScheduled) {
+        this._flushScheduled = true;
+        setTimeout(() => this._flushEvents(), 1000);
+      }
+    } catch(e) { /* silent — audit log must never break main flow */ }
+  },
+  _flushEvents() {
+    this._flushScheduled = false;
+    if (this._eventBuffer.length === 0) return;
+    const batch = this._eventBuffer.splice(0, this._eventBuffer.length);
+    try {
+      const db = getDb();
+      const stmt = db.prepare(`
         INSERT INTO pos_events (event_type, data, cashier_id, cashier_name, order_id, amount)
         VALUES (?, ?, ?, ?, ?, ?)
-      `).run(eventType, JSON.stringify(data), cashierId, cashierName, orderId, amount);
-    } catch(e) {
-      // silent — audit log should never break main flow
-    }
+      `);
+      db.transaction(() => { for (const row of batch) stmt.run(...row); })();
+    } catch(e) { console.warn("[Audit] flush events failed:", e.message); }
   },
 
   check(eventType, data, db, broadcastFn) {

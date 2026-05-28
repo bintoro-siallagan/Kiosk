@@ -12,6 +12,21 @@ const db = new Database(DB_PATH);
 
 // WAL mode untuk better concurrency dan crash safety
 db.pragma('journal_mode = WAL');
+// Performance + write throughput tuning (added 2026-05-28 — POS hang root cause)
+db.pragma('synchronous = NORMAL');         // safe w/ WAL, ~2-3× faster writes
+db.pragma('wal_autocheckpoint = 1000');    // auto-checkpoint @ 1000 pages (~4MB)
+db.pragma('busy_timeout = 8000');          // wait up to 8s on lock contention (concurrent writes from multi-module)
+db.pragma('cache_size = -65536');          // 64MB page cache (default ~2MB)
+db.pragma('temp_store = MEMORY');          // temp tables in RAM
+db.pragma('mmap_size = 268435456');        // 256MB memory-mapped IO
+
+// Force WAL checkpoint on startup (clean slate if WAL accumulated saat process restart)
+try { db.pragma('wal_checkpoint(TRUNCATE)'); } catch (e) { console.warn('[db] startup checkpoint:', e.message); }
+
+// Periodic checkpoint — every 2 min, truncate WAL agar gak balloon
+setInterval(() => {
+  try { db.pragma('wal_checkpoint(TRUNCATE)'); } catch (e) { /* lock held, skip */ }
+}, 2 * 60 * 1000).unref();
 
 // Schema
 db.exec(`
