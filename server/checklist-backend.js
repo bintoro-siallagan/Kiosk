@@ -166,22 +166,32 @@ function setupChecklist(app, opts = {}) {
   });
 
   router.post('/items', (req, res) => {
-    const { type, label } = req.body || {};
+    const { type, label, vertical } = req.body || {};
     if (!['opening', 'closing'].includes(type) || !label || !String(label).trim()) {
       return res.status(400).json({ error: 'type (opening/closing) + label wajib diisi' });
     }
+    // vertical optional — kalau null/empty, item dianggap universal (apply ke semua POS).
+    // Allowed values: 'fnb' | 'cinema' | null.
+    const v = vertical && ['fnb', 'cinema'].includes(vertical) ? vertical : null;
     const max = db.prepare(`SELECT COALESCE(MAX(sort_order), 0) m FROM checklist_items WHERE type = ?`).get(type).m;
-    const info = db.prepare(`INSERT INTO checklist_items (type, label, sort_order) VALUES (?,?,?)`)
-      .run(type, String(label).trim(), max + 1);
+    const info = db.prepare(`INSERT INTO checklist_items (type, label, sort_order, vertical) VALUES (?,?,?,?)`)
+      .run(type, String(label).trim(), max + 1, v);
     res.json({ ok: true, id: info.lastInsertRowid });
   });
 
   router.put('/items/:id', (req, res) => {
     const b = req.body || {};
     const sets = [], p = [];
-    for (const k of ['label', 'sort_order', 'is_active']) if (b[k] !== undefined) {
+    // vertical updatable juga — admin bisa pindahkan item dari fnb ke cinema or universal.
+    for (const k of ['label', 'sort_order', 'is_active', 'vertical']) if (b[k] !== undefined) {
       sets.push(`${k} = ?`);
-      p.push(typeof b[k] === 'boolean' ? (b[k] ? 1 : 0) : b[k]);
+      let val = b[k];
+      if (k === 'vertical') {
+        val = val && ['fnb', 'cinema'].includes(val) ? val : null;
+      } else if (typeof val === 'boolean') {
+        val = val ? 1 : 0;
+      }
+      p.push(val);
     }
     if (!sets.length) return res.status(400).json({ error: 'no fields' });
     p.push(req.params.id);
@@ -196,9 +206,16 @@ function setupChecklist(app, opts = {}) {
 
   // ── SUBMIT ──────────────────────────────────────────────
   router.post('/submit', (req, res) => {
-    const { type, staff_name, checked, notes } = req.body || {};
+    const { type, staff_name, checked, notes, vertical } = req.body || {};
     if (!['opening', 'closing'].includes(type)) return res.status(400).json({ error: 'type invalid' });
-    const items = db.prepare(`SELECT id, label FROM checklist_items WHERE type = ? AND is_active = 1 ORDER BY sort_order`).all(type);
+    // Filter items by vertical kalau client kirim — match frontend filter di GET /items.
+    // Tanpa ini, frontend POS F&B submit 5 items tapi backend cek vs semua 27 (incl cinema)
+    // → response "22 item belum di-ceklis" walaupun semua F&B items udah diceklis.
+    let sql = `SELECT id, label FROM checklist_items WHERE type = ? AND is_active = 1`;
+    const params = [type];
+    if (vertical) { sql += ` AND (vertical = ? OR vertical IS NULL)`; params.push(vertical); }
+    sql += ` ORDER BY sort_order`;
+    const items = db.prepare(sql).all(...params);
     if (!items.length) return res.status(400).json({ error: 'belum ada item checklist' });
     const checkedSet = new Set((checked || []).map(Number));
     const missing = items.filter(i => !checkedSet.has(i.id));

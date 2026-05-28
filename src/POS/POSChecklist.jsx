@@ -53,7 +53,7 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
       const r = await fetch(`${apiBase}/api/checklist/submit`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          type, staff_name: cashier?.name, checked: items.map(i => i.id), notes,
+          type, vertical, staff_name: cashier?.name, checked: items.map(i => i.id), notes,
           target: type === 'opening' ? (Number(target) || 0) : undefined,
           mood: type === 'opening' ? (mood || undefined) : undefined,
         }),
