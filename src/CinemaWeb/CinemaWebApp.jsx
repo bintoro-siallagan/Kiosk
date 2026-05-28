@@ -361,7 +361,7 @@ export default function CinemaWebApp() {
   const pickOutlet = (o) => {
     setOutlet(o);
     try { localStorage.setItem("cinema_web_outlet", JSON.stringify(o)); } catch {}
-    // Kalau user udah pilih featured film dari hero, langsung lanjut ke filmDetail
+    try { cinemaAudio.seatPick(); } catch {} // subtle chime for outlet selection
     setStep(film ? "filmDetail" : "films");
   };
   const resetOutlet = () => {
@@ -711,7 +711,7 @@ export default function CinemaWebApp() {
         {step === "films" && outlet && (
           <>
             <ContinueBookingRow brandPrimary={brandPrimary} onRestore={restoreDraft} onDismiss={dismissDraft} />
-            <FilmsGrid outlet={outlet} onPickFilm={(f) => { setFilm(f); goTo("filmDetail"); }} brandPrimary={brandPrimary} />
+            <FilmsGrid outlet={outlet} onPickFilm={(f) => { try { cinemaAudio.seatPick(); } catch {} setFilm(f); goTo("filmDetail"); }} brandPrimary={brandPrimary} />
           </>
         )}
         {step === "filmDetail" && film && (

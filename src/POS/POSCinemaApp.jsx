@@ -21,6 +21,7 @@ import { HelpButton } from "../components/HelpModal.jsx";
 import TouchNumpad, { showNumpad } from "../components/TouchNumpad.jsx";
 import UpsellTicker from "../components/UpsellTicker.jsx";
 import DeviceOutletSetup, { getDeviceOutlet } from "../components/DeviceOutletSetup.jsx";
+import { isBridgeOnline } from "../lib/localPrint.js";
 import API_HOST from "../apiBase.js";
 
 
@@ -1732,28 +1733,50 @@ function Success({ sale, onAnother }) {
         <div className="no-print" style={{ display: "flex", gap: 10, marginTop: 26, justifyContent: "center", flexWrap: "wrap" }}>
           <button onClick={() => window.print()} className="ghost-btn" style={S.ghostBtn} title="Print A4 standard (preview muncul kecuali Chrome --kiosk-printing flag)">🖨️ Cetak A4</button>
           <button onClick={async () => {
-            // 1) Coba backend ESC/POS direct (silent print, no preview)
-            const outlet = new URLSearchParams(window.location.search).get("outlet") || "";
-            let escposOk = 0, escposFail = 0;
-            for (const t of (tickets || [])) {
+            // Print Thermal via local bridge (Backend VPS gak bisa reach printer LAN —
+            // pattern sama dgn F&B POS: fetch ESC/POS bytes per tiket → POST localhost:9101/print → 800ms jeda antar tiket biar printer settle).
+            const bridgeUrl = (typeof localStorage !== "undefined" && localStorage.getItem("printBridgeUrl")) || "http://localhost:9101";
+            let okCount = 0, failCount = 0;
+            const failures = [];
+            for (let i = 0; i < (tickets || []).length; i++) {
+              const t = tickets[i];
               try {
-                const r = await fetch(`${API_HOST}/api/cinema/tickets/${t.id}/print-thermal${outlet ? `?outlet=${outlet}` : ""}`, { method: "POST" });
+                // 1) fetch bytes dari backend (build ticket ESC/POS, return array)
+                const r = await fetch(`${API_HOST}/api/cinema/tickets/${t.id}/escpos`);
                 const d = await r.json();
-                if (d.ok) escposOk++; else escposFail++;
-              } catch { escposFail++; }
+                if (!d.ok || !d.bytes || !d.target_ip) {
+                  failCount++; failures.push(`${t.seat || t.code}: ${d.error || "no bytes"}`);
+                  continue;
+                }
+                // 2) forward ke local bridge
+                const bres = await fetch(`${bridgeUrl}/print`, {
+                  method: "POST", headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ ip: d.target_ip, port: d.target_port || 9100, data: d.bytes }),
+                });
+                const bd = await bres.json().catch(() => ({}));
+                if (bres.ok && bd.ok) okCount++;
+                else { failCount++; failures.push(`${t.seat || t.code}: ${bd.error || `bridge ${bres.status}`}`); }
+                // Jeda 800ms antar tiket biar printer settle (per-IP queue di bridge)
+                if (i < tickets.length - 1) await new Promise(r => setTimeout(r, 800));
+              } catch (e) {
+                failCount++; failures.push(`${t.seat || t.code}: ${e.message}`);
+              }
             }
-            // 2) Fallback: kalau ESC/POS semua gagal, pakai browser print thermal window
-            if (escposOk === 0 && escposFail > 0) {
-              alert("Direct printer offline. Pakai fallback browser print thermal (set Chrome --kiosk-printing biar silent)");
-              tickets.forEach((t, i) => {
-                setTimeout(() => {
-                  window.open(`${window.location.origin}/?ticket=${encodeURIComponent(t.code)}&print=1&thermal=1`, `print_${t.code}`, "width=400,height=600");
-                }, i * 600);
-              });
-            } else if (escposOk > 0) {
-              alert(`✓ Print silent: ${escposOk}/${tickets.length} tiket OK ke thermal printer`);
+            if (okCount === tickets.length) {
+              alert(`✓ ${okCount} tiket berhasil cetak via printer thermal`);
+            } else if (okCount > 0) {
+              alert(`⚠ ${okCount}/${tickets.length} sukses, ${failCount} gagal:\n${failures.join("\n")}`);
+            } else {
+              // Fallback browser print
+              if (confirm("Bridge offline atau printer error. Pakai browser print sebagai fallback?")) {
+                tickets.forEach((t, i) => {
+                  setTimeout(() => {
+                    window.open(`${window.location.origin}/?ticket=${encodeURIComponent(t.code)}&print=1&thermal=1`, `print_${t.code}`, "width=400,height=600");
+                  }, i * 600);
+                });
+              }
             }
-          }} style={{ ...S.ghostBtn, background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.4)", color: "#22d3ee" }} title="Silent print via ESC/POS direct ke Epson TM-T82 (LAN). Fallback ke browser print kalau printer offline.">🖨️ Print Thermal</button>
+          }} style={{ ...S.ghostBtn, background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.4)", color: "#22d3ee" }} title="Silent print via local bridge → thermal printer LAN. Fallback browser print kalau bridge offline.">🖨️ Print Thermal</button>
           <button onClick={() => {
             // Kirim digital ticket via WA (input phone customer)
             const phone = prompt("Nomor WA customer (e.g. 081234567890):");

@@ -1409,6 +1409,8 @@ function loadPrinterConfig() {
 }
 
 let printerConfig = loadPrinterConfig();
+// Expose untuk modules lain (cinema-backend) — bisa baca printer IP/port aktif
+global.getPrinterConfig = () => printerConfig;
 
 function savePrinterConfig() {
   fs.writeFileSync(PRINTER_CONFIG_FILE, JSON.stringify(printerConfig, null, 2));

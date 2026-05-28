@@ -1862,10 +1862,40 @@ function setupCinema(app, opts = {}) {
     res.json({ ok: true, refunded, swaps, voids });
   });
 
+  // ── GET ticket as ESC/POS bytes — untuk forward ke local print bridge ──
+  // Pattern sama dgn F&B /api/orders/:id/escpos. Frontend fetch bytes → POST ke
+  // localhost:9101/print. Backend VPS gak perlu reach printer LAN.
+  router.get('/tickets/:id/escpos', (req, res) => {
+    try {
+      const t = db.prepare(`
+        SELECT t.*, f.title AS film_title, f.rating, f.duration_min,
+               s.show_date, s.start_time, st.name AS studio_name, st.studio_type
+        FROM cinema_tickets t
+        LEFT JOIN cinema_showtimes s ON s.id = t.showtime_id
+        LEFT JOIN cinema_films    f ON f.id = s.film_id
+        LEFT JOIN cinema_studios  st ON st.id = s.studio_id
+        WHERE t.id = ?
+      `).get(req.params.id);
+      if (!t) return res.status(404).json({ error: 'ticket not found' });
+      const raw = buildCinemaTicket({
+        purchase_id: t.purchase_id || '',
+        film: { title: t.film_title, rating: t.rating, duration_min: t.duration_min },
+        show: { show_date: t.show_date, start_time: t.start_time, studio_name: t.studio_name, studio_type: t.studio_type },
+        ticket: { code: t.code, seat: t.seat, price: t.price },
+        total: t.price,
+      });
+      const bytes = Buffer.isBuffer(raw) ? Array.from(raw) : (Array.isArray(raw) ? raw : Array.from(raw || []));
+      // Printer config from printer-config.json (kitchen IP — cinema pakai sama)
+      const printerConfig = (typeof global.getPrinterConfig === 'function') ? global.getPrinterConfig() : null;
+      const target_ip   = printerConfig?.kitchen?.ip   || printerConfig?.customer?.ip   || '';
+      const target_port = printerConfig?.kitchen?.port || printerConfig?.customer?.port || 9100;
+      res.json({ ok: true, ticket_id: t.id, code: t.code, seat: t.seat, bytes, target_ip, target_port });
+    } catch (e) {
+      res.status(500).json({ error: 'build failed: ' + e.message });
+    }
+  });
+
   // ── ESC/POS DIRECT PRINT — silent print ke thermal printer (Epson TM-T82, dll) ──
-  // Bypass browser print dialog completely. Printer dengan LAN IP (Ethernet) atau USB-to-LAN.
-  // Config printer URL via pos_config: CINEMA_PRINTER_URL:OUTLET = 'http://192.168.1.100:8008'
-  // (Epson ePOS-Print URL atau Star MicroPOS API)
   router.post('/tickets/:id/print-thermal', async (req, res) => {
     const outlet = String(req.body?.outlet || req.query?.outlet || '').trim().toUpperCase();
     const printerUrlKey = outlet ? `CINEMA_PRINTER_URL:${outlet}` : 'CINEMA_PRINTER_URL_DEFAULT';

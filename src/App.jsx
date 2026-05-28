@@ -101,6 +101,33 @@ function getScene() {
     return "admin-login";  // default: entry admin
   }
 
+  // signage.karyaos.tech → digital signage player (default), no other UI mixed in
+  if (host.startsWith("signage.")) {
+    return "signage";
+  }
+  // cds.karyaos.tech → customer display second screen
+  if (host.startsWith("cds.")) {
+    return "cds";
+  }
+  // kds.karyaos.tech → kitchen display
+  if (host.startsWith("kds.")) {
+    return "kds";
+  }
+  // pos.karyaos.tech → POS surface (kasir terminal)
+  if (host.startsWith("pos.")) {
+    // Query param tetap menang
+    if (q.includes("cinema")) return "pos-cinema";
+    return "pos";
+  }
+  // cinema.karyaos.tech → customer cinema booking web
+  if (host.startsWith("cinema.")) {
+    return "cinema";
+  }
+  // qr.karyaos.tech → FlowApp (QR table-side ordering, customer scans QR di meja)
+  if (host.startsWith("qr.")) {
+    return "flow";
+  }
+
   if (new URLSearchParams(q).has("command")) return "command";
   // POS scenes — MUST be checked BEFORE generic "cinema" / "pos" suffixes
   // ("pos-cinema" contains "cinema" so cinema check would steal it otherwise)
