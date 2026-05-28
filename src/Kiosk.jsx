@@ -863,6 +863,97 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           )}
         </div>
 
+        {/* ── COMBO UPSELL — 'Sering dibeli bareng' strip ── */}
+        {cart.length > 0 && (() => {
+          // Detect categories in cart
+          const cartCategories = new Set(cart.map(e => e.item.category));
+          const cartIds = new Set(cart.map(e => e.item.id));
+          // Pairing rules — kategori dlm cart → kategori suggestion (yg complementary)
+          const PAIRING = {
+            "🍦 Frozen Yogurt": ["🥤 Smoothies", "📦 Take Home", "✨ Special"],
+            "🥤 Smoothies":     ["🍦 Frozen Yogurt", "🍨 Yogulato", "✨ Special"],
+            "🍨 Yogulato":      ["🥤 Smoothies", "📦 Take Home"],
+            "📦 Take Home":     ["✨ Special", "🍦 Frozen Yogurt"],
+            "✨ Special":       ["🥤 Smoothies", "🍦 Frozen Yogurt"],
+          };
+          const suggestedCats = new Set();
+          cartCategories.forEach(c => (PAIRING[c] || []).forEach(s => suggestedCats.add(s)));
+          // Filter suggestions: in suggested categories, NOT already in cart, available, has tag/popular preferred
+          const suggestions = MENU
+            .filter(item => suggestedCats.has(item.category) && !cartIds.has(item.id) && item.avail !== false)
+            .sort((a, b) => {
+              // Bestseller/Hot tags first
+              const aHot = ["BESTSELLER", "BEST SELLER", "HOT TODAY", "HOT 🔥"].includes((a.tag || "").toUpperCase()) ? 1 : 0;
+              const bHot = ["BESTSELLER", "BEST SELLER", "HOT TODAY", "HOT 🔥"].includes((b.tag || "").toUpperCase()) ? 1 : 0;
+              return bHot - aHot;
+            })
+            .slice(0, 3);
+          if (suggestions.length === 0) return null;
+          return (
+            <div style={{
+              padding: "14px 20px 16px",
+              borderTop: BORDER_DEFAULT,
+              background: "linear-gradient(180deg,color-mix(in srgb,var(--brand-primary,#FF6B35) 7%,transparent),transparent)",
+              animation: "cartUpsellSlide 0.4s cubic-bezier(.2,.8,.2,1)",
+            }}>
+              <div style={{
+                fontSize: 10, color: "color-mix(in srgb,var(--brand-primary,#FF6B35) 90%,#fff)",
+                fontFamily: "'Geist Mono',monospace", fontWeight: 700, letterSpacing: 1.8,
+                textTransform: "uppercase", marginBottom: 10,
+                display: "flex", alignItems: "center", gap: 6,
+              }}>
+                <span style={{ fontSize: 13 }}>🎯</span>
+                Sering Dibeli Bareng
+              </div>
+              <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4 }} className="upsell-scroll">
+                {suggestions.map(item => {
+                  const handleAdd = () => {
+                    audio.playTap();
+                    if (item.freeToppings > 0) setToppingItem(item);
+                    else if (item.addons && item.addons.length > 0) setAddonItem(item);
+                    else addToCart(item, {}, "", 0);
+                  };
+                  return (
+                    <button key={item.id} onClick={handleAdd} style={{
+                      flexShrink: 0,
+                      display: "flex", alignItems: "center", gap: 8,
+                      padding: "8px 12px 8px 8px",
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 12,
+                      cursor: "pointer", color: "#fff", fontFamily: "inherit",
+                      transition: "all 0.18s cubic-bezier(.2,.8,.2,1)",
+                      maxWidth: 220,
+                    }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "color-mix(in srgb,var(--brand-primary,#FF6B35) 14%,transparent)"; e.currentTarget.style.borderColor = "color-mix(in srgb,var(--brand-primary,#FF6B35) 50%,transparent)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.transform = "translateY(0)"; }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 8, overflow: "hidden", flexShrink: 0, background: "rgba(0,0,0,0.3)" }}>
+                        <FoodImage item={item} size={36} />
+                      </div>
+                      <div style={{ minWidth: 0, textAlign: "left", flex: 1 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 120 }}>
+                          {item.name}
+                        </div>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: "color-mix(in srgb,var(--brand-primary,#FF6B35) 95%,#fff)", marginTop: 2, fontFamily: "'Geist Mono',monospace" }}>
+                          +{fIDR(item.price)}
+                        </div>
+                      </div>
+                      <span style={{
+                        width: 26, height: 26, borderRadius: "50%",
+                        background: "linear-gradient(135deg,var(--brand-primary,#FF6B35),var(--brand-secondary,#E55A2B))",
+                        color: "#fff", fontSize: 16, fontWeight: 800,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        flexShrink: 0,
+                        boxShadow: "0 4px 12px color-mix(in srgb,var(--brand-primary,#FF6B35) 50%,transparent)",
+                      }}>+</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Cart footer */}
         <div style={K.cartPanelFooter}>
           {cart.length>0 ? (
@@ -1076,6 +1167,10 @@ const KIOSK_CSS = `
   /* Realtime tag glow — pulses gently utk attention */
   @keyframes kioskTagGlow{0%,100%{filter:brightness(1) drop-shadow(0 2px 8px rgba(255,107,53,0.3))}50%{filter:brightness(1.15) drop-shadow(0 2px 14px rgba(255,107,53,0.55))}}
   .kiosk-tag-glow{animation:kioskTagGlow 2.4s ease infinite}
+  /* Combo upsell — slide-in entrance */
+  @keyframes cartUpsellSlide{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .upsell-scroll::-webkit-scrollbar{display:none}
+  .upsell-scroll{scrollbar-width:none}
   .cat-btn-premium{transition:all 0.2s cubic-bezier(0.4,0,0.2,1)}
   .cat-btn-premium:hover{background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.12)}
   .order-btn-premium{transition:all 0.25s cubic-bezier(0.4,0,0.2,1)}
