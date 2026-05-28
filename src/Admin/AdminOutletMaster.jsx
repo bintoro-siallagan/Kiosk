@@ -2,6 +2,7 @@
 // Outlet Master — registry & lifecycle outlet (CRUD lengkap).
 
 import { useState, useEffect, useCallback } from "react";
+import QRCode from "qrcode";
 import { useUiKit } from "../components/uiKit.jsx";
 
 const AC = "#15803d";
@@ -14,6 +15,7 @@ export default function AdminOutletMaster({ apiBase = "" }) {
   const [msg, setMsg] = useState("");
   const [editing, setEditing] = useState(null);
   const [adding, setAdding] = useState(null);
+  const [setupOutlet, setSetupOutlet] = useState(null); // open setup URL modal for outlet
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/outlet-master`).then(r => r.json()).then(setD).catch(() => {});
@@ -98,7 +100,8 @@ export default function AdminOutletMaster({ apiBase = "" }) {
                   <div>👤 {o.manager} · ☎ {o.phone}</div>
                   <div>🪑 {o.seat_capacity} seats · <span style={{ color: "#5b6470" }}>{o.outlet_type}</span></div>
                 </div>
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: 4, marginTop: 8 }}>
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 4, marginTop: 8, flexWrap: "wrap" }}>
+                  <button onClick={() => setSetupOutlet(o)} title="Generate setup URL/QR untuk install POS di outlet ini" style={{ background: "#38BDF818", border: "1px solid #38BDF844", color: "#38BDF8", padding: "3px 9px", borderRadius: 5, fontSize: 10.5, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>📲 Setup URL</button>
                   <button onClick={() => setEditing({ ...o })} style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 9px", borderRadius: 5, fontSize: 10.5, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️ Edit</button>
                   <button onClick={() => remove(o)} style={{ background: "#ef444418", border: "1px solid #ef444444", color: "#ef4444", padding: "3px 9px", borderRadius: 5, fontSize: 10.5, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>🗑️</button>
                 </div>
@@ -118,6 +121,7 @@ export default function AdminOutletMaster({ apiBase = "" }) {
           onSave={editing ? saveEdit : submitAdd}
         />
       )}
+      {setupOutlet && <OutletSetupModal outlet={setupOutlet} onClose={() => setSetupOutlet(null)} />}
     </div>
   );
 }
@@ -208,3 +212,116 @@ const S = {
   kicker: { fontSize: 11, fontWeight: 700, letterSpacing: 1, color: "#5b6470", fontFamily: "'Geist Mono',monospace" },
   kpiRow: { display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 12 },
 };
+
+// ────────────────────────────────────────────────────────────────────
+// OutletSetupModal — generate setup URL + QR untuk install POS di outlet baru.
+// Kasir Chrome buka URL → posOutletDevice auto-bind dari URL param → skip wizard.
+// ────────────────────────────────────────────────────────────────────
+function OutletSetupModal({ outlet, onClose }) {
+  const [qrPos, setQrPos] = useState(null);
+  const [qrCinema, setQrCinema] = useState(null);
+  const [copied, setCopied] = useState(null);
+
+  const isCinema = outlet.vertical === "cinema" || outlet.vertical === "hybrid";
+  const isFnb    = outlet.vertical === "fnb"    || outlet.vertical === "hybrid";
+
+  const origin = typeof window !== "undefined" ? window.location.origin.replace("admin.", "app.").replace("admin-", "app-") : "https://app.karyaos.tech";
+  const baseUrl = origin.includes("admin") ? "https://app.karyaos.tech" : origin;
+
+  const urlPos    = `${baseUrl}/?pos&outletSetup=${encodeURIComponent(outlet.code)}`;
+  const urlCinema = `${baseUrl}/?pos-cinema&outletSetup=${encodeURIComponent(outlet.code)}`;
+
+  useEffect(() => {
+    if (isFnb) {
+      QRCode.toDataURL(urlPos, { width: 320, margin: 1, color: { dark: "#0a0e16", light: "#fff" } })
+        .then(setQrPos).catch(() => {});
+    }
+    if (isCinema) {
+      QRCode.toDataURL(urlCinema, { width: 320, margin: 1, color: { dark: "#0a0e16", light: "#fff" } })
+        .then(setQrCinema).catch(() => {});
+    }
+  }, [outlet.code, isFnb, isCinema, urlPos, urlCinema]);
+
+  const copy = (url, key) => {
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(key);
+      setTimeout(() => setCopied(null), 2000);
+    }).catch(() => {});
+  };
+
+  return (
+    <div onClick={onClose} style={{
+      position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", backdropFilter: "blur(8px)",
+      display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20, overflowY: "auto",
+    }}>
+      <div onClick={e => e.stopPropagation()} style={{
+        background: "#0d1117", border: "1px solid #38BDF855", borderRadius: 14, padding: 28,
+        maxWidth: 720, width: "100%", color: "#e6edf3", fontFamily: "'Inter',sans-serif",
+        maxHeight: "90vh", overflowY: "auto",
+      }}>
+        <div style={{ textAlign: "center", marginBottom: 20 }}>
+          <div style={{ fontSize: 40, marginBottom: 8 }}>📲</div>
+          <div style={{ fontSize: 11, color: "#38BDF8", letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 4 }}>● DEVICE SETUP URL</div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: "#fff", marginBottom: 4 }}>{outlet.name}</div>
+          <div style={{ fontSize: 12, color: "#94a3b8", fontFamily: "'Geist Mono',monospace" }}>{outlet.code}{outlet.area ? ` · ${outlet.area}` : ""}</div>
+        </div>
+
+        <div style={{ padding: "10px 14px", background: "rgba(56,189,248,0.08)", border: "1px solid rgba(56,189,248,0.25)", borderRadius: 8, fontSize: 12, color: "#7dd3fc", marginBottom: 18, lineHeight: 1.6 }}>
+          💡 <b>Cara install POS di outlet baru:</b><br/>
+          1. Install Chrome di tablet/PC kasir<br/>
+          2. Kasir scan QR atau buka URL berikut → device auto-bind ke outlet ini<br/>
+          3. Setelah masuk POS, posOutletDevice locked (gak bisa diganti tanpa Manager PIN)
+        </div>
+
+        {isFnb && (
+          <div style={{ marginBottom: 18, padding: 16, background: "#0a0e16", border: "1px solid #161b22", borderRadius: 10 }}>
+            <div style={{ fontSize: 11, color: "#38BDF8", fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 10 }}>🍦 F&B POS · SETUP URL</div>
+            <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+              {qrPos && <img src={qrPos} alt="" style={{ width: 140, height: 140, borderRadius: 8, background: "#fff", padding: 4 }} />}
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{
+                  background: "#000", border: "1px solid #21262d", borderRadius: 6, padding: "8px 10px",
+                  fontSize: 11, fontFamily: "'Geist Mono',monospace", color: "#9ca3af", wordBreak: "break-all", marginBottom: 8,
+                }}>{urlPos}</div>
+                <button onClick={() => copy(urlPos, "pos")} style={{
+                  padding: "8px 14px", background: copied === "pos" ? "#10b981" : "#38BDF8",
+                  border: "none", borderRadius: 6, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                }}>{copied === "pos" ? "✓ Tersalin" : "📋 Copy URL"}</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isCinema && (
+          <div style={{ marginBottom: 18, padding: 16, background: "#0a0e16", border: "1px solid #161b22", borderRadius: 10 }}>
+            <div style={{ fontSize: 11, color: "#A855F7", fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", marginBottom: 10 }}>🎬 CINEMA POS · SETUP URL</div>
+            <div style={{ display: "flex", gap: 16, alignItems: "flex-start", flexWrap: "wrap" }}>
+              {qrCinema && <img src={qrCinema} alt="" style={{ width: 140, height: 140, borderRadius: 8, background: "#fff", padding: 4 }} />}
+              <div style={{ flex: 1, minWidth: 200 }}>
+                <div style={{
+                  background: "#000", border: "1px solid #21262d", borderRadius: 6, padding: "8px 10px",
+                  fontSize: 11, fontFamily: "'Geist Mono',monospace", color: "#9ca3af", wordBreak: "break-all", marginBottom: 8,
+                }}>{urlCinema}</div>
+                <button onClick={() => copy(urlCinema, "cinema")} style={{
+                  padding: "8px 14px", background: copied === "cinema" ? "#10b981" : "#A855F7",
+                  border: "none", borderRadius: 6, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+                }}>{copied === "cinema" ? "✓ Tersalin" : "📋 Copy URL"}</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div style={{ fontSize: 11, color: "#5b6470", lineHeight: 1.6, padding: "10px 12px", background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.2)", borderRadius: 8, marginBottom: 16 }}>
+          ⚠️ <b>Penting:</b> Setelah device di-bind, gak ada cara untuk ganti outlet kecuali Manager PIN.
+          Pastikan URL ini dikirim ke device yang BENAR untuk outlet ini.
+        </div>
+
+        <button onClick={onClose} style={{
+          width: "100%", padding: "12px 20px", background: "rgba(255,255,255,0.05)",
+          border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10,
+          color: "#fff", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+        }}>Tutup</button>
+      </div>
+    </div>
+  );
+}

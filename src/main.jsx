@@ -3,6 +3,29 @@ installOffline();   // patch fetch buat mode offline — sebelum app render
 import { installFetchInterceptor } from './companyAuth.js'
 installFetchInterceptor();   // multi-tenant: inject x-company-id / x-super-admin headers
 
+// ── DEVICE OUTLET PROVISION ─────────────────────────────────────────────────
+// URL pattern: https://app.karyaos.tech/?pos&outletSetup=CMX-BDG01
+// Admin generate URL untuk new outlet install. Kasir buka URL di Chrome new
+// install → posOutletDevice auto-set + URL param dibersihkan + locked.
+// Skip wizard, langsung ke POS dengan outlet sudah bound.
+(() => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const setupCode = params.get('outletSetup');
+    if (setupCode && /^[A-Z]{2,4}-[A-Z0-9]{3,8}$/i.test(setupCode)) {
+      // Validate format outlet code (e.g. CMX-BDG01, OTL-001)
+      localStorage.setItem('posOutletDevice', setupCode);
+      localStorage.setItem('posOutlet', setupCode); // legacy compat
+      console.log(`📍 Device bound to outlet: ${setupCode} (via setup URL)`);
+      // Strip outletSetup dari URL biar bersih (one-shot consumption)
+      params.delete('outletSetup');
+      const newSearch = params.toString();
+      const newUrl = window.location.pathname + (newSearch ? '?' + newSearch : '') + window.location.hash;
+      window.history.replaceState(null, '', newUrl);
+    }
+  } catch (e) { console.warn('[outletSetup]', e); }
+})();
+
 // Auto-reload on stale chunk hash — Vite renames lazy chunks each deploy.
 // If user keeps tab open across deploys, old chunks 404 and break navigation.
 // Detect "Failed to fetch dynamically imported module" → force reload (once).

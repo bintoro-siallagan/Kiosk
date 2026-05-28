@@ -31,6 +31,8 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
   const [now, setNow] = useState(new Date());
   const [stats, setStats] = useState({ revenue: 0, orders: 0, anomalies: 0 });
   const [staff, setStaff] = useState([]);
+  const [hqStaff, setHqStaff] = useState([]); // HQ users (outlet_code null) — only available via HQ Override
+  const [showHqOverride, setShowHqOverride] = useState(false);
   const [activeShifts, setActiveShifts] = useState({});
   const [system, setSystem] = useState({ network: 'checking', printer: 'unknown', last_sync: null });
   const [pinModal, setPinModal] = useState(null);
@@ -72,7 +74,6 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
   const loadStaff = useCallback(async () => {
     setLoading(true);
     let list = null;
-    // Try common endpoints — /api/auth/users is this project's real staff source
     for (const url of ['/api/staff', '/api/auth/users', '/api/users', '/api/pos/staff']) {
       try {
         const r = await fetch(`${apiBase}${url}`);
@@ -80,13 +81,32 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
       } catch {}
     }
     if (!Array.isArray(list) || list.length === 0) {
-      // Fallback mock — replace with real endpoint
       list = [
         { id: 'manager-1', name: 'Manager', role: 'manager', last_login: Math.floor(Date.now()/1000) - 18*3600 },
         { id: 'kasir-1', name: 'Kasir 1', role: 'kasir', last_login: Math.floor(Date.now()/1000) - 30*60 },
         { id: 'kasir-2', name: 'Kasir 2', role: 'kasir', last_login: Math.floor(Date.now()/1000) - 3*3600 },
       ];
     }
+
+    // Outlet scoping — strict mode dgn HQ Override.
+    // Main grid: hanya user bound ke outlet ini.
+    // HQ users (outlet_code null) tersedia via "🌐 HQ Login" button di bawah.
+    const deviceOutlet = typeof localStorage !== "undefined"
+      ? (localStorage.getItem("posOutletDevice") || localStorage.getItem("posOutlet") || "")
+      : "";
+    if (deviceOutlet) {
+      const bound = list.filter(u => u.outlet_code === deviceOutlet);
+      const hq    = list.filter(u => !u.outlet_code); // HQ access
+      setHqStaff(hq);
+      if (bound.length > 0) {
+        // Strict mode: only bound users di main grid
+        list = bound;
+      }
+      // Kalau gak ada bound user: fallback tampil semua (outlet baru belum di-setup)
+    } else {
+      setHqStaff([]);
+    }
+
     setStaff(list);
 
     // Fetch active shifts from pos_events (shift_open without subsequent shift_close)
@@ -259,21 +279,11 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
           <button onClick={handleOpenDay} style={{background:'#f59e0b', color:'#111', border:'none', borderRadius:14, padding:'16px 40px', fontSize:16, fontWeight:800, cursor:'pointer'}}>☀️ Open Day</button>
         </div>
       ) : (
-      <>
-      <div style={styles.prompt}>Pilih Kasir untuk Memulai</div>
-
-      {loading ? (
-        <div style={{textAlign: 'center', color: '#6b7280', padding: 40}}>Loading staff...</div>
-      ) : (
-        <div style={styles.staffGrid}>
-          {sortedStaff.map(s => (
-            <StaffCard key={s.id} staff={s}
-              activeShift={activeShifts[s.id]}
-              onClick={() => handleSelectStaff(s)} />
-          ))}
-        </div>
-      )}
-      </>
+        <PinLogin
+          apiBase={apiBase}
+          deviceOutlet={typeof localStorage !== "undefined" ? (localStorage.getItem("posOutletDevice") || localStorage.getItem("posOutlet") || "") : ""}
+          onLogin={(user) => handleSelectStaff(user)}
+        />
       )}
 
       {pinModal && (
@@ -498,3 +508,134 @@ const styles = {
   keyBtn: { padding: '16px 0', background: 'rgba(255,255,255,0.05)', color: '#fff', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, fontSize: 20, fontWeight: 700, cursor: 'pointer', fontFamily: "'Geist Mono',monospace" },
   cancelBtn: { width: '100%', padding: '12px', background: 'transparent', color: '#94a3b8', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }
 };
+
+// ────────────────────────────────────────────────────────────────────
+// PinLogin — keypad-only login. Kasir input PIN, sistem identify + bind ke device outlet.
+// ────────────────────────────────────────────────────────────────────
+function PinLogin({ apiBase, deviceOutlet, onLogin }) {
+  const [pin, setPin] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  const submit = async (overridePin) => {
+    const tryPin = overridePin ?? pin;
+    if (tryPin.length !== 6) { setErr("PIN harus 6 digit"); return; }
+    setBusy(true); setErr("");
+    try {
+      const r = await fetch(`${apiBase}/api/auth/login`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: tryPin }),
+      });
+      const d = await r.json();
+      if (!r.ok || !d.ok) {
+        setErr(d?.error || "PIN salah");
+        setPin("");
+        setBusy(false);
+        return;
+      }
+      const user = d.user || {};
+      // Frontend-side outlet check — backend belum tahu device outlet
+      if (deviceOutlet && user.outlet_code && user.outlet_code !== deviceOutlet) {
+        setErr(`User ini terikat ke outlet ${user.outlet_code}, bukan ${deviceOutlet}`);
+        setPin("");
+        setBusy(false);
+        return;
+      }
+      // Pass — login berhasil, mapping ke shape user yg dipake handleSelectStaff
+      onLogin({
+        id: user.id, name: user.name, role: user.role,
+        outlet_code: user.outlet_code, company_id: user.company_id,
+        vertical: user.vertical, token: d.token,
+      });
+    } catch (e) {
+      setErr(e.message || "Gagal login");
+      setPin(""); setBusy(false);
+    }
+  };
+
+  const append = (ch) => {
+    if (pin.length >= 6 || busy) return;
+    const newPin = pin + ch;
+    setPin(newPin);
+    setErr("");
+    if (newPin.length === 6) {
+      // Auto-submit saat 6 digit terakhir
+      setTimeout(() => submit(newPin), 120);
+    }
+  };
+  const back = () => { setPin(p => p.slice(0, -1)); setErr(""); };
+  const clear = () => { setPin(""); setErr(""); };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 20, padding: "30px 20px 50px" }}>
+      <div style={{
+        fontSize: 12, color: "#94a3b8", letterSpacing: 3, fontFamily: "'Geist Mono',monospace",
+        textTransform: "uppercase", fontWeight: 700,
+      }}>● MASUKAN PIN KASIR</div>
+
+      {/* PIN dots display */}
+      <div style={{ display: "flex", gap: 14, marginBottom: 4 }}>
+        {[0,1,2,3,4,5].map(i => {
+          const filled = i < pin.length;
+          return (
+            <div key={i} style={{
+              width: 18, height: 18, borderRadius: "50%",
+              background: filled ? (err ? "#ef4444" : "#fff") : "transparent",
+              border: `2px solid ${err ? "#ef4444" : filled ? "#fff" : "rgba(255,255,255,0.25)"}`,
+              transition: "all 0.15s ease",
+              boxShadow: filled && !err ? "0 0 12px rgba(255,255,255,0.4)" : "none",
+            }} />
+          );
+        })}
+      </div>
+
+      {err && <div style={{ fontSize: 13, color: "#fca5a5", padding: "6px 14px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 8, maxWidth: 360, textAlign: "center" }}>⚠ {err}</div>}
+
+      {/* Numeric keypad */}
+      <div style={{
+        display: "grid", gridTemplateColumns: "repeat(3, 80px)", gap: 12,
+        marginTop: 8,
+      }}>
+        {[1,2,3,4,5,6,7,8,9].map(n => (
+          <button key={n} onClick={() => append(String(n))} disabled={busy} style={{
+            width: 80, height: 80, borderRadius: 16,
+            background: "rgba(255,255,255,0.06)",
+            border: "1px solid rgba(255,255,255,0.1)",
+            color: "#fff", fontSize: 28, fontWeight: 700, cursor: busy ? "wait" : "pointer",
+            fontFamily: "'Geist Mono',monospace",
+            transition: "all 0.1s ease",
+          }}
+            onMouseDown={(e) => { e.currentTarget.style.transform = "scale(0.95)"; e.currentTarget.style.background = "rgba(255,255,255,0.12)"; }}
+            onMouseUp={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.background = "rgba(255,255,255,0.06)"; }}>
+            {n}
+          </button>
+        ))}
+        <button onClick={clear} disabled={busy} style={{
+          width: 80, height: 80, borderRadius: 16,
+          background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.25)",
+          color: "#fca5a5", fontSize: 12, fontWeight: 700, cursor: busy ? "wait" : "pointer",
+          fontFamily: "'Geist Mono',monospace", letterSpacing: 1,
+        }}>CLEAR</button>
+        <button onClick={() => append("0")} disabled={busy} style={{
+          width: 80, height: 80, borderRadius: 16,
+          background: "rgba(255,255,255,0.06)",
+          border: "1px solid rgba(255,255,255,0.1)",
+          color: "#fff", fontSize: 28, fontWeight: 700, cursor: busy ? "wait" : "pointer",
+          fontFamily: "'Geist Mono',monospace",
+        }}>0</button>
+        <button onClick={back} disabled={busy || pin.length === 0} style={{
+          width: 80, height: 80, borderRadius: 16,
+          background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)",
+          color: "#fbbf24", fontSize: 22, fontWeight: 700, cursor: busy ? "wait" : (pin.length === 0 ? "not-allowed" : "pointer"),
+          fontFamily: "'Geist Mono',monospace",
+          opacity: pin.length === 0 ? 0.4 : 1,
+        }}>⌫</button>
+      </div>
+
+      <div style={{ marginTop: 16, fontSize: 11, color: "#5b6470", textAlign: "center", lineHeight: 1.6, maxWidth: 360 }}>
+        💡 Lupa PIN? Hubungi Manager / Admin untuk reset PIN dari panel admin.
+      </div>
+    </div>
+  );
+}

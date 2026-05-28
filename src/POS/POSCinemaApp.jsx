@@ -267,8 +267,17 @@ export default function POSCinemaApp() {
 
   if (!cashier) return <POSKasirLogin apiBase={API_HOST} onSelectKasir={handleLogin} />;
 
-  // GATE: opening checklist WAJIB kelar sebelum kasir bisa transaksi
-  if (checklist && !checklist.opening?.done) {
+  // Wait for checklist state — race condition fix (cash modal jumping before checklist)
+  if (checklist === null) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0e16", color: "#9ca3af", fontFamily: "'Inter',sans-serif" }}>
+        <div style={{ fontSize: 14, letterSpacing: 1.5 }}>⏳ Memuat checklist cinema…</div>
+      </div>
+    );
+  }
+  // GATE: opening checklist WAJIB kelar sebelum kasir bisa transaksi.
+  // Order: PIN → Checklist → Cash modal (ShiftGate) → POS Cinema.
+  if (!checklist.opening?.done) {
     return <POSChecklist type="opening" vertical="cinema" apiBase={API_HOST} cashier={cashier} onDone={reloadChecklist} />;
   }
 

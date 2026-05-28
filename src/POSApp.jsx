@@ -194,8 +194,19 @@ export default function POSApp() {
 
   if (!cashier) return <POSKasirLogin apiBase={API_HOST} onSelectKasir={handleLogin} />;
 
-  // GATE: opening checklist wajib kelar sebelum kasir bisa mulai transaksi
-  if (checklist && !checklist.opening?.done) {
+  // Wait for checklist state to load — jangan kasih jump ke ShiftGate dulu
+  // (kalau gak wait, race condition: cash modal pop up sebentar lalu di-overlay checklist)
+  if (checklist === null) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0e16", color: "#9ca3af", fontFamily: "'Inter',sans-serif" }}>
+        <div style={{ fontSize: 14, letterSpacing: 1.5 }}>⏳ Memuat checklist…</div>
+      </div>
+    );
+  }
+
+  // GATE: opening checklist wajib kelar dulu sebelum buka shift (cash modal + target).
+  // Order: PIN → Checklist → Cash modal (ShiftGate) → POS menu.
+  if (!checklist.opening?.done) {
     return <POSChecklist type="opening" vertical="fnb" apiBase={API_HOST} cashier={cashier} onDone={reloadChecklist} />;
   }
 
