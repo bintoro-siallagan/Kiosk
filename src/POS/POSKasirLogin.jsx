@@ -38,6 +38,8 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
   const [pinModal, setPinModal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [dayClosed, setDayClosed] = useState(false);
+  const [dayOpenBusy, setDayOpenBusy] = useState(false);
+  const [dayOpenErr, setDayOpenErr] = useState("");
 
   // CLOCK — refresh every 30s
   useEffect(() => {
@@ -146,13 +148,30 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
     return () => clearInterval(t);
   }, [checkDay]);
   async function handleOpenDay() {
+    setDayOpenBusy(true); setDayOpenErr("");
     try {
-      await fetch(`${apiBase}/api/day/open`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ by: "Manager" }),
+      const token = (() => { try { return localStorage.getItem("adminToken") || ""; } catch { return ""; } })();
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const r = await fetch(`${apiBase}/api/day/open?vertical=fnb`, {
+        method: "POST", headers,
+        body: JSON.stringify({ by: "Manager", vertical: "fnb" }),
       });
-    } catch {}
-    setDayClosed(false);
+      if (!r.ok) {
+        if (r.status === 401 || r.status === 403) {
+          throw new Error("Manager / Admin harus login dulu di admin.karyaos.tech sebelum buka hari.");
+        }
+        let detail = ""; try { detail = (await r.json())?.error || ""; } catch {}
+        throw new Error(detail || `Gagal buka hari (HTTP ${r.status})`);
+      }
+      setDayClosed(false);
+      // Re-check setelah short delay untuk sync state backend
+      setTimeout(() => checkDay(), 800);
+    } catch (e) {
+      setDayOpenErr(e.message || "Gagal buka hari");
+    } finally {
+      setDayOpenBusy(false);
+    }
   }
 
   // SYSTEM HEALTH — network + printer + last sync
@@ -275,8 +294,16 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
         <div style={{textAlign:'center', padding:'48px 24px'}}>
           <div style={{fontSize:72, marginBottom:12}}>🌙</div>
           <div style={{fontSize:26, fontWeight:800, color:'#f59e0b', letterSpacing:1, marginBottom:10}}>HARI DITUTUP</div>
-          <div style={{fontSize:14, color:'#9ca3af', lineHeight:1.6, marginBottom:30}}>Operasional today sudah ditutup Manager.<br/>Open day dulu untuk mulai melayani lagi.</div>
-          <button onClick={handleOpenDay} style={{background:'#f59e0b', color:'#111', border:'none', borderRadius:14, padding:'16px 40px', fontSize:16, fontWeight:800, cursor:'pointer'}}>☀️ Open Day</button>
+          <div style={{fontSize:14, color:'#9ca3af', lineHeight:1.6, marginBottom:30}}>Operasional today sudah ditutup Manager.<br/>Manager harus buka hari sebelum kasir bisa start day.</div>
+          {dayOpenErr && (
+            <div style={{maxWidth:480, margin:'0 auto 18px', padding:'12px 16px', background:'rgba(239,68,68,0.10)', border:'1px solid rgba(239,68,68,0.35)', borderRadius:10, color:'#fca5a5', fontSize:13, lineHeight:1.5}}>
+              ⚠ {dayOpenErr}
+            </div>
+          )}
+          <button onClick={handleOpenDay} disabled={dayOpenBusy} style={{background: dayOpenBusy ? '#3a3a3a' : '#f59e0b', color:'#111', border:'none', borderRadius:14, padding:'16px 40px', fontSize:16, fontWeight:800, cursor: dayOpenBusy ? 'not-allowed' : 'pointer', opacity: dayOpenBusy ? 0.6 : 1}}>
+            {dayOpenBusy ? '⏳ Membuka…' : '☀️ Open Day'}
+          </button>
+          <div style={{marginTop:14, fontSize:11, color:'#5b6470', fontStyle:'italic'}}>Butuh akses Manager / Admin</div>
         </div>
       ) : (
         <PinLogin

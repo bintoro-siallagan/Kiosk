@@ -34,11 +34,20 @@ export default function ShiftGate({ children, cashier, onSwitchCashier, customer
   const openDay = async () => {
     setBusy(true); setErr("");
     try {
+      const token = (() => { try { return localStorage.getItem("adminToken") || ""; } catch { return ""; } })();
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
       const r = await fetch(`${API_BASE}/api/day/open${_vq}`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", headers,
         body: JSON.stringify({ by: cashier?.name || "Manager", vertical }),
       });
-      if (!r.ok) throw new Error("Gagal buka hari");
+      if (!r.ok) {
+        if (r.status === 401 || r.status === 403) {
+          throw new Error("Manager / Admin harus login dulu di admin.karyaos.tech sebelum buka hari.");
+        }
+        let detail = ""; try { detail = (await r.json())?.error || ""; } catch {}
+        throw new Error(detail || `Gagal buka hari (HTTP ${r.status})`);
+      }
       await check();
     } catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
