@@ -4777,6 +4777,100 @@ app.patch("/api/staff-call/:id/resolve", (req, res) => {
 
 // ─── START SERVER ─────────────────────────────────────────────────────────
 
+// ─── PUBLIC BERANDA — story wall ────────────────────────────────────
+// Endpoint publik (no auth) — show wall yg bikin customer rindu menyapa.
+// Filosofi karyaOS: customer datang BUKAN cuma karena makanan,
+// tapi karena ingin menyapa karyaOS sebentar. Beranda jadi tempat
+// menyapa itu.
+//
+// Output:
+// - greeting (time-of-day)
+// - milestone (total orders week-to-date, total customers served)
+// - stories (5 customer reviews anonymized 4-5★ dgn comment)
+// - today_tagline (adaptive)
+// - most_loved (item paling banyak dipesan minggu ini)
+app.get("/api/public/beranda", (req, res) => {
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    const dow = d.getDay() === 0 ? 7 : d.getDay();
+    const weekStartMs = d.getTime() - (dow - 1) * 86400 * 1000;
+    const weekStart = Math.floor(weekStartMs / 1000);
+
+    // Sambutan waktu
+    const h = new Date().getHours();
+    const greeting = h >= 5 && h < 11 ? 'Selamat pagi'
+                  : h >= 11 && h < 15 ? 'Selamat siang'
+                  : h >= 15 && h < 18 ? 'Selamat sore'
+                  : 'Selamat malam';
+    const tagline = h >= 5 && h < 11 ? 'Pagi yang baru menunggu rasa baru.'
+                 : h >= 11 && h < 15 ? 'Siang yang hangat, perut yang senang.'
+                 : h >= 15 && h < 18 ? 'Sore yang manis menunggu cerita.'
+                 : 'Malam yang tenang menunggu kunjunganmu.';
+
+    // Milestone — total orders minggu ini
+    let ordersWeek = 0;
+    try {
+      const r = db.rawDb.prepare(`SELECT COUNT(*) c FROM orders WHERE time >= ? AND status != 'cancelled'`).get(weekStart * 1000);
+      ordersWeek = r?.c || 0;
+    } catch {}
+
+    // Total customer dilayani (all-time, distinct phone)
+    let totalServed = 0;
+    try {
+      const r = db.rawDb.prepare(`SELECT COUNT(DISTINCT phone) c FROM customers WHERE phone IS NOT NULL AND phone != ''`).get();
+      totalServed = r?.c || 0;
+    } catch {}
+
+    // Stories — anonymized highlights
+    let stories = [];
+    try {
+      stories = db.rawDb.prepare(`
+        SELECT comment, rating, source, created_at
+        FROM customer_feedback
+        WHERE rating >= 4 AND comment IS NOT NULL AND LENGTH(TRIM(comment)) >= 10
+        ORDER BY rating DESC, created_at DESC LIMIT 5
+      `).all();
+    } catch {}
+
+    // Most loved item minggu ini — parse orders.items JSON, count
+    let mostLoved = null;
+    try {
+      const rows = db.rawDb.prepare(`SELECT items FROM orders WHERE time >= ? AND status != 'cancelled' LIMIT 500`).all(weekStart * 1000);
+      const counts = new Map();
+      for (const r of rows) {
+        try {
+          const items = JSON.parse(r.items || '[]');
+          for (const it of items) {
+            const name = it.n || it.name;
+            if (!name) continue;
+            counts.set(name, (counts.get(name) || 0) + (it.q || it.qty || 1));
+          }
+        } catch {}
+      }
+      if (counts.size > 0) {
+        const top = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+        mostLoved = { name: top[0], qty: top[1] };
+      }
+    } catch {}
+
+    res.json({
+      greeting,
+      tagline,
+      milestone: {
+        orders_week: ordersWeek,
+        total_served: totalServed,
+      },
+      stories,
+      most_loved: mostLoved,
+      generated_at: now,
+    });
+  } catch (e) {
+    console.error('[beranda]', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── Public config (CDS tracking URL etc) ──────────────────────────────
 app.get("/api/config/public", (_, res) => {
   let auditConfig = {};
