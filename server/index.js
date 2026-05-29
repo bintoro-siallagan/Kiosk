@@ -4829,21 +4829,46 @@ app.get("/api/admin/karya-hari-ini", (req, res) => {
       `).get(yStart, yEnd);
     } catch {}
 
-    // Milestones kemarin — kasir yg anniversary, dll
+    // Milestones kemarin — kasir + outlet yg anniversary, ulang tahun, dll
     const milestones = [];
     try {
       // Kasir yg punya anniversary kemarin
       const ANNIV_DAYS = [100, 180, 365, 500, 730, 1000, 1825];
       const yesterdayDay = (firstAt) => Math.floor((yStart - firstAt) / 86400) + 1;
-      const allUsers = db.rawDb.prepare(`SELECT name, first_login_at FROM admin_users WHERE first_login_at IS NOT NULL AND active = 1`).all();
+      const allUsers = db.rawDb.prepare(`SELECT name, first_login_at, birth_date FROM admin_users WHERE active = 1`).all();
       for (const u of allUsers) {
-        const d = yesterdayDay(u.first_login_at);
-        if (ANNIV_DAYS.includes(d)) {
-          const label = d === 100 ? "hari ke-100" : d === 180 ? "6 bulan" : d === 365 ? "1 tahun"
-                     : d === 500 ? "hari ke-500" : d === 730 ? "2 tahun" : d === 1000 ? "hari ke-1000" : "5 tahun";
-          milestones.push(`🌳 ${u.name} mencapai ${label} kemarin`);
+        if (u.first_login_at) {
+          const d = yesterdayDay(u.first_login_at);
+          if (ANNIV_DAYS.includes(d)) {
+            const label = d === 100 ? "hari ke-100" : d === 180 ? "6 bulan" : d === 365 ? "1 tahun"
+                       : d === 500 ? "hari ke-500" : d === 730 ? "2 tahun" : d === 1000 ? "hari ke-1000" : "5 tahun";
+            milestones.push(`🌳 ${u.name} mencapai ${label} kerja`);
+          }
+        }
+        // Ulang tahun kemarin
+        if (u.birth_date && u.birth_date.length >= 5) {
+          const dt = new Date(yStartMs);
+          const ymd = `${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+          if (u.birth_date.slice(5) === ymd) {
+            milestones.push(`🎂 Kemarin ulang tahun ${u.name} — semoga sehat selalu`);
+          }
         }
       }
+
+      // Outlet anniversary — outlet yg punya milestone hari kemarin
+      try {
+        const outlets = db.rawDb.prepare(`SELECT name, opening_date, created_at FROM outlet_master WHERE status = 'active'`).all();
+        for (const o of outlets) {
+          const dateRef = o.opening_date || o.created_at;
+          if (!dateRef) continue;
+          const d = yesterdayDay(dateRef);
+          if (ANNIV_DAYS.includes(d)) {
+            const label = d === 100 ? "100 hari" : d === 180 ? "6 bulan" : d === 365 ? "1 tahun"
+                       : d === 500 ? "500 hari" : d === 730 ? "2 tahun" : d === 1000 ? "1000 hari" : "5 tahun";
+            milestones.push(`🏪 Outlet ${o.name} mencapai ${label} kemarin`);
+          }
+        }
+      } catch {}
     } catch {}
 
     // Kasir top kemarin (omset tertinggi)

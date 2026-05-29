@@ -571,14 +571,38 @@ function setupCashierKpi(app, opts = {}) {
              : (hour >= 11 && hour < 15) ? 'Selamat siang'
              : (hour >= 15 && hour < 18) ? 'Selamat sore'
              : 'Selamat malam';
-    let lastLoginAt0 = null, day0 = null;
+    let lastLoginAt0 = null, day0 = null, birthDate0 = null;
     try {
-      const u = db.prepare(`SELECT last_login_at, first_login_at FROM admin_users WHERE name = ? LIMIT 1`).get(cashierName);
+      const u = db.prepare(`SELECT last_login_at, first_login_at, birth_date FROM admin_users WHERE name = ? LIMIT 1`).get(cashierName);
       lastLoginAt0 = u?.last_login_at || null;
+      birthDate0 = u?.birth_date || null;
       if (u?.first_login_at) {
         day0 = Math.floor((Math.floor(Date.now() / 1000) - u.first_login_at) / 86400) + 1;
       }
     } catch {}
+
+    // Birthday check juga di early return (kasir tanpa data kemarin tetap dapat sambutan ultah)
+    let birthday0 = null;
+    if (birthDate0) {
+      try {
+        const today = new Date();
+        const todayMd = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const birthMd = birthDate0.length >= 5 ? birthDate0.slice(5) : null;
+        if (birthMd === todayMd) {
+          let ageYears = null;
+          if (birthDate0.length === 10) {
+            const birthY = parseInt(birthDate0.slice(0, 4));
+            if (birthY && birthY > 1900) ageYears = today.getFullYear() - birthY;
+          }
+          birthday0 = {
+            today: true, age: ageYears,
+            message: ageYears
+              ? `Selamat ulang tahun ke-${ageYears}, ${cashierName}. Hari ini hari Anda.`
+              : `Selamat ulang tahun, ${cashierName}. Hari ini hari Anda.`,
+          };
+        }
+      } catch {}
+    }
 
     if (!me) {
       return res.json({
@@ -586,11 +610,13 @@ function setupCashierKpi(app, opts = {}) {
         badges: [],
         message: null,
         highlight: null,
+        anniversary: null,
+        birthday: birthday0,
         yesterday_kpi: null,
         greeting: tg,
         day: day0,
         last_login_at: lastLoginAt0,
-        has_celebration: false,
+        has_celebration: !!birthday0,
       });
     }
 
@@ -655,15 +681,43 @@ function setupCashierKpi(app, opts = {}) {
 
     // Continuity context — last_login_at + day di perjalanan kasir.
     // Filosofi: setiap pulang ke "rumah" karyaOS harus disambut dgn ingatan.
-    let lastLoginAt = null, day = null, firstLoginAt = null;
+    let lastLoginAt = null, day = null, firstLoginAt = null, birthDate = null;
     try {
-      const u = db.prepare(`SELECT last_login_at, first_login_at FROM admin_users WHERE name = ? LIMIT 1`).get(cashierName);
+      const u = db.prepare(`SELECT last_login_at, first_login_at, birth_date FROM admin_users WHERE name = ? LIMIT 1`).get(cashierName);
       lastLoginAt = u?.last_login_at || null;
       firstLoginAt = u?.first_login_at || null;
+      birthDate = u?.birth_date || null;
       if (firstLoginAt) {
         day = Math.floor((Math.floor(Date.now() / 1000) - firstLoginAt) / 86400) + 1;
       }
     } catch {}
+
+    // Birthday — hari yg paling sakral. Pekerja seringkali sendirian
+    // ulang tahun saat shift kerja. Sistem harus mengingat itu.
+    let birthday = null;
+    if (birthDate) {
+      try {
+        const today = new Date();
+        const todayMd = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        // birth_date format: YYYY-MM-DD
+        const birthMd = birthDate.length >= 5 ? birthDate.slice(5) : null;
+        if (birthMd === todayMd) {
+          // Hitung umur kalau ada tahun
+          let ageYears = null;
+          if (birthDate.length === 10) {
+            const birthY = parseInt(birthDate.slice(0, 4));
+            if (birthY && birthY > 1900) ageYears = today.getFullYear() - birthY;
+          }
+          birthday = {
+            today: true,
+            age: ageYears,
+            message: ageYears
+              ? `Selamat ulang tahun ke-${ageYears}, ${cashierName}. Hari ini hari Anda. Bekerja sambil dirayakan.`
+              : `Selamat ulang tahun, ${cashierName}. Hari ini hari Anda. Kami senang Anda di sini.`,
+          };
+        }
+      } catch {}
+    }
 
     res.json({
       cashier: cashierName,
@@ -671,12 +725,13 @@ function setupCashierKpi(app, opts = {}) {
       message,
       highlight,
       anniversary, // anniversary today (atau null)
+      birthday,    // birthday today (atau null)
       yesterday_kpi: me.kpi_score,
       // Continuity untuk DailyHomecoming — pakai variables yg sudah dideklarasi di awal
       greeting: tg,
       day,
       last_login_at: lastLoginAt,
-      has_celebration: badges.length > 0 || !!highlight || !!anniversary,
+      has_celebration: badges.length > 0 || !!highlight || !!anniversary || !!birthday,
     });
   });
 

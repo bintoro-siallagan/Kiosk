@@ -169,6 +169,9 @@ try { db.exec("ALTER TABLE shifts ADD COLUMN closed_by TEXT"); } catch {}
 // dari hari pertama. Sistem harus mengingat hari itu.
 try { db.exec("ALTER TABLE admin_users ADD COLUMN first_login_at INTEGER"); } catch {}
 try { db.exec("ALTER TABLE admin_users ADD COLUMN onboarded_at INTEGER"); } catch {}
+// Fase 5 — birthday recognition. Format: YYYY-MM-DD. Bagian YYYY
+// ada utk catatan, tapi pengecekan hanya MM-DD (ulang tahun setiap tahun).
+try { db.exec("ALTER TABLE admin_users ADD COLUMN birth_date TEXT"); } catch {}
 
 // Login audit log
 try {
@@ -539,12 +542,12 @@ const adminUserStmts = {
      username, email, password_hash, password_salt, password_changed_at,
      must_change_password, last_login_at, last_login_ip,
      failed_login_count, locked_until, company_id, vertical, outlet_code,
-     first_login_at, onboarded_at)
+     first_login_at, onboarded_at, birth_date)
     VALUES (@id, @name, @pin, @role, @active, @created_at,
      @username, @email, @password_hash, @password_salt, @password_changed_at,
      @must_change_password, @last_login_at, @last_login_ip,
      @failed_login_count, @locked_until, @company_id, @vertical, @outlet_code,
-     @first_login_at, @onboarded_at)`),
+     @first_login_at, @onboarded_at, @birth_date)`),
   selectAll: db.prepare(`SELECT * FROM admin_users ORDER BY id`),
   delete:    db.prepare(`DELETE FROM admin_users WHERE id = ?`),
 };
@@ -573,6 +576,7 @@ const adminUserToRow = u => {
     outlet_code: u.outlet_code || null,
     first_login_at: u.first_login_at ?? null,
     onboarded_at:   u.onboarded_at   ?? null,
+    birth_date:     u.birth_date     ?? null,
   };
 };
 const rowToAdminUser = r => ({
@@ -591,6 +595,7 @@ const rowToAdminUser = r => ({
   outlet_code: r.outlet_code || null,
   first_login_at: r.first_login_at ?? null,
   onboarded_at:   r.onboarded_at   ?? null,
+  birth_date:     r.birth_date     ?? null,
 });
 function loadAllAdminUsers() { return adminUserStmts.selectAll.all().map(rowToAdminUser); }
 function insertAdminUser(u)  { adminUserStmts.insert.run(adminUserToRow(u)); }

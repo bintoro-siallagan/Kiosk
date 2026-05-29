@@ -42,14 +42,15 @@ export default function MorningRecognition({ apiBase = '', onDone }) {
         const hasBadges = Array.isArray(d?.badges) && d.badges.length > 0;
         const hasHighlight = d?.highlight && d.highlight.comment;
         const hasAnniversary = !!d?.anniversary;
-        const hasGreeting = d?.greeting; // selalu ada dari backend update
-        if (!d || (!hasBadges && !hasHighlight && !hasAnniversary && !hasGreeting)) {
+        const hasBirthday = !!d?.birthday;
+        const hasGreeting = d?.greeting;
+        if (!d || (!hasBadges && !hasHighlight && !hasAnniversary && !hasBirthday && !hasGreeting)) {
           onDone?.();
           return;
         }
         // Soft mode: hanya greeting (tanpa celebration). Kasir gak pernah
         // disambut layar kosong saat pulang ke karyaOS.
-        d._isSoftMode = !hasBadges && !hasHighlight && !hasAnniversary;
+        d._isSoftMode = !hasBadges && !hasHighlight && !hasAnniversary && !hasBirthday;
         setData(d);
       })
       .catch(() => { if (alive) onDone?.(); });
@@ -79,8 +80,8 @@ export default function MorningRecognition({ apiBase = '', onDone }) {
       } catch {}
     }
     // Adaptive dwell: soft greeting cepat (4s), celebration penuh,
-    // anniversary dipanjangin (12s) supaya kasir bisa baca message ulang.
-    const dwellMs = data.anniversary ? 12000
+    // anniversary + birthday dipanjangin (12s) — momen sakral, butuh waktu.
+    const dwellMs = (data.birthday || data.anniversary) ? 12000
                   : data._isSoftMode ? 4000
                   : data.highlight ? 10000 : 6000;
     const t = setTimeout(() => {
@@ -140,6 +141,16 @@ export default function MorningRecognition({ apiBase = '', onDone }) {
             : 'linear-gradient(180deg, #fff 0%, #FFD700 100%)',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         }}>{data.cashier}</h1>
+
+        {/* BIRTHDAY — momen paling sakral. Pekerja seringkali ulang
+            tahun sendirian di shift. Sistem yg mengingat = sahabat sejati. */}
+        {data.birthday && (
+          <div style={S.bdayBox}>
+            <div style={S.bdayIcon}>🎂</div>
+            <div style={S.bdayLabel}>SELAMAT ULANG TAHUN</div>
+            <p style={S.bdayMessage}>{data.birthday.message}</p>
+          </div>
+        )}
 
         {/* ANNIVERSARY — perayaan hari ke-100/365/500/1000 yg sakral.
             Ditampilkan paling atas, dengan animasi pop yang dramatic. */}
@@ -289,6 +300,29 @@ const S = {
   annivMessage: {
     margin: 0, fontSize: 14.5, color: '#fde68a',
     fontStyle: 'italic', lineHeight: 1.55, maxWidth: 380,
+    marginLeft: 'auto', marginRight: 'auto',
+  },
+  // Birthday — momen sakral. Pink-gold accent karena ini momen pribadi, bukan profesional.
+  bdayBox: {
+    margin: '4px auto 24px', maxWidth: 480, padding: '26px 28px',
+    background: 'linear-gradient(180deg, rgba(236,72,153,0.18) 0%, rgba(245,158,11,0.05) 100%)',
+    border: '1px solid rgba(236,72,153,0.45)',
+    borderRadius: 20,
+    boxShadow: '0 16px 40px rgba(236,72,153,0.20), inset 0 0 40px rgba(236,72,153,0.08)',
+    animation: 'morn-badge-pop 0.8s 0.2s both',
+  },
+  bdayIcon: {
+    fontSize: 80, marginBottom: 10,
+    filter: 'drop-shadow(0 8px 22px rgba(236,72,153,0.45))',
+  },
+  bdayLabel: {
+    fontSize: 12, fontWeight: 800, color: '#f9a8d4',
+    letterSpacing: 4, marginBottom: 14,
+    textShadow: '0 2px 12px rgba(236,72,153,0.4)',
+  },
+  bdayMessage: {
+    margin: 0, fontSize: 16, color: '#fce7f3',
+    fontStyle: 'italic', lineHeight: 1.55, maxWidth: 400,
     marginLeft: 'auto', marginRight: 'auto',
   },
 };
