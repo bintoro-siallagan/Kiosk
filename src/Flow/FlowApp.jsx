@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import FlowWelcome from "./FlowWelcome.jsx";
+const FarewellOverlay = lazy(() => import("../components/FarewellOverlay.jsx"));
 import FlowHome from "./FlowHome.jsx";
 import FlowMenu from "./FlowMenu.jsx";
 import FlowCheckout from "./FlowCheckout.jsx";
@@ -59,14 +60,20 @@ export default function FlowApp() {
     setScreen("home");
   }
 
+  const [farewell, setFarewell] = useState(null);
   function handleLogout() {
-    try {
-      localStorage.removeItem(SESSION_KEY);
-      localStorage.removeItem(CART_KEY);
-    } catch {}
-    setSession(null);
-    setCart([]);
-    setScreen("welcome");
+    setFarewell({
+      name: session?.name || 'Sahabat',
+      then: () => {
+        try {
+          localStorage.removeItem(SESSION_KEY);
+          localStorage.removeItem(CART_KEY);
+        } catch {}
+        setSession(null);
+        setCart([]);
+        setScreen("welcome");
+      },
+    });
   }
 
   function addToCart(item, qty = 1) {
@@ -200,6 +207,13 @@ export default function FlowApp() {
       <div style={{ position: "fixed", top: "calc(env(safe-area-inset-top) + 12px)", right: 12, zIndex: 9999 }}>
         <LocaleSwitcher compact />
       </div>
+
+      {/* Farewell overlay saat customer logout */}
+      {farewell && (
+        <Suspense fallback={null}>
+          <FarewellOverlay name={farewell.name} onDone={() => { setFarewell(null); farewell.then?.(); }} />
+        </Suspense>
+      )}
     </div>
   );
 }

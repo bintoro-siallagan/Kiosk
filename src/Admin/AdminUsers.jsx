@@ -336,6 +336,7 @@ function EditUserModal({ user, API, token, roles, onClose, onSaved }) {
   const [role, setRole] = useState(user.role || "");
   const [vertical, setVertical] = useState(user.vertical || "");
   const [outletCode, setOutletCode] = useState(user.outlet_code || "");
+  const [birthDate, setBirthDate] = useState(user.birth_date || "");
   const [outlets, setOutlets] = useState([]);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -360,7 +361,7 @@ function EditUserModal({ user, API, token, roles, onClose, onSaved }) {
       const r = await fetch(`${API}/api/auth/users/${user.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json", Authorization: token ? `Bearer ${token}` : undefined },
-        body: JSON.stringify({ name: name.trim(), role, vertical: vertical || null, outlet_code: outletCode || null }),
+        body: JSON.stringify({ name: name.trim(), role, vertical: vertical || null, outlet_code: outletCode || null, birth_date: birthDate || null }),
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j?.error || "Gagal update user");
@@ -372,7 +373,8 @@ function EditUserModal({ user, API, token, roles, onClose, onSaved }) {
   const dirty = name.trim() !== (user.name || "")
     || role !== (user.role || "")
     || (vertical || "") !== (user.vertical || "")
-    || (outletCode || "") !== (user.outlet_code || "");
+    || (outletCode || "") !== (user.outlet_code || "")
+    || (birthDate || "") !== (user.birth_date || "");
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20, backdropFilter: "blur(6px)" }}>
@@ -440,6 +442,19 @@ function EditUserModal({ user, API, token, roles, onClose, onSaved }) {
               🌐 <strong>HQ Access:</strong> User lihat data semua outlet. Cocok untuk Owner / Regional Manager / Auditor.
             </div>
           )}
+        </div>
+
+        {/* Tanggal lahir — untuk birthday recognition. Optional, tapi
+            kalau diisi, kasir akan dapat sambutan ulang tahun pagi-pagi. */}
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>
+            🎂 TANGGAL LAHIR (opsional)
+          </div>
+          <input type="date" value={birthDate} onChange={e => setBirthDate(e.target.value)}
+            style={{ width: "100%", padding: 10, background: "rgba(0,0,0,0.4)", border: BORDER, borderRadius: 8, color: "#fff", fontSize: 14, fontFamily: "inherit", boxSizing: "border-box", outline: "none", colorScheme: "dark" }} />
+          <div style={{ marginTop: 6, padding: "8px 12px", background: "rgba(236,72,153,0.06)", border: "1px solid rgba(236,72,153,0.20)", borderRadius: 6, fontSize: 11, color: "#f9a8d4", lineHeight: 1.55 }}>
+            💛 Saat ulang tahun, kasir dapat sambutan pink-gold di layar POS pagi-pagi. Boleh kosong kalau privacy.
+          </div>
         </div>
 
         {err && <div style={{ padding: "10px 12px", background: "rgba(239,68,68,0.1)", border: `1px solid ${RED}55`, borderRadius: 8, color: "#fca5a5", fontSize: 12, marginBottom: 12 }}>⚠ {err}</div>}

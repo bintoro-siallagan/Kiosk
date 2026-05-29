@@ -4035,7 +4035,7 @@ app.patch("/api/auth/users/:id", requireAdmin, (req, res) => {
   if (!isSuperAdmin && adminUsers[idx].company_id !== companyId) {
     return res.status(403).json({ error: "Tidak punya akses user ini" });
   }
-  const { name, pin, role, active, vertical, outlet_code } = req.body;
+  const { name, pin, role, active, vertical, outlet_code, birth_date } = req.body;
   // Guard: tenant gak boleh ubah ke super-admin
   if (!isSuperAdmin && (role === "super-admin" || role === "superadmin")) {
     return res.status(403).json({ error: "Tidak boleh assign role super-admin" });
@@ -4065,6 +4065,14 @@ app.patch("/api/auth/users/:id", requireAdmin, (req, res) => {
   // Outlet binding — set/clear outlet_code per user
   if (outlet_code !== undefined) {
     adminUsers[idx].outlet_code = outlet_code || null;
+  }
+  // Birth date — utk birthday recognition. Format YYYY-MM-DD.
+  if (birth_date !== undefined) {
+    // Validate format kalau ada nilai
+    if (birth_date && !/^\d{4}-\d{2}-\d{2}$/.test(birth_date)) {
+      return res.status(400).json({ error: "Tanggal lahir harus format YYYY-MM-DD" });
+    }
+    adminUsers[idx].birth_date = birth_date || null;
   }
   db.insertAdminUser(adminUsers[idx]); // persist
   res.json({ ...adminUsers[idx], pin: "••••••" });

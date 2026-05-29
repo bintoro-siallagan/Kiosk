@@ -6,7 +6,8 @@
 // Reuses backend /api/cinema/* (films, showtimes, seats, tickets).
 // Premium dark theme, brand-aware via /api/companies/branding.
 
-import { useState, useEffect, useMemo, useCallback, useRef, Fragment } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef, Fragment, lazy, Suspense } from "react";
+const FarewellOverlay = lazy(() => import("../components/FarewellOverlay.jsx"));
 import QRCode from "qrcode";
 import API_HOST from "../apiBase.js";
 import { fmtMoney as rp } from "../lib/currency.js";
@@ -387,9 +388,15 @@ export default function CinemaWebApp() {
     try { localStorage.setItem("cinema_web_session", JSON.stringify(sess)); } catch {}
     setSignInOpen(false);
   };
+  const [farewell, setFarewell] = useState(null);
   const handleSignOut = () => {
-    setSession(null);
-    try { localStorage.removeItem("cinema_web_session"); } catch {}
+    setFarewell({
+      name: session?.name || 'Sahabat',
+      then: () => {
+        setSession(null);
+        try { localStorage.removeItem("cinema_web_session"); } catch {}
+      },
+    });
   };
 
   // ═══ DRAFT AUTO-SAVE: simpan saat user pilih sesuatu di flow booking ═══
@@ -773,6 +780,11 @@ export default function CinemaWebApp() {
       </main>
       <Footer brand={brand} brandPrimary={brandPrimary} onAbout={() => goTo("about")} onNav={(t) => goTo(t)} footerConfig={resolvedFooterConfig} />
       {signInOpen && <SignInModal onClose={() => setSignInOpen(false)} onSignIn={handleSignIn} brandPrimary={brandPrimary} />}
+      {farewell && (
+        <Suspense fallback={null}>
+          <FarewellOverlay name={farewell.name} onDone={() => { setFarewell(null); farewell.then?.(); }} />
+        </Suspense>
+      )}
     </div>
   );
 }
