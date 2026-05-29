@@ -338,11 +338,21 @@ export default function CinemaWebApp() {
   });
   const [signInOpen, setSignInOpen] = useState(false);
 
-  // Brand theming (auto-load tenant brand for color hint)
-  const [brand, setBrand] = useState(null);
+  // Brand — untuk cinema.karyaos.tech (marketplace), pakai brand karyaOS Cinema
+  // bukan tenant F&B yg fetched. CinemaWebApp adalah destinasi cinema umbrella.
+  // Kalau bukan cinema. subdomain (mis. embedded di app.karyaos.tech), tetap fetch tenant brand.
+  const isMarketplace = typeof window !== "undefined" && window.location.hostname.startsWith("cinema.");
+  const MARKETPLACE_BRAND = {
+    company_id: null, company_code: "KCN",
+    name: "Karya Cinema", brand_short: "Karya Cinema",
+    brand_color: "#a855f7", brand_secondary: "#7e22ce",
+    logo_url: "/logo.png", vertical: "cinema",
+  };
+  const [brand, setBrand] = useState(isMarketplace ? MARKETPLACE_BRAND : null);
   useEffect(() => {
+    if (isMarketplace) return; // marketplace: skip tenant brand fetch
     fetch(`${API_HOST}/api/companies/branding`).then(r => r.json()).then(setBrand).catch(() => {});
-  }, []);
+  }, [isMarketplace]);
   const brandPrimary = brand?.brand_color || "#a855f7";
 
   // P5 — Theme Studio (shared helper)
@@ -2750,13 +2760,51 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
   }, [trailerEmbed, isTouch, idx, inView]);
 
   if (!current) {
-    // Fallback ringan saat film belum loaded — bg gradient brand subtle
+    // Hero placeholder cinematic — saat poster belum di-upload, jangan
+    // tampilkan 85vh kosong yg bikin halaman terasa mati. Tampilkan
+    // banner ringkas dgn brand + film titles sbg ticker.
+    const titles = (films || []).filter(f => f.status === "now_showing" || !f.status).slice(0, 4);
     return (
       <section style={{
-        position: "relative", width: "100vw", minHeight: "85vh",
+        position: "relative", width: "100vw", minHeight: "32vh",
         marginLeft: "calc(-50vw + 50%)", marginRight: "calc(-50vw + 50%)",
-        background: `linear-gradient(135deg, ${brandPrimary}11, #141414 60%)`,
-      }} />
+        background: `radial-gradient(ellipse at center, ${brandPrimary}22 0%, #0a0a12 60%, #000 100%)`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        flexDirection: "column", padding: "40px 24px", overflow: "hidden",
+      }}>
+        <div style={{
+          fontSize: 11, letterSpacing: 4, color: brandPrimary,
+          fontFamily: "'Geist Mono',monospace", textTransform: "uppercase",
+          marginBottom: 12, fontWeight: 700,
+        }}>🎬 Karya Cinema</div>
+        <h1 style={{
+          fontSize: "clamp(28px, 5vw, 48px)", fontWeight: 800, margin: 0,
+          letterSpacing: -0.8, textAlign: "center", lineHeight: 1.1,
+          background: `linear-gradient(180deg, #fff 0%, ${brandPrimary} 100%)`,
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+          marginBottom: 14,
+        }}>Sedang Tayang Hari Ini</h1>
+        {titles.length > 0 && (
+          <div style={{
+            display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center",
+            maxWidth: 720,
+          }}>
+            {titles.map(f => (
+              <span key={f.id} style={{
+                fontSize: 13, padding: "6px 14px",
+                background: "rgba(255,255,255,0.06)",
+                border: "1px solid rgba(255,255,255,0.10)",
+                borderRadius: 999, color: "#cbd5e1",
+                fontWeight: 500, letterSpacing: 0.2,
+              }}>{f.title}</span>
+            ))}
+          </div>
+        )}
+        <p style={{
+          fontSize: 13, color: "#94a3b8", margin: "18px 0 0",
+          fontStyle: "italic", textAlign: "center", maxWidth: 480,
+        }}>Pilih lokasi cinema favorit Anda untuk lihat jadwal lengkap di bawah.</p>
+      </section>
     );
   }
 
