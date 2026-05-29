@@ -291,19 +291,19 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
       </div>
 
       {dayClosed ? (
-        <div style={{display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-start', textAlign:'center', padding:'48px 24px', gap:18}}>
-          <div style={{fontSize:72, lineHeight:1, display:'block', margin:0}}>🌙</div>
-          <div style={{fontSize:26, fontWeight:800, color:'#f59e0b', letterSpacing:1, lineHeight:1.2, margin:0}}>HARI DITUTUP</div>
-          <div style={{fontSize:14, color:'#9ca3af', lineHeight:1.6, maxWidth:480, margin:0}}>Operasional today sudah ditutup Manager.<br/>Manager harus buka hari sebelum kasir bisa start day.</div>
+        <div style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center', padding:'48px 24px', gap:22, minHeight:'52vh'}}>
+          <div style={{fontSize:128, lineHeight:1, display:'block', margin:0, filter:'drop-shadow(0 8px 32px rgba(245,158,11,0.25))', opacity:0.92}}>🌙</div>
+          <div style={{fontSize:36, fontWeight:900, color:'#f59e0b', letterSpacing:6, lineHeight:1.1, margin:0, textShadow:'0 2px 24px rgba(245,158,11,0.3)'}}>HARI DITUTUP</div>
+          <div style={{fontSize:15, color:'#9ca3af', lineHeight:1.6, maxWidth:520, margin:0}}>Operasional today sudah ditutup Manager.<br/>Manager harus buka hari sebelum kasir bisa start day.</div>
           {dayOpenErr && (
-            <div style={{maxWidth:480, margin:'0 auto 18px', padding:'12px 16px', background:'rgba(239,68,68,0.10)', border:'1px solid rgba(239,68,68,0.35)', borderRadius:10, color:'#fca5a5', fontSize:13, lineHeight:1.5}}>
+            <div style={{maxWidth:480, padding:'12px 16px', background:'rgba(239,68,68,0.10)', border:'1px solid rgba(239,68,68,0.35)', borderRadius:10, color:'#fca5a5', fontSize:13, lineHeight:1.5}}>
               ⚠ {dayOpenErr}
             </div>
           )}
-          <button onClick={handleOpenDay} disabled={dayOpenBusy} style={{background: dayOpenBusy ? '#3a3a3a' : '#f59e0b', color:'#111', border:'none', borderRadius:14, padding:'16px 40px', fontSize:16, fontWeight:800, cursor: dayOpenBusy ? 'not-allowed' : 'pointer', opacity: dayOpenBusy ? 0.6 : 1}}>
+          <button onClick={handleOpenDay} disabled={dayOpenBusy} style={{background: dayOpenBusy ? '#3a3a3a' : 'linear-gradient(135deg,#F59E0B,#fbbf24)', color:'#111', border:'none', borderRadius:14, padding:'18px 48px', fontSize:17, fontWeight:800, cursor: dayOpenBusy ? 'not-allowed' : 'pointer', opacity: dayOpenBusy ? 0.6 : 1, boxShadow: dayOpenBusy ? 'none' : '0 12px 36px rgba(245,158,11,0.35)', letterSpacing:1, marginTop:10}}>
             {dayOpenBusy ? '⏳ Membuka…' : '☀️ Open Day'}
           </button>
-          <div style={{marginTop:14, fontSize:11, color:'#5b6470', fontStyle:'italic'}}>Butuh akses Manager / Admin</div>
+          <div style={{fontSize:11, color:'#5b6470', fontStyle:'italic', letterSpacing:0.5}}>Butuh akses Manager / Admin</div>
         </div>
       ) : (
         <PinLogin
@@ -478,6 +478,7 @@ function PinModal({ staff, onCancel, onSuccess, verifyPin }) {
 const styles = {
   root: {
     minHeight: '100vh',
+    display: 'flex', flexDirection: 'column',
     background: 'linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)',
     backgroundAttachment: 'fixed',
     color: '#fff',
