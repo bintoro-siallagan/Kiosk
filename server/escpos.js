@@ -121,6 +121,16 @@ function buildCustomerReceipt(order, template = {}) {
   r.align("center").bold(true).size("dbl").line(outletName)
    .size("normal").line(sourceLabel).bold(false);
   if (outletAddress) r.line(outletAddress);
+
+  // Sambutan waktu di header struk — customer baca pertama kali.
+  // Filosofi karyaOS: setiap struk = surat kecil dari rumah ke customer.
+  // Awalnya disapa, tengahnya jelas, akhirnya didoakan.
+  const headHour = new Date(order.time || Date.now()).getHours();
+  const headWarm = headHour >= 5 && headHour < 11 ? "Terima kasih atas pagi ini"
+                : headHour >= 11 && headHour < 15 ? "Terima kasih atas siang ini"
+                : headHour >= 15 && headHour < 18 ? "Terima kasih atas sore ini"
+                : "Terima kasih atas malam ini";
+  r.feed().line(headWarm);
   r.feed();
   r.hr("=");
 

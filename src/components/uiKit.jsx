@@ -79,9 +79,39 @@ export function UiKitProvider({ children }) {
     return new Promise((resolve) => setPromptReq({ title, label, defaultValue, placeholder, type, onResolve: resolve }));
   }, []);
 
+  // Warmifier — transform pesan generic ke bahasa karyaOS (sahabat-guru-ibu).
+  // Caller bisa pakai pesan singkat ("Saved", "Failed") dan otomatis di-warm.
+  // Kalau ada pesan kustom (tidak ada di map), itu tetap dipakai apa adanya.
+  const warmifyToast = (msg, kind) => {
+    if (typeof msg !== "string") return msg;
+    const m = msg.trim().toLowerCase();
+    const WARM_OK = {
+      "saved": "Tersimpan dengan hati 🌱",
+      "tersimpan": "Tersimpan dengan hati 🌱",
+      "updated": "Sudah diperbarui ✓",
+      "deleted": "Sudah dihapus.",
+      "created": "Sudah ditambahkan ✓",
+      "synced": "Sudah tersinkron ✓",
+      "ok": "Selesai 🌱",
+      "success": "Selesai 🌱",
+    };
+    const WARM_ERR = {
+      "failed": "Belum berhasil — coba lagi ya 🤔",
+      "error": "Hmm, sebentar ya 🤔",
+      "gagal": "Belum berhasil — coba lagi ya 🤔",
+      "network error": "Internet lagi lemah — kami tunggu sampai stabil 🌐",
+      "timeout": "Lambat sebentar — coba lagi 1-2 menit ya 🤔",
+      "not found": "Belum kami temukan 🤔",
+    };
+    if (kind === "err" || kind === "warn") return WARM_ERR[m] || msg;
+    if (kind === "ok") return WARM_OK[m] || msg;
+    return msg;
+  };
+
   const toast = useCallback((message, kind = "ok", ttl = 2500) => {
     const id = Math.random().toString(36).slice(2);
-    setToasts(p => [...p, { id, message, kind, ttl }]);
+    const warm = warmifyToast(message, kind);
+    setToasts(p => [...p, { id, message: warm, kind, ttl }]);
     if (ttl > 0) setTimeout(() => setToasts(p => p.filter(t => t.id !== id)), ttl);
     return id;
   }, []);
