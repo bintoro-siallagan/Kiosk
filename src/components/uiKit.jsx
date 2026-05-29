@@ -290,18 +290,29 @@ export function Help({ text }) {
 
 // ════════════════════════════════════════════════════════════════════
 // COMPONENT: EmptyState
+//
+// Filosofi karyaOS: empty state bukan layar mati. Itu ruang yg
+// menunggu cerita. Default copy hangat — caller bisa override.
 // ════════════════════════════════════════════════════════════════════
-export function EmptyState({ icon = "📭", title = "No data yet", desc = "", action }) {
+export function EmptyState({
+  icon = "🌱",
+  title = "Belum ada cerita di sini",
+  desc = "Begitu mulai, semua akan tercatat dengan jujur. Ruang ini menunggumu.",
+  action,
+}) {
   return (
     <div style={{
       background: "#0d1117", border: `1px dashed ${C.border}`, borderRadius: 12,
       padding: "40px 20px", textAlign: "center", color: C.sub, fontFamily: "'Inter',sans-serif",
     }}>
-      <div style={{ fontSize: 48, marginBottom: 10 }}>{icon}</div>
+      <div style={{
+        fontSize: 48, marginBottom: 10,
+        filter: "drop-shadow(0 6px 16px rgba(245,158,11,0.18))",
+      }}>{icon}</div>
       <div style={{ fontSize: 15, fontWeight: 700, color: "#e6edf3", marginBottom: 6 }}>{title}</div>
-      {desc && <div style={{ fontSize: 12.5, color: C.sub, lineHeight: 1.5, maxWidth: 400, margin: "0 auto 16px" }}>{desc}</div>}
+      {desc && <div style={{ fontSize: 12.5, color: C.sub, lineHeight: 1.55, maxWidth: 400, margin: "0 auto 16px" }}>{desc}</div>}
       {action && (
-        <button onClick={action.onClick} style={{ background: action.color || "#3b82f6", border: "none", color: "#fff", padding: "9px 22px", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", marginTop: 8 }}>
+        <button onClick={action.onClick} style={{ background: action.color || "linear-gradient(180deg, #F59E0B 0%, #D97706 100%)", border: "none", color: action.color ? "#fff" : "#1a1006", padding: "9px 22px", borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", marginTop: 8, letterSpacing: 0.2 }}>
           {action.label}
         </button>
       )}
@@ -390,9 +401,33 @@ export function LoadingSkeleton({ rows = 3, height = 40 }) {
 
 // ════════════════════════════════════════════════════════════════════
 // COMPONENT: LoadingState (spinner + label, brand-aware)
+//
+// Filosofi karyaOS: setiap momen di karyaOS berharga, termasuk momen
+// menunggu. Loading state bukan filler — itu kesempatan menemani user.
+// Default label rotate dari kumpulan kalimat hangat, supaya tiap muat
+// data customer/kasir merasa ditemani, bukan ditinggal.
 // ════════════════════════════════════════════════════════════════════
-export function LoadingState({ label = "Memuat…", sub = "", compact = false }) {
+
+// Pool kalimat default — dipakai rotation atau random pick.
+// Kalau caller pass label spesifik, itu yg dipakai. Tapi default
+// SELALU hangat.
+const WARM_LOADING_PHRASES = [
+  "Sebentar ya, kami sedang menyiapkan...",
+  "Hampir siap...",
+  "Sedang dimuat dengan hati...",
+  "Tinggal sebentar lagi...",
+  "Kami siapkan halamanmu...",
+];
+
+export function LoadingState({ label, sub = "", compact = false }) {
   const size = compact ? 16 : 28;
+  // Random warm phrase kalau caller gak pass label.
+  // useMemo supaya gak ganti tiap render (kesannya gemetar).
+  const resolvedLabel = useMemo(() => {
+    if (label) return label;
+    return WARM_LOADING_PHRASES[Math.floor(Math.random() * WARM_LOADING_PHRASES.length)];
+  }, [label]);
+
   return (
     <div style={{
       display: "flex", flexDirection: compact ? "row" : "column",
@@ -408,10 +443,66 @@ export function LoadingState({ label = "Memuat…", sub = "", compact = false })
         flexShrink: 0,
       }} />
       <div style={{ textAlign: compact ? "left" : "center" }}>
-        <div style={{ fontSize: compact ? 13 : 14, fontWeight: 600, color: C.text }}>{label}</div>
+        <div style={{ fontSize: compact ? 13 : 14, fontWeight: 600, color: C.text }}>{resolvedLabel}</div>
         {sub && !compact && <div style={{ fontSize: 12, color: C.sub, marginTop: 4 }}>{sub}</div>}
       </div>
       <style>{`@keyframes uiKitSpin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════
+// COMPONENT: ErrorState — bukan crash report, tapi tangan yg menenangkan
+//
+// Filosofi: error bukan punishment user. Sistem yg salah, bukan user.
+// Bahasa: "sistem sedang lelah", "coba lagi pelan-pelan", bukan
+// "Internal Server Error 500". Ada CTA retry yg ngajak, bukan menyalahkan.
+// ════════════════════════════════════════════════════════════════════
+export function ErrorState({
+  title = "Hmm, ada yang lambat sebentar",
+  body = "Sistem sedang lelah. Tetap tenang — data kamu aman. Coba lagi 1-2 menit ya.",
+  onRetry,
+  retryLabel = "Coba lagi",
+  technical, // raw error untuk debug, hidden default
+}) {
+  const [showTech, setShowTech] = useState(false);
+  return (
+    <div style={{
+      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+      padding: "60px 24px", textAlign: "center", color: C.sub,
+      fontFamily: "'Inter',sans-serif", maxWidth: 460, margin: "0 auto",
+    }}>
+      <div style={{ fontSize: 52, marginBottom: 14 }}>🤔</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 8, letterSpacing: -0.2 }}>{title}</div>
+      <div style={{ fontSize: 14, lineHeight: 1.6, color: C.sub, marginBottom: 22 }}>{body}</div>
+      {onRetry && (
+        <button onClick={onRetry} style={{
+          background: "rgba(34,211,238,0.12)",
+          border: "1px solid rgba(34,211,238,0.40)",
+          color: "#22D3EE",
+          padding: "11px 24px", borderRadius: 10, fontSize: 13, fontWeight: 700,
+          cursor: "pointer", fontFamily: "inherit", letterSpacing: 0.2,
+        }}>🔄 {retryLabel}</button>
+      )}
+      {technical && (
+        <button
+          onClick={() => setShowTech(s => !s)}
+          style={{
+            marginTop: 18, background: "transparent", border: "none",
+            color: "#64748b", fontSize: 11, cursor: "pointer", letterSpacing: 0.3,
+            textDecoration: "underline", fontFamily: "inherit",
+          }}
+        >
+          {showTech ? "Sembunyikan detail" : "Detail teknis (untuk admin)"}
+        </button>
+      )}
+      {showTech && technical && (
+        <div style={{
+          marginTop: 10, fontSize: 11, color: "#94a3b8",
+          background: "rgba(0,0,0,0.3)", padding: 10, borderRadius: 6,
+          fontFamily: "'Geist Mono',monospace", maxWidth: 400, wordBreak: "break-word",
+        }}>{String(technical)}</div>
+      )}
     </div>
   );
 }
