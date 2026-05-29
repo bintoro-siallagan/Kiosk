@@ -171,15 +171,28 @@ export default function AdminCashierKPI({ apiBase = "" }) {
   const [coaching, setCoaching] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
 
+  // Global outlet scope — sync filter dengan OutletScopeBar di topbar
+  const scope = useOutletScope();
+  // Stable key utk re-fetch saat scope berubah
+  const scopeKey = `${scope.vertical}::${scope.outletCodes.join(',') || 'all'}`;
+
   const load = useCallback(async () => {
     setLoading(true);
     const from = tsStart(fromDate), to = tsEnd(toDate);
+    // Append outlet scope ke query string (kalau ada)
+    // - 1 outlet: ?outlet=XXX
+    // - Multi: ?outlets=A,B,C
+    const scopeParts = [];
+    if (scope.outletCodes.length === 1) scopeParts.push(`outlet=${encodeURIComponent(scope.outletCodes[0])}`);
+    else if (scope.outletCodes.length > 1) scopeParts.push(`outlets=${scope.outletCodes.map(encodeURIComponent).join(',')}`);
+    const scopeQ = scopeParts.length ? `&${scopeParts.join('&')}` : '';
+
     try {
       const [kpiR, srcR, hlR, cR] = await Promise.all([
-        fetch(`${apiBase}/api/cashier-kpi?from=${from}&to=${to}`).then(r => r.json()),
-        fetch(`${apiBase}/api/feedback/by-source?from=${from}&to=${to}`).then(r => r.json()).catch(() => []),
-        fetch(`${apiBase}/api/cashier-kpi/highlights?from=${from}&to=${to}&limit=20`).then(r => r.json()).catch(() => ({ highlights: [] })),
-        fetch(`${apiBase}/api/cashier-kpi/coaching`).then(r => r.json()).catch(() => ({ suggestions: [] })),
+        fetch(`${apiBase}/api/cashier-kpi?from=${from}&to=${to}${scopeQ}`).then(r => r.json()),
+        fetch(`${apiBase}/api/feedback/by-source?from=${from}&to=${to}${scopeQ}`).then(r => r.json()).catch(() => []),
+        fetch(`${apiBase}/api/cashier-kpi/highlights?from=${from}&to=${to}&limit=20${scopeQ}`).then(r => r.json()).catch(() => ({ highlights: [] })),
+        fetch(`${apiBase}/api/cashier-kpi/coaching${scopeQ ? '?' + scopeQ.slice(1) : ''}`).then(r => r.json()).catch(() => ({ suggestions: [] })),
       ]);
       setData(kpiR);
       setBySource(Array.isArray(srcR) ? srcR : []);
@@ -187,7 +200,7 @@ export default function AdminCashierKPI({ apiBase = "" }) {
       setCoaching(Array.isArray(cR?.suggestions) ? cR.suggestions : []);
     } catch { setData(null); }
     setLoading(false);
-  }, [apiBase, fromDate, toDate]);
+  }, [apiBase, fromDate, toDate, scopeKey]);
 
   const copyShare = (h) => {
     const channelMap = { pos: 'POS', kiosk: 'Kiosk', qr: 'QR Order', 'qr-struk': 'QR Struk' };

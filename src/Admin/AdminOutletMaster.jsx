@@ -16,9 +16,23 @@ export default function AdminOutletMaster({ apiBase = "" }) {
   const [editing, setEditing] = useState(null);
   const [adding, setAdding] = useState(null);
   const [setupOutlet, setSetupOutlet] = useState(null); // open setup URL modal for outlet
+  // Capabilities map: { outletCode: { declared, derived, mismatch, suggestion, evidence } }
+  // Auto-detect vertical based on actual data (cinema_studios, orders, dll).
+  const [capabilities, setCapabilities] = useState({});
 
   const load = useCallback(() => {
     fetch(`${apiBase}/api/outlet-master`).then(r => r.json()).then(setD).catch(() => {});
+    // Fetch capabilities — kalau outlet master declared vertical != derived,
+    // tampilkan warning supaya admin tahu data tidak sinkron.
+    fetch(`${apiBase}/api/admin/outlet-capabilities`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (!d?.outlets) return;
+        const map = {};
+        for (const o of d.outlets) map[o.code] = o;
+        setCapabilities(map);
+      })
+      .catch(() => {});
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
@@ -85,12 +99,38 @@ export default function AdminOutletMaster({ apiBase = "" }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(310px,1fr))", gap: 12, marginTop: 10 }}>
           {d.outlets.map(o => {
             const st = ST[o.status] || ST.active;
+            const cap = capabilities[o.code];
+            const vertIcon = o.vertical === 'cinema' ? '🎬' : o.vertical === 'hybrid' ? '🍽️🎬' : '🍽️';
+            const vertColor = o.vertical === 'cinema' ? '#a855f7' : o.vertical === 'hybrid' ? '#22D3EE' : '#F59E0B';
             return (
               <div key={o.id} style={{ background: "#0a0e16", border: "1px solid #161b22", borderTop: `2px solid ${st.c}`, borderRadius: 10, padding: "12px 14px" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 18 }}>{TYPE_ICON[o.outlet_type] || "🏪"}</span>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: "#e6edf3" }}>{o.name}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: "#e6edf3" }}>{o.name}</div>
+                      {/* Vertical badge */}
+                      <span style={{
+                        fontSize: 9, fontWeight: 800, color: vertColor,
+                        background: `${vertColor}1a`, border: `1px solid ${vertColor}44`,
+                        padding: "2px 6px", borderRadius: 999,
+                        fontFamily: "'Geist Mono',monospace", letterSpacing: 0.4,
+                      }}>{vertIcon} {(o.vertical || 'fnb').toUpperCase()}</span>
+                      {/* Mismatch warning chip */}
+                      {cap?.mismatch && (
+                        <span
+                          title={cap.suggestion}
+                          style={{
+                            fontSize: 9, fontWeight: 800, color: "#F59E0B",
+                            background: "rgba(245,158,11,0.10)",
+                            border: "1px solid rgba(245,158,11,0.40)",
+                            padding: "2px 6px", borderRadius: 999,
+                            cursor: "help", letterSpacing: 0.4,
+                            fontFamily: "'Geist Mono',monospace",
+                          }}
+                        >⚠️ MISMATCH → {cap.derived_vertical?.toUpperCase()}</span>
+                      )}
+                    </div>
                     <div style={{ fontSize: 10, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>{o.code} · {o.area}</div>
                   </div>
                   <button onClick={() => cycleStatus(o)} style={{ fontSize: 9, fontWeight: 700, color: st.c, background: st.c + "1f", border: `1px solid ${st.c}66`, borderRadius: 5, padding: "3px 8px", fontFamily: "'Geist Mono',monospace", cursor: "pointer" }}>{st.l}</button>
@@ -100,6 +140,18 @@ export default function AdminOutletMaster({ apiBase = "" }) {
                   <div>👤 {o.manager} · ☎ {o.phone}</div>
                   <div>🪑 {o.seat_capacity} seats · <span style={{ color: "#5b6470" }}>{o.outlet_type}</span></div>
                 </div>
+                {cap?.mismatch && (
+                  <div style={{
+                    marginTop: 8, padding: "8px 10px",
+                    background: "rgba(245,158,11,0.06)", border: "1px solid rgba(245,158,11,0.20)",
+                    borderRadius: 6, fontSize: 11, color: "#fbbf24", lineHeight: 1.5,
+                  }}>
+                    💡 {cap.suggestion}
+                    <div style={{ fontSize: 10, color: "#94a3b8", marginTop: 4, fontFamily: "'Geist Mono',monospace" }}>
+                      cinema: {cap.evidence.cinema_studios} studios · F&B: {cap.evidence.orders_90d} orders (90d)
+                    </div>
+                  </div>
+                )}
                 <div style={{ display: "flex", justifyContent: "flex-end", gap: 4, marginTop: 8, flexWrap: "wrap" }}>
                   <button onClick={() => setSetupOutlet(o)} title="Generate setup URL/QR untuk install POS di outlet ini" style={{ background: "#38BDF818", border: "1px solid #38BDF844", color: "#38BDF8", padding: "3px 9px", borderRadius: 5, fontSize: 10.5, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>📲 Setup URL</button>
                   <button onClick={() => setEditing({ ...o })} style={{ background: "#f59e0b18", border: "1px solid #f59e0b44", color: "#f59e0b", padding: "3px 9px", borderRadius: 5, fontSize: 10.5, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>✏️ Edit</button>

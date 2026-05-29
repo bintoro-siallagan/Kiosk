@@ -76,6 +76,16 @@ function computeUpsellByActor(db, from, to) {
   return byCashier;
 }
 
+// Helper — set of cashier names yg outlet_code-nya match filter.
+// Dipakai utk filter KPI per outlet di endpoint level.
+function _kasirSetForOutlet(db, outletCode) {
+  if (!outletCode) return null;
+  try {
+    const rows = db.prepare(`SELECT name FROM admin_users WHERE outlet_code = ? AND active = 1`).all(outletCode);
+    return new Set(rows.map(r => r.name));
+  } catch { return new Set(); }
+}
+
 // Hitung KPI per kasir untuk rentang waktu tertentu
 function computeKpi(db, from, to) {
   let sales = [];
@@ -738,6 +748,44 @@ function setupCashierKpi(app, opts = {}) {
   router.get('/', (req, res) => {
     const { from, to } = rangeOf(req);
     const result = computeKpi(db, from, to);
+
+    // Outlet scope filter — terima ?outlet=XXX (single) atau ?outlets=A,B,C (multi).
+    // Filter kasir yg outlet_code-nya match salah satu outlet di scope.
+    const outletSingle = (req.query.outlet || '').trim();
+    const outletMulti = (req.query.outlets || '').trim();
+    const outletCodes = outletMulti
+      ? outletMulti.split(',').map(s => s.trim()).filter(Boolean)
+      : (outletSingle ? [outletSingle] : []);
+
+    if (outletCodes.length > 0) {
+      // Gabungin kasir set dari semua outlet
+      const kasirSet = new Set();
+      for (const code of outletCodes) {
+        const sub = _kasirSetForOutlet(db, code);
+        if (sub) for (const n of sub) kasirSet.add(n);
+      }
+
+      if (kasirSet.size > 0) {
+        result.cashiers = result.cashiers.filter(c => kasirSet.has(c.cashier));
+        const rated = result.cashiers.filter(c => c.kpi_score != null);
+        result.summary = {
+          total_cashiers: result.cashiers.length,
+          rated_cashiers: rated.length,
+          avg_kpi: rated.length ? Math.round(rated.reduce((s, c) => s + c.kpi_score, 0) / rated.length) : null,
+          total_bad_reviews: result.cashiers.reduce((s, c) => s + c.bad_count, 0),
+          avg_upsell_rate: (() => {
+            const u = result.cashiers.filter(c => c.upsell_rate != null);
+            return u.length ? Math.round(u.reduce((s, c) => s + c.upsell_rate, 0) / u.length) : null;
+          })(),
+        };
+        result.scope = { outlets: outletCodes, kasir_count: kasirSet.size };
+      } else {
+        result.cashiers = [];
+        result.summary = { total_cashiers: 0, rated_cashiers: 0, avg_kpi: null, total_bad_reviews: 0, avg_upsell_rate: null };
+        result.scope = { outlets: outletCodes, kasir_count: 0 };
+      }
+    }
+
     // Target hari ini (dari opening checklist) vs actual sales hari ini
     const ds = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
     let target = null, actual = 0;

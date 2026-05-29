@@ -16,6 +16,7 @@ const PromoManager  = lazy(() => import("./PromoManager.jsx"));
 const ShiftManager  = lazy(() => import("./ShiftManager.jsx"));
 const FarewellOverlay = lazy(() => import("./components/FarewellOverlay.jsx"));
 const OutletDashboard = lazy(() => import("./Admin/OutletDashboard.jsx"));
+const ChangePasswordModal = lazy(() => import("./Admin/ChangePasswordModal.jsx"));
 import { OutletScopeProvider } from "./Admin/OutletScopeContext.jsx";
 import OutletScopeBar from "./Admin/OutletScopeBar.jsx";
 
@@ -231,6 +232,8 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
   // Fase 5 — Farewell overlay. Wrapper utk onLogout supaya bisa sambut
   // perpisahan 2.5 detik sebelum benar-benar logout.
   const [farewell, setFarewell] = useState(null);
+  // Change password modal
+  const [showChangePwd, setShowChangePwd] = useState(false);
   const wrappedLogout = useCallback(() => {
     if (!onLogout) return;
     setFarewell({ name: adminSession?.name || 'Sahabat', then: () => onLogout() });
@@ -1385,6 +1388,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
 
       <div style={S.footer} className="no-print">
         {onLogout && <button className="tile" style={{ ...S.footBtn, color: "#f87171", borderColor: "#f8717133" }} onClick={wrappedLogout}>Log Out</button>}
+        <button className="tile" style={{ ...S.footBtn, color: "#fbbf24", borderColor: "#fbbf2433" }} onClick={() => setShowChangePwd(true)}>🔐 Ganti Password</button>
         <span style={{ flex: 1 }} />
         <KaryaLocaleSwitcher />
         <span style={S.footNote}>karyaOS · 145+ modules · 🎬 Cinema · 🍽️ F&B · 🛡️ Enterprise · v5 · <kbd style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 4, padding: "1px 5px", fontSize: 9.5, color: "rgba(255,255,255,0.6)", fontFamily: "'Geist Mono',monospace" }}>⌘K</kbd> to search</span>
@@ -1407,6 +1411,13 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       {farewell && (
         <Suspense fallback={null}>
           <FarewellOverlay name={farewell.name} onDone={() => { setFarewell(null); farewell.then?.(); }} />
+        </Suspense>
+      )}
+
+      {/* Change Password modal */}
+      {showChangePwd && (
+        <Suspense fallback={null}>
+          <ChangePasswordModal onClose={() => setShowChangePwd(false)} />
         </Suspense>
       )}
     </div>

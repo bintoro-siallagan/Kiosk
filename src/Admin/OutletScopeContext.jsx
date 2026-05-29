@@ -27,14 +27,33 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import API_HOST from '../apiBase.js';
 
-const LS_OUTLET   = 'karyaos:scope:outlet';
+const LS_OUTLETS  = 'karyaos:scope:outlets'; // array (multi-select)
 const LS_VERTICAL = 'karyaos:scope:vertical';
+// Backwards compat: old single key
+const LS_OUTLET_OLD = 'karyaos:scope:outlet';
 
 const OutletScopeContext = createContext(null);
 
 export function OutletScopeProvider({ children }) {
-  const [outletCode, setOutletCodeRaw] = useState(() => {
-    try { return localStorage.getItem(LS_OUTLET) || null; } catch { return null; }
+  // outletCodes — ARRAY. Empty = "semua outlet sesuai vertikal".
+  // 1 item = single outlet drill-down. 2+ = subset.
+  const [outletCodes, setOutletCodesRaw] = useState(() => {
+    try {
+      // Migrate legacy single-outlet localStorage
+      const oldSingle = localStorage.getItem(LS_OUTLET_OLD);
+      if (oldSingle) {
+        localStorage.removeItem(LS_OUTLET_OLD);
+        const arr = [oldSingle];
+        localStorage.setItem(LS_OUTLETS, JSON.stringify(arr));
+        return arr;
+      }
+      const raw = localStorage.getItem(LS_OUTLETS);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      }
+    } catch {}
+    return [];
   });
   const [vertical, setVerticalRaw] = useState(() => {
     try { return localStorage.getItem(LS_VERTICAL) || 'all'; } catch { return 'all'; }
@@ -59,13 +78,33 @@ export function OutletScopeProvider({ children }) {
   }, []);
   useEffect(() => { reload(); }, [reload]);
 
-  const setOutletCode = useCallback((code) => {
-    setOutletCodeRaw(code || null);
+  // Set keseluruhan array
+  const setOutletCodes = useCallback((codes) => {
+    const arr = Array.isArray(codes) ? codes.filter(Boolean) : [];
+    setOutletCodesRaw(arr);
     try {
-      if (code) localStorage.setItem(LS_OUTLET, code);
-      else localStorage.removeItem(LS_OUTLET);
+      if (arr.length) localStorage.setItem(LS_OUTLETS, JSON.stringify(arr));
+      else localStorage.removeItem(LS_OUTLETS);
     } catch {}
   }, []);
+
+  // Toggle satu outlet (add kalau belum, remove kalau sudah)
+  const toggleOutletCode = useCallback((code) => {
+    setOutletCodesRaw(prev => {
+      const exists = prev.includes(code);
+      const next = exists ? prev.filter(c => c !== code) : [...prev, code];
+      try {
+        if (next.length) localStorage.setItem(LS_OUTLETS, JSON.stringify(next));
+        else localStorage.removeItem(LS_OUTLETS);
+      } catch {}
+      return next;
+    });
+  }, []);
+
+  // Backwards compat — single setter, akan replace seluruh array
+  const setOutletCode = useCallback((code) => {
+    setOutletCodes(code ? [code] : []);
+  }, [setOutletCodes]);
 
   const setVertical = useCallback((v) => {
     const safe = ['all','cinema','fnb','hybrid'].includes(v) ? v : 'all';
@@ -74,9 +113,9 @@ export function OutletScopeProvider({ children }) {
   }, []);
 
   const reset = useCallback(() => {
-    setOutletCode(null);
+    setOutletCodes([]);
     setVertical('all');
-  }, [setOutletCode, setVertical]);
+  }, [setOutletCodes, setVertical]);
 
   // Outlets terfilter sesuai vertikal — utk dropdown picker.
   const filteredOutlets = useMemo(() => {
@@ -88,23 +127,40 @@ export function OutletScopeProvider({ children }) {
     );
   }, [outlets, vertical]);
 
-  const currentOutlet = useMemo(() => {
-    if (!outletCode) return null;
-    return outlets.find(o => o.code === outletCode) || null;
-  }, [outletCode, outlets]);
+  // Outlets terpilih (object) — utk display name
+  const selectedOutlets = useMemo(() => {
+    if (!outletCodes.length) return [];
+    return outlets.filter(o => outletCodes.includes(o.code));
+  }, [outletCodes, outlets]);
+
+  // Backwards compat — single outlet (kalau cuma 1 dipilih)
+  const outletCode = outletCodes.length === 1 ? outletCodes[0] : null;
+  const currentOutlet = outletCodes.length === 1 ? selectedOutlets[0] || null : null;
 
   // Helper: build query string utk pass scope ke endpoint
-  // contoh: ?outlet=KCN-001  atau  ?vertical=cinema  atau ?outlet=KCN-001&vertical=cinema
+  // - 1 outlet → ?outlet=KCN-001
+  // - Multi outlet → ?outlets=KCN-001,KCN-002
+  // - 0 outlet + vertical → ?vertical=cinema
   const asQueryString = useCallback(() => {
     const parts = [];
-    if (outletCode) parts.push(`outlet=${encodeURIComponent(outletCode)}`);
+    if (outletCodes.length === 1) {
+      parts.push(`outlet=${encodeURIComponent(outletCodes[0])}`);
+    } else if (outletCodes.length > 1) {
+      parts.push(`outlets=${outletCodes.map(c => encodeURIComponent(c)).join(',')}`);
+    }
     if (vertical && vertical !== 'all') parts.push(`vertical=${vertical}`);
     return parts.length ? '?' + parts.join('&') : '';
-  }, [outletCode, vertical]);
+  }, [outletCodes, vertical]);
 
   const value = {
-    outletCode, vertical, outlets, filteredOutlets, currentOutlet, loading,
-    setOutletCode, setVertical, reset, asQueryString, reload,
+    // Multi-select API
+    outletCodes, selectedOutlets,
+    setOutletCodes, toggleOutletCode,
+    // Backwards compat (single)
+    outletCode, currentOutlet, setOutletCode,
+    // Vertical + shared
+    vertical, outlets, filteredOutlets, loading,
+    setVertical, reset, asQueryString, reload,
   };
 
   return (
@@ -115,10 +171,11 @@ export function OutletScopeProvider({ children }) {
 export function useOutletScope() {
   const ctx = useContext(OutletScopeContext);
   if (!ctx) {
-    // Fallback safe — kalau dipake di luar provider, jangan crash
     return {
-      outletCode: null, vertical: 'all',
-      outlets: [], filteredOutlets: [], currentOutlet: null, loading: false,
+      outletCodes: [], selectedOutlets: [],
+      outletCode: null, currentOutlet: null,
+      vertical: 'all', outlets: [], filteredOutlets: [], loading: false,
+      setOutletCodes: () => {}, toggleOutletCode: () => {},
       setOutletCode: () => {}, setVertical: () => {}, reset: () => {},
       asQueryString: () => '', reload: () => {},
     };
@@ -126,9 +183,8 @@ export function useOutletScope() {
   return ctx;
 }
 
-// Untuk komponen yg butuh re-fetch saat scope berubah —
-// dependency yg stable: [outletCode, vertical]
+// Untuk komponen yg butuh re-fetch saat scope berubah — stable key
 export function useScopeKey() {
-  const { outletCode, vertical } = useOutletScope();
-  return `${vertical || 'all'}::${outletCode || 'all'}`;
+  const { outletCodes, vertical } = useOutletScope();
+  return `${vertical || 'all'}::${outletCodes.length ? outletCodes.join(',') : 'all'}`;
 }

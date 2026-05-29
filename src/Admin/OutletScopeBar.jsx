@@ -14,7 +14,7 @@ const VERTICAL_OPTS = [
 ];
 
 export default function OutletScopeBar() {
-  const { outletCode, vertical, filteredOutlets, currentOutlet, setOutletCode, setVertical, reset, loading } = useOutletScope();
+  const { outletCodes, selectedOutlets, vertical, filteredOutlets, currentOutlet, setOutletCodes, toggleOutletCode, setVertical, reset, loading } = useOutletScope();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
 
@@ -32,7 +32,18 @@ export default function OutletScopeBar() {
   }, [open]);
 
   const vOpt = VERTICAL_OPTS.find(v => v.k === vertical) || VERTICAL_OPTS[0];
-  const hasFilter = outletCode || vertical !== 'all';
+  const hasFilter = outletCodes.length > 0 || vertical !== 'all';
+
+  // Label outlet di pill: 0 = "Semua outlet", 1 = nama outlet, 2+ = "X outlet"
+  const outletPillLabel = (() => {
+    if (outletCodes.length === 0) return { dim: true, text: '📍 Semua outlet' };
+    if (outletCodes.length === 1) {
+      const o = selectedOutlets[0];
+      if (!o) return { dim: false, text: `📍 ${outletCodes[0]}` };
+      return { dim: false, text: `📍 ${o.area || o.name?.replace('Karya Cinema ', '')}`, code: o.code };
+    }
+    return { dim: false, text: `📍 ${outletCodes.length} outlet dipilih`, multi: true };
+  })();
 
   return (
     <div ref={wrapRef} style={S.wrap}>
@@ -40,20 +51,11 @@ export default function OutletScopeBar() {
         <span style={S.pillEyebrow}>SCOPE</span>
         <span style={S.pillSep}>·</span>
         <span style={{ ...S.pillVertical, color: vOpt.color, borderColor: vOpt.color + '55' }}>{vOpt.label}</span>
-        {currentOutlet ? (
-          <>
-            <span style={S.pillSep}>·</span>
-            <span style={S.pillOutlet}>
-              📍 {currentOutlet.area || currentOutlet.name?.replace('Karya Cinema ', '')}
-              <span style={S.pillCode}>{currentOutlet.code}</span>
-            </span>
-          </>
-        ) : (
-          <>
-            <span style={S.pillSep}>·</span>
-            <span style={S.pillOutletDim}>📍 Semua outlet</span>
-          </>
-        )}
+        <span style={S.pillSep}>·</span>
+        <span style={outletPillLabel.dim ? S.pillOutletDim : S.pillOutlet}>
+          {outletPillLabel.text}
+          {outletPillLabel.code && <span style={S.pillCode}>{outletPillLabel.code}</span>}
+        </span>
         <span style={S.pillCaret}>{open ? '▴' : '▾'}</span>
       </button>
 
@@ -75,7 +77,7 @@ export default function OutletScopeBar() {
             <div style={S.sectionLabel}>🎯 Vertikal</div>
             <div style={S.chipRow}>
               {VERTICAL_OPTS.map(v => (
-                <button key={v.k} onClick={() => { setVertical(v.k); if (v.k !== 'all') setOutletCode(null); }}
+                <button key={v.k} onClick={() => { setVertical(v.k); if (v.k !== 'all') setOutletCodes([]); }}
                   style={S.chip(vertical === v.k, v.color)}>
                   {v.label}
                 </button>
@@ -84,16 +86,23 @@ export default function OutletScopeBar() {
           </div>
 
           <div style={S.section}>
-            <div style={S.sectionLabel}>📍 Outlet ({filteredOutlets.length})</div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div style={S.sectionLabel}>📍 Outlet ({filteredOutlets.length}) — pilih 1 atau lebih</div>
+              {outletCodes.length > 0 && (
+                <button onClick={() => setOutletCodes([])} style={S.clearBtn}>
+                  Bersihkan ({outletCodes.length})
+                </button>
+              )}
+            </div>
             <div style={S.outletList}>
-              <button onClick={() => { setOutletCode(null); setOpen(false); }}
-                style={S.outletRow(!outletCode)}>
+              <button onClick={() => { setOutletCodes([]); }}
+                style={S.outletRow(outletCodes.length === 0)}>
                 <span style={{ fontSize: 18 }}>🌐</span>
                 <div style={{ flex: 1 }}>
                   <div style={S.outletName}>Semua outlet</div>
-                  <div style={S.outletMeta}>Aggregate semua data sesuai vertikal</div>
+                  <div style={S.outletMeta}>Aggregate sesuai vertikal di atas</div>
                 </div>
-                {!outletCode && <span style={S.checkmark}>✓</span>}
+                {outletCodes.length === 0 && <span style={S.checkmark}>✓</span>}
               </button>
               {loading && (
                 <div style={S.loadingRow}>Sebentar ya, kami siapkan daftar outlet...</div>
@@ -104,22 +113,27 @@ export default function OutletScopeBar() {
                   Belum ada outlet untuk vertikal ini.
                 </div>
               )}
-              {filteredOutlets.map(o => (
-                <button key={o.code} onClick={() => { setOutletCode(o.code); setOpen(false); }}
-                  style={S.outletRow(outletCode === o.code)}>
-                  <span style={{ fontSize: 18 }}>
-                    {o.vertical === 'cinema' ? '🎬' : o.vertical === 'hybrid' ? '🍽️🎬' : '🍽️'}
-                  </span>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={S.outletName}>{o.area || o.name?.replace('Karya Cinema ', '')}</div>
-                    <div style={S.outletMeta}>
-                      <span style={S.outletCode}>{o.code}</span>
-                      {o.name && o.area && o.name !== o.area && <span> · {o.name.replace('Karya Cinema ', '')}</span>}
+              {filteredOutlets.map(o => {
+                const selected = outletCodes.includes(o.code);
+                return (
+                  <button key={o.code} onClick={() => toggleOutletCode(o.code)}
+                    style={S.outletRow(selected)}>
+                    <span style={{ fontSize: 16, width: 22, display: 'inline-flex', justifyContent: 'center' }}>
+                      {selected ? '☑' : '☐'}
+                    </span>
+                    <span style={{ fontSize: 18 }}>
+                      {o.vertical === 'cinema' ? '🎬' : o.vertical === 'hybrid' ? '🍽️🎬' : '🍽️'}
+                    </span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={S.outletName}>{o.area || o.name?.replace('Karya Cinema ', '')}</div>
+                      <div style={S.outletMeta}>
+                        <span style={S.outletCode}>{o.code}</span>
+                        {o.name && o.area && o.name !== o.area && <span> · {o.name.replace('Karya Cinema ', '')}</span>}
+                      </div>
                     </div>
-                  </div>
-                  {outletCode === o.code && <span style={S.checkmark}>✓</span>}
-                </button>
-              ))}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -199,4 +213,9 @@ const S = {
   loadingRow: { padding: 16, color: '#94a3b8', fontStyle: 'italic', fontSize: 12, textAlign: 'center' },
   emptyRow: { padding: 20, color: '#94a3b8', fontSize: 12, textAlign: 'center' },
   dropFoot: { padding: '12px 18px', fontSize: 11, color: '#64748b', fontStyle: 'italic', borderTop: '1px solid #161b22', lineHeight: 1.5 },
+  clearBtn: {
+    background: 'rgba(245,158,11,0.10)', border: '1px solid rgba(245,158,11,0.30)',
+    borderRadius: 6, padding: '4px 10px', color: '#fbbf24',
+    fontSize: 10, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: 0.3,
+  },
 };
