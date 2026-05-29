@@ -210,6 +210,20 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     }).catch(() => setTenantFeatures(['*']));
   }, []);
   const GROUPS = useMemo(() => _computeGROUPS(tenantFeatures), [tenantFeatures]);
+
+  // Fase 5 continuity — fetch journey context utk sambutan hangat AdminHome.
+  // Karya yg menyambut "pulang ke rumah" perlu ingat kapan terakhir user di sini.
+  const [journey, setJourney] = useState(null);
+  useEffect(() => {
+    const token = localStorage.getItem("adminToken");
+    if (!token) return;
+    fetch(`${API}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(r => r.ok ? r.json() : null).then(d => {
+      if (d?.journey) setJourney(d.journey);
+    }).catch(() => {});
+  }, []);
+
   const [now, setNow] = useState(new Date());
   const [orders, setOrders] = useState([]);
   const [allOrders, setAllOrders] = useState([]);
@@ -797,6 +811,34 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
           <div style={S.clock}>{now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</div>
           <div style={S.greetLine}>{greet}, <b style={{ color: "#cdd5df" }}>{adminSession?.name || "Admin"}</b>
             <span style={S.role}>{adminSession?.role || "—"}</span></div>
+          {/* Continuity sub-line — sambutan pulang yg ingat kapan terakhir */}
+          {journey && (() => {
+            const prev = journey.previous_login_at;
+            const nowSec = Math.floor(Date.now() / 1000);
+            const day = journey.day;
+            let msg = null;
+            if (journey.is_first_session) {
+              msg = `Selamat datang di karyaOS untuk pertama kali.`;
+            } else if (prev) {
+              const diff = nowSec - prev;
+              const hoursAgo = Math.floor(diff / 3600);
+              const daysAgo = Math.floor(diff / 86400);
+              if (hoursAgo < 2) msg = null; // baru aja, skip
+              else if (hoursAgo < 12) msg = `Senang Anda kembali sebentar tadi.`;
+              else if (daysAgo === 0) msg = `Senang Anda kembali. Anda terakhir di sini tadi pagi.`;
+              else if (daysAgo === 1) msg = `Senang Anda kembali. Anda terakhir di sini kemarin.`;
+              else if (daysAgo <= 7) msg = `Senang Anda kembali. Sudah ${daysAgo} hari sejak terakhir.`;
+              else if (daysAgo <= 30) msg = `Senang Anda kembali setelah ${daysAgo} hari.`;
+              else msg = `Senang Anda kembali setelah cukup lama.`;
+            }
+            if (!msg && !day) return null;
+            return (
+              <div style={{ fontSize: 11, color: "#8b95a3", marginTop: 4, letterSpacing: 0.2, fontStyle: "italic" }}>
+                {msg}
+                {day && day > 1 && <span style={{ color: "#6b7280", marginLeft: msg ? 6 : 0 }}>{msg && '· '}Hari ke-{day} di karyaOS</span>}
+              </div>
+            );
+          })()}
         </div>
       </div>
 

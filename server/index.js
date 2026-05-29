@@ -3943,7 +3943,38 @@ app.get("/api/auth/me", (req, res) => {
   const user = adminUsers.find(u => u.id === session.userId);
   // Refresh company info (kalau company berubah primary_vertical/brand)
   const companyInfo = user ? resolveCompanyForUser(user) : null;
-  res.json({ ...session, pin: undefined, company: companyInfo });
+
+  // Fase 5 continuity — tambah journey context utk admin/owner.
+  // Filosofi karyaOS: setiap pengguna pulang ke rumah karyaOS, sistem
+  // ingat kapan terakhir mereka di sini dan hari ke berapa di perjalanan.
+  let journey = null;
+  if (user) {
+    const sessStartSec = Math.floor((session.loginAt || Date.now()) / 1000);
+    let prevLoginAt = null;
+    try {
+      // Cari last successful login SEBELUM session ini di-create.
+      // Filter created_at < session start supaya gak return login session sekarang.
+      const r = db.rawDb.prepare(`
+        SELECT created_at FROM admin_login_audit
+        WHERE user_id = ? AND success = 1 AND created_at < ?
+        ORDER BY created_at DESC LIMIT 1
+      `).get(user.id, sessStartSec);
+      prevLoginAt = r?.created_at || null;
+    } catch {}
+
+    const firstLoginAt = user.first_login_at || null;
+    const nowSec = Math.floor(Date.now() / 1000);
+    const day = firstLoginAt ? (Math.floor((nowSec - firstLoginAt) / 86400) + 1) : null;
+
+    journey = {
+      first_login_at: firstLoginAt,
+      previous_login_at: prevLoginAt,
+      day,
+      is_first_session: !prevLoginAt,
+    };
+  }
+
+  res.json({ ...session, pin: undefined, company: companyInfo, journey });
 });
 
 // Helper: resolve scope (super-admin atau tenant) untuk auth endpoints
