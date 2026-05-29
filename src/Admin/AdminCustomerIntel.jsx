@@ -17,13 +17,26 @@ export default function AdminCustomerIntel({ apiBase = "" }) {
   const [d, setD] = useState(null);
 
   const load = useCallback(() => {
-    fetch(`${apiBase}/api/customer-intel`).then(r => r.json()).then(setD).catch(() => {});
+    fetch(`${apiBase}/api/customer-intel`)
+      .then(r => r.ok ? r.json() : null)
+      .then(setD)
+      .catch(() => {});
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  if (!d) return <LoadingState label="Memuat Customer Intelligence…" />;
+  if (!d) return <LoadingState label="Sebentar ya, kami siapkan data customer…" />;
+  // Defensive: kalau API return error object atau struct gak lengkap
   const s = d.summary;
   const vf = d.visit_frequency;
+  if (!s || !vf || typeof vf !== 'object') {
+    return (
+      <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>
+        <div style={{ fontSize: 48, marginBottom: 12 }}>🤔</div>
+        <div style={{ fontSize: 16, fontWeight: 700, color: '#cbd5e1', marginBottom: 6 }}>Belum bisa muat Customer Intelligence</div>
+        <div style={{ fontSize: 13 }}>Sesi mungkin habis. Coba logout + login ulang.</div>
+      </div>
+    );
+  }
   const maxVf = Math.max(1, ...Object.values(vf));
 
   return (
