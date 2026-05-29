@@ -98,16 +98,16 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
           {currentStep >= 3 ? "🎉" : currentStep >= 2 ? "🛎️" : currentStep >= 1 ? "👨‍🍳" : "✅"}
         </div>
         <div style={{...S.title, color: currentStep >= 3 ? "var(--brand-primary,#FF6B35)" : "#10B981"}}>
-          {currentStep >= 3 && "Order Complete!"}
-          {currentStep === 2 && "Pesanan Siap Diambil!"}
-          {currentStep === 1 && "Sedang Preparing"}
-          {currentStep === 0 && "Pesanan Diterima!"}
+          {currentStep >= 3 && "Selesai. Terima kasih."}
+          {currentStep === 2 && "Sudah siap untuk Anda"}
+          {currentStep === 1 && "Sedang disiapkan dengan hati"}
+          {currentStep === 0 && "Pesananmu sudah kami terima"}
         </div>
         <div style={S.subtitle}>
-          {currentStep >= 3 && "Terima kasih sudah order di KaryaOS ☕"}
-          {currentStep === 2 && "Silakan diambil di counter / meja kamu"}
-          {currentStep === 1 && "Barista lagi nyiapin pesanan kamu"}
-          {currentStep === 0 && "Akan segera dipersiapkan"}
+          {currentStep >= 3 && "Sampai bertemu lagi. Selamat menikmati hari Anda."}
+          {currentStep === 2 && "Silakan diambil di counter atau meja Anda."}
+          {currentStep === 1 && "Tim kami menyiapkan dengan sepenuh hati."}
+          {currentStep === 0 && "Sebentar lagi akan mulai disiapkan."}
         </div>
       </div>
 
@@ -151,11 +151,11 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
       <div style={S.steps}>
         <Step icon="📥" label="Diterima" active={currentStep >= 0} done={currentStep > 0} />
         <StepLine done={currentStep > 0} />
-        <Step icon="👨‍🍳" label="Preparing" active={currentStep >= 1} done={currentStep > 1} />
+        <Step icon="👨‍🍳" label="Disiapkan" active={currentStep >= 1} done={currentStep > 1} />
         <StepLine done={currentStep > 1} />
         <Step icon="🛎️" label="Siap" active={currentStep >= 2} done={currentStep > 2} />
         <StepLine done={currentStep > 2} />
-        <Step icon="🎉" label="Done" active={currentStep >= 3} done={currentStep >= 3} />
+        <Step icon="🎉" label="Selesai" active={currentStep >= 3} done={currentStep >= 3} />
       </div>
 
       <div style={S.statusBox}>

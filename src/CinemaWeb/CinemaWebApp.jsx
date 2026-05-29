@@ -4998,15 +4998,28 @@ function SuccessPage({ booking, film, showtime, seats, bundlesCart, onNewBooking
           filter: isPaid ? "drop-shadow(0 0 20px rgba(16,185,129,0.5))" : `drop-shadow(0 0 20px ${C.gold}55)`,
         }}>{isPaid ? "✅" : isCounter ? "🎫" : "⏳"}</div>
 
-        {/* Eyebrow mono */}
-        <div style={{ ...TY.eyebrow, color: C.gold, marginBottom: S[2] }}>🎬 Booking Confirmed</div>
+        {/* Eyebrow mono — sapaan hangat utk customer cinema */}
+        <div style={{ ...TY.eyebrow, color: C.gold, marginBottom: S[2] }}>
+          🎬 SELAMAT MENONTON
+        </div>
 
         <h1 style={{ ...TY.display, fontSize: "clamp(34px, 5vw, 52px)", margin: 0, marginBottom: S[2],
           color: isPaid ? "#10b981" : isCounter ? C.gold : "#fbbf24",
           textShadow: isPaid ? "0 0 24px rgba(16,185,129,0.3)" : `0 0 24px ${C.gold}33`,
         }}>
-          {isPaid ? "Pembayaran Sukses!" : isCounter ? "Booking Berhasil!" : "Pembayaran Diverifikasi"}
+          {isPaid ? "Tiket Anda Sudah Aman" : isCounter ? "Booking Berhasil" : "Sedang Kami Verifikasi"}
         </h1>
+
+        {/* Sub-sapaan — kami tunggu cerita Anda */}
+        <div style={{
+          fontSize: 14, color: "rgba(255,255,255,0.62)",
+          marginBottom: S[3], fontStyle: "italic", letterSpacing: 0.2,
+          maxWidth: 380, marginLeft: "auto", marginRight: "auto",
+        }}>
+          {isPaid && "Selamat menikmati pertunjukannya. Kami tunggu cerita Anda."}
+          {isCounter && "Selesaikan pembayaran di counter saat tiba. Sampai bertemu di studio."}
+          {!isPaid && !isCounter && "Sedang kami pastikan pembayarannya. Sebentar ya."}
+        </div>
 
         {/* Film + showtime mini-card */}
         <div style={{

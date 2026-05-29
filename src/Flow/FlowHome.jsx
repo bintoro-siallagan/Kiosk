@@ -57,7 +57,32 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
       <PromoStrip apiBase={API} variant="dark" maxItems={5} compact />
 
       <div style={S.profile}>
-        <div style={S.greeting}>Halo, {profile?.name || session.name}! 👋</div>
+        {/* Sambutan hangat untuk customer kembali — time + continuity.
+            Filosofi karyaOS: customer "pulang" ke flow, bukan masuk
+            formulir. Mereka harus merasa diingat. */}
+        {(() => {
+          const h = new Date().getHours();
+          const tgreet = h >= 5 && h < 11 ? 'Selamat pagi'
+                       : h >= 11 && h < 15 ? 'Selamat siang'
+                       : h >= 15 && h < 18 ? 'Selamat sore'
+                       : 'Selamat malam';
+          const name = profile?.name || session.name;
+          const isNew = tags.includes("new") || visits === 0;
+          return (
+            <>
+              <div style={S.greeting}>{tgreet}, {name}.</div>
+              <div style={{
+                fontSize: 13, color: 'rgba(255,255,255,0.62)', marginTop: 4,
+                fontWeight: 400, letterSpacing: 0.1,
+              }}>
+                {isNew ? 'Senang Anda bergabung. Selamat menikmati.' :
+                 visits === 1 ? 'Senang Anda kembali. Kunjungan kedua Anda.' :
+                 `Senang lihat Anda lagi — kunjungan ke-${visits + 1}.`}
+              </div>
+            </>
+          );
+        })()}
+        <div style={{ height: 12 }} />
         {tableContext ? (
           <div style={S.tableBadge}>📍 Meja {tableContext}</div>
         ) : (
