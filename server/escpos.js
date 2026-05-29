@@ -194,6 +194,16 @@ function buildCustomerReceipt(order, template = {}) {
   // Footer + QR — center, customizable
   if (footerThanks) r.line(footerThanks);
   if (footerNote) r.line(footerNote);
+
+  // Sambutan penutup yang adaptive waktu — karyaOS prinsip:
+  // customer harus merasa "disambut pulang" via struk juga. Bukan
+  // sekedar "thanks for shopping". Ini suara hangat yg dibawa pulang.
+  const hour = new Date(order.time || Date.now()).getHours();
+  const sayang = hour >= 5 && hour < 11 ? "Selamat menjalankan hari Anda."
+              : hour >= 11 && hour < 15 ? "Selamat menikmati siang ini."
+              : hour >= 15 && hour < 18 ? "Selamat menikmati sore Anda."
+              : "Selamat menikmati malam Anda.";
+  r.feed().line(sayang);
   r.feed();
 
   if (showQr) {

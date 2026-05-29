@@ -541,6 +541,28 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
         </h1>
         <p style={K.tagline}>Crafted with love · Ordered with ease</p>
         <div style={K.clockDisp}>{time.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</div>
+
+        {/* Sambutan waktu — sapaan hangat ke customer.
+            Filosofi karyaOS: customer juga harus merasa disambut, bukan
+            disuruh "Tap to begin" seperti mesin tiket. */}
+        {(() => {
+          const h = time.getHours();
+          const greet = h >= 5 && h < 11 ? 'Selamat pagi'
+                      : h >= 11 && h < 15 ? 'Selamat siang'
+                      : h >= 15 && h < 18 ? 'Selamat sore'
+                      : 'Selamat malam';
+          const sub = h >= 5 && h < 11 ? 'Mulai hari dengan rasa.'
+                    : h >= 11 && h < 15 ? 'Mau coba apa hari ini?'
+                    : h >= 15 && h < 18 ? 'Singgah dulu, sini.'
+                    : 'Apa yang Anda rindukan malam ini?';
+          return (
+            <p style={K.warmGreet}>
+              <span style={K.warmGreetMain}>{greet}.</span>
+              <span style={K.warmGreetSub}> {sub}</span>
+            </p>
+          );
+        })()}
+
         <div style={K.orderRow}>
           <button className="lg order-pill" style={K.orderBtn} onClick={()=>setOrderType("dine")}>
             <span style={K.orderBtnIcon}>🪑</span>
@@ -553,7 +575,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
             <span style={K.orderBtnSub}>To go</span>
           </button>
         </div>
-        <p style={K.tapHint}>Tap to begin</p>
+        <p style={K.tapHint}>Sentuh layar untuk memulai</p>
       </div>
     </div>
   );
@@ -1281,7 +1303,11 @@ const K = {
   logoIcon:   {fontSize:72,lineHeight:1,marginBottom:10,display:"block"},
   brand:      {fontFamily:"'Inter',sans-serif",fontSize:"min(32px,5vw)",fontWeight:500,letterSpacing:"-0.8px",color:"rgba(255,255,255,0.88)",lineHeight:1,userSelect:"none"},
   tagline:    {fontSize:12,color:"rgba(255,255,255,0.38)",marginTop:10,letterSpacing:0.3,fontFamily:"'Inter',sans-serif",fontWeight:400},
-  clockDisp:  {fontSize:11,color:"rgba(255,255,255,0.24)",marginBottom:48,marginTop:24,letterSpacing:8,fontFamily:"'Inter',sans-serif",fontVariantNumeric:"tabular-nums",fontWeight:400},
+  clockDisp:  {fontSize:11,color:"rgba(255,255,255,0.24)",marginBottom:24,marginTop:24,letterSpacing:8,fontFamily:"'Inter',sans-serif",fontVariantNumeric:"tabular-nums",fontWeight:400},
+  // Sambutan waktu — terlihat sebelum tombol Dine In / Takeaway
+  warmGreet:  {fontSize:18,marginBottom:32,fontFamily:"'Inter',sans-serif",letterSpacing:"-0.2px",lineHeight:1.5},
+  warmGreetMain: {color:"rgba(255,255,255,0.92)",fontWeight:600},
+  warmGreetSub:  {color:"rgba(255,255,255,0.55)",fontWeight:400},
   welcomeQ:   {fontSize:15,letterSpacing:"-0.2px",color:"rgba(255,255,255,0.78)",marginBottom:28,fontFamily:"'Inter',sans-serif",fontWeight:500},
   orderRow:   {display:"flex",gap:18,justifyContent:"center",marginBottom:36},
   // background/shadow/border handled by .lg / .lg-brand classes — keep here only layout

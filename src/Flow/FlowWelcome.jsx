@@ -133,11 +133,25 @@ export default function FlowWelcome({ onAuth, tableContext }) {
     setLoading(false);
   }
 
+  // Sambutan waktu — sapaan hangat ke customer yg baru duduk di meja.
+  // Filosofi karyaOS: customer juga "pulang" ke karyaOS, bukan masuk
+  // formulir. Pertama yg dia baca harus terasa seperti tuan rumah
+  // yang menyapa, bukan sistem yg menanya.
+  const warmHello = (() => {
+    const h = new Date().getHours();
+    const main = h >= 5 && h < 11 ? 'Selamat pagi'
+               : h >= 11 && h < 15 ? 'Selamat siang'
+               : h >= 15 && h < 18 ? 'Selamat sore'
+               : 'Selamat malam';
+    if (tableContext) return `${main}. Senang Anda di Meja ${tableContext}.`;
+    return `${main}. Senang Anda di sini.`;
+  })();
+
   return (
     <div style={S.container}>
       <div style={S.hero}>
         <img src="/logo.png" alt="KaryaOS" style={{ width: 132, height: 132, objectFit: "contain", marginBottom: 6 }} />
-        <div style={S.tagline}>Order Directly from Your Phone</div>
+        <div style={S.tagline}>{warmHello}</div>
         {tableContext && (
           <div style={S.tableBadge}>📍 {t("flow.table_no")} {tableContext}</div>
         )}
