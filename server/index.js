@@ -4805,11 +4805,18 @@ app.get("/api/admin/outlet-overview", (req, res) => {
     const filterOutlet = String(req.query.outlet || '').trim() || null;
     const periodDays = Math.max(1, Math.floor((to - from) / 86400));
 
-    // Outlet master list
+    // Multi-tenant scope — owner cuma boleh lihat outlet company sendiri.
+    // Super-admin lihat semua. Filosofi karyaOS: tenant boundary sakral —
+    // data company lain bukan urusan owner ini.
+    const scope = req.companyScope || { is_super_admin: true };
+    const tenantFilter = scope.is_super_admin ? '' : 'AND company_id = ?';
+    const tenantParam = scope.is_super_admin ? [] : [scope.company_id];
+
+    // Outlet master list (filtered by tenant)
     let outletList = [];
     try {
-      let sql = `SELECT code, name, area, vertical, status FROM outlet_master WHERE status != 'closed'`;
-      const params = [];
+      let sql = `SELECT code, name, area, vertical, status, company_id FROM outlet_master WHERE status != 'closed' ${tenantFilter}`;
+      const params = [...tenantParam];
       if (filterOutlet) { sql += ` AND code = ?`; params.push(filterOutlet); }
       sql += ` ORDER BY code`;
       outletList = db.rawDb.prepare(sql).all(...params);
@@ -4820,21 +4827,22 @@ app.get("/api/admin/outlet-overview", (req, res) => {
     let totalRevenue = 0, totalOrders = 0, totalKpiSum = 0, totalKpiCount = 0;
 
     for (const o of outletList) {
-      // F&B orders — filter by orders.kasir's outlet binding via admin_users
-      // OR by orders.source field. Tapi data lama mungkin gak punya outlet di order.
-      // Approach: get list of kasir bound to outlet, sum their orders.
+      const ocid = o.company_id; // outlet's company — utk defense-in-depth filter
+
+      // F&B orders — filter by kasir-outlet binding + tenant
       let revenue = 0, orderCount = 0;
       try {
         const r = db.rawDb.prepare(`
           SELECT COUNT(*) c, COALESCE(SUM(total),0) t
           FROM orders o
           WHERE o.time >= ? AND o.time < ? AND o.status != 'cancelled'
-            AND o.kasir IN (SELECT name FROM admin_users WHERE outlet_code = ?)
-        `).get(from * 1000, to * 1000, o.code);
+            AND (o.company_id IS NULL OR o.company_id = ?)
+            AND o.kasir IN (SELECT name FROM admin_users WHERE outlet_code = ? AND (company_id IS NULL OR company_id = ?))
+        `).get(from * 1000, to * 1000, ocid, o.code, ocid);
         orderCount = r?.c || 0; revenue = r?.t || 0;
       } catch {}
 
-      // Cinema revenue (kalau outlet cinema/hybrid)
+      // Cinema revenue (kalau outlet cinema/hybrid) — tenant-scoped
       let cinemaRevenue = 0, cinemaTickets = 0;
       if (o.vertical === 'cinema' || o.vertical === 'hybrid') {
         try {
@@ -4843,8 +4851,9 @@ app.get("/api/admin/outlet-overview", (req, res) => {
             FROM cinema_tickets t
             LEFT JOIN cinema_studios st ON st.id = t.studio_id
             WHERE t.sold_at >= ? AND t.sold_at < ?
+              AND (t.company_id IS NULL OR t.company_id = ?)
               AND st.outlet IN (?, ?)
-          `).get(from, to, o.name, o.code);
+          `).get(from, to, ocid, o.name, o.code);
           cinemaTickets = r?.c || 0; cinemaRevenue = r?.v || 0;
         } catch {}
       }
@@ -4853,48 +4862,50 @@ app.get("/api/admin/outlet-overview", (req, res) => {
       const combinedOrders = orderCount + cinemaTickets;
       const avgTicket = combinedOrders > 0 ? Math.round(combinedRevenue / combinedOrders) : 0;
 
-      // Customer rating avg per outlet (via kasir attribution)
+      // Customer rating avg per outlet (via kasir attribution + tenant)
       let rating = null, reviewCount = 0;
       try {
         const r = db.rawDb.prepare(`
           SELECT COUNT(*) c, COALESCE(AVG(rating),0) r
           FROM customer_feedback
           WHERE created_at >= ? AND created_at < ?
-            AND cashier IN (SELECT name FROM admin_users WHERE outlet_code = ?)
-        `).get(from, to, o.code);
+            AND cashier IN (SELECT name FROM admin_users WHERE outlet_code = ? AND (company_id IS NULL OR company_id = ?))
+        `).get(from, to, o.code, ocid);
         if (r?.c > 0) { rating = Math.round((r.r || 0) * 100) / 100; reviewCount = r.c; }
       } catch {}
 
-      // Top kasir at this outlet
+      // Top kasir at this outlet (tenant-scoped)
       let topKasir = null;
       try {
         const r = db.rawDb.prepare(`
           SELECT actor, COUNT(DISTINCT order_ref) cnt, COALESCE(SUM(amount_applied),0) rev
           FROM pos_payments
           WHERE created_at >= ? AND created_at < ? AND status = 'completed'
-            AND actor IN (SELECT name FROM admin_users WHERE outlet_code = ?)
+            AND actor IN (SELECT name FROM admin_users WHERE outlet_code = ? AND (company_id IS NULL OR company_id = ?))
           GROUP BY actor ORDER BY rev DESC LIMIT 1
-        `).get(from, to, o.code);
+        `).get(from, to, o.code, ocid);
         if (r?.actor) topKasir = { name: r.actor, transactions: r.cnt, revenue: r.rev };
       } catch {}
 
-      // Prev period for growth
+      // Prev period for growth (tenant-scoped)
       const prevFrom = from - (to - from);
       let prevRevenue = 0;
       try {
         const r1 = db.rawDb.prepare(`
           SELECT COALESCE(SUM(total),0) t FROM orders
           WHERE time >= ? AND time < ? AND status != 'cancelled'
-            AND kasir IN (SELECT name FROM admin_users WHERE outlet_code = ?)
-        `).get(prevFrom * 1000, from * 1000, o.code);
+            AND (company_id IS NULL OR company_id = ?)
+            AND kasir IN (SELECT name FROM admin_users WHERE outlet_code = ? AND (company_id IS NULL OR company_id = ?))
+        `).get(prevFrom * 1000, from * 1000, ocid, o.code, ocid);
         prevRevenue = r1?.t || 0;
         if (o.vertical === 'cinema' || o.vertical === 'hybrid') {
           const r2 = db.rawDb.prepare(`
             SELECT COALESCE(SUM(t.price),0) v FROM cinema_tickets t
             LEFT JOIN cinema_studios st ON st.id = t.studio_id
             WHERE t.sold_at >= ? AND t.sold_at < ?
+              AND (t.company_id IS NULL OR t.company_id = ?)
               AND st.outlet IN (?, ?)
-          `).get(prevFrom, from, o.name, o.code);
+          `).get(prevFrom, from, ocid, o.name, o.code);
           prevRevenue += r2?.v || 0;
         }
       } catch {}
