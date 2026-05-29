@@ -899,9 +899,12 @@ function setupCinema(app, opts = {}) {
 
   // ── FILMS ──
   router.get('/films', (req, res) => {
-    // Multi-tenant: filter by company_id kalau bukan super-admin
+    // Marketplace mode: public access (cinema.karyaos.tech) shows all
+    // companies' films sbg satu brand. Filter tenant hanya saat ada auth
+    // (admin/manage panel).
     const scope = req.companyScope || { is_super_admin: true };
-    const where = scope.is_super_admin ? '' : `WHERE f.company_id = ${parseInt(scope.company_id, 10)}`;
+    const hasAuth = !!(req.headers.authorization || req.headers['x-admin-name']);
+    const where = (scope.is_super_admin || !hasAuth) ? '' : `WHERE f.company_id = ${parseInt(scope.company_id, 10)}`;
     res.json({ films: db.prepare(`
       SELECT f.*, d.name AS distributor_name, d.code AS distributor_code,
              ROUND((SELECT AVG(rating) FROM cinema_film_ratings WHERE film_id = f.id), 2) AS avg_rating,
@@ -1140,14 +1143,31 @@ function setupCinema(app, opts = {}) {
     const p = [];
     const wh = [];
     if (req.query.date) { wh.push(`s.show_date = ?`); p.push(req.query.date); }
-    if (req.query.outlet) { wh.push(`st.outlet = ?`); p.push(String(req.query.outlet).trim()); }
+    if (req.query.outlet) {
+      // Frontend bisa pass code (OTL-001) atau name (Paskal). cinema_studios.outlet
+      // dulu pakai name; sekarang resolve dari outlet_master supaya kompatibel
+      // dgn kedua format.
+      const v = String(req.query.outlet).trim();
+      let resolved = v;
+      try {
+        const om = db.prepare(`SELECT name FROM outlet_master WHERE code = ? OR name = ? LIMIT 1`).get(v, v);
+        if (om?.name) resolved = om.name;
+      } catch {}
+      wh.push(`(st.outlet = ? OR st.outlet = ?)`);
+      p.push(v, resolved);
+    }
     // By default exclude archived; ?include_archived=1 to include them
     if (String(req.query.include_archived || '') !== '1') {
       wh.push(`COALESCE(s.is_archived, 0) = 0`);
     }
-    // Multi-tenant: filter by company_id (kalau bukan super-admin)
+    // Multi-tenant filter — apply HANYA kalau request ada auth (admin/kasir).
+    // Public customer access (cinema.karyaos.tech) = marketplace mode,
+    // tampilkan semua tenant sbg satu brand karyaOS Cinema.
+    // Filosofi: customer gak peduli outlet milik perusahaan mana — mereka
+    // pilih lokasi yg dekat. Filtering tenant urusan internal.
     const scope = req.companyScope || { is_super_admin: true };
-    if (!scope.is_super_admin) {
+    const hasAuth = !!(req.headers.authorization || req.headers['x-admin-name']);
+    if (!scope.is_super_admin && hasAuth) {
       wh.push(`s.company_id = ?`);
       p.push(scope.company_id);
     }
