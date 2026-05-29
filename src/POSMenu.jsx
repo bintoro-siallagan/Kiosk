@@ -29,6 +29,8 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
     try {
       const today = new Date().toISOString().slice(0, 10);
       const key = `morningRecog:${cashier?.name || 'unknown'}:${today}`;
+      // Skip kalau hari pertama (mereka udah dapat WelcomeRitual — gak perlu double sambutan)
+      if (localStorage.getItem('karyaos:isFirstLogin')) return false;
       return !localStorage.getItem(key);
     } catch { return false; }
   });
@@ -182,7 +184,15 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
             apiBase={API_BASE}
             onDone={() => {
               setShowWelcome(false);
-              try { localStorage.removeItem('karyaos:needsWelcome'); } catch {}
+              try {
+                localStorage.removeItem('karyaos:needsWelcome');
+                localStorage.removeItem('karyaos:isFirstLogin');
+                // Mark today's homecoming as "sudah disambut" — gak perlu double modal
+                const today = new Date().toISOString().slice(0, 10);
+                const key = `morningRecog:${cashier?.name || 'unknown'}:${today}`;
+                localStorage.setItem(key, '1');
+              } catch {}
+              setShowMorning(false);
             }}
           />
         </Suspense>

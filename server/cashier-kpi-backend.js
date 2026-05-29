@@ -564,8 +564,34 @@ function setupCashierKpi(app, opts = {}) {
     const all = result.cashiers || [];
     const me = all.find(c => c.cashier === cashierName);
 
+    // Time-of-day + continuity context — selalu dikembalikan, supaya
+    // setiap kasir (termasuk yg kemarin gak kerja) tetap disambut.
+    const hour = new Date().getHours();
+    const tg = (hour >= 5 && hour < 11) ? 'Selamat pagi'
+             : (hour >= 11 && hour < 15) ? 'Selamat siang'
+             : (hour >= 15 && hour < 18) ? 'Selamat sore'
+             : 'Selamat malam';
+    let lastLoginAt0 = null, day0 = null;
+    try {
+      const u = db.prepare(`SELECT last_login_at, first_login_at FROM admin_users WHERE name = ? LIMIT 1`).get(cashierName);
+      lastLoginAt0 = u?.last_login_at || null;
+      if (u?.first_login_at) {
+        day0 = Math.floor((Math.floor(Date.now() / 1000) - u.first_login_at) / 86400) + 1;
+      }
+    } catch {}
+
     if (!me) {
-      return res.json({ cashier: cashierName, badges: [], message: null, yesterday_kpi: null });
+      return res.json({
+        cashier: cashierName,
+        badges: [],
+        message: null,
+        highlight: null,
+        yesterday_kpi: null,
+        greeting: tg,
+        day: day0,
+        last_login_at: lastLoginAt0,
+        has_celebration: false,
+      });
     }
 
     const badges = [];
@@ -607,12 +633,29 @@ function setupCashierKpi(app, opts = {}) {
       `).get(cashierName, yStart, yEnd);
     } catch {}
 
+    // Continuity context — last_login_at + day di perjalanan kasir.
+    // Filosofi: setiap pulang ke "rumah" karyaOS harus disambut dgn ingatan.
+    let lastLoginAt = null, day = null, firstLoginAt = null;
+    try {
+      const u = db.prepare(`SELECT last_login_at, first_login_at FROM admin_users WHERE name = ? LIMIT 1`).get(cashierName);
+      lastLoginAt = u?.last_login_at || null;
+      firstLoginAt = u?.first_login_at || null;
+      if (firstLoginAt) {
+        day = Math.floor((Math.floor(Date.now() / 1000) - firstLoginAt) / 86400) + 1;
+      }
+    } catch {}
+
     res.json({
       cashier: cashierName,
       badges,
       message,
       highlight,
       yesterday_kpi: me.kpi_score,
+      // Continuity untuk DailyHomecoming — pakai variables yg sudah dideklarasi di awal
+      greeting: tg,
+      day,
+      last_login_at: lastLoginAt,
+      has_celebration: badges.length > 0 || !!highlight,
     });
   });
 

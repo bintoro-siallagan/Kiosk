@@ -1,13 +1,26 @@
-// src/POS/MorningRecognition.jsx
-// Pengakuan pagi — saat kasir mulai shift hari ini, kalau kemarin dia
-// punya pencapaian objektif (Top Sales, Top Upsell, Perfect Rating, dll),
-// tampilkan momen cinematic 5 detik.
+// src/POS/MorningRecognition.jsx — sekarang juga DailyHomecoming
 //
-// Filosofi: badge ini BUKAN dipilih atasan, BUKAN dipilih sistem secara
-// sembarangan. Lahir murni dari data kemarin. "Yang baik makin baik"
-// dimulai dgn yang baik TAHU dia baik.
+// Filosofi (Bintoro, 2026-05-29):
+// "karyaOS bukan sistem yang mereka takuti, tapi mereka kembali ke
+//  rumah mereka, dan harapan mereka ada di sistem karyaOS."
 //
-// Auto-dismiss setelah 6 detik atau saat user klik.
+// Sebelumnya: hanya muncul kalau ada badge/highlight kemarin.
+// Sekarang: muncul SELALU sekali per hari, ADAPTIF:
+//
+// A. has_celebration (ada badge atau highlight)
+//    → Full cinematic: gold spotlight + sparkles + badges + quote
+//    → Auto-dismiss 10 detik (perlu waktu utk dibaca)
+//
+// B. tidak ada celebration, ada continuity (last_login_at + day)
+//    → Soft homecoming: "Selamat pagi/siang/sore/malam, [nama].
+//       Hari ke-X. Senang Anda kembali."
+//    → Auto-dismiss 4 detik (cukup utk dilihat, tidak menahan)
+//
+// C. tidak ada apa-apa (kasir baru, day 1)
+//    → Skip (mereka akan dapat WelcomeRitual)
+//
+// Setiap kembali ke karyaOS = pulang ke rumah. Tidak ada pengguna
+// yg masuk lalu disambut layar kosong.
 
 import React, { useEffect, useState } from 'react';
 
@@ -24,14 +37,18 @@ export default function MorningRecognition({ apiBase = '', onDone }) {
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (!alive) return;
-        // Show kalau ada badge ATAU highlight comment. Kasir yg gak ranking #1
-        // tapi dpt komentar customer yg menyentuh tetap layak diapresiasi.
+        // Adaptif: tampil utk SEMUA kasir yg punya konteks (greeting + day).
+        // Hanya skip kalau benar-benar tidak ada apa-apa (kasir baru sekali).
         const hasBadges = Array.isArray(d?.badges) && d.badges.length > 0;
         const hasHighlight = d?.highlight && d.highlight.comment;
-        if (!d || (!hasBadges && !hasHighlight)) {
+        const hasGreeting = d?.greeting; // selalu ada dari backend update
+        if (!d || (!hasBadges && !hasHighlight && !hasGreeting)) {
           onDone?.();
           return;
         }
+        // Soft mode: hanya greeting (tanpa celebration). Kasir gak pernah
+        // disambut layar kosong saat pulang ke karyaOS.
+        d._isSoftMode = !hasBadges && !hasHighlight;
         setData(d);
       })
       .catch(() => { if (alive) onDone?.(); });
@@ -41,24 +58,28 @@ export default function MorningRecognition({ apiBase = '', onDone }) {
   // Auto-dismiss + sound cue
   useEffect(() => {
     if (!data) return;
-    try {
-      // Lightweight chime via Web Audio API (no asset)
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      [880, 1320, 1760].forEach((freq, i) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'sine';
-        osc.frequency.value = freq;
-        gain.gain.value = 0;
-        gain.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 0.05 + i * 0.12);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4 + i * 0.12);
-        osc.connect(gain); gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + i * 0.12);
-        osc.stop(ctx.currentTime + 0.5 + i * 0.12);
-      });
-    } catch {}
-    // Beri waktu lebih lama kalau ada highlight quote (perlu dibaca)
-    const dwellMs = data.highlight ? 10000 : 6000;
+    // Soft mode tidak pakai chime — sambutan harus tenang, bukan kemenangan.
+    // Kasir yg baru pulang gak butuh tone naik 3 oktaf.
+    if (!data._isSoftMode) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        [880, 1320, 1760].forEach((freq, i) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          gain.gain.value = 0;
+          gain.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 0.05 + i * 0.12);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4 + i * 0.12);
+          osc.connect(gain); gain.connect(ctx.destination);
+          osc.start(ctx.currentTime + i * 0.12);
+          osc.stop(ctx.currentTime + 0.5 + i * 0.12);
+        });
+      } catch {}
+    }
+    // Adaptive dwell: soft greeting cepat (4s), celebration penuh (10s).
+    // Soft mode tidak nge-block kerja kasir lama-lama.
+    const dwellMs = data._isSoftMode ? 4000 : (data.highlight ? 10000 : 6000);
     const t = setTimeout(() => {
       setVisible(false);
       setTimeout(() => onDone?.(), 400);
@@ -67,29 +88,59 @@ export default function MorningRecognition({ apiBase = '', onDone }) {
   }, [data, onDone]);
 
   if (!data) return null;
+  const soft = data._isSoftMode;
+  const greeting = data.greeting || 'Selamat datang';
+
+  // Soft mode subtitle adaptif berdasarkan day
+  const softSub = (() => {
+    const d = data.day;
+    if (!d) return 'Senang Anda kembali.';
+    if (d === 1) return 'Hari pertama. Pelan-pelan saja.';
+    if (d < 7)   return `Hari ke-${d}. Masih dalam minggu pertama.`;
+    if (d < 30)  return `Hari ke-${d}. Cerita kamu sedang dibangun.`;
+    if (d < 90)  return `Hari ke-${d}. Sudah ${Math.floor(d / 7)} minggu di sini.`;
+    return `Hari ke-${d}. Sudah lama bersama karyaOS.`;
+  })();
 
   return (
     <div
-      style={{ ...S.overlay, opacity: visible ? 1 : 0, transition: 'opacity 0.4s' }}
+      style={{
+        ...S.overlay,
+        background: soft
+          ? 'radial-gradient(circle at center, rgba(99,102,241,0.20) 0%, rgba(15,23,42,0.95) 70%)'
+          : 'radial-gradient(circle at center, rgba(245,158,11,0.35) 0%, rgba(0,0,0,0.95) 70%)',
+        opacity: visible ? 1 : 0, transition: 'opacity 0.4s',
+      }}
       onClick={() => { setVisible(false); setTimeout(() => onDone?.(), 200); }}
     >
       <style>{CSS}</style>
 
-      {/* Sparkle field */}
-      <div aria-hidden style={S.sparkleField}>
-        <span style={{ ...S.sparkle, top: '12%', left: '18%', animationDelay: '0s' }}>✨</span>
-        <span style={{ ...S.sparkle, top: '22%', left: '78%', animationDelay: '0.3s' }}>⭐</span>
-        <span style={{ ...S.sparkle, top: '55%', left: '8%', animationDelay: '0.6s' }}>✨</span>
-        <span style={{ ...S.sparkle, top: '68%', left: '85%', animationDelay: '0.9s' }}>⭐</span>
-        <span style={{ ...S.sparkle, top: '32%', left: '50%', animationDelay: '0.2s' }}>✨</span>
-        <span style={{ ...S.sparkle, top: '82%', left: '40%', animationDelay: '0.4s' }}>⭐</span>
-      </div>
+      {/* Sparkle field — hanya celebration mode */}
+      {!soft && (
+        <div aria-hidden style={S.sparkleField}>
+          <span style={{ ...S.sparkle, top: '12%', left: '18%', animationDelay: '0s' }}>✨</span>
+          <span style={{ ...S.sparkle, top: '22%', left: '78%', animationDelay: '0.3s' }}>⭐</span>
+          <span style={{ ...S.sparkle, top: '55%', left: '8%', animationDelay: '0.6s' }}>✨</span>
+          <span style={{ ...S.sparkle, top: '68%', left: '85%', animationDelay: '0.9s' }}>⭐</span>
+          <span style={{ ...S.sparkle, top: '32%', left: '50%', animationDelay: '0.2s' }}>✨</span>
+          <span style={{ ...S.sparkle, top: '82%', left: '40%', animationDelay: '0.4s' }}>⭐</span>
+        </div>
+      )}
 
       <div style={S.box}>
-        <div style={S.eyebrow}>SELAMAT PAGI</div>
-        <h1 style={S.greeting}>{data.cashier}</h1>
+        <div style={{ ...S.eyebrow, color: soft ? '#a5b4fc' : '#FFD700' }}>{greeting.toUpperCase()}</div>
+        <h1 style={{
+          ...S.greeting,
+          fontSize: soft ? 38 : 48,
+          background: soft
+            ? 'linear-gradient(180deg, #fff 0%, #c7d2fe 100%)'
+            : 'linear-gradient(180deg, #fff 0%, #FFD700 100%)',
+          WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+        }}>{data.cashier}</h1>
 
-        {data.badges && data.badges.length > 0 ? (
+        {soft ? (
+          <div style={{ ...S.subtitle, color: '#cbd5e1', marginBottom: 8 }}>{softSub}</div>
+        ) : data.badges && data.badges.length > 0 ? (
           <>
             <div style={S.subtitle}>Kemarin Anda meraih pengakuan:</div>
             <div style={S.badgeRow}>
