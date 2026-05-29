@@ -40,6 +40,7 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
   const [dayClosed, setDayClosed] = useState(false);
   const [dayOpenBusy, setDayOpenBusy] = useState(false);
   const [dayOpenErr, setDayOpenErr] = useState("");
+  const [dayOpenPinModal, setDayOpenPinModal] = useState(false);
 
   // CLOCK — refresh every 30s
   useEffect(() => {
@@ -147,31 +148,36 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
     const t = setInterval(checkDay, 20000);
     return () => clearInterval(t);
   }, [checkDay]);
-  async function handleOpenDay() {
-    setDayOpenBusy(true); setDayOpenErr("");
+  function handleOpenDay() {
+    // Open Day butuh Manager PIN — biar kasir gak nyusahkan harus login admin
+    // di subdomain lain. Modal akan munculkan keypad PIN.
+    setDayOpenErr("");
+    setDayOpenPinModal(true);
+  }
+
+  // Dipanggil PinModal setelah user input PIN
+  async function verifyOpenDayPin(pin) {
     try {
-      const token = (() => { try { return localStorage.getItem("adminToken") || ""; } catch { return ""; } })();
-      const headers = { "Content-Type": "application/json" };
-      if (token) headers.Authorization = `Bearer ${token}`;
-      const r = await fetch(`${apiBase}/api/day/open?vertical=fnb`, {
-        method: "POST", headers,
-        body: JSON.stringify({ by: "Manager", vertical: "fnb" }),
+      const r = await fetch(`${apiBase}/api/day/open-with-pin?vertical=fnb`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin, by: "Manager", vertical: "fnb" }),
       });
-      if (!r.ok) {
-        if (r.status === 401 || r.status === 403) {
-          throw new Error("Manager / Admin harus login dulu di admin.karyaos.tech sebelum buka hari.");
-        }
-        let detail = ""; try { detail = (await r.json())?.error || ""; } catch {}
-        throw new Error(detail || `Gagal buka hari (HTTP ${r.status})`);
-      }
-      setDayClosed(false);
-      // Re-check setelah short delay untuk sync state backend
-      setTimeout(() => checkDay(), 800);
+      if (r.ok) return true;
+      if (r.status === 401) return false; // PIN salah — PinModal kasih feedback sendiri
+      let detail = ""; try { detail = (await r.json())?.error || ""; } catch {}
+      setDayOpenErr(detail || `Gagal buka hari (HTTP ${r.status})`);
+      return false;
     } catch (e) {
       setDayOpenErr(e.message || "Gagal buka hari");
-    } finally {
-      setDayOpenBusy(false);
+      return false;
     }
+  }
+
+  function handleOpenDaySuccess() {
+    setDayOpenPinModal(false);
+    setDayClosed(false);
+    setDayOpenErr("");
+    setTimeout(() => checkDay(), 600);
   }
 
   // SYSTEM HEALTH — network + printer + last sync
@@ -300,10 +306,10 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
               ⚠ {dayOpenErr}
             </div>
           )}
-          <button onClick={handleOpenDay} disabled={dayOpenBusy} style={{background: dayOpenBusy ? '#3a3a3a' : 'linear-gradient(135deg,#F59E0B,#fbbf24)', color:'#111', border:'none', borderRadius:14, padding:'18px 48px', fontSize:17, fontWeight:800, cursor: dayOpenBusy ? 'not-allowed' : 'pointer', opacity: dayOpenBusy ? 0.6 : 1, boxShadow: dayOpenBusy ? 'none' : '0 12px 36px rgba(245,158,11,0.35)', letterSpacing:1, marginTop:10}}>
-            {dayOpenBusy ? '⏳ Membuka…' : '☀️ Open Day'}
+          <button onClick={handleOpenDay} style={{background: 'linear-gradient(135deg,#F59E0B,#fbbf24)', color:'#111', border:'none', borderRadius:14, padding:'18px 48px', fontSize:17, fontWeight:800, cursor: 'pointer', boxShadow: '0 12px 36px rgba(245,158,11,0.35)', letterSpacing:1, marginTop:10}}>
+            ☀️ Open Day
           </button>
-          <div style={{fontSize:11, color:'#5b6470', fontStyle:'italic', letterSpacing:0.5}}>Butuh akses Manager / Admin</div>
+          <div style={{fontSize:11, color:'#5b6470', fontStyle:'italic', letterSpacing:0.5}}>Approval Manager PIN diperlukan</div>
         </div>
       ) : (
         <PinLogin
@@ -318,6 +324,13 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
           onCancel={() => setPinModal(null)}
           onSuccess={() => { doLogin(pinModal.staff); setPinModal(null); }}
           verifyPin={verifyPin} />
+      )}
+
+      {dayOpenPinModal && (
+        <PinModal staff={{ name: "Open Day · Manager Approval", role: "manager" }}
+          onCancel={() => setDayOpenPinModal(false)}
+          onSuccess={handleOpenDaySuccess}
+          verifyPin={verifyOpenDayPin} />
       )}
     </div>
   );

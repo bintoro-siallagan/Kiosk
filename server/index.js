@@ -4471,6 +4471,33 @@ app.post("/api/day/open", requireAdmin, (req, res) => {
   res.json({ ...dayStates[vertical], vertical });
 });
 
+// Alternative: open day via Manager PIN (untuk POS kasir yang gak punya admin token)
+// Verify PIN cocok dengan pos_config.MANAGER_PIN, lalu buka hari.
+app.post("/api/day/open-with-pin", (req, res) => {
+  const vertical = _vertOf(req);
+  const pin = String((req.body && req.body.pin) || "").trim();
+  const by  = String((req.body && req.body.by)  || "Manager").slice(0, 60);
+  if (!pin) return res.status(400).json({ error: "PIN wajib diisi" });
+  try {
+    const row = db.rawDb.prepare(`SELECT value FROM pos_config WHERE key = ?`).get("MANAGER_PIN");
+    let configured = "1234";
+    if (row?.value) {
+      try { configured = JSON.parse(row.value); } catch { configured = row.value; }
+    }
+    if (String(configured) !== pin) {
+      console.log(`🔐 Open day PIN salah dari ${by} (vertical=${vertical})`);
+      return res.status(401).json({ error: "PIN Manager salah" });
+    }
+    dayStates[vertical] = { closed: false, closedAt: null, closedBy: null, openedAt: Date.now(), openedBy: by };
+    saveDayState();
+    console.log(`☀️ Hari ${vertical} dibuka oleh ${by} (via Manager PIN)`);
+    res.json({ ...dayStates[vertical], vertical });
+  } catch (e) {
+    console.error("[day/open-with-pin]", e.message);
+    res.status(500).json({ error: "Gagal buka hari: " + e.message });
+  }
+});
+
 app.get("/api/shifts", (req, res) => res.json(shifts.map(normalizeShift)));
 app.get("/api/shifts/active", (req, res) => {
   const vertical = _vertOf(req);
