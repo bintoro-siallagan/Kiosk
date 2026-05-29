@@ -2733,7 +2733,7 @@ const menuBtnStyle = {
 // NETFLIX BILLBOARD HERO — featured film, CTA Pesan/Detail, left-aligned
 // ════════════════════════════════════════════════════════════════════
 function CinemaHero({ films, brandPrimary, onPickFilm }) {
-  const slides = useMemo(() => (films || []).filter(f => f.poster_url && f.status !== "archived").slice(0, 5), [films]);
+  const slides = useMemo(() => (films || []).filter(f => (f.poster_url || f.backdrop_url) && f.status !== "archived").slice(0, 5), [films]);
   const [idx, setIdx] = useState(0);
   useEffect(() => {
     if (slides.length < 2) return;
@@ -2854,12 +2854,14 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
       marginLeft: "calc(-50vw + 50%)", marginRight: "calc(-50vw + 50%)",
       background: "#141414",
     }}>
-      {/* Crossfade poster bg */}
+      {/* Crossfade backdrop bg — prefer landscape backdrop (TMDB original) untuk
+          hero billboard. Fallback ke poster kalau backdrop belum ada (manual upload). */}
       {slides.map((f, i) => (
         <div key={f.id} aria-hidden={i !== idx} style={{
           position: "absolute", inset: 0,
-          backgroundImage: `url(${f.poster_url})`,
-          backgroundSize: "cover", backgroundPosition: "center 15%",
+          backgroundImage: `url(${f.backdrop_url || f.poster_url})`,
+          backgroundSize: "cover",
+          backgroundPosition: f.backdrop_url ? "center center" : "center 15%",
           opacity: i === idx ? (trailerPlaying ? 0 : 1) : 0,
           transition: "opacity 1.4s ease-in-out",
         }} />
