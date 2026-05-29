@@ -41,6 +41,7 @@ const CinemaCDS              = lazy(() => import("./Cinema/CinemaCDS.jsx"));
 const CinemaFeedback         = lazy(() => import("./Cinema/CinemaFeedback.jsx"));
 const CinemaDigitalTicket    = lazy(() => import("./Cinema/CinemaDigitalTicket.jsx"));
 const SignagePlayer          = lazy(() => import("./SignagePlayer.jsx"));
+const SignageLauncher        = lazy(() => import("./SignageLauncher.jsx"));
 const TenantSignup           = lazy(() => import("./TenantSignup.jsx"));
 const OutletAudit            = lazy(() => import("./RemoteOps/OutletAudit.jsx"));
 const OutletVisit            = lazy(() => import("./RemoteOps/OutletVisit.jsx"));
@@ -100,6 +101,8 @@ function getScene() {
     if (q.includes("command") || new URLSearchParams(q).has("command")) return "command";
     if (q.includes("signup")) return "signup";
     if (q.includes("reset")) return "reset-password";
+    if (new URLSearchParams(q).has("signage-launcher")) return "signage-launcher";
+    if (new URLSearchParams(q).has("signage")) return "signage";
     return "admin-login";  // default: entry admin
   }
 
@@ -154,6 +157,7 @@ function getScene() {
   if (new URLSearchParams(q).has("service")) return "service-staff";
   if (new URLSearchParams(q).get("ticket")) return "cinema-digital-ticket";
   if (new URLSearchParams(q).has("purchase")) return "cinema-digital-ticket";
+  if (new URLSearchParams(q).has("signage-launcher")) return "signage-launcher";
   if (new URLSearchParams(q).has("signage")) return "signage";
   if (new URLSearchParams(q).has("pickup") || new URLSearchParams(q).has("expeditor")) return "pickup-monitor";
   if (new URLSearchParams(q).has("signup")) return "signup";
@@ -290,6 +294,8 @@ export default function App() {
     node = <CinemaBoard apiBase={API_HOST} />;
   } else if (scene === "signage") {
     node = <SignagePlayer />;
+  } else if (scene === "signage-launcher") {
+    node = <SignageLauncher />;
   } else if (scene === "signup") {
     node = <TenantSignup />;
   } else if (scene === "movies") {
