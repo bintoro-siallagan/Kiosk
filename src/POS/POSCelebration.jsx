@@ -42,20 +42,21 @@ export default function POSCelebration({ order, apiBase = '', onDone }) {
   if (err) {
     return (
       <div style={S.root}><div style={S.box}>
-        <div style={{ fontSize: 54 }}>🎉</div>
-        <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', margin: '8px 0' }}>Transaksi Selesai!</div>
-        <button onClick={onDone} style={S.cta}>Lanjut →</button>
+        <div style={{ fontSize: 54 }}>💛</div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', margin: '8px 0' }}>Terima kasih sudah datang</div>
+        <div style={{ fontSize: 13, color: '#cbd5e1', marginBottom: 12 }}>Sampai bertemu lagi.</div>
+        <button onClick={onDone} style={S.cta}>Selesai →</button>
       </div></div>
     );
   }
-  if (!d) return <div style={S.root}><div style={S.box}><LoadingState label="Memuat…" /></div></div>;
+  if (!d) return <div style={S.root}><div style={S.box}><LoadingState label="Sebentar ya, kami siapkan hadiahmu…" /></div></div>;
 
   const t = d.title;
   return (
     <div style={S.root}>
       <div style={{ ...S.box, borderColor: t.color + '66' }}>
         <div style={S.brand}>🍦 KaryaOS</div>
-        <div style={S.kicker}>🎉 TRANSAKSI SELESAI</div>
+        <div style={S.kicker}>💛 TERIMA KASIH SUDAH DATANG</div>
         <div style={{ fontSize: 76, lineHeight: 1, margin: '4px 0' }}>{t.emoji}</div>
         <div style={{ fontSize: 12, color: '#9ca3af' }}>Gelar kamu jam ini</div>
         <div style={{ fontSize: 38, fontWeight: 900, color: t.color, letterSpacing: 1, lineHeight: 1.1 }}>{t.title}</div>
@@ -89,9 +90,9 @@ export default function POSCelebration({ order, apiBase = '', onDone }) {
           ))}
         </div>
 
-        <div style={S.shareHint}>📸 Screenshot & pamerin ke WA Story / Instagram kamu!</div>
-        <button onClick={onDone} style={S.cta}>Lanjut →</button>
-        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 6 }}>Tiap jam ada Sultan baru — balik lagi buat rebut posisi! 🚀</div>
+        <div style={S.shareHint}>📸 Screenshot & bagikan kalau Anda berkenan</div>
+        <button onClick={onDone} style={S.cta}>Selesai. Sampai jumpa lagi →</button>
+        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 6 }}>Tiap jam ada Sultan baru — kami tunggu Anda balik 🌱</div>
       </div>
     </div>
   );

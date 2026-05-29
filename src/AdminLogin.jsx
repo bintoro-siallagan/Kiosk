@@ -128,8 +128,21 @@ export default function AdminLogin({ onLogin }) {
       <style>{CSS}</style>
       <div style={{ ...L.wrap, animation: shake ? "shake 0.4s ease" : "fadeUp 0.3s ease" }}>
         <img src="/logo.png" alt="KaryaOS" style={L.logoImg} />
-        <div style={L.title}>{mode === "password" ? "ADMIN LOGIN" : "PIN QUICK-ACCESS"}</div>
-        <div style={L.sub}>{mode === "password" ? "Enterprise authentication · username & password" : "For POS cashier · 6-digit PIN"}</div>
+        {/* Sambutan waktu — admin/manager juga "pulang ke rumah" karyaOS */}
+        {(() => {
+          const h = new Date().getHours();
+          const g = h >= 5 && h < 11 ? 'Selamat pagi'
+                  : h >= 11 && h < 15 ? 'Selamat siang'
+                  : h >= 15 && h < 18 ? 'Selamat sore'
+                  : 'Selamat malam';
+          return (
+            <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 8, letterSpacing: 0.6, fontWeight: 500 }}>
+              {g}. Selamat datang kembali.
+            </div>
+          );
+        })()}
+        <div style={L.title}>{mode === "password" ? "Masuk ke karyaOS" : "Masukkan PIN"}</div>
+        <div style={L.sub}>{mode === "password" ? "Pakai username & password yang biasa." : "Untuk kasir POS — 6 digit angka."}</div>
 
         {error && <div style={L.error} role="alert">⚠ {error}</div>}
 
@@ -157,13 +170,13 @@ export default function AdminLogin({ onLogin }) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14 }}>
               <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, color: "#9ca3af", cursor: "pointer" }}>
                 <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} />
-                Remember username
+                Ingat saya
               </label>
-              <a href="#" onClick={(e) => { e.preventDefault(); setShowForgot(true); }} style={{ fontSize: 11, color: "#3b82f6", textDecoration: "none" }}>Forgot password?</a>
+              <a href="#" onClick={(e) => { e.preventDefault(); setShowForgot(true); }} style={{ fontSize: 11, color: "#3b82f6", textDecoration: "none" }}>Lupa password?</a>
             </div>
 
             <button type="submit" disabled={busy} style={{ ...L.primaryBtn, marginTop: 18, opacity: busy ? 0.6 : 1, cursor: busy ? "not-allowed" : "pointer" }}>
-              {busy ? <><span style={L.spinner} /> Memverifikasi…</> : "🔓 Login"}
+              {busy ? <><span style={L.spinner} /> Sebentar ya…</> : "🌱 Masuk"}
             </button>
           </form>
         ) : (
