@@ -1,7 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, lazy, Suspense } from "react";
 import ToppingPicker from "./ToppingPicker.jsx";
 import API_HOST from "./apiBase.js";
 import { LoadingState } from "./components/uiKit.jsx";
+
+const MyKpiPanel = lazy(() => import("./POS/MyKpiPanel.jsx"));
 
 const API_BASE = API_HOST;
 
@@ -18,6 +20,7 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
   const [activeCat, setActiveCat] = useState("All");
   const [cart, setCart] = useState([]);
   const [toppingItem, setToppingItem] = useState(null);
+  const [showKpi, setShowKpi] = useState(false);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/menu`)
@@ -140,9 +143,20 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
         <PosShiftPill apiBase={API_BASE} />
         <PosAlertPill apiBase={API_BASE} />
         <PosStockPill apiBase={API_BASE} />
+        <button
+          onClick={() => setShowKpi(true)}
+          style={S.kpiBtn}
+          title="Cermin jujur — KPI saya hari ini"
+        >📊</button>
         <div style={S.kasir}>👤 {cashier.name}</div>
         <button onClick={onCancel} style={S.iconBtn}>✕</button>
       </header>
+
+      {showKpi && (
+        <Suspense fallback={null}>
+          <MyKpiPanel apiBase={API_BASE} onClose={() => setShowKpi(false)} />
+        </Suspense>
+      )}
 
       <div style={S.body}>
         <div style={S.menuSide}>
@@ -345,6 +359,8 @@ const S = {
   summary: { flex:1, fontSize:14, color:"#F59E0B", fontWeight:600, display:"flex", gap:6, alignItems:"center" },
   dot: { color:"#444" },
   kasir: { fontSize:13, color:"#888" },
+  kpiBtn: { background:"rgba(245,158,11,0.10)", border:"1px solid rgba(245,158,11,0.30)", color:"#F59E0B",
+    width:36, height:36, borderRadius:10, fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", fontFamily:"inherit" },
   body: { flex:1, display:"flex", overflow:"hidden" },
   menuSide: { flex:1, padding:"16px 20px", overflowY:"auto", maxHeight:"calc(100vh - 60px)" },
   toolbar: { marginBottom:12 },

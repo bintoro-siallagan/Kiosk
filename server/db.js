@@ -194,6 +194,10 @@ try { db.exec("ALTER TABLE pos_menus ADD COLUMN outlet_ids TEXT"); console.log("
 // disuruh tawarkan) vs item utama. Hitung upsell rate per kasir secara akurat,
 // bukan dari asumsi "ada addon" — addon bisa request customer, bukan effort kasir.
 try { db.exec("ALTER TABLE pos_menus ADD COLUMN is_upsell INTEGER DEFAULT 0"); console.log("📈 pos_menus.is_upsell added"); } catch {}
+// Idempotent — kasir + source kolom orders. Mungkin sudah ada di DB baru,
+// tapi tetap dijaga utk DB lama yg belum punya kolom ini.
+try { db.exec("ALTER TABLE orders ADD COLUMN kasir TEXT"); console.log("👤 orders.kasir added"); } catch {}
+try { db.exec("ALTER TABLE orders ADD COLUMN source TEXT"); console.log("🔖 orders.source added"); } catch {}
 
 // Service charge config — idempotent insert (skip kalau sudah ada)
 try {
