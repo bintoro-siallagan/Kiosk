@@ -500,7 +500,7 @@ const styles = {
   },
   logoSub: { fontSize: 11, color: '#64748b', letterSpacing: '0.2em', fontFamily: "'Geist Mono',monospace", fontWeight: 700, lineHeight: 1 },
 
-  statsRow: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: 10, marginBottom: 24, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' },
+  statsRow: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 24, width: '100%', maxWidth: 600, alignSelf: 'center' },
   statCard: {
     background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 12, padding: '14px 16px', textAlign: 'center',
