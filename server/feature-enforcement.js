@@ -86,12 +86,30 @@ function setupFeatureEnforcement(app, opts = {}) {
   const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
   db.pragma('journal_mode = WAL');
 
+  // Whitelist endpoint publik customer-facing yg HARUS jalan tanpa
+  // gate billing (cinema booking, film listing, seats). Customer outlet
+  // jangan kena 402 — itu surface jualan tenant, bukan admin.
+  const CUSTOMER_PUBLIC_PATHS = [
+    /^\/api\/cinema\/films\b/,
+    /^\/api\/cinema\/showtimes\b/,
+    /^\/api\/cinema\/available-seats\b/,
+    /^\/api\/cinema\/seats\b/,
+    /^\/api\/cinema\/tickets(\/|$|\?)/,  // booking tiket customer
+    /^\/api\/cinema\/feedback\b/,
+    /^\/api\/cinema\/bundles\b/,
+    /^\/api\/cinema\/cashier-ratings\b/,
+  ];
+
   app.use((req, res, next) => {
     // Bypass super-admin
     const sc = req.companyScope || {};
     if (sc.is_super_admin || sc.company_id == null) return next();
 
-    const feature = lookupRequiredFeature(req.path || req.url || '');
+    // Bypass customer-public cinema endpoints (booking flow)
+    const url = req.path || req.url || '';
+    if (CUSTOMER_PUBLIC_PATHS.some(re => re.test(url))) return next();
+
+    const feature = lookupRequiredFeature(url);
     if (!feature) return next(); // public/base endpoint
 
     const features = getTenantFeatures(db, sc.company_id);
