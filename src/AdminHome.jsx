@@ -15,6 +15,19 @@ const MemberList    = lazy(() => import("./MemberList.jsx"));
 const PromoManager  = lazy(() => import("./PromoManager.jsx"));
 const ShiftManager  = lazy(() => import("./ShiftManager.jsx"));
 const FarewellOverlay = lazy(() => import("./components/FarewellOverlay.jsx"));
+
+// Karya Hari Ini — metric kecil dgn label + value
+function KaryaMetric({ label, value, accent = '#fff' }) {
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.04)', borderRadius: 10,
+      padding: '10px 12px', textAlign: 'left',
+    }}>
+      <div style={{ fontSize: 10, color: '#94a3b8', letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 700, color: accent, fontFamily: "'Geist Mono',monospace" }}>{value}</div>
+    </div>
+  );
+}
 // White-label self-service portal pages (Phase 1+2)
 const AdminBranding     = lazy(() => import("./Admin/AdminBranding.jsx"));
 const AdminIntegrations = lazy(() => import("./Admin/AdminIntegrations.jsx"));
@@ -223,6 +236,14 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
   // Fase 5 continuity — fetch journey context utk sambutan hangat AdminHome.
   // Karya yg menyambut "pulang ke rumah" perlu ingat kapan terakhir user di sini.
   const [journey, setJourney] = useState(null);
+  // Karya Hari Ini — ringkasan kemarin dari karyaOS utk owner pagi-pagi.
+  const [karyaHariIni, setKaryaHariIni] = useState(null);
+  const [karyaCollapsed, setKaryaCollapsed] = useState(() => {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      return !!localStorage.getItem(`karyaCollapsed:${today}`);
+    } catch { return false; }
+  });
   useEffect(() => {
     const token = localStorage.getItem("adminToken");
     if (!token) return;
@@ -231,7 +252,22 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
     }).then(r => r.ok ? r.json() : null).then(d => {
       if (d?.journey) setJourney(d.journey);
     }).catch(() => {});
+
+    // Karya Hari Ini — fetch ringkasan kemarin
+    fetch(`${API}/api/admin/karya-hari-ini`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }).then(r => r.ok ? r.json() : null).then(d => {
+      if (d?.for_date) setKaryaHariIni(d);
+    }).catch(() => {});
   }, []);
+
+  const dismissKarya = () => {
+    setKaryaCollapsed(true);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      localStorage.setItem(`karyaCollapsed:${today}`, '1');
+    } catch {}
+  };
 
   const [now, setNow] = useState(new Date());
   const [orders, setOrders] = useState([]);
@@ -931,6 +967,75 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
               </div>
             </div>
           ) : (<>
+          {/* ═══ KARYA HARI INI — surat dari karyaOS untuk owner setiap pagi ═══ */}
+          {karyaHariIni && !karyaCollapsed && (
+            <div style={{
+              background: 'linear-gradient(180deg, rgba(255,215,0,0.10) 0%, rgba(245,158,11,0.02) 100%)',
+              border: '1px solid rgba(255,215,0,0.25)',
+              borderRadius: 16, padding: '20px 24px', marginBottom: 16,
+              position: 'relative', overflow: 'hidden',
+            }}>
+              <div style={{
+                position: 'absolute', top: 12, right: 14,
+                display: 'flex', gap: 6,
+              }}>
+                <button onClick={dismissKarya} title="Sembunyikan untuk hari ini"
+                  style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: 13, cursor: 'pointer', padding: '4px 8px' }}>
+                  ✕
+                </button>
+              </div>
+              <div style={{ fontSize: 10, color: '#fbbf24', letterSpacing: 2.5, fontWeight: 700, marginBottom: 6, textTransform: 'uppercase', fontFamily: "'Geist Mono',monospace" }}>
+                💛 SURAT DARI KARYAOS
+              </div>
+              <h2 style={{
+                fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 0 4px',
+                letterSpacing: -0.5,
+              }}>
+                Karya hari ini — {karyaHariIni.for_date}
+              </h2>
+              <p style={{
+                fontSize: 14, color: '#fde68a', fontStyle: 'italic',
+                margin: '0 0 16px', lineHeight: 1.5,
+              }}>
+                {karyaHariIni.tagline}
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginBottom: 14 }}>
+                <KaryaMetric label="Cerita pesanan" value={karyaHariIni.metrics.orders} />
+                <KaryaMetric label="Omset" value={`Rp ${(karyaHariIni.metrics.revenue / 1e6).toFixed(1)}jt`} />
+                {karyaHariIni.metrics.new_customers > 0 && <KaryaMetric label="Teman baru" value={karyaHariIni.metrics.new_customers} accent="#22D3EE" />}
+                {karyaHariIni.metrics.reviews > 0 && <KaryaMetric label="Cerita customer" value={karyaHariIni.metrics.reviews} accent="#FFD700" />}
+                {karyaHariIni.metrics.avg_rating > 0 && <KaryaMetric label="Rating rata" value={`${karyaHariIni.metrics.avg_rating} ★`} accent="#F59E0B" />}
+              </div>
+
+              {karyaHariIni.milestones?.length > 0 && (
+                <div style={{ marginBottom: 14, padding: '10px 12px', background: 'rgba(167,139,250,0.08)', border: '1px solid rgba(167,139,250,0.25)', borderRadius: 10 }}>
+                  {karyaHariIni.milestones.map((m, i) => (
+                    <div key={i} style={{ fontSize: 12.5, color: '#c4b5fd', marginBottom: i < karyaHariIni.milestones.length - 1 ? 4 : 0 }}>{m}</div>
+                  ))}
+                </div>
+              )}
+
+              {karyaHariIni.top_story && (
+                <figure style={{
+                  margin: 0, padding: '12px 16px',
+                  background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.18)',
+                  borderRadius: 10, position: 'relative',
+                }}>
+                  <div style={{ position: 'absolute', top: 2, left: 8, fontSize: 36, lineHeight: 1, color: 'rgba(245,158,11,0.30)', fontFamily: 'Georgia, serif' }}>"</div>
+                  <blockquote style={{
+                    margin: 0, fontSize: 13.5, lineHeight: 1.55, color: '#fde68a',
+                    fontStyle: 'italic', fontFamily: 'Georgia, serif', paddingLeft: 18, marginBottom: 6,
+                  }}>{karyaHariIni.top_story.comment}</blockquote>
+                  <figcaption style={{ paddingLeft: 18, fontSize: 11, color: '#94a3b8' }}>
+                    <span style={{ color: '#F59E0B' }}>{'★'.repeat(karyaHariIni.top_story.rating || 5)}</span>
+                    <span style={{ marginLeft: 6 }}>untuk {karyaHariIni.top_story.cashier || '—'}</span>
+                  </figcaption>
+                </figure>
+              )}
+            </div>
+          )}
+
           {/* ═══ HERO BANNER (animated, gradient mesh, big number) ═══ */}
           <div style={S.hero} className="ah-hero">
             <div style={S.heroMesh} />

@@ -4777,6 +4777,125 @@ app.patch("/api/staff-call/:id/resolve", (req, res) => {
 
 // ─── START SERVER ─────────────────────────────────────────────────────────
 
+// ─── KARYA HARI INI — daily summary utk owner/manager ──────────────
+// Filosofi karyaOS: owner adalah orang yg paling jauh dari outlet
+// secara harian. Dia perlu "kembali ke rumah karyaOS" tiap pagi —
+// melihat apa yg terjadi kemarin sebagai surat dari tim.
+//
+// Output: ringkasan kemarin yg menggerakkan hati, bukan cuma angka.
+//
+// Auth: butuh session admin/owner.
+app.get("/api/admin/karya-hari-ini", (req, res) => {
+  const token = req.headers.authorization?.replace(/^Bearer\s+/i, '');
+  const session = token && adminSessions.get(token);
+  if (!session) return res.status(401).json({ error: 'session required' });
+
+  try {
+    // Range: kemarin 00:00 - 23:59
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    const yEnd = Math.floor(d.getTime() / 1000);
+    const yStart = yEnd - 86400;
+    const yEndMs = yEnd * 1000;
+    const yStartMs = yStart * 1000;
+
+    // Orders kemarin
+    let ordersCount = 0, revenue = 0, newCustomers = 0;
+    try {
+      const r1 = db.rawDb.prepare(`SELECT COUNT(*) c, COALESCE(SUM(total),0) t FROM orders WHERE time >= ? AND time < ? AND status != 'cancelled'`).get(yStartMs, yEndMs);
+      ordersCount = r1?.c || 0; revenue = r1?.t || 0;
+    } catch {}
+    try {
+      const r2 = db.rawDb.prepare(`SELECT COUNT(*) c FROM customers WHERE created_at >= ? AND created_at < ?`).get(yStart, yEnd);
+      newCustomers = r2?.c || 0;
+    } catch {}
+
+    // Reviews kemarin
+    let reviewsCount = 0, avgRating = 0, badCount = 0;
+    try {
+      const r3 = db.rawDb.prepare(`SELECT COUNT(*) c, COALESCE(AVG(rating),0) a, SUM(CASE WHEN rating <= 2 THEN 1 ELSE 0 END) b FROM customer_feedback WHERE created_at >= ? AND created_at < ?`).get(yStart, yEnd);
+      reviewsCount = r3?.c || 0; avgRating = Math.round((r3?.a || 0) * 100) / 100;
+      badCount = r3?.b || 0;
+    } catch {}
+
+    // Top story kemarin
+    let topStory = null;
+    try {
+      topStory = db.rawDb.prepare(`
+        SELECT comment, cashier, rating, source
+        FROM customer_feedback
+        WHERE rating >= 4 AND comment IS NOT NULL AND LENGTH(TRIM(comment)) >= 10
+          AND created_at >= ? AND created_at < ?
+        ORDER BY rating DESC, created_at DESC LIMIT 1
+      `).get(yStart, yEnd);
+    } catch {}
+
+    // Milestones kemarin — kasir yg anniversary, dll
+    const milestones = [];
+    try {
+      // Kasir yg punya anniversary kemarin
+      const ANNIV_DAYS = [100, 180, 365, 500, 730, 1000, 1825];
+      const yesterdayDay = (firstAt) => Math.floor((yStart - firstAt) / 86400) + 1;
+      const allUsers = db.rawDb.prepare(`SELECT name, first_login_at FROM admin_users WHERE first_login_at IS NOT NULL AND active = 1`).all();
+      for (const u of allUsers) {
+        const d = yesterdayDay(u.first_login_at);
+        if (ANNIV_DAYS.includes(d)) {
+          const label = d === 100 ? "hari ke-100" : d === 180 ? "6 bulan" : d === 365 ? "1 tahun"
+                     : d === 500 ? "hari ke-500" : d === 730 ? "2 tahun" : d === 1000 ? "hari ke-1000" : "5 tahun";
+          milestones.push(`🌳 ${u.name} mencapai ${label} kemarin`);
+        }
+      }
+    } catch {}
+
+    // Kasir top kemarin (omset tertinggi)
+    let topCashier = null;
+    try {
+      const r = db.rawDb.prepare(`
+        SELECT actor AS cashier, COUNT(DISTINCT order_ref) AS tx, COALESCE(SUM(amount_applied),0) AS revenue
+        FROM pos_payments
+        WHERE created_at >= ? AND created_at < ? AND status = 'completed' AND actor IS NOT NULL AND actor != ''
+        GROUP BY actor ORDER BY revenue DESC LIMIT 1
+      `).get(yStart, yEnd);
+      if (r?.cashier) topCashier = { name: r.cashier, transactions: r.tx, revenue: r.revenue };
+    } catch {}
+
+    // Tagline adaptif berdasarkan performance kemarin
+    let tagline;
+    if (avgRating >= 4.5 && reviewsCount >= 3) {
+      tagline = 'Hari kemarin sangat bercahaya. Tim Anda menyentuh banyak hati.';
+    } else if (ordersCount >= 50) {
+      tagline = 'Hari yang sibuk. Tim Anda berdiri tegak di tengah keramaian.';
+    } else if (badCount > 0) {
+      tagline = 'Hari yang menantang. Setiap kritik adalah hadiah untuk tumbuh.';
+    } else if (newCustomers >= 1) {
+      tagline = 'Ada wajah baru yang datang kemarin. Mari sambut mereka kembali.';
+    } else {
+      tagline = 'Hari yang tenang. Bukan tidak terjadi apa-apa — banyak yg dilakukan dgn sungguh-sungguh.';
+    }
+
+    const forDate = new Date(yStartMs).toLocaleDateString('id-ID', {
+      weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+    });
+
+    res.json({
+      for_date: forDate,
+      metrics: {
+        orders: ordersCount,
+        revenue,
+        new_customers: newCustomers,
+        reviews: reviewsCount,
+        avg_rating: avgRating,
+      },
+      top_story: topStory,
+      top_cashier: topCashier,
+      milestones,
+      tagline,
+    });
+  } catch (e) {
+    console.error('[karya-hari-ini]', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── PUBLIC BERANDA — story wall ────────────────────────────────────
 // Endpoint publik (no auth) — show wall yg bikin customer rindu menyapa.
 // Filosofi karyaOS: customer datang BUKAN cuma karena makanan,

@@ -41,14 +41,15 @@ export default function MorningRecognition({ apiBase = '', onDone }) {
         // Hanya skip kalau benar-benar tidak ada apa-apa (kasir baru sekali).
         const hasBadges = Array.isArray(d?.badges) && d.badges.length > 0;
         const hasHighlight = d?.highlight && d.highlight.comment;
+        const hasAnniversary = !!d?.anniversary;
         const hasGreeting = d?.greeting; // selalu ada dari backend update
-        if (!d || (!hasBadges && !hasHighlight && !hasGreeting)) {
+        if (!d || (!hasBadges && !hasHighlight && !hasAnniversary && !hasGreeting)) {
           onDone?.();
           return;
         }
         // Soft mode: hanya greeting (tanpa celebration). Kasir gak pernah
         // disambut layar kosong saat pulang ke karyaOS.
-        d._isSoftMode = !hasBadges && !hasHighlight;
+        d._isSoftMode = !hasBadges && !hasHighlight && !hasAnniversary;
         setData(d);
       })
       .catch(() => { if (alive) onDone?.(); });
@@ -77,9 +78,11 @@ export default function MorningRecognition({ apiBase = '', onDone }) {
         });
       } catch {}
     }
-    // Adaptive dwell: soft greeting cepat (4s), celebration penuh (10s).
-    // Soft mode tidak nge-block kerja kasir lama-lama.
-    const dwellMs = data._isSoftMode ? 4000 : (data.highlight ? 10000 : 6000);
+    // Adaptive dwell: soft greeting cepat (4s), celebration penuh,
+    // anniversary dipanjangin (12s) supaya kasir bisa baca message ulang.
+    const dwellMs = data.anniversary ? 12000
+                  : data._isSoftMode ? 4000
+                  : data.highlight ? 10000 : 6000;
     const t = setTimeout(() => {
       setVisible(false);
       setTimeout(() => onDone?.(), 400);
@@ -137,6 +140,16 @@ export default function MorningRecognition({ apiBase = '', onDone }) {
             : 'linear-gradient(180deg, #fff 0%, #FFD700 100%)',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         }}>{data.cashier}</h1>
+
+        {/* ANNIVERSARY — perayaan hari ke-100/365/500/1000 yg sakral.
+            Ditampilkan paling atas, dengan animasi pop yang dramatic. */}
+        {data.anniversary && (
+          <div style={S.annivBox}>
+            <div style={S.annivIcon}>{data.anniversary.icon}</div>
+            <div style={S.annivBadgeLabel}>{data.anniversary.label}</div>
+            <p style={S.annivMessage}>{data.anniversary.message}</p>
+          </div>
+        )}
 
         {soft ? (
           <div style={{ ...S.subtitle, color: '#cbd5e1', marginBottom: 8 }}>{softSub}</div>
@@ -253,4 +266,29 @@ const S = {
     fontFamily: 'Georgia, "Times New Roman", serif', textAlign: 'left',
   },
   highlightStars: { textAlign: 'right', marginTop: 10, color: '#FFD700', fontSize: 14, letterSpacing: 2 },
+  // Anniversary celebration — perayaan hari sakral
+  annivBox: {
+    margin: '4px auto 28px',
+    maxWidth: 480,
+    padding: '24px 28px',
+    background: 'linear-gradient(180deg, rgba(255,215,0,0.18) 0%, rgba(245,158,11,0.05) 100%)',
+    border: '1px solid rgba(255,215,0,0.45)',
+    borderRadius: 18,
+    boxShadow: '0 16px 40px rgba(255,215,0,0.18), inset 0 0 40px rgba(255,215,0,0.08)',
+    animation: 'morn-badge-pop 0.8s 0.4s both',
+  },
+  annivIcon: {
+    fontSize: 72, marginBottom: 8,
+    filter: 'drop-shadow(0 6px 20px rgba(255,215,0,0.45))',
+  },
+  annivBadgeLabel: {
+    fontSize: 22, fontWeight: 800, color: '#FFD700',
+    letterSpacing: 1, marginBottom: 10,
+    textShadow: '0 2px 12px rgba(255,215,0,0.4)',
+  },
+  annivMessage: {
+    margin: 0, fontSize: 14.5, color: '#fde68a',
+    fontStyle: 'italic', lineHeight: 1.55, maxWidth: 380,
+    marginLeft: 'auto', marginRight: 'auto',
+  },
 };

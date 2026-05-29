@@ -618,6 +618,26 @@ function setupCashierKpi(app, opts = {}) {
     if (badges.length >= 3) message = 'Kemarin Anda luar biasa. Hari ini, tetap dengan sungguh-sungguh.';
     else if (badges.length > 0) message = `Kemarin Anda meraih ${badges.length} pengakuan. Lanjutkan ritmenya hari ini.`;
 
+    // Anniversary — hari ke-X yg patut dirayakan khusus.
+    // Filosofi karyaOS: kasir yg bertahan sungguh-sungguh adalah karya
+    // hidup. Berapa hari bersama karyaOS = berapa hari kesungguhan
+    // bekerja. Itu sakral.
+    let anniversary = null;
+    if (day0) {
+      const ANNIVERSARIES = {
+        100:  { icon: '🌳', label: 'Seratus Hari',     message: 'Sudah 100 hari Anda menemani kami. Terima kasih untuk kesungguhan.' },
+        180:  { icon: '🌿', label: 'Setengah Tahun',   message: 'Enam bulan bersama karyaOS. Anda sudah jadi bagian dari rumah ini.' },
+        365:  { icon: '🌟', label: 'Setahun',          message: 'Setahun penuh. Terima kasih untuk setiap hari yang Anda berikan.' },
+        500:  { icon: '💎', label: 'Lima Ratus Hari',  message: '500 hari. Yang sungguh-sungguh memang bertahan. Anda salah satunya.' },
+        730:  { icon: '🌸', label: 'Dua Tahun',        message: 'Dua tahun. Bukan main. Banyak yang sudah Anda jalani di sini.' },
+        1000: { icon: '👑', label: 'Seribu Hari',      message: 'Seribu hari bersama. Kerja Anda sudah jadi cerita panjang di sini.' },
+        1825: { icon: '🏆', label: 'Lima Tahun',       message: 'Lima tahun. Anda bukan sekadar pekerja — Anda adalah keluarga karyaOS.' },
+      };
+      if (ANNIVERSARIES[day0]) {
+        anniversary = { day: day0, ...ANNIVERSARIES[day0] };
+      }
+    }
+
     // Bonus: 1 highlight comment kemarin — kalau ada. Suara customer
     // yang langsung sampai ke kasir, lebih kuat dari skor angka.
     let highlight = null;
@@ -650,12 +670,13 @@ function setupCashierKpi(app, opts = {}) {
       badges,
       message,
       highlight,
+      anniversary, // anniversary today (atau null)
       yesterday_kpi: me.kpi_score,
       // Continuity untuk DailyHomecoming — pakai variables yg sudah dideklarasi di awal
       greeting: tg,
       day,
       last_login_at: lastLoginAt,
-      has_celebration: badges.length > 0 || !!highlight,
+      has_celebration: badges.length > 0 || !!highlight || !!anniversary,
     });
   });
 
