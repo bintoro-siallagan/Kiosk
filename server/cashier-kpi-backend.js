@@ -269,6 +269,62 @@ function setupCashierKpi(app, opts = {}) {
     });
   });
 
+  // ── Highlight Moments — Cerita Berharga ──
+  // Saat customer kasih rating tinggi (≥4) + comment yang substansial,
+  // itu adalah cerita berharga. Bukan sekadar angka rating, tapi suara
+  // customer yang nyata. Kembalikan dgn attribution ke kasir.
+  //
+  // Filosofi: kerja baik biasanya gak dapat balasan langsung. Customer
+  // yg merasa senang sering pulang tanpa ngomong. Tapi yg menulis review
+  // bagus → itu hadiah utk kasir yg pelayanannya menyentuh. Pastikan
+  // hadiah itu sampai ke yg layak menerimanya.
+
+  // GET /me/highlights — kasir login lihat cerita berharga utk dirinya
+  router.get('/me/highlights', (req, res) => {
+    const cashierName = (global.getSessionUserName && global.getSessionUserName(req)) || null;
+    if (!cashierName) return res.status(401).json({ error: 'session required' });
+    const limit = Math.min(Number(req.query.limit) || 5, 20);
+    const fromTs = Number(req.query.from) || (Math.floor(Date.now() / 1000) - 30 * 86400); // default 30 hari
+    try {
+      const rows = db.prepare(`
+        SELECT id, order_ref, rating, comment, source, created_at
+        FROM customer_feedback
+        WHERE cashier = ?
+          AND rating >= 4
+          AND comment IS NOT NULL
+          AND LENGTH(TRIM(comment)) >= 10
+          AND created_at >= ?
+        ORDER BY rating DESC, created_at DESC
+        LIMIT ?
+      `).all(cashierName, fromTs, limit);
+      res.json({ cashier: cashierName, highlights: rows, count: rows.length });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // GET /highlights — admin view: cerita berharga semua kasir (manager share ke tim)
+  router.get('/highlights', (req, res) => {
+    const { from, to } = rangeOf(req);
+    const limit = Math.min(Number(req.query.limit) || 30, 100);
+    try {
+      const rows = db.prepare(`
+        SELECT id, order_ref, cashier, rating, comment, source, created_at
+        FROM customer_feedback
+        WHERE rating >= 4
+          AND comment IS NOT NULL
+          AND LENGTH(TRIM(comment)) >= 10
+          AND cashier IS NOT NULL AND cashier != ''
+          AND created_at BETWEEN ? AND ?
+        ORDER BY rating DESC, created_at DESC
+        LIMIT ?
+      `).all(from, to, limit);
+      res.json({ from, to, highlights: rows, count: rows.length });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // ── Morning Recognition — pengakuan yang lahir dari fakta kemarin ──
   // Saat kasir buka shift pagi-pagi, panggil ini. Kalau ada pencapaian
   // kemarin (Top Sales, Top Upsell, Perfect Rating, dll), POS tampilkan
@@ -313,10 +369,26 @@ function setupCashierKpi(app, opts = {}) {
     if (badges.length >= 3) message = 'Kemarin Anda luar biasa. Hari ini, tetap dengan sungguh-sungguh.';
     else if (badges.length > 0) message = `Kemarin Anda meraih ${badges.length} pengakuan. Lanjutkan ritmenya hari ini.`;
 
+    // Bonus: 1 highlight comment kemarin — kalau ada. Suara customer
+    // yang langsung sampai ke kasir, lebih kuat dari skor angka.
+    let highlight = null;
+    try {
+      highlight = db.prepare(`
+        SELECT comment, rating, source
+        FROM customer_feedback
+        WHERE cashier = ? AND rating >= 4
+          AND comment IS NOT NULL AND LENGTH(TRIM(comment)) >= 10
+          AND created_at BETWEEN ? AND ?
+        ORDER BY rating DESC, created_at DESC
+        LIMIT 1
+      `).get(cashierName, yStart, yEnd);
+    } catch {}
+
     res.json({
       cashier: cashierName,
       badges,
       message,
+      highlight,
       yesterday_kpi: me.kpi_score,
     });
   });

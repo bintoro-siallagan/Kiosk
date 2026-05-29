@@ -12,21 +12,31 @@ import React, { useEffect, useState } from 'react';
 
 export default function MyKpiPanel({ apiBase = '', onClose }) {
   const [data, setData] = useState(null);
+  const [highlights, setHighlights] = useState([]);
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let alive = true;
     const token = localStorage.getItem('adminToken');
-    fetch(`${apiBase}/api/cashier-kpi/me`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-      .then(async r => {
+    const auth = token ? { Authorization: `Bearer ${token}` } : {};
+
+    Promise.all([
+      fetch(`${apiBase}/api/cashier-kpi/me`, { headers: auth }).then(async r => {
         const j = await r.json();
         if (!r.ok) throw new Error(j.error || 'gagal muat KPI');
         return j;
+      }),
+      fetch(`${apiBase}/api/cashier-kpi/me/highlights?limit=5`, { headers: auth })
+        .then(r => r.ok ? r.json() : { highlights: [] })
+        .catch(() => ({ highlights: [] })),
+    ])
+      .then(([kpi, hl]) => {
+        if (!alive) return;
+        setData(kpi);
+        setHighlights(Array.isArray(hl?.highlights) ? hl.highlights : []);
+        setLoading(false);
       })
-      .then(d => { if (alive) { setData(d); setLoading(false); } })
       .catch(e => { if (alive) { setErr(e.message); setLoading(false); } });
     return () => { alive = false; };
   }, [apiBase]);
@@ -50,6 +60,7 @@ export default function MyKpiPanel({ apiBase = '', onClose }) {
             <TodaySection data={data} />
             <WeekDeltasSection data={data} />
             <GrowthNote data={data} />
+            <HighlightsSection highlights={highlights} />
           </>
         )}
       </div>
@@ -121,6 +132,44 @@ function DeltaCard({ label, delta, format }) {
       </div>
     </div>
   );
+}
+
+// ── Cerita Berharga — suara customer yang nyata utk kasir ──
+// Bukan angka. Bukan badge. Kata-kata customer langsung yg menyentuh.
+// Ini hadiah yg kasir biasanya gak pernah tahu sampai ke dia.
+function HighlightsSection({ highlights }) {
+  if (!highlights || highlights.length === 0) return null;
+  const channelLabel = { pos: 'POS', kiosk: 'Kiosk', qr: 'QR Order', 'qr-struk': 'QR Struk' };
+
+  return (
+    <section style={S.section}>
+      <div style={S.sectionLabel}>💛 Cerita berharga dari customer</div>
+      <div style={S.heroQuoteWrap}>
+        {highlights.map((h, i) => (
+          <figure key={h.id || i} style={S.quoteCard}>
+            <div style={S.quoteMark}>"</div>
+            <blockquote style={S.quoteText}>{h.comment}</blockquote>
+            <figcaption style={S.quoteCaption}>
+              <span style={S.quoteRating}>
+                {Array.from({ length: h.rating || 5 }).map((_, k) => <span key={k}>★</span>)}
+              </span>
+              <span style={S.quoteMeta}>
+                {channelLabel[h.source] || h.source || ''} · {fDate(h.created_at)}
+              </span>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function fDate(ts) {
+  if (!ts) return '';
+  try {
+    const d = new Date(ts * 1000);
+    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+  } catch { return ''; }
 }
 
 function GrowthNote({ data }) {
@@ -259,4 +308,24 @@ const S = {
   deltaPct: { fontSize: 12, fontWeight: 500, opacity: 0.7, marginLeft: 4 },
   notes: { display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 },
   note: { padding: '10px 12px', borderLeft: '3px solid', borderRadius: 6, background: 'rgba(255,255,255,0.03)', fontSize: 13, lineHeight: 1.5, color: '#cbd5e1' },
+  // Cerita Berharga — typographic quote cards
+  heroQuoteWrap: { display: 'flex', flexDirection: 'column', gap: 12 },
+  quoteCard: {
+    margin: 0, padding: '20px 22px 18px',
+    background: 'linear-gradient(180deg, rgba(245,158,11,0.10) 0%, rgba(245,158,11,0.02) 100%)',
+    border: '1px solid rgba(245,158,11,0.20)',
+    borderRadius: 14, position: 'relative',
+  },
+  quoteMark: {
+    position: 'absolute', top: 6, left: 14, fontSize: 56, lineHeight: 1, color: 'rgba(245,158,11,0.35)',
+    fontFamily: 'Georgia, serif', pointerEvents: 'none',
+  },
+  quoteText: {
+    margin: 0, fontSize: 16, lineHeight: 1.55, fontStyle: 'italic', color: '#fde68a',
+    fontFamily: 'Georgia, "Times New Roman", serif',
+    paddingLeft: 24, marginBottom: 10,
+  },
+  quoteCaption: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingLeft: 24, gap: 8 },
+  quoteRating: { color: '#F59E0B', fontSize: 13, letterSpacing: 1 },
+  quoteMeta: { fontSize: 11, color: '#94a3b8' },
 };

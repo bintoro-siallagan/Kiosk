@@ -24,7 +24,11 @@ export default function MorningRecognition({ apiBase = '', onDone }) {
       .then(r => r.ok ? r.json() : null)
       .then(d => {
         if (!alive) return;
-        if (!d || !Array.isArray(d.badges) || d.badges.length === 0) {
+        // Show kalau ada badge ATAU highlight comment. Kasir yg gak ranking #1
+        // tapi dpt komentar customer yg menyentuh tetap layak diapresiasi.
+        const hasBadges = Array.isArray(d?.badges) && d.badges.length > 0;
+        const hasHighlight = d?.highlight && d.highlight.comment;
+        if (!d || (!hasBadges && !hasHighlight)) {
           onDone?.();
           return;
         }
@@ -53,10 +57,12 @@ export default function MorningRecognition({ apiBase = '', onDone }) {
         osc.stop(ctx.currentTime + 0.5 + i * 0.12);
       });
     } catch {}
+    // Beri waktu lebih lama kalau ada highlight quote (perlu dibaca)
+    const dwellMs = data.highlight ? 10000 : 6000;
     const t = setTimeout(() => {
       setVisible(false);
       setTimeout(() => onDone?.(), 400);
-    }, 6000);
+    }, dwellMs);
     return () => clearTimeout(t);
   }, [data, onDone]);
 
@@ -83,22 +89,38 @@ export default function MorningRecognition({ apiBase = '', onDone }) {
         <div style={S.eyebrow}>SELAMAT PAGI</div>
         <h1 style={S.greeting}>{data.cashier}</h1>
 
-        <div style={S.subtitle}>Kemarin Anda meraih pengakuan:</div>
-
-        <div style={S.badgeRow}>
-          {data.badges.map((b, i) => (
-            <div
-              key={b.id}
-              style={{ ...S.badgeCard, animation: `morn-badge-pop 0.6s ${i * 0.15}s both` }}
-            >
-              <div style={S.badgeIcon}>{b.icon}</div>
-              <div style={S.badgeLabel}>{b.label}</div>
+        {data.badges && data.badges.length > 0 ? (
+          <>
+            <div style={S.subtitle}>Kemarin Anda meraih pengakuan:</div>
+            <div style={S.badgeRow}>
+              {data.badges.map((b, i) => (
+                <div
+                  key={b.id}
+                  style={{ ...S.badgeCard, animation: `morn-badge-pop 0.6s ${i * 0.15}s both` }}
+                >
+                  <div style={S.badgeIcon}>{b.icon}</div>
+                  <div style={S.badgeLabel}>{b.label}</div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        ) : (
+          <div style={S.subtitle}>Ada cerita berharga untukmu kemarin…</div>
+        )}
 
         {data.message && (
           <div style={S.message}>{data.message}</div>
+        )}
+
+        {data.highlight && data.highlight.comment && (
+          <figure style={S.highlight}>
+            <div style={S.highlightLabel}>Apa yang customer katakan tentang Anda kemarin:</div>
+            <div style={S.highlightMark}>"</div>
+            <blockquote style={S.highlightText}>{data.highlight.comment}</blockquote>
+            <figcaption style={S.highlightStars}>
+              {'★'.repeat(data.highlight.rating || 5)}
+            </figcaption>
+          </figure>
         )}
 
         <div style={S.foot}>Ketuk untuk menutup</div>
@@ -156,4 +178,28 @@ const S = {
     animation: 'morn-greet 0.5s 1.4s both',
   },
   foot: { fontSize: 11, color: '#94a3b8', letterSpacing: 1.2 },
+  // Highlight quote — emotional payoff
+  highlight: {
+    margin: '0 auto 24px',
+    maxWidth: 500,
+    padding: '18px 24px 16px',
+    background: 'linear-gradient(180deg, rgba(255,215,0,0.10) 0%, rgba(245,158,11,0.04) 100%)',
+    border: '1px solid rgba(255,215,0,0.25)',
+    borderRadius: 16,
+    position: 'relative',
+    animation: 'morn-greet 0.6s 1.8s both',
+  },
+  highlightLabel: {
+    fontSize: 11, color: '#fbbf24', letterSpacing: 1.5, textTransform: 'uppercase',
+    fontWeight: 600, marginBottom: 8,
+  },
+  highlightMark: {
+    position: 'absolute', top: 18, right: 18, fontSize: 56, lineHeight: 1,
+    color: 'rgba(255,215,0,0.30)', fontFamily: 'Georgia, serif', pointerEvents: 'none',
+  },
+  highlightText: {
+    margin: 0, fontSize: 16, lineHeight: 1.55, fontStyle: 'italic', color: '#fef3c7',
+    fontFamily: 'Georgia, "Times New Roman", serif', textAlign: 'left',
+  },
+  highlightStars: { textAlign: 'right', marginTop: 10, color: '#FFD700', fontSize: 14, letterSpacing: 2 },
 };

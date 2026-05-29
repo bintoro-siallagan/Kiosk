@@ -166,19 +166,36 @@ export default function AdminCashierKPI({ apiBase = "" }) {
   const [toDate, setToDate] = useState(() => fmtDate(new Date()));
   const [preset, setPreset] = useState("today");
 
+  const [highlights, setHighlights] = useState([]);
+  const [copiedId, setCopiedId] = useState(null);
+
   const load = useCallback(async () => {
     setLoading(true);
     const from = tsStart(fromDate), to = tsEnd(toDate);
     try {
-      const [kpiR, srcR] = await Promise.all([
+      const [kpiR, srcR, hlR] = await Promise.all([
         fetch(`${apiBase}/api/cashier-kpi?from=${from}&to=${to}`).then(r => r.json()),
         fetch(`${apiBase}/api/feedback/by-source?from=${from}&to=${to}`).then(r => r.json()).catch(() => []),
+        fetch(`${apiBase}/api/cashier-kpi/highlights?from=${from}&to=${to}&limit=20`).then(r => r.json()).catch(() => ({ highlights: [] })),
       ]);
       setData(kpiR);
       setBySource(Array.isArray(srcR) ? srcR : []);
+      setHighlights(Array.isArray(hlR?.highlights) ? hlR.highlights : []);
     } catch { setData(null); }
     setLoading(false);
   }, [apiBase, fromDate, toDate]);
+
+  const copyShare = (h) => {
+    const channelMap = { pos: 'POS', kiosk: 'Kiosk', qr: 'QR Order', 'qr-struk': 'QR Struk' };
+    const dt = h.created_at ? new Date(h.created_at * 1000).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' }) : '';
+    const stars = '⭐'.repeat(h.rating || 5);
+    const text = `🌟 Cerita berharga dari customer untuk ${h.cashier}:\n\n"${h.comment}"\n\n${stars}  ${channelMap[h.source] || h.source || ''} · ${dt}\n\n— karyaOS`;
+    try {
+      navigator.clipboard.writeText(text);
+      setCopiedId(h.id);
+      setTimeout(() => setCopiedId(null), 1800);
+    } catch {}
+  };
 
   useEffect(() => { load(); }, [load]);
 
@@ -363,6 +380,48 @@ export default function AdminCashierKPI({ apiBase = "" }) {
         cashiers.forEach(c => { allBadges[c.cashier] = computeBadges(c, cashiers); });
         return <Podium cashiers={cashiers} allBadges={allBadges} />;
       })()}
+
+      {/* 💛 Cerita Berharga Tim — wall manager bisa share ke WA grup */}
+      {highlights.length > 0 && (
+        <div style={{ ...S.card, background: 'linear-gradient(180deg, #0d1117 0%, #161b22 100%)', border: '1px solid #21262d' }}>
+          <div style={S.label}>💛 Cerita berharga dari customer — suara yang patut tim dengar</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12, marginTop: 8 }}>
+            {highlights.map(h => {
+              const channelMap = { pos: 'POS', kiosk: 'Kiosk', qr: 'QR Order', 'qr-struk': 'QR Struk' };
+              const dt = h.created_at ? new Date(h.created_at * 1000).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '';
+              return (
+                <figure key={h.id} style={{
+                  margin: 0, padding: '18px 18px 14px',
+                  background: 'linear-gradient(180deg, rgba(245,158,11,0.08) 0%, rgba(245,158,11,0.02) 100%)',
+                  border: '1px solid rgba(245,158,11,0.20)', borderRadius: 12, position: 'relative',
+                }}>
+                  <div style={{ position: 'absolute', top: 4, left: 12, fontSize: 48, lineHeight: 1, color: 'rgba(245,158,11,0.30)', fontFamily: 'Georgia, serif' }}>"</div>
+                  <blockquote style={{
+                    margin: 0, fontSize: 14, lineHeight: 1.55, fontStyle: 'italic', color: '#fde68a',
+                    fontFamily: 'Georgia, "Times New Roman", serif', paddingLeft: 18, marginBottom: 10,
+                  }}>{h.comment}</blockquote>
+                  <figcaption style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingLeft: 18, gap: 8, fontSize: 11 }}>
+                    <div>
+                      <span style={{ color: '#F59E0B' }}>{'★'.repeat(h.rating || 5)}</span>
+                      <span style={{ color: '#cbd5e1', marginLeft: 8, fontWeight: 600 }}>{h.cashier}</span>
+                      <span style={{ color: '#64748b', marginLeft: 6 }}>· {channelMap[h.source] || h.source} · {dt}</span>
+                    </div>
+                    <button onClick={() => copyShare(h)} style={{
+                      background: copiedId === h.id ? '#10B98122' : '#22D3EE22',
+                      border: `1px solid ${copiedId === h.id ? '#10B98166' : '#22D3EE66'}`,
+                      borderRadius: 6, padding: '4px 10px',
+                      color: copiedId === h.id ? '#34d399' : '#22D3EE',
+                      fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                    }}>
+                      {copiedId === h.id ? '✓ Tersalin' : '📋 Bagikan'}
+                    </button>
+                  </figcaption>
+                </figure>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Leaderboard lengkap */}
       <div style={S.card}>
