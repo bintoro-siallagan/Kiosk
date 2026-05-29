@@ -98,14 +98,19 @@ export function getActiveCompanyId() {
   return getCompanyId();
 }
 
-// Monkey-patch fetch — auto inject headers untuk semua request same-origin.
+// Monkey-patch fetch — auto inject headers + safe json() on auth errors.
 // Dipanggil sekali di main.jsx setelah load.
+//
+// Defensive: kalau response 401/403 (session expired / forbidden),
+// override r.json() agar return null. Mencegah 497 unsafe fetch call
+// di codebase crash dgn `Cannot convert undefined or null to object`
+// karena consumer mereka pattern `r.json().then(d => d.something)`.
 let _patched = false;
 export function installFetchInterceptor() {
   if (_patched || typeof window === "undefined") return;
   _patched = true;
   const _fetch = window.fetch.bind(window);
-  window.fetch = (input, init = {}) => {
+  window.fetch = async (input, init = {}) => {
     try {
       // Hanya inject untuk same-origin atau relative paths
       const url = typeof input === "string" ? input : input?.url || "";
@@ -114,13 +119,10 @@ export function installFetchInterceptor() {
         const ctx = getCompanyCtx();
         if (ctx) {
           const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
-          // Super-admin URL override (?company=CMX) — kalau ada, set company_id ke override
           let cid = ctx.company_id;
           try {
             const param = new URLSearchParams(window.location.search).get("company");
             if (param && ctx.is_super_admin) {
-              // For URL override, kita kirim code; backend bisa lookup.
-              // Untuk safety, super-admin tetep akses all kecuali switch eksplisit.
               headers.set("x-company-code-override", param.toUpperCase());
             }
           } catch {}
@@ -131,6 +133,30 @@ export function installFetchInterceptor() {
         }
       }
     } catch {}
-    return _fetch(input, init);
+
+    const r = await _fetch(input, init);
+
+    // Safe-json untuk 401/403 — banyak consumer di codebase pattern
+    // `fetch().then(r => r.json()).then(d => d.something)` tanpa cek
+    // r.ok. Kalau r.json() balikin { error: "Unauthorized" } → akses
+    // d.something → undefined → crash. Override .json() utk return null
+    // saat status auth-error.
+    //
+    // PENGECUALIAN: /api/auth/* — login flow butuh response body utk
+    // tampilkan error message ke user ("PIN salah", "akun terkunci", dll).
+    const url2 = typeof input === "string" ? input : input?.url || "";
+    const isAuthEndpoint = /\/api\/auth\//.test(url2);
+    if ((r.status === 401 || r.status === 403) && !isAuthEndpoint) {
+      const orig = r.json.bind(r);
+      r.json = async () => {
+        try { await orig(); } catch {}
+        return null;
+      };
+      if (r.status === 401) {
+        try { window.dispatchEvent(new CustomEvent("karyaos:session-expired")); } catch {}
+      }
+    }
+
+    return r;
   };
 }
