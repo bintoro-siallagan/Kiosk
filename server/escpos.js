@@ -216,21 +216,16 @@ function buildCustomerReceipt(order, template = {}) {
   r.feed().line(sayang);
   r.feed();
 
-  if (showQr) {
-    r.line("Scan untuk cek status pesanan:").feed();
-    const base = process.env.TRACKING_BASE_URL || "http://localhost:5173";
-    r.qr(`${base}/?trackorder=${order.id}`, 7, 1).feed();
-  }
-
-  // ── KPI Foundation: Rating QR ──
-  // Customer scan QR ini → kasih bintang 1-5. Tersimpan dgn order_ref +
-  // auto-link ke kasir (backend lookup via pos_payments.actor).
-  const showRatingQr = template.show_rating_qr !== false;
+  // ── Single QR: rating + komentar ──
+  // Sebelumnya ada 2 QR (tracking + rating) — terlalu rame di struk.
+  // Sekarang 1 QR aja, fokus ke feedback (cermin jujur karyaOS).
+  // Rating page bisa diperluas nanti untuk tampil status order juga.
+  const showRatingQr = template.show_rating_qr !== false && showQr !== false;
   if (showRatingQr) {
     r.feed().bold(true).line("Bagaimana pengalaman Anda?").bold(false);
-    r.line("Scan untuk beri rating:").feed();
+    r.line("Scan untuk cek status + beri rating:").feed();
     const ratingBase = process.env.RATING_BASE_URL || process.env.TRACKING_BASE_URL || "http://localhost:5173";
-    r.qr(`${ratingBase}/?rate=${order.id}`, 6, 1).feed();
+    r.qr(`${ratingBase}/?rate=${order.id}`, 7, 1).feed();
   }
 
   r.line(`Order #${order.id}`).feed(2);
