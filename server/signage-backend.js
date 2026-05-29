@@ -328,58 +328,147 @@ function setupSignage(app, opts = {}) {
       // Detect F&B vertical: zone tidak di cinema list = F&B (atau lookup company)
       if (['menu-board', 'counter-side', 'dining-area', 'pickup'].includes(zone) ||
           (zone === 'window' && items.length === 0)) {
-        if (zone === 'menu-board') {
-          // F&B menu items (dari MenuContext data via DB kalau ada)
-          // Fallback: pakai sample static items
+
+        // Helper: ambil pos_menus per company + outlet-filter (kalau outlet_ids di-set)
+        const fetchMenus = (extraWhere = '', limit = 30) => {
           try {
-            const overrides = db.prepare(`SELECT item_id, avail FROM menu_overrides`).all();
-            const availMap = new Map(overrides.map(o => [o.item_id, o.avail]));
-            // F&B menu source — pakai global menu dari frontend (kalau ada API)
-            // Untuk MVP, return placeholder yang frontend bakal merge dengan client-side menu data
-            items.push({
-              type: 'fnb_menu_grid',
-              duration_sec: 60,
-              data: { outlet, mode: 'auto-from-menu', available_overrides: availMap.size },
+            const rows = db.prepare(`
+              SELECT m.id, m.name, m.emoji, m.description, m.price, m.image_url,
+                     m.is_popular, m.is_new, m.badge_text, m.badge_color, m.is_available,
+                     m.outlet_ids, m.is_chef_choice,
+                     c.name AS category_name, c.id AS category_id
+              FROM pos_menus m
+              LEFT JOIN pos_menu_categories c ON c.id = m.category_id
+              WHERE COALESCE(m.is_available,1) = 1
+                ${companyId ? `AND m.company_id = ${companyId}` : ''}
+                ${extraWhere}
+              ORDER BY m.is_popular DESC, m.display_order, m.name
+              LIMIT ${limit}
+            `).all();
+            // Outlet filter: outlet_ids = JSON array; kosong/null = available di semua outlet
+            if (!outlet) return rows;
+            return rows.filter(r => {
+              if (!r.outlet_ids) return true;
+              try { const ids = JSON.parse(r.outlet_ids); return !ids.length || ids.includes(outlet); }
+              catch { return true; }
             });
-          } catch {}
-        } else if (zone === 'counter-side') {
-          // F&B promo aktif (promoCodes via /api/promos)
-          // Reach via API call — fallback empty
+          } catch { return []; }
+        };
+
+        if (zone === 'menu-board') {
+          // Menu grid lengkap — Big TV di atas counter. Group per kategori.
+          const menus = fetchMenus('', 40);
+          const byCategory = {};
+          for (const m of menus) {
+            const cat = m.category_name || 'Menu';
+            if (!byCategory[cat]) byCategory[cat] = [];
+            byCategory[cat].push({
+              id: m.id, name: m.name, emoji: m.emoji, price: m.price,
+              image_url: m.image_url, badge: m.badge_text, badge_color: m.badge_color,
+              is_popular: !!m.is_popular, is_new: !!m.is_new, is_chef_choice: !!m.is_chef_choice,
+            });
+          }
           items.push({
-            type: 'fnb_promo_carousel',
-            duration_sec: 12,
-            data: { outlet, source: '/api/promos' },
+            type: 'fnb_menu_grid',
+            duration_sec: 60,
+            data: { outlet, categories: byCategory, total: menus.length },
           });
+
+        } else if (zone === 'counter-side') {
+          // Promo aktif yg masih valid + featured combo
+          const nowSec = Math.floor(Date.now() / 1000);
+          let promos = [];
+          try {
+            promos = db.prepare(`
+              SELECT code, type, value, "desc" AS description, min_order, max_discount,
+                     valid_from, valid_until
+              FROM promos
+              WHERE COALESCE(active,1) = 1
+                AND (valid_until IS NULL OR valid_until > ?)
+                AND (valid_from IS NULL OR valid_from <= ?)
+              ORDER BY (valid_until IS NULL), valid_until ASC
+              LIMIT 8
+            `).all(nowSec, nowSec);
+          } catch {}
+          for (const p of promos) {
+            items.push({
+              type: 'fnb_promo_card',
+              duration_sec: 10,
+              data: {
+                code: p.code, description: p.description, type: p.type, value: p.value,
+                min_order: p.min_order, max_discount: p.max_discount,
+                valid_until: p.valid_until,
+              },
+            });
+          }
+          if (!promos.length) {
+            const popular = fetchMenus('AND m.is_popular = 1', 6);
+            for (const m of popular) {
+              items.push({
+                type: 'fnb_promo_card',
+                duration_sec: 10,
+                data: { mode: 'featured-menu', name: m.name, emoji: m.emoji, price: m.price, image_url: m.image_url, badge: m.badge_text || 'FAVORIT' },
+              });
+            }
+          }
+
         } else if (zone === 'dining-area') {
-          // Brand story + customer reviews (kalau ada feedback)
+          // Top-selling + chef choice + brand idle
+          const popular = fetchMenus('AND m.is_popular = 1', 8);
+          const chefChoice = fetchMenus('AND m.is_chef_choice = 1', 5);
           items.push({
             type: 'fnb_dining',
             duration_sec: 45,
-            data: { outlet, modes: ['brand_story', 'top_menu', 'reviews'] },
+            data: {
+              outlet,
+              brand: 'karyaOS',
+              popular: popular.map(m => ({ name: m.name, emoji: m.emoji, image_url: m.image_url, price: m.price })),
+              chef_choice: chefChoice.map(m => ({ name: m.name, emoji: m.emoji, image_url: m.image_url, description: m.description })),
+            },
           });
+
         } else if (zone === 'pickup') {
-          // Live ready orders queue
+          // Live ready orders queue — last 8 ready, customer-friendly display
+          let ready = [];
           try {
-            const ready = db.prepare(`
-              SELECT id, customer_name, time
+            ready = db.prepare(`
+              SELECT id, customer_name, time, type, "table" AS table_no
               FROM orders
               WHERE status = 'ready'
                 ${companyId ? `AND company_id = ${companyId}` : ''}
               ORDER BY time DESC LIMIT 8
             `).all();
-            items.push({
-              type: 'fnb_pickup_queue',
-              duration_sec: 15,
-              data: { outlet, ready_orders: ready, refresh_hint: 'live' },
-            });
           } catch {}
-        } else if (zone === 'window') {
-          // F&B window: featured menu + walk-in attractor
           items.push({
-            type: 'fnb_window',
-            duration_sec: 30,
-            data: { outlet, mode: 'walk-in-attractor' },
+            type: 'fnb_pickup_queue',
+            duration_sec: 15,
+            data: {
+              outlet,
+              ready_orders: ready.map(o => ({
+                order_no: o.id?.slice(-4) || '----',
+                customer_name: o.customer_name || (o.table_no ? `Meja ${o.table_no}` : 'Tamu'),
+                ready_at: o.time,
+              })),
+              refresh_hint: 'live',
+            },
           });
+
+        } else if (zone === 'window') {
+          // F&B window — new launch + popular = walk-in attractor
+          const newItems = fetchMenus('AND m.is_new = 1', 4);
+          const popular = fetchMenus('AND m.is_popular = 1', 4);
+          const launch = [...newItems, ...popular].slice(0, 6);
+          for (const m of launch) {
+            items.push({
+              type: 'fnb_window',
+              duration_sec: 12,
+              data: {
+                name: m.name, emoji: m.emoji, price: m.price, image_url: m.image_url,
+                badge: m.is_new ? 'BARU' : 'FAVORIT',
+                description: m.description,
+              },
+            });
+          }
         }
       }
     } catch (e) {

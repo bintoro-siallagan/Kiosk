@@ -17,6 +17,7 @@ const ShiftManager  = lazy(() => import("./ShiftManager.jsx"));
 const FarewellOverlay = lazy(() => import("./components/FarewellOverlay.jsx"));
 const OutletDashboard = lazy(() => import("./Admin/OutletDashboard.jsx"));
 const ChangePasswordModal = lazy(() => import("./Admin/ChangePasswordModal.jsx"));
+const OutletSetupWizard = lazy(() => import("./Admin/OutletSetupWizard.jsx"));
 import { OutletScopeProvider } from "./Admin/OutletScopeContext.jsx";
 import OutletScopeBar from "./Admin/OutletScopeBar.jsx";
 
@@ -234,6 +235,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
   const [farewell, setFarewell] = useState(null);
   // Change password modal
   const [showChangePwd, setShowChangePwd] = useState(false);
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
   const wrappedLogout = useCallback(() => {
     if (!onLogout) return;
     setFarewell({ name: adminSession?.name || 'Sahabat', then: () => onLogout() });
@@ -862,6 +864,10 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
           <div style={{ marginLeft: 16 }}>
             <OutletScopeBar />
           </div>
+          <button onClick={() => setShowSetupWizard(true)} title="Setup outlet F&B baru end-to-end"
+            style={{ marginLeft: 12, padding: "8px 14px", background: "linear-gradient(90deg,rgba(168,85,247,0.18),rgba(251,191,36,0.18))", border: "1px solid rgba(168,85,247,0.45)", borderRadius: 10, color: "#fff", fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", letterSpacing: 0.3 }}>
+            ✨ Setup Outlet
+          </button>
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={S.clock}>{now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}</div>
@@ -1418,6 +1424,13 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       {showChangePwd && (
         <Suspense fallback={null}>
           <ChangePasswordModal onClose={() => setShowChangePwd(false)} />
+        </Suspense>
+      )}
+
+      {/* Outlet Setup Wizard — F&B end-to-end */}
+      {showSetupWizard && (
+        <Suspense fallback={null}>
+          <OutletSetupWizard onClose={() => setShowSetupWizard(false)} onDone={() => setShowSetupWizard(false)} />
         </Suspense>
       )}
     </div>
