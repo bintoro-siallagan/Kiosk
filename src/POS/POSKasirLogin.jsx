@@ -291,10 +291,10 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
       </div>
 
       {dayClosed ? (
-        <div style={{textAlign:'center', padding:'48px 24px'}}>
-          <div style={{fontSize:72, marginBottom:12}}>🌙</div>
-          <div style={{fontSize:26, fontWeight:800, color:'#f59e0b', letterSpacing:1, marginBottom:10}}>HARI DITUTUP</div>
-          <div style={{fontSize:14, color:'#9ca3af', lineHeight:1.6, marginBottom:30}}>Operasional today sudah ditutup Manager.<br/>Manager harus buka hari sebelum kasir bisa start day.</div>
+        <div style={{display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'flex-start', textAlign:'center', padding:'48px 24px', gap:18}}>
+          <div style={{fontSize:72, lineHeight:1, display:'block', margin:0}}>🌙</div>
+          <div style={{fontSize:26, fontWeight:800, color:'#f59e0b', letterSpacing:1, lineHeight:1.2, margin:0}}>HARI DITUTUP</div>
+          <div style={{fontSize:14, color:'#9ca3af', lineHeight:1.6, maxWidth:480, margin:0}}>Operasional today sudah ditutup Manager.<br/>Manager harus buka hari sebelum kasir bisa start day.</div>
           {dayOpenErr && (
             <div style={{maxWidth:480, margin:'0 auto 18px', padding:'12px 16px', background:'rgba(239,68,68,0.10)', border:'1px solid rgba(239,68,68,0.35)', borderRadius:10, color:'#fca5a5', fontSize:13, lineHeight:1.5}}>
               ⚠ {dayOpenErr}
