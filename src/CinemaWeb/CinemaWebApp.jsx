@@ -3111,24 +3111,34 @@ function OutletPicker({ onPick, onPickFeaturedFilm, pendingFilm, brandPrimary, o
     Promise.all([
       fetch(`${API_HOST}/api/outlet-master`).then(r => { if (!r.ok) throw new Error(`outlets ${r.status}`); return r.json(); }),
       fetch(`${API_HOST}/api/cinema/films`).then(r => r.ok ? r.json() : { films: [] }).catch(() => ({ films: [] })),
-    ]).then(([d, fd]) => {
+      fetch(`${API_HOST}/api/cinema/showtimes`).then(r => r.ok ? r.json() : { showtimes: [] }).catch(() => ({ showtimes: [] })),
+    ]).then(([d, fd, sd]) => {
       const list = Array.isArray(d) ? d : (d.outlets || d.data || []);
-      const cinemaOnly = list.filter(o => o.primary_vertical === "cinema" || o.vertical === "cinema");
+      // Primary filter: cinema atau hybrid vertical
+      let cinemaList = list.filter(o => o.primary_vertical === "cinema" || o.vertical === "cinema" || o.vertical === "hybrid");
+      // Fallback: kalau gak ada cinema-marked, ambil outlet yg punya cinema showtimes
+      // (kasus data lama — outlet belum dipindah ke vertical=cinema/hybrid)
+      if (cinemaList.length === 0) {
+        const showtimes = sd?.showtimes || [];
+        const outletNames = new Set(showtimes.map(s => s.outlet).filter(Boolean));
+        cinemaList = list.filter(o => outletNames.has(o.name) || outletNames.has(o.code));
+      }
       const nowSec = Math.floor(Date.now() / 1000);
-      // Active: status active + opening_date passed (or null)
-      const active = cinemaOnly.filter(o =>
+      const active = cinemaList.filter(o =>
         (o.status === "active" || o.status === undefined) &&
         (!o.opening_date || o.opening_date <= nowSec)
       );
-      // Coming soon: status='coming_soon' OR opening_date in future
-      const coming = cinemaOnly.filter(o =>
+      const coming = cinemaList.filter(o =>
         o.status === "coming_soon" ||
         (o.opening_date && o.opening_date > nowSec)
       );
       setOutlets(active);
       setComingOutlets(coming);
       const allFilms = fd.films || [];
-      setFilms(allFilms.filter(f => f.poster_url && (f.status === "now_showing" || !f.status)).slice(0, 8));
+      // Hero: dulu butuh poster_url. Sekarang fallback ke film tanpa poster
+      // (poster akan diganti placeholder gradient di CinemaHero).
+      const showingFilms = allFilms.filter(f => f.status === "now_showing" || !f.status);
+      setFilms(showingFilms.slice(0, 8));
       setComingFilms(allFilms.filter(f => f.status === "coming_soon").slice(0, 8));
     }).catch(e => setError(e));
   }, []);
