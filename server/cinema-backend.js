@@ -4124,14 +4124,30 @@ function setupCinema(app, opts = {}) {
     });
   });
 
+  // ── TMDB API key resolver — env atau Admin Integrations per-tenant ──
+  // Filosofi karyaOS: feature config gak harus paksa env edit. Admin bisa
+  // set lewat UI (Admin → Integrations → TMDB → API Key).
+  const _tenantInteg = (() => {
+    try { return require('./tenant-integrations'); } catch { return null; }
+  })();
+  function _resolveTmdbKey(req) {
+    if (process.env.TMDB_API_KEY) return process.env.TMDB_API_KEY;
+    if (!_tenantInteg) return null;
+    try {
+      const cid = req.companyScope?.company_id;
+      if (!cid) return null;
+      return _tenantInteg.getKey(db, cid, 'tmdb', 'api_key');
+    } catch { return null; }
+  }
+
   // ── TMDB LOOKUP — search film + fetch poster & trailer URL ──
   // GET /api/cinema/tmdb/search?q=Inception
-  // Set TMDB_API_KEY env (free signup di https://www.themoviedb.org/signup)
+  // API key bisa dari: env TMDB_API_KEY atau Admin Integrations → TMDB
   router.get('/tmdb/search', async (req, res) => {
     const q = String(req.query.q || '').trim();
     if (!q) return res.status(400).json({ ok: false, error: 'query q wajib' });
-    const apiKey = process.env.TMDB_API_KEY;
-    if (!apiKey) return res.status(503).json({ ok: false, error: 'TMDB_API_KEY belum di-set di server env' });
+    const apiKey = _resolveTmdbKey(req);
+    if (!apiKey) return res.status(503).json({ ok: false, error: 'TMDB API key belum di-set. Set di Admin → Integrations → TMDB (signup gratis di themoviedb.org)' });
     try {
       const lang = req.query.lang || 'id-ID';
       const url = `https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&language=${lang}&query=${encodeURIComponent(q)}&include_adult=false`;
@@ -4156,8 +4172,8 @@ function setupCinema(app, opts = {}) {
 
   // GET /api/cinema/tmdb/movie/:id — full details + trailer key (YouTube)
   router.get('/tmdb/movie/:id', async (req, res) => {
-    const apiKey = process.env.TMDB_API_KEY;
-    if (!apiKey) return res.status(503).json({ ok: false, error: 'TMDB_API_KEY belum di-set' });
+    const apiKey = _resolveTmdbKey(req);
+    if (!apiKey) return res.status(503).json({ ok: false, error: 'TMDB API key belum di-set. Set di Admin → Integrations → TMDB' });
     try {
       const lang = req.query.lang || 'id-ID';
       const [info, videos, videosAll] = await Promise.all([
