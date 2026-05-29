@@ -4785,6 +4785,104 @@ app.patch("/api/staff-call/:id/resolve", (req, res) => {
 
 // ─── START SERVER ─────────────────────────────────────────────────────────
 
+// ─── OUTLET CAPABILITIES — auto-detect vertical dari data nyata ────
+// Filosofi karyaOS: sistem TIDAK boleh menebak salah. Cek data sebenarnya.
+//
+// Logic:
+//   has_cinema = outlet punya studios + showtimes scheduled
+//   has_fnb    = outlet punya kasir bound + orders dlm 90 hari
+//   derived    = capability sebenernya
+//
+// Kalau declared vertical != derived → mismatch (kasih warning ke admin)
+app.get("/api/admin/outlet-capabilities", (req, res) => {
+  try {
+    const scope = req.companyScope || { is_super_admin: true };
+    const tenantFilter = scope.is_super_admin ? '' : 'AND company_id = ?';
+    const tenantParam = scope.is_super_admin ? [] : [scope.company_id];
+
+    let outlets = [];
+    try {
+      const sql = `SELECT code, name, area, vertical, company_id FROM outlet_master WHERE status != 'closed' ${tenantFilter} ORDER BY code`;
+      outlets = db.rawDb.prepare(sql).all(...tenantParam);
+    } catch {}
+
+    const ninetyDaysAgo = Math.floor(Date.now() / 1000) - 90 * 86400;
+    const result = [];
+
+    for (const o of outlets) {
+      // Cinema capability — punya studios?
+      let cinemaStudios = 0, cinemaShowtimes = 0;
+      try {
+        const r = db.rawDb.prepare(`SELECT COUNT(*) c FROM cinema_studios WHERE (outlet = ? OR outlet = ?) ${tenantFilter ? 'AND (company_id IS NULL OR company_id = ?)' : ''}`)
+          .get(o.code, o.name, ...(tenantFilter ? [o.company_id] : []));
+        cinemaStudios = r?.c || 0;
+      } catch {}
+      try {
+        const r = db.rawDb.prepare(`
+          SELECT COUNT(*) c FROM cinema_showtimes s
+          LEFT JOIN cinema_studios st ON st.id = s.studio_id
+          WHERE (st.outlet = ? OR st.outlet = ?) AND s.show_date >= date('now', '-30 days')
+          ${tenantFilter ? 'AND (s.company_id IS NULL OR s.company_id = ?)' : ''}
+        `).get(o.code, o.name, ...(tenantFilter ? [o.company_id] : []));
+        cinemaShowtimes = r?.c || 0;
+      } catch {}
+      const hasCinema = cinemaStudios > 0;
+
+      // F&B capability — punya kasir bound + orders recent?
+      let kasirCount = 0, recentOrders = 0;
+      try {
+        const r = db.rawDb.prepare(`SELECT COUNT(*) c FROM admin_users WHERE outlet_code = ? AND active = 1`).get(o.code);
+        kasirCount = r?.c || 0;
+      } catch {}
+      try {
+        const r = db.rawDb.prepare(`
+          SELECT COUNT(*) c FROM orders
+          WHERE time >= ? AND status != 'cancelled'
+            AND kasir IN (SELECT name FROM admin_users WHERE outlet_code = ?)
+        `).get(ninetyDaysAgo * 1000, o.code);
+        recentOrders = r?.c || 0;
+      } catch {}
+      const hasFnb = kasirCount > 0 && recentOrders > 0;
+
+      // Derive
+      let derived;
+      if (hasCinema && hasFnb) derived = 'hybrid';
+      else if (hasCinema) derived = 'cinema';
+      else if (hasFnb) derived = 'fnb';
+      else derived = null; // belum ada aktivitas
+
+      const declared = o.vertical || 'fnb';
+      const mismatch = derived && declared !== derived;
+
+      result.push({
+        code: o.code, name: o.name, area: o.area,
+        declared_vertical: declared,
+        derived_vertical: derived,
+        mismatch,
+        evidence: {
+          cinema_studios: cinemaStudios,
+          cinema_showtimes_30d: cinemaShowtimes,
+          kasir_bound: kasirCount,
+          orders_90d: recentOrders,
+        },
+        suggestion: mismatch ? `Vertical declared "${declared}" — tapi outlet ini punya ${hasCinema ? 'cinema content' : ''}${hasCinema && hasFnb ? ' + ' : ''}${hasFnb ? 'F&B activity' : ''}. Pertimbangkan ganti ke "${derived}".` : null,
+      });
+    }
+
+    res.json({
+      outlets: result,
+      summary: {
+        total: result.length,
+        mismatched: result.filter(o => o.mismatch).length,
+        no_activity: result.filter(o => !o.derived_vertical).length,
+      },
+    });
+  } catch (e) {
+    console.error('[outlet-capabilities]', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── OUTLET OVERVIEW — sales + KPI per outlet (filterable) ─────────
 // Aggregate metrics per outlet untuk dashboard owner/manager. Filosofi:
 // owner perlu tahu "outlet mana yg paling sungguh-sungguh" — dan kalau

@@ -146,6 +146,41 @@ function OutletForm({ data, isEdit, d, onChange, onClose, onSave }) {
             </select>
           </div>
           <div><div style={lbl}>KAPASITAS KURSI</div><input type="number" min="0" value={data.seat_capacity || 0} onChange={e => onChange({ seat_capacity: Number(e.target.value) })} style={inp} /></div>
+
+          {/* Vertikal — penentu modul mana yg aktif: F&B / Cinema / Hybrid */}
+          <div style={{ gridColumn: "1/-1" }}>
+            <div style={lbl}>🎯 VERTIKAL OUTLET</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {[
+                { k: "fnb",    label: "🍽️ F&B",       color: "#F59E0B", desc: "POS kasir + Kitchen Display + Kiosk self-order" },
+                { k: "cinema", label: "🎬 Cinema",     color: "#A855F7", desc: "Showtimes + Tickets + Seat picker" },
+                { k: "hybrid", label: "🍽️🎬 Hybrid", color: "#22D3EE", desc: "F&B + Cinema dlm satu outlet" },
+              ].map(v => {
+                const active = (data.vertical || "fnb") === v.k;
+                return (
+                  <button
+                    key={v.k}
+                    onClick={() => onChange({ vertical: v.k })}
+                    style={{
+                      flex: 1, minWidth: 160, padding: "10px 14px",
+                      background: active ? `${v.color}22` : "rgba(255,255,255,0.03)",
+                      border: `1px solid ${active ? v.color + "66" : "#21262d"}`,
+                      borderRadius: 10,
+                      color: active ? v.color : "#94a3b8",
+                      fontSize: 13, fontWeight: 700, cursor: "pointer",
+                      fontFamily: "inherit", textAlign: "left",
+                    }}
+                  >
+                    <div style={{ marginBottom: 4 }}>{v.label}</div>
+                    <div style={{ fontSize: 10, color: active ? `${v.color}aa` : "#64748b", fontWeight: 500, lineHeight: 1.4 }}>{v.desc}</div>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: 10, color: "#64748b", marginTop: 6, fontStyle: "italic" }}>
+              💡 Vertikal menentukan modul mana yg muncul + dashboard filter. Outlet hybrid bisa pakai dua-duanya.
+            </div>
+          </div>
           {isEdit && (
             <div style={{ gridColumn: "1/-1" }}><div style={lbl}>STATUS</div>
               <select value={data.status || "active"} onChange={e => onChange({ status: e.target.value })} style={inp}>

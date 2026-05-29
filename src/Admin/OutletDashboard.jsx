@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import API_HOST from '../apiBase.js';
 import { fmtMoney as fIDR } from '../lib/currency.js';
+import { useOutletScope } from './OutletScopeContext.jsx';
 
 const PERIODS = [
   { k: 'today',  label: 'Hari ini',   days: 1 },
@@ -18,8 +19,9 @@ const PERIODS = [
 
 export default function OutletDashboard() {
   const [period, setPeriod] = useState('today');
-  const [selectedOutlet, setSelectedOutlet] = useState(null); // null = all
-  const [selectedVertical, setSelectedVertical] = useState('all'); // all | cinema | fnb | hybrid
+  // Filter sekarang dari GLOBAL OutletScope (bukan local state lagi)
+  // — supaya consistent dgn modul lain + persistent.
+  const { outletCode: selectedOutlet, vertical: selectedVertical, setOutletCode: setSelectedOutlet, setVertical: setSelectedVertical } = useOutletScope();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState(null);

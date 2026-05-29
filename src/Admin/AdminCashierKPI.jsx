@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback } from "react";
 
 import { fmtMoney as fR } from "../lib/currency.js";
+import { useOutletScope } from "./OutletScopeContext.jsx";
 const DAY = 86400;
 const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const tsStart = (s) => Math.floor(new Date(s + "T00:00:00").getTime() / 1000);

@@ -91,12 +91,19 @@ function setupOutletMaster(app, opts = {}) {
     const b = req.body || {};
     if (!b.name || !String(b.name).trim()) return res.status(400).json({ error: 'nama outlet wajib' });
     const n = db.prepare(`SELECT COUNT(*) c FROM outlet_master`).get().c;
-    db.prepare(`INSERT INTO outlet_master (code, name, area, address, phone, manager, outlet_type, status, seat_capacity, opening_date)
-      VALUES (?,?,?,?,?,?,?,?,?,?)`).run(
-      `OTL-${String(n + 1).padStart(3, '0')}`, String(b.name).trim(), (b.area || '-').trim(), (b.address || '-').trim(),
+    // Vertikal — fnb (default) | cinema | hybrid. Prefix code mengikuti:
+    //   cinema → KCN-XXX, fnb → OTL-XXX, hybrid → OTL-XXX
+    const vertical = VERTICALS.includes(b.vertical) ? b.vertical : 'fnb';
+    const prefix = vertical === 'cinema' ? 'KCN' : 'OTL';
+    // Count outlets dgn prefix yg sama supaya numbering konsisten per vertical
+    const c2 = db.prepare(`SELECT COUNT(*) c FROM outlet_master WHERE code LIKE ?`).get(`${prefix}-%`).c;
+    const code = `${prefix}-${String(c2 + 1).padStart(3, '0')}`;
+    db.prepare(`INSERT INTO outlet_master (code, name, area, address, phone, manager, outlet_type, status, seat_capacity, opening_date, vertical)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?)`).run(
+      code, String(b.name).trim(), (b.area || '-').trim(), (b.address || '-').trim(),
       (b.phone || '-').trim(), (b.manager || '-').trim(), TYPES.includes(b.outlet_type) ? b.outlet_type : 'Dine-in',
-      'onboarding', Number(b.seat_capacity) || 0, nowSec());
-    res.json({ ok: true });
+      'onboarding', Number(b.seat_capacity) || 0, nowSec(), vertical);
+    res.json({ ok: true, code, vertical });
   });
 
   router.post('/:id/status', requireAdmin, (req, res) => {

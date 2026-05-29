@@ -16,6 +16,8 @@ const PromoManager  = lazy(() => import("./PromoManager.jsx"));
 const ShiftManager  = lazy(() => import("./ShiftManager.jsx"));
 const FarewellOverlay = lazy(() => import("./components/FarewellOverlay.jsx"));
 const OutletDashboard = lazy(() => import("./Admin/OutletDashboard.jsx"));
+import { OutletScopeProvider } from "./Admin/OutletScopeContext.jsx";
+import OutletScopeBar from "./Admin/OutletScopeBar.jsx";
 
 // Karya Hari Ini — metric kecil dgn label + value
 function KaryaMetric({ label, value, accent = '#fff' }) {
@@ -781,6 +783,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
   );
 
   return (
+    <OutletScopeProvider>
     <div style={S.root}>
       <style>{CSS}</style>
 
@@ -851,6 +854,10 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
           <div>
             <div style={S.brand}>karya<span style={{ background: "linear-gradient(135deg,#f59e0b,#fbbf24)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>OS</span></div>
             <div style={S.brandSub}>ENTERPRISE OPERATING SYSTEM · F&B + CINEMA</div>
+          </div>
+          {/* Global outlet scope picker — propagate ke semua modul */}
+          <div style={{ marginLeft: 16 }}>
+            <OutletScopeBar />
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
@@ -1403,6 +1410,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
         </Suspense>
       )}
     </div>
+    </OutletScopeProvider>
   );
 }
 
