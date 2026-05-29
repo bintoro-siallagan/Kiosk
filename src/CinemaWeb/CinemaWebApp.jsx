@@ -4101,48 +4101,44 @@ function MetaItem({ label, value }) {
 const FORMAT_COLOR = { "2D": "#3b82f6", "3D": "#a855f7", IMAX: "#fbbf24", "4DX": "#ec4899" };
 
 // Curated Unsplash cinema-interior photos (free use, no API key).
-// Theme: actual movie theater shots (seats, screens, projection) — NOT city skylines.
-// Stable URLs verified — each outlet maps ke 1 cinematic photo per city karakter.
-// Fallback: gradient + 🎬 (no random picsum — too unprofessional).
+// Upgrade resolution w=1600 + q=90 utk display sharp di retina.
 const CITY_IMAGES = {
-  "jakarta":    { url: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1200&q=80&auto=format&fit=crop", emoji: "🏙️" },  // red velvet seats — metropolitan classic
-  "bandung":    { url: "https://images.unsplash.com/photo-1574267432553-4b4628081c31?w=1200&q=80&auto=format&fit=crop", emoji: "🌋" },  // cinema marquee neon — creative city vibe
-  "bali":       { url: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=1200&q=80&auto=format&fit=crop", emoji: "🏝️" },  // premium reclining — resort luxury feel
-  "medan":      { url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1200&q=80&auto=format&fit=crop", emoji: "🌴" },  // duplicate Surabaya — verified cinema interior (replaced blur 1604079628040)
-  "surabaya":   { url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1200&q=80&auto=format&fit=crop", emoji: "🌉" },  // modern cinema interior lights
-  "yogyakarta": { url: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1200&q=80&auto=format&fit=crop", emoji: "🏛️" },  // classic seats — heritage city
-  "semarang":   { url: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=1200&q=80&auto=format&fit=crop", emoji: "⛩️" },  // film projection beams
-  "makassar":   { url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1200&q=80&auto=format&fit=crop", emoji: "⛵" },
-  "denpasar":   { url: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=1200&q=80&auto=format&fit=crop", emoji: "🏝️" },
+  "jakarta":    { url: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1600&q=90&auto=format&fit=crop", emoji: "🏙️" },
+  "bandung":    { url: "https://images.unsplash.com/photo-1574267432553-4b4628081c31?w=1600&q=90&auto=format&fit=crop", emoji: "🌋" },
+  "bali":       { url: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=1600&q=90&auto=format&fit=crop", emoji: "🏝️" },
+  "medan":      { url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1600&q=90&auto=format&fit=crop", emoji: "🌴" },
+  "surabaya":   { url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1600&q=90&auto=format&fit=crop", emoji: "🌉" },
+  "yogyakarta": { url: "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1600&q=90&auto=format&fit=crop", emoji: "🏛️" },
+  "semarang":   { url: "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=1600&q=90&auto=format&fit=crop", emoji: "⛩️" },
+  "makassar":   { url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1600&q=90&auto=format&fit=crop", emoji: "⛵" },
+  "denpasar":   { url: "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=1600&q=90&auto=format&fit=crop", emoji: "🏝️" },
+  "tangerang":  { url: "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1600&q=90&auto=format&fit=crop", emoji: "🌆" },
 };
 
-// Generic cinema fallback pool — stable hash-based pick (consistent per outlet code).
+// Generic cinema fallback pool — w=1600 q=90 utk sharp display.
 const GENERIC_CINEMA_PHOTOS = [
-  "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1200&q=80&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1200&q=80&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=1200&q=80&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=1200&q=80&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1574267432553-4b4628081c31?w=1200&q=80&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=1600&q=90&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=1600&q=90&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=1600&q=90&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=1600&q=90&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1574267432553-4b4628081c31?w=1600&q=90&auto=format&fit=crop",
 ];
 
 // Premium cinema-themed dark gradient (no more bright purple/red). Used when no image.
 const DEFAULT_CITY_GRADIENT = "linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 40%, #2a1810 100%)";
 
 function getCityVisual(outlet) {
-  // 1. Admin-uploaded photo (future DB field) → highest priority
+  // 1. Admin-uploaded photo (DB field) → highest priority
   if (outlet.image_url || outlet.cover_url) {
     return { url: outlet.image_url || outlet.cover_url, fallback: null, emoji: "🎬" };
   }
-  // 2. City-specific: try LOCAL file first (kapten upload ke public/img/cities/{slug}.jpg),
-  //    fallback ke Unsplash stock photo via onError handler di <img>.
+  // 2. City-specific Unsplash photo (langsung pakai URL — gak coba local file
+  //    yg memang belum di-upload. Sebelumnya coba /img/cities/{city}.jpg → 404
+  //    → fall ke gradient kosong)
   const key = (outlet.area || outlet.name || "").toLowerCase();
   for (const city of Object.keys(CITY_IMAGES)) {
     if (key.includes(city)) {
-      return {
-        url: `/img/cities/${city}.jpg`,           // local file (kalau ada)
-        fallback: CITY_IMAGES[city].url,           // Unsplash stock backup
-        emoji: CITY_IMAGES[city].emoji,
-      };
+      return { url: CITY_IMAGES[city].url, fallback: null, emoji: CITY_IMAGES[city].emoji };
     }
   }
   // 3. Generic cinema photo (stable per outlet — hash code → index)
