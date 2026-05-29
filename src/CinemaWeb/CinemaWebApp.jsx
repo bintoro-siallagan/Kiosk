@@ -338,22 +338,22 @@ export default function CinemaWebApp() {
   });
   const [signInOpen, setSignInOpen] = useState(false);
 
-  // Brand — untuk cinema.karyaos.tech (marketplace), pakai brand karyaOS Cinema
-  // bukan tenant F&B yg fetched. CinemaWebApp adalah destinasi cinema umbrella.
-  // Kalau bukan cinema. subdomain (mis. embedded di app.karyaos.tech), tetap fetch tenant brand.
+  // Brand — untuk cinema.karyaos.tech (marketplace), pakai nama "Karya Cinema"
+  // tapi tetap pakai brand color karyaOS (#FF6B35 orange) — konsisten dgn
+  // ekosistem karyaOS lain. Cuma override NAME, bukan COLOR.
   const isMarketplace = typeof window !== "undefined" && window.location.hostname.startsWith("cinema.");
-  const MARKETPLACE_BRAND = {
-    company_id: null, company_code: "KCN",
-    name: "Karya Cinema", brand_short: "Karya Cinema",
-    brand_color: "#a855f7", brand_secondary: "#7e22ce",
-    logo_url: "/logo.png", vertical: "cinema",
-  };
-  const [brand, setBrand] = useState(isMarketplace ? MARKETPLACE_BRAND : null);
+  const [brand, setBrand] = useState(null);
   useEffect(() => {
-    if (isMarketplace) return; // marketplace: skip tenant brand fetch
-    fetch(`${API_HOST}/api/companies/branding`).then(r => r.json()).then(setBrand).catch(() => {});
+    fetch(`${API_HOST}/api/companies/branding`).then(r => r.json()).then(d => {
+      if (isMarketplace) {
+        // Override hanya nama, color/logo dari tenant tetap dipakai
+        setBrand({ ...d, name: "Karya Cinema", brand_short: "Karya Cinema", vertical: "cinema" });
+      } else {
+        setBrand(d);
+      }
+    }).catch(() => {});
   }, [isMarketplace]);
-  const brandPrimary = brand?.brand_color || "#a855f7";
+  const brandPrimary = brand?.brand_color || "#FF6B35";
 
   // P5 — Theme Studio (shared helper)
   const { fontFamily: resolvedFontFamily, background: resolvedBackground } = useTenantTheme(brand, { fallbackBg: C.bgGrad });
@@ -2760,50 +2760,89 @@ function CinemaHero({ films, brandPrimary, onPickFilm }) {
   }, [trailerEmbed, isTouch, idx, inView]);
 
   if (!current) {
-    // Hero placeholder cinematic — saat poster belum di-upload, jangan
-    // tampilkan 85vh kosong yg bikin halaman terasa mati. Tampilkan
-    // banner ringkas dgn brand + film titles sbg ticker.
+    // Hero placeholder cinematic 85vh — saat poster belum di-upload tetap
+    // dramatic, bukan layar kosong. Konsep: cinema billboard yg menyala
+    // sebelum film tayang. Gold accent + film titles besar sbg "now playing".
     const titles = (films || []).filter(f => f.status === "now_showing" || !f.status).slice(0, 4);
     return (
       <section style={{
-        position: "relative", width: "100vw", minHeight: "32vh",
+        position: "relative", width: "100vw", minHeight: "85vh",
         marginLeft: "calc(-50vw + 50%)", marginRight: "calc(-50vw + 50%)",
-        background: `radial-gradient(ellipse at center, ${brandPrimary}22 0%, #0a0a12 60%, #000 100%)`,
+        background: `
+          radial-gradient(ellipse 80% 60% at 50% 30%, ${brandPrimary}33 0%, transparent 60%),
+          radial-gradient(ellipse 60% 80% at 80% 70%, ${brandPrimary}22 0%, transparent 60%),
+          radial-gradient(ellipse 50% 50% at 20% 80%, ${brandPrimary}1a 0%, transparent 60%),
+          linear-gradient(180deg, #0a0a12 0%, #000 100%)
+        `,
         display: "flex", alignItems: "center", justifyContent: "center",
-        flexDirection: "column", padding: "40px 24px", overflow: "hidden",
+        padding: "40px 24px", overflow: "hidden",
       }}>
-        <div style={{
-          fontSize: 11, letterSpacing: 4, color: brandPrimary,
-          fontFamily: "'Geist Mono',monospace", textTransform: "uppercase",
-          marginBottom: 12, fontWeight: 700,
-        }}>🎬 Karya Cinema</div>
-        <h1 style={{
-          fontSize: "clamp(28px, 5vw, 48px)", fontWeight: 800, margin: 0,
-          letterSpacing: -0.8, textAlign: "center", lineHeight: 1.1,
-          background: `linear-gradient(180deg, #fff 0%, ${brandPrimary} 100%)`,
-          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
-          marginBottom: 14,
-        }}>Sedang Tayang Hari Ini</h1>
-        {titles.length > 0 && (
+        {/* Spotlight sparkle field */}
+        <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+          <span style={{ position: "absolute", top: "18%", left: "12%", fontSize: 32, opacity: 0.4, filter: `drop-shadow(0 0 16px ${brandPrimary})` }}>✨</span>
+          <span style={{ position: "absolute", top: "28%", right: "16%", fontSize: 28, opacity: 0.35, filter: `drop-shadow(0 0 14px ${brandPrimary})` }}>⭐</span>
+          <span style={{ position: "absolute", bottom: "22%", left: "20%", fontSize: 36, opacity: 0.40, filter: `drop-shadow(0 0 18px ${brandPrimary})` }}>✨</span>
+          <span style={{ position: "absolute", bottom: "30%", right: "22%", fontSize: 30, opacity: 0.35, filter: `drop-shadow(0 0 16px ${brandPrimary})` }}>⭐</span>
+        </div>
+
+        <div style={{ textAlign: "center", maxWidth: 900, zIndex: 1, position: "relative" }}>
           <div style={{
-            display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center",
-            maxWidth: 720,
+            fontSize: 14, letterSpacing: 6, color: brandPrimary,
+            fontFamily: "'Geist Mono',monospace", textTransform: "uppercase",
+            marginBottom: 24, fontWeight: 800,
+            textShadow: `0 0 30px ${brandPrimary}66`,
+          }}>🎬 KARYA CINEMA</div>
+
+          <h1 style={{
+            fontSize: "clamp(40px, 8vw, 88px)", fontWeight: 900, margin: 0,
+            letterSpacing: -2, textAlign: "center", lineHeight: 1.0,
+            background: `linear-gradient(180deg, #fff 0%, ${brandPrimary} 80%)`,
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            marginBottom: 18,
+            filter: `drop-shadow(0 0 40px ${brandPrimary}33)`,
+          }}>Sedang Tayang</h1>
+
+          <p style={{
+            fontSize: "clamp(15px, 1.6vw, 18px)", color: "#cbd5e1", margin: "0 0 32px",
+            fontStyle: "italic", letterSpacing: 0.3, lineHeight: 1.5,
+          }}>Empat cerita yang menunggu Anda di layar lebar minggu ini.</p>
+
+          {titles.length > 0 && (
+            <div style={{
+              display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center",
+              maxWidth: 800, margin: "0 auto 36px",
+            }}>
+              {titles.map((f, i) => (
+                <div key={f.id} style={{
+                  padding: "12px 22px",
+                  background: `linear-gradient(135deg, ${brandPrimary}22, ${brandPrimary}08)`,
+                  border: `1px solid ${brandPrimary}66`,
+                  borderRadius: 14, color: "#fff",
+                  fontSize: "clamp(15px, 1.4vw, 18px)", fontWeight: 700,
+                  letterSpacing: -0.2,
+                  boxShadow: `0 8px 24px ${brandPrimary}22`,
+                  animation: `cwFadeUp 0.6s ${0.2 + i * 0.1}s ease both`,
+                }}>{f.title}</div>
+              ))}
+            </div>
+          )}
+
+          <div style={{
+            display: "inline-flex", alignItems: "center", gap: 10,
+            padding: "10px 20px",
+            background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.10)",
+            borderRadius: 999,
+            fontSize: 13, color: "#94a3b8", letterSpacing: 0.5,
+            backdropFilter: "blur(10px)",
           }}>
-            {titles.map(f => (
-              <span key={f.id} style={{
-                fontSize: 13, padding: "6px 14px",
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.10)",
-                borderRadius: 999, color: "#cbd5e1",
-                fontWeight: 500, letterSpacing: 0.2,
-              }}>{f.title}</span>
-            ))}
+            <span style={{
+              width: 8, height: 8, borderRadius: "50%",
+              background: "#10b981", boxShadow: "0 0 12px #10b981",
+              animation: "pulse 1.6s ease infinite",
+            }} />
+            Pilih lokasi cinema di bawah untuk lihat jadwal
           </div>
-        )}
-        <p style={{
-          fontSize: 13, color: "#94a3b8", margin: "18px 0 0",
-          fontStyle: "italic", textAlign: "center", maxWidth: 480,
-        }}>Pilih lokasi cinema favorit Anda untuk lihat jadwal lengkap di bawah.</p>
+        </div>
       </section>
     );
   }
