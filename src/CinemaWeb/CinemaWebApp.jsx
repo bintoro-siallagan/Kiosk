@@ -3193,6 +3193,21 @@ function OutletPicker({ onPick, onPickFeaturedFilm, pendingFilm, brandPrimary, o
 
       {/* Outlet picker section */}
       <div style={{ textAlign: "center", marginBottom: 18 }}>
+        {/* Sambutan waktu — sapaan hangat ke customer cinema.
+            Filosofi karyaOS: customer juga harus disambut seperti tamu rumah,
+            bukan formulir booking. */}
+        {!pendingFilm && (() => {
+          const h = new Date().getHours();
+          const greet = h >= 5 && h < 11 ? 'Selamat pagi'
+                      : h >= 11 && h < 15 ? 'Selamat siang'
+                      : h >= 15 && h < 18 ? 'Selamat sore'
+                      : 'Selamat malam';
+          return (
+            <div style={{ fontSize: 13, color: C.sub, marginBottom: 8, letterSpacing: 0.4, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase" }}>
+              {greet} ✨
+            </div>
+          );
+        })()}
         <h2 style={{ fontSize: 24, fontWeight: 800, letterSpacing: -0.5, margin: 0, marginBottom: 6 }}>
           {pendingFilm ? "Pilih Lokasi" : "Mau Nonton Di Mana?"}
         </h2>

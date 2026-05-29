@@ -7,11 +7,15 @@ import PushPermissionPrompt from "./components/PushPermissionPrompt.jsx";
 import API_HOST from "./apiBase.js";
 
 
+// Stage label + warm caption — pesananmu dilihat dgn hati di setiap tahap.
+// Filosofi karyaOS: customer juga punya hak tahu apa yang sedang terjadi
+// dgn pesanannya, dgn bahasa yg tenang. Bukan "Preparing" kering, tapi
+// "Sedang disiapkan dengan hati" — supaya nungguan terasa hangat.
 const STAGES = [
-  { key: "waiting",   label: "Diterima",     emoji: "📝", color: "#94A3B8" },
-  { key: "preparing", label: "Preparing",    emoji: "👨‍🍳", color: "#F59E0B" },
-  { key: "ready",     label: "Siap Diambil", emoji: "🔔", color: "#10B981" },
-  { key: "completed", label: "Done",      emoji: "✅", color: "#22C55E" },
+  { key: "waiting",   label: "Diterima",        emoji: "📝", color: "#94A3B8", caption: "Pesananmu sudah kami terima." },
+  { key: "preparing", label: "Sedang Disiapkan", emoji: "👨‍🍳", color: "#F59E0B", caption: "Sedang disiapkan dengan hati." },
+  { key: "ready",     label: "Siap untuk Anda",  emoji: "🔔", color: "#10B981", caption: "Pesanan sudah siap menyambut Anda." },
+  { key: "completed", label: "Selesai",          emoji: "✅", color: "#22C55E", caption: "Terima kasih sudah datang." },
 ];
 
 import { fmtMoney as fIDR } from "./lib/currency.js";
@@ -75,25 +79,36 @@ export default function CustomerTrackingPage({ orderId }) {
   if (loading) return (
     <div style={S.root}>
       <div style={S.spinner}/>
-      <LoadingState label="Memuat pesanan…" />
+      <LoadingState label="Sebentar, kami sedang membuka cerita pesananmu…" />
     </div>
   );
 
   if (error || !order) return (
     <div style={S.root}>
-      <div style={{fontSize:64,textAlign:"center",marginTop:40}}>⚠️</div>
-      <div style={S.h2}>Tidak Ditemukan</div>
-      <div style={S.muted}>{error || "Order tidak ditemukan"}</div>
+      <div style={{fontSize:64,textAlign:"center",marginTop:40}}>🤔</div>
+      <div style={S.h2}>Belum kami temukan</div>
+      <div style={S.muted}>{error || "Pesanan ini belum bisa kami buka. Coba refresh halaman, atau hubungi kasir kalau berlanjut."}</div>
     </div>
   );
 
   const cancelled = order.status === "cancelled";
   const currentIdx = STAGES.findIndex(s => s.key === order.status);
 
+  // Sambutan waktu utk customer yg sedang nunggu pesanan.
+  // Filosofi karyaOS: bahkan saat nunggu, customer harus merasa ditemani.
+  const warmGreet = (() => {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 11) return 'Selamat pagi';
+    if (h >= 11 && h < 15) return 'Selamat siang';
+    if (h >= 15 && h < 18) return 'Selamat sore';
+    return 'Selamat malam';
+  })();
+  const currentStage = STAGES[currentIdx >= 0 ? currentIdx : 0];
+
   return (
     <div style={S.root}>
       <div style={S.brand}>KaryaOS</div>
-      <div style={S.muted}>SELF ORDER KIOSK</div>
+      <div style={S.muted}>{warmGreet}, kami sedang menjaga pesananmu.</div>
 
       <PushPermissionPrompt orderId={order.id} phone={order.customer_phone} />
 
