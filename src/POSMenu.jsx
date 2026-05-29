@@ -4,6 +4,7 @@ import API_HOST from "./apiBase.js";
 import { LoadingState } from "./components/uiKit.jsx";
 
 const MyKpiPanel = lazy(() => import("./POS/MyKpiPanel.jsx"));
+const MorningRecognition = lazy(() => import("./POS/MorningRecognition.jsx"));
 
 const API_BASE = API_HOST;
 
@@ -21,6 +22,15 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
   const [cart, setCart] = useState([]);
   const [toppingItem, setToppingItem] = useState(null);
   const [showKpi, setShowKpi] = useState(false);
+  // Morning Recognition — auto-trigger sekali per hari per kasir.
+  // Pakai localStorage key kombinasi tanggal + nama kasir supaya gak repeat.
+  const [showMorning, setShowMorning] = useState(() => {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const key = `morningRecog:${cashier?.name || 'unknown'}:${today}`;
+      return !localStorage.getItem(key);
+    } catch { return false; }
+  });
 
   useEffect(() => {
     fetch(`${API_BASE}/api/menu`)
@@ -155,6 +165,22 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
       {showKpi && (
         <Suspense fallback={null}>
           <MyKpiPanel apiBase={API_BASE} onClose={() => setShowKpi(false)} />
+        </Suspense>
+      )}
+
+      {showMorning && (
+        <Suspense fallback={null}>
+          <MorningRecognition
+            apiBase={API_BASE}
+            onDone={() => {
+              setShowMorning(false);
+              try {
+                const today = new Date().toISOString().slice(0, 10);
+                const key = `morningRecog:${cashier?.name || 'unknown'}:${today}`;
+                localStorage.setItem(key, '1');
+              } catch {}
+            }}
+          />
         </Suspense>
       )}
 

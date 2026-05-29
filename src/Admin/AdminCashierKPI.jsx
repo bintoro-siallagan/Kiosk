@@ -26,6 +26,128 @@ const S = {
 
 const scoreColor = (s) => s == null ? "#6b7280" : s >= 80 ? "#34D399" : s >= 60 ? "#FBBF24" : "#F87171";
 
+// ── Auto-badges berdasarkan data nyata ──
+// Filosofi: badge bukan dekorasi, badge adalah PENGAKUAN. Tidak boleh
+// di-set manual oleh atasan. Lahir murni dari fakta operasional.
+function computeBadges(c, all) {
+  const badges = [];
+  if (!c) return badges;
+
+  // Top sales — kasir #1 berdasarkan total_sales (min 1 transaksi)
+  const sorted = [...all].filter(x => x.transactions > 0).sort((a, b) => b.total_sales - a.total_sales);
+  if (sorted[0] && sorted[0].cashier === c.cashier && c.total_sales > 0) {
+    badges.push({ id: 'top-sales', icon: '🏆', label: 'Top Sales', color: '#F59E0B' });
+  }
+
+  // Top upsell — rate tertinggi (min 5 orders untuk valid)
+  const upsellPool = all.filter(x => x.upsell_rate != null && x.upsell_total >= 5);
+  const topUpsell = upsellPool.sort((a, b) => b.upsell_rate - a.upsell_rate)[0];
+  if (topUpsell && topUpsell.cashier === c.cashier && c.upsell_rate >= 50) {
+    badges.push({ id: 'top-upsell', icon: '📈', label: 'Top Upsell', color: '#10B981' });
+  }
+
+  // Perfect rating — avg ≥ 4.8 dgn min 3 review
+  if (c.feedback_count >= 3 && c.avg_rating >= 4.8) {
+    badges.push({ id: 'perfect-rating', icon: '⭐', label: 'Perfect Rating', color: '#EC4899' });
+  }
+
+  // Zero complaint — gak ada review jelek + min 5 review
+  if (c.feedback_count >= 5 && c.bad_count === 0) {
+    badges.push({ id: 'zero-complaint', icon: '💎', label: 'Zero Complaint', color: '#22D3EE' });
+  }
+
+  // Sales champion — sales tertinggi DAN KPI ≥ 85
+  if (sorted[0]?.cashier === c.cashier && c.kpi_score != null && c.kpi_score >= 85) {
+    badges.push({ id: 'champion', icon: '👑', label: 'Champion', color: '#A78BFA' });
+  }
+
+  return badges;
+}
+
+// ── Podium top 3 — cinematic award treatment ──
+function Podium({ cashiers, allBadges }) {
+  const top3 = cashiers.filter(c => c.kpi_score != null).slice(0, 3);
+  if (top3.length === 0) return null;
+
+  const tiers = [
+    { rank: 2, color: '#C0C0C0', glow: '#94a3b8', label: '🥈 Silver', height: 110 }, // kiri
+    { rank: 1, color: '#FFD700', glow: '#F59E0B', label: '🥇 Gold',   height: 140 }, // tengah
+    { rank: 3, color: '#CD7F32', glow: '#92400e', label: '🥉 Bronze', height: 90 },  // kanan
+  ];
+
+  return (
+    <div style={{
+      background: 'linear-gradient(180deg, #0d1117 0%, #161b22 100%)',
+      border: '1px solid #21262d',
+      borderRadius: 16, padding: '24px 20px', marginBottom: 14, position: 'relative', overflow: 'hidden',
+    }}>
+      {/* Cinematic spotlight */}
+      <div aria-hidden style={{
+        position: 'absolute', top: -80, left: '50%', transform: 'translateX(-50%)',
+        width: 400, height: 200, background: 'radial-gradient(ellipse at center, rgba(255,215,0,0.18) 0%, transparent 70%)',
+        pointerEvents: 'none',
+      }} />
+
+      <div style={{ ...S.label, textAlign: 'center', marginBottom: 18, position: 'relative' }}>
+        ✨ Peringkat Tertinggi — Yang Berbuat Sungguh-Sungguh ✨
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 16, position: 'relative' }}>
+        {tiers.map(t => {
+          const c = top3[t.rank - 1];
+          if (!c) return <div key={t.rank} style={{ width: 140 }} />;
+          const badges = allBadges[c.cashier] || [];
+          return (
+            <div key={t.rank} style={{ width: 140, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{
+                marginBottom: 8, fontSize: 13, fontWeight: 700, color: t.color,
+                textShadow: `0 0 16px ${t.glow}66`,
+              }}>{t.label}</div>
+
+              <div style={{
+                width: 60, height: 60, borderRadius: '50%',
+                background: `conic-gradient(${t.color} ${(c.kpi_score || 0) * 3.6}deg, rgba(255,255,255,0.06) 0deg)`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8,
+                boxShadow: `0 0 24px ${t.glow}44`,
+              }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: '50%', background: '#0d1117',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 17, fontWeight: 800, color: t.color, fontFamily: "'Geist Mono',monospace",
+                }}>{c.kpi_score}</div>
+              </div>
+
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', textAlign: 'center', marginBottom: 4, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {c.cashier}
+              </div>
+              <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 8 }}>{fR(c.total_sales)}</div>
+
+              {badges.length > 0 && (
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 10 }}>
+                  {badges.slice(0, 3).map(b => (
+                    <span key={b.id} title={b.label} style={{
+                      fontSize: 16, padding: '2px 6px', borderRadius: 6,
+                      background: `${b.color}22`, border: `1px solid ${b.color}44`,
+                    }}>{b.icon}</span>
+                  ))}
+                </div>
+              )}
+
+              <div style={{
+                width: '100%', height: t.height, borderRadius: '8px 8px 0 0',
+                background: `linear-gradient(180deg, ${t.color} 0%, ${t.glow} 100%)`,
+                display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: 8,
+                fontSize: 28, fontWeight: 900, color: '#0d1117', fontFamily: "'Geist Mono',monospace",
+                boxShadow: `inset 0 -8px 16px rgba(0,0,0,0.2)`,
+              }}>#{t.rank}</div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function Stars({ value }) {
   return (
     <span style={{ letterSpacing: 1 }}>
@@ -235,14 +357,23 @@ export default function AdminCashierKPI({ apiBase = "" }) {
         )}
       </div>
 
-      {/* Leaderboard */}
+      {/* ✨ Podium top 3 — cinematic */}
+      {!loading && cashiers.length > 0 && (() => {
+        const allBadges = {};
+        cashiers.forEach(c => { allBadges[c.cashier] = computeBadges(c, cashiers); });
+        return <Podium cashiers={cashiers} allBadges={allBadges} />;
+      })()}
+
+      {/* Leaderboard lengkap */}
       <div style={S.card}>
-        <div style={S.label}>🏆 Peringkat Kasir — KPI digerakin rating customer</div>
+        <div style={S.label}>🏆 Peringkat Kasir — yang baik makin baik, yang kurang baik akan jadi baik</div>
         {loading ? <div style={{ color: "#555", padding: 12 }}>Loading...</div> :
           cashiers.length === 0 ? <div style={{ color: "#555", padding: 12 }}>No data yet kasir di periode ini</div> :
-            cashiers.map((c, i) => (
+            cashiers.map((c, i) => {
+              const badges = computeBadges(c, cashiers);
+              return (
               <div key={c.cashier} style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 0", borderBottom: "1px solid #0f1629" }}>
-                <div style={{ fontSize: 18, fontWeight: 800, color: "#555", width: 30, fontFamily: "'Geist Mono',monospace" }}>#{i + 1}</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: i < 3 ? "#F59E0B" : "#555", width: 30, fontFamily: "'Geist Mono',monospace" }}>#{i + 1}</div>
                 <div style={{
                   width: 58, height: 58, borderRadius: "50%", flexShrink: 0,
                   border: `3px solid ${scoreColor(c.kpi_score)}`,
@@ -254,12 +385,29 @@ export default function AdminCashierKPI({ apiBase = "" }) {
                   <div style={{ fontSize: 7, color: "#555", letterSpacing: 1.5 }}>KPI</div>
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700 }}>{c.cashier}</div>
-                  <div style={{ fontSize: 12, marginTop: 3 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 15, fontWeight: 700 }}>{c.cashier}</span>
+                    {badges.map(b => (
+                      <span key={b.id} title={b.label} style={{
+                        fontSize: 11, padding: "2px 7px", borderRadius: 6,
+                        background: `${b.color}22`, border: `1px solid ${b.color}44`, color: b.color, fontWeight: 600,
+                      }}>{b.icon} {b.label}</span>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 12, marginTop: 4 }}>
                     <Stars value={c.avg_rating} />
                     <span style={{ color: "#888", marginLeft: 6 }}>
                       {c.feedback_count > 0 ? `${c.avg_rating} · ${c.feedback_count} review` : "belum dinilai"}
                     </span>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right", minWidth: 110 }}>
+                  <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 2, letterSpacing: 0.6 }}>UPSELL</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: c.upsell_rate == null ? "#475569" : c.upsell_rate >= 50 ? "#10B981" : c.upsell_rate >= 25 ? "#F59E0B" : "#94a3b8", fontFamily: "'Geist Mono',monospace" }}>
+                    {c.upsell_rate == null ? "—" : `${c.upsell_rate}%`}
+                  </div>
+                  <div style={{ fontSize: 10, color: "#666" }}>
+                    {c.upsell_total > 0 ? `${c.upsell_orders}/${c.upsell_total}` : "—"}
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
@@ -272,7 +420,8 @@ export default function AdminCashierKPI({ apiBase = "" }) {
                   {c.voided > 0 && <div style={{ fontSize: 11, color: "#FBBF24" }}>✖ {c.voided} void</div>}
                 </div>
               </div>
-            ))
+              );
+            })
         }
       </div>
     </div>

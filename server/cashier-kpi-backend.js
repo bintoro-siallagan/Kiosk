@@ -269,6 +269,58 @@ function setupCashierKpi(app, opts = {}) {
     });
   });
 
+  // ── Morning Recognition — pengakuan yang lahir dari fakta kemarin ──
+  // Saat kasir buka shift pagi-pagi, panggil ini. Kalau ada pencapaian
+  // kemarin (Top Sales, Top Upsell, Perfect Rating, dll), POS tampilkan
+  // celebration. Tidak manipulatif — hanya cermin yang merayakan.
+  router.get('/me/recognition', (req, res) => {
+    const cashierName = (global.getSessionUserName && global.getSessionUserName(req)) || null;
+    if (!cashierName) return res.status(401).json({ error: 'session required' });
+
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    const yEnd = Math.floor(d.getTime() / 1000);
+    const yStart = yEnd - 86400;
+
+    const result = computeKpi(db, yStart, yEnd);
+    const all = result.cashiers || [];
+    const me = all.find(c => c.cashier === cashierName);
+
+    if (!me) {
+      return res.json({ cashier: cashierName, badges: [], message: null, yesterday_kpi: null });
+    }
+
+    const badges = [];
+    const topSales = [...all].filter(x => x.transactions > 0).sort((a, b) => b.total_sales - a.total_sales)[0];
+    if (topSales?.cashier === cashierName && me.total_sales > 0) {
+      badges.push({ id: 'top-sales', icon: '🏆', label: 'Top Sales' });
+    }
+    const upsellPool = all.filter(x => x.upsell_rate != null && x.upsell_total >= 5);
+    const topUpsell = upsellPool.sort((a, b) => b.upsell_rate - a.upsell_rate)[0];
+    if (topUpsell?.cashier === cashierName && me.upsell_rate >= 50) {
+      badges.push({ id: 'top-upsell', icon: '📈', label: 'Top Upsell' });
+    }
+    if (me.feedback_count >= 3 && me.avg_rating >= 4.8) {
+      badges.push({ id: 'perfect-rating', icon: '⭐', label: 'Perfect Rating' });
+    }
+    if (me.feedback_count >= 5 && me.bad_count === 0) {
+      badges.push({ id: 'zero-complaint', icon: '💎', label: 'Zero Complaint' });
+    }
+    if (topSales?.cashier === cashierName && me.kpi_score != null && me.kpi_score >= 85) {
+      badges.push({ id: 'champion', icon: '👑', label: 'Champion' });
+    }
+
+    let message = null;
+    if (badges.length >= 3) message = 'Kemarin Anda luar biasa. Hari ini, tetap dengan sungguh-sungguh.';
+    else if (badges.length > 0) message = `Kemarin Anda meraih ${badges.length} pengakuan. Lanjutkan ritmenya hari ini.`;
+
+    res.json({
+      cashier: cashierName,
+      badges,
+      message,
+      yesterday_kpi: me.kpi_score,
+    });
+  });
+
   router.get('/', (req, res) => {
     const { from, to } = rangeOf(req);
     const result = computeKpi(db, from, to);
