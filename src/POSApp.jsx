@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import POSKasirLogin from "./POS/POSKasirLogin.jsx";
+const FarewellOverlay = lazy(() => import("./components/FarewellOverlay.jsx"));
 import { useTenantTheme } from "./lib/tenantTheme.js";
 import POSHome from "./POSHome.jsx";
 import POSOrder from "./POSOrder.jsx";
@@ -149,17 +150,26 @@ export default function POSApp() {
     }).catch(() => {});
   };
 
+  // Farewell overlay state — sambutan "sampai bertemu lagi" sebelum logout
+  const [farewell, setFarewell] = useState(null);
+
   const handleLogout = () => {
-    // HRIS — auto check-out absensi pas kasir keluar
     if (cashier?.name) {
+      // HRIS — auto check-out absensi pas kasir keluar (jangan blok flow)
       fetch(`${API_HOST}/api/hris/checkout`, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ staff_name: cashier.name }),
       }).catch(() => {});
     }
-    sessionStorage.removeItem("posCashier");
-    setCashier(null);
-    setView("home");
+    // Tampilkan farewell dulu, baru logout actual
+    setFarewell({
+      name: cashier?.name || 'Sahabat',
+      then: () => {
+        sessionStorage.removeItem("posCashier");
+        setCashier(null);
+        setView("home");
+      },
+    });
   };
 
   const proceedCloseShift = async () => {
@@ -303,6 +313,11 @@ export default function POSApp() {
         />
       )}
     </ShiftGate>
+    {farewell && (
+      <Suspense fallback={null}>
+        <FarewellOverlay name={farewell.name} onDone={() => { setFarewell(null); farewell.then?.(); }} />
+      </Suspense>
+    )}
     <TouchNumpad />
     <FullscreenPrompt
       icon="🍽️"

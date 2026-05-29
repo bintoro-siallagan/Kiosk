@@ -25,6 +25,7 @@ import TouchNumpad, { showNumpad } from "../components/TouchNumpad.jsx";
 const MyKpiPanel         = lazy(() => import("./MyKpiPanel.jsx"));
 const MorningRecognition = lazy(() => import("./MorningRecognition.jsx"));
 const WelcomeRitual      = lazy(() => import("./WelcomeRitual.jsx"));
+const FarewellOverlay    = lazy(() => import("../components/FarewellOverlay.jsx"));
 import UpsellTicker from "../components/UpsellTicker.jsx";
 import DeviceOutletSetup, { getDeviceOutlet } from "../components/DeviceOutletSetup.jsx";
 import { isBridgeOnline } from "../lib/localPrint.js";
@@ -201,13 +202,19 @@ export default function POSCinemaApp() {
     }
     setCashier(kasir);
   };
+  // Farewell overlay — sampai bertemu lagi
+  const [farewell, setFarewell] = useState(null);
+
   const handleLogout = () => {
     // Closing checklist wajib kalau opening sudah done tapi closing belum
     if (checklist && checklist.opening?.done && !checklist.closing?.done) {
       setClosingChecklist(true);
       return;
     }
-    sessionStorage.removeItem("posCashier"); setCashier(null); setStage("home");
+    setFarewell({
+      name: cashier?.name || 'Sahabat',
+      then: () => { sessionStorage.removeItem("posCashier"); setCashier(null); setStage("home"); },
+    });
   };
   const forceLogout = () => { sessionStorage.removeItem("posCashier"); setCashier(null); setStage("home"); };
 
@@ -418,6 +425,13 @@ export default function POSCinemaApp() {
       {showKpi && (
         <Suspense fallback={null}>
           <MyKpiPanel apiBase={API_HOST} onClose={() => setShowKpi(false)} />
+        </Suspense>
+      )}
+
+      {/* Farewell overlay — sampai bertemu lagi saat logout */}
+      {farewell && (
+        <Suspense fallback={null}>
+          <FarewellOverlay name={farewell.name} onDone={() => { setFarewell(null); farewell.then?.(); }} />
         </Suspense>
       )}
     </ShiftGate>

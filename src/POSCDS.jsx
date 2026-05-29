@@ -341,13 +341,17 @@ function CDSIdle() {
   ]);
   const [idx, setIdx] = useState(0);
 
-  // Fetch popular items + active promos
+  // Fetch popular items + active promos + cerita berharga (beranda)
+  // Filosofi karyaOS: CDS = second monitor menghadap customer. Saat idle,
+  // ini momen utk customer "menyapa" karyaOS — lihat cerita teman, milestone
+  // outlet, item yg disukai. Bukan layar mati.
   useEffect(() => {
     let mounted = true;
     Promise.all([
       fetch(`${API_BASE}/api/menu`).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(`${API_BASE}/api/promos`).then(r => r.ok ? r.json() : []).catch(() => [])
-    ]).then(([menu, promos]) => {
+      fetch(`${API_BASE}/api/promos`).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${API_BASE}/api/public/beranda`).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([menu, promos, beranda]) => {
       if (!mounted) return;
       const popular = (Array.isArray(menu) ? menu : []).filter(m => m.popular && m.avail !== false).slice(0, 5);
       const now = Date.now();
@@ -360,10 +364,22 @@ function CDSIdle() {
         })
         .slice(0, 4);
 
+      // Stories dari beranda — anonymized customer comments
+      const stories = beranda?.stories?.slice(0, 4) || [];
+      const milestone = beranda?.milestone || null;
+
       const slideList = [{ type: "welcome" }];
+      // Milestone slide kalau ada
+      if (milestone && milestone.orders_week > 0) {
+        slideList.push({ type: "milestone", data: milestone });
+      }
       activePromos.forEach((promo, i) => {
         slideList.push({ type: "promo", data: promo });
         if (popular[i]) slideList.push({ type: "item", data: popular[i] });
+      });
+      // Inject stories between items — supaya customer terus dapat momen warm
+      stories.forEach((story, i) => {
+        slideList.push({ type: "story", data: story });
       });
       popular.slice(activePromos.length).forEach(item => {
         slideList.push({ type: "item", data: item });
@@ -391,6 +407,8 @@ function CDSIdle() {
         {slide.type === "welcome" && <SlideWelcome />}
         {slide.type === "item" && <SlideItem item={slide.data} />}
         {slide.type === "promo" && <SlidePromo promo={slide.data} />}
+        {slide.type === "story" && <SlideStory story={slide.data} />}
+        {slide.type === "milestone" && <SlideMilestone milestone={slide.data} />}
         {slide.type === "member" && <SlideMember />}
         {slide.type === "thanks" && <SlideThanks />}
       </div>
@@ -531,8 +549,87 @@ function SlideThanks() {
         fontWeight:800, letterSpacing:"-2px", lineHeight:1,
         filter:"drop-shadow(0 0 60px rgba(251,191,36,0.35))",
       }}>Terima Kasih</div>
-      <div style={S.ssItemDesc}>Sudah mampir ke KaryaOS</div>
+      <div style={S.ssItemDesc}>Sudah mampir ke karyaOS</div>
       <div style={S.ssSocial}>📷 @karyaos</div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// SlideStory — Cerita berharga dari customer lain.
+// Filosofi karyaOS: customer di depan kasir, sambil menunggu order
+// diproses, lihat cerita customer LAIN — itu compounding loyalty +
+// brand authenticity. Mereka tahu mereka di tempat yg disayang orang.
+// ═══════════════════════════════════════════════════════════
+function SlideStory({ story }) {
+  if (!story?.comment) return null;
+  return (
+    <div style={S.ssCenter}>
+      <div style={{
+        fontSize: "min(20px,2.4vh,2vw)", color: "#fbbf24",
+        letterSpacing: 4, fontWeight: 700, marginBottom: 18,
+        textTransform: "uppercase",
+        fontFamily: "'Geist Mono', monospace",
+      }}>💛 Suara Teman</div>
+      <div style={{
+        position: "relative", maxWidth: "70vw", padding: "0 20px",
+      }}>
+        <div style={{
+          position: "absolute", top: -30, left: -10,
+          fontSize: "min(120px,12vh)", lineHeight: 1, color: "rgba(245,158,11,0.30)",
+          fontFamily: "Georgia, serif", pointerEvents: "none",
+        }}>"</div>
+        <blockquote style={{
+          margin: 0, fontSize: "min(48px,5vh,4vw)",
+          lineHeight: 1.35, fontStyle: "italic", color: "#fde68a",
+          fontFamily: "Georgia, 'Times New Roman', serif",
+          padding: "0 0 0 30px",
+        }}>{story.comment}</blockquote>
+      </div>
+      <div style={{
+        marginTop: 30, fontSize: "min(28px,3.2vh,2.6vw)",
+        color: "#F59E0B", letterSpacing: 4,
+      }}>{'★'.repeat(story.rating || 5)}</div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════
+// SlideMilestone — Outlet milestone counter
+// "Sudah X cerita pesanan minggu ini" — customer di kasir lihat,
+// merasa "outlet ini hidup dan banyak yg datang."
+// ═══════════════════════════════════════════════════════════
+function SlideMilestone({ milestone }) {
+  if (!milestone?.orders_week) return null;
+  return (
+    <div style={S.ssCenter}>
+      <div style={{
+        fontSize: "min(22px,2.6vh,2.2vw)", color: "#fbbf24",
+        letterSpacing: 4, fontWeight: 700, marginBottom: 20,
+        textTransform: "uppercase",
+        fontFamily: "'Geist Mono', monospace",
+      }}>Karya Minggu Ini</div>
+      <div style={{
+        fontSize: "min(180px,18vh,14vw)", fontWeight: 800,
+        letterSpacing: "-3px", lineHeight: 1,
+        background: "linear-gradient(180deg, #fff 0%, #fbbf24 100%)",
+        WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+        fontFamily: "'Geist Mono', monospace",
+        marginBottom: 16,
+        filter: "drop-shadow(0 0 60px rgba(251,191,36,0.35))",
+      }}>
+        {milestone.orders_week.toLocaleString('id-ID')}
+      </div>
+      <div style={{
+        fontSize: "min(34px,3.8vh,3vw)", color: "#cbd5e1",
+        letterSpacing: 0.5, fontStyle: "italic",
+      }}>cerita pesanan minggu ini</div>
+      {milestone.total_served > 0 && (
+        <div style={{
+          marginTop: 24, fontSize: "min(20px,2.4vh,1.8vw)",
+          color: "#94a3b8", letterSpacing: 2,
+        }}>{milestone.total_served.toLocaleString('id-ID')} teman sudah datang ke sini</div>
+      )}
     </div>
   );
 }

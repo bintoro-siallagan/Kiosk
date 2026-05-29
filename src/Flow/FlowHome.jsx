@@ -40,6 +40,22 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
   else if (tags.includes("member")) { tier = "Member 🎫"; tierColor = "#10B981"; }
   else if (tags.includes("new")) { tier = "Baru ✨"; tierColor = "#60A5FA"; }
 
+  // Milestone celebration — kunjungan ke-X yg patut dirayakan.
+  // Filosofi karyaOS: customer regular itu HARTA. Dilihat tiap kunjungan
+  // mereka — bukan dianggap "ya udah biasanya juga datang".
+  const CUSTOMER_MILESTONES = {
+    5:   { icon: '🌱', label: 'Kunjungan ke-5',   message: 'Anda sudah kunjungan ke-5. Senang Anda selalu kembali.' },
+    10:  { icon: '🌿', label: 'Kunjungan ke-10',  message: 'Sepuluh kali sudah. Anda jadi salah satu wajah yg kami nantikan.' },
+    25:  { icon: '🌟', label: 'Kunjungan ke-25',  message: 'Sudah 25 kali Anda datang. Anda adalah keluarga kami.' },
+    50:  { icon: '💎', label: 'Kunjungan ke-50',  message: '50 kunjungan. Yang sungguh-sungguh datang memang akan terlihat.' },
+    100: { icon: '👑', label: 'Kunjungan ke-100', message: '100 kunjungan! Anda salah satu yang paling setia. Terima kasih.' },
+    250: { icon: '🏆', label: 'Kunjungan ke-250', message: '250 kali. Tidak ada kata yang cukup untuk Anda.' },
+  };
+  // visits adalah total kunjungan SUDAH terjadi. Saat sekarang ada di FlowHome,
+  // mereka baru mau kunjungan ke-(visits+1). Cek milestone di SEKARANG.
+  const currentVisitNum = visits + 1;
+  const milestone = CUSTOMER_MILESTONES[currentVisitNum] || null;
+
   // fIDR comes from module import below; per-component shim no longer needed
 
   return (
@@ -55,6 +71,28 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
 
       {/* Promo banner — daftar promo F&B aktif, customer tap untuk salin kode */}
       <PromoStrip apiBase={API} variant="dark" maxItems={5} compact />
+
+      {/* Milestone celebration banner — kunjungan ke-X */}
+      {milestone && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(255,215,0,0.18) 0%, rgba(245,158,11,0.06) 100%)',
+          border: '1px solid rgba(255,215,0,0.40)',
+          borderRadius: 16, padding: '18px 22px', marginBottom: 16,
+          textAlign: 'center', boxShadow: '0 8px 28px rgba(255,215,0,0.18)',
+          animation: 'milestonePop 0.7s cubic-bezier(0.34,1.56,0.64,1) both',
+        }}>
+          <style>{`@keyframes milestonePop { 0%{opacity:0;transform:scale(0.85) translateY(8px)} 60%{transform:scale(1.05)} 100%{opacity:1;transform:scale(1) translateY(0)} }`}</style>
+          <div style={{ fontSize: 48, marginBottom: 8, filter: 'drop-shadow(0 6px 16px rgba(255,215,0,0.40))' }}>{milestone.icon}</div>
+          <div style={{
+            fontSize: 12, letterSpacing: 2, color: '#FFD700', fontWeight: 700,
+            marginBottom: 6, textTransform: 'uppercase',
+          }}>{milestone.label}</div>
+          <p style={{
+            margin: 0, fontSize: 14, color: '#fde68a', fontStyle: 'italic',
+            lineHeight: 1.55,
+          }}>{milestone.message}</p>
+        </div>
+      )}
 
       <div style={S.profile}>
         {/* Sambutan hangat untuk customer kembali — time + continuity.
