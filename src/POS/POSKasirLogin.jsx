@@ -277,7 +277,7 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
       {/* LOGO */}
       <div style={styles.logo}>
         <div style={styles.logoRow}>
-          <img src="/logo.png" alt="KaryaOS" style={{ height: 54, objectFit: "contain" }} />
+          <img src="/logo.png" alt="KaryaOS" style={{ height: 54, width: 54, objectFit: "contain", display: 'block', flexShrink: 0 }} />
           <span style={styles.logoText}>KaryaOS POS</span>
         </div>
         <div style={styles.logoSub}>POINT OF SALE TERMINAL</div>
@@ -488,15 +488,16 @@ const styles = {
   statusGroup: { display: 'flex', gap: 18, flexWrap: 'wrap' },
   datetime: { color: '#94a3b8', fontFamily: "'Geist Mono',monospace", letterSpacing: 0.3 },
 
-  logo: { textAlign: 'center', marginBottom: 22 },
-  logoRow: { display: 'inline-flex', alignItems: 'center', gap: 14, marginBottom: 4 },
-  logoIcon: { fontSize: 36 },
+  logo: { display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 22, gap: 6 },
+  logoRow: { display: 'inline-flex', alignItems: 'center', gap: 14, lineHeight: 1 },
+  logoIcon: { fontSize: 36, lineHeight: 1 },
   logoText: {
-    fontSize: 32, fontWeight: 800, letterSpacing: -0.5,
+    fontSize: 32, fontWeight: 800, letterSpacing: -0.5, lineHeight: 1,
     background: 'linear-gradient(135deg,#F59E0B,#fbbf24)',
     WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
   },
-  logoSub: { fontSize: 11, color: '#64748b', letterSpacing: '0.2em', fontFamily: "'Geist Mono',monospace", fontWeight: 700 },
+  logoSub: { fontSize: 11, color: '#64748b', letterSpacing: '0.2em', fontFamily: "'Geist Mono',monospace", fontWeight: 700, lineHeight: 1 },
 
   statsRow: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))', gap: 10, marginBottom: 24, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' },
   statCard: {
