@@ -144,6 +144,36 @@ export default function AdminLogin({ onLogin }) {
         <div style={L.title}>{mode === "password" ? "Masuk ke karyaOS" : "Masukkan PIN"}</div>
         <div style={L.sub}>{mode === "password" ? "Pakai username & password yang biasa." : "Untuk kasir POS — 6 digit angka."}</div>
 
+        {/* TAB Mode switch — pindahkan ke ATAS form supaya gampang dilihat */}
+        <div style={{
+          display: "flex", gap: 0, marginTop: 16, marginBottom: 14,
+          background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+          borderRadius: 10, padding: 3,
+        }}>
+          <button
+            type="button"
+            onClick={() => { setMode("password"); setError(""); }}
+            style={{
+              flex: 1, padding: "9px 12px", borderRadius: 8, border: "none",
+              background: mode === "password" ? "rgba(245,158,11,0.18)" : "transparent",
+              color: mode === "password" ? "#fbbf24" : "#94a3b8",
+              fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+              letterSpacing: 0.3, transition: "all 0.18s ease",
+            }}
+          >👤 Username + Password</button>
+          <button
+            type="button"
+            onClick={() => { setMode("pin"); setError(""); }}
+            style={{
+              flex: 1, padding: "9px 12px", borderRadius: 8, border: "none",
+              background: mode === "pin" ? "rgba(168,85,247,0.18)" : "transparent",
+              color: mode === "pin" ? "#c084fc" : "#94a3b8",
+              fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+              letterSpacing: 0.3, transition: "all 0.18s ease",
+            }}
+          >🔢 PIN Kasir</button>
+        </div>
+
         {error && <div style={L.error} role="alert">⚠ {error}</div>}
 
         {mode === "password" ? (
