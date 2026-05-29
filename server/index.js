@@ -4785,6 +4785,172 @@ app.patch("/api/staff-call/:id/resolve", (req, res) => {
 
 // ─── START SERVER ─────────────────────────────────────────────────────────
 
+// ─── OUTLET OVERVIEW — sales + KPI per outlet (filterable) ─────────
+// Aggregate metrics per outlet untuk dashboard owner/manager. Filosofi:
+// owner perlu tahu "outlet mana yg paling sungguh-sungguh" — dan kalau
+// ada yg drop, bisa drill-down dgn empati.
+//
+// Query params:
+//   ?from=<epoch_sec>  (default: today 00:00)
+//   ?to=<epoch_sec>    (default: now)
+//   ?outlet=<code>     (optional — filter ke 1 outlet specific)
+//
+// Returns: { range, outlets[], totals }
+app.get("/api/admin/outlet-overview", (req, res) => {
+  try {
+    const now = Math.floor(Date.now() / 1000);
+    const todayStart = Math.floor(new Date().setHours(0,0,0,0) / 1000);
+    const from = Number(req.query.from) || todayStart;
+    const to = Number(req.query.to) || now;
+    const filterOutlet = String(req.query.outlet || '').trim() || null;
+    const periodDays = Math.max(1, Math.floor((to - from) / 86400));
+
+    // Outlet master list
+    let outletList = [];
+    try {
+      let sql = `SELECT code, name, area, vertical, status FROM outlet_master WHERE status != 'closed'`;
+      const params = [];
+      if (filterOutlet) { sql += ` AND code = ?`; params.push(filterOutlet); }
+      sql += ` ORDER BY code`;
+      outletList = db.rawDb.prepare(sql).all(...params);
+    } catch (e) { console.error('[outlet-overview] outlet_master', e); }
+
+    // Per-outlet metrics
+    const results = [];
+    let totalRevenue = 0, totalOrders = 0, totalKpiSum = 0, totalKpiCount = 0;
+
+    for (const o of outletList) {
+      // F&B orders — filter by orders.kasir's outlet binding via admin_users
+      // OR by orders.source field. Tapi data lama mungkin gak punya outlet di order.
+      // Approach: get list of kasir bound to outlet, sum their orders.
+      let revenue = 0, orderCount = 0;
+      try {
+        const r = db.rawDb.prepare(`
+          SELECT COUNT(*) c, COALESCE(SUM(total),0) t
+          FROM orders o
+          WHERE o.time >= ? AND o.time < ? AND o.status != 'cancelled'
+            AND o.kasir IN (SELECT name FROM admin_users WHERE outlet_code = ?)
+        `).get(from * 1000, to * 1000, o.code);
+        orderCount = r?.c || 0; revenue = r?.t || 0;
+      } catch {}
+
+      // Cinema revenue (kalau outlet cinema/hybrid)
+      let cinemaRevenue = 0, cinemaTickets = 0;
+      if (o.vertical === 'cinema' || o.vertical === 'hybrid') {
+        try {
+          const r = db.rawDb.prepare(`
+            SELECT COUNT(t.id) c, COALESCE(SUM(t.price),0) v
+            FROM cinema_tickets t
+            LEFT JOIN cinema_studios st ON st.id = t.studio_id
+            WHERE t.sold_at >= ? AND t.sold_at < ?
+              AND st.outlet IN (?, ?)
+          `).get(from, to, o.name, o.code);
+          cinemaTickets = r?.c || 0; cinemaRevenue = r?.v || 0;
+        } catch {}
+      }
+
+      const combinedRevenue = revenue + cinemaRevenue;
+      const combinedOrders = orderCount + cinemaTickets;
+      const avgTicket = combinedOrders > 0 ? Math.round(combinedRevenue / combinedOrders) : 0;
+
+      // Customer rating avg per outlet (via kasir attribution)
+      let rating = null, reviewCount = 0;
+      try {
+        const r = db.rawDb.prepare(`
+          SELECT COUNT(*) c, COALESCE(AVG(rating),0) r
+          FROM customer_feedback
+          WHERE created_at >= ? AND created_at < ?
+            AND cashier IN (SELECT name FROM admin_users WHERE outlet_code = ?)
+        `).get(from, to, o.code);
+        if (r?.c > 0) { rating = Math.round((r.r || 0) * 100) / 100; reviewCount = r.c; }
+      } catch {}
+
+      // Top kasir at this outlet
+      let topKasir = null;
+      try {
+        const r = db.rawDb.prepare(`
+          SELECT actor, COUNT(DISTINCT order_ref) cnt, COALESCE(SUM(amount_applied),0) rev
+          FROM pos_payments
+          WHERE created_at >= ? AND created_at < ? AND status = 'completed'
+            AND actor IN (SELECT name FROM admin_users WHERE outlet_code = ?)
+          GROUP BY actor ORDER BY rev DESC LIMIT 1
+        `).get(from, to, o.code);
+        if (r?.actor) topKasir = { name: r.actor, transactions: r.cnt, revenue: r.rev };
+      } catch {}
+
+      // Prev period for growth
+      const prevFrom = from - (to - from);
+      let prevRevenue = 0;
+      try {
+        const r1 = db.rawDb.prepare(`
+          SELECT COALESCE(SUM(total),0) t FROM orders
+          WHERE time >= ? AND time < ? AND status != 'cancelled'
+            AND kasir IN (SELECT name FROM admin_users WHERE outlet_code = ?)
+        `).get(prevFrom * 1000, from * 1000, o.code);
+        prevRevenue = r1?.t || 0;
+        if (o.vertical === 'cinema' || o.vertical === 'hybrid') {
+          const r2 = db.rawDb.prepare(`
+            SELECT COALESCE(SUM(t.price),0) v FROM cinema_tickets t
+            LEFT JOIN cinema_studios st ON st.id = t.studio_id
+            WHERE t.sold_at >= ? AND t.sold_at < ?
+              AND st.outlet IN (?, ?)
+          `).get(prevFrom, from, o.name, o.code);
+          prevRevenue += r2?.v || 0;
+        }
+      } catch {}
+
+      const growthPct = prevRevenue > 0
+        ? Math.round((combinedRevenue - prevRevenue) / prevRevenue * 100)
+        : (combinedRevenue > 0 ? 100 : 0);
+
+      // Simple outlet KPI score — composite of revenue + rating + orders volume
+      // Normalize: rating to 0-100, orders to threshold-based, revenue per-day
+      const ratingScore = rating != null ? (rating / 5) * 100 : 0;
+      const dailyRev = combinedRevenue / Math.max(1, periodDays);
+      const volScore = Math.min(100, (dailyRev / 5000000) * 100); // 5jt/hari = 100
+      const kpiScore = rating != null
+        ? Math.round(ratingScore * 0.6 + volScore * 0.4)
+        : Math.round(volScore);
+
+      const result = {
+        code: o.code, name: o.name, area: o.area, vertical: o.vertical, status: o.status,
+        revenue: combinedRevenue,
+        revenue_fb: revenue,
+        revenue_cinema: cinemaRevenue,
+        orders: combinedOrders,
+        orders_fb: orderCount,
+        tickets_cinema: cinemaTickets,
+        avg_ticket: avgTicket,
+        rating, review_count: reviewCount,
+        top_kasir: topKasir,
+        growth_pct: growthPct,
+        kpi_score: kpiScore,
+      };
+      results.push(result);
+      totalRevenue += combinedRevenue;
+      totalOrders += combinedOrders;
+      if (kpiScore > 0) { totalKpiSum += kpiScore; totalKpiCount++; }
+    }
+
+    // Sort by revenue DESC (top performer first)
+    results.sort((a, b) => b.revenue - a.revenue);
+
+    res.json({
+      range: { from, to, period_days: periodDays },
+      outlets: results,
+      totals: {
+        revenue: totalRevenue,
+        orders: totalOrders,
+        outlet_count: results.length,
+        avg_kpi: totalKpiCount > 0 ? Math.round(totalKpiSum / totalKpiCount) : null,
+      },
+    });
+  } catch (e) {
+    console.error('[outlet-overview]', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ─── KARYA HARI INI — daily summary utk owner/manager ──────────────
 // Filosofi karyaOS: owner adalah orang yg paling jauh dari outlet
 // secara harian. Dia perlu "kembali ke rumah karyaOS" tiap pagi —

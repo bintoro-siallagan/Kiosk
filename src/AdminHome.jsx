@@ -15,6 +15,7 @@ const MemberList    = lazy(() => import("./MemberList.jsx"));
 const PromoManager  = lazy(() => import("./PromoManager.jsx"));
 const ShiftManager  = lazy(() => import("./ShiftManager.jsx"));
 const FarewellOverlay = lazy(() => import("./components/FarewellOverlay.jsx"));
+const OutletDashboard = lazy(() => import("./Admin/OutletDashboard.jsx"));
 
 // Karya Hari Ini — metric kecil dgn label + value
 function KaryaMetric({ label, value, accent = '#fff' }) {
@@ -1035,6 +1036,13 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
               )}
             </div>
           )}
+
+          {/* ═══ OUTLET DASHBOARD — sales + KPI per outlet (HQ tidak menangis lagi) ═══ */}
+          <div style={{ background: "#0a0e16", border: "1px solid #161b22", borderRadius: 14, padding: "20px 24px", marginBottom: 16 }}>
+            <Suspense fallback={<PanelLoading />}>
+              <OutletDashboard />
+            </Suspense>
+          </div>
 
           {/* ═══ HERO BANNER (animated, gradient mesh, big number) ═══ */}
           <div style={S.hero} className="ah-hero">
