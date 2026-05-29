@@ -3886,18 +3886,48 @@ app.post("/api/auth/login", (req, res) => {
     company_id: user.company_id ?? null, is_super_admin: user.company_id == null,
     loginAt: Date.now(), expiresAt, ip,
   });
+
+  // Fase 5 — "Membangun dari 0". Catat kapan kasir pertama login.
+  // Setelah ini, sistem tahu "hari ke berapa dia bekerja" dan bisa
+  // menyesuaikan ritual + KPI utk yg masih awal perjalanannya.
+  const isFirstLogin = !user.first_login_at;
+  const nowSec = Math.floor(Date.now() / 1000);
+  if (isFirstLogin) {
+    user.first_login_at = nowSec;
+    try { db.insertAdminUser({ ...user, last_login_at: nowSec, last_login_ip: ip }); } catch {}
+    console.log(`🌱 HARI PERTAMA: ${user.name} (${user.role}) — selamat datang.`);
+  } else {
+    try { db.insertAdminUser({ ...user, last_login_at: nowSec, last_login_ip: ip }); } catch {}
+  }
+
   db.logLoginAttempt({ user_id: user.id, username: user.username, ip, user_agent: ua, method: "pin", success: 1 });
   console.log(`🔐 PIN Login: ${user.name} (${user.role}, company=${companyInfo?.code || 'KARYS'})`);
   res.json({
     ok: true, token, name: user.name, role: user.role,
     must_change_password: !!user.must_change_password,
     force_pin_change: isWeakPin(user.pin),  // SECURITY: force ganti kalau PIN weak
+    is_first_login: isFirstLogin,
+    needs_welcome: !user.onboarded_at,
     user: { id: user.id, name: user.name, role: user.role,
             company_id: user.company_id ?? null, is_super_admin: user.company_id == null,
             vertical: user.vertical || null,
-            outlet_code: user.outlet_code || null },
+            outlet_code: user.outlet_code || null,
+            first_login_at: user.first_login_at,
+            onboarded_at:   user.onboarded_at },
     company: companyInfo,
   });
+});
+
+// Fase 5 — onboarded marker. Frontend POST setelah selesai WelcomeRitual.
+app.post("/api/auth/onboarded", (req, res) => {
+  const token = req.headers.authorization?.replace("Bearer ", "");
+  const session = token && adminSessions.get(token);
+  if (!session) return res.status(401).json({ error: "Not authenticated" });
+  const u = adminUsers.find(x => x.id === session.userId);
+  if (!u) return res.status(404).json({ error: "User not found" });
+  u.onboarded_at = Math.floor(Date.now() / 1000);
+  try { db.insertAdminUser(u); } catch {}
+  res.json({ ok: true, onboarded_at: u.onboarded_at });
 });
 
 app.post("/api/auth/logout", (req, res) => {

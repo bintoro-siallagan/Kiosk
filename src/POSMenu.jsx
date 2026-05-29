@@ -5,6 +5,7 @@ import { LoadingState } from "./components/uiKit.jsx";
 
 const MyKpiPanel = lazy(() => import("./POS/MyKpiPanel.jsx"));
 const MorningRecognition = lazy(() => import("./POS/MorningRecognition.jsx"));
+const WelcomeRitual = lazy(() => import("./POS/WelcomeRitual.jsx"));
 
 const API_BASE = API_HOST;
 
@@ -30,6 +31,12 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
       const key = `morningRecog:${cashier?.name || 'unknown'}:${today}`;
       return !localStorage.getItem(key);
     } catch { return false; }
+  });
+  // Fase 5 — Welcome ritual untuk kasir baru. Diset dari POSKasirLogin
+  // saat backend kasih needs_welcome=true. Setelah selesai, localStorage
+  // dibersihkan + backend dipanggil utk set onboarded_at.
+  const [showWelcome, setShowWelcome] = useState(() => {
+    try { return !!localStorage.getItem('karyaos:needsWelcome'); } catch { return false; }
   });
 
   useEffect(() => {
@@ -168,7 +175,20 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
         </Suspense>
       )}
 
-      {showMorning && (
+      {showWelcome && (
+        <Suspense fallback={null}>
+          <WelcomeRitual
+            cashierName={cashier?.name || 'Sahabat'}
+            apiBase={API_BASE}
+            onDone={() => {
+              setShowWelcome(false);
+              try { localStorage.removeItem('karyaos:needsWelcome'); } catch {}
+            }}
+          />
+        </Suspense>
+      )}
+
+      {!showWelcome && showMorning && (
         <Suspense fallback={null}>
           <MorningRecognition
             apiBase={API_BASE}

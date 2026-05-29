@@ -12,6 +12,7 @@ import React, { useEffect, useState } from 'react';
 
 export default function MyKpiPanel({ apiBase = '', onClose }) {
   const [data, setData] = useState(null);
+  const [journey, setJourney] = useState(null);
   const [highlights, setHighlights] = useState([]);
   const [err, setErr] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,11 +31,15 @@ export default function MyKpiPanel({ apiBase = '', onClose }) {
       fetch(`${apiBase}/api/cashier-kpi/me/highlights?limit=5`, { headers: auth })
         .then(r => r.ok ? r.json() : { highlights: [] })
         .catch(() => ({ highlights: [] })),
+      fetch(`${apiBase}/api/cashier-kpi/me/journey`, { headers: auth })
+        .then(r => r.ok ? r.json() : null)
+        .catch(() => null),
     ])
-      .then(([kpi, hl]) => {
+      .then(([kpi, hl, jr]) => {
         if (!alive) return;
         setData(kpi);
         setHighlights(Array.isArray(hl?.highlights) ? hl.highlights : []);
+        setJourney(jr);
         setLoading(false);
       })
       .catch(e => { if (alive) { setErr(e.message); setLoading(false); } });
@@ -57,10 +62,15 @@ export default function MyKpiPanel({ apiBase = '', onClose }) {
 
         {data && !loading && !err && (
           <>
-            <TodaySection data={data} />
-            <WeekDeltasSection data={data} />
-            <GrowthNote data={data} />
+            {journey && <JourneyHero journey={journey} />}
+            <TodaySection data={data} hideAchievement={journey?.is_early_days} />
+            {/* Hari awal: gak banding-bandingin dgn veteran. Tumbuh dgn diri sendiri dulu. */}
+            {!journey?.is_early_days && <WeekDeltasSection data={data} />}
+            {journey?.is_early_days
+              ? <EarlyDaysNote journey={journey} />
+              : <GrowthNote data={data} />}
             <HighlightsSection highlights={highlights} />
+            {journey && journey.milestones.length > 0 && <MilestonesSection journey={journey} />}
           </>
         )}
       </div>
@@ -68,7 +78,7 @@ export default function MyKpiPanel({ apiBase = '', onClose }) {
   );
 }
 
-function TodaySection({ data }) {
+function TodaySection({ data, hideAchievement }) {
   const t = data.today || {};
   const score = t.kpi_score;
   const achievement = data.achievement_pct;
@@ -85,12 +95,70 @@ function TodaySection({ data }) {
         <div style={S.scoreSide}>
           <Stat label="Transaksi" value={txCount} />
           <Stat label="Omset" value={fIDR(sales)} />
-          {achievement != null && <Stat label="vs Target" value={`${achievement}%`} tone={achievement >= 100 ? 'up' : achievement >= 70 ? 'flat' : 'down'} />}
+          {!hideAchievement && achievement != null && <Stat label="vs Target" value={`${achievement}%`} tone={achievement >= 100 ? 'up' : achievement >= 70 ? 'flat' : 'down'} />}
         </div>
       </div>
       <div style={S.miniGrid}>
         <MiniMetric icon="⭐" label="Rating" value={rating != null ? rating.toFixed(2) : '–'} sub={t.feedback_count ? `${t.feedback_count} review` : 'belum ada'} />
         <MiniMetric icon="📈" label="Upsell Rate" value={upsell != null ? `${upsell}%` : '–'} sub={upsell != null ? `${t.upsell_orders}/${t.upsell_total} order` : 'belum ada item upsell'} />
+      </div>
+    </section>
+  );
+}
+
+// Hari ke berapa perjalanan kasir — disambut dgn martabat.
+function JourneyHero({ journey }) {
+  const day = journey.day || 1;
+  return (
+    <section style={S.heroJourney}>
+      <div style={S.heroEyebrow}>PERJALANAN ANDA</div>
+      <div style={S.heroTitle}>Hari ke-{day}</div>
+      <div style={S.heroSub}>
+        {day === 1 && 'Hari pertama. Selamat datang. Tidak apa-apa kalau belum tahu semuanya.'}
+        {day === 2 && 'Hari kedua. Kemarin sudah jadi pengalaman. Hari ini kita lanjut.'}
+        {day === 3 && 'Hari ketiga. Sudah mulai terasa familiar, ya?'}
+        {day >= 4 && day <= 7 && `Hari ke-${day}. Minggu pertama. Sedang dalam ritme belajar.`}
+        {day > 7 && day <= 30 && `Hari ke-${day}. Bulan pertama. Pelan-pelan kamu sedang membangun cerita.`}
+        {day > 30 && `Hari ke-${day}. Cerita kamu di sini sudah dimulai sejak ${Math.floor(day / 7)} minggu lalu.`}
+      </div>
+    </section>
+  );
+}
+
+function EarlyDaysNote({ journey }) {
+  const day = journey.day || 1;
+  const txn = journey?.totals?.transactions || 0;
+  const reviews = journey?.totals?.reviews || 0;
+  return (
+    <section style={S.notes}>
+      <div style={{ ...S.note, borderLeftColor: '#FFD700' }}>
+        Belum ada perbandingan dgn minggu lalu — karena minggu ini adalah minggu pertama kamu. Kami pakai kamu sendiri sebagai ukuran. Pelan-pelan saja.
+      </div>
+      {txn > 0 && (
+        <div style={{ ...S.note, borderLeftColor: '#10B981' }}>
+          Sejak mulai, kamu sudah handle <b>{txn} transaksi</b>{reviews > 0 ? ` dan dapat ${reviews} review` : ''}. Itu bukan angka kecil — itu cerita yang sudah kamu bangun.
+        </div>
+      )}
+      {day < 7 && (
+        <div style={{ ...S.note, borderLeftColor: '#A78BFA' }}>
+          Tidak ada yang harus sempurna di minggu pertama. Kalau ragu tombol mana, tanya teman atau manager — itu wajar.
+        </div>
+      )}
+    </section>
+  );
+}
+
+function MilestonesSection({ journey }) {
+  return (
+    <section style={S.section}>
+      <div style={S.sectionLabel}>🌱 Yang sudah kamu capai sejak mulai</div>
+      <div style={S.milestoneRow}>
+        {journey.milestones.map(m => (
+          <div key={m.id} style={S.milestoneCard} title={m.label}>
+            <div style={S.milestoneIcon}>{m.icon}</div>
+            <div style={S.milestoneLabel}>{m.label}</div>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -328,4 +396,26 @@ const S = {
   quoteCaption: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingLeft: 24, gap: 8 },
   quoteRating: { color: '#F59E0B', fontSize: 13, letterSpacing: 1 },
   quoteMeta: { fontSize: 11, color: '#94a3b8' },
+  // Hari ke-N hero
+  heroJourney: {
+    background: 'linear-gradient(180deg, rgba(255,215,0,0.12) 0%, rgba(245,158,11,0.04) 100%)',
+    border: '1px solid rgba(255,215,0,0.25)',
+    borderRadius: 16, padding: '18px 22px', marginBottom: 18,
+  },
+  heroEyebrow: { fontSize: 11, color: '#fbbf24', letterSpacing: 1.5, fontWeight: 600, marginBottom: 4 },
+  heroTitle: {
+    fontSize: 26, fontWeight: 800, letterSpacing: -0.5, marginBottom: 6,
+    background: 'linear-gradient(180deg, #fff 0%, #FFD700 100%)',
+    WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+  },
+  heroSub: { fontSize: 14, color: '#e2e8f0', lineHeight: 1.5 },
+  // Milestone cards
+  milestoneRow: { display: 'flex', flexWrap: 'wrap', gap: 8 },
+  milestoneCard: {
+    display: 'flex', flexDirection: 'column', alignItems: 'center',
+    background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+    borderRadius: 10, padding: '10px 12px', minWidth: 80,
+  },
+  milestoneIcon: { fontSize: 22, marginBottom: 4 },
+  milestoneLabel: { fontSize: 10, color: '#cbd5e1', textAlign: 'center', lineHeight: 1.3 },
 };

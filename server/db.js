@@ -162,6 +162,13 @@ try { db.exec("CREATE INDEX IF NOT EXISTS idx_orders_company ON orders(company_i
 try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users(username) WHERE username IS NOT NULL"); } catch {}
 // KPI Foundation — siapa yang menutup shift, supaya accountability tutup hari jelas
 try { db.exec("ALTER TABLE shifts ADD COLUMN closed_by TEXT"); } catch {}
+// Fase 5 — "Membangun dari 0". Track perjalanan kasir sejak hari pertama.
+// first_login_at: stempel waktu kasir login pertama kali (epoch detik).
+// onboarded_at: kapan kasir selesai welcome ritual.
+// Filosofi: tidak ada kasir yg masuk "kosong" — semua membawa cerita
+// dari hari pertama. Sistem harus mengingat hari itu.
+try { db.exec("ALTER TABLE admin_users ADD COLUMN first_login_at INTEGER"); } catch {}
+try { db.exec("ALTER TABLE admin_users ADD COLUMN onboarded_at INTEGER"); } catch {}
 
 // Login audit log
 try {
@@ -531,11 +538,13 @@ const adminUserStmts = {
     (id, name, pin, role, active, created_at,
      username, email, password_hash, password_salt, password_changed_at,
      must_change_password, last_login_at, last_login_ip,
-     failed_login_count, locked_until, company_id, vertical, outlet_code)
+     failed_login_count, locked_until, company_id, vertical, outlet_code,
+     first_login_at, onboarded_at)
     VALUES (@id, @name, @pin, @role, @active, @created_at,
      @username, @email, @password_hash, @password_salt, @password_changed_at,
      @must_change_password, @last_login_at, @last_login_ip,
-     @failed_login_count, @locked_until, @company_id, @vertical, @outlet_code)`),
+     @failed_login_count, @locked_until, @company_id, @vertical, @outlet_code,
+     @first_login_at, @onboarded_at)`),
   selectAll: db.prepare(`SELECT * FROM admin_users ORDER BY id`),
   delete:    db.prepare(`DELETE FROM admin_users WHERE id = ?`),
 };
@@ -562,6 +571,8 @@ const adminUserToRow = u => {
     company_id: companyId,
     vertical,
     outlet_code: u.outlet_code || null,
+    first_login_at: u.first_login_at ?? null,
+    onboarded_at:   u.onboarded_at   ?? null,
   };
 };
 const rowToAdminUser = r => ({
@@ -578,6 +589,8 @@ const rowToAdminUser = r => ({
   company_id: r.company_id ?? null,
   vertical: r.vertical || null,
   outlet_code: r.outlet_code || null,
+  first_login_at: r.first_login_at ?? null,
+  onboarded_at:   r.onboarded_at   ?? null,
 });
 function loadAllAdminUsers() { return adminUserStmts.selectAll.all().map(rowToAdminUser); }
 function insertAdminUser(u)  { adminUserStmts.insert.run(adminUserToRow(u)); }

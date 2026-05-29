@@ -541,11 +541,20 @@ function PinLogin({ apiBase, deviceOutlet, onLogin }) {
         setBusy(false);
         return;
       }
+      // Fase 5 — "Membangun dari 0". Catat first_login + needs_welcome
+      // di localStorage supaya POSMenu/Cinema bisa show WelcomeRitual.
+      try {
+        if (d.needs_welcome) localStorage.setItem('karyaos:needsWelcome', '1');
+        else localStorage.removeItem('karyaos:needsWelcome');
+        if (d.is_first_login) localStorage.setItem('karyaos:isFirstLogin', '1');
+      } catch {}
       // Pass — login berhasil, mapping ke shape user yg dipake handleSelectStaff
       onLogin({
         id: user.id, name: user.name, role: user.role,
         outlet_code: user.outlet_code, company_id: user.company_id,
         vertical: user.vertical, token: d.token,
+        is_first_login: !!d.is_first_login,
+        needs_welcome: !!d.needs_welcome,
       });
     } catch (e) {
       setErr(e.message || "Gagal login");

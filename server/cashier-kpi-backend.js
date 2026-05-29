@@ -269,6 +269,89 @@ function setupCashierKpi(app, opts = {}) {
     });
   });
 
+  // ── Journey — perjalanan kasir dari hari pertama ──
+  //
+  // Fase 5: "membangun dari 0". Endpoint ini menjawab: "Hari ini hari
+  // ke berapa di KaryaOS?" + "Sudah pernah belajar/capai apa sejak hari
+  // pertama?". Output dipakai utk:
+  // - Adapt MyKpiPanel kalau masih dalam 7 hari pertama (no leaderboard)
+  // - Welcome ritual (kalau belum onboarded)
+  // - Milestone celebration
+
+  router.get('/me/journey', (req, res) => {
+    const cashierName = (global.getSessionUserName && global.getSessionUserName(req)) || null;
+    if (!cashierName) return res.status(401).json({ error: 'session required' });
+    try {
+      const u = db.prepare(`
+        SELECT id, name, role, first_login_at, onboarded_at, created_at
+        FROM admin_users WHERE name = ? LIMIT 1
+      `).get(cashierName);
+
+      if (!u) return res.json({ cashier: cashierName, day: 0, milestones: [], needs_welcome: false });
+
+      const now = Math.floor(Date.now() / 1000);
+      const firstAt = u.first_login_at || u.created_at || now;
+      const dayInRole = Math.floor((now - firstAt) / 86400) + 1; // hari 1 = pertama
+      const isEarlyDays = dayInRole <= 7;
+
+      // Total transaksi sejak pertama (semua waktu)
+      let totalTxn = 0, totalSales = 0;
+      try {
+        const r = db.prepare(`
+          SELECT COUNT(DISTINCT order_ref) c, COALESCE(SUM(amount_applied), 0) s
+          FROM pos_payments
+          WHERE actor = ? AND status = 'completed'
+        `).get(cashierName);
+        totalTxn = r?.c || 0; totalSales = r?.s || 0;
+      } catch {}
+
+      // Rating customer total
+      let totalReview = 0, avgRating = 0, bestComment = null;
+      try {
+        const r = db.prepare(`
+          SELECT COUNT(*) c, COALESCE(AVG(rating), 0) a
+          FROM customer_feedback WHERE cashier = ?
+        `).get(cashierName);
+        totalReview = r?.c || 0; avgRating = r?.a || 0;
+        if (totalReview > 0) {
+          bestComment = db.prepare(`
+            SELECT comment, rating, created_at
+            FROM customer_feedback
+            WHERE cashier = ? AND rating >= 4 AND comment IS NOT NULL AND LENGTH(TRIM(comment)) >= 10
+            ORDER BY rating DESC, created_at DESC LIMIT 1
+          `).get(cashierName);
+        }
+      } catch {}
+
+      // Milestones — kebanggan kecil yg patut dirayakan
+      const milestones = [];
+      if (totalTxn >= 1)   milestones.push({ id: 'first-txn',        icon: '🎯', label: 'Transaksi pertama' });
+      if (totalTxn >= 10)  milestones.push({ id: 'ten-txn',          icon: '🔟', label: '10 transaksi' });
+      if (totalTxn >= 50)  milestones.push({ id: 'fifty-txn',        icon: '⚡', label: '50 transaksi' });
+      if (totalTxn >= 100) milestones.push({ id: 'hundred-txn',      icon: '💯', label: '100 transaksi' });
+      if (totalTxn >= 500) milestones.push({ id: 'five-hundred-txn', icon: '🏅', label: '500 transaksi' });
+      if (dayInRole >= 7)  milestones.push({ id: 'week-one',         icon: '🌱', label: 'Minggu pertama' });
+      if (dayInRole >= 30) milestones.push({ id: 'month-one',        icon: '🌿', label: 'Bulan pertama' });
+      if (dayInRole >= 90) milestones.push({ id: 'quarter',          icon: '🌳', label: 'Tiga bulan' });
+      if (totalReview >= 1)  milestones.push({ id: 'first-review',   icon: '⭐', label: 'Review pertama dari customer' });
+      if (avgRating >= 4.5 && totalReview >= 5) milestones.push({ id: 'beloved', icon: '💛', label: 'Disayangi customer' });
+
+      res.json({
+        cashier: cashierName,
+        day: dayInRole,
+        is_early_days: isEarlyDays,
+        first_login_at: u.first_login_at,
+        onboarded_at: u.onboarded_at,
+        needs_welcome: !u.onboarded_at,
+        totals: { transactions: totalTxn, sales: totalSales, reviews: totalReview, avg_rating: Math.round(avgRating * 100) / 100 },
+        milestones,
+        best_comment: bestComment,
+      });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // ── Coaching Suggestions — bukan punishment, tapi bahasa pertumbuhan ──
   //
   // Endpoint ini menghasilkan saran konkret untuk manager: kasir mana yg
