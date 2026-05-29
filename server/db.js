@@ -160,6 +160,8 @@ try { db.exec("ALTER TABLE admin_users ADD COLUMN outlet_code TEXT"); } catch {}
 try { db.exec("ALTER TABLE orders ADD COLUMN company_id INTEGER"); } catch {}
 try { db.exec("CREATE INDEX IF NOT EXISTS idx_orders_company ON orders(company_id)"); } catch {}
 try { db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_admin_users_username ON admin_users(username) WHERE username IS NOT NULL"); } catch {}
+// KPI Foundation — siapa yang menutup shift, supaya accountability tutup hari jelas
+try { db.exec("ALTER TABLE shifts ADD COLUMN closed_by TEXT"); } catch {}
 
 // Login audit log
 try {
@@ -188,6 +190,10 @@ try { db.exec("ALTER TABLE pos_menus ADD COLUMN new_until INTEGER"); console.log
 try { db.exec("ALTER TABLE pos_menus ADD COLUMN badge_text TEXT"); console.log("🏷️ pos_menus.badge_text added"); } catch {}
 try { db.exec("ALTER TABLE pos_menus ADD COLUMN badge_color TEXT"); console.log("🎨 pos_menus.badge_color added"); } catch {}
 try { db.exec("ALTER TABLE pos_menus ADD COLUMN outlet_ids TEXT"); console.log("🏪 pos_menus.outlet_ids (JSON) added"); } catch {}
+// KPI Foundation — explicit upsell flag. Bedakan item upsell terencana (kasir
+// disuruh tawarkan) vs item utama. Hitung upsell rate per kasir secara akurat,
+// bukan dari asumsi "ada addon" — addon bisa request customer, bukan effort kasir.
+try { db.exec("ALTER TABLE pos_menus ADD COLUMN is_upsell INTEGER DEFAULT 0"); console.log("📈 pos_menus.is_upsell added"); } catch {}
 
 // Service charge config — idempotent insert (skip kalau sudah ada)
 try {
@@ -456,7 +462,7 @@ function deleteTable(id) { tableStmts.delete.run(id); }
 
 // ─── SHIFTS ─────────────────────────────────────────
 const shiftStmts = {
-  insert: db.prepare(`INSERT OR REPLACE INTO shifts (id,opened_by,opened_at,opening_cash,closed_at,closing_cash,sales) VALUES (@id,@opened_by,@opened_at,@opening_cash,@closed_at,@closing_cash,@sales)`),
+  insert: db.prepare(`INSERT OR REPLACE INTO shifts (id,opened_by,opened_at,opening_cash,closed_at,closing_cash,closed_by,sales) VALUES (@id,@opened_by,@opened_at,@opening_cash,@closed_at,@closing_cash,@closed_by,@sales)`),
   selectAll: db.prepare(`SELECT * FROM shifts ORDER BY opened_at DESC`),
   selectActive: db.prepare(`SELECT * FROM shifts WHERE closed_at IS NULL LIMIT 1`),
 };
@@ -466,6 +472,7 @@ const shiftToRow = s => ({
   opening_cash:s.openingCash??0,
   closed_at:s.closedAt??s.closeAt??null,
   closing_cash:s.closingCash??null,
+  closed_by:s.closedBy??s.closed_by??null,
   sales:JSON.stringify({
     totalOrders:  s.totalOrders  || 0,
     totalRevenue: s.totalRevenue || 0,
@@ -480,6 +487,7 @@ const rowToShift = r => {
   return {
     id:r.id, openedBy:r.opened_by, openedAt:r.opened_at,
     openingCash:r.opening_cash, closedAt:r.closed_at, closingCash:r.closing_cash,
+    closedBy:    r.closed_by,
     totalOrders:  parsed.totalOrders  || 0,
     totalRevenue: parsed.totalRevenue || 0,
     byPayment:    parsed.byPayment    || {},

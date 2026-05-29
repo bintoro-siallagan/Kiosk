@@ -1038,7 +1038,7 @@ function _enrichMenu(items, opts = {}) {
   try {
     const companyId = opts.companyId || 1;
     // 1) Pull ALL pos_menus rows for this tenant (not just ones with image)
-    const allRows = db.rawDb.prepare(`SELECT id, category_id, emoji, name, description, price, free_extras, is_popular, is_available, image_url, badge_text FROM pos_menus WHERE company_id = ?`).all(companyId);
+    const allRows = db.rawDb.prepare(`SELECT id, category_id, emoji, name, description, price, free_extras, is_popular, is_available, image_url, badge_text, is_upsell FROM pos_menus WHERE company_id = ?`).all(companyId);
     if (!allRows.length) return items;
 
     // 2) Enrich existing legacy items with image/desc from matching pos_menus rows
@@ -1052,6 +1052,7 @@ function _enrichMenu(items, opts = {}) {
         image_url: match.image_url || m.image_url || null,
         description: match.description || m.description || m.desc || "",
         desc: match.description || m.desc || m.description || "",
+        is_upsell: match.is_upsell === 1 || match.is_upsell === true || !!m.is_upsell,
       };
     });
 
@@ -1072,6 +1073,7 @@ function _enrichMenu(items, opts = {}) {
         avail: r.is_available === 1 || r.is_available === true,
         image_url: r.image_url || null,
         tag: r.badge_text || undefined,
+        is_upsell: r.is_upsell === 1 || r.is_upsell === true,
         company_id: companyId,
       }));
     return enriched.concat(newOnes);
@@ -1232,6 +1234,49 @@ app.put("/api/menu/:id", (req, res) => {
   broadcast("menu:updated", menu[idx]);
   console.log("[Master] Updated:", menu[idx].name, "id:", id);
   res.json(menu[idx]);
+});
+
+// ── KPI Foundation: Toggle is_upsell per item ──
+// Dipisah dari PUT umum supaya admin UI cukup tombol kecil (badge toggle),
+// dan side-effect terbatas ke kolom is_upsell saja.
+app.patch("/api/menu/:id/upsell", requireAdmin, (req, res) => {
+  const rawId = req.params.id;
+  const id = isNaN(rawId) ? rawId : parseInt(rawId);
+  const flag = req.body?.is_upsell ? 1 : 0;
+  try {
+    // Coba update di pos_menus dulu (kanonik). Match by id (string) OR by name (legacy).
+    const r1 = db.rawDb.prepare(`UPDATE pos_menus SET is_upsell = ?, updated_at = strftime('%s','now') WHERE id = ?`).run(flag, String(rawId));
+    let updated = r1.changes;
+
+    // Legacy in-memory item — sinkron + mirror ke pos_menus by name
+    const legacy = menu.find(m => m.id === id);
+    if (legacy) {
+      legacy.is_upsell = !!flag;
+      if (updated === 0) {
+        const nameKey = String(legacy.name || '').toLowerCase().trim();
+        const r2 = db.rawDb.prepare(`UPDATE pos_menus SET is_upsell = ?, updated_at = strftime('%s','now') WHERE LOWER(TRIM(name)) = ?`).run(flag, nameKey);
+        updated = r2.changes;
+        if (updated === 0) {
+          // Stub row supaya enrichment + KPI compute bisa find item ini
+          const idStr = `legacy-${legacy.id}`;
+          db.rawDb.prepare(`INSERT OR IGNORE INTO pos_menus
+            (id, category_id, emoji, name, description, price, free_extras, is_popular, is_available, image_url, is_upsell, display_order, company_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+            .run(idStr, legacy.cat || 'froyo', legacy.emoji || '', legacy.name, legacy.desc || '',
+              legacy.price, legacy.freeToppings || 0, legacy.popular ? 1 : 0, legacy.avail ? 1 : 0,
+              legacy.image_url || null, flag, 0, 1);
+          updated = 1;
+        }
+      }
+    }
+
+    if (!updated) return res.status(404).json({ error: 'item not found' });
+    broadcast("menu:updated", { id, is_upsell: !!flag });
+    res.json({ ok: true, id, is_upsell: !!flag });
+  } catch (e) {
+    console.error('[menu upsell toggle]', e);
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ── MASTER TOPPINGS: CRUD ──
@@ -3625,6 +3670,16 @@ global.getSessionOutlet = (req) => {
     return { outletCode, role, isHQ: !outletCode };
   } catch { return { outletCode: null, role: null, isHQ: true }; }
 };
+
+// Resolve display name dari session token — dipakai utk attribution (closed_by, dll).
+// Return: string nama atau null kalau gak ada session valid.
+global.getSessionUserName = (req) => {
+  try {
+    const token = req.headers?.authorization?.replace(/^Bearer\s+/i, '');
+    const s = token && adminSessions.get(token);
+    return s?.name || s?.username || null;
+  } catch { return null; }
+};
 // Load valid sessions from DB at startup (survive restart)
 try {
   const rows = _sessionDb.loadValid();
@@ -4378,19 +4433,22 @@ app.post("/api/shifts/force-close", requireAdmin, (req, res) => {
   const vertical = _vertOf(req);
   const active = activeShifts[vertical];
   if (!active) return res.status(404).json({ error: `Tidak ada shift ${vertical} aktif` });
+  const adminName = global.getSessionUserName?.(req) || 'admin';
+  const closedBy = `${adminName} (force)`;
   const closed = {
     ...normalizeShift(active),
     closeAt: Date.now(),
     closingCash: 0,
+    closedBy,
     note: "FORCE CLOSE — " + (req.body?.reason || "Manual reset by admin"),
     active: false,
     vertical,
   };
-  try { db.updateShift?.(closed.id, { closedAt: closed.closeAt, closingCash: 0, sales: 0 }); } catch {}
+  try { db.updateShift?.(closed.id, { closedAt: closed.closeAt, closingCash: 0, closedBy, sales: 0 }); } catch {}
   shifts = shifts.map(s => s.id === closed.id ? closed : s);
   if (!shifts.find(s => s.id === closed.id)) shifts.push(closed);
   activeShifts[vertical] = null;
-  console.log(`⚠️  Shift ${closed.id} (${vertical}) force-closed`);
+  console.log(`⚠️  Shift ${closed.id} (${vertical}) force-closed oleh ${closedBy}`);
   res.json({ ok: true, shift: closed });
 });
 
@@ -4425,7 +4483,10 @@ app.post("/api/shifts/close", (req, res) => {
   const vertical = _vertOf(req);
   const active = activeShifts[vertical];
   if (!active) return res.status(404).json({ error: `Tidak ada shift ${vertical} aktif` });
-  const { closingCash, note } = req.body;
+  const { closingCash, note, closedBy: bodyClosedBy } = req.body;
+  // Identitas siapa yang nutup — body > session > fallback kasir pembuka.
+  // Penting utk akuntabilitas: KPI + cermin operasional.
+  const closedBy = bodyClosedBy || global.getSessionUserName?.(req) || active.kasirName || null;
   // Collect orders in this shift — filter by vertical via source
   const openTs = active.openAt || active.openedAt || active.opened_at || 0;
   const shiftOrders = orders.filter(o => o.time >= openTs && o.status !== "cancelled" && _vertFromSource(o.source) === vertical);
@@ -4434,6 +4495,7 @@ app.post("/api/shifts/close", (req, res) => {
     ...active,
     closeAt:      Date.now(),
     closingCash:  Number(closingCash)||0,
+    closedBy,
     note:         note||"",
     orders:       shiftOrders.map(o => o.id),
     totalOrders:  shiftOrders.length,
@@ -4445,7 +4507,7 @@ app.post("/api/shifts/close", (req, res) => {
   const closed = { ...closingShift };
   db.insertShift(closingShift);
   activeShifts[vertical] = null;
-  console.log(`🔴 Shift ditutup: ${closed.kasirName} (${vertical}) — ${shiftOrders.length} order, Rp ${totalRevenue.toLocaleString()}`);
+  console.log(`🔴 Shift ditutup oleh ${closedBy || '-'}: ${closed.kasirName} (${vertical}) — ${shiftOrders.length} order, Rp ${totalRevenue.toLocaleString()}`);
 
   // ── AUTO-REPORT: Send shift summary via WhatsApp ──
   (async () => {
@@ -4920,7 +4982,7 @@ app.get("/api/shifts/history", (req, res) => {
 // POST close shift with closing cash
 app.post("/api/shifts/:id/close-with-report", (req, res) => {
   try {
-    const { closingCash } = req.body;
+    const { closingCash, closedBy: bodyClosedBy } = req.body;
     if (closingCash === undefined || closingCash === null) {
       return res.status(400).json({ error: "closingCash required" });
     }
@@ -4930,25 +4992,38 @@ app.post("/api/shifts/:id/close-with-report", (req, res) => {
     if (_get(shift, 'closed_at')) return res.status(400).json({ error: "Shift already closed" });
 
     const closedAt = Date.now();
+    // Identitas penutup — body > session > pembuka shift sbg fallback.
+    const closedBy = bodyClosedBy
+      || global.getSessionUserName?.(req)
+      || _get(shift, 'kasirName') || _get(shift, 'opened_by') || null;
+
     // Update in-memory
     shift.closed_at = closedAt;
     shift.closing_cash = closingCash;
+    shift.closedBy = closedBy;
+    shift.closed_by = closedBy;
 
     const report = buildShiftReportV2(shift);
     shift.sales = JSON.stringify(report.summary);
 
-    // Persist via db wrapper if available
+    // Persist via updateShift(id, updates) — sebelumnya dipanggil dgn signature
+    // salah (shift sbg arg tunggal) sehingga no-op. Sekarang fixed + sertakan closedBy.
     try {
-      if (db && typeof db.saveShift === 'function') {
-        db.saveShift(shift);
-      } else if (db && typeof db.updateShift === 'function') {
-        db.updateShift(shift);
+      if (db && typeof db.updateShift === 'function') {
+        db.updateShift(shift.id, {
+          closedAt,
+          closingCash: Number(closingCash) || 0,
+          closedBy,
+          totalOrders:  report?.summary?.totalOrders  || 0,
+          totalRevenue: report?.summary?.totalRevenue || 0,
+          byPayment:    report?.summary?.byPayment    || {},
+        });
       }
     } catch (saveErr) {
       console.warn("Persistence warning:", saveErr.message);
     }
 
-    res.json({ ok: true, closedAt, report });
+    res.json({ ok: true, closedAt, closedBy, report });
   } catch (e) {
     console.error("Close shift error:", e);
     res.status(500).json({ error: e.message });

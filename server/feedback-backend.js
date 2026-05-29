@@ -41,18 +41,35 @@ function setupFeedback(app, opts = {}) {
     const r = parseInt(rating, 10);
     if (!r || r < 1 || r > 5) return res.status(400).json({ error: 'rating harus 1-5' });
 
+    // Auto-derive cashier kalau gak dikirim (mis. dari QR struk public —
+    // customer gak tau siapa kasirnya). Lookup pos_payments.actor by order_ref,
+    // fallback ke cinema_tickets.cashier_name (untuk struk cinema).
+    let cashierResolved = cashier || null;
+    if (!cashierResolved && order_ref) {
+      try {
+        const fromPay = db.prepare(`SELECT actor FROM pos_payments WHERE order_ref = ? AND actor IS NOT NULL ORDER BY created_at DESC LIMIT 1`).get(order_ref);
+        if (fromPay?.actor) cashierResolved = fromPay.actor;
+      } catch {}
+      if (!cashierResolved) {
+        try {
+          const fromCinema = db.prepare(`SELECT cashier_name FROM cinema_tickets WHERE code = ? AND cashier_name IS NOT NULL LIMIT 1`).get(order_ref);
+          if (fromCinema?.cashier_name) cashierResolved = fromCinema.cashier_name;
+        } catch {}
+      }
+    }
+
     const info = db.prepare(`
       INSERT INTO customer_feedback (order_ref, rating, comment, cashier, customer_phone, source)
       VALUES (?,?,?,?,?,?)
-    `).run(order_ref || null, r, (comment || '').trim() || null, cashier || null,
+    `).run(order_ref || null, r, (comment || '').trim() || null, cashierResolved,
       customer_phone || null, source || 'pos');
 
     // Audit + alert kalau rating jelek
     try {
       if (typeof global.logPosEvent === 'function') global.logPosEvent({
         event_type: 'customer_feedback', event_subtype: source || 'pos',
-        payload: { rating: r, order_ref, has_comment: !!(comment && comment.trim()) },
-        order_ref: order_ref || null, actor: cashier || null,
+        payload: { rating: r, order_ref, has_comment: !!(comment && comment.trim()), cashier: cashierResolved },
+        order_ref: order_ref || null, actor: cashierResolved || null,
         severity: r <= 2 ? 'warning' : 'info',
       });
     } catch {}

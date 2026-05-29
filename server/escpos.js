@@ -201,6 +201,18 @@ function buildCustomerReceipt(order, template = {}) {
     const base = process.env.TRACKING_BASE_URL || "http://localhost:5173";
     r.qr(`${base}/?trackorder=${order.id}`, 7, 1).feed();
   }
+
+  // ── KPI Foundation: Rating QR ──
+  // Customer scan QR ini → kasih bintang 1-5. Tersimpan dgn order_ref +
+  // auto-link ke kasir (backend lookup via pos_payments.actor).
+  const showRatingQr = template.show_rating_qr !== false;
+  if (showRatingQr) {
+    r.feed().bold(true).line("Bagaimana pengalaman Anda?").bold(false);
+    r.line("Scan untuk beri rating:").feed();
+    const ratingBase = process.env.RATING_BASE_URL || process.env.TRACKING_BASE_URL || "http://localhost:5173";
+    r.qr(`${ratingBase}/?rate=${order.id}`, 6, 1).feed();
+  }
+
   r.line(`Order #${order.id}`).feed(2);
 
   r.cut();

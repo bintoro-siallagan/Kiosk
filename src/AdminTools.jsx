@@ -1034,6 +1034,15 @@ function MasterItemTab({ showToast }) {
     load();
   };
 
+  // KPI Foundation — toggle is_upsell. Item upsell akan jadi basis hitung
+  // upsell-rate per kasir di KPI dashboard (bukan dari asumsi addon).
+  const handleUpsellToggle = async (item) => {
+    const next = !item.is_upsell;
+    await apiPatch("/api/menu/" + item.id + "/upsell", { is_upsell: next });
+    showToast(`${item.name} ${next ? "ditandai sebagai Upsell 📈" : "bukan Upsell lagi"}`);
+    load();
+  };
+
   const filtered = filter ? items.filter(i => i.cat === filter) : items;
   const grouped = {};
   filtered.forEach(i => { if (!grouped[i.cat]) grouped[i.cat] = []; grouped[i.cat].push(i); });
@@ -1103,9 +1112,15 @@ function MasterItemTab({ showToast }) {
                   </div>
                   <span style={{fontSize:15,fontWeight:700,color:"#F59E0B",fontFamily:"'Geist Mono',monospace",minWidth:90}}>{fR(item.price)}</span>
                   <span style={S.badge(item.avail?"#34D399":"#F87171")}>{item.avail?"Active":"Off"}</span>
+                  {item.is_upsell && <span style={S.badge("#F59E0B")} title="Item ini dipakai untuk hitung Upsell Rate kasir">📈 Upsell</span>}
                   {item.freeToppings>0&&<span style={{fontSize:11,color:"#888"}}>+{item.freeToppings} topping</span>}
                   <div style={{display:"flex",gap:4}}>
                     <button onClick={()=>handleToggle(item)} style={S.btn(item.avail?"#F87171":"#34D399")}>{item.avail?"Off":"On"}</button>
+                    <button
+                      onClick={()=>handleUpsellToggle(item)}
+                      style={S.btn(item.is_upsell?"#F59E0B":"#8b8b95")}
+                      title={item.is_upsell ? "Lepas tag Upsell" : "Tandai sebagai item Upsell (kasir wajib tawarkan)"}
+                    >{item.is_upsell ? "📈 Upsell ✓" : "📈 Upsell"}</button>
                     <button onClick={()=>handleEdit(item)} style={S.btn("#3B82F6")}>Edit</button>
                     <button onClick={()=>handleDelete(item.id,item.name)} style={S.btnDanger}>Delete</button>
                   </div>

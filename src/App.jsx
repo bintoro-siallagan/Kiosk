@@ -59,6 +59,7 @@ const PickupMonitor          = lazy(() => import("./KDS/PickupMonitor.jsx"));
 const FlowApp                = lazy(() => import("./Flow/FlowApp.jsx"));
 const CinemaWebApp           = lazy(() => import("./CinemaWeb/CinemaWebApp.jsx"));
 const POSSatisfaction        = lazy(() => import("./POS/POSSatisfaction.jsx"));
+const RatingPage             = lazy(() => import("./RatingPage.jsx"));
 const PWAInstallPrompt       = lazy(() => import("./components/PWAInstallPrompt.jsx"));
 
 // White-label P3C — surfaces where a mobile install banner makes sense.
@@ -163,6 +164,7 @@ function getScene() {
   if (q.includes("home")) return "home";
   if (new URLSearchParams(q).has("flow")) return "flow";
   if (new URLSearchParams(q).get("trackorder")) return "customer-track";
+  if (new URLSearchParams(q).get("rate"))       return "customer-rating";
   if (q.includes("track"))     return "track";
   if (q.includes("admin"))     return "admin-login";
   if (q.includes("report"))    return "report";
@@ -310,6 +312,8 @@ export default function App() {
     node = <ServiceStaff />;
   } else if (scene === "customer-track") {
     node = <><PromoBroadcastBanner/><CustomerTrackingPage orderId={trackOrderId}/></>;
+  } else if (scene === "customer-rating") {
+    node = <RatingPage />;
   } else if (scene === "track") {
     node = <OrderTracking onHome={go("kiosk")}/>;
   } else if (scene === "table-select" && checkoutData) {

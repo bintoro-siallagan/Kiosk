@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS pos_shifts (
   staff_name TEXT,
   opened_at INTEGER NOT NULL,
   closed_at INTEGER,
+  closed_by TEXT,
   opening_cash REAL NOT NULL DEFAULT 0,
   closing_cash REAL,
   expected_cash REAL,
@@ -130,6 +131,8 @@ function setupShiftStaff(app, opts = {}) {
   const db = new Database(opts.dbPath || DEFAULT_DB);
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA_SQL);
+  // KPI Foundation — closed_by attribution (idempotent untuk DB lama)
+  try { db.exec(`ALTER TABLE pos_shifts ADD COLUMN closed_by TEXT`); } catch {}
 
   // Seed default staff if empty
   const staffCount = db.prepare(`SELECT COUNT(*) c FROM pos_staff`).get().c;
@@ -330,13 +333,15 @@ function setupShiftStaff(app, opts = {}) {
     const variance = closingCashNum - summary.expected_cash;
 
     const tx = db.transaction(() => {
+      // closed_by: body arg menang, fallback ke staff_id pembuka (assume self-close)
+      const closerId = closed_by || shift.staff_id;
       db.prepare(`
         UPDATE pos_shifts
-        SET closed_at=?, closing_cash=?, expected_cash=?, cash_variance=?,
+        SET closed_at=?, closed_by=?, closing_cash=?, expected_cash=?, cash_variance=?,
             total_revenue=?, total_orders=?, total_voids=?, total_refunds=?, total_anomalies=?,
             notes_close=?, status='closed', updated_at=?
         WHERE id=?
-      `).run(nowSec(), closingCashNum, summary.expected_cash, variance,
+      `).run(nowSec(), closerId, closingCashNum, summary.expected_cash, variance,
         summary.revenue, summary.orders, summary.voids, summary.refunds, summary.anomalies,
         notes || null, nowSec(), req.params.id);
 
