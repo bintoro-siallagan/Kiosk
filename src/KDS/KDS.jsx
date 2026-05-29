@@ -47,6 +47,28 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
   const wsRef = useRef(null);
   const audioCtx = useRef(null);
 
+  // Fase 5 — KDS warm welcome. Operator dapur paling sering dilupakan
+  // sistem — selalu di belakang, tidak terlihat customer, tidak punya
+  // momen sambutan. Sekarang mereka juga disambut waktu, walau cuma
+  // 4 detik di awal sesi.
+  const [showKdsWelcome, setShowKdsWelcome] = useState(() => {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      return !sessionStorage.getItem(`kdsWelcome:${today}`);
+    } catch { return false; }
+  });
+  useEffect(() => {
+    if (!showKdsWelcome) return;
+    const t = setTimeout(() => {
+      setShowKdsWelcome(false);
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        sessionStorage.setItem(`kdsWelcome:${today}`, '1');
+      } catch {}
+    }, 4500);
+    return () => clearTimeout(t);
+  }, [showKdsWelcome]);
+
   // KDS is a full-screen kitchen display — escape the 1126px #root width cap
   // (index.css) so it uses the whole monitor.
   useEffect(() => {
@@ -258,8 +280,47 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
 
   if (loading) return <div style={{padding: 40, background: '#0a0a0a', minHeight: '100vh', color: '#9ca3af', textAlign: 'center'}}>Loading kitchen display...</div>;
 
+  // Sambutan dapur — adaptive waktu, ucapan jujur ke tim kitchen
+  const kdsWelcomeMsg = (() => {
+    const h = new Date().getHours();
+    if (h >= 5 && h < 11)  return { greet: "Selamat pagi", sub: "Mulai hari dengan tenang. Kami bersama Anda." };
+    if (h >= 11 && h < 15) return { greet: "Selamat siang", sub: "Tim dapur — terima kasih untuk siang yang penuh order." };
+    if (h >= 15 && h < 18) return { greet: "Selamat sore", sub: "Tim dapur, terima kasih untuk hari ini." };
+    return { greet: "Selamat malam", sub: "Shift malam yang berharga. Selesaikan dengan tenang." };
+  })();
+
   return (
     <div style={styles.root}>
+      {/* KDS warm welcome — overlay 4.5 detik per sesi */}
+      {showKdsWelcome && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 99999,
+          background: "radial-gradient(circle at center, rgba(251,191,36,0.25) 0%, rgba(0,0,0,0.92) 70%)",
+          backdropFilter: "blur(8px)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          animation: "fadeOutKds 0.6s ease 3.9s forwards",
+        }}
+        onClick={() => setShowKdsWelcome(false)}>
+          <style>{`@keyframes fadeOutKds { to { opacity: 0; pointer-events: none; } }`}</style>
+          <div style={{ textAlign: "center", color: "#fff", maxWidth: 540, padding: 20 }}>
+            <div style={{ fontSize: 60, marginBottom: 20, filter: "drop-shadow(0 8px 24px rgba(251,191,36,0.35))" }}>🍳</div>
+            <div style={{ fontSize: 11, color: "#fbbf24", letterSpacing: 3, fontWeight: 600, marginBottom: 10, textTransform: "uppercase" }}>
+              {kdsWelcomeMsg.greet}
+            </div>
+            <h1 style={{
+              fontSize: 38, fontWeight: 800, margin: "0 0 14px", letterSpacing: -0.5,
+              background: "linear-gradient(180deg, #fff 0%, #fbbf24 100%)",
+              WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+              lineHeight: 1.15,
+            }}>Tim Dapur, Selamat Datang</h1>
+            <p style={{ fontSize: 15, color: "#cbd5e1", lineHeight: 1.5, marginBottom: 16, fontStyle: "italic" }}>
+              {kdsWelcomeMsg.sub}
+            </p>
+            <p style={{ fontSize: 11, color: "#64748b", letterSpacing: 1 }}>Ketuk untuk menutup</p>
+          </div>
+        </div>
+      )}
+
       {/* TOP BAR */}
       <div style={styles.topBar}>
         <div style={{display: 'flex', alignItems: 'center', gap: 12}}>

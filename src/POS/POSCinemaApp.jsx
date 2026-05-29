@@ -9,7 +9,7 @@
 //   GET /api/cinema/bundles
 //   POST /api/cinema/tickets { showtime_id, seats[], bundles[], buyer, payment }
 
-import { useState, useEffect, useCallback, useMemo, useRef, Fragment } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, Fragment, lazy, Suspense } from "react";
 import POSKasirLogin from "./POSKasirLogin.jsx";
 import { useTenantTheme } from "../lib/tenantTheme.js";
 import ShiftGate from "../ShiftGate.jsx";
@@ -19,6 +19,12 @@ import { ErrorInline } from "../components/ConnectionError.jsx";
 import QRCode from "qrcode";
 import { HelpButton } from "../components/HelpModal.jsx";
 import TouchNumpad, { showNumpad } from "../components/TouchNumpad.jsx";
+
+// Fase 5 — soul carriers: welcome ritual + cermin jujur + sambutan pulang.
+// Filosofi karyaOS: kasir cinema = manusia juga. Mereka juga deserve disambut.
+const MyKpiPanel         = lazy(() => import("./MyKpiPanel.jsx"));
+const MorningRecognition = lazy(() => import("./MorningRecognition.jsx"));
+const WelcomeRitual      = lazy(() => import("./WelcomeRitual.jsx"));
 import UpsellTicker from "../components/UpsellTicker.jsx";
 import DeviceOutletSetup, { getDeviceOutlet } from "../components/DeviceOutletSetup.jsx";
 import { isBridgeOnline } from "../lib/localPrint.js";
@@ -131,6 +137,21 @@ export default function POSCinemaApp() {
       console.warn("[POSCinema] cashier init err:", e);
       return null;
     }
+  });
+
+  // Fase 5 carriers — KPI panel + DailyHomecoming + Welcome Ritual states.
+  // Sama dgn POSMenu F&B parity (lihat src/POSMenu.jsx).
+  const [showKpi, setShowKpi] = useState(false);
+  const [showMorning, setShowMorning] = useState(() => {
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const key = `morningRecog:${cashier?.name || 'unknown'}:${today}`;
+      if (localStorage.getItem('karyaos:isFirstLogin')) return false;
+      return !localStorage.getItem(key);
+    } catch { return false; }
+  });
+  const [showWelcome, setShowWelcome] = useState(() => {
+    try { return !!localStorage.getItem('karyaos:needsWelcome'); } catch { return false; }
   });
 
   // Emergency global helper — bisa dipanggil dari DevTools console: window.posLogout()
@@ -286,7 +307,7 @@ export default function POSCinemaApp() {
     <ShiftGate cashier={cashier} onSwitchCashier={handleLogout} vertical="cinema">
       <TouchNumpad />
       <ThemedRoot CSS={CSS} SMesh={S.mesh} SRoot={S.root}>
-        <TopBar cashier={cashier} stage={stage} onLogout={handleLogout} onHome={resetSale} />
+        <TopBar cashier={cashier} stage={stage} onLogout={handleLogout} onHome={resetSale} onOpenKpi={() => setShowKpi(true)} />
         <UpsellTicker vertical="cinema" />
 
         {stage === "home" && (
@@ -354,6 +375,51 @@ export default function POSCinemaApp() {
           onDone={() => { setClosingChecklist(false); reloadChecklist(); forceLogout(); }}
         />
       )}
+
+      {/* Fase 5 — Welcome Ritual untuk kasir hari pertama */}
+      {showWelcome && (
+        <Suspense fallback={null}>
+          <WelcomeRitual
+            cashierName={cashier?.name || 'Sahabat'}
+            apiBase={API_HOST}
+            onDone={() => {
+              setShowWelcome(false);
+              try {
+                localStorage.removeItem('karyaos:needsWelcome');
+                localStorage.removeItem('karyaos:isFirstLogin');
+                const today = new Date().toISOString().slice(0, 10);
+                const key = `morningRecog:${cashier?.name || 'unknown'}:${today}`;
+                localStorage.setItem(key, '1');
+              } catch {}
+              setShowMorning(false);
+            }}
+          />
+        </Suspense>
+      )}
+
+      {/* DailyHomecoming setiap kembali ke karyaOS */}
+      {!showWelcome && showMorning && (
+        <Suspense fallback={null}>
+          <MorningRecognition
+            apiBase={API_HOST}
+            onDone={() => {
+              setShowMorning(false);
+              try {
+                const today = new Date().toISOString().slice(0, 10);
+                const key = `morningRecog:${cashier?.name || 'unknown'}:${today}`;
+                localStorage.setItem(key, '1');
+              } catch {}
+            }}
+          />
+        </Suspense>
+      )}
+
+      {/* MyKPI cermin jujur */}
+      {showKpi && (
+        <Suspense fallback={null}>
+          <MyKpiPanel apiBase={API_HOST} onClose={() => setShowKpi(false)} />
+        </Suspense>
+      )}
     </ShiftGate>
   );
 }
@@ -379,7 +445,7 @@ function ThemedRoot({ CSS, SMesh, SRoot, children }) {
 // ═══════════════════════════════════════════════════════════════════
 // TOP BAR
 // ═══════════════════════════════════════════════════════════════════
-function TopBar({ cashier, stage, onLogout, onHome }) {
+function TopBar({ cashier, stage, onLogout, onHome, onOpenKpi }) {
   const [now, setNow] = useState(new Date());
   const [outletInfo, setOutletInfo] = useState({ code: null, name: null, area: null });
   const [showOutletPicker, setShowOutletPicker] = useState(false);
@@ -575,6 +641,19 @@ function TopBar({ cashier, stage, onLogout, onHome }) {
           </div>
         </div>
         <div style={{ width: 1, height: 30, background: "rgba(255,255,255,0.08)" }} />
+        {onOpenKpi && (
+          <button
+            onClick={onOpenKpi}
+            title="Cermin jujur — KPI saya hari ini"
+            style={{
+              background: "rgba(245,158,11,0.10)",
+              border: "1px solid rgba(245,158,11,0.30)",
+              color: "#F59E0B",
+              width: 36, height: 36, borderRadius: 10, fontSize: 16,
+              cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
+              fontFamily: "inherit",
+            }}>📊</button>
+        )}
         <div style={{ textAlign: "right" }}>
           <div style={{ fontSize: 11.5, color: TH.sub }}>Cashier</div>
           <div style={{ fontSize: 13.5, fontWeight: 700, color: "#fff" }}>{cashier?.name || "—"}</div>
