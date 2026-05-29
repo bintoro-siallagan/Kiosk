@@ -269,6 +269,146 @@ function setupCashierKpi(app, opts = {}) {
     });
   });
 
+  // ── Coaching Suggestions — bukan punishment, tapi bahasa pertumbuhan ──
+  //
+  // Endpoint ini menghasilkan saran konkret untuk manager: kasir mana yg
+  // butuh attention, dan bagaimana CARA mendekatinya. Bahasanya konsultatif,
+  // bukan menyalahkan. Filosofi: "yang baik makin baik, yang kurang baik
+  // akan jadi baik."
+  //
+  // Output adalah daftar suggestion cards yg dipakai manager untuk:
+  // - Apresiasi yg sudah tumbuh (rising-star)
+  // - Bantu yg sedang turun (upsell-decline, rating-decline)
+  // - Sambut kembali yg biasanya hebat (comeback-potential)
+  // - Pastikan suara customer sampai ke semua (no-recent-rating)
+  // - Diskusi pelan tentang akurasi (high-void-rate)
+
+  function computePatterns(db) {
+    const now = Math.floor(Date.now() / 1000);
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    const dow = d.getDay() === 0 ? 7 : d.getDay();
+    const weekStart = Math.floor(d.getTime() / 1000) - (dow - 1) * 86400;
+    const lastWeekStart = weekStart - 7 * 86400;
+    const lastWeekEnd = weekStart;
+
+    const thisWeek = computeKpi(db, weekStart, now);
+    const lastWeek = computeKpi(db, lastWeekStart, lastWeekEnd);
+
+    const lastMap = new Map(lastWeek.cashiers.map(c => [c.cashier, c]));
+    const teamAvgVoid = (() => {
+      const arr = thisWeek.cashiers.filter(c => c.transactions > 0).map(c => (c.voided / c.transactions) * 100);
+      return arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0;
+    })();
+
+    const suggestions = [];
+
+    for (const c of thisWeek.cashiers) {
+      const prev = lastMap.get(c.cashier);
+
+      // 🌟 Rising star — KPI naik signifikan dari minggu lalu
+      if (prev && c.kpi_score != null && prev.kpi_score != null &&
+          c.kpi_score - prev.kpi_score >= 8 && c.kpi_score >= 70) {
+        suggestions.push({
+          id: `rising-${c.cashier}`,
+          pattern: 'rising-star',
+          severity: 'good',
+          kasir: c.cashier,
+          observation: `${c.cashier} KPI minggu ini ${c.kpi_score} — naik ${c.kpi_score - prev.kpi_score} dari minggu lalu (${prev.kpi_score}). Momentum yang bagus.`,
+          suggested_action: 'Apresiasi langsung — kirim WA singkat hari ini, atau sebut di shift briefing. Validasi kerja kerasnya supaya dia tahu effort-nya terlihat.',
+        });
+      }
+
+      // 📉 Upsell decline
+      if (prev && c.upsell_rate != null && prev.upsell_rate != null &&
+          prev.upsell_rate >= 25 && (prev.upsell_rate - c.upsell_rate) >= 15) {
+        suggestions.push({
+          id: `upsell-${c.cashier}`,
+          pattern: 'upsell-decline',
+          severity: 'medium',
+          kasir: c.cashier,
+          observation: `Upsell rate ${c.cashier} minggu ini ${c.upsell_rate}% — turun ${prev.upsell_rate - c.upsell_rate}% dari minggu lalu (${prev.upsell_rate}%).`,
+          suggested_action: 'Ajak ngobrol singkat: apakah ada item upsell yang dia merasa sulit ditawarkan? Mungkin perlu update knowledge ttg fitur produk. Bukan menyalahkan.',
+        });
+      }
+
+      // ⭐ Rating decline
+      if (prev && c.feedback_count >= 3 && prev.feedback_count >= 3 &&
+          c.avg_rating != null && prev.avg_rating != null &&
+          prev.avg_rating >= 4.0 && (prev.avg_rating - c.avg_rating) >= 0.4) {
+        suggestions.push({
+          id: `rating-${c.cashier}`,
+          pattern: 'rating-decline',
+          severity: 'medium',
+          kasir: c.cashier,
+          observation: `Rating ${c.cashier} minggu ini ${c.avg_rating.toFixed(1)}★ — turun ${(prev.avg_rating - c.avg_rating).toFixed(1)} dari minggu lalu (${prev.avg_rating.toFixed(1)}★).`,
+          suggested_action: 'Coba review 2-3 komentar negatif terbaru bersama dia. Bukan untuk menyalahkan, tapi untuk dengarkan dari sudutnya. Mungkin shift dia kena jam ramai berat.',
+        });
+      }
+
+      // 📡 No recent rating despite activity
+      if (c.transactions >= 15 && c.feedback_count === 0) {
+        suggestions.push({
+          id: `silent-${c.cashier}`,
+          pattern: 'no-recent-rating',
+          severity: 'low',
+          kasir: c.cashier,
+          observation: `${c.cashier} sudah handle ${c.transactions} transaksi minggu ini tapi belum ada review customer sama sekali.`,
+          suggested_action: 'Cek apakah QR struk berfungsi di shift dia (mungkin printer error). Atau kasih reminder lembut: "Coba kasih senyum ekstra saat serahkan struk, supaya customer mau scan QR rating."',
+        });
+      }
+
+      // ✖ High void rate
+      if (c.transactions >= 10 && c.voided > 0) {
+        const voidPct = (c.voided / c.transactions) * 100;
+        if (voidPct > Math.max(5, teamAvgVoid * 2)) {
+          suggestions.push({
+            id: `void-${c.cashier}`,
+            pattern: 'high-void-rate',
+            severity: 'medium',
+            kasir: c.cashier,
+            observation: `Void rate ${c.cashier} minggu ini ${voidPct.toFixed(1)}% (${c.voided}/${c.transactions}) — di atas rata-rata tim (${teamAvgVoid.toFixed(1)}%).`,
+            suggested_action: 'Bisa karena salah input, atau customer ganti pesanan. Shadow dia 30 menit untuk lihat pola void-nya. Mungkin shortcut tombol perlu diperjelas.',
+          });
+        }
+      }
+
+      // 🌱 Comeback potential — biasanya hebat, minggu ini drop
+      if (prev && prev.kpi_score != null && c.kpi_score != null &&
+          prev.kpi_score >= 80 && c.kpi_score < 60) {
+        suggestions.push({
+          id: `comeback-${c.cashier}`,
+          pattern: 'comeback-potential',
+          severity: 'high',
+          kasir: c.cashier,
+          observation: `${c.cashier} biasanya KPI ${prev.kpi_score}+ (sangat baik). Minggu ini ${c.kpi_score}. Ada perubahan yang perlu kita tahu?`,
+          suggested_action: 'Ini biasanya bukan masalah skill. Mungkin urusan personal/keluarga, kelelahan, atau konflik tim. Ajak ngobrol pribadi tanpa membawa data. Tanyakan apa kabar dulu.',
+        });
+      }
+    }
+
+    // Sort: good news (rising-star) dulu — manager mulai dgn yg positif.
+    // Lalu severity: high (comeback) → medium → low.
+    const order = { good: 0, high: 1, medium: 2, low: 3 };
+    suggestions.sort((a, b) => (order[a.severity] || 9) - (order[b.severity] || 9));
+
+    return {
+      this_week: { from: weekStart, to: now, cashiers: thisWeek.cashiers.length },
+      last_week: { from: lastWeekStart, to: lastWeekEnd, cashiers: lastWeek.cashiers.length },
+      team_avg_void_pct: Math.round(teamAvgVoid * 10) / 10,
+      suggestions,
+      count: suggestions.length,
+    };
+  }
+
+  router.get('/coaching', (req, res) => {
+    try {
+      res.json(computePatterns(db));
+    } catch (e) {
+      console.error('[coaching]', e);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // ── Highlight Moments — Cerita Berharga ──
   // Saat customer kasih rating tinggi (≥4) + comment yang substansial,
   // itu adalah cerita berharga. Bukan sekadar angka rating, tapi suara

@@ -167,20 +167,23 @@ export default function AdminCashierKPI({ apiBase = "" }) {
   const [preset, setPreset] = useState("today");
 
   const [highlights, setHighlights] = useState([]);
+  const [coaching, setCoaching] = useState([]);
   const [copiedId, setCopiedId] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     const from = tsStart(fromDate), to = tsEnd(toDate);
     try {
-      const [kpiR, srcR, hlR] = await Promise.all([
+      const [kpiR, srcR, hlR, cR] = await Promise.all([
         fetch(`${apiBase}/api/cashier-kpi?from=${from}&to=${to}`).then(r => r.json()),
         fetch(`${apiBase}/api/feedback/by-source?from=${from}&to=${to}`).then(r => r.json()).catch(() => []),
         fetch(`${apiBase}/api/cashier-kpi/highlights?from=${from}&to=${to}&limit=20`).then(r => r.json()).catch(() => ({ highlights: [] })),
+        fetch(`${apiBase}/api/cashier-kpi/coaching`).then(r => r.json()).catch(() => ({ suggestions: [] })),
       ]);
       setData(kpiR);
       setBySource(Array.isArray(srcR) ? srcR : []);
       setHighlights(Array.isArray(hlR?.highlights) ? hlR.highlights : []);
+      setCoaching(Array.isArray(cR?.suggestions) ? cR.suggestions : []);
     } catch { setData(null); }
     setLoading(false);
   }, [apiBase, fromDate, toDate]);
@@ -345,6 +348,50 @@ export default function AdminCashierKPI({ apiBase = "" }) {
           </div>
         </div>
       </div>
+
+      {/* 🌱 Coaching Suggestions — bahasa pertumbuhan utk manager */}
+      {coaching.length > 0 && (
+        <div style={S.card}>
+          <div style={S.label}>🌱 Saran coaching tim — bukan menyalahkan, tapi membantu tumbuh</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 12, marginTop: 8 }}>
+            {coaching.map(s => {
+              const tone = {
+                good:   { bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.30)', accent: '#10B981', icon: '🌟', label: 'Apresiasi' },
+                high:   { bg: 'rgba(167,139,250,0.08)', border: 'rgba(167,139,250,0.30)', accent: '#A78BFA', icon: '🌱', label: 'Perlu obrolan' },
+                medium: { bg: 'rgba(251,191,36,0.06)', border: 'rgba(251,191,36,0.30)', accent: '#FBBF24', icon: '🤝', label: 'Coba bantu' },
+                low:    { bg: 'rgba(34,211,238,0.06)', border: 'rgba(34,211,238,0.25)', accent: '#22D3EE', icon: '💡', label: 'Cek pelan' },
+              }[s.severity] || { bg: 'rgba(148,163,184,0.06)', border: 'rgba(148,163,184,0.25)', accent: '#94a3b8', icon: '•', label: '' };
+              return (
+                <div key={s.id} style={{
+                  background: tone.bg,
+                  border: `1px solid ${tone.border}`,
+                  borderLeft: `4px solid ${tone.accent}`,
+                  borderRadius: 10, padding: '14px 16px',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 18 }}>{tone.icon}</span>
+                      <span style={{ fontSize: 12, color: tone.accent, fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase' }}>{tone.label}</span>
+                    </div>
+                    <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>{s.kasir}</span>
+                  </div>
+                  <div style={{ fontSize: 13, color: '#cbd5e1', lineHeight: 1.55, marginBottom: 10 }}>
+                    {s.observation}
+                  </div>
+                  <div style={{
+                    fontSize: 12.5, color: '#fde68a', lineHeight: 1.55,
+                    padding: '8px 10px', background: 'rgba(0,0,0,0.20)',
+                    borderRadius: 6, fontStyle: 'italic',
+                  }}>
+                    <span style={{ color: tone.accent, fontStyle: 'normal', fontWeight: 600, marginRight: 6 }}>→</span>
+                    {s.suggested_action}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Rating per sales channel */}
       <div style={S.card}>
