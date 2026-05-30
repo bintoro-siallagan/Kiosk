@@ -399,16 +399,16 @@ function PulseTicker({ pulse }) {
   const messages = useMemo(() => {
     if (!pulse) return [];
     const msgs = [];
-    // Threshold: minimal 3 orders biar pulse meaningful (gak awkward saat masih sepi)
-    if (pulse.orders_today >= 3) {
+    // Threshold: minimal 2 orders biar pulse meaningful (gak awkward saat 1 doang)
+    if (pulse.orders_today >= 2) {
       msgs.push({ icon: "💛", text: `${pulse.orders_today} orang sudah pesan hari ini` });
     }
     // Cap last_hour ke orders_today (avoid "12 dalam 1 jam" padahal today cuma 1)
     const lastHour = Math.min(pulse.orders_last_hour || 0, pulse.orders_today || 0);
-    if (lastHour >= 3) {
+    if (lastHour >= 2) {
       msgs.push({ icon: "✨", text: `${lastHour} pesanan baru dalam 1 jam terakhir` });
     }
-    // Only show top item kalau ordered >= 2x (signal real, bukan random satu order)
+    // Top item — show kalau ordered >= 2x
     if (pulse.most_loved_today?.name && pulse.most_loved_today.count >= 2) {
       msgs.push({ icon: "🔥", text: `${pulse.most_loved_today.name} paling laris hari ini (${pulse.most_loved_today.count}x)` });
     }
