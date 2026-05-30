@@ -5506,6 +5506,35 @@ app.get("/api/public/daily-target", (req, res) => {
   }
 });
 
+// PATCH /api/admin/daily-target — owner bisa update target via UI
+app.patch("/api/admin/daily-target", (req, res) => {
+  try {
+    const { target_revenue, target_orders } = req.body || {};
+    const upsert = (key, val) => {
+      if (val == null) return;
+      try {
+        db.rawDb.prepare(`INSERT INTO pos_config (key, value, type) VALUES (?, ?, 'number')
+                         ON CONFLICT(key) DO UPDATE SET value=excluded.value, type=excluded.type`).run(key, String(val));
+      } catch {
+        // Fallback insert/update tanpa ON CONFLICT
+        try { db.rawDb.prepare(`UPDATE pos_config SET value = ? WHERE key = ?`).run(String(val), key); } catch {}
+        try { db.rawDb.prepare(`INSERT OR IGNORE INTO pos_config (key, value, type) VALUES (?, ?, 'number')`).run(key, String(val)); } catch {}
+      }
+    };
+    if (target_revenue != null) {
+      const n = parseInt(target_revenue, 10);
+      if (!isNaN(n) && n > 0) upsert("DAILY_TARGET_REVENUE", n);
+    }
+    if (target_orders != null) {
+      const n = parseInt(target_orders, 10);
+      if (!isNaN(n) && n > 0) upsert("DAILY_TARGET_ORDERS", n);
+    }
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── Recent activity feed — owner pulse timeline ──
 // Returns last N orders + ratings sorted by time desc. Safe public:
 // only order_no (last 4 chars) + first name + minimal status/rating.

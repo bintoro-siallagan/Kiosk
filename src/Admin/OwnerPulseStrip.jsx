@@ -84,8 +84,8 @@ export default function OwnerPulseStrip() {
 }
 
 function GoalProgress({ goal }) {
+  const [editing, setEditing] = useState(false);
   const fmt = (n) => "Rp " + Math.round(n / 1000).toLocaleString("id-ID") + "K";
-  // Encouragement text based on combined avg pct
   const avgPct = Math.round((goal.revenue_pct + goal.orders_pct) / 2);
   const cheer = avgPct >= 100 ? "🏆 Target hari ini tercapai! Luar biasa."
               : avgPct >= 80  ? "🔥 Hampir sampai garis akhir, semangat!"
@@ -97,10 +97,60 @@ function GoalProgress({ goal }) {
       <div style={S.goalHead}>
         <span style={S.goalEyebrow}>🎯 TARGET HARI INI</span>
         <span style={S.goalCheer}>{cheer}</span>
+        <button onClick={() => setEditing(true)} title="Ubah target" style={S.editBtn}>✏️ Edit</button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 10 }}>
         <GoalBar label="Omzet" current={fmt(goal.current_revenue)} target={fmt(goal.target_revenue)} pct={goal.revenue_pct} color="#10b981" />
         <GoalBar label="Order" current={goal.current_orders} target={goal.target_orders} pct={goal.orders_pct} color="#22d3ee" />
+      </div>
+      {editing && <GoalEditModal goal={goal} onClose={() => setEditing(false)} />}
+    </div>
+  );
+}
+
+function GoalEditModal({ goal, onClose }) {
+  const [revenue, setRevenue] = useState(String(goal.target_revenue || 2000000));
+  const [orders, setOrders] = useState(String(goal.target_orders || 30));
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    setSaving(true);
+    const token = (() => { try { return localStorage.getItem("adminToken") || ""; } catch { return ""; } })();
+    try {
+      await fetch(`${API_HOST}/api/admin/daily-target`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
+          target_revenue: parseInt(revenue, 10) || goal.target_revenue,
+          target_orders: parseInt(orders, 10) || goal.target_orders,
+        }),
+      });
+      onClose();
+      setTimeout(() => window.location.reload(), 200);
+    } catch (e) { alert("Gagal save: " + e.message); }
+    setSaving(false);
+  };
+
+  return (
+    <div onClick={onClose} style={S.modalBackdrop}>
+      <div onClick={e => e.stopPropagation()} style={S.modal}>
+        <div style={{ fontSize: 11, color: "#a5b4fc", letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginBottom: 8 }}>🎯 EDIT TARGET HARI INI</div>
+        <div style={{ fontSize: 13, color: "#94a3b8", marginBottom: 16, lineHeight: 1.5 }}>
+          Target ini muncul di Owner Pulse + encourage tim biar punya finish line yg jelas.
+        </div>
+
+        <label style={S.modalLabel}>Target Omzet (Rp)</label>
+        <input type="number" value={revenue} onChange={e => setRevenue(e.target.value)} style={S.modalInput} placeholder="2000000" />
+
+        <label style={{ ...S.modalLabel, marginTop: 14 }}>Target Order (jumlah)</label>
+        <input type="number" value={orders} onChange={e => setOrders(e.target.value)} style={S.modalInput} placeholder="30" />
+
+        <div style={{ display: "flex", gap: 10, marginTop: 22, justifyContent: "flex-end" }}>
+          <button onClick={onClose} style={S.modalCancel}>Cancel</button>
+          <button onClick={save} disabled={saving} style={{ ...S.modalSave, opacity: saving ? 0.5 : 1, cursor: saving ? "not-allowed" : "pointer" }}>
+            {saving ? "Saving..." : "💾 Simpan"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -198,5 +248,40 @@ const S = {
   },
   goalCheer: {
     fontSize: 11, color: "#cbd5e1", fontStyle: "italic", letterSpacing: 0.1,
+  },
+  editBtn: {
+    padding: "3px 10px", background: "rgba(165,180,252,0.10)",
+    border: "1px solid rgba(165,180,252,0.30)", color: "#a5b4fc",
+    borderRadius: 6, fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+  },
+  modalBackdrop: {
+    position: "fixed", inset: 0, background: "rgba(0,0,0,0.78)",
+    backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center",
+    zIndex: 10000, padding: 20,
+  },
+  modal: {
+    background: "#0d1117", border: "1px solid #30363d", borderRadius: 14,
+    padding: 24, maxWidth: 400, width: "100%", fontFamily: "'Inter',sans-serif",
+  },
+  modalLabel: {
+    display: "block", fontSize: 11, color: "#9ca3af", letterSpacing: 1.2,
+    fontFamily: "'Geist Mono',monospace", fontWeight: 700, marginBottom: 4,
+  },
+  modalInput: {
+    width: "100%", padding: "10px 12px", background: "#0a0e16",
+    border: "1px solid #30363d", borderRadius: 8,
+    color: "#fff", fontSize: 16, fontFamily: "'Geist Mono',monospace",
+    fontWeight: 700, outline: "none", boxSizing: "border-box",
+  },
+  modalCancel: {
+    padding: "8px 16px", background: "#161b22", border: "1px solid #30363d",
+    color: "#9ca3af", borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
+  },
+  modalSave: {
+    padding: "8px 18px",
+    background: "linear-gradient(135deg, #6366f1, #4338ca)",
+    color: "#fff", border: "none", borderRadius: 8,
+    fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
+    boxShadow: "0 4px 16px rgba(99,102,241,0.30)",
   },
 };
