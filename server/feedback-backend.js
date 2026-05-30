@@ -31,6 +31,9 @@ function setupFeedback(app, opts = {}) {
   const db = new Database(opts.dbPath || path.join(__dirname, 'data.db'));
   db.pragma('journal_mode = WAL');
   db.exec(SCHEMA);
+  // Migration: outlet_code column buat per-outlet filter (Bintoro: "bisa per outlet kapten?")
+  try { db.exec(`ALTER TABLE customer_feedback ADD COLUMN outlet_code TEXT`); } catch {}
+  try { db.exec(`CREATE INDEX IF NOT EXISTS idx_feedback_outlet ON customer_feedback(outlet_code)`); } catch {}
 
   const router = express.Router();
   router.use(express.json());
@@ -58,11 +61,21 @@ function setupFeedback(app, opts = {}) {
       }
     }
 
+    // Auto-derive outlet_code dari kasir name → admin_users.outlet_code.
+    // Kalau kasir gak ditemukan / outlet kasir kosong, biarkan null (legacy data).
+    let outletResolved = (req.body && req.body.outlet_code) || null;
+    if (!outletResolved && cashierResolved) {
+      try {
+        const row = db.prepare(`SELECT outlet_code FROM admin_users WHERE name = ? AND outlet_code IS NOT NULL LIMIT 1`).get(cashierResolved);
+        if (row?.outlet_code) outletResolved = row.outlet_code;
+      } catch {}
+    }
+
     const info = db.prepare(`
-      INSERT INTO customer_feedback (order_ref, rating, comment, cashier, customer_phone, source)
-      VALUES (?,?,?,?,?,?)
+      INSERT INTO customer_feedback (order_ref, rating, comment, cashier, customer_phone, source, outlet_code)
+      VALUES (?,?,?,?,?,?,?)
     `).run(order_ref || null, r, (comment || '').trim() || null, cashierResolved,
-      customer_phone || null, source || 'pos');
+      customer_phone || null, source || 'pos', outletResolved);
 
     // Audit + alert kalau rating jelek
     try {
@@ -77,21 +90,38 @@ function setupFeedback(app, opts = {}) {
     res.json({ ok: true, id: info.lastInsertRowid });
   });
 
+  // Helper: build WHERE clause utk outlet filter — terima ?outlet=A atau ?outlets=A,B,C
+  // Return { sql: " AND ...", params: [...] } siap di-inject ke query.
+  // (Defensive: kalau column outlet_code belum ada, defer-fail di runtime → return no-op)
+  function outletWhere(req) {
+    const single = req.query.outlet;
+    const multi  = req.query.outlets;
+    if (single) return { sql: ` AND outlet_code = ?`, params: [String(single)] };
+    if (multi) {
+      const arr = String(multi).split(',').map(s => s.trim()).filter(Boolean);
+      if (!arr.length) return { sql: '', params: [] };
+      return { sql: ` AND outlet_code IN (${arr.map(() => '?').join(',')})`, params: arr };
+    }
+    return { sql: '', params: [] };
+  }
+
   // List terbaru
   router.get('/', (req, res) => {
     const limit = Math.min(Number(req.query.limit) || 50, 200);
-    res.json(db.prepare(`SELECT * FROM customer_feedback ORDER BY created_at DESC LIMIT ?`).all(limit));
+    const ow = outletWhere(req);
+    res.json(db.prepare(`SELECT * FROM customer_feedback WHERE 1=1 ${ow.sql} ORDER BY created_at DESC LIMIT ?`).all(...ow.params, limit));
   });
 
   // Ringkasan — buat dashboard / KPI
   router.get('/stats', (req, res) => {
     const from = Number(req.query.from || 0);
+    const ow = outletWhere(req);
     const agg = db.prepare(`
       SELECT COUNT(*) count, COALESCE(AVG(rating), 0) avg_rating
-      FROM customer_feedback WHERE created_at >= ?
-    `).get(from);
+      FROM customer_feedback WHERE created_at >= ? ${ow.sql}
+    `).get(from, ...ow.params);
     const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    for (const d of db.prepare(`SELECT rating, COUNT(*) c FROM customer_feedback WHERE created_at >= ? GROUP BY rating`).all(from)) {
+    for (const d of db.prepare(`SELECT rating, COUNT(*) c FROM customer_feedback WHERE created_at >= ? ${ow.sql} GROUP BY rating`).all(from, ...ow.params)) {
       distribution[d.rating] = d.c;
     }
     res.json({
@@ -105,6 +135,7 @@ function setupFeedback(app, opts = {}) {
   router.get('/by-source', (req, res) => {
     const from = Number(req.query.from || 0);
     const to = Number(req.query.to || Math.floor(Date.now() / 1000));
+    const ow = outletWhere(req);
     res.json(db.prepare(`
       SELECT source,
         COUNT(*) count,
@@ -112,15 +143,16 @@ function setupFeedback(app, opts = {}) {
         SUM(CASE WHEN rating <= 2 THEN 1 ELSE 0 END) bad_count,
         SUM(CASE WHEN rating >= 4 THEN 1 ELSE 0 END) good_count
       FROM customer_feedback
-      WHERE created_at >= ? AND created_at <= ?
+      WHERE created_at >= ? AND created_at <= ? ${ow.sql}
       GROUP BY source
       ORDER BY avg_rating ASC
-    `).all(from, to).map(r => ({ ...r, avg_rating: Math.round(r.avg_rating * 100) / 100 })));
+    `).all(from, to, ...ow.params).map(r => ({ ...r, avg_rating: Math.round(r.avg_rating * 100) / 100 })));
   });
 
   // Per-kasir — buat KPI kasir (feedback jelek → KPI jelek).
   router.get('/by-cashier', (req, res) => {
     const from = Number(req.query.from || 0);
+    const ow = outletWhere(req);
     res.json(db.prepare(`
       SELECT cashier,
         COUNT(*) count,
@@ -128,8 +160,24 @@ function setupFeedback(app, opts = {}) {
         SUM(CASE WHEN rating <= 2 THEN 1 ELSE 0 END) bad_count,
         SUM(CASE WHEN rating >= 4 THEN 1 ELSE 0 END) good_count
       FROM customer_feedback
-      WHERE created_at >= ? AND cashier IS NOT NULL AND cashier != ''
+      WHERE created_at >= ? AND cashier IS NOT NULL AND cashier != '' ${ow.sql}
       GROUP BY cashier
+      ORDER BY avg_rating ASC
+    `).all(from, ...ow.params).map(r => ({ ...r, avg_rating: Math.round(r.avg_rating * 100) / 100 })));
+  });
+
+  // Per-outlet — leaderboard outlet (yg butuh perhatian first)
+  router.get('/by-outlet', (req, res) => {
+    const from = Number(req.query.from || 0);
+    res.json(db.prepare(`
+      SELECT outlet_code,
+        COUNT(*) count,
+        COALESCE(AVG(rating), 0) avg_rating,
+        SUM(CASE WHEN rating <= 2 THEN 1 ELSE 0 END) bad_count,
+        SUM(CASE WHEN rating >= 4 THEN 1 ELSE 0 END) good_count
+      FROM customer_feedback
+      WHERE created_at >= ? AND outlet_code IS NOT NULL AND outlet_code != ''
+      GROUP BY outlet_code
       ORDER BY avg_rating ASC
     `).all(from).map(r => ({ ...r, avg_rating: Math.round(r.avg_rating * 100) / 100 })));
   });
@@ -138,19 +186,21 @@ function setupFeedback(app, opts = {}) {
   router.get('/export.csv', (req, res) => {
     const from = Number(req.query.from || 0);
     const to = Number(req.query.to || Math.floor(Date.now() / 1000));
+    const ow = outletWhere(req);
     const rows = db.prepare(`
-      SELECT created_at, source, cashier, rating, comment, order_ref
-      FROM customer_feedback WHERE created_at BETWEEN ? AND ?
+      SELECT created_at, source, cashier, rating, comment, order_ref, outlet_code
+      FROM customer_feedback WHERE created_at BETWEEN ? AND ? ${ow.sql}
       ORDER BY created_at DESC
-    `).all(from, to);
+    `).all(from, to, ...ow.params);
     const cf = (v) => {
       const s = v == null ? '' : String(v);
       return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
     };
-    const CH = { pos: 'POS', kiosk: 'Kiosk', qr: 'QR Order' };
-    const header = ['Tanggal', 'Channel', 'Kasir', 'Rating', 'Komentar', 'Order Ref'];
+    const CH = { pos: 'POS', kiosk: 'Kiosk', qr: 'QR Order', 'qr-struk': 'QR Struk' };
+    const header = ['Tanggal', 'Outlet', 'Channel', 'Kasir', 'Rating', 'Komentar', 'Order Ref'];
     const body = rows.map(r => [
       new Date((r.created_at || 0) * 1000).toLocaleString('id-ID'),
+      r.outlet_code || '',
       CH[r.source] || r.source || '',
       r.cashier || '',
       r.rating,

@@ -16,6 +16,7 @@
 // atau "Catat tindak lanjut" (future).
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useOutletScope } from "./OutletScopeContext";
 
 const SOURCE_META = {
   pos:    { icon: "💁", label: "POS",         color: "#f97316" },
@@ -58,18 +59,27 @@ function timeAgo(sec) {
 }
 
 export default function AdminCustomerFeedback({ apiBase = "" }) {
+  const { outletCodes, selectedOutlets } = useOutletScope();
   const [period, setPeriod] = useState("week");
   const [ratingFilter, setRatingFilter] = useState("all"); // all | bad (1-2) | mid (3) | good (4-5)
   const [feedback, setFeedback] = useState([]);
   const [stats, setStats] = useState(null);
   const [bySource, setBySource] = useState([]);
   const [byCashier, setByCashier] = useState([]);
+  const [byOutlet, setByOutlet] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const fromSec = useMemo(() => {
     const p = PERIODS.find(x => x.k === period);
     return p?.secs ? Math.floor(Date.now() / 1000) - p.secs : 0;
   }, [period]);
+
+  // Outlet query string — single: ?outlet=X, multi: ?outlets=X,Y
+  const outletQs = useMemo(() => {
+    if (!outletCodes?.length) return "";
+    if (outletCodes.length === 1) return `&outlet=${encodeURIComponent(outletCodes[0])}`;
+    return `&outlets=${outletCodes.map(encodeURIComponent).join(',')}`;
+  }, [outletCodes]);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -78,18 +88,20 @@ export default function AdminCustomerFeedback({ apiBase = "" }) {
       return t ? { Authorization: `Bearer ${t}` } : {};
     })();
     Promise.all([
-      fetch(`${apiBase}/api/feedback?limit=200`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(`${apiBase}/api/feedback/stats?from=${fromSec}`, { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
-      fetch(`${apiBase}/api/feedback/by-source?from=${fromSec}`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(`${apiBase}/api/feedback/by-cashier?from=${fromSec}`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
-    ]).then(([list, st, src, csh]) => {
+      fetch(`${apiBase}/api/feedback?limit=200${outletQs}`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${apiBase}/api/feedback/stats?from=${fromSec}${outletQs}`, { headers }).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`${apiBase}/api/feedback/by-source?from=${fromSec}${outletQs}`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${apiBase}/api/feedback/by-cashier?from=${fromSec}${outletQs}`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`${apiBase}/api/feedback/by-outlet?from=${fromSec}`, { headers }).then(r => r.ok ? r.json() : []).catch(() => []),
+    ]).then(([list, st, src, csh, out]) => {
       setFeedback(Array.isArray(list) ? list : []);
       setStats(st);
       setBySource(Array.isArray(src) ? src : []);
       setByCashier(Array.isArray(csh) ? csh : []);
+      setByOutlet(Array.isArray(out) ? out : []);
       setLoading(false);
     });
-  }, [apiBase, fromSec]);
+  }, [apiBase, fromSec, outletQs]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -102,7 +114,7 @@ export default function AdminCustomerFeedback({ apiBase = "" }) {
   }, [feedback, fromSec, ratingFilter]);
 
   const exportCsv = () => {
-    const url = `${apiBase}/api/feedback/export.csv?from=${fromSec}&to=${Math.floor(Date.now() / 1000)}`;
+    const url = `${apiBase}/api/feedback/export.csv?from=${fromSec}&to=${Math.floor(Date.now() / 1000)}${outletQs}`;
     window.open(url, "_blank");
   };
 
@@ -111,6 +123,14 @@ export default function AdminCustomerFeedback({ apiBase = "" }) {
       <div style={S.intro}>
         💛 <b style={{ color: "#fbbf24" }}>SUARA CUSTOMER</b> — rating + komentar dari QR struk, kiosk, dan POS.
         Setiap suara penting, terutama yang kurang puas — di situ ada peluang tumbuh.
+        {outletCodes?.length > 0 && (
+          <div style={{ marginTop: 6, fontSize: 12, color: "#fbbf24" }}>
+            📍 Filter outlet aktif:&nbsp;
+            <b>{outletCodes.length === 1
+              ? (selectedOutlets[0]?.area || selectedOutlets[0]?.name || outletCodes[0])
+              : `${outletCodes.length} outlet`}</b> · ganti scope di pill 📍 di topbar
+          </div>
+        )}
       </div>
 
       {/* Period + Rating filter */}
@@ -139,6 +159,7 @@ export default function AdminCustomerFeedback({ apiBase = "" }) {
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(280px, 1fr)", gap: 14, marginTop: 14 }}>
         <CommentsList feedback={filteredFeedback} loading={loading} />
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <ByOutletCard data={byOutlet} activeCode={outletCodes?.[0]} />
           <BySourceCard data={bySource} />
           <ByCashierCard data={byCashier} />
         </div>
@@ -254,6 +275,11 @@ function CommentsList({ feedback, loading }) {
                       Kasir: <b style={{ color: "#cbd5e1" }}>{f.cashier}</b>
                     </span>
                   )}
+                  {f.outlet_code && (
+                    <span style={{ fontSize: 10, padding: "2px 6px", borderRadius: 4, background: "rgba(251,191,36,0.10)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.25)", fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>
+                      📍 {f.outlet_code}
+                    </span>
+                  )}
                   {f.order_ref && (
                     <span style={{ fontSize: 10, color: "#5b6470", fontFamily: "'Geist Mono',monospace" }}>
                       #{f.order_ref}
@@ -283,6 +309,46 @@ function CommentsList({ feedback, loading }) {
           );
         })}
       </div>
+    </div>
+  );
+}
+
+function ByOutletCard({ data, activeCode }) {
+  const sorted = data.slice(0, 8);
+  return (
+    <div style={S.card}>
+      <div style={{ fontSize: 10, color: "#94a3b8", letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 700, marginBottom: 12 }}>
+        📍 PER OUTLET
+      </div>
+      {!sorted.length ? (
+        <div style={{ fontSize: 12, color: "#5b6470", fontStyle: "italic" }}>
+          Belum ada data per-outlet. Pastikan kasir punya outlet_code (Admin → User Management).
+        </div>
+      ) : sorted.map((d, i) => {
+        const isActive = activeCode === d.outlet_code;
+        return (
+          <div key={i} style={{ padding: "10px 0", borderTop: i > 0 ? "1px solid #161b22" : "none" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: isActive ? "#fbbf24" : "#e6edf3", fontFamily: "'Geist Mono',monospace" }}>
+                {isActive ? "→ " : ""}{d.outlet_code}
+              </span>
+              <span style={{ fontSize: 14, fontWeight: 800, color: ratingColor(d.avg_rating), fontFamily: "'Geist Mono',monospace" }}>
+                {d.avg_rating.toFixed(1)} ★
+              </span>
+            </div>
+            <div style={{ fontSize: 11, color: "#94a3b8", display: "flex", gap: 12 }}>
+              <span>{d.count} ulasan</span>
+              {d.good_count > 0 && <span style={{ color: "#10b981" }}>👍 {d.good_count}</span>}
+              {d.bad_count > 0 && <span style={{ color: "#ef4444" }}>👎 {d.bad_count}</span>}
+            </div>
+          </div>
+        );
+      })}
+      {data.length > 8 && (
+        <div style={{ fontSize: 10, color: "#5b6470", textAlign: "center", marginTop: 10, fontStyle: "italic" }}>
+          + {data.length - 8} outlet lainnya
+        </div>
+      )}
     </div>
   );
 }
