@@ -85,6 +85,7 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
   const [allOutlets, setAllOutlets] = useState([]);
   const outletBtnRef = useRef(null);
   const [pickerCoords, setPickerCoords] = useState({ top: 0, left: 0 });
+  const [pickerStep, setPickerStep] = useState("list"); // "pin" | "list"
   const [showOutletPicker, setShowOutletPicker] = useState(false);
   const [brand, setBrand] = useState({ name: null, code: null, logoUrl: "/logo.png" });
   useEffect(() => {
@@ -131,6 +132,7 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
         throw new Error(`Role "${role}" tidak punya akses reset outlet`);
       }
       setShowUnlockModal(false);
+      setPickerStep("list");
       setShowOutletPicker(true);
       setUnlockPin("");
       setTimeout(() => setShowOutletPicker(false), 60_000);
@@ -283,19 +285,18 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
           {/* Branch / outlet picker — kalau device-locked: read-only, klik → Manager PIN modal */}
           <div style={{ position: "relative", marginLeft: 12, display: "inline-block" }}>
             <button ref={outletBtnRef} onClick={(e) => {
-              // Skip PIN modal kalau user sudah Manager/Admin/Owner (elevated access).
               const role = (cashier?.role || "").toLowerCase();
               const isElevated = ["manager", "admin", "super-admin", "superadmin", "owner"].includes(role);
-              if (isDeviceLocked && !isElevated && !showOutletPicker) {
-                setShowUnlockModal(true);
-              } else {
-                // Compute coords sebelum buka — dropdown render via portal di body
-                if (outletBtnRef.current) {
-                  const r = outletBtnRef.current.getBoundingClientRect();
-                  setPickerCoords({ top: r.bottom + 6, left: r.left });
-                }
-                setShowOutletPicker(s => !s);
+              // Compute coords — inline panel render via portal di body
+              if (outletBtnRef.current) {
+                const r = outletBtnRef.current.getBoundingClientRect();
+                setPickerCoords({ top: r.bottom + 6, left: r.left });
               }
+              // Device-locked + non-elevated → PIN inline. Else langsung list.
+              setPickerStep(isDeviceLocked && !isElevated ? "pin" : "list");
+              setUnlockPin("");
+              setUnlockErr("");
+              setShowOutletPicker(s => !s);
             }} style={{
               padding: "4px 10px", borderRadius: 999,
               background: outletInfo.name ? "rgba(56,189,248,0.12)" : "rgba(245,158,11,0.1)",
@@ -326,12 +327,50 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
                 position: "fixed", top: pickerCoords.top, left: pickerCoords.left,
                 background: "#1a1d29",
                 border: "1px solid rgba(56,189,248,0.45)",
-                borderRadius: 12, padding: 8, minWidth: 320, maxHeight: 380, overflowY: "auto",
+                borderRadius: 12, padding: 8, minWidth: 320, maxHeight: 480, overflowY: "auto",
                 boxShadow: "0 20px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(56,189,248,0.30)",
                 zIndex: 100000,
                 fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif",
                 color: "#fff",
               }}>
+                {pickerStep === "pin" ? (
+                  <div style={{ padding: "8px 6px 4px" }}>
+                    <div style={{ padding: "2px 6px 10px", fontSize: 11, color: "#fbbf24", fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase", borderBottom: "1px solid rgba(255,255,255,0.08)", marginBottom: 10 }}>
+                      🔒 Manager PIN
+                    </div>
+                    <div style={{ fontSize: 12, color: "#cbd5e1", marginBottom: 10, padding: "0 4px", lineHeight: 1.5 }}>
+                      Outlet terkunci di device ini.<br/>
+                      Masukkan PIN Manager untuk ganti.
+                    </div>
+                    <input
+                      type="password" inputMode="numeric" maxLength={6}
+                      autoFocus
+                      value={unlockPin}
+                      onChange={(e) => { setUnlockPin(e.target.value.replace(/\D/g, "")); setUnlockErr(""); }}
+                      onKeyDown={(e) => { if (e.key === "Enter" && unlockPin.length === 6) tryUnlock(); }}
+                      placeholder="••••••"
+                      style={{
+                        width: "100%", padding: "12px 14px",
+                        background: "#0f1218", border: "1px solid rgba(56,189,248,0.35)",
+                        borderRadius: 8, color: "#fff", fontSize: 22, textAlign: "center",
+                        fontFamily: "'Geist Mono',monospace", letterSpacing: 8,
+                        outline: "none", boxSizing: "border-box",
+                      }}
+                    />
+                    {unlockErr && (
+                      <div style={{ fontSize: 11, color: "#f87171", marginTop: 8, padding: "0 4px" }}>{unlockErr}</div>
+                    )}
+                    <button onClick={tryUnlock} disabled={unlockPin.length !== 6} style={{
+                      marginTop: 10, width: "100%", padding: "10px 12px",
+                      background: unlockPin.length === 6 ? "linear-gradient(135deg, #38BDF8, #0ea5e9)" : "rgba(255,255,255,0.06)",
+                      color: unlockPin.length === 6 ? "#0a0a0f" : "#64748b",
+                      border: "none", borderRadius: 8, fontSize: 13, fontWeight: 800,
+                      cursor: unlockPin.length === 6 ? "pointer" : "not-allowed",
+                      letterSpacing: 0.5,
+                    }}>BUKA</button>
+                  </div>
+                ) : (
+                  <>
                 <div style={{ padding: "10px 12px 8px", fontSize: 11, color: "#38BDF8", fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase", borderBottom: "1px solid rgba(255,255,255,0.08)", marginBottom: 4 }}>
                   📍 Pilih Outlet ({allOutlets.length})
                 </div>
@@ -359,6 +398,8 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
                     {outletInfo.code === o.code && <span style={{ color: "#38BDF8", fontSize: 16 }}>✓</span>}
                   </button>
                 ))}
+                  </>
+                )}
               </div>
               </>,
               document.body
