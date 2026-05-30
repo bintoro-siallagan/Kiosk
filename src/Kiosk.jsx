@@ -743,9 +743,39 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           </div>
           <div style={{display:"flex",alignItems:"center",gap:12}}>
             <div style={K.headerTime}>{time.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</div>
-            <button style={K.resetBtn} onClick={()=>{clearCart();setOrderType(null);}}>✕ Reset</button>
+            <button style={K.resetBtn} onClick={()=>{clearCart();setOrderType(null);}}>✕ Ulang</button>
           </div>
         </div>
+
+        {/* Greeting bar — time-aware warm sapaan */}
+        {(() => {
+          const h = new Date().getHours();
+          let greet, sub, emoji;
+          if (h >= 5 && h < 11)      { greet = "Selamat pagi"; sub = "Mau coba menu pagi kami?"; emoji = "🌅"; }
+          else if (h >= 11 && h < 15){ greet = "Selamat siang"; sub = "Sudah waktunya menyenangkan diri sendiri"; emoji = "☀️"; }
+          else if (h >= 15 && h < 18){ greet = "Selamat sore"; sub = "Cocoknya yg manis-manis nih"; emoji = "🌤️"; }
+          else if (h >= 18 && h < 22){ greet = "Selamat malam"; sub = "Mau coba yg paling enak hari ini?"; emoji = "🌙"; }
+          else                       { greet = "Halo, masih semangat ya"; sub = "Kami juga masih nemenin"; emoji = "✨"; }
+          return (
+            <div style={{
+              padding: "16px 24px 12px",
+              borderBottom: "1px solid rgba(255,255,255,0.04)",
+              background: "linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 8%, transparent), transparent)",
+              display: "flex", alignItems: "center", gap: 14,
+              animation: "fadeIn 0.6s ease-out",
+            }}>
+              <div style={{
+                fontSize: 32, lineHeight: 1,
+                filter: "drop-shadow(0 4px 12px color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent))",
+                animation: "emptyFloat 3s ease-in-out infinite",
+              }}>{emoji}</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "'Inter',sans-serif", fontSize: 18, fontWeight: 800, color: "#fff", letterSpacing: "-0.4px", lineHeight: 1.2 }}>{greet} 🙂</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.62)", marginTop: 3, fontFamily: "'Inter',sans-serif", letterSpacing: 0.1 }}>{sub}</div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Category tabs — sticky at top, pill style */}
         <div style={K.catBar} className="cat-scroll">
@@ -823,14 +853,14 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           <div>
             <h2 style={K.cartPanelTitle}>
               <span style={{ fontSize: 22 }}>🛒</span>
-              Your Order
+              Pesanan Anda
             </h2>
             <div key={cartCount} className={cartCount>0?"cart-bump":""} style={K.cartPanelSub}>
-              {cartCount>0 ? `${cartCount} item${cartCount===1?"":"s"} · ready to order` : "No items yet · pick favorites"}
+              {cartCount>0 ? `${cartCount} item · siap dipesan` : "Pilih favorit hari ini ✨"}
             </div>
           </div>
           {cart.length>0 && (
-            <button onClick={clearCart} style={K.clearAllBtn}>Clear</button>
+            <button onClick={clearCart} style={K.clearAllBtn}>Bersihkan</button>
           )}
         </div>
 
@@ -838,15 +868,29 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
         <div style={K.cartPanelBody}>
           {cart.length===0 ? (
             <div style={K.emptyCartPanel}>
-              <div style={{position:"relative",width:120,height:120,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <div style={{position:"absolute",inset:0,borderRadius:"50%",background:"radial-gradient(circle,color-mix(in srgb,var(--brand-primary,#FF6B35) 14%,transparent),transparent 65%)",filter:"blur(20px)"}}/>
-                <div style={{fontSize:54,opacity:.5,position:"relative"}}>🛍️</div>
+              <div style={{position:"relative",width:140,height:140,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <div style={{position:"absolute",inset:0,borderRadius:"50%",background:"radial-gradient(circle,color-mix(in srgb,var(--brand-primary,#FF6B35) 22%,transparent),transparent 65%)",filter:"blur(24px)",animation:"emptyGlow 3.5s ease-in-out infinite"}}/>
+                <div style={{fontSize:68,position:"relative",animation:"emptyFloat 3s ease-in-out infinite",filter:"drop-shadow(0 8px 20px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent))"}}>{(() => {
+                  const h = new Date().getHours();
+                  if (h >= 5 && h < 11) return "🌅";
+                  if (h >= 11 && h < 15) return "☀️";
+                  if (h >= 15 && h < 18) return "🌤️";
+                  if (h >= 18 && h < 22) return "🌙";
+                  return "✨";
+                })()}</div>
               </div>
-              <div style={K.emptyTitle}>Your cart is empty</div>
-              <div style={K.emptyHint}>Browse the menu on the left to start your order</div>
+              <div style={K.emptyTitle}>{(() => {
+                const h = new Date().getHours();
+                if (h >= 5 && h < 11) return "Selamat pagi 🙂";
+                if (h >= 11 && h < 15) return "Selamat siang 🙂";
+                if (h >= 15 && h < 18) return "Selamat sore 🙂";
+                if (h >= 18 && h < 22) return "Selamat malam 🙂";
+                return "Halo, masih bersama kami ✨";
+              })()}</div>
+              <div style={K.emptyHint}>Lagi pengen apa hari ini?<br/>Pilih dari menu, kami siapkan dgn hangat.</div>
               <div style={K.emptyChip}>
                 <span style={{animation:"arrowPulse 1.8s ease-in-out infinite"}}>←</span>
-                <span>tap a dish to begin</span>
+                <span>tap menu favorit Anda</span>
               </div>
             </div>
           ) : (
@@ -1000,12 +1044,12 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
               </div>
               <button onClick={goToConfirm} className="lg lg-brand order-pill"
                 style={K.cartCheckoutBtn}>
-                Checkout →
+                Lanjut Bayar →
               </button>
             </>
           ) : (
             <button disabled style={K.cartCheckoutDisabled}>
-              Select a dish to continue
+              Pilih menu dulu yuk
             </button>
           )}
         </div>
@@ -1016,7 +1060,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
         <div className="lg" style={K.toast} onClick={()=>setToast(null)}>
           <span style={K.toastIcon}>{toast.emoji || "🍦"}</span>
           <div style={{display:"flex",flexDirection:"column",gap:1}}>
-            <span style={K.toastTitle}>Added to cart</span>
+            <span style={K.toastTitle}>Masuk keranjang ✨</span>
             <span style={K.toastName}>{toast.name}</span>
           </div>
           <span style={K.toastCheck}>✓</span>
@@ -1101,6 +1145,9 @@ const KIOSK_CSS = `
   @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
   @keyframes idlePulse{0%,100%{opacity:1}50%{opacity:0.5}}
   @keyframes arrowPulse{0%,100%{opacity:0.3;transform:translateX(0)}50%{opacity:0.8;transform:translateX(-4px)}}
+  @keyframes emptyFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+  @keyframes emptyGlow{0%,100%{opacity:0.6;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
+  @keyframes cardWarmth{0%,100%{box-shadow:0 4px 12px rgba(0,0,0,0.35),0 24px 60px rgba(0,0,0,0.55)}50%{box-shadow:0 4px 14px rgba(0,0,0,0.4),0 24px 64px rgba(0,0,0,0.58),0 0 22px color-mix(in srgb,var(--brand-primary,#FF6B35) 8%,transparent)}}
   @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
   @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
   @keyframes breathe{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:.85;transform:scale(1.04)}}
@@ -1330,7 +1377,7 @@ const K = {
   catBtn:     {background:"rgba(255,255,255,0.025)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:999,padding:"9px 18px",color:"rgba(255,255,255,0.6)",fontSize:13,whiteSpace:"nowrap",minHeight:38,flexShrink:0,fontWeight:500,letterSpacing:"-0.2px",fontFamily:"'Inter',sans-serif",cursor:"pointer",transition:"all 0.18s cubic-bezier(.2,.8,.2,1)"},
   catActive:  {background:"linear-gradient(180deg,var(--brand-primary,#FF6B35),var(--brand-secondary,#E55A2B))",border:"1px solid rgba(255,255,255,0.16)",color:"#fff",fontWeight:600,boxShadow:"inset 0 1px 0 rgba(255,255,255,0.22),0 4px 14px color-mix(in srgb,var(--brand-primary,#FF6B35) 32%,transparent)"},
   // 5-column grid for menu items
-  menuGrid5:  {display:"grid",gridTemplateColumns:"repeat(5,1fr)",gap:12,padding:"16px 20px"},
+  menuGrid5:  {display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:16,padding:"18px 22px"},
 
   // ── MENU GRID ──
   grid:       {display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(180px,1fr))",gap:12},
