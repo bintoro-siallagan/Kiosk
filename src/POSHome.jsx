@@ -192,13 +192,23 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
   async function handleCloseDay() {
     if (!window.confirm("TUTUP HARI?\n\nShift aktif ikut ditutup, dan TIDAK ADA yang bisa order sampai Manager 'Open Day'. Summary transaksi today akan dicetak" + " (& dikirim email bila email aktif).")) return;
     try {
+      const adminToken = cashier?.token
+        || localStorage.getItem("adminToken")
+        || localStorage.getItem("posToken")
+        || "";
       const r = await fetch(`${API_BASE}/api/day/close?vertical=fnb`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ by: cashier.name || "Manager", vertical: "fnb" }),
+        headers: {
+          "Content-Type": "application/json",
+          ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {}),
+        },
+        body: JSON.stringify({ by: cashier?.name || "Manager", vertical: "fnb" }),
       });
-      const data = await r.json();
-      if (data.reportHtml) {
+      const data = await r.json().catch(() => null);
+      if (!r.ok) {
+        throw new Error((data && data.error) || `HTTP ${r.status} ${r.statusText || ""}`.trim());
+      }
+      if (data && data.reportHtml) {
         const w = window.open("", "_blank", "width=640,height=820");
         if (w) {
           w.document.write(`<html><head><title>Close Day — KaryaOS</title></head><body style="margin:24px" onload="setTimeout(function(){window.print()},300)">${data.reportHtml}</body></html>`);
@@ -206,9 +216,9 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
         }
       }
       // Ceremonial closing ritual — bukan langsung logout, beri momen apresiasi
-      setClosingRitual(data?.report || data?.summary || {});
+      setClosingRitual((data && (data.report || data.summary)) || {});
     } catch (e) {
-      alert("Gagal tutup hari: " + e.message);
+      alert("Gagal tutup hari: " + (e?.message || e));
       return;
     }
   }

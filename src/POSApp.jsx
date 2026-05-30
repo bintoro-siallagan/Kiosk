@@ -138,6 +138,10 @@ export default function POSApp() {
 
   const handleLogin = (user) => {
     sessionStorage.setItem("posCashier", JSON.stringify(user));
+    // Persist auth token agar fetch ke endpoint protected (requireAdmin) ga 401
+    if (user?.token) {
+      try { localStorage.setItem("adminToken", user.token); } catch {}
+    }
     // Auto-bind outlet dari user record kalau admin sudah set
     if (user?.outlet_code) {
       localStorage.setItem("posOutlet", user.outlet_code);
