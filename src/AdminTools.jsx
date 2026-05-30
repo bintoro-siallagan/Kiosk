@@ -14,6 +14,7 @@ const AdminAggregator             = lazy(() => import("./Admin/AdminAggregator.j
 const AdminPaymentGateway         = lazy(() => import("./Admin/AdminPaymentGateway.jsx"));
 const AdminLoyalty                = lazy(() => import("./Admin/AdminLoyalty.jsx"));
 const AdminCashierKPI             = lazy(() => import("./Admin/AdminCashierKPI.jsx"));
+const AdminCustomerFeedback       = lazy(() => import("./Admin/AdminCustomerFeedback.jsx"));
 const AdminChecklist              = lazy(() => import("./Admin/AdminChecklist.jsx"));
 const AdminHRIS                   = lazy(() => import("./Admin/AdminHRIS.jsx"));
 const AdminBroadcast              = lazy(() => import("./Admin/AdminBroadcast.jsx"));
@@ -270,6 +271,7 @@ export default function AdminTools({ initialTab }) {
         {tab === "payment" && <AdminPaymentGateway apiBase={API} />}
         {tab === "loyalty" && <AdminLoyalty apiBase={API} />}
         {tab === "cashier_kpi" && <AdminCashierKPI apiBase={API} />}
+        {tab === "customer_feedback" && <AdminCustomerFeedback apiBase={API} />}
         {tab === "checklist" && <AdminChecklist apiBase={API} />}
         {tab === "hris" && <AdminHRIS apiBase={API} />}
         {tab === "broadcast" && <AdminBroadcast apiBase={API} />}

@@ -603,7 +603,8 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
 
   const columns = [
     { title: "📊 Dashboard", accent: "#f59e0b", items: [
-      { label: "Owner Dashboard", icon: "📊", c: "#f59e0b", on: () => openRight("tools", "dashboard") },
+      { label: "Owner Dashboard",     icon: "📊", c: "#f59e0b", on: () => openRight("tools", "dashboard") },
+      { label: "💛 Suara Customer",   icon: "💛", c: "#fbbf24", on: () => openRight("tools", "customer_feedback") },
     ] },
     { title: "🏪 F&B Outlet", accent: "#22d3ee", vertical: "fnb", items: [
       { label: "Orders",           icon: "🧾", c: "#10b981", on: () => openRight("admin", "orders") },

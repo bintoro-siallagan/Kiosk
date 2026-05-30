@@ -14,6 +14,7 @@ export const TABS = [
   { id: "departments",          label: "🏢 Departments",               color: "#3b82f6" },
   { id: "checklist",            label: "✅ Checklists",                color: "#10B981" },
   { id: "cashier_kpi",          label: "📊 Cashier KPI",               color: "#34D399" },
+  { id: "customer_feedback",    label: "💛 Suara Customer",           color: "#fbbf24" },
   { id: "user_kpi",             label: "📊 User KPI",                  color: "#a855f7" },
   { id: "gudang",               label: "📦 Warehouse",                 color: "#3B82F6" },
   { id: "waste",                label: "🗑️ Waste Log",                 color: "#F97316" },
@@ -197,7 +198,7 @@ export const TABS = [
 // Urutan value-chain enterprise: Operasi → Product → Inventory → Commerce
 // → Finance → HRIS → Customer → Security. Tiap grup urut alur kerja.
 export const GROUPS = [
-  { name: "Dashboard", icon: "📊", module: "pos", ids: ["dashboard", "optimization"] },
+  { name: "Dashboard", icon: "📊", module: "pos", ids: ["dashboard", "optimization", "customer_feedback"] },
   { name: "Operations & Outlets", icon: "🛰️", module: "pos", ids: ["outlet_master", "staff", "admin_users", "departments", "checklist", "cashier_kpi", "user_kpi", "shift_roster", "gudang", "waste", "asset_maintenance", "quality", "incidents", "escalation", "compliance", "document_hub", "helpdesk", "notif_center", "config", "audit", "email_config", "outlet_pin_config", "remote_ops_command", "outlet_launch", "service_visit"] },
   // 🎬 Cinema vertical — dedicated top-level group dengan 4 sub-kategori.
   // Sub-grouping via `categories` field; AdminHome rail renderer support nested.
