@@ -351,18 +351,22 @@ export default function FlowCheckout({
             <div style={S.qrPolling}>● Menunggu pembayaran</div>
           </>)}
 
-          {qrStep === "paid" && (<>
-            <div style={S.successIcon}>✅</div>
-            <div style={S.successTitle}>Payment Successful!</div>
-            <div style={S.successSub}>Menyimpan pesanan...</div>
-          </>)}
+          {qrStep === "paid" && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, padding: 24 }}>
+              <div style={S.successIcon}>✅</div>
+              <div style={S.successTitle}>Payment Successful!</div>
+              <div style={S.successSub}>Menyimpan pesanan...</div>
+            </div>
+          )}
 
-          {qrStep === "error" && (<>
-            <div style={S.errorIcon}>⚠️</div>
-            <div style={S.errorTitle}>Ada Masalah</div>
-            <div style={S.errorMsg}>{error || "Payment processing failed"}</div>
-            <button onClick={cancelQR} style={S.errorBtn}>Back</button>
-          </>)}
+          {qrStep === "error" && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: 24 }}>
+              <div style={S.errorIcon}>⚠️</div>
+              <div style={S.errorTitle}>Ada Masalah</div>
+              <div style={S.errorMsg}>{error || "Payment processing failed"}</div>
+              <button onClick={cancelQR} style={S.errorBtn}>Back</button>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -704,11 +708,11 @@ const S = {
   qrDeeplink: { fontSize: 13, color: "#3B82F6", textDecoration: "none", marginTop: 12, padding: "10px 16px", background: "rgba(59,130,246,0.1)", border: "1px solid rgba(59,130,246,0.3)", borderRadius: 10, fontWeight: 600 },
   qrOrderId: { fontSize: 10, color: "#6B7280", marginTop: 8 },
   qrPolling: { fontSize: 12, color: "#10B981", animation: "pulse 1.5s infinite", marginTop: 6, fontWeight: 600 },
-  successIcon: { fontSize: 80, animation: "successPop 0.6s ease" },
-  successTitle: { fontSize: 22, fontWeight: 800, color: "#10B981" },
-  successSub: { fontSize: 13, color: "#9CA3AF" },
-  errorIcon: { fontSize: 64 },
-  errorTitle: { fontSize: 20, fontWeight: 800, color: "#F87171" },
-  errorMsg: { fontSize: 13, color: "#9CA3AF", maxWidth: 320 },
+  successIcon: { fontSize: 80, lineHeight: 1, animation: "successPop 0.6s ease", margin: 0 },
+  successTitle: { fontSize: 22, fontWeight: 800, color: "#10B981", lineHeight: 1.2, margin: 0, textShadow: "0 2px 12px rgba(16,185,129,0.30)" },
+  successSub: { fontSize: 13, color: "#9CA3AF", lineHeight: 1.4, margin: 0 },
+  errorIcon: { fontSize: 64, lineHeight: 1, margin: 0 },
+  errorTitle: { fontSize: 20, fontWeight: 800, color: "#F87171", lineHeight: 1.2, margin: 0 },
+  errorMsg: { fontSize: 13, color: "#9CA3AF", maxWidth: 320, lineHeight: 1.5, margin: 0, textAlign: "center" },
   errorBtn: { marginTop: 12, padding: "12px 24px", borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid #2a2a2a", color: "white", fontSize: 13, cursor: "pointer", fontFamily: "inherit" },
 };
