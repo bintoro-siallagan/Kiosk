@@ -253,8 +253,36 @@ export default function OutletSetupWizard({ onClose, onDone }) {
     setMsg("");
   };
 
+  // Detect kalau wizard punya progress real (lebih dari step 0 default state)
+  const hasProgress = () => {
+    if (stepIdx > 0) return true;
+    if (Object.keys(savedFlags).length > 0) return true;
+    const def = defaultState();
+    // Cek field outlet yg paling sering keisi pertama
+    if (data.outlet.name !== def.outlet.name) return true;
+    if (data.outlet.code !== def.outlet.code) return true;
+    if (data.outlet.area !== def.outlet.area) return true;
+    return false;
+  };
+
+  // Close intentional (via tombol ✕) — confirm kalau ada progress
+  const handleCloseRequest = () => {
+    if (hasProgress()) {
+      if (!window.confirm("Tutup wizard?\n\nProgress kapten otomatis tersimpan — bisa lanjut kapan saja klik ✨ Setup Outlet lagi.")) return;
+    }
+    onClose?.();
+  };
+
+  // Click backdrop — gak boleh accidental close. Kasih hint pertama, baru
+  // kedua kali confirm (double-tap guard). Yang gak punya progress sama sekali
+  // langsung tutup (gak ada yg hilang).
+  const handleBackdropClick = () => {
+    if (!hasProgress()) { onClose?.(); return; }
+    setMsg("ℹ Klik tombol ✕ kanan-atas untuk tutup wizard (anti gak sengaja close).");
+  };
+
   return (
-    <div style={S.backdrop} onClick={onClose}>
+    <div style={S.backdrop} onClick={handleBackdropClick}>
       <div style={S.modal} onClick={e => e.stopPropagation()}>
         {/* Header */}
         <div style={S.header}>
@@ -263,7 +291,7 @@ export default function OutletSetupWizard({ onClose, onDone }) {
             <div style={S.title}>Buka 1 Lokasi F&B Lengkap</div>
             <div style={S.subtitle}>POS · Kiosk · KDS · Digital Signage — semua dalam satu alur</div>
           </div>
-          <button onClick={onClose} style={S.closeBtn}>✕</button>
+          <button onClick={handleCloseRequest} style={S.closeBtn} title="Tutup wizard (progress tersimpan)">✕</button>
         </div>
 
         {/* Stepper */}
@@ -336,6 +364,10 @@ export default function OutletSetupWizard({ onClose, onDone }) {
 
 function StepOutlet({ data, update }) {
   const autoCode = () => {
+    // Anti-accidental override: kalau code sudah ada, confirm dulu
+    if (data.code && data.code.trim()) {
+      if (!window.confirm(`Ganti kode outlet "${data.code}" dengan kode auto-generate?\n\nKalau mau pakai kode kapten, klik Cancel — kode sekarang dipertahankan.`)) return;
+    }
     const slug = (data.area || data.city || "OTL").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6) || "OTL";
     const rand = String(Math.floor(Math.random() * 900) + 100);
     update({ code: `OTL-${slug}-${rand}` });
@@ -351,10 +383,12 @@ function StepOutlet({ data, update }) {
       <Field label="Kota">
         <input value={data.city} onChange={e => update({ city: e.target.value })} placeholder="Bandung" style={S.input} />
       </Field>
-      <Field label="Kode Outlet" hint="Identifier internal — dipakai di URL kiosk, KDS, signage device">
+      <Field label="Kode Outlet" hint="Identifier internal — dipakai di URL kiosk, KDS, signage device. Ketik bebas, atau klik ✨ kalau mau auto.">
         <div style={{ display: "flex", gap: 8 }}>
           <input value={data.code} onChange={e => update({ code: e.target.value.toUpperCase() })} placeholder="OTL-PSK-001" style={{ ...S.input, flex: 1, fontFamily: "'Geist Mono',monospace" }} />
-          <button onClick={autoCode} style={S.smallBtn}>✨ Generate</button>
+          <button onClick={autoCode} style={S.smallBtn} title={data.code ? "Replace kode existing" : "Auto-generate kode"}>
+            {data.code ? "🔄 Re-Generate" : "✨ Generate"}
+          </button>
         </div>
       </Field>
       <div style={S.infoBox}>
