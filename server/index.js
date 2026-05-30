@@ -5465,6 +5465,47 @@ app.get("/api/public/cinema-pulse", (req, res) => {
   }
 });
 
+// ── Daily target tracker — owner motivasi visual ──
+// GET /api/public/daily-target?outlet=X (optional)
+// Returns target (from pos_config or default) + current progress
+app.get("/api/public/daily-target", (req, res) => {
+  try {
+    const todayStartMs = new Date().setHours(0, 0, 0, 0);
+    const getConfigInt = (key, def) => {
+      try {
+        const row = db.rawDb.prepare(`SELECT value FROM pos_config WHERE key = ?`).get(key);
+        if (!row?.value) return def;
+        let v = row.value;
+        try { v = JSON.parse(v); } catch {}
+        const n = parseInt(v, 10);
+        return isNaN(n) ? def : n;
+      } catch { return def; }
+    };
+    // Default targets — owner bisa override via pos_config
+    const targetRevenue = getConfigInt("DAILY_TARGET_REVENUE", 2000000); // Rp 2jt
+    const targetOrders  = getConfigInt("DAILY_TARGET_ORDERS",  30);
+
+    let currentRevenue = 0, currentOrders = 0;
+    try {
+      const r = db.rawDb.prepare(`SELECT COUNT(*) c, COALESCE(SUM(total),0) s FROM orders WHERE time >= ? AND status != 'cancelled'`).get(todayStartMs);
+      currentOrders = r?.c || 0;
+      currentRevenue = r?.s || 0;
+    } catch {}
+
+    res.json({
+      target_revenue: targetRevenue,
+      target_orders: targetOrders,
+      current_revenue: currentRevenue,
+      current_orders: currentOrders,
+      revenue_pct: targetRevenue > 0 ? Math.min(100, Math.round((currentRevenue / targetRevenue) * 100)) : 0,
+      orders_pct: targetOrders > 0 ? Math.min(100, Math.round((currentOrders / targetOrders) * 100)) : 0,
+      generated_at: Math.floor(Date.now() / 1000),
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── Recent activity feed — owner pulse timeline ──
 // Returns last N orders + ratings sorted by time desc. Safe public:
 // only order_no (last 4 chars) + first name + minimal status/rating.
