@@ -309,31 +309,38 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
                 <>⚠ PILIH OUTLET ▾</>
               )}
             </button>
-            {showOutletPicker && allOutlets.length > 0 && (
+            {showOutletPicker && (
               <div style={{
-                position: "absolute", top: "100%", left: 0, marginTop: 6,
-                background: "rgba(15,17,23,0.97)", border: "1px solid rgba(56,189,248,0.35)",
-                borderRadius: 12, padding: 6, minWidth: 280, maxHeight: 360, overflowY: "auto",
-                boxShadow: "0 12px 36px rgba(0,0,0,0.6), 0 0 0 1px rgba(56,189,248,0.2)",
-                zIndex: 99999, backdropFilter: "blur(20px)",
+                position: "absolute", top: "100%", left: 0, marginTop: 8,
+                background: "#1a1d29",
+                border: "1px solid rgba(56,189,248,0.45)",
+                borderRadius: 12, padding: 8, minWidth: 320, maxHeight: 380, overflowY: "auto",
+                boxShadow: "0 20px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(56,189,248,0.30)",
+                zIndex: 99999,
               }}>
-                <div style={{ padding: "8px 12px 6px", fontSize: 10, color: "#9ca3af", fontWeight: 700, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                  🍦 Pilih Outlet F&B
+                <div style={{ padding: "10px 12px 8px", fontSize: 11, color: "#38BDF8", fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase", borderBottom: "1px solid rgba(255,255,255,0.08)", marginBottom: 4 }}>
+                  📍 Pilih Outlet ({allOutlets.length})
                 </div>
+                {allOutlets.length === 0 && (
+                  <div style={{ padding: "16px 12px", color: "#9ca3af", fontSize: 12, textAlign: "center", lineHeight: 1.5 }}>
+                    Belum ada outlet terdaftar.<br/>
+                    <span style={{ fontSize: 10, color: "#6b7280" }}>Tambah via Admin → Outlet Master.</span>
+                  </div>
+                )}
                 {allOutlets.map(o => (
                   <button key={o.code} onClick={() => pickOutlet(o.code)} style={{
                     display: "flex", width: "100%", textAlign: "left",
-                    padding: "8px 12px", marginTop: 2,
-                    background: outletInfo.code === o.code ? "rgba(56,189,248,0.18)" : "transparent",
+                    padding: "10px 12px", marginTop: 2,
+                    background: outletInfo.code === o.code ? "rgba(56,189,248,0.20)" : "transparent",
                     border: "none", color: "#fff", fontSize: 13,
                     borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
                     justifyContent: "space-between", alignItems: "center", gap: 8,
                   }}
-                    onMouseEnter={(e) => { if (outletInfo.code !== o.code) e.currentTarget.style.background = "rgba(56,189,248,0.08)"; }}
+                    onMouseEnter={(e) => { if (outletInfo.code !== o.code) e.currentTarget.style.background = "rgba(56,189,248,0.10)"; }}
                     onMouseLeave={(e) => { if (outletInfo.code !== o.code) e.currentTarget.style.background = "transparent"; }}>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.name}</div>
-                      <div style={{ fontSize: 10, color: "#9ca3af", fontFamily: "'Geist Mono',monospace", marginTop: 2 }}>{o.code}{o.area ? ` · ${o.area}` : ""}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{o.name}</div>
+                      <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'Geist Mono',monospace", marginTop: 3 }}>{o.code}{o.area ? ` · ${o.area}` : ""}</div>
                     </div>
                     {outletInfo.code === o.code && <span style={{ color: "#38BDF8", fontSize: 16 }}>✓</span>}
                   </button>
