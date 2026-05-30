@@ -280,7 +280,11 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
           {/* Branch / outlet picker — kalau device-locked: read-only, klik → Manager PIN modal */}
           <div style={{ position: "relative", marginLeft: 12, display: "inline-block" }}>
             <button onClick={() => {
-              if (isDeviceLocked && !showOutletPicker) {
+              // Skip PIN modal kalau user sudah Manager/Admin/Owner (elevated access).
+              // Cuma kasir biasa yg butuh re-auth via Manager PIN buat ganti outlet.
+              const role = (cashier?.role || "").toLowerCase();
+              const isElevated = ["manager", "admin", "super-admin", "superadmin", "owner"].includes(role);
+              if (isDeviceLocked && !isElevated && !showOutletPicker) {
                 setShowUnlockModal(true);
               } else {
                 setShowOutletPicker(s => !s);
