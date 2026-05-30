@@ -102,8 +102,14 @@ export default function TouchNumpad({ autoAttach = true }) {
   }, []);
 
   // Auto-attach global focus listener — bekerja untuk input yg gak pakai TouchInput wrapper
+  // PENTING: cuma trigger di TOUCHSCREEN device. Desktop dgn mouse + keyboard
+  // fisik gak perlu on-screen numpad — auto-show malah distract (lihat Pos3
+  // screenshot: numpad muncul tanpa di-trigger sama Bintoro di MacBook).
   useEffect(() => {
     if (!autoAttach) return;
+    // Touch detection: pointer:coarse = touchscreen primary
+    const isTouch = typeof window !== "undefined" && window.matchMedia?.("(pointer: coarse)").matches;
+    if (!isTouch) return; // skip on desktop/laptop
     const onFocus = (e) => {
       const el = e.target;
       if (!el || (el.tagName !== "INPUT" && el.tagName !== "TEXTAREA")) return;
