@@ -235,23 +235,31 @@ app.get("/manifest.webmanifest", (req, res) => {
     const isPlatform = !c?.code || PLATFORM_CODES.includes(c.code);
     const displayName = isPlatform ? "karyaos" : (c?.name || "karyaos");
     const brand = c?.brand_color || "#FF6B35";
-    const logoUrl = c?.logo_url || "/logo.png";
+    const logoUrl = c?.logo_url || null;
     // Use X-Forwarded-Host (nginx) so manifest URLs are public, not localhost
     const proto = req.headers["x-forwarded-proto"] || (req.secure ? "https" : "http");
     const host = req.headers["x-forwarded-host"] || req.headers.host;
-    const absoluteLogo = logoUrl.startsWith("http") ? logoUrl : `${proto}://${host}${logoUrl}`;
+    const abs = (p) => p?.startsWith("http") ? p : `${proto}://${host}${p}`;
+
+    // Icons MUST match actual file dimensions — Chrome strict, install gagal kalau
+    // declare 192x192 padahal file 512x512.
+    //   /favicon.png = 192x192 (verified)
+    //   /logo.png    = 512x512 (verified)
+    // Tenant logo_url override: pakai untuk both slot (assume admin upload proper size).
+    const icon192 = logoUrl ? abs(logoUrl) : abs("/favicon.png");
+    const icon512 = logoUrl ? abs(logoUrl) : abs("/logo.png");
     return res.json({
       name: displayName + " — Self-order Kiosk",
       short_name: displayName,
       description: `${displayName} self-order kiosk on karyaos`,
       start_url: "/?kiosk=1",
       display: "standalone",
-      orientation: "landscape",
+      orientation: "any",
       background_color: "#12141c",
       theme_color: brand,
       icons: [
-        { src: absoluteLogo, sizes: "192x192", type: "image/png", purpose: "any" },
-        { src: absoluteLogo, sizes: "512x512", type: "image/png", purpose: "any maskable" },
+        { src: icon192, sizes: "192x192", type: "image/png", purpose: "any" },
+        { src: icon512, sizes: "512x512", type: "image/png", purpose: "any" },
       ],
       categories: ["food", "business"],
       lang: "en",
@@ -261,7 +269,10 @@ app.get("/manifest.webmanifest", (req, res) => {
       name: "karyaos", short_name: "karyaos",
       start_url: "/?kiosk=1", display: "standalone",
       background_color: "#12141c", theme_color: "#FF6B35",
-      icons: [{ src: "/logo.png", sizes: "512x512", type: "image/png" }],
+      icons: [
+        { src: "/favicon.png", sizes: "192x192", type: "image/png", purpose: "any" },
+        { src: "/logo.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      ],
     });
   }
 });
