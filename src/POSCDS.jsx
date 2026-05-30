@@ -429,12 +429,25 @@ function CDSIdle() {
 }
 
 function SlideWelcome() {
+  const h = new Date().getHours();
+  const greet = h >= 5 && h < 11 ? { text: "Selamat Pagi", emoji: "☀️" }
+              : h >= 11 && h < 15 ? { text: "Selamat Siang", emoji: "🌤️" }
+              : h >= 15 && h < 18 ? { text: "Selamat Sore", emoji: "🌅" }
+              : { text: "Selamat Malam", emoji: "✨" };
+  const sub = h >= 5 && h < 11 ? "Pagi hangat menunggu rasa baru."
+            : h >= 11 && h < 15 ? "Siang sibuk, perut riang."
+            : h >= 15 && h < 18 ? "Sore manis menyambut Anda."
+            : "Malam tenang, mari menikmati.";
   return (
     <div style={S.ssCenter}>
       <div style={S.ssLogo}><img src="/logo.png" alt="KaryaOS" style={{ height: 88, objectFit: "contain" }} /></div>
       <div style={S.ssBrand}>KaryaOS</div>
-      <div style={S.ssTagline}>Welcome!</div>
-      <div style={S.ssHint}>Tap cashier to start order</div>
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "8px 18px", borderRadius: 999, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)", fontSize: 18, fontWeight: 600, color: "rgba(255,255,255,0.92)", letterSpacing: -0.3, marginTop: 8, backdropFilter: "blur(8px)" }}>
+        <span style={{ fontSize: 20 }}>{greet.emoji}</span>
+        <span>{greet.text}</span>
+      </div>
+      <div style={{ ...S.ssTagline, marginTop: 14, fontStyle: "italic", letterSpacing: 0.2 }}>{sub}</div>
+      <div style={S.ssHint}>Lihat menu di sini · sapa kasir untuk mulai pesan</div>
     </div>
   );
 }
