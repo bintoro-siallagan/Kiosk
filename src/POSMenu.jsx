@@ -7,6 +7,7 @@ const MyKpiPanel = lazy(() => import("./POS/MyKpiPanel.jsx"));
 const MorningRecognition = lazy(() => import("./POS/MorningRecognition.jsx"));
 const WelcomeRitual = lazy(() => import("./POS/WelcomeRitual.jsx"));
 const KasirNudge = lazy(() => import("./POS/KasirNudge.jsx"));
+const FirstOrderCelebration = lazy(() => import("./POS/FirstOrderCelebration.jsx"));
 
 const API_BASE = API_HOST;
 
@@ -41,6 +42,8 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
   const [showWelcome, setShowWelcome] = useState(() => {
     try { return !!localStorage.getItem('karyaos:needsWelcome'); } catch { return false; }
   });
+  // First order of day — celebrate ritual sekali per kasir per hari
+  const [firstOrderId, setFirstOrderId] = useState(null);
 
   useEffect(() => {
     fetch(`${API_BASE}/api/menu`)
@@ -139,7 +142,15 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
       const today = new Date().toISOString().slice(0, 10);
       const key = `txCount:${cashier?.name || 'x'}:${today}`;
       const cur = parseInt(localStorage.getItem(key) || '0', 10);
-      localStorage.setItem(key, String(cur + 1));
+      const next = cur + 1;
+      localStorage.setItem(key, String(next));
+      // First-order ritual — show celebration sekali per kasir per hari
+      const firstKey = `firstOrder:${cashier?.name || 'x'}:${today}`;
+      if (cur === 0 && !localStorage.getItem(firstKey)) {
+        const fakeOrderId = `${Date.now().toString(36).slice(-5).toUpperCase()}`;
+        setFirstOrderId(fakeOrderId);
+        localStorage.setItem(firstKey, '1');
+      }
     } catch {}
     onCheckout({ action, cart, subtotal });
   };
@@ -219,6 +230,17 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
               } catch { return 0; }
             })()}
             cashierName={cashier?.name || null}
+          />
+        </Suspense>
+      )}
+
+      {/* First order ritual — sekali per kasir per hari */}
+      {firstOrderId && (
+        <Suspense fallback={null}>
+          <FirstOrderCelebration
+            cashierName={cashier?.name || null}
+            orderId={firstOrderId}
+            onClose={() => setFirstOrderId(null)}
           />
         </Suspense>
       )}

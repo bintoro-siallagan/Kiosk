@@ -441,6 +441,44 @@ export function LoadingSkeleton({ rows = 3, height = 40 }) {
 // Pool kalimat default — dipakai rotation atau random pick.
 // Kalau caller pass label spesifik, itu yg dipakai. Tapi default
 // SELALU hangat.
+// Time-aware warm loading phrases — pool diperluas per momen hari
+// Filosofi karyaOS: loading bukan dead time, tapi moment tunggu yg hangat.
+function getWarmPhrase() {
+  const h = new Date().getHours();
+  const allDay = [
+    "Sebentar ya, kami sedang menyiapkan...",
+    "Hampir siap...",
+    "Sedang dimuat dengan hati...",
+    "Tinggal sebentar lagi...",
+    "Kami siapkan halamanmu...",
+    "Mohon tunggu sebentar...",
+  ];
+  const morning = [
+    "Selamat pagi — sebentar ya...",
+    "Pagi-pagi, sistem sedang seduh kopi dulu...",
+    "Hampir siap, hari baru menunggu...",
+  ];
+  const noon = [
+    "Sebentar ya, jam sibuk siang...",
+    "Sistem agak rame jam segini, mohon sabar...",
+  ];
+  const afternoon = [
+    "Sebentar ya, sore yang sibuk...",
+    "Hampir siap, jangan kabur dulu...",
+  ];
+  const evening = [
+    "Selamat malam — sebentar ya...",
+    "Sistem juga ngantuk dikit, sabar ya...",
+    "Hampir siap, tenang...",
+  ];
+  let pool = [...allDay];
+  if (h < 11) pool = [...pool, ...morning];
+  else if (h < 15) pool = [...pool, ...noon];
+  else if (h < 18) pool = [...pool, ...afternoon];
+  else pool = [...pool, ...evening];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 const WARM_LOADING_PHRASES = [
   "Sebentar ya, kami sedang menyiapkan...",
   "Hampir siap...",
@@ -455,7 +493,7 @@ export function LoadingState({ label, sub = "", compact = false }) {
   // useMemo supaya gak ganti tiap render (kesannya gemetar).
   const resolvedLabel = useMemo(() => {
     if (label) return label;
-    return WARM_LOADING_PHRASES[Math.floor(Math.random() * WARM_LOADING_PHRASES.length)];
+    return getWarmPhrase();
   }, [label]);
 
   return (

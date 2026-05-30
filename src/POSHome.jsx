@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
+const DayClosingRitual = lazy(() => import("./POS/DayClosingRitual.jsx"));
 
 import POSOrderHistory from "./POSOrderHistory.jsx";
 import POSMergeTabsModal from "./POSMergeTabsModal.jsx";
@@ -76,6 +77,7 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
   const [mergeTab, setMergeTab] = useState(null);
   const [todayOrders, setTodayOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [closingRitual, setClosingRitual] = useState(null);
   // Detect outlet vertical (fnb | cinema | hybrid) — bisa load Jual Tiket button kalau hybrid
   const [outletVertical, setOutletVertical] = useState("fnb");
   const [outletInfo, setOutletInfo] = useState({ code: null, name: null, area: null });
@@ -198,11 +200,12 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
           w.document.close();
         }
       }
+      // Ceremonial closing ritual — bukan langsung logout, beri momen apresiasi
+      setClosingRitual(data?.report || data?.summary || {});
     } catch (e) {
       alert("Gagal tutup hari: " + e.message);
       return;
     }
-    onLogout();
   }
 
   return (
@@ -528,6 +531,17 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
           </div>
         </section>
       </main>
+
+      {/* Day closing ritual — ceremonial farewell sebelum logout */}
+      {closingRitual && (
+        <Suspense fallback={null}>
+          <DayClosingRitual
+            closedBy={cashier?.name || "Manager"}
+            summary={closingRitual}
+            onDone={() => { setClosingRitual(null); onLogout(); }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
