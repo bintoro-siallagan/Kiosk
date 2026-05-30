@@ -507,10 +507,10 @@ function TenantView({ my, plans, API }) {
       {/* Success Modal */}
       {success && (
         <div onClick={() => setSuccess(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: "min(440px, 100%)", background: "rgba(10,15,28,0.96)", border: `1px solid ${GREEN}55`, borderRadius: 16, padding: 28, textAlign: "center" }}>
-            <div style={{ fontSize: 64 }}>🎉</div>
-            <div style={{ fontSize: 11, color: GREEN, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800, marginTop: 6 }}>UPGRADE BERHASIL</div>
-            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginTop: 6 }}>{success.old_plan} → {success.new_plan}</div>
+          <div onClick={e => e.stopPropagation()} style={{ width: "min(440px, 100%)", background: "rgba(10,15,28,0.96)", border: `1px solid ${GREEN}55`, borderRadius: 16, padding: 28, textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+            <div style={{ fontSize: 64, lineHeight: 1, margin: 0 }}>🎉</div>
+            <div style={{ fontSize: 11, color: GREEN, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800, margin: 0 }}>UPGRADE BERHASIL</div>
+            <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", lineHeight: 1.2, margin: 0 }}>{success.old_plan} → {success.new_plan}</div>
             {success.invoice_no && (
               <div style={{ marginTop: 14, padding: 12, background: "rgba(0,0,0,0.4)", border: `1px dashed ${AMBER}55`, borderRadius: 10 }}>
                 <div style={{ fontSize: 10, color: AMBER, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700 }}>INVOICE</div>

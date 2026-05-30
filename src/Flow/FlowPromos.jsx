@@ -212,10 +212,10 @@ export default function FlowPromos({ customer, setActivePromo, setScreen }) {
           </div>
         )}
         {!loading && !err && filtered.length === 0 && (
-          <div style={{ textAlign: "center", padding: 60, color: SUB }}>
-            <div style={{ fontSize: 60, marginBottom: 16 }}>🎉</div>
-            <div style={{ fontSize: 16, fontWeight: 600, color: TEXT }}>Belum ada promo</div>
-            <div style={{ fontSize: 13, marginTop: 6 }}>Pantengin terus ya!</div>
+          <div style={{ display:"flex",flexDirection:"column",alignItems:"center",textAlign: "center", padding: 60, color: SUB, gap: 10 }}>
+            <div style={{ fontSize: 60, lineHeight: 1, margin: 0 }}>🎉</div>
+            <div style={{ fontSize: 16, fontWeight: 600, color: TEXT, margin: 0 }}>Belum ada promo</div>
+            <div style={{ fontSize: 13, margin: 0 }}>Pantengin terus ya!</div>
           </div>
         )}
 

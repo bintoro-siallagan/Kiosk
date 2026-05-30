@@ -33,10 +33,10 @@ export default function TableSelector({ onPick, onBack, onCancel }) {
         {loading && <LoadingState label="Memuat meja..." />}
 
         {!loading && tables.length === 0 && (
-          <div style={S.empty}>
-            <div style={{fontSize:60, marginBottom:12}}>🪑</div>
-            <p>Belum ada meja terdaftar</p>
-            <p style={{fontSize:12, color:"#555"}}>Tambah via Admin → Operasional → Meja</p>
+          <div style={{...S.empty,display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
+            <div style={{fontSize:60,lineHeight:1,margin:0}}>🪑</div>
+            <p style={{margin:0,lineHeight:1.4}}>Belum ada meja terdaftar</p>
+            <p style={{fontSize:12, color:"#555",margin:0,lineHeight:1.4}}>Tambah via Admin → Operasional → Meja</p>
           </div>
         )}
 

@@ -171,8 +171,8 @@ function DoneStep({ result, outletName, onAgain }) {
   const color = within ? GREEN : RED;
   return (
     <Shell>
-      <div style={{ padding: "60px 24px", textAlign: "center" }}>
-        <div style={{ fontSize: 72, marginBottom: 14, filter: `drop-shadow(0 0 28px ${color}55)` }}>{within ? "✅" : "⚠️"}</div>
+      <div style={{ padding: "60px 24px", textAlign: "center", display:"flex",flexDirection:"column",alignItems:"center",gap:10 }}>
+        <div style={{ fontSize: 72, lineHeight:1, margin:0, filter: `drop-shadow(0 0 28px ${color}55)` }}>{within ? "✅" : "⚠️"}</div>
         <div style={{ fontSize: 12, color: CYAN, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>CHECK-IN TERSIMPAN</div>
         <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", marginTop: 8 }}>{outletName}</div>
         {result.distance_m != null && (

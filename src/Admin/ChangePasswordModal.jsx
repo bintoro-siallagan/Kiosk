@@ -73,10 +73,10 @@ export default function ChangePasswordModal({ onClose, onSuccess }) {
     return (
       <div style={S.overlay} onClick={onClose}>
         <div style={S.box} onClick={e => e.stopPropagation()}>
-          <div style={{ textAlign: 'center', padding: 30 }}>
-            <div style={{ fontSize: 64, marginBottom: 16 }}>🌱</div>
+          <div style={{ display:"flex",flexDirection:"column",alignItems:"center",textAlign: 'center', padding: 30, gap: 12 }}>
+            <div style={{ fontSize: 64, lineHeight: 1, margin: 0 }}>🌱</div>
             <div style={S.title}>Password tersimpan dengan hati</div>
-            <div style={{ ...S.sub, marginTop: 8 }}>
+            <div style={{ ...S.sub, margin: 0 }}>
               Password baru sudah aktif. Pakai password ini untuk login berikutnya.
             </div>
           </div>

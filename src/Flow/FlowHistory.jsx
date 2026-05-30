@@ -203,9 +203,9 @@ export default function FlowHistory({ session, addToCart, setScreen }) {
           </div>
         )}
         {!loading && !err && filtered.length === 0 && (
-          <div style={{ textAlign: "center", padding: 60, color: SUB }}>
-            <div style={{ fontSize: 60, marginBottom: 16 }}>📦</div>
-            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6, color: TEXT }}>
+          <div style={{ display:"flex",flexDirection:"column",alignItems:"center",textAlign: "center", padding: 60, color: SUB, gap: 8 }}>
+            <div style={{ fontSize: 60, lineHeight: 1, margin: 0 }}>📦</div>
+            <div style={{ fontSize: 16, fontWeight: 600, margin: 0, color: TEXT, lineHeight: 1.3 }}>
               {filter === "all" ? "Belum ada pesanan" :
                filter === "active" ? "No orders aktif" : "Belum ada pesanan selesai"}
             </div>

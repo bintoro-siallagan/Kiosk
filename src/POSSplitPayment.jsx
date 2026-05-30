@@ -303,21 +303,21 @@ export default function POSSplitPayment({ order, kasir, onClose, onSuccess }) {
             )}
 
             {qrisStep === "paid" && (
-              <>
-                <div style={{fontSize: 72, marginBottom: 16}}>✅</div>
-                <div style={{fontSize: 18, color: "#10B981", fontWeight: 700}}>Payment Successful!</div>
-                <div style={{fontSize: 13, color: "#9CA3AF", marginTop: 8}}>Menyimpan order...</div>
-              </>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
+                <div style={{fontSize: 72,lineHeight:1,margin:0}}>✅</div>
+                <div style={{fontSize: 18, color: "#10B981", fontWeight: 700,lineHeight:1.2,margin:0}}>Payment Successful!</div>
+                <div style={{fontSize: 13, color: "#9CA3AF",lineHeight:1.4,margin:0}}>Menyimpan order...</div>
+              </div>
             )}
 
             {qrisStep === "error" && (
-              <>
-                <div style={{fontSize: 56, marginBottom: 16}}>⚠️</div>
-                <div style={{fontSize: 16, color: "#F87171", marginBottom: 8}}>{error || "Gagal proses QR"}</div>
-                <button onClick={cancelQR} style={{...S.btnSecondary, marginTop: 16}}>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
+                <div style={{fontSize: 56,lineHeight:1,margin:0}}>⚠️</div>
+                <div style={{fontSize: 16, color: "#F87171",lineHeight:1.4,margin:0}}>{error || "Gagal proses QR"}</div>
+                <button onClick={cancelQR} style={{...S.btnSecondary, marginTop: 8}}>
                   Kembali ke Split
                 </button>
-              </>
+              </div>
             )}
           </div>
         </div>

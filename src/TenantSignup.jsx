@@ -169,8 +169,8 @@ export default function TenantSignup() {
         {/* Step 3: Done */}
         {step === 3 && result && (
           <div style={{ animation: "slideIn 0.3s" }}>
-            <div style={{ textAlign: "center", marginBottom: 22, position: "relative" }}>
-              <div style={{ fontSize: 64, marginBottom: 4 }}>🎊</div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", marginBottom: 22, position: "relative", gap: 12 }}>
+              <div style={{ fontSize: 64, lineHeight: 1, margin: 0 }}>🎊</div>
               {[...Array(6)].map((_, i) => (
                 <div key={i} style={{
                   position: "absolute", top: 20, left: `${20 + i * 12}%`,

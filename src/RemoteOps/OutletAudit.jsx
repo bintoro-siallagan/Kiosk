@@ -348,8 +348,8 @@ function FillStep({ outletName, managerName, templates, items, updateItem, onPho
 function DoneStep({ outletName, score, onAgain }) {
   const color = score >= 90 ? GREEN : score >= 75 ? "#22d3ee" : score >= 60 ? AMBER : RED;
   return (
-    <div style={{ padding: "60px 24px", textAlign: "center" }}>
-      <div style={{ fontSize: 72, marginBottom: 14, filter: `drop-shadow(0 0 28px ${color}55)` }}>{score >= 75 ? "🎉" : score >= 60 ? "👍" : "⚠️"}</div>
+    <div style={{ padding: "60px 24px", textAlign: "center", display:"flex",flexDirection:"column",alignItems:"center",gap:10 }}>
+      <div style={{ fontSize: 72, lineHeight:1, margin:0, filter: `drop-shadow(0 0 28px ${color}55)` }}>{score >= 75 ? "🎉" : score >= 60 ? "👍" : "⚠️"}</div>
       <div style={{ fontSize: 12, color: PURPLE, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>AUDIT TERSIMPAN</div>
       <div style={{ fontSize: 26, fontWeight: 900, color: "#fff", marginTop: 8 }}>{outletName}</div>
       <div style={{ fontSize: 64, fontWeight: 900, color, marginTop: 14, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{score}</div>

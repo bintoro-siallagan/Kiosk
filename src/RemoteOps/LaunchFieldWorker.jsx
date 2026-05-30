@@ -433,8 +433,8 @@ function SignoffStep({ launch, detail, activeDept, gps, grabGps, deviceId, onBac
 
 function DoneStep({ launch, dept, onAgain }) {
   return (
-    <div style={{ padding: "60px 24px", textAlign: "center" }}>
-      <div style={{ fontSize: 72, marginBottom: 14, filter: `drop-shadow(0 0 28px ${GREEN}55)` }}>✓</div>
+    <div style={{ padding: "60px 24px", textAlign: "center", display:"flex",flexDirection:"column",alignItems:"center",gap:10 }}>
+      <div style={{ fontSize: 72, lineHeight:1, margin:0, filter: `drop-shadow(0 0 28px ${GREEN}55)` }}>✓</div>
       <div style={{ fontSize: 12, color: PURPLE, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>SIGN-OFF TERSIMPAN</div>
       <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginTop: 8 }}>{launch.outlet_name}</div>
       <div style={{ fontSize: 13, color: "#cbd5e1", marginTop: 6 }}>Departemen <b>{dept}</b> sudah resmi sign-off</div>

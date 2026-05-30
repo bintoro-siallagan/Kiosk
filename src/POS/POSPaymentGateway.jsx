@@ -261,10 +261,10 @@ export default function POSPaymentGateway({ orderRef, amount, customerName, cust
 
         {/* PAID */}
         {step === 'paid' && intent && (
-          <div style={{textAlign: 'center', padding: 30}}>
-            <div style={{fontSize: 64, marginBottom: 12}}>✅</div>
-            <h2 style={{color: '#4ade80', marginBottom: 8}}>Payment Successful</h2>
-            <div style={{fontSize: 32, fontWeight: 700, color: '#fff', marginBottom: 8}}>{fmtIDR(amount)}</div>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",textAlign: 'center', padding: 30, gap: 8}}>
+            <div style={{fontSize: 64, lineHeight: 1, margin: 0}}>✅</div>
+            <h2 style={{color: '#4ade80', lineHeight: 1.2, margin: 0}}>Payment Successful</h2>
+            <div style={{fontSize: 32, fontWeight: 700, color: '#fff', lineHeight: 1.1, margin: 0}}>{fmtIDR(amount)}</div>
             <div style={{fontSize: 12, color: '#9ca3af'}}>via {selectedMethod} · {selectedProvider}</div>
             <div style={{fontSize: 11, color: '#6b7280', marginTop: 16}}>Ref: {intent.external_id || intent.doc_no}</div>
             <div style={{marginTop: 24, fontSize: 12, color: '#9ca3af'}}>Lanjut ke struk...</div>

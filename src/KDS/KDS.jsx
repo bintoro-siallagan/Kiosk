@@ -302,8 +302,8 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
         }}
         onClick={() => setShowKdsWelcome(false)}>
           <style>{`@keyframes fadeOutKds { to { opacity: 0; pointer-events: none; } }`}</style>
-          <div style={{ textAlign: "center", color: "#fff", maxWidth: 540, padding: 20 }}>
-            <div style={{ fontSize: 60, marginBottom: 20, filter: "drop-shadow(0 8px 24px rgba(251,191,36,0.35))" }}>🍳</div>
+          <div style={{ display:"flex",flexDirection:"column",alignItems:"center",textAlign: "center", color: "#fff", maxWidth: 540, padding: 20, gap: 14 }}>
+            <div style={{ fontSize: 60, lineHeight: 1, margin: 0, filter: "drop-shadow(0 8px 24px rgba(251,191,36,0.35))" }}>🍳</div>
             <div style={{ fontSize: 11, color: "#fbbf24", letterSpacing: 3, fontWeight: 600, marginBottom: 10, textTransform: "uppercase" }}>
               {kdsWelcomeMsg.greet}
             </div>

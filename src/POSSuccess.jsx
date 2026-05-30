@@ -93,8 +93,8 @@ const S = {
   card: { maxWidth: 520, width: "100%", textAlign: "center", padding: "44px 36px 32px", borderRadius: 28 },
   iconWrap: { position: "relative", width: 110, height: 110, margin: "0 auto 20px", display: "flex", alignItems: "center", justifyContent: "center" },
   iconGlow: { position: "absolute", inset: -20, borderRadius: "50%", background: "radial-gradient(circle, rgba(16,185,129,0.35), transparent 65%)", filter: "blur(24px)", animation: "pulseGlow 2.5s ease-in-out infinite" },
-  icon: { position: "relative", zIndex: 1, fontSize: 80, filter: "drop-shadow(0 8px 24px rgba(16,185,129,0.4))" },
-  title: { fontFamily: "'Inter',sans-serif", fontSize: 28, fontWeight: 600, letterSpacing: "-0.8px", color: "#fff", margin: "0 0 6px" },
+  icon: { position: "relative", zIndex: 1, fontSize: 80, lineHeight: 1, filter: "drop-shadow(0 8px 24px rgba(16,185,129,0.4))" },
+  title: { fontFamily: "'Inter',sans-serif", fontSize: 28, fontWeight: 600, lineHeight: 1.2, letterSpacing: "-0.8px", color: "#fff", margin: "0 0 6px" },
   orderId: { fontSize: 11, color: "rgba(255,255,255,0.45)", letterSpacing: 2, marginBottom: 26, fontWeight: 500, fontFamily: "'Inter',sans-serif", textTransform: "uppercase" },
   // Big queue number — most prominent element on success screen
   queueBlock: {

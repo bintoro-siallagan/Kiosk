@@ -435,8 +435,8 @@ function FinishStep({ ticket, selfie, setSelfie, summary, setSummary, busy, err,
 
 function DoneStep({ ticket, onAgain }) {
   return (
-    <div style={{ padding: "60px 24px", textAlign: "center" }}>
-      <div style={{ fontSize: 72, marginBottom: 14, filter: `drop-shadow(0 0 28px ${GREEN}55)` }}>✓</div>
+    <div style={{ padding: "60px 24px", textAlign: "center", display:"flex",flexDirection:"column",alignItems:"center",gap:10 }}>
+      <div style={{ fontSize: 72, lineHeight:1, margin:0, filter: `drop-shadow(0 0 28px ${GREEN}55)` }}>✓</div>
       <div style={{ fontSize: 12, color: PURPLE, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>TIKET COMPLETED</div>
       <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginTop: 8 }}>{ticket.title}</div>
       <div style={{ padding: 14, background: GREEN + "11", border: `1px solid ${GREEN}33`, borderRadius: 12, marginTop: 24, fontSize: 12, color: "#86efac", lineHeight: 1.55 }}>

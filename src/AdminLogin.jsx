@@ -530,8 +530,8 @@ export function ResetPasswordPage() {
   if (done) return (
     <div style={L.root}>
       <style>{CSS}</style>
-      <div style={L.wrap}>
-        <div style={{ fontSize: 60, marginBottom: 10 }}>✅</div>
+      <div style={{...L.wrap,display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
+        <div style={{ fontSize: 60, lineHeight: 1, margin: 0 }}>✅</div>
         <div style={L.title}>PASSWORD BERHASIL DIUPDATE</div>
         <div style={L.sub}>Anda bisa login sekarang dengan password baru.</div>
         <a href="/?admin" style={{ ...L.primaryBtn, marginTop: 18, textDecoration: "none", display: "inline-block" }}>🔐 Login Sekarang</a>

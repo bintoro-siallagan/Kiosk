@@ -834,12 +834,12 @@ function StepDone({ data, savedFlags }) {
 
   return (
     <div style={{ display: "grid", gap: 18 }}>
-      <div style={{ textAlign: "center", padding: 20 }}>
-        <div style={{ fontSize: 80, marginBottom: 12 }}>🎉</div>
-        <div style={{ fontSize: 22, fontWeight: 900, color: "#fbbf24", marginBottom: 6 }}>
+      <div style={{ display:"flex",flexDirection:"column",alignItems:"center",textAlign: "center", padding: 20, gap: 10 }}>
+        <div style={{ fontSize: 80, lineHeight: 1, margin: 0 }}>🎉</div>
+        <div style={{ fontSize: 22, fontWeight: 900, color: "#fbbf24", lineHeight: 1.2, margin: 0 }}>
           Outlet <span style={{ fontFamily: "'Geist Mono',monospace" }}>{data.outlet.code}</span> siap!
         </div>
-        <div style={{ fontSize: 14, color: "#9da7b3" }}>{completed}/{checks.length} langkah selesai</div>
+        <div style={{ fontSize: 14, color: "#9da7b3", margin: 0 }}>{completed}/{checks.length} langkah selesai</div>
       </div>
 
       <div style={S.subCard}>

@@ -505,8 +505,8 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
   if (showIdle) return (
     <div style={K.idleOverlay}>
       <style>{FONT_CSS+KIOSK_CSS+BRAND_OVERRIDE_CSS}</style>
-      <div style={K.idleBox}>
-        <div style={{fontSize:64,marginBottom:16}}>😴</div>
+      <div style={{...K.idleBox,display:"flex",flexDirection:"column",alignItems:"center",gap:14}}>
+        <div style={{fontSize:64,lineHeight:1,margin:0}}>😴</div>
         <div style={K.idleTitle}>Masih di sini?</div>
         <div style={K.idleSub}>Sesi akan direset dalam</div>
         <div style={K.idleCount}>{idleLeft}</div>
@@ -692,7 +692,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.65)",backdropFilter:"blur(16px) saturate(180%)",WebkitBackdropFilter:"blur(16px) saturate(180%)",zIndex:9998,display:"flex",alignItems:"center",justifyContent:"center",animation:"fadeIn 0.2s ease"}}>
           <div className="lg" onClick={e=>e.stopPropagation()}
             style={{borderRadius:28,padding:"40px 36px 32px",maxWidth:440,width:"90%",textAlign:"center",animation:"slideUp 0.35s cubic-bezier(.2,.8,.2,1)"}}>
-            <div style={{fontSize:64,marginBottom:14,animation:"giftBounce 1.2s ease infinite",filter:"drop-shadow(0 8px 20px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent))"}}>🎁</div>
+            <div style={{fontSize:64,lineHeight:1,marginBottom:14,animation:"giftBounce 1.2s ease infinite",filter:"drop-shadow(0 8px 20px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent))"}}>🎁</div>
             <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:600,letterSpacing:"-0.6px",margin:"0 0 10px",color:"rgba(255,255,255,0.95)"}}>Check promo first?</h2>
             <p style={{fontSize:14,color:"rgba(255,255,255,0.55)",lineHeight:1.55,margin:"0 0 26px",fontFamily:"'Inter',sans-serif"}}>
               Got a code or voucher? Apply it before checkout.

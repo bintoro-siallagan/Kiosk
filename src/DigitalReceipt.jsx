@@ -67,9 +67,9 @@ export default function DigitalReceipt({ orderId, onDone }) {
   if (!receipt) return (
     <div style={{...R.root,justifyContent:"center",flexDirection:"column",textAlign:"center",gap:16}}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@700&family=DM+Sans:wght@400;700&display=swap');*{box-sizing:border-box;margin:0;padding:0}`}</style>
-      <div style={{fontSize:72}}>✅</div>
-      <div style={{fontFamily:"'Geist Mono',monospace",fontSize:24,color:"#34D399",letterSpacing:3}}>PEMBAYARAN BERHASIL!</div>
-      <div style={{fontSize:13,color:"#555"}}>Receipt tidak tersedia saat ini</div>
+      <div style={{fontSize:72,lineHeight:1,margin:0}}>✅</div>
+      <div style={{fontFamily:"'Geist Mono',monospace",fontSize:24,color:"#34D399",lineHeight:1.2,margin:0,letterSpacing:3}}>PEMBAYARAN BERHASIL!</div>
+      <div style={{fontSize:13,color:"#555",lineHeight:1.4,margin:0}}>Receipt tidak tersedia saat ini</div>
       <button style={{...R.doneBtn,maxWidth:240,margin:"20px auto 0"}} onClick={onDone}>SELESAI →</button>
     </div>
   );

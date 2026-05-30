@@ -77,9 +77,9 @@ export default function CinemaFeedback() {
   if (sent) {
     return (
       <Shell>
-        <div style={{ textAlign: "center", padding: "40px 24px" }}>
-          <div style={{ fontSize: 80, marginBottom: 14, filter: "drop-shadow(0 0 24px rgba(251,191,36,0.4))" }}>✨</div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", marginBottom: 8 }}>Terima Kasih!</div>
+        <div style={{ display:"flex",flexDirection:"column",alignItems:"center",textAlign: "center", padding: "40px 24px", gap: 14 }}>
+          <div style={{ fontSize: 80, lineHeight: 1, margin: 0, filter: "drop-shadow(0 0 24px rgba(251,191,36,0.4))" }}>✨</div>
+          <div style={{ fontSize: 28, fontWeight: 900, color: "#fff", lineHeight: 1.2, margin: 0 }}>Terima Kasih!</div>
           <div style={{ fontSize: 14, color: "#cbd5e1", marginBottom: 24, lineHeight: 1.5 }}>
             {rating > 0 && <>Film: <b style={{ color: "#fbbf24" }}>{rating}★</b><br/></>}
             {cashierRating > 0 && <>Kasir {cashierName}: <b style={{ color: "#22d3ee" }}>{cashierRating}★</b><br/></>}

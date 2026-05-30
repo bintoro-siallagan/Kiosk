@@ -253,10 +253,10 @@ export default function CinemaInStudioOrder({ apiBase }) {
 
           {/* QR Code */}
           {paid ? (
-            <div style={{ background: "rgba(16,185,129,0.08)", border: "2px solid #10b981", borderRadius: 18, padding: 32, marginBottom: 16 }}>
-              <div style={{ fontSize: 72 }}>✅</div>
-              <div style={{ fontSize: 22, fontWeight: 900, color: "#10b981", marginTop: 10, letterSpacing: -0.5 }}>PEMBAYARAN SUKSES</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 6 }}>{busy ? "Sending order to staff…" : "Preparing order…"}</div>
+            <div style={{ background: "rgba(16,185,129,0.08)", border: "2px solid #10b981", borderRadius: 18, padding: 32, marginBottom: 16, display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+              <div style={{ fontSize: 72, lineHeight: 1, margin: 0 }}>✅</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#10b981", lineHeight: 1.2, margin: 0, letterSpacing: -0.5 }}>PEMBAYARAN SUKSES</div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.4, margin: 0 }}>{busy ? "Sending order to staff…" : "Preparing order…"}</div>
             </div>
           ) : qrSrc ? (
             <div style={{ background: "#fff", borderRadius: 18, padding: 20, marginBottom: 16, display: "inline-block" }}>

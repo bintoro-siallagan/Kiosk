@@ -483,7 +483,7 @@ function Shell({ children, now, outlet, bgUrl, needFullscreen, goFullscreen, dis
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
           color: "#fff", cursor: "pointer", padding: 20, backdropFilter: "blur(24px)",
         }}>
-          <div style={{ fontSize: 96, marginBottom: 24, filter: "drop-shadow(0 0 32px rgba(168,85,247,0.4))" }}>🎬</div>
+          <div style={{ fontSize: 96, lineHeight: 1, marginBottom: 24, filter: "drop-shadow(0 0 32px rgba(168,85,247,0.4))" }}>🎬</div>
           <div style={{ fontSize: 12, color: "#fbbf24", letterSpacing: 4, fontFamily: "'Geist Mono',monospace", fontWeight: 800, textTransform: "uppercase", marginBottom: 14 }}>● CINEMA CUSTOMER DISPLAY</div>
           <div style={{ fontSize: "clamp(32px,4.5vw,48px)", fontWeight: 900, letterSpacing: -1, marginBottom: 14, textAlign: "center", textShadow: "0 0 32px rgba(251,191,36,0.4)" }}>Tap to Enter Fullscreen</div>
           <div style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", marginBottom: 30, textAlign: "center", maxWidth: 540, lineHeight: 1.55 }}>

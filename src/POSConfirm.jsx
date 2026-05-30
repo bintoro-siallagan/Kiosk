@@ -851,11 +851,11 @@ function POSQRISFlow({ cart, subtotal, order, onCancel, onPaid }) {
 
       <main style={{...S.main, alignItems: "center", justifyContent: "center", textAlign: "center"}}>
         {status === "loading" && (
-          <>
-            <div style={{fontSize:64,marginBottom:16}}>⏳</div>
-            <h2 style={{fontSize:24,marginBottom:8}}>Membuat QR Code...</h2>
-            <p style={{color:"#888"}}>Please wait sebentar</p>
-          </>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
+            <div style={{fontSize:64,lineHeight:1,margin:0}}>⏳</div>
+            <h2 style={{fontSize:24,lineHeight:1.2,margin:0}}>Membuat QR Code...</h2>
+            <p style={{color:"#888",margin:0}}>Please wait sebentar</p>
+          </div>
         )}
 
         {status === "waiting" && qrData && (
@@ -879,33 +879,33 @@ function POSQRISFlow({ cart, subtotal, order, onCancel, onPaid }) {
         )}
 
         {status === "paid" && (
-          <>
-            <div style={{fontSize:120, marginBottom:16}}>✅</div>
-            <h2 style={{fontSize:28, color:"#10B981", marginBottom:8}}>Payment Successful!</h2>
-            <p style={{color:"#888"}}>Menyimpan order...</p>
-          </>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:14}}>
+            <div style={{fontSize:120,lineHeight:1,margin:0}}>✅</div>
+            <h2 style={{fontSize:28,color:"#10B981",lineHeight:1.2,margin:0}}>Payment Successful!</h2>
+            <p style={{color:"#888",margin:0}}>Menyimpan order...</p>
+          </div>
         )}
 
         {status === "timeout" && (
-          <>
-            <div style={{fontSize:64, marginBottom:16}}>⏰</div>
-            <h2 style={{fontSize:24, marginBottom:8}}>Pembayaran Timeout</h2>
-            <p style={{color:"#888", marginBottom:24}}>QR expired atau customer cancel</p>
-            <button onClick={handleCancel} style={S.confirmBtn}>← Back</button>
-          </>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:14}}>
+            <div style={{fontSize:64,lineHeight:1,margin:0}}>⏰</div>
+            <h2 style={{fontSize:24,lineHeight:1.2,margin:0}}>Pembayaran Timeout</h2>
+            <p style={{color:"#888",margin:0}}>QR expired atau customer cancel</p>
+            <button onClick={handleCancel} style={{...S.confirmBtn,marginTop:10}}>← Back</button>
+          </div>
         )}
 
         {status === "error" && (
-          <>
-            <div style={{fontSize:64, marginBottom:16}}>⚠️</div>
-            <h2 style={{fontSize:22, color:"#EF4444", marginBottom:8}}>QRIS Tidak Tersedia</h2>
-            <p style={{color:"#888", marginBottom:8, maxWidth:500}}>{errMsg}</p>
-            <p style={{color:"#666", fontSize:13, marginBottom:24, maxWidth:500}}>
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10,maxWidth:520}}>
+            <div style={{fontSize:64,lineHeight:1,margin:0}}>⚠️</div>
+            <h2 style={{fontSize:22,color:"#EF4444",lineHeight:1.2,margin:0}}>QRIS Tidak Tersedia</h2>
+            <p style={{color:"#888",margin:0}}>{errMsg}</p>
+            <p style={{color:"#666",fontSize:13,margin:0,lineHeight:1.5,textAlign:"center"}}>
               Backend Midtrans mungkin belum dikonfigurasi.<br/>
               Gunakan Cash sementara waktu.
             </p>
-            <button onClick={handleCancel} style={S.confirmBtn}>← Pakai Cash</button>
-          </>
+            <button onClick={handleCancel} style={{...S.confirmBtn,marginTop:10}}>← Pakai Cash</button>
+          </div>
         )}
       </main>
     </div>

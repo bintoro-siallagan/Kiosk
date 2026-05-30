@@ -1040,10 +1040,10 @@ function HistoryPage({ session, brandPrimary, onSignInClick }) {
   }, []);
 
   if (!session) return (
-    <div style={{ padding: "60px 0", textAlign: "center", maxWidth: 480, margin: "0 auto" }}>
-      <div style={{ fontSize: 64, marginBottom: 18 }}>🔐</div>
-      <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", margin: 0, marginBottom: 10 }}>Sign In Dulu</h2>
-      <p style={{ fontSize: 13, color: C.sub, marginBottom: 20 }}>Untuk lihat akun Anda (booking, poin, promo), masuk dengan nomor HP.</p>
+    <div style={{ padding: "60px 0", display:"flex",flexDirection:"column",alignItems:"center",textAlign: "center", maxWidth: 480, margin: "0 auto", gap: 12 }}>
+      <div style={{ fontSize: 64, lineHeight: 1, margin: 0 }}>🔐</div>
+      <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", lineHeight: 1.2, margin: 0 }}>Sign In Dulu</h2>
+      <p style={{ fontSize: 13, color: C.sub, lineHeight: 1.5, margin: "0 0 8px" }}>Untuk lihat akun Anda (booking, poin, promo), masuk dengan nomor HP.</p>
       <button onClick={onSignInClick} style={{ padding: "12px 24px", background: brandPrimary, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>🔐 Sign In</button>
     </div>
   );

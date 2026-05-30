@@ -197,7 +197,7 @@ export default function CinemaKDS() {
           display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
           color: "#fff", cursor: "pointer", padding: 20, backdropFilter: "blur(20px)",
         }}>
-          <div style={{ fontSize: 80, marginBottom: 22 }}>🎬</div>
+          <div style={{ fontSize: 80, lineHeight: 1, marginBottom: 22 }}>🎬</div>
           <div style={{ fontSize: 11, color: "#fbbf24", letterSpacing: 3, fontFamily: "'Geist Mono',monospace", fontWeight: 800, textTransform: "uppercase", marginBottom: 12 }}>● CINEMA KITCHEN DISPLAY</div>
           <div style={{ fontSize: "clamp(28px,4vw,42px)", fontWeight: 900, letterSpacing: -0.8, marginBottom: 14, textAlign: "center", textShadow: "0 0 24px rgba(251,191,36,0.4)" }}>Tap to Enter Fullscreen</div>
           <div style={{ fontSize: 14, color: "rgba(255,255,255,0.7)", marginBottom: 28, textAlign: "center", maxWidth: 480, lineHeight: 1.55 }}>

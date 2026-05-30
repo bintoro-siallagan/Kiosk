@@ -85,9 +85,11 @@ export default function CustomerTrackingPage({ orderId }) {
 
   if (error || !order) return (
     <div style={S.root}>
-      <div style={{fontSize:64,textAlign:"center",marginTop:40}}>🤔</div>
-      <div style={S.h2}>Belum kami temukan</div>
-      <div style={S.muted}>{error || "Pesanan ini belum bisa kami buka. Coba refresh halaman, atau hubungi kasir kalau berlanjut."}</div>
+      <div style={{display:"flex",flexDirection:"column",alignItems:"center",textAlign:"center",gap:14,marginTop:40,padding:"0 20px"}}>
+        <div style={{fontSize:64,lineHeight:1}}>🤔</div>
+        <div style={S.h2}>Belum kami temukan</div>
+        <div style={S.muted}>{error || "Pesanan ini belum bisa kami buka. Coba refresh halaman, atau hubungi kasir kalau berlanjut."}</div>
+      </div>
     </div>
   );
 

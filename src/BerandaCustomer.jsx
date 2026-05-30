@@ -164,9 +164,10 @@ const S = {
   card: {
     background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 20, padding: 40, textAlign: 'center', maxWidth: 420,
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
   },
-  icon: { fontSize: 60, marginBottom: 16, filter: 'drop-shadow(0 6px 16px rgba(245,158,11,0.25))' },
-  title: { fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 8px' },
+  icon: { fontSize: 60, lineHeight: 1, margin: 0, filter: 'drop-shadow(0 6px 16px rgba(245,158,11,0.25))' },
+  title: { fontSize: 22, fontWeight: 700, color: '#fff', lineHeight: 1.2, margin: 0 },
   sub: { fontSize: 14, color: '#94a3b8', margin: 0, lineHeight: 1.5 },
 
   sparkleField: { position: 'absolute', inset: 0, pointerEvents: 'none' },
