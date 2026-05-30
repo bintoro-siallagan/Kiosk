@@ -32,26 +32,39 @@ function FoodImage({ item, size = 140 }) {
       </div>
     );
   }
-  // Fallback: SVG gradient + emoji
-  const colors = palettes[item.category] || ["#333","#555","#777","#999"];
+  // Fallback: SVG gradient + emoji — cinematic vibrant
+  const colors = palettes[item.category] || ["#1a1d29","#475569","#94a3b8","#cbd5e1"];
   const id = `grad-${item.id}`;
+  const shineId = `shine-${item.id}`;
   return (
     <div style={{ width:size, height:size, borderRadius:16, overflow:"hidden", flexShrink:0, position:"relative" }}>
       <svg width={size} height={size} style={{ position:"absolute", inset:0 }}>
         <defs>
-          <radialGradient id={id} cx="40%" cy="35%" r="65%">
-            <stop offset="0%" stopColor={colors[1]} stopOpacity="1"/>
-            <stop offset="50%" stopColor={colors[0]} stopOpacity="1"/>
-            <stop offset="100%" stopColor="#111" stopOpacity="1"/>
+          <radialGradient id={id} cx="35%" cy="30%" r="80%">
+            <stop offset="0%" stopColor={colors[2]} stopOpacity="1"/>
+            <stop offset="35%" stopColor={colors[1]} stopOpacity="1"/>
+            <stop offset="75%" stopColor={colors[0]} stopOpacity="1"/>
+            <stop offset="100%" stopColor="#0a0e16" stopOpacity="1"/>
           </radialGradient>
+          <linearGradient id={shineId} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#fff" stopOpacity="0.25"/>
+            <stop offset="40%" stopColor="#fff" stopOpacity="0"/>
+          </linearGradient>
         </defs>
         <rect width={size} height={size} fill={`url(#${id})`}/>
-        {[...Array(8)].map((_,i) => (
-          <circle key={i} cx={20+i*16} cy={size-18} r={3} fill={colors[2]} fillOpacity={0.3}/>
+        <ellipse cx={size*0.3} cy={size*0.25} rx={size*0.35} ry={size*0.18} fill="#fff" fillOpacity={0.12}/>
+        <rect width={size} height={size} fill={`url(#${shineId})`}/>
+        {[...Array(6)].map((_,i) => (
+          <circle key={i} cx={size*0.15+i*(size*0.14)} cy={size-12} r={size*0.018} fill={colors[3]} fillOpacity={0.45}/>
         ))}
       </svg>
+      {/* Soft inner glow ring */}
+      <div style={{ position:"absolute", inset:0, borderRadius:16, boxShadow:`inset 0 0 30px ${colors[1]}55, inset 0 1px 0 rgba(255,255,255,0.18)`, pointerEvents:"none" }}/>
       <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center", justifyContent:"center",
-        fontSize: size > 100 ? 52 : 32, filter:"drop-shadow(0 4px 8px rgba(0,0,0,0.5))" }}>
+        fontSize: size > 100 ? 72 : 38,
+        filter:`drop-shadow(0 8px 18px rgba(0,0,0,0.55)) drop-shadow(0 0 22px ${colors[1]}aa)`,
+        transform:"translateY(-4px)",
+      }}>
         {item.emoji}
       </div>
     </div>
@@ -1148,6 +1161,7 @@ const KIOSK_CSS = `
   @keyframes emptyFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
   @keyframes emptyGlow{0%,100%{opacity:0.6;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
   @keyframes cardWarmth{0%,100%{box-shadow:0 4px 12px rgba(0,0,0,0.35),0 24px 60px rgba(0,0,0,0.55)}50%{box-shadow:0 4px 14px rgba(0,0,0,0.4),0 24px 64px rgba(0,0,0,0.58),0 0 22px color-mix(in srgb,var(--brand-primary,#FF6B35) 8%,transparent)}}
+  @keyframes checkoutGlow{0%,100%{box-shadow:0 12px 32px color-mix(in srgb,var(--brand-primary,#FF6B35) 50%,transparent),0 0 0 2px color-mix(in srgb,var(--brand-primary,#FF6B35) 30%,transparent),inset 0 1px 0 rgba(255,255,255,0.3)}50%{box-shadow:0 16px 40px color-mix(in srgb,var(--brand-primary,#FF6B35) 65%,transparent),0 0 0 3px color-mix(in srgb,var(--brand-primary,#FF6B35) 45%,transparent),inset 0 1px 0 rgba(255,255,255,0.4)}}
   @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
   @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
   @keyframes breathe{0%,100%{opacity:.55;transform:scale(1)}50%{opacity:.85;transform:scale(1.04)}}
@@ -1295,7 +1309,7 @@ const K = {
   editorialCard:    {borderRadius:20,display:"flex",flexDirection:"column",position:"relative",cursor:"pointer",overflow:"hidden",background:"linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))",border:"1px solid rgba(255,255,255,0.06)",transition:"transform 0.25s cubic-bezier(.2,.8,.2,1),box-shadow 0.25s,border-color 0.25s"},
   editorialCardImg: {height:180,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden",background:"radial-gradient(ellipse 90% 70% at 50% 35%,color-mix(in srgb,var(--brand-primary,#FF6B35) 18%,transparent),transparent 75%)"},
   editorialCardInfo:{padding:"14px 16px 16px",display:"flex",flexDirection:"column",gap:10},
-  editorialCardName:{fontFamily:"'Inter',sans-serif",fontSize:16,fontWeight:700,letterSpacing:"-0.3px",color:"#fff",lineHeight:1.25,overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",minHeight:40},
+  editorialCardName:{fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:700,letterSpacing:"-0.3px",color:"#fff",lineHeight:1.25,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",minHeight:20},
   editorialCardBottom:{display:"flex",justifyContent:"space-between",alignItems:"center",gap:10},
   // Price — bigger appetizing accent (brand color, bold)
   editorialCardPrice:{fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:800,color:"var(--brand-primary,#FF6B35)",letterSpacing:"-0.4px",fontVariantNumeric:"tabular-nums",textShadow:"0 0 12px color-mix(in srgb,var(--brand-primary,#FF6B35) 30%,transparent)"},
@@ -1317,19 +1331,19 @@ const K = {
   emptyChip:     {marginTop:6,padding:"8px 16px",borderRadius:999,border:"1px solid rgba(255,255,255,0.08)",background:"rgba(255,255,255,0.025)",fontSize:11,color:"rgba(255,255,255,0.45)",display:"flex",alignItems:"center",gap:7,fontFamily:"'Inter',sans-serif",letterSpacing:0.2},
   removeBtn:{background:"transparent",border:"none",color:"rgba(248,113,113,0.7)",fontSize:14,cursor:"pointer",padding:"4px 6px",flexShrink:0,transition:"all 0.2s ease",borderRadius:8},
   // cart row fine-grain
-  cartRowName:   {fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:600,letterSpacing:"-0.2px",color:"rgba(255,255,255,0.95)",lineHeight:1.3},
-  cartRowUnit:   {fontSize:11,color:"rgba(255,255,255,0.4)",marginTop:3,fontVariantNumeric:"tabular-nums",fontFamily:"'Inter',sans-serif"},
-  cartRowAddons: {fontSize:11,color:"color-mix(in srgb,var(--brand-primary,#FF6B35) 88%,#fff)",marginBottom:4,lineHeight:1.5,fontVariantNumeric:"tabular-nums"},
-  cartQtyGroup:  {display:"flex",alignItems:"center",gap:6},
-  cartQtyVal:    {width:28,textAlign:"center",fontSize:13,fontWeight:600,fontVariantNumeric:"tabular-nums"},
-  cartLineTotal: {fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:600,color:"#fff",fontVariantNumeric:"tabular-nums",letterSpacing:"-0.2px"},
+  cartRowName:   {fontFamily:"'Inter',sans-serif",fontSize:15,fontWeight:700,letterSpacing:"-0.2px",color:"#fff",lineHeight:1.3},
+  cartRowUnit:   {fontSize:12,color:"rgba(255,255,255,0.6)",marginTop:3,fontVariantNumeric:"tabular-nums",fontFamily:"'Inter',sans-serif",fontWeight:500},
+  cartRowAddons: {fontSize:12,color:"color-mix(in srgb,var(--brand-primary,#FF6B35) 90%,#fff)",marginBottom:4,lineHeight:1.5,fontVariantNumeric:"tabular-nums",fontWeight:600},
+  cartQtyGroup:  {display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.06)",borderRadius:999,padding:"4px 6px"},
+  cartQtyVal:    {minWidth:24,textAlign:"center",fontSize:15,fontWeight:800,fontVariantNumeric:"tabular-nums",color:"#fff"},
+  cartLineTotal: {fontFamily:"'Inter',sans-serif",fontSize:16,fontWeight:800,color:"#fff",fontVariantNumeric:"tabular-nums",letterSpacing:"-0.3px"},
   // cart footer rows
   cartFooterRow: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6,fontSize:12,color:"rgba(255,255,255,0.55)",fontFamily:"'Inter',sans-serif"},
   cartFooterDivider:{height:1,background:"linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent)",margin:"8px 0"},
-  cartFooterTotal:{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:16},
-  cartFooterTotalLabel:{fontFamily:"'Inter',sans-serif",fontSize:13,letterSpacing:0.4,color:"rgba(255,255,255,0.55)",fontWeight:400,textTransform:"uppercase"},
-  cartFooterTotalVal:{fontFamily:"'Inter',sans-serif",fontSize:28,color:"#fff",fontWeight:600,letterSpacing:"-0.7px",fontVariantNumeric:"tabular-nums"},
-  cartCheckoutBtn:{width:"100%",padding:"16px",borderRadius:16,border:"none",color:"#fff",fontFamily:"'Inter',sans-serif",fontSize:16,fontWeight:600,letterSpacing:"-0.3px",cursor:"pointer"},
+  cartFooterTotal:{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:16,padding:"14px 16px",borderRadius:14,background:"linear-gradient(135deg, color-mix(in srgb,var(--brand-primary,#FF6B35) 18%, transparent), color-mix(in srgb,var(--brand-primary,#FF6B35) 8%, transparent))",border:"1px solid color-mix(in srgb,var(--brand-primary,#FF6B35) 30%, transparent)"},
+  cartFooterTotalLabel:{fontFamily:"'Inter',sans-serif",fontSize:14,letterSpacing:1,color:"rgba(255,255,255,0.85)",fontWeight:800,textTransform:"uppercase"},
+  cartFooterTotalVal:{fontFamily:"'Inter',sans-serif",fontSize:34,color:"#fff",fontWeight:900,letterSpacing:"-1px",fontVariantNumeric:"tabular-nums",textShadow:"0 0 24px color-mix(in srgb,var(--brand-primary,#FF6B35) 45%, transparent)"},
+  cartCheckoutBtn:{width:"100%",padding:"20px",borderRadius:16,border:"none",color:"#fff",fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:800,letterSpacing:"-0.3px",cursor:"pointer",boxShadow:"0 12px 32px color-mix(in srgb,var(--brand-primary,#FF6B35) 50%, transparent), 0 0 0 2px color-mix(in srgb,var(--brand-primary,#FF6B35) 30%, transparent), inset 0 1px 0 rgba(255,255,255,0.3)",animation:"checkoutGlow 2.4s ease-in-out infinite"},
   cartCheckoutDisabled:{width:"100%",padding:"15px",borderRadius:16,background:"rgba(255,255,255,0.025)",border:"1px solid rgba(255,255,255,0.06)",color:"rgba(255,255,255,0.3)",fontFamily:"'Inter',sans-serif",fontSize:14,fontWeight:500,letterSpacing:0.1,cursor:"not-allowed"},
 
   // ── IDLE ──
