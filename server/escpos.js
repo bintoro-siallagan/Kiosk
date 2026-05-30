@@ -118,7 +118,10 @@ function buildCustomerReceipt(order, template = {}) {
   })();
 
   // Header — center, customizable per outlet + auto sub per source
-  r.align("center").bold(true).size("dbl").line(outletName)
+  // Decorative divider biar terasa premium, bukan "machine output"
+  const decorTop = "*  *  *  *  *  *";
+  r.align("center").line(decorTop);
+  r.bold(true).size("dbl").line(outletName)
    .size("normal").line(sourceLabel).bold(false);
   if (outletAddress) r.line(outletAddress);
 
@@ -134,7 +137,11 @@ function buildCustomerReceipt(order, template = {}) {
   r.feed();
   r.hr("=");
 
-  // Meta info — center
+  // ORDER # HERO — besar di tengah, mudah dibaca buat panggilan + display
+  r.align("center").bold(true).size("dblH").line(`#${order.id}`)
+   .size("normal").bold(false).feed();
+
+  // Meta info — center, lebih ringkas
   const receiptNo = `RCP-${order.id}-${(order.midtransId || Math.random().toString(36).slice(2,10)).slice(-8).toUpperCase()}`;
   const timestamp = new Date(order.time).toLocaleString("id-ID", {
     day:"numeric", month:"numeric", year:"numeric",
@@ -142,12 +149,11 @@ function buildCustomerReceipt(order, template = {}) {
   });
   r.align("center");
   r.line(`No. Struk: ${receiptNo}`);
-  r.line(`No. Order: #${order.id}`);
   r.line(`Waktu: ${timestamp}`);
   // Kasir line — dari order.kasir kalau POS; "Self Order" untuk kiosk; "QR Order" untuk flow
   r.line(`Kasir: ${order.kasir || (order.source === "pos" ? "POS" : order.source === "customer_portal" ? "Customer (QR)" : "Self Order")}`);
   r.line(`Tipe: ${order.type === "dine" ? `Dine In - Meja ${order.table || "-"}` : "Bawa Pulang"}`);
-  if (order.customerName) r.line(`Customer: ${order.customerName}`);
+  if (order.customerName) r.line(`Untuk: ${order.customerName}`);
   r.hr("=");
 
   // Items — center, label di baris harga di bawahnya
@@ -190,6 +196,12 @@ function buildCustomerReceipt(order, template = {}) {
     r.line(`Tukar ${order.pointsRedeemed} poin: -${fIDR(order.pointsDiscount)}`);
   }
   r.feed().bold(true).size("dblH").line(`TOTAL: ${fIDR(total)}`).size("normal").bold(false);
+
+  // Highlight savings dari promo + points — bikin customer merasa "worth it"
+  const totalSaved = (order.promoDiscount || 0) + (order.pointsDiscount || 0);
+  if (totalSaved > 0) {
+    r.feed().bold(true).line(`>> Anda hemat ${fIDR(totalSaved)} <<`).bold(false);
+  }
   if (order.pointsEarned > 0) {
     r.feed().bold(true).line(`+${order.pointsEarned} POIN DIDAPAT`).bold(false);
   }
@@ -202,7 +214,11 @@ function buildCustomerReceipt(order, template = {}) {
   r.line(`Status: LUNAS`).feed();
 
   // Footer + QR — center, customizable
-  if (footerThanks) r.line(footerThanks);
+  // Personalized thanks kalau ada nama customer
+  const personalThanks = order.customerName
+    ? `Terima kasih, ${order.customerName}.`
+    : (footerThanks || "Terima kasih atas kunjungan Anda.");
+  r.feed().bold(true).line(personalThanks).bold(false);
   if (footerNote) r.line(footerNote);
 
   // Sambutan penutup yang adaptive waktu — karyaOS prinsip:
@@ -214,6 +230,11 @@ function buildCustomerReceipt(order, template = {}) {
               : hour >= 15 && hour < 18 ? "Selamat menikmati sore Anda."
               : "Selamat menikmati malam Anda.";
   r.feed().line(sayang);
+  r.feed();
+
+  // Brand signature — closing yg lebih punya jiwa daripada "Powered by"
+  r.line(`- dari kami yang berterima kasih -`);
+  r.bold(true).line(outletName.toUpperCase()).bold(false);
   r.feed();
 
   // ── Single QR: rating + komentar ──
@@ -228,7 +249,8 @@ function buildCustomerReceipt(order, template = {}) {
     r.qr(`${ratingBase}/?rate=${order.id}`, 7, 1).feed();
   }
 
-  r.line(`Order #${order.id}`).feed(2);
+  r.line(`Order #${order.id}`).feed();
+  r.align("center").line("*  *  *  *  *  *").feed();
 
   r.cut();
   return r.done();
