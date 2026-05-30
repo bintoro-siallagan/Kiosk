@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import API_HOST from "../apiBase.js";
 import POSCelebration from "../POS/POSCelebration.jsx";
+import POSSatisfaction from "../POS/POSSatisfaction.jsx";
 import { subscribeToOrderPush, isPushSupported } from "../lib/push.js";
 import PushPermissionPrompt from "../components/PushPermissionPrompt.jsx";
 
@@ -33,6 +34,12 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
   const [showCelebration, setShowCelebration] = useState(false);
   const celebrationShown = useRef(false);
   const pollRef = useRef(null);
+  // Rating flow — auto-show saat order siap (ready/completed), sekali per order
+  const [showRating, setShowRating] = useState(false);
+  const [rated, setRated] = useState(() => {
+    try { return localStorage.getItem(`fb_done_${order.id}`) === "1"; } catch { return false; }
+  });
+  const ratingTriggered = useRef(false);
 
   useEffect(() => {
     const baseUrl = window.location.origin + window.location.pathname;
@@ -80,6 +87,22 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
   }, [order.id]);
 
   const currentStep = STATUS_TO_STEP[currentStatus] ?? 0;
+
+  // Auto-trigger rating prompt saat order siap (step >= 2) dan belum di-rate.
+  // Delay 2 detik biar customer nikmati momen "siap" dulu, baru ditanya.
+  useEffect(() => {
+    if (rated || ratingTriggered.current) return;
+    if (currentStep < 2) return;
+    ratingTriggered.current = true;
+    const t = setTimeout(() => setShowRating(true), 2000);
+    return () => clearTimeout(t);
+  }, [currentStep, rated]);
+
+  const onRatingDone = () => {
+    try { localStorage.setItem(`fb_done_${order.id}`, "1"); } catch {}
+    setRated(true);
+    setShowRating(false);
+  };
 
   function openWhatsApp() {
     const phone = (session.phone || "").replace(/[^0-9]/g, "");
@@ -179,6 +202,18 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
         👑 Lihat Gelar Sultan Jam Ini
       </button>
 
+      {/* Rating CTA — selalu accessible (auto-pop juga kalau order siap) */}
+      {!rated && (
+        <button onClick={() => setShowRating(true)} style={{ ...S.btnSecondary, marginTop: 8, background: "linear-gradient(135deg,rgba(245,158,11,0.18),rgba(239,68,68,0.10))", borderColor: "rgba(245,158,11,0.45)", color: "#fbbf24" }}>
+          💛 Bagaimana pengalaman Anda?
+        </button>
+      )}
+      {rated && (
+        <div style={{ marginTop: 8, padding: "10px 14px", textAlign: "center", background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.30)", borderRadius: 12, color: "#10b981", fontSize: 13, fontWeight: 600 }}>
+          ✓ Terima kasih atas penilaian Anda
+        </div>
+      )}
+
       <button onClick={onOrderMore} style={S.btnPrimary}>🛒 Pesan Lagi</button>
       <button onClick={onHome} style={S.btnGhost}>← Kembali ke Home</button>
 
@@ -194,6 +229,16 @@ export default function FlowSuccess({ order, session, onHome, onOrderMore }) {
             total: orderData.total || order.total,
           }}
           onDone={() => setShowCelebration(false)}
+        />
+      )}
+
+      {/* Rating prompt — auto-pop saat order siap, manual via button "Beri Rating" */}
+      {showRating && (
+        <POSSatisfaction
+          order={{ ref: order.id, cashier: orderData.kasir || order.kasir }}
+          apiBase={API}
+          source="flow"
+          onDone={onRatingDone}
         />
       )}
     </div>

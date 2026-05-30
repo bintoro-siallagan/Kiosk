@@ -74,29 +74,82 @@ export default function PWAInstallPrompt({ brandName = "karyaos" }) {
 
   if (!visible) return null;
 
+  // iOS path: visual step-by-step (Safari gak support install programmatic)
+  if (showIos) {
+    return (
+      <div style={S.iosCard}>
+        <style>{KEYFRAMES}</style>
+        <button onClick={dismiss} style={S.iosDismiss} aria-label="Tutup">✕</button>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ fontSize: 44, marginBottom: 8 }}>📲</div>
+          <div style={S.iosTitle}>Pasang {brandName} ke Home Screen</div>
+          <div style={S.iosSub}>Akses cepat seperti app, full-screen tanpa browser bar</div>
+        </div>
+        <div style={S.iosSteps}>
+          <div style={S.iosStep}>
+            <div style={S.iosStepNum}>1</div>
+            <div style={{ flex: 1 }}>
+              <div style={S.iosStepText}>Tap tombol <b>Share</b> di bawah Safari</div>
+              <div style={S.iosStepHint}>
+                <span style={S.iosShareIcon}>
+                  <svg width="18" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8" />
+                    <polyline points="16 6 12 2 8 6" />
+                    <line x1="12" y1="2" x2="12" y2="15" />
+                  </svg>
+                </span>
+                <span>ikon kotak dengan panah ke atas</span>
+              </div>
+            </div>
+          </div>
+          <div style={S.iosStep}>
+            <div style={S.iosStepNum}>2</div>
+            <div style={{ flex: 1 }}>
+              <div style={S.iosStepText}>Scroll, pilih <b>"Add to Home Screen"</b></div>
+              <div style={S.iosStepHint}>
+                <span style={{ fontSize: 16 }}>➕</span>
+                <span>Tambah ke Home Screen</span>
+              </div>
+            </div>
+          </div>
+          <div style={S.iosStep}>
+            <div style={S.iosStepNum}>3</div>
+            <div style={{ flex: 1 }}>
+              <div style={S.iosStepText}>Tap <b>"Add"</b> kanan atas</div>
+              <div style={S.iosStepHint}>Icon karyaOS langsung tampil di home screen</div>
+            </div>
+          </div>
+        </div>
+        {/* Arrow animated pointing to Safari share button (bottom-center on iOS) */}
+        <div style={S.iosArrow}>
+          <div style={{ fontSize: 32, animation: "bounce-down 1.5s ease-in-out infinite" }}>↓</div>
+          <div style={S.iosArrowText}>Tap Share di bawah</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Android / desktop Chrome — native install prompt
   return (
     <div style={S.banner}>
       <style>{KEYFRAMES}</style>
       <div style={S.icon}>📲</div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={S.title}>Install {brandName} as app</div>
-        <div style={S.subtitle}>
-          {showIos
-            ? "Tap the Share icon, then \"Add to Home Screen\""
-            : "Quick access, full-screen, faster load"}
-        </div>
+        <div style={S.title}>Pasang {brandName} sebagai app</div>
+        <div style={S.subtitle}>Akses cepat, full-screen, lebih ringan</div>
       </div>
       <div style={S.actions}>
-        {!showIos && (
-          <button onClick={install} style={S.installBtn}>Install</button>
-        )}
-        <button onClick={dismiss} style={S.dismissBtn} aria-label="Dismiss">✕</button>
+        <button onClick={install} style={S.installBtn}>Pasang</button>
+        <button onClick={dismiss} style={S.dismissBtn} aria-label="Tutup">✕</button>
       </div>
     </div>
   );
 }
 
-const KEYFRAMES = `@keyframes pwa-slide-up { from { transform: translateY(120%); opacity: 0 } to { transform: translateY(0); opacity: 1 } }`;
+const KEYFRAMES = `
+  @keyframes pwa-slide-up { from { transform: translateY(120%); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+  @keyframes bounce-down { 0%, 100% { transform: translateY(0); opacity: 0.85 } 50% { transform: translateY(8px); opacity: 1 } }
+`;
 
 const S = {
   banner: {
@@ -132,4 +185,38 @@ const S = {
     color: "rgba(255,255,255,0.6)", borderRadius: "50%", cursor: "pointer", fontSize: 14, lineHeight: 1,
     display: "flex", alignItems: "center", justifyContent: "center",
   },
+  // iOS step-by-step card (Safari gak support beforeinstallprompt — wajib manual)
+  iosCard: {
+    position: "fixed", bottom: 16, left: 16, right: 16,
+    maxWidth: 420, margin: "0 auto",
+    background: "linear-gradient(180deg,#0d1117 0%,#161b22 100%)",
+    border: "1px solid rgba(96,165,250,0.30)",
+    borderRadius: 20, padding: 20,
+    zIndex: 9100, boxShadow: "0 20px 60px rgba(0,0,0,0.65)",
+    animation: "pwa-slide-up 0.5s cubic-bezier(.2,.8,.2,1)",
+    fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif",
+  },
+  iosDismiss: {
+    position: "absolute", top: 12, right: 12, width: 30, height: 30, padding: 0,
+    background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)",
+    color: "rgba(255,255,255,0.6)", borderRadius: "50%", cursor: "pointer", fontSize: 14,
+    display: "flex", alignItems: "center", justifyContent: "center",
+  },
+  iosTitle: { fontSize: 18, fontWeight: 800, color: "#fff", letterSpacing: -0.3, marginTop: 4 },
+  iosSub: { fontSize: 12, color: "rgba(255,255,255,0.55)", marginTop: 4, lineHeight: 1.5 },
+  iosSteps: { display: "flex", flexDirection: "column", gap: 12, marginTop: 16 },
+  iosStep: {
+    display: "flex", gap: 12, padding: "10px 12px", background: "rgba(255,255,255,0.03)",
+    border: "1px solid rgba(255,255,255,0.06)", borderRadius: 10, alignItems: "flex-start",
+  },
+  iosStepNum: {
+    width: 24, height: 24, borderRadius: "50%", background: "linear-gradient(135deg,#60a5fa,#a855f7)",
+    color: "#fff", fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center",
+    flexShrink: 0,
+  },
+  iosStepText: { fontSize: 13, color: "#e6edf3", lineHeight: 1.4 },
+  iosStepHint: { fontSize: 11, color: "#9da7b3", marginTop: 4, display: "inline-flex", alignItems: "center", gap: 6 },
+  iosShareIcon: { display: "inline-flex", padding: 3, background: "rgba(96,165,250,0.10)", border: "1px solid rgba(96,165,250,0.30)", borderRadius: 5 },
+  iosArrow: { textAlign: "center", marginTop: 14, color: "#60a5fa" },
+  iosArrowText: { fontSize: 10, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", fontWeight: 700, color: "#60a5fa", textTransform: "uppercase", opacity: 0.7 },
 };
