@@ -404,17 +404,19 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
           </span>
           {onCloseShift && (
             <button onClick={onCloseShift}
+              title="Tutup shift kasir — hitung kas laci, print summary shift, kasir lain bisa mulai shift baru"
               style={{...S.logout, background: '#f9731622', border: '1px solid #f9731655', color: '#f97316'}}>
-              🔒 Close Shift
+              🔒 Tutup Shift
             </button>
           )}
           {role === "manager" && (
             <button onClick={handleCloseDay}
+              title="Tutup hari operasional — outlet berhenti melayani sampai Manager Open Day esok pagi. Summary harian dicetak + email."
               style={{...S.logout, background: '#7c3aed22', border: '1px solid #7c3aed66', color: '#a78bfa'}}>
-              🌙 Close Day
+              🌙 Tutup Hari
             </button>
           )}
-          <button onClick={onLogout} style={S.logout}>Log Out</button>
+          <button onClick={onLogout} title="Logout dari sesi kasir saat ini" style={S.logout}>Keluar</button>
         </div>
       </header>
 
@@ -513,17 +515,19 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
 
         {/* MAIN ACTION GRID — F&B default, plus Cinema button kalau outlet hybrid */}
         <div style={S.actionGrid}>
-          <button className="ph-card" style={S.bigBtn} onClick={onNewOrder}>
+          <button className="ph-card" style={S.bigBtn} onClick={onNewOrder}
+            title="Mulai pesanan baru — pilih menu, addons, payment">
             <div style={S.bigBtnIcon}>🛒</div>
-            <div style={S.bigBtnTitle}>New order</div>
-            <div style={S.btnHint}>Start an order for a customer</div>
+            <div style={S.bigBtnTitle}>Pesanan Baru</div>
+            <div style={S.btnHint}>Mulai pesan untuk customer</div>
           </button>
 
           {onQuickOrder && (
-            <button className="ph-card" style={S.bigBtn} onClick={onQuickOrder}>
+            <button className="ph-card" style={S.bigBtn} onClick={onQuickOrder}
+              title="Mode cepat — skip menu picker, langsung pakai master menu">
               <div style={S.bigBtnIcon}>⚡</div>
-              <div style={S.bigBtnTitle}>Quick order</div>
-              <div style={S.btnHint}>Fast order — master menu</div>
+              <div style={S.bigBtnTitle}>Pesan Cepat</div>
+              <div style={S.btnHint}>Skip menu picker, langsung master menu</div>
             </button>
           )}
 
