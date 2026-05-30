@@ -1419,6 +1419,20 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
         {onLogout && <button className="tile" style={{ ...S.footBtn, color: "#f87171", borderColor: "#f8717133" }} onClick={wrappedLogout}>Log Out</button>}
         <button className="tile" style={{ ...S.footBtn, color: "#fbbf24", borderColor: "#fbbf2433" }} onClick={() => setShowChangePwd(true)}>🔐 Ganti Password</button>
         <button className="tile" style={{ ...S.footBtn, color: "#a5b4fc", borderColor: "#a5b4fc33" }} onClick={() => setShowTour(true)}>🎓 Tour</button>
+        <button className="tile" style={{ ...S.footBtn, color: "#10b981", borderColor: "#10b98133" }} onClick={async () => {
+          const phone = prompt("No HP owner untuk kirim rekap WA (08xxx atau 62xxx):");
+          if (!phone) return;
+          try {
+            const r = await fetch(`${API}/api/admin/send-daily-summary-wa`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", ...(localStorage.getItem("adminToken") ? { Authorization: `Bearer ${localStorage.getItem("adminToken")}` } : {}) },
+              body: JSON.stringify({ phone }),
+            });
+            const j = await r.json();
+            if (j.ok) alert("✓ Rekap WA terkirim ke " + phone);
+            else alert("Preview (WA belum di-config?):\n\n" + (j.preview || j.error || "unknown"));
+          } catch (e) { alert("Gagal: " + e.message); }
+        }}>📱 Kirim Rekap WA</button>
         <span style={{ flex: 1 }} />
         <KaryaLocaleSwitcher />
         <span style={S.footNote}>karyaOS · 145+ modules · 🎬 Cinema · 🍽️ F&B · 🛡️ Enterprise · v5 · <kbd style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 4, padding: "1px 5px", fontSize: 9.5, color: "rgba(255,255,255,0.6)", fontFamily: "'Geist Mono',monospace" }}>⌘K</kbd> to search</span>

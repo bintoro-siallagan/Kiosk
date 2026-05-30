@@ -5535,6 +5535,76 @@ app.patch("/api/admin/daily-target", (req, res) => {
   }
 });
 
+// ── Manual WA Daily Summary — owner trigger anytime ──
+// POST /api/admin/send-daily-summary-wa { phone }
+// Compose karyaOS hangat summary + send via WA. Use case: owner di
+// luar admin, mau quick recap. Atau test sebelum auto-schedule.
+app.post("/api/admin/send-daily-summary-wa", async (req, res) => {
+  try {
+    const phone = String((req.body && req.body.phone) || "").trim();
+    if (!phone) return res.status(400).json({ error: "phone required" });
+
+    const todayStartMs = new Date().setHours(0, 0, 0, 0);
+    const todayStartSec = Math.floor(todayStartMs / 1000);
+
+    // Aggregate stats today
+    let orders = 0, revenue = 0, topItem = null, rating = 0, ratingCount = 0;
+    try {
+      const r = db.rawDb.prepare(`SELECT COUNT(*) c, COALESCE(SUM(total),0) s FROM orders WHERE time >= ? AND status != 'cancelled'`).get(todayStartMs);
+      orders = r?.c || 0; revenue = r?.s || 0;
+    } catch {}
+    try {
+      const rows = db.rawDb.prepare(`SELECT items FROM orders WHERE time >= ? AND status != 'cancelled' LIMIT 500`).all(todayStartMs);
+      const counts = new Map();
+      for (const r of rows) {
+        try {
+          const it = JSON.parse(r.items || '[]');
+          for (const x of it) {
+            const n = x.n || x.name; if (!n) continue;
+            counts.set(n, (counts.get(n) || 0) + (x.q || x.qty || 1));
+          }
+        } catch {}
+      }
+      let best = null, bc = 0;
+      for (const [n, c] of counts.entries()) if (c > bc) { best = n; bc = c; }
+      if (best) topItem = { name: best, count: bc };
+    } catch {}
+    try {
+      const fb = db.rawDb.prepare(`SELECT COUNT(*) c, COALESCE(AVG(rating),0) a FROM customer_feedback WHERE created_at >= ?`).get(todayStartSec);
+      rating = Math.round((fb?.a || 0) * 100) / 100; ratingCount = fb?.c || 0;
+    } catch {}
+
+    // Compose hangat message
+    const fmtIDR = (n) => "Rp " + Math.round(n / 1000).toLocaleString("id-ID") + "K";
+    const date = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+    const h = new Date().getHours();
+    const greet = h >= 18 ? "Selamat malam" : h >= 15 ? "Selamat sore" : h >= 11 ? "Selamat siang" : "Selamat pagi";
+
+    let msg = `💛 ${greet}!\n\n*Rekap hari ini · ${date}*\n\n`;
+    if (orders === 0) {
+      msg += `Hari ini masih tenang. Belum ada transaksi tercatat — semoga sentuhan pertama segera datang.\n\n`;
+    } else {
+      msg += `🛒 ${orders} pesanan diterima\n`;
+      msg += `💰 Omzet: ${fmtIDR(revenue)}\n`;
+      msg += `📊 Rata-rata struk: ${fmtIDR(orders > 0 ? revenue / orders : 0)}\n`;
+      if (topItem) msg += `🔥 Paling laris: ${topItem.name} (${topItem.count}x)\n`;
+      msg += `\n`;
+    }
+    if (ratingCount > 0) {
+      msg += `⭐ Rating hari ini: ${rating.toFixed(1)} dari ${ratingCount} ulasan\n`;
+      if (rating < 3.5) msg += `⚠️ Rating rendah — perlu perhatian.\n`;
+      msg += `\n`;
+    }
+    msg += `Terima kasih atas kerja tim hari ini.\nSelamat beristirahat.\n\n— karyaOS`;
+
+    // Send via wa.sendMessage
+    const result = await wa.sendMessage(phone, msg);
+    res.json({ ok: result?.ok || false, result, preview: msg });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── Recent activity feed — owner pulse timeline ──
 // Returns last N orders + ratings sorted by time desc. Safe public:
 // only order_no (last 4 chars) + first name + minimal status/rating.
