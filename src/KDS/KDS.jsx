@@ -385,6 +385,7 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
         <AnalyticsTile label="READY" value={analytics.ready} color="#4ade80" />
         {analytics.warning > 0 && <AnalyticsTile label="WARN" value={analytics.warning} color="#fbbf24" />}
         {analytics.late > 0 && <AnalyticsTile label="LATE" value={analytics.late} color="#ef4444" pulse />}
+        <KitchenWhisper analytics={analytics} stats={stats} />
         <div style={{ flex: 1 }} />
         {stats?.completed_today && (
           <>
@@ -693,6 +694,55 @@ function Empty({ children }) {
 }
 
 // Kitchen analytics tile — compact KPI utk strip top
+// 💭 KitchenWhisper — kontekstual nudge buat tim dapur.
+// Filosofi karyaOS: dapur = hidden hero. Saat sepi diberi nafas, saat
+// rame diberi dorongan, saat performance bagus diberi celebration.
+function KitchenWhisper({ analytics, stats }) {
+  const msg = useMemo(() => {
+    const total = analytics?.total || 0;
+    const late = analytics?.late || 0;
+    const queued = analytics?.queued || 0;
+    const doneToday = stats?.completed_today?.total || 0;
+    const avgPrep = stats?.completed_today?.avg_prep || 0;
+    const h = new Date().getHours();
+
+    // Priority order:
+    // 1. Late tickets > 2 → urgency push
+    if (late >= 3) return { icon: "🚨", text: `${late} tiket lewat target. Tetap fokus, jangan panik.`, color: "#ef4444", bg: "rgba(239,68,68,0.10)" };
+    // 2. Queue building up
+    if (queued >= 5) return { icon: "🔥", text: `${queued} antrian — tim kalian luar biasa, ayo!`, color: "#fb923c", bg: "rgba(251,146,60,0.10)" };
+    // 3. Milestone celebration
+    if (doneToday >= 100 && doneToday < 105) return { icon: "🏆", text: `100 tiket! Hari yg luar biasa.`, color: "#fbbf24", bg: "rgba(251,191,36,0.10)" };
+    if (doneToday >= 50 && doneToday < 55) return { icon: "👑", text: `50 tiket selesai — performa solid!`, color: "#fbbf24", bg: "rgba(251,191,36,0.10)" };
+    if (doneToday >= 25 && doneToday < 30) return { icon: "🔥", text: `25 tiket! Kerja kerasnya kelihatan.`, color: "#fbbf24", bg: "rgba(251,191,36,0.10)" };
+    if (doneToday >= 10 && doneToday < 12) return { icon: "✨", text: `10 tiket — momentum bagus.`, color: "#22d3ee", bg: "rgba(34,211,238,0.10)" };
+    // 4. Speed celebration
+    if (avgPrep > 0 && avgPrep < 180 && doneToday >= 5) return { icon: "⚡", text: `Avg ${Math.round(avgPrep)}s — kecepatan top!`, color: "#22d3ee", bg: "rgba(34,211,238,0.10)" };
+    // 5. Quiet moment
+    if (total === 0) {
+      if (h >= 5 && h < 11) return { icon: "☕", text: "Pagi tenang — pelan-pelan ya, hari baru saja mulai.", color: "#a5b4fc", bg: "rgba(165,180,252,0.08)" };
+      if (h >= 11 && h < 15) return { icon: "🍽️", text: "Siang sepi — sebentar lagi rame, tetap siap.", color: "#a5b4fc", bg: "rgba(165,180,252,0.08)" };
+      if (h >= 15 && h < 18) return { icon: "🌅", text: "Sore tenang — istirahat sebentar yuk.", color: "#a5b4fc", bg: "rgba(165,180,252,0.08)" };
+      return { icon: "🌙", text: "Malam tenang — nafas dulu, nikmati momen.", color: "#a5b4fc", bg: "rgba(165,180,252,0.08)" };
+    }
+    return null;
+  }, [analytics?.total, analytics?.late, analytics?.queued, stats?.completed_today?.total, stats?.completed_today?.avg_prep]);
+
+  if (!msg) return null;
+  return (
+    <div style={{
+      display: "inline-flex", alignItems: "center", gap: 8,
+      padding: "6px 12px", borderRadius: 8,
+      background: msg.bg, border: `1px solid ${msg.color}33`,
+      marginLeft: 8, animation: "kdsWhisperIn 0.5s ease",
+    }}>
+      <style>{`@keyframes kdsWhisperIn { 0% { opacity: 0; transform: scale(0.94) } 100% { opacity: 1; transform: scale(1) } }`}</style>
+      <span style={{ fontSize: 14, lineHeight: 1 }}>{msg.icon}</span>
+      <span style={{ fontSize: 12, color: msg.color, fontWeight: 600, letterSpacing: -0.1 }}>{msg.text}</span>
+    </div>
+  );
+}
+
 function AnalyticsTile({ label, value, color, pulse }) {
   return (
     <div className={pulse ? "kds-card-pulse" : ""} style={{
