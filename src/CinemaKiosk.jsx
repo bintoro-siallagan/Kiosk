@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import DelightPopup from "./components/DelightPopup.jsx";
 import MarqueeTicker from "./components/MarqueeTicker.jsx";
+import { ThoughtBubble as SoulBubble, PulseTicker as SoulPulse, buildCinemaPulseMessages, timeOfDay } from "./components/SoulOverlay.jsx";
 import CinemaCelebration from "./CinemaCelebration.jsx";
 import { ErrorInline } from "./components/ConnectionError.jsx";
 import { useT, LocaleSwitcher } from "./i18n";
@@ -40,6 +41,9 @@ export default function CinemaKiosk({ apiBase }) {
   }, [apiBase]);
   const { fontFamily: tenantFont, background: tenantBg } = useTenantTheme(brand, { fallbackBg: "", fallbackFont: "" });
   const [autoPromos, setAutoPromos] = useState([]);    // [{id,name,discount_type,discount_value,progress:{unlocked}}]
+  // Soul state — cinema pulse + clock
+  const [cinemaPulse, setCinemaPulse] = useState(null);
+  const [soulNow, setSoulNow] = useState(() => new Date());
   // Auto-print state: idle | printing | success | error | unconfigured
   const [printState, setPrintState] = useState("idle");
   const [printMsg, setPrintMsg] = useState("");
@@ -124,6 +128,20 @@ export default function CinemaKiosk({ apiBase }) {
     timer = setInterval(fetchAuto, 30000);
     return () => clearInterval(timer);
   }, [base, outletCode]);
+
+  // Soul pulse — cinema community stats (poll per 60s)
+  useEffect(() => {
+    const loadPulse = () => {
+      fetch(`${apiBase || ""}/api/public/cinema-pulse`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setCinemaPulse(d); })
+        .catch(() => {});
+    };
+    loadPulse();
+    const pulsePoll = setInterval(loadPulse, 60000);
+    const clock = setInterval(() => setSoulNow(new Date()), 60000);
+    return () => { clearInterval(pulsePoll); clearInterval(clock); };
+  }, [apiBase]);
 
   // Best unlocked auto-promo (highest discount among yang sudah ke-unlock)
   const bestAutoPromo = useMemo(() => {
@@ -638,6 +656,23 @@ export default function CinemaKiosk({ apiBase }) {
             {!bestAutoPromo && autoPromos.length > 0 && (
               <AutoPromoProgressBanner promos={autoPromos} />
             )}
+            {/* 💭 Cinema Soul — greeting + gumam + pulse social proof */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginBottom: 20, textAlign: "center" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "6px 14px", borderRadius: 999, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)", backdropFilter: "blur(8px)" }}>
+                <span style={{ fontSize: 16 }}>{timeOfDay(soulNow).emoji}</span>
+                <span>{timeOfDay(soulNow).greet} — mau nonton apa {timeOfDay(soulNow).word} ini?</span>
+              </div>
+              <SoulBubble
+                vertical="cinema" now={soulNow}
+                extras={{ upcomingShows: cinemaPulse?.upcoming_shows, topFilm: cinemaPulse?.top_film_today }}
+                accentColor="#ef4444" intervalMs={7000}
+                style={{ alignSelf: "center", padding: "12px 18px" }}
+              />
+              {cinemaPulse && (
+                <SoulPulse messages={buildCinemaPulseMessages(cinemaPulse)} />
+              )}
+            </div>
+
             <H>{t("cinema.choose_film")}</H>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: 14 }}>
               {films.filter(f => f.status === "now_showing" && filmIdsWithShows.has(f.id)).map(f => (

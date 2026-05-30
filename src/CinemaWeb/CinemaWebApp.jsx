@@ -17,6 +17,7 @@ import CinemaCelebration from "../CinemaCelebration.jsx";
 import { useTenantTheme } from "../lib/tenantTheme.js";
 import { LocaleSwitcher } from "../i18n";
 import { cinemaAudio } from "../lib/cinemaAudio.js";
+import { ThoughtBubble as SoulBubble, PulseTicker as SoulPulse, buildCinemaPulseMessages, timeOfDay } from "../components/SoulOverlay.jsx";
 
 // ════════════════════════════════════════════════════════════════════
 // PREMIUM SKELETON COMPONENTS
@@ -3194,6 +3195,23 @@ function OutletPicker({ onPick, onPickFeaturedFilm, pendingFilm, brandPrimary, o
 
   const [comingOutlets, setComingOutlets] = useState([]);
   const [comingFilms, setComingFilms] = useState([]);
+  // Soul state — time-aware + pulse
+  const [pulse, setPulse] = useState(null);
+  const [nowTick, setNowTick] = useState(() => new Date());
+
+  // Fetch cinema-pulse + clock tick
+  useEffect(() => {
+    const loadPulse = () => {
+      fetch(`${API_HOST}/api/public/cinema-pulse`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setPulse(d); })
+        .catch(() => {});
+    };
+    loadPulse();
+    const pulsePoll = setInterval(loadPulse, 60000);
+    const clock = setInterval(() => setNowTick(new Date()), 60000);
+    return () => { clearInterval(pulsePoll); clearInterval(clock); };
+  }, []);
 
   const load = useCallback(() => {
     setError(null);
@@ -3270,6 +3288,24 @@ function OutletPicker({ onPick, onPickFeaturedFilm, pendingFilm, brandPrimary, o
     <div className="cw-section-pad" style={{ padding: 0 }}>
       {/* IMMERSIVE CINEMA HERO — film poster slideshow + dark gradient + spotlight feel */}
       <CinemaHero films={films || []} brandPrimary={brandPrimary} onPickFilm={onPickFeaturedFilm} />
+
+      {/* 💭 Cinema Soul — greeting hangat + gumam + pulse social proof */}
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "20px 20px 0", display: "flex", flexDirection: "column", gap: 10, alignItems: "center", textAlign: "center" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 10, padding: "6px 14px", borderRadius: 999, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.85)", backdropFilter: "blur(8px)" }}>
+          <span style={{ fontSize: 14 }}>{timeOfDay(nowTick).emoji}</span>
+          <span>{timeOfDay(nowTick).greet} — mau nonton apa {timeOfDay(nowTick).word} ini?</span>
+        </div>
+        <SoulBubble
+          vertical="cinema" now={nowTick}
+          extras={{ upcomingShows: pulse?.upcoming_shows, topFilm: pulse?.top_film_today }}
+          accentColor={brandPrimary} intervalMs={7000}
+          style={{ alignSelf: "center", padding: "12px 18px" }}
+        />
+        {pulse && (
+          <SoulPulse messages={buildCinemaPulseMessages(pulse)} />
+        )}
+      </div>
+
       <div style={{ height: 32 }} />
 
       {/* CONTINUE BOOKING — appear kalau ada draft (booking belum checkout) */}

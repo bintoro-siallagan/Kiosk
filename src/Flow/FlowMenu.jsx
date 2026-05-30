@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import API_HOST from "../apiBase.js";
 import { fmtMoney } from "../lib/currency.js";
 import { cinemaAudio } from "../lib/cinemaAudio.js";
+import { ThoughtBubble, PulseTicker, buildFnbPulseMessages } from "../components/SoulOverlay.jsx";
 
 const BRAND = "var(--brand-primary,#FF6B35)";
 const BG = "#0A0A0A";
@@ -83,9 +84,11 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
   const [selectedToppings, setSelectedToppings] = useState([]);
   const [detailQty, setDetailQty] = useState(1);
   const [showCart, setShowCart] = useState(false);
-  // QUICK WINS #1+#2: outlet identity + day status
+  // QUICK WINS #1+#2: outlet identity + day status + soul (pulse)
   const [outletInfo, setOutletInfo] = useState(null);
   const [dayClosed, setDayClosed] = useState(false);
+  const [pulse, setPulse] = useState(null);
+  const [nowTick, setNowTick] = useState(() => new Date());
 
   // Resolve outlet code: ?outlet=X URL param OR table session
   const outletCode = useMemo(() => {
@@ -129,7 +132,22 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
     };
     loadDay();
     const dayPoll = setInterval(loadDay, 60000); // refresh per menit
-    return () => clearInterval(dayPoll);
+
+    // Soul pulse — community stats
+    const loadPulse = () => {
+      const qs = outletCode ? `?outlet=${encodeURIComponent(outletCode)}` : "";
+      fetch(`${API}/api/public/kiosk-pulse${qs}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setPulse(d); })
+        .catch(() => {});
+    };
+    loadPulse();
+    const pulsePoll = setInterval(loadPulse, 60000);
+
+    // Clock untuk time-aware greeting refresh
+    const clock = setInterval(() => setNowTick(new Date()), 60000);
+
+    return () => { clearInterval(dayPoll); clearInterval(pulsePoll); clearInterval(clock); };
   }, [outletCode]);
 
   const categories = useMemo(() => {
@@ -318,6 +336,24 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
                 {dayClosed ? "TUTUP" : "BUKA"}
               </span>
             </div>
+          </div>
+        )}
+
+        {/* 💭 Soul strip — gumam kiosk + community pulse (sebelum search) */}
+        {(outletInfo || pulse) && (
+          <div style={{ padding: "10px 20px 0", display: "flex", flexDirection: "column", gap: 8, alignItems: "stretch" }}>
+            <ThoughtBubble
+              vertical="fnb" now={nowTick} outletInfo={outletInfo}
+              extras={{ promoCount: 0, popular: menu.find(m => m.popular || m.is_popular) }}
+              accentColor={BRAND} intervalMs={7000}
+              style={{ alignSelf: "flex-start", maxWidth: "100%", padding: "10px 14px", fontSize: 14 }}
+            />
+            {pulse && (
+              <PulseTicker
+                messages={buildFnbPulseMessages(pulse)}
+                style={{ alignSelf: "flex-start" }}
+              />
+            )}
           </div>
         )}
 

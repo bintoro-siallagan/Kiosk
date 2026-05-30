@@ -5392,6 +5392,59 @@ app.get("/api/public/kiosk-pulse", (req, res) => {
   }
 });
 
+// ── Cinema attract-loop pulse — social proof aman utk CinemaWeb + Box Office Kiosk ──
+// Aggregate counts dari cinema_tickets + cinema_showtimes. No PII no revenue.
+app.get("/api/public/cinema-pulse", (req, res) => {
+  try {
+    const todayStartSec = Math.floor(new Date().setHours(0, 0, 0, 0) / 1000);
+    const oneHourAgoSec = Math.floor(Date.now() / 1000) - 3600;
+
+    let ticketsToday = 0;
+    let ticketsLastHour = 0;
+    let topFilmToday = null;
+    let upcomingShows = 0;
+
+    try {
+      ticketsToday = db.rawDb.prepare(`SELECT COUNT(*) c FROM cinema_tickets WHERE sold_at >= ?`).get(todayStartSec).c || 0;
+    } catch {}
+    try {
+      ticketsLastHour = db.rawDb.prepare(`SELECT COUNT(*) c FROM cinema_tickets WHERE sold_at >= ?`).get(oneHourAgoSec).c || 0;
+    } catch {}
+    try {
+      const row = db.rawDb.prepare(`
+        SELECT f.title, COUNT(*) c
+        FROM cinema_tickets t
+        JOIN cinema_showtimes s ON s.id = t.showtime_id
+        JOIN cinema_films f ON f.id = s.film_id
+        WHERE t.sold_at >= ?
+        GROUP BY f.id
+        ORDER BY c DESC LIMIT 1
+      `).get(todayStartSec);
+      if (row?.title) topFilmToday = { title: row.title, count: row.c };
+    } catch {}
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const nowHHmm = new Date().toTimeString().slice(0, 5);
+      upcomingShows = db.rawDb.prepare(`
+        SELECT COUNT(*) c FROM cinema_showtimes
+        WHERE show_date = ? AND start_time >= ?
+          AND COALESCE(is_archived, 0) = 0
+          AND COALESCE(status, 'scheduled') = 'scheduled'
+      `).get(today, nowHHmm).c || 0;
+    } catch {}
+
+    res.json({
+      tickets_today: ticketsToday,
+      tickets_last_hour: ticketsLastHour,
+      top_film_today: topFilmToday,
+      upcoming_shows: upcomingShows,
+      generated_at: Math.floor(Date.now() / 1000),
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── Public config (CDS tracking URL etc) ──────────────────────────────
 app.get("/api/config/public", (_, res) => {
   let auditConfig = {};
