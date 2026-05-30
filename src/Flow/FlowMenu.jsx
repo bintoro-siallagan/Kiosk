@@ -45,6 +45,24 @@ function rupiah(n) {
   return fmtMoney(n);
 }
 
+// F&B hero photo pool — food/cafe themed Unsplash (warm appetite-friendly)
+const FNB_HERO_PHOTOS = [
+  "https://images.unsplash.com/photo-1559339352-11d035aa65de?w=1200&q=85&auto=format&fit=crop", // cafe interior wood
+  "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=1200&q=85&auto=format&fit=crop", // coffee shop counter
+  "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200&q=85&auto=format&fit=crop", // restaurant warm
+  "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&q=85&auto=format&fit=crop", // food plate
+];
+
+function getFnbHero(outlet) {
+  if (!outlet) return { url: FNB_HERO_PHOTOS[0], emoji: "🏪" };
+  if (outlet.image_url || outlet.cover_url) return { url: outlet.image_url || outlet.cover_url, emoji: "🏪" };
+  // Stable hash by code → consistent same outlet always gets same photo
+  const code = (outlet.code || outlet.name || "OTL");
+  let h = 0;
+  for (let i = 0; i < code.length; i++) h = (h * 31 + code.charCodeAt(i)) >>> 0;
+  return { url: FNB_HERO_PHOTOS[h % FNB_HERO_PHOTOS.length], emoji: "🏪" };
+}
+
 function calcAddonTotal(selected, freeQuota, extraPrice) {
   if (!selected || selected.length === 0) return 0;
   const premiumCost = selected.reduce((s, t) => s + (t.price || 0), 0);
@@ -64,6 +82,17 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
   const [selectedToppings, setSelectedToppings] = useState([]);
   const [detailQty, setDetailQty] = useState(1);
   const [showCart, setShowCart] = useState(false);
+  // QUICK WINS #1+#2: outlet identity + day status
+  const [outletInfo, setOutletInfo] = useState(null);
+  const [dayClosed, setDayClosed] = useState(false);
+
+  // Resolve outlet code: ?outlet=X URL param OR table session
+  const outletCode = useMemo(() => {
+    try {
+      const q = new URLSearchParams(window.location.search);
+      return (q.get("outlet") || "").toUpperCase() || null;
+    } catch { return null; }
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -77,7 +106,30 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
       }
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+
+    // Fetch outlet identity (kalau ada code di URL) — buat hero card
+    if (outletCode) {
+      fetch(`${API}/api/outlet-master`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          const list = d?.outlets || (Array.isArray(d) ? d : []);
+          const o = list.find(x => (x.code || "").toUpperCase() === outletCode);
+          if (o) setOutletInfo(o);
+        })
+        .catch(() => {});
+    }
+
+    // Day status — buat status pill "Buka"/"Tutup"
+    const loadDay = () => {
+      fetch(`${API}/api/day/status?vertical=fnb`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => setDayClosed(!!d?.closed))
+        .catch(() => {});
+    };
+    loadDay();
+    const dayPoll = setInterval(loadDay, 60000); // refresh per menit
+    return () => clearInterval(dayPoll);
+  }, [outletCode]);
 
   const categories = useMemo(() => {
     const set = new Set(menu.map(m => m.cat));
@@ -103,6 +155,18 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
     return list;
   }, [menu, activeCat, search]);
 
+  // QUICK WIN #3: count items per category
+  const categoryCounts = useMemo(() => {
+    const counts = { all: menu.filter(m => m.avail !== false).length };
+    menu.forEach(m => {
+      if (m.avail === false) return;
+      counts[m.cat] = (counts[m.cat] || 0) + 1;
+    });
+    return counts;
+  }, [menu]);
+
+  const heroVisual = useMemo(() => getFnbHero(outletInfo), [outletInfo]);
+
   const groupedToppings = useMemo(() => {
     const groups = {};
     toppings.forEach(t => {
@@ -112,10 +176,34 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
     return groups;
   }, [toppings]);
 
+  // QUICK WIN #4: detect kalau item butuh detail modal (ada addon config) atau bisa quick-add
+  function itemNeedsDetail(item) {
+    // Punya free toppings quota (yogulato) → wajib pilih topping → buka modal
+    if ((item.freeToppings || 0) > 0) return true;
+    // Punya allowed_extras list (pizza/sandwich pakai add-on) → buka modal
+    if (Array.isArray(item.allowed_extras) && item.allowed_extras.length > 0) return true;
+    // Default: simple item (food/drink fixed) → bisa quick-add
+    return false;
+  }
+
   function openDetail(item) {
     setDetail(item);
     setSelectedToppings([]);
     setDetailQty(1);
+  }
+
+  // Quick-add: tambah 1 item langsung ke cart tanpa modal
+  function quickAdd(item) {
+    addToCart({
+      id: item.id, baseId: item.id, e: item.emoji, n: item.name,
+      p: item.price, freeToppings: 0, addons: {}, addonTotal: 0,
+    });
+    try { cinemaAudio.seatPick(); } catch {}
+  }
+
+  function handleItemClick(item) {
+    if (itemNeedsDetail(item)) openDetail(item);
+    else quickAdd(item);
   }
   function closeDetail() {
     setDetail(null);
@@ -179,32 +267,91 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
         @keyframes flowSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
       `}</style>
 
-      {/* ── Header ── */}
-      <div style={{ background: BG, borderBottom: `1px solid ${BORDER}`, padding: "14px 20px", flexShrink: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-          <button onClick={() => setScreen("home")} style={{ background: "transparent", border: "none", color: TEXT, fontSize: 24, cursor: "pointer", padding: 0, width: 32 }}>←</button>
-          <h1 style={{ margin: 0, fontFamily: "'Inter', sans-serif", fontSize: 26, color: BRAND, letterSpacing: 1 }}>MENU</h1>
-        </div>
-        <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari menu..."
-          style={{ width: "100%", padding: "10px 14px", background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, color: TEXT, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
-
-        {/* Category tabs — scrollbar hidden, fade hint at right edge */}
-        <div style={{ position: "relative", marginTop: 10 }}>
-          <div className="cat-scroll" style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
-            {categories.map(c => (
-              <button key={c} onClick={() => setActiveCat(c)} style={{
-                padding: "7px 14px", borderRadius: 999, whiteSpace: "nowrap", flexShrink: 0,
-                border: `1px solid ${activeCat === c ? BRAND : BORDER}`,
-                background: activeCat === c ? BRAND : "transparent",
-                color: activeCat === c ? "#000" : TEXT,
-                fontSize: 12, fontWeight: 600, cursor: "pointer"
-              }}>{catLabels[c] || c}</button>
-            ))}
+      {/* ── Header dengan Hero Outlet ── */}
+      <div style={{ background: BG, borderBottom: `1px solid ${BORDER}`, flexShrink: 0 }}>
+        {/* QUICK WIN #1: Hero outlet identity — photo + nama outlet + status */}
+        {outletInfo && (
+          <div style={{ position: "relative", height: 140, overflow: "hidden" }}>
+            <img src={heroVisual.url} alt={outletInfo.name}
+              style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
+            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.85) 100%)" }} />
+            <div style={{ position: "absolute", inset: 0, padding: "12px 20px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+              {/* Top row: back + status badge */}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <button onClick={() => setScreen("home")}
+                  style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.15)", color: TEXT, width: 36, height: 36, borderRadius: 999, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>←</button>
+                {/* QUICK WIN #2: Status operasional */}
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", background: dayClosed ? "rgba(239,68,68,0.20)" : "rgba(16,185,129,0.20)", border: `1px solid ${dayClosed ? "rgba(239,68,68,0.50)" : "rgba(16,185,129,0.50)"}`, borderRadius: 999, backdropFilter: "blur(8px)" }}>
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: dayClosed ? "#ef4444" : "#10b981", boxShadow: dayClosed ? "none" : "0 0 8px #10b981" }} />
+                  <span style={{ fontSize: 11, fontWeight: 700, color: dayClosed ? "#fca5a5" : "#86efac", letterSpacing: 0.5 }}>
+                    {dayClosed ? "TUTUP" : "BUKA"}
+                  </span>
+                </div>
+              </div>
+              {/* Bottom: outlet name */}
+              <div>
+                <div style={{ fontSize: 10, letterSpacing: 2, color: "rgba(255,255,255,0.65)", fontFamily: "'Geist Mono',monospace", fontWeight: 700, marginBottom: 4 }}>
+                  📍 {outletInfo.area || outletInfo.code}
+                </div>
+                <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", letterSpacing: -0.5, lineHeight: 1.15, textShadow: "0 2px 16px rgba(0,0,0,0.6)" }}>
+                  {outletInfo.name}
+                </div>
+              </div>
+            </div>
           </div>
-          <div style={{
-            position: "absolute", right: 0, top: 0, bottom: 4, width: 40, pointerEvents: "none",
-            background: `linear-gradient(to right, transparent, ${BG})`
-          }} />
+        )}
+
+        {/* Fallback header kalau gak ada outlet info (legacy/no ?outlet=) */}
+        {!outletInfo && (
+          <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px 0" }}>
+            <button onClick={() => setScreen("home")} style={{ background: "transparent", border: "none", color: TEXT, fontSize: 24, cursor: "pointer", padding: 0, width: 32 }}>←</button>
+            <h1 style={{ margin: 0, fontFamily: "'Inter', sans-serif", fontSize: 26, color: BRAND, letterSpacing: 1 }}>MENU</h1>
+            <div style={{ flex: 1 }} />
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", background: dayClosed ? "rgba(239,68,68,0.15)" : "rgba(16,185,129,0.15)", border: `1px solid ${dayClosed ? "rgba(239,68,68,0.40)" : "rgba(16,185,129,0.40)"}`, borderRadius: 999 }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: dayClosed ? "#ef4444" : "#10b981" }} />
+              <span style={{ fontSize: 10, fontWeight: 700, color: dayClosed ? "#fca5a5" : "#86efac" }}>
+                {dayClosed ? "TUTUP" : "BUKA"}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Search + Category tabs */}
+        <div style={{ padding: "12px 20px 14px" }}>
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari menu..."
+            style={{ width: "100%", padding: "10px 14px", background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, color: TEXT, fontSize: 14, outline: "none", boxSizing: "border-box" }} />
+
+          {/* Category tabs — QUICK WIN #3: tampil count per category */}
+          <div style={{ position: "relative", marginTop: 10 }}>
+            <div className="cat-scroll" style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }}>
+              {categories.map(c => {
+                const count = categoryCounts[c] || 0;
+                const isActive = activeCat === c;
+                return (
+                  <button key={c} onClick={() => setActiveCat(c)} style={{
+                    padding: "7px 12px", borderRadius: 999, whiteSpace: "nowrap", flexShrink: 0,
+                    border: `1px solid ${isActive ? BRAND : BORDER}`,
+                    background: isActive ? BRAND : "transparent",
+                    color: isActive ? "#000" : TEXT,
+                    fontSize: 12, fontWeight: 600, cursor: "pointer",
+                    display: "inline-flex", alignItems: "center", gap: 6,
+                  }}>
+                    <span>{catLabels[c] || c}</span>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: "1px 6px", borderRadius: 999,
+                      background: isActive ? "rgba(0,0,0,0.20)" : "rgba(255,255,255,0.06)",
+                      color: isActive ? "#000" : SUB,
+                      fontFamily: "'Geist Mono',monospace",
+                    }}>{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{
+              position: "absolute", right: 0, top: 0, bottom: 4, width: 40, pointerEvents: "none",
+              background: `linear-gradient(to right, transparent, ${BG})`
+            }} />
+          </div>
         </div>
       </div>
 
@@ -220,7 +367,7 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
         `}</style>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           {filtered.map(item => (
-            <button key={item.id} data-flow-tile onClick={() => openDetail(item)} style={{
+            <button key={item.id} data-flow-tile onClick={() => handleItemClick(item)} style={{
               background: "linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.01))",
               border: `1px solid rgba(255,255,255,0.06)`, borderRadius: 18,
               padding: 0, textAlign: "left", cursor: "pointer", position: "relative", overflow: "hidden", color: TEXT,
