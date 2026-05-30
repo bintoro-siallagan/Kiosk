@@ -8,7 +8,7 @@
 // Always renders something (no more silent fail on empty images). Brand-aware:
 // uses --brand-primary / --brand-secondary CSS vars set by parent Kiosk.
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import * as audio from "./audio.js";
 import API_HOST from "./apiBase.js";
 import { fmtMoney } from "./lib/currency.js";
@@ -37,6 +37,9 @@ export default function Screensaver({ onDismiss, brandName, brandLogo }) {
   const [promos, setPromos] = useState([]);            // active promo list
   const [phase, setPhase] = useState(0);
   const [now, setNow] = useState(() => new Date());
+  // QUICK WIN #1+#2: outlet identity + live community stats
+  const [outletInfo, setOutletInfo] = useState(null);
+  const [stats, setStats] = useState({ rating: 0, ratingCount: 0 });
 
   // Load config + content
   useEffect(() => {
@@ -69,6 +72,33 @@ export default function Screensaver({ onDismiss, brandName, brandLogo }) {
       .then(data => {
         const list = Array.isArray(data) ? data : (data?.items || data?.promos || []);
         setPromos(list.filter(p => p.active !== false).slice(0, 3));
+      })
+      .catch(() => {});
+
+    // QUICK WIN #1: outlet identity — detect dari URL ?outlet=X atau localStorage
+    const outletCode = (() => {
+      try {
+        const q = new URLSearchParams(window.location.search);
+        return (q.get("outlet") || localStorage.getItem("posOutlet") || localStorage.getItem("posOutletDevice") || "").toUpperCase() || null;
+      } catch { return null; }
+    })();
+    if (outletCode) {
+      fetch(`${API_URL}/api/outlet-master`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => {
+          const list = d?.outlets || (Array.isArray(d) ? d : []);
+          const o = list.find(x => (x.code || "").toUpperCase() === outletCode);
+          if (o) setOutletInfo(o);
+        })
+        .catch(() => {});
+    }
+
+    // QUICK WIN #2: live rating stat — 30 hari terakhir, biar nominal segar
+    const from30 = Math.floor(Date.now() / 1000) - 30 * 86400;
+    fetch(`${API_URL}/api/feedback/stats?from=${from30}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => {
+        if (d && d.count > 0) setStats({ rating: d.avg_rating || 0, ratingCount: d.count || 0 });
       })
       .catch(() => {});
   }, []);
@@ -131,7 +161,7 @@ export default function Screensaver({ onDismiss, brandName, brandLogo }) {
 
       {/* Slide stage */}
       <div style={S.stage} key={phase /* re-mount for fade-in */}>
-        {kind === "hero" && <HeroSlide brandName={brandName} brandLogo={brandLogo} />}
+        {kind === "hero" && <HeroSlide brandName={brandName} brandLogo={brandLogo} outletInfo={outletInfo} stats={stats} menu={menu} menuCount={menu.length} promoCount={promos.length} now={now} />}
         {kind === "menu" && <MenuSlide items={menu} phase={phase} />}
         {kind === "bestseller" && <BestsellerSlide items={bestsellers} phase={phase} />}
         {kind === "combo" && <ComboSlide promos={promos} phase={phase} />}
@@ -144,8 +174,9 @@ export default function Screensaver({ onDismiss, brandName, brandLogo }) {
         )}
       </div>
 
-      {/* Bottom tap-CTA */}
+      {/* Bottom tap-CTA — conversational + bigger */}
       <div style={S.bottomCta}>
+        <div style={S.ctaQuestion}>Mau pesan apa {timeGreeting(now).greet.split(" ")[1].toLowerCase()} ini?</div>
         <div style={S.fingerEmoji}>👆</div>
         <div style={S.tapText}>{config.tagline || "SENTUH UNTUK MEMESAN"}</div>
       </div>
@@ -257,20 +288,142 @@ function ComboSlide({ promos, phase }) {
   );
 }
 
-function HeroSlide({ brandName, brandLogo }) {
+// Time-of-day greeting — karyaOS hangat seperti tuan rumah
+function timeGreeting(now) {
+  const h = (now || new Date()).getHours();
+  if (h >= 5 && h < 11) return { greet: "Selamat Pagi", emoji: "☀️" };
+  if (h >= 11 && h < 15) return { greet: "Selamat Siang", emoji: "🌤️" };
+  if (h >= 15 && h < 18) return { greet: "Selamat Sore", emoji: "🌅" };
+  return { greet: "Selamat Malam", emoji: "✨" };
+}
+
+// 💭 ThoughtBubble — kiosk "ngomong sendiri" di depan customer.
+// Filosofi: bukan iklan promosi keras, tapi gumam ramah yg bikin orang yg lewat
+// nyantol — "ih kayaknya enak nih, coba ah". karyaOS sebagai tuan rumah yg
+// hangat, bukan sales yg agresif.
+function pickThoughts(now, outletInfo, menu, promoCount) {
+  const h = (now || new Date()).getHours();
+  const outletName = outletInfo?.name || "kami";
+
+  const morning = [
+    "Pagi-pagi gini, secangkir kopi panas pas banget...",
+    "Mau mulai hari dengan sarapan hangat? Saya bantu siapkan.",
+    "Bayangin: nasi, telur ceplok, teh manis. Apa kabarnya?",
+    "Belum sempet sarapan? Ini perfect timing.",
+  ];
+  const noon = [
+    "Jam makan siang nih... perut udah lapar belum?",
+    "Yang tadi pesan rice bowl bilang enak banget loh.",
+    "Cepet aja, 5 menit beres — bisa balik kerja lagi.",
+    "Mau yang ringan atau yang kenyang? Dua-duanya ada.",
+  ];
+  const afternoon = [
+    "Sore-sore, snack manis pas banget ya...",
+    "Cuma istirahat sebentar? Saya siapin yg cepet.",
+    "Capek kerja? Hadiah kecil buat diri sendiri yuk.",
+    "Lapar pre-dinner? Sini, saya cariin yg pas.",
+  ];
+  const evening = [
+    "Selamat malam... mau nutup hari dengan apa?",
+    "Pulang kerja, capek, lapar. Tenang, saya bantu.",
+    "Yang lagi rame malam ini: pasta kepiting, katanya juara.",
+    "Mau makan tenang sambil nge-charge HP? Boleh.",
+  ];
+
+  let pool = h < 11 ? morning : h < 15 ? noon : h < 18 ? afternoon : evening;
+
+  // Tambah variants berbasis data — kalau ada promo aktif / menu popular
+  if (promoCount > 0) {
+    pool = [...pool,
+      `Btw ada ${promoCount} promo aktif loh hari ini...`,
+      "Diam-diam ada diskon tersembunyi — coba lihat menunya?",
+    ];
+  }
+  if (menu?.length > 0) {
+    const popular = menu.find(m => m.is_popular || (m.tag || "").toLowerCase().includes("popular"));
+    if (popular?.name) {
+      pool = [...pool,
+        `Hari ini ${popular.name} lagi rajin di-pesan...`,
+        `Tadi ada yang bilang "${popular.name}" nyess banget.`,
+      ];
+    }
+  }
+  if (outletInfo) {
+    pool = [...pool,
+      `Selamat datang di ${outletName} — saya yang akan menemani.`,
+    ];
+  }
+  return pool;
+}
+
+function ThoughtBubble({ now, outletInfo, menu, promoCount }) {
+  const [idx, setIdx] = useState(0);
+  const thoughts = useMemo(() => pickThoughts(now, outletInfo, menu, promoCount), [now?.getHours?.(), outletInfo, menu, promoCount]);
+
+  useEffect(() => {
+    const t = setInterval(() => setIdx(i => (i + 1) % thoughts.length), 6500);
+    return () => clearInterval(t);
+  }, [thoughts.length]);
+
+  if (!thoughts.length) return null;
+  const text = thoughts[idx];
+
+  return (
+    <div key={idx} style={S.thoughtBubble}>
+      <span style={S.thoughtQuote}>“</span>
+      <span style={S.thoughtText}>{text}</span>
+      <span style={S.thoughtQuoteEnd}>”</span>
+    </div>
+  );
+}
+
+function HeroSlide({ brandName, brandLogo, outletInfo, stats, menu, menuCount, promoCount, now }) {
+  const { greet, emoji } = timeGreeting(now);
+  const outletDisplay = outletInfo?.name || brandName || "karyaOS";
+  const outletLoc = outletInfo ? [outletInfo.area, outletInfo.city].filter(Boolean).join(" · ") : null;
+
   return (
     <div style={S.heroCenter}>
       <img src={brandLogo || "/logo.png"} alt="" style={S.heroLogo}
         onError={(e) => { e.currentTarget.style.display = "none"; }}/>
-      <div style={S.heroName}>
-        {brandName || (<>karya<span style={{ fontWeight: 300, opacity: 0.5 }}>os</span></>)}
+
+      {/* Greeting hangat — time-aware */}
+      <div style={S.heroGreet}>
+        <span style={S.heroGreetIcon}>{emoji}</span>
+        <span>{greet}</span>
       </div>
-      <div style={S.heroTag}>Self-Order Kiosk · Cepat, Tanpa Antri</div>
+
+      {/* Outlet name primary — bukan brand platform */}
+      <div style={S.heroName}>{outletDisplay}</div>
+
+      {/* Location pill — kalau ada outlet binding */}
+      {outletLoc && (
+        <div style={S.heroLoc}>📍 {outletLoc}</div>
+      )}
+
+      {/* Live community badges — replace static teknis dengan numbers */}
       <div style={S.heroBadges}>
-        <span style={S.badge}>⚡ 30 detik</span>
-        <span style={S.badge}>🎁 Earn Points</span>
-        <span style={S.badge}>📱 Track Order</span>
+        {menuCount > 0 && (
+          <span style={S.badge}>👨‍🍳 {menuCount} menu siap</span>
+        )}
+        {promoCount > 0 && (
+          <span style={{ ...S.badge, ...S.badgeAccent }}>🔥 {promoCount} promo aktif</span>
+        )}
+        {stats?.ratingCount > 0 && (
+          <span style={S.badge}>⭐ {stats.rating.toFixed(1)} dari {stats.ratingCount} ulasan</span>
+        )}
+        {/* Fallback kalau belum ada data live */}
+        {menuCount === 0 && promoCount === 0 && stats?.ratingCount === 0 && (
+          <>
+            <span style={S.badge}>⚡ 30 detik</span>
+            <span style={S.badge}>🎁 Earn Points</span>
+            <span style={S.badge}>📱 Track Order</span>
+          </>
+        )}
       </div>
+
+      {/* 💭 Kiosk "ngomong sendiri" — gumam ramah yg bikin orang nyantol */}
+      <ThoughtBubble now={now} outletInfo={outletInfo} menu={menu} promoCount={promoCount} />
     </div>
   );
 }
@@ -306,6 +459,7 @@ const KEYFRAMES = `
 @keyframes screensaverPulse { 0%,100% { opacity: 0.95; transform: translateY(0) } 50% { opacity: 0.6; transform: translateY(-6px) } }
 @keyframes screensaverSlideIn { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
 @keyframes screensaverGlow { 0%,100% { opacity: 0.4 } 50% { opacity: 0.7 } }
+@keyframes thoughtFadeIn { 0% { opacity: 0; transform: translateY(8px) } 100% { opacity: 1; transform: translateY(0) } }
 `;
 
 const S = {
@@ -334,14 +488,30 @@ const S = {
     position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center",
     padding: "100px 60px", animation: "screensaverFade 0.5s ease-out",
   },
-  heroCenter: { display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 18 },
-  heroLogo: { width: 180, height: 180, objectFit: "contain", margin: 0,
+  heroCenter: { display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 14 },
+  heroLogo: { width: 160, height: 160, objectFit: "contain", margin: 0,
     filter: "drop-shadow(0 0 28px var(--brand-primary, #FF6B35)) drop-shadow(0 0 60px color-mix(in srgb, var(--brand-primary,#FF6B35) 50%, transparent))",
     animation: "screensaverFloat 4s ease-in-out infinite" },
-  heroName: { fontSize: 88, fontWeight: 800, lineHeight: 1.05, letterSpacing: "-2px", margin: 0,
+  // QUICK WIN #1: time-aware greeting hangat
+  heroGreet: {
+    display: "inline-flex", alignItems: "center", gap: 10, marginTop: 4,
+    padding: "8px 18px", borderRadius: 999,
+    background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)",
+    fontSize: 18, fontWeight: 600, color: "rgba(255,255,255,0.92)",
+    letterSpacing: -0.3, lineHeight: 1, backdropFilter: "blur(8px)",
+  },
+  heroGreetIcon: { fontSize: 20, lineHeight: 1 },
+  heroName: { fontSize: 78, fontWeight: 800, lineHeight: 1.05, letterSpacing: "-2px", margin: 0,
     textShadow: "0 0 40px color-mix(in srgb, var(--brand-primary,#FF6B35) 50%, transparent)" },
-  heroTag: { fontSize: 24, fontWeight: 500, color: "rgba(255,255,255,0.6)", lineHeight: 1.4, letterSpacing: "-0.2px", margin: 0 },
-  heroBadges: { display: "flex", gap: 14, justifyContent: "center", marginTop: 18, flexWrap: "wrap" },
+  // Outlet location pill — anchor "di mana"
+  heroLoc: {
+    fontSize: 14, color: "#fbbf24", letterSpacing: 1.5,
+    fontFamily: "'Geist Mono',monospace", fontWeight: 700,
+    padding: "5px 14px", borderRadius: 999,
+    background: "rgba(251,191,36,0.08)", border: "1px solid rgba(251,191,36,0.25)",
+    lineHeight: 1, marginTop: 2,
+  },
+  heroBadges: { display: "flex", gap: 12, justifyContent: "center", marginTop: 18, flexWrap: "wrap" },
   badge: { padding: "10px 18px", borderRadius: 999, fontSize: 14, fontWeight: 600,
     background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)",
     color: "rgba(255,255,255,0.85)", backdropFilter: "blur(20px)" },
@@ -362,10 +532,47 @@ const S = {
     overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", letterSpacing: "-0.2px" },
   menuPrice: { fontSize: 13, fontWeight: 700, color: "var(--brand-primary, #FF6B35)", letterSpacing: 0.3 },
   bottomCta: {
-    position: "absolute", bottom: 70, left: 0, right: 0, textAlign: "center",
+    position: "absolute", bottom: 50, left: 0, right: 0, textAlign: "center",
+    display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
     animation: "screensaverPulse 2.5s ease-in-out infinite", pointerEvents: "none",
   },
-  fingerEmoji: { fontSize: 44, marginBottom: 8 },
-  tapText: { fontSize: 22, letterSpacing: 6, fontWeight: 600, color: "rgba(255,255,255,0.85)",
+  ctaQuestion: {
+    fontSize: 26, fontWeight: 600, color: "rgba(255,255,255,0.92)",
+    letterSpacing: -0.4, lineHeight: 1.3, margin: 0, marginBottom: 6,
+    textShadow: "0 2px 16px rgba(0,0,0,0.4)",
+  },
+  fingerEmoji: { fontSize: 44, lineHeight: 1, margin: 0 },
+  tapText: { fontSize: 18, letterSpacing: 5, fontWeight: 700, color: "rgba(255,255,255,0.85)",
+    margin: 0, fontFamily: "'Geist Mono',monospace",
     textShadow: "0 0 24px color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent)" },
+  // Accent badge — pakai warna brand utk highlight (mis. promo)
+  badgeAccent: {
+    background: "color-mix(in srgb, var(--brand-primary,#FF6B35) 16%, transparent)",
+    border: "1px solid color-mix(in srgb, var(--brand-primary,#FF6B35) 50%, transparent)",
+    color: "color-mix(in srgb, var(--brand-primary,#FF6B35) 95%, #fff)",
+  },
+  // 💭 ThoughtBubble — gumam kiosk yg fade in-out tiap 6.5s
+  thoughtBubble: {
+    marginTop: 36, padding: "16px 26px", borderRadius: 22,
+    background: "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))",
+    border: "1px solid rgba(255,255,255,0.10)",
+    backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)",
+    maxWidth: 640, fontFamily: "'Inter',sans-serif",
+    display: "inline-flex", alignItems: "flex-start", gap: 4,
+    animation: "thoughtFadeIn 0.8s cubic-bezier(.2,.8,.2,1)",
+    boxShadow: "0 12px 36px rgba(0,0,0,0.25)",
+  },
+  thoughtQuote: {
+    fontSize: 36, lineHeight: 1, color: "color-mix(in srgb, var(--brand-primary,#FF6B35) 75%, #fff)",
+    fontFamily: "Georgia, serif", fontWeight: 700, opacity: 0.7, marginTop: -2,
+  },
+  thoughtQuoteEnd: {
+    fontSize: 36, lineHeight: 1, color: "color-mix(in srgb, var(--brand-primary,#FF6B35) 75%, #fff)",
+    fontFamily: "Georgia, serif", fontWeight: 700, opacity: 0.7, alignSelf: "flex-end", marginBottom: -8,
+  },
+  thoughtText: {
+    fontSize: 20, fontWeight: 500, color: "rgba(255,255,255,0.85)",
+    letterSpacing: -0.3, lineHeight: 1.5, fontStyle: "italic",
+    padding: "0 8px",
+  },
 };
