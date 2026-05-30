@@ -4254,9 +4254,21 @@ function ShowtimesList({ outlet, film, onPickShowtime, brandPrimary }) {
 
       <div style={{ ...TY.eyebrow, color: brandPrimary, marginBottom: 8 }}>📅 Step 3 of 5</div>
       <h2 style={{ ...TY.headline, fontSize: 28, marginBottom: 8, color: C.text }}>Pilih Jadwal</h2>
-      <p style={{ ...TY.bodySm, color: C.dim, margin: "0 0 22px" }}>
+      <p style={{ ...TY.bodySm, color: C.dim, margin: "0 0 8px" }}>
         <span style={{ fontFamily: T.mono, color: C.text, fontWeight: 600 }}>{showtimes.length}</span> jadwal tersedia · klik untuk pilih kursi
       </p>
+      {/* Whisper hangat — bantu pilih waktu yg pas */}
+      {showtimes.length > 0 && (
+        <p style={{ fontSize: 12, color: C.dim, margin: "0 0 22px", fontStyle: "italic", letterSpacing: 0.2 }}>
+          {(() => {
+            const h = new Date().getHours();
+            if (h >= 5 && h < 11) return "Pagi-pagi nonton? Theater lebih sepi, vibe enak banget...";
+            if (h >= 11 && h < 15) return "Habis makan siang — slot prime time mulai rame.";
+            if (h >= 15 && h < 18) return "Sore yg pas — banyak pulang kerja langsung mampir.";
+            return "Malam prime time — kursi favorit cepet penuh.";
+          })()}
+        </p>
+      )}
 
       {showtimes.length === 0 ? (
         <div style={{ textAlign: "center", padding: 60, color: C.dim, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14 }}>
@@ -4407,6 +4419,14 @@ function SeatPicker({ showtime, film, initialSeats, onConfirm, brandPrimary }) {
         <div style={{ marginTop: S[3], fontSize: T.xs, color: seatsLeft <= 10 ? C.crimson : seatsLeft <= 30 ? C.gold : C.dim, fontFamily: T.mono, fontWeight: T.semibold, letterSpacing: 0.6 }}>
           {seatsLeft <= 10 ? "🔥 " : seatsLeft <= 30 ? "⚡ " : ""}
           {seatsLeft} of {totalCapacity} seats available
+        </div>
+        {/* Whisper hangat — bantu customer yg ragu */}
+        <div style={{ marginTop: S[2], fontSize: 12, color: C.dim, fontStyle: "italic", letterSpacing: 0.2 }}>
+          {selected.size === 0
+            ? "Kursi tengah biasanya yang paling nyaman..."
+            : selected.size === 1
+              ? "Bareng siapa nonton? Pilih lagi kalau ada teman."
+              : `${selected.size} kursi sudah dipilih — semua sebelahan? Coba cek baris yang sama.`}
         </div>
       </div>
 
@@ -4587,6 +4607,10 @@ function BundlesStep({ outlet, cart, onChange, onContinue, brandPrimary }) {
         </h2>
         <p style={{ ...TY.bodySm, color: C.sub, margin: 0 }}>
           Pesan sekalian di sini, ambil di counter saat scan tiket. Bisa di-skip kalau gak perlu.
+        </p>
+        {/* Whisper hangat — bioskop tanpa popcorn rasanya... */}
+        <p style={{ fontSize: 12, color: C.dim, marginTop: 8, fontStyle: "italic", letterSpacing: 0.2 }}>
+          Katanya, film 2 jam terasa lebih singkat kalau ada teman di pangkuan...
         </p>
       </div>
 
@@ -4790,7 +4814,10 @@ function Checkout({ outlet, film, showtime, seats, bundlesCart, onBooked, onEdit
     }
   };
 
-  const submitLabel = submitting ? "Memproses…" : "Booking Sekarang";
+  // Whisper hangat saat submit — bukan "Memproses..." dingin
+  const submitLabel = submitting
+    ? "✨ Sebentar ya, tiket sedang kami siapkan..."
+    : "🎬 Booking Sekarang";
 
   return (
     <div className="cw-checkout" style={{ padding: "30px 0", display: "grid", gridTemplateColumns: "1fr 360px", gap: 24 }}>
