@@ -5465,6 +5465,64 @@ app.get("/api/public/cinema-pulse", (req, res) => {
   }
 });
 
+// ── Recent activity feed — owner pulse timeline ──
+// Returns last N orders + ratings sorted by time desc. Safe public:
+// only order_no (last 4 chars) + first name + minimal status/rating.
+app.get("/api/public/recent-activity", (req, res) => {
+  try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 12, 1), 30);
+    const todayStartMs = new Date().setHours(0, 0, 0, 0);
+    const items = [];
+
+    // Last orders today
+    try {
+      const rows = db.rawDb.prepare(`
+        SELECT id, time, status, customer_name, total
+        FROM orders WHERE time >= ? AND status != 'cancelled'
+        ORDER BY time DESC LIMIT ?
+      `).all(todayStartMs, limit);
+      for (const r of rows) {
+        const firstName = (r.customer_name || '').trim().split(/\s+/)[0] || 'Tamu';
+        items.push({
+          kind: 'order',
+          at: r.time,
+          icon: r.status === 'completed' ? '✅' : r.status === 'ready' ? '🛎️' : r.status === 'preparing' ? '🍳' : '📥',
+          text: `${firstName} pesan #${String(r.id).slice(-4).toUpperCase()}`,
+          status: r.status,
+        });
+      }
+    } catch {}
+
+    // Last ratings today
+    try {
+      const todaySec = Math.floor(todayStartMs / 1000);
+      const fb = db.rawDb.prepare(`
+        SELECT order_ref, rating, comment, cashier, created_at
+        FROM customer_feedback WHERE created_at >= ?
+        ORDER BY created_at DESC LIMIT ?
+      `).all(todaySec, limit);
+      for (const r of fb) {
+        const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+        items.push({
+          kind: 'rating',
+          at: r.created_at * 1000,
+          icon: r.rating >= 4 ? '💛' : r.rating >= 3 ? '⭐' : '⚠️',
+          text: r.comment
+            ? `${stars} "${(r.comment || '').slice(0, 60)}"`
+            : `${stars} (tanpa komentar)`,
+          rating: r.rating,
+        });
+      }
+    } catch {}
+
+    // Sort merged + cap
+    items.sort((a, b) => b.at - a.at);
+    res.json({ items: items.slice(0, limit), generated_at: Math.floor(Date.now() / 1000) });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── Dayparts public endpoint — list semua daypart + yg current ──
 app.get("/api/public/dayparts", (req, res) => {
   try {

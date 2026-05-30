@@ -19,6 +19,7 @@ const OutletDashboard = lazy(() => import("./Admin/OutletDashboard.jsx"));
 const ChangePasswordModal = lazy(() => import("./Admin/ChangePasswordModal.jsx"));
 const OutletSetupWizard = lazy(() => import("./Admin/OutletSetupWizard.jsx"));
 const OwnerPulseStrip = lazy(() => import("./Admin/OwnerPulseStrip.jsx"));
+const RecentActivityFeed = lazy(() => import("./Admin/RecentActivityFeed.jsx"));
 import { OutletScopeProvider } from "./Admin/OutletScopeContext.jsx";
 import OutletScopeBar from "./Admin/OutletScopeBar.jsx";
 
@@ -989,6 +990,11 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
           {/* ═══ OWNER PULSE — nadi hidup outlet sekarang ═══ */}
           <Suspense fallback={null}>
             <OwnerPulseStrip />
+          </Suspense>
+
+          {/* ═══ CERITA HARI INI — live feed orders + ratings ═══ */}
+          <Suspense fallback={null}>
+            <RecentActivityFeed />
           </Suspense>
 
           {/* ═══ KARYA HARI INI — surat dari karyaOS untuk owner setiap pagi ═══ */}
