@@ -6,6 +6,7 @@ import { LoadingState } from "./components/uiKit.jsx";
 const MyKpiPanel = lazy(() => import("./POS/MyKpiPanel.jsx"));
 const MorningRecognition = lazy(() => import("./POS/MorningRecognition.jsx"));
 const WelcomeRitual = lazy(() => import("./POS/WelcomeRitual.jsx"));
+const KasirNudge = lazy(() => import("./POS/KasirNudge.jsx"));
 
 const API_BASE = API_HOST;
 
@@ -132,6 +133,14 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
 
   const handleAction = (action) => {
     if (cart.length === 0) { alert("Cart kosong! Tambah item dulu."); return; }
+    // Increment transaction counter — buat KasirNudge milestone celebration
+    // (parent handle real order success/fail, ini optimistic count)
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const key = `txCount:${cashier?.name || 'x'}:${today}`;
+      const cur = parseInt(localStorage.getItem(key) || '0', 10);
+      localStorage.setItem(key, String(cur + 1));
+    } catch {}
     onCheckout({ action, cart, subtotal });
   };
 
@@ -194,6 +203,22 @@ export default function POSMenu({ order, cashier, onBack, onCancel, onCheckout }
               } catch {}
               setShowMorning(false);
             }}
+          />
+        </Suspense>
+      )}
+
+      {/* KasirNudge — encouragement bubble saat idle / milestone */}
+      {!showWelcome && !showMorning && !showKpi && (
+        <Suspense fallback={null}>
+          <KasirNudge
+            cartActivity={cart.length}
+            txCount={(() => {
+              try {
+                const today = new Date().toISOString().slice(0, 10);
+                return parseInt(localStorage.getItem(`txCount:${cashier?.name || 'x'}:${today}`) || '0', 10);
+              } catch { return 0; }
+            })()}
+            cashierName={cashier?.name || null}
           />
         </Suspense>
       )}
