@@ -7,13 +7,17 @@ const path = require('path');
 const WA_CONFIG_FILE = path.join(__dirname, "wa-config.json");
 
 const DEFAULT_TEMPLATES = {
-  ready: "🍦 Halo {customerName}!\n\nPesanan *#{orderId}* kamu sudah siap diambil di counter ya. Tunjukkan struk atau sebut nomor pesanan.\n\nTotal: Rp {totalIDR}\n\nTerima kasih,\n*KaryaOS*",
-  completed: "✅ Terima kasih telah berbelanja di KaryaOS!\n\nPesanan #{orderId} udah selesai diambil.\n\nRate pengalaman kamu: {trackingUrl}"
+  // Saat order baru ke-place (status: waiting) — sambutan hangat
+  waiting: "💛 Halo {customerName}!\n\nPesanan kamu *#{orderId}* sudah kami terima dengan hati. Tim dapur akan segera menyiapkan.\n\nTotal: *Rp {totalIDR}*\n\nKami kabari lagi saat siap diambil ya 🙏\n\n— {brandName}",
+  // Saat ready — siap diambil
+  ready: "🛎️ {customerName}, pesanan *#{orderId}* sudah siap!\n\nSilakan ambil di counter — tunjukkan struk atau sebut nomor pesanan.\n\nSelamat menikmati 🌱\n\n— {brandName}",
+  // Saat completed — sambutan pulang + rating
+  completed: "✅ Terima kasih, {customerName} 💛\n\nPesanan #{orderId} sudah selesai. Kami senang Anda menyempatkan datang.\n\nKalau berkenan, ceritakan pengalaman Anda ya:\n{trackingUrl}\n\nSampai bertemu lagi.\n— {brandName}",
 };
 
 function loadConfig() {
   const defaults = {
-    enabled: { ready: true, completed: false },
+    enabled: { waiting: true, ready: true, completed: false },
     provider: null,  // "fonnte" | "twilio" | null (auto-detected)
     templates: { ...DEFAULT_TEMPLATES },
     fonnte:  { token: process.env.FONNTE_TOKEN  || "" },

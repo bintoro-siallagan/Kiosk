@@ -824,6 +824,11 @@ app.post("/api/orders", (req, res) => {
   }
   printKitchenTicket(order).catch(() => {});   // fire-and-forget kitchen print
   printCustomerReceipt(order).catch(() => {}); // fire-and-forget customer struk
+  // WA confirmation hangat — order baru ke-place (status: waiting)
+  // Fire-and-forget — gak block response
+  if (order.customerPhone) {
+    wa.notifyOrderStatus(order, order.status || 'waiting').catch(e => console.error("WA waiting:", e.message));
+  }
   broadcast("order:new", order);
   // P4A — outbound webhook
   if (typeof global.emitWebhook === 'function' && order.company_id) {
