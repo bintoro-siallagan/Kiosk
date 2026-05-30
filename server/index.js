@@ -5535,6 +5535,41 @@ app.patch("/api/admin/daily-target", (req, res) => {
   }
 });
 
+// ── Backup automation — daily snapshot + manual trigger ──
+const backup = require("./backup");
+const _BACKUP_DB_PATH = require("path").join(__dirname, "data.db");
+backup.startScheduler(_BACKUP_DB_PATH, { targetHour: 3 });
+
+// POST /api/admin/backup-now — manual snapshot
+app.post("/api/admin/backup-now", (req, res) => {
+  const result = backup.snapshotDb(_BACKUP_DB_PATH);
+  if (result.error) return res.status(500).json(result);
+  res.json(result);
+});
+
+// GET /api/admin/backups — list available backups
+app.get("/api/admin/backups", (req, res) => {
+  try {
+    const list = backup.listBackups();
+    res.json({ backups: list, count: list.length });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/admin/backups/:filename — download specific backup
+app.get("/api/admin/backups/:filename", (req, res) => {
+  const fname = req.params.filename;
+  if (!/^data-\d{4}-\d{2}-\d{2}-\d{4}\.db$/.test(fname)) {
+    return res.status(400).json({ error: "invalid filename" });
+  }
+  const filePath = require("path").join(backup.BACKUP_DIR, fname);
+  if (!require("fs").existsSync(filePath)) {
+    return res.status(404).json({ error: "not found" });
+  }
+  res.download(filePath, fname);
+});
+
 // ── Manual WA Daily Summary — owner trigger anytime ──
 // POST /api/admin/send-daily-summary-wa { phone }
 // Compose karyaOS hangat summary + send via WA. Use case: owner di
