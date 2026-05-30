@@ -264,29 +264,47 @@ function buildCinemaTicket(payload) {
   const film = payload.film || {};
   const show = payload.show || {};
   const ticket = payload.ticket || {};
+  const brand = payload.brand || "KaryaOS Cinema";
+  const customerName = payload.customer_name || payload.buyer || null;
 
-  r.align("center").bold(true).size("dbl").line("KaryaOS Cinema")
-   .size("normal").bold(false).line("E-Ticket").feed();
+  // Decorative header — premium cinema vibe
+  r.align("center").line("*  *  *  *  *  *");
+  r.bold(true).size("dbl").line(brand)
+   .size("normal").line("E-TICKET").bold(false);
+
+  // Time-aware sambutan — customer baca pertama kali
+  const h = new Date().getHours();
+  const greet = h >= 5 && h < 11 ? "Selamat menjalani pagi"
+              : h >= 11 && h < 15 ? "Selamat menjalani siang"
+              : h >= 15 && h < 18 ? "Selamat menjalani sore"
+              : "Selamat menjalani malam";
+  r.feed().line(greet).feed();
   r.hr("=");
 
+  // FILM TITLE HERO — big drama
   r.align("center").bold(true).size("dblH").line(String(film.title || "-").slice(0, 28))
    .size("normal").bold(false).feed();
 
+  // Detail
   r.align("left");
   r.row("Jadwal", `${show.show_date || "-"} ${show.start_time || ""}`);
   r.row("Studio", `${show.studio_name || "-"}${show.studio_type ? " · " + show.studio_type : ""}`);
   r.row("Rating", String(film.rating || "-"));
   r.row("Durasi", `${film.duration_min || 0} mnt`);
+  if (customerName) r.row("Untuk", customerName);
   r.hr("-");
 
+  // SEAT HERO — paling penting buat customer
   r.align("center").bold(true).size("dbl").line(`KURSI ${ticket.seat || "-"}`)
    .size("normal").bold(false).feed();
 
+  // QR + code
   if (ticket.code) {
     r.align("center").qr(String(ticket.code), 8, 1).feed();
     r.align("center").size("normal").bold(true).line(String(ticket.code)).bold(false).feed();
   }
 
+  // Totals + bundles
   r.align("left").hr("-");
   r.row("Harga tiket", fIDR(ticket.price || 0));
   if (Array.isArray(payload.bundles) && payload.bundles.length > 0) {
@@ -300,15 +318,25 @@ function buildCinemaTicket(payload) {
   }
   r.hr("=");
 
+  // Instructions
   r.align("center")
-   .line("Tunjukkan QR di pintu studio")
-   .line("E-ticket berlaku 1x masuk").feed();
+   .bold(true).line("Tunjukkan QR di pintu studio").bold(false)
+   .line("Datang 10 menit sebelum mulai").feed();
+
+  // Personalized closing — sambutan hangat sebelum pulang membawa tiket
+  const sayang = customerName ? `Selamat menikmati, ${customerName}.` : "Selamat menikmati pertunjukannya.";
+  r.line(sayang);
+  r.line("Sampai bertemu di studio.").feed();
 
   if (payload.purchase_id) {
     r.line(`Purchase #${payload.purchase_id}`);
   }
-  r.line(new Date().toLocaleString("id-ID", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" }))
-   .feed(2);
+  r.line(new Date().toLocaleString("id-ID", { day: "numeric", month: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" })).feed();
+
+  // Brand signature
+  r.line("- dari kami yang berterima kasih -");
+  r.bold(true).line(brand.toUpperCase()).bold(false).feed();
+  r.line("*  *  *  *  *  *").feed();
 
   r.cut();
   return r.done();
