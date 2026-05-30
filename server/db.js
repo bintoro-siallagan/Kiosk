@@ -204,6 +204,9 @@ try { db.exec("ALTER TABLE pos_menus ADD COLUMN outlet_ids TEXT"); console.log("
 // disuruh tawarkan) vs item utama. Hitung upsell rate per kasir secara akurat,
 // bukan dari asumsi "ada addon" — addon bisa request customer, bukan effort kasir.
 try { db.exec("ALTER TABLE pos_menus ADD COLUMN is_upsell INTEGER DEFAULT 0"); console.log("📈 pos_menus.is_upsell added"); } catch {}
+// Dayparting — menu items tagged with time-of-day windows.
+// Format: JSON array, e.g. '["breakfast","lunch"]'. NULL/empty = all-day.
+try { db.exec("ALTER TABLE pos_menus ADD COLUMN dayparts TEXT"); console.log("🕒 pos_menus.dayparts added"); } catch {}
 // Idempotent — kasir + source kolom orders. Mungkin sudah ada di DB baru,
 // tapi tetap dijaga utk DB lama yg belum punya kolom ini.
 try { db.exec("ALTER TABLE orders ADD COLUMN kasir TEXT"); console.log("👤 orders.kasir added"); } catch {}

@@ -259,17 +259,27 @@ function Trailer({ data }) {
 function FnbMenuGrid({ data }) {
   const categories = data.categories || {};
   const catNames = Object.keys(categories);
+  const dp = data.daypart;
   if (!catNames.length) {
     return (
-      <div style={{ padding: 50, height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", color: "#fff", textAlign: "center" }}>
-        <div style={{ fontSize: 200, marginBottom: 20 }}>🍽️</div>
-        <div style={{ fontSize: 60, fontWeight: 900 }}>Menu segera hadir</div>
+      <div style={{ padding: 50, height: "100%", display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", color: "#fff", textAlign: "center", gap: 12 }}>
+        <div style={{ fontSize: 200, lineHeight: 1, margin: 0 }}>🍽️</div>
+        <div style={{ fontSize: 50, fontWeight: 900, lineHeight: 1.1 }}>Menu segera hadir</div>
+        {dp && <div style={{ fontSize: 22, color: "rgba(255,255,255,0.65)" }}>Saat ini {dp.emoji} {dp.label}</div>}
       </div>
     );
   }
   return (
     <div style={{ padding: 40, height: "100%", display: "flex", flexDirection: "column", color: "#fff" }}>
-      <div style={{ fontSize: 14, color: "#f97316", letterSpacing: 6, fontFamily: "'Geist Mono',monospace", marginBottom: 18 }}>🍔 MENU BOARD · {data.outlet || ""}</div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+        <div style={{ fontSize: 14, color: "#f97316", letterSpacing: 6, fontFamily: "'Geist Mono',monospace" }}>🍔 MENU BOARD · {data.outlet || ""}</div>
+        {dp && (
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px", borderRadius: 999, background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.45)", fontSize: 13, color: "#fbbf24", fontWeight: 700, fontFamily: "'Geist Mono',monospace" }}>
+            <span>{dp.emoji}</span>
+            <span>MENU {dp.label.toUpperCase()}</span>
+          </div>
+        )}
+      </div>
       <div style={{ flex: 1, overflow: "hidden", display: "grid", gridTemplateColumns: `repeat(${Math.min(catNames.length, 3)}, 1fr)`, gap: 24 }}>
         {catNames.slice(0, 3).map(cat => (
           <div key={cat} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: 18, overflow: "hidden" }}>

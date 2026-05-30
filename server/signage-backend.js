@@ -10,6 +10,7 @@
 const express = require('express');
 const Database = require('better-sqlite3');
 const path = require('path');
+const { DAYPARTS, currentDaypart, currentDaypartId, isAvailableNow } = require('./dayparts');
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS signage_screens (
@@ -329,13 +330,13 @@ function setupSignage(app, opts = {}) {
       if (['menu-board', 'counter-side', 'dining-area', 'pickup'].includes(zone) ||
           (zone === 'window' && items.length === 0)) {
 
-        // Helper: ambil pos_menus per company + outlet-filter (kalau outlet_ids di-set)
+        // Helper: ambil pos_menus per company + outlet-filter + DAYPART filter
         const fetchMenus = (extraWhere = '', limit = 30) => {
           try {
             const rows = db.prepare(`
               SELECT m.id, m.name, m.emoji, m.description, m.price, m.image_url,
                      m.is_popular, m.is_new, m.badge_text, m.badge_color, m.is_available,
-                     m.outlet_ids, m.is_chef_choice,
+                     m.outlet_ids, m.is_chef_choice, m.dayparts,
                      c.name AS category_name, c.id AS category_id
               FROM pos_menus m
               LEFT JOIN pos_menu_categories c ON c.id = m.category_id
@@ -345,18 +346,24 @@ function setupSignage(app, opts = {}) {
               ORDER BY m.is_popular DESC, m.display_order, m.name
               LIMIT ${limit}
             `).all();
-            // Outlet filter: outlet_ids = JSON array; kosong/null = available di semua outlet
-            if (!outlet) return rows;
+            // Filter: outlet binding + daypart (current time)
+            const nowDate = new Date();
             return rows.filter(r => {
-              if (!r.outlet_ids) return true;
-              try { const ids = JSON.parse(r.outlet_ids); return !ids.length || ids.includes(outlet); }
-              catch { return true; }
+              // Outlet filter: outlet_ids JSON; kosong/null = available di semua outlet
+              if (outlet && r.outlet_ids) {
+                try { const ids = JSON.parse(r.outlet_ids); if (ids.length && !ids.includes(outlet)) return false; }
+                catch {}
+              }
+              // Daypart filter: item dayparts NULL/[] = all-day, else must include current daypart
+              if (!isAvailableNow(r.dayparts, nowDate)) return false;
+              return true;
             });
           } catch { return []; }
         };
 
         if (zone === 'menu-board') {
           // Menu grid lengkap — Big TV di atas counter. Group per kategori.
+          // Auto-filter by current daypart (sarapan/siang/sore/malam).
           const menus = fetchMenus('', 40);
           const byCategory = {};
           for (const m of menus) {
@@ -368,10 +375,11 @@ function setupSignage(app, opts = {}) {
               is_popular: !!m.is_popular, is_new: !!m.is_new, is_chef_choice: !!m.is_chef_choice,
             });
           }
+          const dp = currentDaypart();
           items.push({
             type: 'fnb_menu_grid',
             duration_sec: 60,
-            data: { outlet, categories: byCategory, total: menus.length },
+            data: { outlet, categories: byCategory, total: menus.length, daypart: dp },
           });
 
         } else if (zone === 'counter-side') {

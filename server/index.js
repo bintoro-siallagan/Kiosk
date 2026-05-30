@@ -5445,6 +5445,16 @@ app.get("/api/public/cinema-pulse", (req, res) => {
   }
 });
 
+// ── Dayparts public endpoint — list semua daypart + yg current ──
+app.get("/api/public/dayparts", (req, res) => {
+  try {
+    const { DAYPARTS, currentDaypart } = require("./dayparts");
+    res.json({ dayparts: DAYPARTS, current: currentDaypart() });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── Public config (CDS tracking URL etc) ──────────────────────────────
 app.get("/api/config/public", (_, res) => {
   let auditConfig = {};

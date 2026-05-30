@@ -851,11 +851,20 @@ function setupMasterItems(app, opts = {}) {
   router.put('/menus/:id', (req, res) => {
     const b = req.body || {};
     const allowed = ['category_id','emoji','name','description','price','free_extras',
-      'is_popular','is_available','image_url','display_order'];
+      'is_popular','is_available','image_url','display_order','dayparts'];
     const sets = [], params = [];
     for (const k of allowed) if (b[k] !== undefined) {
       sets.push(`${k} = ?`);
-      params.push(typeof b[k] === 'boolean' ? (b[k] ? 1 : 0) : b[k]);
+      let v = b[k];
+      if (k === 'dayparts') {
+        // Normalize: null/'' = all-day, array = JSON.stringify
+        if (v == null || v === '') v = null;
+        else if (Array.isArray(v)) v = v.length ? JSON.stringify(v) : null;
+        else if (typeof v === 'string' && !v.startsWith('[')) v = null;
+      } else if (typeof v === 'boolean') {
+        v = v ? 1 : 0;
+      }
+      params.push(v);
     }
     if (b.outlet_ids !== undefined) {
       sets.push('outlet_ids = ?');
@@ -878,11 +887,20 @@ function setupMasterItems(app, opts = {}) {
   router.patch('/menus/:id', (req, res) => {
     const b = req.body || {};
     const allowed = ['category_id','emoji','name','description','price','free_extras',
-      'is_popular','is_available','image_url','display_order'];
+      'is_popular','is_available','image_url','display_order','dayparts'];
     const sets = [], params = [];
     for (const k of allowed) if (b[k] !== undefined) {
       sets.push(`${k} = ?`);
-      params.push(typeof b[k] === 'boolean' ? (b[k] ? 1 : 0) : b[k]);
+      let v = b[k];
+      if (k === 'dayparts') {
+        // Normalize: null/'' = all-day, array = JSON.stringify
+        if (v == null || v === '') v = null;
+        else if (Array.isArray(v)) v = v.length ? JSON.stringify(v) : null;
+        else if (typeof v === 'string' && !v.startsWith('[')) v = null;
+      } else if (typeof v === 'boolean') {
+        v = v ? 1 : 0;
+      }
+      params.push(v);
     }
     if (b.outlet_ids !== undefined) {
       sets.push('outlet_ids = ?');
@@ -950,7 +968,16 @@ function setupMasterItems(app, opts = {}) {
     const sets = [], params = [];
     for (const k of allowed) if (b[k] !== undefined) {
       sets.push(`${k} = ?`);
-      params.push(typeof b[k] === 'boolean' ? (b[k] ? 1 : 0) : b[k]);
+      let v = b[k];
+      if (k === 'dayparts') {
+        // Normalize: null/'' = all-day, array = JSON.stringify
+        if (v == null || v === '') v = null;
+        else if (Array.isArray(v)) v = v.length ? JSON.stringify(v) : null;
+        else if (typeof v === 'string' && !v.startsWith('[')) v = null;
+      } else if (typeof v === 'boolean') {
+        v = v ? 1 : 0;
+      }
+      params.push(v);
     }
     if (!sets.length) return res.status(400).json({ error: 'no fields' });
     sets.push(`updated_at = ?`); params.push(nowSec());

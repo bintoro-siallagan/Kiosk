@@ -236,11 +236,20 @@ function BulkImport({ categories, onDone }) {
   );
 }
 
+const DAYPART_OPTIONS = [
+  { id: 'breakfast', emoji: '🥞', label: 'Sarapan', hint: '05-10' },
+  { id: 'lunch',     emoji: '🍽️', label: 'Siang',   hint: '10-15' },
+  { id: 'snack',     emoji: '☕', label: 'Sore',    hint: '15-18' },
+  { id: 'dinner',    emoji: '🍝', label: 'Malam',   hint: '18-22' },
+  { id: 'late',      emoji: '🌙', label: 'Larut',   hint: '22-05' },
+];
+
 function MenuForm({ initial, categories, onSave, onCancel }) {
   const [f, setF] = useState({
     id: '', emoji: '', name: '', description: '', price: 0,
     category_id: categories[0]?.id || '', free_extras: 0,
     is_popular: false, is_available: true, image_url: '',
+    dayparts: [],
     ...initial
   });
   const isNew = initial?.isNew;
@@ -258,10 +267,16 @@ function MenuForm({ initial, categories, onSave, onCancel }) {
     if (!isNew && initial?.id) {
       api(`/menus/${initial.id}`).then(d => {
         setDetail(d);
+        // Parse dayparts JSON kalau ada
+        let dpArr = [];
+        if (d.dayparts) {
+          try { dpArr = JSON.parse(d.dayparts); if (!Array.isArray(dpArr)) dpArr = []; } catch { dpArr = []; }
+        }
         setF(prev => ({
           ...prev, ...d,
           is_popular: d.is_popular === 1,
-          is_available: d.is_available === 1
+          is_available: d.is_available === 1,
+          dayparts: dpArr,
         }));
         setSelectedExtras(new Set(d.allowed_extras || []));
         setBom(d.bom || []);
@@ -281,6 +296,7 @@ function MenuForm({ initial, categories, onSave, onCancel }) {
         price: parseFloat(f.price) || 0,
         free_extras: parseInt(f.free_extras, 10) || 0,
         allowed_extras: selectedExtras.size > 0 ? Array.from(selectedExtras) : undefined,
+        dayparts: Array.isArray(f.dayparts) && f.dayparts.length ? f.dayparts : null,
       };
       await onSave(body);
       if (!isNew) {
@@ -353,6 +369,49 @@ function MenuForm({ initial, categories, onSave, onCancel }) {
           <label style={{display:'flex', alignItems:'center', gap:6}}>
             <input type="checkbox" checked={f.is_available} onChange={update('is_available')} /> Available
           </label>
+        </div>
+
+        {/* Dayparting — kapan item ini muncul (kalau kosong = sepanjang hari) */}
+        <div style={{ marginTop: 12, padding: 12, background: '#f9fafb', borderRadius: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 4 }}>
+            🕒 Tersedia Saat (Daypart)
+          </div>
+          <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 8 }}>
+            Pilih jam tayang. <b>Kosongkan = sepanjang hari</b> (default).
+            Item akan otomatis sembunyi di signage kalau di luar jam.
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {DAYPART_OPTIONS.map(opt => {
+              const checked = (f.dayparts || []).includes(opt.id);
+              return (
+                <label key={opt.id} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '6px 10px', borderRadius: 999,
+                  background: checked ? '#fef3c7' : '#fff',
+                  border: `1px solid ${checked ? '#f59e0b' : '#e5e7eb'}`,
+                  fontSize: 12, cursor: 'pointer', userSelect: 'none',
+                }}>
+                  <input
+                    type="checkbox" checked={checked}
+                    onChange={(e) => {
+                      const next = new Set(f.dayparts || []);
+                      if (e.target.checked) next.add(opt.id); else next.delete(opt.id);
+                      setF({ ...f, dayparts: Array.from(next) });
+                    }}
+                    style={{ margin: 0 }}
+                  />
+                  <span>{opt.emoji} {opt.label}</span>
+                  <span style={{ fontSize: 9, color: '#9ca3af', fontFamily: "'Geist Mono',monospace" }}>{opt.hint}</span>
+                </label>
+              );
+            })}
+            {(f.dayparts || []).length > 0 && (
+              <button type="button" onClick={() => setF({ ...f, dayparts: [] })}
+                style={{ padding: '6px 10px', background: 'transparent', border: '1px solid #9ca3af', borderRadius: 6, fontSize: 11, color: '#6b7280', cursor: 'pointer' }}>
+                ↺ Reset (all-day)
+              </button>
+            )}
+          </div>
         </div>
 
         {!isNew && (
