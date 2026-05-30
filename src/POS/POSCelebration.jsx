@@ -14,6 +14,7 @@ const MEDAL = ['🥇', '🥈', '🥉'];
 export default function POSCelebration({ order, apiBase = '', onDone }) {
   const [d, setD] = useState(null);
   const [err, setErr] = useState(false);
+  const [shareMsg, setShareMsg] = useState("");
   const recorded = useRef(false);
 
   useEffect(() => {
@@ -52,7 +53,6 @@ export default function POSCelebration({ order, apiBase = '', onDone }) {
   if (!d) return <div style={S.root}><div style={S.box}><LoadingState label="Sebentar ya, kami siapkan hadiahmu…" /></div></div>;
 
   const t = d.title;
-  const [shareMsg, setShareMsg] = useState("");
 
   async function handleShare() {
     const shareText = `Saya baru aja dapet gelar ${t.emoji} ${t.title} di karyaOS!\n` +
