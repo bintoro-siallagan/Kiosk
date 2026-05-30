@@ -20,6 +20,7 @@ const ChangePasswordModal = lazy(() => import("./Admin/ChangePasswordModal.jsx")
 const OutletSetupWizard = lazy(() => import("./Admin/OutletSetupWizard.jsx"));
 const OwnerPulseStrip = lazy(() => import("./Admin/OwnerPulseStrip.jsx"));
 const RecentActivityFeed = lazy(() => import("./Admin/RecentActivityFeed.jsx"));
+const OwnerAttentionBar = lazy(() => import("./Admin/OwnerAttentionBar.jsx"));
 import { OutletScopeProvider } from "./Admin/OutletScopeContext.jsx";
 import OutletScopeBar from "./Admin/OutletScopeBar.jsx";
 
@@ -987,6 +988,11 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
               </div>
             </div>
           ) : (<>
+          {/* ═══ OWNER ATTENTION — bad ratings butuh perhatian (hide kalau bersih) ═══ */}
+          <Suspense fallback={null}>
+            <OwnerAttentionBar onOpenFeedback={() => openRight("tools", "customer_feedback")} />
+          </Suspense>
+
           {/* ═══ OWNER PULSE — nadi hidup outlet sekarang ═══ */}
           <Suspense fallback={null}>
             <OwnerPulseStrip />
