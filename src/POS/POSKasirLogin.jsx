@@ -289,12 +289,24 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
         <div style={styles.logoSub}>POINT OF SALE TERMINAL</div>
       </div>
 
-      {/* KPI STATS */}
-      <div style={styles.statsRow}>
-        <StatCard label="Revenue today" value={fmtIDR(stats.revenue)} color="#f97316" />
-        <StatCard label="Orders" value={stats.orders} color="#fff" />
-        <StatCard label="Anomali" value={stats.anomalies} color={stats.anomalies > 0 ? '#fbbf24' : '#4ade80'} />
-      </div>
+      {/* KPI STATS — hide kalau semua 0 (shift baru), tampilkan welcome message */}
+      {(stats.revenue > 0 || stats.orders > 0 || stats.anomalies > 0) ? (
+        <div style={styles.statsRow}>
+          <StatCard label="Revenue today" value={fmtIDR(stats.revenue)} color="#f97316" />
+          <StatCard label="Orders" value={stats.orders} color="#fff" />
+          <StatCard label="Anomali" value={stats.anomalies} color={stats.anomalies > 0 ? '#fbbf24' : '#4ade80'} />
+        </div>
+      ) : (
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 24 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '8px 18px', borderRadius: 999, background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)', fontSize: 13, color: '#fbbf24', fontWeight: 600, letterSpacing: 0.3, backdropFilter: 'blur(8px)' }}>
+            <span style={{ fontSize: 16 }}>{(() => {
+              const h = new Date().getHours();
+              return h >= 5 && h < 11 ? '☀️' : h >= 11 && h < 15 ? '🌤️' : h >= 15 && h < 18 ? '🌅' : '✨';
+            })()}</span>
+            <span>Shift baru. Hari ini menunggu sentuhan pertama.</span>
+          </div>
+        </div>
+      )}
 
       {dayClosed ? (
         <div style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center', padding:'48px 24px', gap:22, minHeight:'52vh'}}>

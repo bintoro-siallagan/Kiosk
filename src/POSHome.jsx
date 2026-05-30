@@ -417,8 +417,23 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
       <main style={S.main}>
         <style>{POSHOME_CSS}</style>
         <div style={S.welcome}>
-          <h2 style={S.welcomeTitle}>Hi, {cashier.name} 👋</h2>
-          <p style={S.welcomeSub}>Ready for today's shift</p>
+          {(() => {
+            const h = new Date().getHours();
+            const greet = h >= 5 && h < 11 ? "Selamat pagi"
+                       : h >= 11 && h < 15 ? "Selamat siang"
+                       : h >= 15 && h < 18 ? "Selamat sore"
+                       : "Selamat malam";
+            const sub = h >= 5 && h < 11 ? "Hari baru, kesempatan baru. Siap menyambut tamu pertama?"
+                      : h >= 11 && h < 15 ? "Jam sibuk siang — tetap senyum ya."
+                      : h >= 15 && h < 18 ? "Sore tenang sebelum prime time malam. Tetap fokus."
+                      : "Shift malam — pelan-pelan, kualitas yg penting.";
+            return (
+              <>
+                <h2 style={S.welcomeTitle}>{greet}, {cashier.name} 👋</h2>
+                <p style={S.welcomeSub}>{sub}</p>
+              </>
+            );
+          })()}
         </div>
 
         {/* MAIN ACTION GRID — F&B default, plus Cinema button kalau outlet hybrid */}
