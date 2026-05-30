@@ -36,38 +36,72 @@ export default function AdminOutletMaster({ apiBase = "" }) {
   }, [apiBase]);
   useEffect(() => { load(); }, [load]);
 
-  const cycleStatus = (o) => {
+  // Build auth headers — backend requireAdmin butuh Bearer token.
+  // Tanpa ini, save/edit/delete silent 401.
+  const authHeaders = () => {
+    const t = (() => { try { return localStorage.getItem("adminToken") || ""; } catch { return ""; } })();
+    return t
+      ? { "Content-Type": "application/json", Authorization: `Bearer ${t}` }
+      : { "Content-Type": "application/json" };
+  };
+
+  // Parse response standar — kalau !ok, ambil error msg + handle 401/403 dgn pesan hangat
+  const handleResp = async (r, successMsg) => {
+    if (r.ok) {
+      setMsg(successMsg);
+      return true;
+    }
+    if (r.status === 401 || r.status === 403) {
+      setMsg("⚠ Session expired / butuh akses admin — re-login lalu coba lagi.");
+      return false;
+    }
+    let detail = ""; try { detail = (await r.json())?.error || ""; } catch {}
+    setMsg("⚠ " + (detail || `Gagal (HTTP ${r.status})`));
+    return false;
+  };
+
+  const cycleStatus = async (o) => {
     if (!d) return;
     const next = d.statuses[(d.statuses.indexOf(o.status) + 1) % d.statuses.length];
-    fetch(`${apiBase}/api/outlet-master/${o.id}/status`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: next }),
-    }).then(r => r.json()).then(j => { if (j.ok) { setMsg(`✓ ${o.name} → ${next}`); load(); } else setMsg(j.error || "failed"); }).catch(e => setMsg(String(e)));
+    try {
+      const r = await fetch(`${apiBase}/api/outlet-master/${o.id}/status`, {
+        method: "POST", headers: authHeaders(), body: JSON.stringify({ status: next }),
+      });
+      if (await handleResp(r, `✓ ${o.name} → ${next}`)) load();
+    } catch (e) { setMsg("⚠ " + String(e)); }
   };
 
   const saveEdit = async () => {
-    const r = await fetch(`${apiBase}/api/outlet-master/${editing.id}`, {
-      method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(editing),
-    });
-    const j = await r.json();
-    if (j.ok) { setMsg(`✓ ${editing.name} saved`); setEditing(null); load(); }
-    else setMsg(j.error || "failed");
+    if (!editing?.name?.trim()) { setMsg("⚠ Nama outlet wajib"); return; }
+    try {
+      const r = await fetch(`${apiBase}/api/outlet-master/${editing.id}`, {
+        method: "PATCH", headers: authHeaders(), body: JSON.stringify(editing),
+      });
+      if (await handleResp(r, `✓ ${editing.name} tersimpan`)) {
+        setEditing(null); load();
+      }
+    } catch (e) { setMsg("⚠ " + String(e)); }
   };
+
   const submitAdd = async () => {
-    if (!adding.name?.trim()) { setMsg("⚠ Outlet name is required"); return; }
-    const r = await fetch(`${apiBase}/api/outlet-master`, {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(adding),
-    });
-    const j = await r.json();
-    if (j.ok) { setMsg("✓ Outlet added"); setAdding(null); load(); }
-    else setMsg(j.error || "failed");
+    if (!adding.name?.trim()) { setMsg("⚠ Nama outlet wajib"); return; }
+    try {
+      const r = await fetch(`${apiBase}/api/outlet-master`, {
+        method: "POST", headers: authHeaders(), body: JSON.stringify(adding),
+      });
+      if (await handleResp(r, "✓ Outlet ditambahkan")) {
+        setAdding(null); load();
+      }
+    } catch (e) { setMsg("⚠ " + String(e)); }
   };
+
   const remove = async (o) => {
     const ok = await confirm({ title: `Delete outlet "${o.name}"?`, message: `Outlet ${o.code} will be permanently deleted. Related transaction data remains in history but outlet reference is lost.\n\nCannot be undone.`, danger: true, okLabel: "Delete" });
     if (!ok) return;
-    const r = await fetch(`${apiBase}/api/outlet-master/${o.id}`, { method: "DELETE" });
-    const j = await r.json();
-    if (j.ok) { setMsg("✓ Outlet deleted"); load(); }
-    else setMsg(j.error || "failed");
+    try {
+      const r = await fetch(`${apiBase}/api/outlet-master/${o.id}`, { method: "DELETE", headers: authHeaders() });
+      if (await handleResp(r, "✓ Outlet dihapus")) load();
+    } catch (e) { setMsg("⚠ " + String(e)); }
   };
 
   if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Loading Outlet Master…</div>;
