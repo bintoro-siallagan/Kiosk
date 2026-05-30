@@ -438,6 +438,29 @@ function StepMenu({ data, update }) {
 function StepPrinter({ data, update, apiBase }) {
   const [testing, setTesting] = useState({ kitchen: false, customer: false });
   const [testMsg, setTestMsg] = useState("");
+  const [bridgeStatus, setBridgeStatus] = useState({ checking: true, online: false, version: null });
+  const [bridgeLatest, setBridgeLatest] = useState(null);
+
+  // Detect bridge running di PC kasir (this browser's localhost)
+  // + fetch latest version dari backend untuk download link
+  useEffect(() => {
+    fetch("http://localhost:9101/", { signal: AbortSignal.timeout(2000) })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setBridgeStatus({ checking: false, online: !!d, version: d?.version || null }))
+      .catch(() => setBridgeStatus({ checking: false, online: false, version: null }));
+    fetch(`${apiBase}/api/bridge/latest-version`)
+      .then(r => r.ok ? r.json() : null)
+      .then(setBridgeLatest)
+      .catch(() => {});
+  }, [apiBase]);
+
+  const recheckBridge = () => {
+    setBridgeStatus({ checking: true, online: false, version: null });
+    fetch("http://localhost:9101/", { signal: AbortSignal.timeout(2000) })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setBridgeStatus({ checking: false, online: !!d, version: d?.version || null }))
+      .catch(() => setBridgeStatus({ checking: false, online: false, version: null }));
+  };
 
   const testPrint = async (kind) => {
     const ip = kind === "kitchen" ? data.kitchen_ip : data.customer_ip;
@@ -456,8 +479,72 @@ function StepPrinter({ data, update, apiBase }) {
     finally { setTesting(t => ({ ...t, [kind]: false })); }
   };
 
+  const bridgeBg = bridgeStatus.online
+    ? "linear-gradient(135deg, rgba(16,185,129,0.10), rgba(16,185,129,0.04))"
+    : "linear-gradient(135deg, rgba(245,158,11,0.10), rgba(245,158,11,0.04))";
+  const bridgeBorder = bridgeStatus.online ? "rgba(16,185,129,0.40)" : "rgba(245,158,11,0.35)";
+  const bridgeColor  = bridgeStatus.online ? "#10b981" : "#fbbf24";
+
   return (
     <div style={{ display: "grid", gap: 16 }}>
+      {/* Print Bridge Status + Download */}
+      <div style={{ background: bridgeBg, border: `1px solid ${bridgeBorder}`, borderRadius: 12, padding: 18 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12, gap: 12, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+            <div style={{ fontSize: 32, lineHeight: 1 }}>
+              {bridgeStatus.checking ? "⏳" : bridgeStatus.online ? "✅" : "🔌"}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 10, color: bridgeColor, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>
+                PRINT BRIDGE
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "#fff" }}>
+                {bridgeStatus.checking ? "Mengecek koneksi..." :
+                 bridgeStatus.online ? `Terhubung · v${bridgeStatus.version || "?"}` :
+                 "Belum terdeteksi di PC ini"}
+              </div>
+              <div style={{ fontSize: 11, color: "#9da7b3", marginTop: 2 }}>
+                {bridgeStatus.online
+                  ? "Localhost agent jalan — siap forward print job ke printer LAN."
+                  : "Tanpa bridge, struk gak bisa cetak ke printer fisik (cuma mode DEBUG file)."}
+              </div>
+            </div>
+          </div>
+          <button onClick={recheckBridge} disabled={bridgeStatus.checking} style={{ ...S.smallBtn, flexShrink: 0 }}>
+            ↻ Recheck
+          </button>
+        </div>
+
+        {!bridgeStatus.online && (
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 12 }}>
+            <a href={bridgeLatest?.download_url || "/downloads/print-bridge.zip"} download
+              style={{ flex: 1, minWidth: 200, padding: "12px 16px", background: "linear-gradient(135deg,#a855f7,#fbbf24)", color: "#0d1117", border: "none", borderRadius: 10, fontSize: 13, fontWeight: 800, cursor: "pointer", fontFamily: "inherit", textDecoration: "none", textAlign: "center", letterSpacing: 0.3 }}>
+              ⬇ Download Print Bridge {bridgeLatest?.version ? `v${bridgeLatest.version}` : "(Windows)"}
+            </a>
+            <details style={{ flex: 1, minWidth: 200, padding: "10px 14px", background: "#0a0e16", border: "1px solid #21262d", borderRadius: 10, cursor: "pointer" }}>
+              <summary style={{ fontSize: 12, color: "#fbbf24", fontWeight: 700, cursor: "pointer", outline: "none" }}>
+                📖 Cara install (3 langkah)
+              </summary>
+              <ol style={{ fontSize: 11, color: "#9da7b3", lineHeight: 1.7, paddingLeft: 18, margin: "8px 0 0" }}>
+                <li>Install <a href="https://nodejs.org/dist/v20.18.0/node-v20.18.0-x64.msi" target="_blank" rel="noreferrer" style={{ color: "#fbbf24" }}>Node.js LTS</a> di PC kasir</li>
+                <li>Extract zip ke <code style={{ color: "#fbbf24" }}>C:\karyaos\print-bridge\</code></li>
+                <li>Right-click <code style={{ color: "#fbbf24" }}>install-windows-service.bat</code> → <b>Run as administrator</b></li>
+              </ol>
+              <div style={{ fontSize: 10, color: "#5b6470", fontStyle: "italic", marginTop: 6 }}>
+                Service auto-start saat Windows boot. Setelah install, klik <b>Recheck</b> di atas.
+              </div>
+            </details>
+          </div>
+        )}
+
+        {bridgeStatus.online && bridgeLatest && bridgeStatus.version && bridgeLatest.version !== bridgeStatus.version && (
+          <div style={{ marginTop: 10, padding: "8px 12px", background: "rgba(251,191,36,0.10)", border: "1px solid rgba(251,191,36,0.30)", borderRadius: 8, fontSize: 11, color: "#fbbf24" }}>
+            🆕 Update tersedia: v{bridgeLatest.version}. Download + re-install untuk dapatkan fitur terbaru.
+            <a href={bridgeLatest.download_url} download style={{ color: "#fbbf24", marginLeft: 6, fontWeight: 700 }}>⬇ Download</a>
+          </div>
+        )}
+      </div>
+
       <div style={S.infoBox}>
         🖨️ Konfigurasi printer LAN (TCP/IP, port 9100). Mode <b>DEBUG</b> menulis ke file (tanpa printer fisik) —
         cocok untuk testing. Matikan saat siap produksi.
