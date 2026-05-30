@@ -298,23 +298,31 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
               setUnlockErr("");
               setShowOutletPicker(s => !s);
             }} style={{
-              padding: "4px 10px", borderRadius: 999,
-              background: outletInfo.name ? "rgba(56,189,248,0.12)" : "rgba(245,158,11,0.1)",
-              border: outletInfo.name ? "1px solid rgba(56,189,248,0.35)" : "1px solid rgba(245,158,11,0.3)",
-              color: outletInfo.name ? "#38BDF8" : "#fbbf24",
-              fontSize: 11, fontWeight: 700, letterSpacing: 0.5,
-              fontFamily: "'Geist Mono',monospace",
-              display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer",
+              padding: "8px 14px", borderRadius: 999,
+              background: outletInfo.name ? "rgba(56,189,248,0.18)" : "linear-gradient(135deg, rgba(245,158,11,0.25), rgba(239,68,68,0.20))",
+              border: outletInfo.name ? "1.5px solid rgba(56,189,248,0.55)" : "1.5px solid rgba(245,158,11,0.65)",
+              color: outletInfo.name ? "#7dd3fc" : "#fcd34d",
+              fontSize: 13, fontWeight: 800, letterSpacing: 0.5,
+              fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif",
+              display: "inline-flex", alignItems: "center", gap: 7, cursor: "pointer",
+              boxShadow: outletInfo.name
+                ? "0 4px 14px rgba(56,189,248,0.25)"
+                : "0 4px 18px rgba(245,158,11,0.35), 0 0 0 2px rgba(245,158,11,0.15)",
+              animation: outletInfo.name ? "none" : "outletPulse 2s ease-in-out infinite",
             }} title={isDeviceLocked ? "🔒 Device-locked. Klik untuk Manager PIN unlock" : (outletInfo.name ? `Klik ganti outlet · current: ${outletInfo.code}` : "Klik pilih outlet")}>
               {outletInfo.name ? (
                 <>
-                  <span>{isDeviceLocked ? "🔒" : "📍"}</span>
+                  <span style={{ fontSize: 16 }}>{isDeviceLocked ? "🔒" : "📍"}</span>
                   <span>{outletInfo.name}</span>
-                  {outletInfo.area && outletInfo.area !== "-" && <span style={{ color: "#7d8590", fontWeight: 500 }}>· {outletInfo.area}</span>}
-                  {!isDeviceLocked && <span style={{ opacity: 0.6, marginLeft: 4 }}>▾</span>}
+                  {outletInfo.area && outletInfo.area !== "-" && <span style={{ color: "#94a3b8", fontWeight: 600, fontSize: 11 }}>· {outletInfo.area}</span>}
+                  {!isDeviceLocked && <span style={{ opacity: 0.7, marginLeft: 2, fontSize: 11 }}>▾</span>}
                 </>
               ) : (
-                <>⚠ PILIH OUTLET ▾</>
+                <>
+                  <span style={{ fontSize: 16 }}>📍</span>
+                  <span>Pilih Outlet</span>
+                  <span style={{ opacity: 0.7, fontSize: 11 }}>▾</span>
+                </>
               )}
             </button>
             {showOutletPicker && createPortal(
@@ -721,6 +729,7 @@ const POSHOME_CSS = `
   @keyframes phFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
   @keyframes phPulseDeco{0%,100%{opacity:0.45;transform:scale(1)}50%{opacity:0.6;transform:scale(1.05)}}
   @keyframes phShimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  @keyframes outletPulse{0%,100%{box-shadow:0 4px 18px rgba(245,158,11,0.35), 0 0 0 2px rgba(245,158,11,0.15)}50%{box-shadow:0 4px 22px rgba(245,158,11,0.55), 0 0 0 4px rgba(245,158,11,0.30)}}
   .ph-card{animation:phFadeIn .4s cubic-bezier(.2,.8,.2,1) both}
   .ph-card:hover{transform:translateY(-3px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), inset 0 -1px 0 rgba(0,0,0,0.18), 0 14px 36px rgba(0,0,0,0.36), 0 32px 80px color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent)!important}
   .ph-card:active{transform:translateY(-1px) scale(.99)}
