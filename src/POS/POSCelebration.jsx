@@ -52,6 +52,38 @@ export default function POSCelebration({ order, apiBase = '', onDone }) {
   if (!d) return <div style={S.root}><div style={S.box}><LoadingState label="Sebentar ya, kami siapkan hadiahmu…" /></div></div>;
 
   const t = d.title;
+  const [shareMsg, setShareMsg] = useState("");
+
+  async function handleShare() {
+    const shareText = `Saya baru aja dapet gelar ${t.emoji} ${t.title} di karyaOS!\n` +
+                      `Belanja ${fmtRp(d.amount)} · Peringkat #${d.rank} jam ${d.window}\n\n` +
+                      `Yuk mampir juga: ${typeof window !== 'undefined' ? window.location.origin : ''}`;
+    // Web Share API native (iOS Safari + Android Chrome support)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `${t.emoji} ${t.title} di karyaOS`,
+          text: shareText,
+        });
+        setShareMsg("✓ Terima kasih sudah berbagi!");
+        setTimeout(() => setShareMsg(""), 2500);
+      } catch (e) {
+        // User cancel share — silent (jangan kasih error pesan)
+        if (e.name !== 'AbortError') setShareMsg("⚠ Gagal share — coba screenshot manual");
+      }
+      return;
+    }
+    // Fallback: copy to clipboard
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setShareMsg("✓ Pesan disalin — paste di WA/Story");
+      setTimeout(() => setShareMsg(""), 3000);
+    } catch {
+      setShareMsg("📸 Tap-and-hold screen → screenshot, share manual");
+      setTimeout(() => setShareMsg(""), 4000);
+    }
+  }
+
   return (
     <div style={S.root}>
       <div style={{ ...S.box, borderColor: t.color + '66' }}>
@@ -90,7 +122,14 @@ export default function POSCelebration({ order, apiBase = '', onDone }) {
           ))}
         </div>
 
-        <div style={S.shareHint}>📸 Screenshot & bagikan kalau Anda berkenan</div>
+        <button onClick={handleShare} style={S.shareBtn}>
+          📸 Bagikan ke teman
+        </button>
+        {shareMsg && (
+          <div style={{ fontSize: 11, color: shareMsg.startsWith("✓") ? "#10b981" : "#fbbf24", marginTop: 8, fontStyle: "italic" }}>
+            {shareMsg}
+          </div>
+        )}
         <button onClick={onDone} style={S.cta}>Selesai. Sampai jumpa lagi →</button>
         <div style={{ fontSize: 11, color: '#6b7280', marginTop: 6 }}>Tiap jam ada Sultan baru — kami tunggu Anda balik 🌱</div>
       </div>
@@ -143,6 +182,13 @@ const S = {
     marginTop: 16, padding: '10px 14px', fontSize: 12, fontWeight: 500,
     background: 'rgba(236,72,153,0.10)', border: '1px solid rgba(236,72,153,0.28)',
     borderRadius: 12, color: '#f9a8d4', letterSpacing: '-0.1px',
+  },
+  shareBtn: {
+    width: '100%', marginTop: 16, padding: '13px',
+    background: 'linear-gradient(135deg, rgba(236,72,153,0.18), rgba(168,85,247,0.18))',
+    border: '1px solid rgba(236,72,153,0.40)', borderRadius: 12,
+    color: '#f9a8d4', fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
+    cursor: 'pointer', letterSpacing: 0.2,
   },
   cta: {
     width: '100%', marginTop: 14, padding: '15px',
