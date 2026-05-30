@@ -144,6 +144,102 @@ function setupSeed(app, opts = {}) {
   router.post('/reseed/service', (req, res) => res.json(reseedService()));
   router.post('/reseed/outlet-pins', (req, res) => res.json(reseedOutletPins()));
 
+  // ─── Demo Orders Generator ──────────────────────────────
+  // POST /api/seed/demo-orders?count=30
+  // Generate realistic sample orders distributed across today + few feedback
+  // ratings. Tagged source='demo-seed' utk easy cleanup.
+  // Use case: investor demo, screenshot marketing, manual QA test.
+  router.post('/demo-orders', (req, res) => {
+    const count = Math.min(Math.max(parseInt(req.query.count, 10) || 30, 1), 200);
+    try {
+      const menus = db.prepare(`SELECT id, name, emoji, price FROM pos_menus WHERE COALESCE(is_available,1)=1 LIMIT 30`).all();
+      if (!menus.length) return res.status(400).json({ error: 'Tidak ada menu — seed menu dulu' });
+
+      const NAMES = ['Andi', 'Sari', 'Budi', 'Rina', 'Doni', 'Maya', 'Eka', 'Hani', 'Bayu', 'Indah', 'Joko', 'Wina', 'Tomi', 'Lina', 'Aji', 'Citra', 'Reza', 'Dewi', 'Fajar', 'Putri', 'Galih', 'Aulia', 'Hadi', 'Mira', 'Yoga'];
+      const PAYS = ['CASH', 'QRIS', 'CARD', 'CASH', 'QRIS', 'QRIS']; // QRIS lebih sering
+      const TYPES = ['dine', 'takeaway', 'dine', 'takeaway', 'takeaway']; // takeaway sedikit lebih
+      const KASIRS = ['Sari', 'Budi', 'Andi'];
+
+      // Distribute timestamps across today (start 8am to current hour)
+      const dayStartMs = new Date().setHours(8, 0, 0, 0);
+      const nowMs = Date.now();
+      const spanMs = Math.max(60000, nowMs - dayStartMs); // at least 1 min span
+
+      const insertOrder = db.prepare(`
+        INSERT INTO orders (id, time, type, "table", status, pay, items, addons, subtotal, tax, total, customer_name, customer_phone, kasir, source)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+      `);
+
+      const created = [];
+      for (let i = 0; i < count; i++) {
+        const ts = dayStartMs + Math.floor(Math.random() * spanMs);
+        const orderId = `D${ts.toString(36).slice(-6).toUpperCase()}-${i}`;
+        const itemCount = 1 + Math.floor(Math.random() * 3); // 1-3 items
+        const items = [];
+        for (let j = 0; j < itemCount; j++) {
+          const m = menus[Math.floor(Math.random() * menus.length)];
+          const q = 1 + Math.floor(Math.random() * 2);
+          items.push({ id: m.id, n: m.name, e: m.emoji || '', q, p: m.price, addonTotal: 0, addons: {} });
+        }
+        const subtotal = items.reduce((s, it) => s + it.p * it.q, 0);
+        const tax = Math.round(subtotal * 11 / 111);
+        const total = subtotal;
+        const type = TYPES[Math.floor(Math.random() * TYPES.length)];
+        const pay = PAYS[Math.floor(Math.random() * PAYS.length)];
+        const customerName = Math.random() < 0.7 ? NAMES[Math.floor(Math.random() * NAMES.length)] : null;
+        const customerPhone = customerName && Math.random() < 0.4 ? `0812${String(Math.floor(Math.random() * 99999999)).padStart(8, '0')}` : null;
+        const kasir = KASIRS[Math.floor(Math.random() * KASIRS.length)];
+        // Status distribution: 70% completed, 15% ready, 10% preparing, 5% waiting
+        const r = Math.random();
+        const status = r < 0.7 ? 'completed' : r < 0.85 ? 'ready' : r < 0.95 ? 'preparing' : 'waiting';
+        const table = type === 'dine' ? `T${1 + Math.floor(Math.random() * 12)}` : '-';
+
+        try {
+          insertOrder.run(orderId, ts, type, table, status, pay,
+            JSON.stringify(items), '[]', subtotal, tax, total,
+            customerName, customerPhone, kasir, 'demo-seed');
+          created.push(orderId);
+        } catch {}
+      }
+
+      // Generate ratings for ~40% of completed orders
+      let ratingCount = 0;
+      try {
+        const completedDemo = db.prepare(`SELECT id FROM orders WHERE source = 'demo-seed' AND status = 'completed' AND time >= ?`).all(dayStartMs);
+        const insertFb = db.prepare(`INSERT INTO customer_feedback (order_ref, rating, comment, cashier, source, created_at) VALUES (?,?,?,?,?,?)`);
+        const COMMENTS_GOOD = ['Mantap banget!', 'Cepet pelayanannya', 'Enak banget', 'Recommended', 'Selalu konsisten enak', 'Kasir ramah', '', '', null];
+        const COMMENTS_MID  = ['Cukup', 'Lumayan', 'Standard', '', null];
+        const COMMENTS_BAD  = ['Agak lama nunggu', 'Rasa kurang', 'Kasir kurang ramah'];
+        for (const o of completedDemo) {
+          if (Math.random() > 0.4) continue;
+          const rRoll = Math.random();
+          const stars = rRoll < 0.55 ? 5 : rRoll < 0.85 ? 4 : rRoll < 0.95 ? 3 : 2;
+          const pool = stars >= 4 ? COMMENTS_GOOD : stars === 3 ? COMMENTS_MID : COMMENTS_BAD;
+          const comment = pool[Math.floor(Math.random() * pool.length)];
+          const ts = dayStartMs + Math.floor(Math.random() * spanMs);
+          insertFb.run(o.id, stars, comment, ['Sari', 'Budi', 'Andi'][Math.floor(Math.random() * 3)], 'demo-seed', Math.floor(ts / 1000));
+          ratingCount++;
+        }
+      } catch {}
+
+      res.json({ ok: true, orders_created: created.length, ratings_created: ratingCount, source: 'demo-seed' });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // POST /api/seed/demo-orders/cleanup — hapus semua demo-seed data
+  router.post('/demo-orders/cleanup', (req, res) => {
+    try {
+      const o = db.prepare(`DELETE FROM orders WHERE source = 'demo-seed'`).run();
+      let f = { changes: 0 };
+      try { f = db.prepare(`DELETE FROM customer_feedback WHERE source = 'demo-seed'`).run(); } catch {}
+      res.json({ ok: true, orders_deleted: o.changes, ratings_deleted: f.changes });
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   router.post('/reseed/all', (req, res) => {
     res.json({
       launch: reseedLaunch(),
