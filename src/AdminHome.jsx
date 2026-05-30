@@ -21,6 +21,7 @@ const OutletSetupWizard = lazy(() => import("./Admin/OutletSetupWizard.jsx"));
 const OwnerPulseStrip = lazy(() => import("./Admin/OwnerPulseStrip.jsx"));
 const RecentActivityFeed = lazy(() => import("./Admin/RecentActivityFeed.jsx"));
 const OwnerAttentionBar = lazy(() => import("./Admin/OwnerAttentionBar.jsx"));
+const OnboardingTour = lazy(() => import("./Admin/OnboardingTour.jsx"));
 import { OutletScopeProvider } from "./Admin/OutletScopeContext.jsx";
 import OutletScopeBar from "./Admin/OutletScopeBar.jsx";
 
@@ -239,6 +240,9 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
   // Change password modal
   const [showChangePwd, setShowChangePwd] = useState(false);
   const [showSetupWizard, setShowSetupWizard] = useState(false);
+  const [showTour, setShowTour] = useState(() => {
+    try { return !localStorage.getItem("karyaos:tour-completed"); } catch { return false; }
+  });
   const wrappedLogout = useCallback(() => {
     if (!onLogout) return;
     setFarewell({ name: adminSession?.name || 'Sahabat', then: () => onLogout() });
@@ -1414,6 +1418,7 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       <div style={S.footer} className="no-print">
         {onLogout && <button className="tile" style={{ ...S.footBtn, color: "#f87171", borderColor: "#f8717133" }} onClick={wrappedLogout}>Log Out</button>}
         <button className="tile" style={{ ...S.footBtn, color: "#fbbf24", borderColor: "#fbbf2433" }} onClick={() => setShowChangePwd(true)}>🔐 Ganti Password</button>
+        <button className="tile" style={{ ...S.footBtn, color: "#a5b4fc", borderColor: "#a5b4fc33" }} onClick={() => setShowTour(true)}>🎓 Tour</button>
         <span style={{ flex: 1 }} />
         <KaryaLocaleSwitcher />
         <span style={S.footNote}>karyaOS · 145+ modules · 🎬 Cinema · 🍽️ F&B · 🛡️ Enterprise · v5 · <kbd style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 4, padding: "1px 5px", fontSize: 9.5, color: "rgba(255,255,255,0.6)", fontFamily: "'Geist Mono',monospace" }}>⌘K</kbd> to search</span>
@@ -1450,6 +1455,13 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
       {showSetupWizard && (
         <Suspense fallback={null}>
           <OutletSetupWizard onClose={() => setShowSetupWizard(false)} onDone={() => setShowSetupWizard(false)} />
+        </Suspense>
+      )}
+
+      {/* First-time onboarding tour — 5 slide intro karyaOS */}
+      {showTour && (
+        <Suspense fallback={null}>
+          <OnboardingTour onClose={() => setShowTour(false)} />
         </Suspense>
       )}
     </div>
