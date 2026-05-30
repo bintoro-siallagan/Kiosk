@@ -214,6 +214,23 @@ function buildCustomerReceipt(order, template = {}) {
   r.line(`Status: LUNAS`).feed();
 
   // Footer + QR — center, customizable
+  // Customer recognition — kalau customer regular, kasih appreciation hangat
+  // (skip kalau guest tanpa data atau visit pertama)
+  if (order.customer_visits && order.customer_visits > 1) {
+    const v = order.customer_visits;
+    let recog;
+    if (v >= 100) recog = `+ KUNJUNGAN KE-${v} +`;
+    else if (v >= 50) recog = `* KUNJUNGAN KE-${v} *`;
+    else if (v >= 10) recog = `Kunjungan ke-${v} Anda`;
+    else if (v >= 2) recog = `Kunjungan ke-${v} Anda. Terima kasih.`;
+    if (recog) r.feed().bold(true).line(recog).bold(false);
+  } else if (order.customer_since_ts) {
+    // Member sejak — kalau visits gak ke-track tapi created_at ada
+    const since = new Date(order.customer_since_ts * 1000);
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    r.feed().line(`Member sejak ${months[since.getMonth()]} ${since.getFullYear()}`);
+  }
+
   // Personalized thanks kalau ada nama customer
   const personalThanks = order.customerName
     ? `Terima kasih, ${order.customerName}.`

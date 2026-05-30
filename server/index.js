@@ -607,7 +607,22 @@ async function printKitchenTicket(order) {
 }
 
 async function printCustomerReceipt(order) {
-  return _print("Customer receipt", order, buildCustomerReceipt(order, printerConfig.template),
+  // Enrich order dgn customer recognition data — visits + member_since
+  // Buat di-print "✦ Kunjungan ke-N" atau "Member sejak {bulan}"
+  const enriched = { ...order };
+  try {
+    if (order.customerPhone || order.customer_phone) {
+      const phone = String(order.customerPhone || order.customer_phone).replace(/\D/g, '');
+      if (phone) {
+        const c = db.rawDb.prepare(`SELECT visits, created_at, total_spend FROM customers WHERE REPLACE(phone, '-', '') LIKE ? LIMIT 1`).get(`%${phone.slice(-9)}%`);
+        if (c) {
+          enriched.customer_visits = c.visits || 0;
+          enriched.customer_since_ts = c.created_at || null;
+        }
+      }
+    }
+  } catch {}
+  return _print("Customer receipt", enriched, buildCustomerReceipt(enriched, printerConfig.template),
                 "CUSTOMER_PRINTER_IP", "CUSTOMER_PRINTER_PORT",
                 "customer-receipts", "🧾");
 }
