@@ -416,6 +416,39 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
 
       <main style={S.main}>
         <style>{POSHOME_CSS}</style>
+
+        {/* ✨ Ambient particles — soft floating sparkles bikin layar 'bernafas' */}
+        <div style={S.ambientField} aria-hidden>
+          {[...Array(14)].map((_, i) => (
+            <span key={i} style={{
+              position: "absolute",
+              top: `${(i * 7.5) % 95}%`,
+              left: `${(i * 13) % 95}%`,
+              fontSize: 8 + (i % 4) * 3,
+              opacity: 0.15 + (i % 3) * 0.08,
+              filter: "drop-shadow(0 0 6px rgba(251,191,36,0.3))",
+              animation: `phTwinkle ${4 + (i % 5)}s ease-in-out ${i * 0.3}s infinite, phFloat ${8 + (i % 4) * 2}s ease-in-out ${i * 0.2}s infinite`,
+            }}>{["✦", "✧", "·", "*", "✨"][i % 5]}</span>
+          ))}
+        </div>
+
+        {/* 🌅 Time-aware decoration top-right — sun rays / moon stars sesuai jam */}
+        {(() => {
+          const h = new Date().getHours();
+          const deco = h >= 5 && h < 11 ? { emoji: "☀️", color: "rgba(251,191,36,0.18)" }
+                     : h >= 11 && h < 15 ? { emoji: "🌤️", color: "rgba(252,165,165,0.18)" }
+                     : h >= 15 && h < 18 ? { emoji: "🌅", color: "rgba(251,146,60,0.18)" }
+                     : { emoji: "🌙", color: "rgba(199,210,254,0.18)" };
+          return (
+            <div style={{
+              position: "absolute", top: 80, right: 30,
+              fontSize: 120, opacity: 0.5,
+              filter: `drop-shadow(0 0 60px ${deco.color})`,
+              pointerEvents: "none", zIndex: 0,
+              animation: "phPulseDeco 6s ease-in-out infinite",
+            }}>{deco.emoji}</div>
+          );
+        })()}
         {/* ════════ HOMECOMING HERO — "selamat datang kembali ke rumah" ════════
             Filosofi: kasir buka POS = pulang ke rumah. Hangat, glowy, time-aware.
             Bukan generic "welcome" dingin — sambutan tuan rumah yg merindukan. */}
@@ -571,15 +604,20 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
         </section>
 
         <section style={S.section}>
-          <h3 style={S.sectionTitle}>📊 Hari Ini</h3>
+          <h3 style={S.sectionTitle}>✦ Cerita Hari Ini</h3>
           <div style={S.statsGrid}>
             <div style={S.statCard}>
-              <div style={S.statValue}>{todayCount || "—"}</div>
-              <div style={S.statLabel}>ORDERS</div>
+              {/* Soft glow corner accent */}
+              <div style={{ position: "absolute", top: -30, right: -30, width: 80, height: 80, background: "radial-gradient(circle, rgba(34,211,238,0.20), transparent 70%)", filter: "blur(20px)" }} />
+              <div style={{ fontSize: 22, marginBottom: 6, position: "relative", zIndex: 1 }}>🛒</div>
+              <div style={{ ...S.statValue, color: "#22d3ee", textShadow: "0 0 28px rgba(34,211,238,0.45)" }}>{todayCount || "—"}</div>
+              <div style={S.statLabel}>Pesanan Hari Ini</div>
             </div>
             <div style={S.statCard}>
+              <div style={{ position: "absolute", top: -30, right: -30, width: 80, height: 80, background: "radial-gradient(circle, rgba(251,191,36,0.22), transparent 70%)", filter: "blur(20px)" }} />
+              <div style={{ fontSize: 22, marginBottom: 6, position: "relative", zIndex: 1 }}>💰</div>
               <div style={S.statValue}>{todayRevenue > 0 ? `Rp ${fmt(todayRevenue)}` : "—"}</div>
-              <div style={S.statLabel}>REVENUE</div>
+              <div style={S.statLabel}>Omzet Hari Ini</div>
             </div>
           </div>
         </section>
@@ -607,9 +645,14 @@ const roleColors = {
 // v3 design language — matches POSKasirLogin (dark #0a0a0a + orange #f97316, system-ui)
 const POSHOME_CSS = `
   @keyframes phFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes phTwinkle{0%,100%{opacity:0.15;transform:scale(1)}50%{opacity:0.65;transform:scale(1.3)}}
+  @keyframes phFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  @keyframes phPulseDeco{0%,100%{opacity:0.45;transform:scale(1)}50%{opacity:0.6;transform:scale(1.05)}}
+  @keyframes phShimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
   .ph-card{animation:phFadeIn .4s cubic-bezier(.2,.8,.2,1) both}
   .ph-card:hover{transform:translateY(-3px);box-shadow:inset 0 1px 0 rgba(255,255,255,0.26), inset 0 -1px 0 rgba(0,0,0,0.18), 0 14px 36px rgba(0,0,0,0.36), 0 32px 80px color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent)!important}
   .ph-card:active{transform:translateY(-1px) scale(.99)}
+  .ph-stat-pulse{animation:phPulseDeco 3s ease-in-out infinite}
 `;
 
 const S = {
@@ -648,8 +691,10 @@ const S = {
     fontSize: 12, fontWeight: 600, cursor: "pointer", marginLeft: 8, fontFamily: "inherit",
     transition: "all 0.15s",
   },
-  main: { maxWidth: 960, margin: "0 auto", padding: "32px 26px" },
-  welcome: { textAlign: "center", marginBottom: 28 },
+  main: { maxWidth: 960, margin: "0 auto", padding: "32px 26px", position: "relative", overflow: "visible" },
+  // Ambient sparkles overlay — gak block interaksi (pointer-events: none)
+  ambientField: { position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 },
+  welcome: { textAlign: "center", marginBottom: 28, position: "relative", zIndex: 1 },
   welcomeTitle: {
     fontSize: 28, margin: "0 0 6px", fontWeight: 600, letterSpacing: "-0.8px", color: "rgba(255,255,255,0.95)",
   },
@@ -661,6 +706,7 @@ const S = {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))",
     gap: 14, marginBottom: 18,
+    position: "relative", zIndex: 1,
   },
   // CTA card — tinted glass (brand 38% + dark) so white text always visible
   bigBtn: {
@@ -706,7 +752,7 @@ const S = {
     boxShadow: "inset 0 1px 0 rgba(255,255,255,0.12), 0 6px 18px rgba(0,0,0,0.22)",
     transition: "transform 0.25s cubic-bezier(.2,.8,.2,1), box-shadow 0.25s ease",
   },
-  section: { marginTop: 32 },
+  section: { marginTop: 32, position: "relative", zIndex: 1 },
   sectionTitle: {
     fontSize: 13, color: "rgba(255,255,255,0.55)", margin: "0 0 14px",
     fontWeight: 700, letterSpacing: 1.4,
@@ -794,20 +840,23 @@ const S = {
   },
   // Stat card — glass with monospace number
   statCard: {
-    background: "linear-gradient(180deg,#15171c 0%,#0d0f14 100%)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: 14, padding: "20px 16px", textAlign: "center",
-    boxShadow: "0 1px 2px rgba(0,0,0,0.3),0 6px 20px rgba(0,0,0,0.2),inset 0 1px 0 rgba(255,255,255,0.04)",
+    position: "relative", overflow: "hidden",
+    background: "linear-gradient(180deg, rgba(251,191,36,0.05) 0%, rgba(13,15,20,0.95) 60%)",
+    border: "1px solid rgba(251,191,36,0.18)",
+    borderRadius: 16, padding: "22px 18px", textAlign: "center",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.25), 0 0 32px rgba(251,191,36,0.06), inset 0 1px 0 rgba(255,255,255,0.06)",
   },
   statValue: {
-    fontSize: 30, fontWeight: 800, color: "#fbbf24",
-    letterSpacing: -0.5, lineHeight: 1,
+    fontSize: 34, fontWeight: 900, color: "#fbbf24",
+    letterSpacing: -0.8, lineHeight: 1,
     fontFamily: "'Geist Mono',monospace",
-    textShadow: "0 0 24px rgba(251,191,36,0.25)",
+    textShadow: "0 0 32px rgba(251,191,36,0.45), 0 2px 12px rgba(0,0,0,0.4)",
+    position: "relative", zIndex: 1,
   },
   statLabel: {
-    fontSize: 10, color: "rgba(255,255,255,0.45)",
-    letterSpacing: 1.4, fontWeight: 700, marginTop: 8,
+    fontSize: 10, color: "rgba(255,255,255,0.55)",
+    letterSpacing: 1.6, fontWeight: 800, marginTop: 10,
     fontFamily: "'Geist Mono',monospace", textTransform: "uppercase",
+    position: "relative", zIndex: 1,
   },
 };
