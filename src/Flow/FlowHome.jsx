@@ -106,6 +106,15 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
                        : 'Selamat malam';
           const name = profile?.name || session.name;
           const isNew = tags.includes("new") || visits === 0;
+          // Days since last visit — bikin continuity terasa
+          const lastVisit = profile?.last_visit || profile?.lastVisit;
+          let daysAgo = null;
+          if (lastVisit && !isNew) {
+            const lvMs = typeof lastVisit === 'number' ? (lastVisit < 1e12 ? lastVisit * 1000 : lastVisit) : new Date(lastVisit).getTime();
+            const diffMs = Date.now() - lvMs;
+            const days = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+            if (days > 0) daysAgo = days;
+          }
           return (
             <>
               <div style={S.greeting}>{tgreet}, {name}.</div>
@@ -117,6 +126,17 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
                  visits === 1 ? 'Senang Anda kembali. Kunjungan kedua Anda.' :
                  `Senang lihat Anda lagi — kunjungan ke-${visits + 1}.`}
               </div>
+              {daysAgo !== null && daysAgo > 0 && (
+                <div style={{
+                  fontSize: 12, color: 'rgba(255,255,255,0.42)', marginTop: 4,
+                  fontWeight: 400, letterSpacing: 0.1, fontStyle: 'italic',
+                }}>
+                  {daysAgo === 1 ? 'Kemarin baru saja kesini.'
+                   : daysAgo <= 7 ? `Sudah ${daysAgo} hari sejak terakhir kunjungan.`
+                   : daysAgo <= 30 ? `Sudah ${daysAgo} hari — senang Anda menyempatkan datang.`
+                   : `Sudah ${daysAgo} hari — kami kangen Anda, terima kasih sudah kembali.`}
+                </div>
+              )}
             </>
           );
         })()}
