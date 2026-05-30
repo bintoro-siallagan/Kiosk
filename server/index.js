@@ -6196,7 +6196,9 @@ const ADMIN_NAMESPACES = [
   "/api/anti-fraud", "/api/approval", "/api/compliance",
   "/api/incidents", "/api/internal-audit",
   // HR / staff intelligence
-  "/api/hr-command", "/api/hris", "/api/cashier-kpi", "/api/leaderboard",
+  "/api/hr-command", "/api/hris", "/api/cashier-kpi",
+  // NOTE: /api/leaderboard customer-facing (Sultan gamification dari Flow/POS
+  // celebration). Dipanggil customer browser tanpa admin token. Bukan admin data.
   "/api/motivation", "/api/departments",
   // Master / catalog admin
   "/api/master-category", "/api/master-unit", "/api/item-config",

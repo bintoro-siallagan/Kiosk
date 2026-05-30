@@ -270,11 +270,11 @@ function StepLine({ done }) {
 
 const S = {
   container: { width: "min(440px, 100%)", minHeight: "100vh", padding: "32px 20px", display: "flex", flexDirection: "column", gap: 18, animation: "fadeUp 0.5s ease" },
-  celebration: { textAlign: "center", padding: "20px 0" },
+  celebration: { display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "20px 0", gap: 16 },
   // PREMIUM celebration — bigger success icon dgn glow halo
-  successIcon: { fontSize: 92, animation: "successPop 0.6s cubic-bezier(.34,1.56,.64,1)", marginBottom: 24, filter: "drop-shadow(0 0 24px color-mix(in srgb,var(--brand-primary,#FF6B35) 50%,transparent))" },
-  title: { fontSize: "clamp(26px, 5vw, 32px)", fontWeight: 900, marginTop: 8, letterSpacing: -0.6, textShadow: "0 0 24px color-mix(in srgb,var(--brand-primary,#FF6B35) 30%,transparent)" },
-  subtitle: { fontSize: 14, color: "#9CA3AF", marginTop: 6, padding: "0 20px", fontFamily: "'Geist Mono',monospace", letterSpacing: 0.4 },
+  successIcon: { fontSize: 92, lineHeight: 1, margin: 0, animation: "successPop 0.6s cubic-bezier(.34,1.56,.64,1)", filter: "drop-shadow(0 0 24px color-mix(in srgb,var(--brand-primary,#FF6B35) 50%,transparent))" },
+  title: { fontSize: "clamp(26px, 5vw, 32px)", fontWeight: 900, lineHeight: 1.15, margin: 0, letterSpacing: -0.6, textShadow: "0 0 24px color-mix(in srgb,var(--brand-primary,#FF6B35) 30%,transparent)" },
+  subtitle: { fontSize: 14, color: "#9CA3AF", lineHeight: 1.5, margin: 0, padding: "0 20px", fontFamily: "'Geist Mono',monospace", letterSpacing: 0.4, maxWidth: 420 },
   // PICKUP HERO order card — BIG # mono + brand drama
   orderCard: { padding: "28px 22px", borderRadius: 20, background: "linear-gradient(135deg, color-mix(in srgb,var(--brand-primary,#FF6B35) 16%,transparent), color-mix(in srgb,var(--brand-primary,#FF6B35) 4%,transparent))", border: "1px solid color-mix(in srgb,var(--brand-primary,#FF6B35) 40%,transparent)", textAlign: "center", boxShadow: "0 8px 32px color-mix(in srgb,var(--brand-primary,#FF6B35) 20%,rgba(0,0,0,0.4)), inset 0 1px 0 rgba(255,255,255,0.06)" },
   orderId: { fontFamily: "'Geist Mono',monospace", fontSize: "clamp(56px, 12vw, 92px)", fontWeight: 900, color: "var(--brand-primary,#FF6B35)", letterSpacing: -3, lineHeight: 1, textShadow: "0 4px 24px color-mix(in srgb,var(--brand-primary,#FF6B35) 50%,transparent)" },
