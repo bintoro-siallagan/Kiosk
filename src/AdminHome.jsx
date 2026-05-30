@@ -992,6 +992,45 @@ export default function AdminHome({ adminSession, onLogout, onExit, initialView 
               </div>
             </div>
           ) : (<>
+          {/* ✨ Ambient sparkles — soft floating particles bikin dashboard "bernafas" */}
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden", zIndex: 0 }} aria-hidden>
+            <style>{`
+              @keyframes ahTwinkle{0%,100%{opacity:0.10;transform:scale(1)}50%{opacity:0.55;transform:scale(1.25)}}
+              @keyframes ahFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+              @keyframes ahPulseDeco{0%,100%{opacity:0.40;transform:scale(1)}50%{opacity:0.55;transform:scale(1.05)}}
+            `}</style>
+            {[...Array(18)].map((_, i) => (
+              <span key={i} style={{
+                position: "absolute",
+                top: `${(i * 6) % 95}%`,
+                left: `${(i * 11) % 95}%`,
+                fontSize: 7 + (i % 4) * 3,
+                opacity: 0.12 + (i % 3) * 0.08,
+                color: i % 4 === 0 ? "#fbbf24" : "rgba(255,255,255,0.5)",
+                filter: "drop-shadow(0 0 6px rgba(251,191,36,0.3))",
+                animation: `ahTwinkle ${4 + (i % 5)}s ease-in-out ${i * 0.25}s infinite, ahFloat ${10 + (i % 4) * 3}s ease-in-out ${i * 0.2}s infinite`,
+              }}>{["✦", "✧", "·", "*", "✨"][i % 5]}</span>
+            ))}
+          </div>
+
+          {/* 🌅 Time-aware corner decoration — sun rays / moon stars sesuai jam */}
+          {(() => {
+            const h = new Date().getHours();
+            const deco = h >= 5 && h < 11 ? { emoji: "☀️", color: "rgba(251,191,36,0.18)" }
+                       : h >= 11 && h < 15 ? { emoji: "🌤️", color: "rgba(252,165,165,0.18)" }
+                       : h >= 15 && h < 18 ? { emoji: "🌅", color: "rgba(251,146,60,0.18)" }
+                       : { emoji: "🌙", color: "rgba(199,210,254,0.18)" };
+            return (
+              <div style={{
+                position: "absolute", top: 100, right: 40,
+                fontSize: 140, opacity: 0.45,
+                filter: `drop-shadow(0 0 80px ${deco.color})`,
+                pointerEvents: "none", zIndex: 0,
+                animation: "ahPulseDeco 7s ease-in-out infinite",
+              }}>{deco.emoji}</div>
+            );
+          })()}
+
           {/* ═══ OWNER ATTENTION — bad ratings butuh perhatian (hide kalau bersih) ═══ */}
           <Suspense fallback={null}>
             <OwnerAttentionBar onOpenFeedback={() => openRight("tools", "customer_feedback")} />
@@ -1573,7 +1612,7 @@ const S = {
   opDot: { width: 3, height: 3, borderRadius: "50%", background: "#3a3b40" },
   body: { display: "grid", gridTemplateColumns: "264px 1fr", gap: 20, alignItems: "start", marginTop: 12 },
   left: { display: "flex", flexDirection: "column" },
-  right: { display: "flex", flexDirection: "column", minWidth: 0 },
+  right: { display: "flex", flexDirection: "column", minWidth: 0, position: "relative", overflow: "visible" },
   // ═══ HERO BANNER STYLES ═══
   hero: { position: "relative", background: "linear-gradient(135deg, #0d0e13 0%, #14151c 50%, #0d0e13 100%)", border: "1px solid #26272d", borderRadius: 18, padding: "22px 26px 26px", marginBottom: 14, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,.4), inset 0 1px 0 0 #ffffff0a" },
   heroMesh: { position: "absolute", inset: "-50%", background: "radial-gradient(circle at 30% 50%, #f59e0b1a, transparent 50%), radial-gradient(circle at 70% 30%, #3b82f615, transparent 50%), radial-gradient(circle at 50% 80%, #10b98112, transparent 50%)", pointerEvents: "none", opacity: 0.75 },
