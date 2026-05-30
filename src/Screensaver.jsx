@@ -40,6 +40,8 @@ export default function Screensaver({ onDismiss, brandName, brandLogo }) {
   // QUICK WIN #1+#2: outlet identity + live community stats
   const [outletInfo, setOutletInfo] = useState(null);
   const [stats, setStats] = useState({ rating: 0, ratingCount: 0 });
+  // Community pulse — social proof live ("32 orang sudah pesan hari ini")
+  const [pulse, setPulse] = useState(null);
 
   // Load config + content
   useEffect(() => {
@@ -101,6 +103,18 @@ export default function Screensaver({ onDismiss, brandName, brandLogo }) {
         if (d && d.count > 0) setStats({ rating: d.avg_rating || 0, ratingCount: d.count || 0 });
       })
       .catch(() => {});
+
+    // Community pulse — fetch + poll per 60s biar nomor real-time fresh
+    const loadPulse = () => {
+      const qs = outletCode ? `?outlet=${encodeURIComponent(outletCode)}` : "";
+      fetch(`${API_URL}/api/public/kiosk-pulse${qs}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => { if (d) setPulse(d); })
+        .catch(() => {});
+    };
+    loadPulse();
+    const pulsePoll = setInterval(loadPulse, 60000);
+    return () => clearInterval(pulsePoll);
   }, []);
 
   useEffect(() => {
@@ -161,7 +175,7 @@ export default function Screensaver({ onDismiss, brandName, brandLogo }) {
 
       {/* Slide stage */}
       <div style={S.stage} key={phase /* re-mount for fade-in */}>
-        {kind === "hero" && <HeroSlide brandName={brandName} brandLogo={brandLogo} outletInfo={outletInfo} stats={stats} menu={menu} menuCount={menu.length} promoCount={promos.length} now={now} />}
+        {kind === "hero" && <HeroSlide brandName={brandName} brandLogo={brandLogo} outletInfo={outletInfo} stats={stats} menu={menu} menuCount={menu.length} promoCount={promos.length} pulse={pulse} now={now} />}
         {kind === "menu" && <MenuSlide items={menu} phase={phase} />}
         {kind === "bestseller" && <BestsellerSlide items={bestsellers} phase={phase} />}
         {kind === "combo" && <ComboSlide promos={promos} phase={phase} />}
@@ -377,7 +391,45 @@ function ThoughtBubble({ now, outletInfo, menu, promoCount }) {
   );
 }
 
-function HeroSlide({ brandName, brandLogo, outletInfo, stats, menu, menuCount, promoCount, now }) {
+// 🔥 PulseTicker — community pulse rotating ("32 orang sudah pesan hari ini",
+// "Pasta Crab paling laris", "5 orang baru pesan tadi"). Social proof yg
+// bikin layar kerasa "rame", customer mikir "ih ramai juga, ikutan ah".
+function PulseTicker({ pulse }) {
+  const [idx, setIdx] = useState(0);
+  const messages = useMemo(() => {
+    if (!pulse) return [];
+    const msgs = [];
+    if (pulse.orders_today > 0) {
+      msgs.push({ icon: "💛", text: `${pulse.orders_today} orang sudah pesan hari ini` });
+    }
+    if (pulse.orders_last_hour > 0) {
+      msgs.push({ icon: "✨", text: `${pulse.orders_last_hour} pesanan baru dalam 1 jam terakhir` });
+    }
+    if (pulse.most_loved_today?.name) {
+      msgs.push({ icon: "🔥", text: `${pulse.most_loved_today.name} paling laris hari ini (${pulse.most_loved_today.count}x)` });
+    }
+    return msgs;
+  }, [pulse]);
+
+  useEffect(() => {
+    if (messages.length < 2) return;
+    const t = setInterval(() => setIdx(i => (i + 1) % messages.length), 5500);
+    return () => clearInterval(t);
+  }, [messages.length]);
+
+  if (!messages.length) return null;
+  const m = messages[idx % messages.length];
+
+  return (
+    <div key={idx} style={S.pulseTicker}>
+      <span style={S.pulseDot} />
+      <span style={S.pulseIcon}>{m.icon}</span>
+      <span style={S.pulseText}>{m.text}</span>
+    </div>
+  );
+}
+
+function HeroSlide({ brandName, brandLogo, outletInfo, stats, menu, menuCount, promoCount, pulse, now }) {
   const { greet, emoji } = timeGreeting(now);
   const outletDisplay = outletInfo?.name || brandName || "karyaOS";
   const outletLoc = outletInfo ? [outletInfo.area, outletInfo.city].filter(Boolean).join(" · ") : null;
@@ -424,6 +476,9 @@ function HeroSlide({ brandName, brandLogo, outletInfo, stats, menu, menuCount, p
 
       {/* 💭 Kiosk "ngomong sendiri" — gumam ramah yg bikin orang nyantol */}
       <ThoughtBubble now={now} outletInfo={outletInfo} menu={menu} promoCount={promoCount} />
+
+      {/* 🔥 Community pulse — social proof live, "rame" feel */}
+      <PulseTicker pulse={pulse} />
     </div>
   );
 }
@@ -460,6 +515,8 @@ const KEYFRAMES = `
 @keyframes screensaverSlideIn { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
 @keyframes screensaverGlow { 0%,100% { opacity: 0.4 } 50% { opacity: 0.7 } }
 @keyframes thoughtFadeIn { 0% { opacity: 0; transform: translateY(8px) } 100% { opacity: 1; transform: translateY(0) } }
+@keyframes pulseTickerIn { 0% { opacity: 0; transform: scale(0.92) } 100% { opacity: 1; transform: scale(1) } }
+@keyframes pulseDot { 0%,100% { opacity: 1; transform: scale(1) } 50% { opacity: 0.5; transform: scale(0.85) } }
 `;
 
 const S = {
@@ -574,5 +631,24 @@ const S = {
     fontSize: 20, fontWeight: 500, color: "rgba(255,255,255,0.85)",
     letterSpacing: -0.3, lineHeight: 1.5, fontStyle: "italic",
     padding: "0 8px",
+  },
+  // 🔥 PulseTicker — small live indicator: "32 orang sudah pesan hari ini"
+  pulseTicker: {
+    marginTop: 16, padding: "10px 18px", borderRadius: 999,
+    display: "inline-flex", alignItems: "center", gap: 10,
+    background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.28)",
+    fontFamily: "'Inter',sans-serif",
+    animation: "pulseTickerIn 0.6s cubic-bezier(.2,.8,.2,1)",
+    backdropFilter: "blur(6px)", WebkitBackdropFilter: "blur(6px)",
+  },
+  pulseDot: {
+    width: 8, height: 8, borderRadius: "50%", background: "#10b981",
+    boxShadow: "0 0 12px #10b981",
+    animation: "pulseDot 1.6s ease-in-out infinite",
+  },
+  pulseIcon: { fontSize: 16, lineHeight: 1 },
+  pulseText: {
+    fontSize: 14, fontWeight: 600, color: "#86efac",
+    letterSpacing: -0.2, lineHeight: 1,
   },
 };

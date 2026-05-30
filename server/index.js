@@ -5336,6 +5336,62 @@ app.get("/api/public/beranda", (req, res) => {
   }
 });
 
+// ── Kiosk attract-loop pulse — social proof aman utk public attract ──
+// Cuma return aggregate counts (no PII, no revenue). Kiosk pakai ini
+// untuk "32 orang sudah pesan hari ini" ticker bikin layar kerasa hidup.
+app.get("/api/public/kiosk-pulse", (req, res) => {
+  try {
+    const todayStartMs = new Date().setHours(0, 0, 0, 0);
+    const oneHourAgoMs = Date.now() - 60 * 60 * 1000;
+    const outletCode = String(req.query.outlet || "").toUpperCase().trim();
+
+    // Today orders count — filter by status (exclude cancelled)
+    // Note: orders table gak punya outlet column, jadi outlet filter via kasir
+    // → admin_users.outlet_code lookup. Untuk MVP, skip outlet filter kalau
+    // gak ada mapping clean. Kasih total cross-outlet kalau outlet gak match.
+    let ordersToday = 0;
+    let ordersLastHour = 0;
+    try {
+      ordersToday = db.rawDb.prepare(`SELECT COUNT(*) c FROM orders WHERE time >= ? AND status != 'cancelled'`).get(todayStartMs).c || 0;
+      ordersLastHour = db.rawDb.prepare(`SELECT COUNT(*) c FROM orders WHERE time >= ? AND status != 'cancelled'`).get(oneHourAgoMs).c || 0;
+    } catch {}
+
+    // Most loved item today — parse items JSON
+    let mostLovedToday = null;
+    try {
+      const rows = db.rawDb.prepare(`SELECT items FROM orders WHERE time >= ? AND status != 'cancelled' LIMIT 500`).all(todayStartMs);
+      const counts = new Map();
+      for (const r of rows) {
+        try {
+          const items = JSON.parse(r.items || '[]');
+          for (const it of items) {
+            const name = it.n || it.name;
+            if (!name) continue;
+            counts.set(name, (counts.get(name) || 0) + (it.q || it.qty || 1));
+          }
+        } catch {}
+      }
+      if (counts.size > 0) {
+        let bestName = null, bestCount = 0;
+        for (const [name, c] of counts.entries()) {
+          if (c > bestCount) { bestName = name; bestCount = c; }
+        }
+        if (bestName) mostLovedToday = { name: bestName, count: bestCount };
+      }
+    } catch {}
+
+    res.json({
+      orders_today: ordersToday,
+      orders_last_hour: ordersLastHour,
+      most_loved_today: mostLovedToday,
+      outlet: outletCode || null,
+      generated_at: Math.floor(Date.now() / 1000),
+    });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // ── Public config (CDS tracking URL etc) ──────────────────────────────
 app.get("/api/config/public", (_, res) => {
   let auditConfig = {};
