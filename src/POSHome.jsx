@@ -1,4 +1,5 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
+import { createPortal } from "react-dom";
 const DayClosingRitual = lazy(() => import("./POS/DayClosingRitual.jsx"));
 
 import POSOrderHistory from "./POSOrderHistory.jsx";
@@ -82,6 +83,8 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
   const [outletVertical, setOutletVertical] = useState("fnb");
   const [outletInfo, setOutletInfo] = useState({ code: null, name: null, area: null });
   const [allOutlets, setAllOutlets] = useState([]);
+  const outletBtnRef = useRef(null);
+  const [pickerCoords, setPickerCoords] = useState({ top: 0, left: 0 });
   const [showOutletPicker, setShowOutletPicker] = useState(false);
   const [brand, setBrand] = useState({ name: null, code: null, logoUrl: "/logo.png" });
   useEffect(() => {
@@ -279,14 +282,18 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
           <span>{brand.name && !["BTS","CMX","KARYAOS"].includes(brand.code) ? `${brand.name} POS` : "karyaos POS"}</span>
           {/* Branch / outlet picker — kalau device-locked: read-only, klik → Manager PIN modal */}
           <div style={{ position: "relative", marginLeft: 12, display: "inline-block" }}>
-            <button onClick={() => {
+            <button ref={outletBtnRef} onClick={(e) => {
               // Skip PIN modal kalau user sudah Manager/Admin/Owner (elevated access).
-              // Cuma kasir biasa yg butuh re-auth via Manager PIN buat ganti outlet.
               const role = (cashier?.role || "").toLowerCase();
               const isElevated = ["manager", "admin", "super-admin", "superadmin", "owner"].includes(role);
               if (isDeviceLocked && !isElevated && !showOutletPicker) {
                 setShowUnlockModal(true);
               } else {
+                // Compute coords sebelum buka — dropdown render via portal di body
+                if (outletBtnRef.current) {
+                  const r = outletBtnRef.current.getBoundingClientRect();
+                  setPickerCoords({ top: r.bottom + 6, left: r.left });
+                }
                 setShowOutletPicker(s => !s);
               }
             }} style={{
@@ -309,14 +316,21 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
                 <>⚠ PILIH OUTLET ▾</>
               )}
             </button>
-            {showOutletPicker && (
-              <div style={{
-                position: "absolute", top: "100%", left: 0, marginTop: 8,
+            {showOutletPicker && createPortal(
+              <>
+                {/* Backdrop — click outside to close */}
+                <div onClick={() => setShowOutletPicker(false)} style={{
+                  position: "fixed", inset: 0, zIndex: 99999, background: "transparent",
+                }} />
+              <div onClick={(e) => e.stopPropagation()} style={{
+                position: "fixed", top: pickerCoords.top, left: pickerCoords.left,
                 background: "#1a1d29",
                 border: "1px solid rgba(56,189,248,0.45)",
                 borderRadius: 12, padding: 8, minWidth: 320, maxHeight: 380, overflowY: "auto",
                 boxShadow: "0 20px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(56,189,248,0.30)",
-                zIndex: 99999,
+                zIndex: 100000,
+                fontFamily: "'Inter','SF Pro Display',system-ui,sans-serif",
+                color: "#fff",
               }}>
                 <div style={{ padding: "10px 12px 8px", fontSize: 11, color: "#38BDF8", fontWeight: 800, letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase", borderBottom: "1px solid rgba(255,255,255,0.08)", marginBottom: 4 }}>
                   📍 Pilih Outlet ({allOutlets.length})
@@ -346,6 +360,8 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
                   </button>
                 ))}
               </div>
+              </>,
+              document.body
             )}
           </div>
 
