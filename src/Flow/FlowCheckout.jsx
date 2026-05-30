@@ -56,6 +56,10 @@ export default function FlowCheckout({
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  // Guest mode — collect minimal info inline (name required, phone optional)
+  const isGuest = session?.guest === true;
+  const [guestName, setGuestName] = useState("");
+  const [guestPhone, setGuestPhone] = useState("");
 
   // QRIS sub-flow state
   const [qrStep, setQrStep] = useState(null);
@@ -171,6 +175,10 @@ export default function FlowCheckout({
       setError("Cart kosong");
       return;
     }
+    if (isGuest && !guestName.trim()) {
+      setError("Nama wajib diisi — biar kami bisa panggil saat pesanan siap");
+      return;
+    }
     setSubmitting(true);
     setQrStep("loading");
 
@@ -188,7 +196,7 @@ export default function FlowCheckout({
             p: (c.price || 0) + (c.addonTotal || 0),
             q: c.qty,
           })),
-          customerName: session.name || "KaryaOS Customer",
+          customerName: (isGuest ? guestName.trim() : session.name) || "KaryaOS Customer",
         }),
       });
 
@@ -243,7 +251,10 @@ export default function FlowCheckout({
 
   async function saveOrder(mtId) {
     try {
-      const phoneClean = (session.phone || "").replace(/[^0-9]/g, "");
+      // Guest mode: pakai guestName / guestPhone form. Member: pakai session.
+      const customerName = isGuest ? (guestName.trim() || "Tamu") : session.name;
+      const rawPhone = isGuest ? guestPhone : (session.phone || "");
+      const phoneClean = String(rawPhone || "").replace(/[^0-9]/g, "");
       const phoneLocal = phoneClean.startsWith("0") ? phoneClean :
         phoneClean.startsWith("62") ? "0" + phoneClean.substring(2) : phoneClean;
 
@@ -264,9 +275,9 @@ export default function FlowCheckout({
           })),
           subtotal: cartTotal,
           total: finalTotal,
-          customerName: session.name,
-          customerPhone: phoneLocal,
-          customerId: session.customerId || session.id || null,
+          customerName,
+          customerPhone: phoneLocal || null,
+          customerId: isGuest ? null : (session.customerId || session.id || null),
           kasir: "KaryaOS",
           source: "customer_portal",
           notes: notes || null,
@@ -274,7 +285,7 @@ export default function FlowCheckout({
           status: "waiting",
           midtransId: mtId,
           promoCode: appliedPromo?.code || null,
-          pointsRedeemed: actualPoints || 0,
+          pointsRedeemed: isGuest ? 0 : (actualPoints || 0),
         }),
       });
 
@@ -368,8 +379,34 @@ export default function FlowCheckout({
 
       <div style={S.customerCard}>
         <div style={S.fieldLabel}>Customer</div>
-        <div style={S.customerName}>{session.name}</div>
-        <div style={S.customerPhone}>📱 {session.phone}</div>
+        {isGuest ? (
+          <>
+            <input
+              type="text"
+              value={guestName}
+              onChange={e => setGuestName(e.target.value)}
+              placeholder="Nama (untuk dipanggil saat siap)"
+              style={{ width: "100%", padding: "10px 12px", marginTop: 6, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, color: "#fff", fontSize: 15, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+              autoFocus
+            />
+            <input
+              type="tel"
+              inputMode="numeric"
+              value={guestPhone}
+              onChange={e => setGuestPhone(e.target.value)}
+              placeholder="No. HP (opsional, untuk notif WA)"
+              style={{ width: "100%", padding: "10px 12px", marginTop: 8, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 8, color: "#fff", fontSize: 15, fontFamily: "inherit", outline: "none", boxSizing: "border-box" }}
+            />
+            <div style={{ fontSize: 11, color: "rgba(205,213,223,0.5)", marginTop: 8, lineHeight: 1.5 }}>
+              💡 Mau dapet poin loyalty? Daftar setelah pesan beres — order kapten ke-track otomatis.
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={S.customerName}>{session.name}</div>
+            <div style={S.customerPhone}>📱 {session.phone}</div>
+          </>
+        )}
       </div>
 
       {!tableContext && (

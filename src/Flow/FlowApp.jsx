@@ -60,6 +60,25 @@ export default function FlowApp() {
     setScreen("home");
   }
 
+  // Anonymous / guest mode — customer scan QR mau langsung pesan tanpa daftar.
+  // Session ditandai { guest:true } supaya checkout tahu collect name inline.
+  // Tetap di-save ke localStorage biar gak ke-tutup browser hilang cart.
+  function handleGuest() {
+    const guestSession = {
+      guest: true,
+      phone: null, name: null, customerId: null,
+      expires: Date.now() + 24 * 60 * 60 * 1000, // 24 jam guest
+    };
+    try { localStorage.setItem(SESSION_KEY, JSON.stringify(guestSession)); } catch {}
+    setSession(guestSession);
+    setScreen("menu"); // skip FlowHome (loyalty-heavy) — langsung menu
+  }
+
+  // Promote guest → registered di akhir order (dipanggil dari FlowSuccess)
+  function promoteGuestToMember(customer) {
+    handleAuth(customer);
+  }
+
   const [farewell, setFarewell] = useState(null);
   function handleLogout() {
     setFarewell({
@@ -139,7 +158,7 @@ export default function FlowApp() {
       `}</style>
 
       {screen === "welcome" && (
-        <FlowWelcome onAuth={handleAuth} tableContext={tableContext} />
+        <FlowWelcome onAuth={handleAuth} onGuest={handleGuest} tableContext={tableContext} />
       )}
 
       {screen === "home" && session && (

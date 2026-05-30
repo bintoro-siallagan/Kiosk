@@ -71,7 +71,8 @@ function calcAddonTotal(selected, freeQuota, extraPrice) {
   return premiumCost + extraCost;
 }
 
-export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCart, clearCart, setScreen, customer }) {
+export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCart, clearCart, setScreen, customer, session }) {
+  const isGuest = session?.guest === true;
   const [menu, setMenu] = useState([]);
   const [toppings, setToppings] = useState(FALLBACK_TOPPINGS);
   const [extraPrice, setExtraPrice] = useState(FALLBACK_EXTRA);
@@ -278,8 +279,10 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
             <div style={{ position: "absolute", inset: 0, padding: "12px 20px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
               {/* Top row: back + status badge */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <button onClick={() => setScreen("home")}
-                  style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.15)", color: TEXT, width: 36, height: 36, borderRadius: 999, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>←</button>
+                {!isGuest ? (
+                  <button onClick={() => setScreen("home")}
+                    style={{ background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)", border: "1px solid rgba(255,255,255,0.15)", color: TEXT, width: 36, height: 36, borderRadius: 999, cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", justifyContent: "center" }}>←</button>
+                ) : <span />}
                 {/* QUICK WIN #2: Status operasional */}
                 <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "5px 12px", background: dayClosed ? "rgba(239,68,68,0.20)" : "rgba(16,185,129,0.20)", border: `1px solid ${dayClosed ? "rgba(239,68,68,0.50)" : "rgba(16,185,129,0.50)"}`, borderRadius: 999, backdropFilter: "blur(8px)" }}>
                   <span style={{ width: 8, height: 8, borderRadius: "50%", background: dayClosed ? "#ef4444" : "#10b981", boxShadow: dayClosed ? "none" : "0 0 8px #10b981" }} />
@@ -304,7 +307,9 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
         {/* Fallback header kalau gak ada outlet info (legacy/no ?outlet=) */}
         {!outletInfo && (
           <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 20px 0" }}>
-            <button onClick={() => setScreen("home")} style={{ background: "transparent", border: "none", color: TEXT, fontSize: 24, cursor: "pointer", padding: 0, width: 32 }}>←</button>
+            {!isGuest ? (
+              <button onClick={() => setScreen("home")} style={{ background: "transparent", border: "none", color: TEXT, fontSize: 24, cursor: "pointer", padding: 0, width: 32 }}>←</button>
+            ) : <span style={{ width: 32 }} />}
             <h1 style={{ margin: 0, fontFamily: "'Inter', sans-serif", fontSize: 26, color: BRAND, letterSpacing: 1 }}>MENU</h1>
             <div style={{ flex: 1 }} />
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "4px 10px", background: dayClosed ? "rgba(239,68,68,0.15)" : "rgba(16,185,129,0.15)", border: `1px solid ${dayClosed ? "rgba(239,68,68,0.40)" : "rgba(16,185,129,0.40)"}`, borderRadius: 999 }}>

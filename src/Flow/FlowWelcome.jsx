@@ -50,7 +50,7 @@ function strictMatch(storedPhone, inputPhone) {
   return a === b;
 }
 
-export default function FlowWelcome({ onAuth, tableContext }) {
+export default function FlowWelcome({ onAuth, onGuest, tableContext }) {
   const t = useT();
   const [step, setStep] = useState("phone");
   const [phone, setPhone] = useState("");
@@ -160,6 +160,23 @@ export default function FlowWelcome({ onAuth, tableContext }) {
       <div style={S.card}>
         {step === "phone" && (
           <>
+            {/* Guest mode CTA — biar customer gak kena friction login wajib */}
+            {onGuest && (
+              <>
+                <button onClick={onGuest} style={S.guestBtn}>
+                  👀 Lihat menu dulu
+                </button>
+                <div style={S.guestHint}>
+                  Pesan sekarang tanpa daftar. Mau dapet poin? Daftar nanti setelah pesan beres.
+                </div>
+                <div style={S.divider}>
+                  <span style={S.dividerLine} />
+                  <span style={S.dividerText}>atau daftar dulu</span>
+                  <span style={S.dividerLine} />
+                </div>
+              </>
+            )}
+
             <div style={S.cardTitle}>{t("kiosk.welcome")} ☕</div>
             <div style={S.cardSub}>Enter your WhatsApp number</div>
 
@@ -323,6 +340,17 @@ const S = {
   btnDisabled: { background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)",
     cursor: "not-allowed", color: "rgba(205,213,223,0.4)", textShadow: "none", boxShadow: "none" },
   hint: { marginTop: 16, fontSize: 11, color: "rgba(205,213,223,0.4)", lineHeight: 1.5, textAlign: "center" },
+  // Anonymous mode — guest CTA biar customer langsung pesan tanpa daftar
+  guestBtn: {
+    width: "100%", padding: "14px", borderRadius: 12,
+    background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.35)",
+    color: "#10b981", fontSize: 15, fontWeight: 700, fontFamily: "inherit", cursor: "pointer",
+    letterSpacing: 0.3, marginBottom: 8,
+  },
+  guestHint: { fontSize: 11, color: "rgba(205,213,223,0.5)", textAlign: "center", lineHeight: 1.5, marginBottom: 18 },
+  divider: { display: "flex", alignItems: "center", gap: 10, marginBottom: 20 },
+  dividerLine: { flex: 1, height: 1, background: "rgba(255,255,255,0.08)" },
+  dividerText: { fontSize: 10, color: "rgba(205,213,223,0.4)", letterSpacing: 1.5, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase" },
   footer: { marginTop: "auto", textAlign: "center", fontSize: 10,
     color: "rgba(205,213,223,0.3)", letterSpacing: 1, padding: "20px 0" },
 };
