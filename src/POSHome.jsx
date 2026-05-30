@@ -416,22 +416,60 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
 
       <main style={S.main}>
         <style>{POSHOME_CSS}</style>
+        {/* ════════ HOMECOMING HERO — "selamat datang kembali ke rumah" ════════
+            Filosofi: kasir buka POS = pulang ke rumah. Hangat, glowy, time-aware.
+            Bukan generic "welcome" dingin — sambutan tuan rumah yg merindukan. */}
         <div style={S.welcome}>
           {(() => {
             const h = new Date().getHours();
-            const greet = h >= 5 && h < 11 ? "Selamat pagi"
-                       : h >= 11 && h < 15 ? "Selamat siang"
-                       : h >= 15 && h < 18 ? "Selamat sore"
-                       : "Selamat malam";
-            const sub = h >= 5 && h < 11 ? "Hari baru, kesempatan baru. Siap menyambut tamu pertama?"
-                      : h >= 11 && h < 15 ? "Jam sibuk siang — tetap senyum ya."
-                      : h >= 15 && h < 18 ? "Sore tenang sebelum prime time malam. Tetap fokus."
-                      : "Shift malam — pelan-pelan, kualitas yg penting.";
+            const greet = h >= 5 && h < 11 ? { text: "Selamat Pagi", emoji: "☀️", glow: "rgba(251,191,36,0.30)" }
+                       : h >= 11 && h < 15 ? { text: "Selamat Siang", emoji: "🌤️", glow: "rgba(252,165,165,0.30)" }
+                       : h >= 15 && h < 18 ? { text: "Selamat Sore", emoji: "🌅", glow: "rgba(251,146,60,0.30)" }
+                       : { text: "Selamat Malam", emoji: "✨", glow: "rgba(199,210,254,0.30)" };
+            const homeMsg = h >= 5 && h < 11 ? "Senang Anda mulai hari di sini."
+                          : h >= 11 && h < 15 ? "Tetap semangat, jam sibuk segera datang."
+                          : h >= 15 && h < 18 ? "Sore yang baik — pelan-pelan ya."
+                          : "Senang Anda kembali. Shift malam yg tenang.";
+            const hint = h >= 5 && h < 11 ? "Sebentar lagi tamu pertama datang. Siapkan senyum 🌱"
+                       : h >= 11 && h < 15 ? "Kalau capek, tarik napas — jam sibuk siang sebentar lagi."
+                       : h >= 15 && h < 18 ? "Mau ngopi dulu? Counter masih bisa nunggu sebentar."
+                       : "Saat tenang juga kerja keras. Tetap fokus, hampir selesai shift.";
             return (
-              <>
-                <h2 style={S.welcomeTitle}>{greet}, {cashier.name} 👋</h2>
-                <p style={S.welcomeSub}>{sub}</p>
-              </>
+              <div style={{
+                padding: "32px 24px", borderRadius: 24,
+                background: `radial-gradient(ellipse 80% 100% at 50% 0%, ${greet.glow}, transparent 60%), linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)`,
+                border: "1px solid rgba(255,255,255,0.08)",
+                boxShadow: `inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 32px ${greet.glow}`,
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+              }}>
+                <div style={{ fontSize: 44, lineHeight: 1, marginBottom: 4, filter: `drop-shadow(0 0 24px ${greet.glow})` }}>
+                  {greet.emoji}
+                </div>
+                <div style={{ fontSize: 12, color: "#fbbf24", letterSpacing: 3, fontWeight: 700, fontFamily: "'Geist Mono',monospace", textTransform: "uppercase", marginBottom: 2 }}>
+                  ✦ {greet.text}
+                </div>
+                <h2 style={{
+                  fontSize: 32, fontWeight: 800, color: "#fff", margin: 0,
+                  letterSpacing: -1, lineHeight: 1.15,
+                  textShadow: `0 2px 16px ${greet.glow}`,
+                }}>
+                  {cashier.name}
+                </h2>
+                <p style={{
+                  fontSize: 14, color: "rgba(255,255,255,0.75)", margin: "6px 0 0",
+                  fontStyle: "italic", letterSpacing: 0.1, lineHeight: 1.5,
+                }}>
+                  {homeMsg}
+                </p>
+                <div style={{
+                  marginTop: 12, padding: "8px 14px", borderRadius: 999,
+                  background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+                  fontSize: 12, color: "rgba(255,255,255,0.65)",
+                  fontStyle: "italic", letterSpacing: 0.2, maxWidth: 420, textAlign: "center",
+                }}>
+                  "{hint}"
+                </div>
+              </div>
             );
           })()}
         </div>
