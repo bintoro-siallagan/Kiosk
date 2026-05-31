@@ -82,7 +82,11 @@ export function classifyError(rawMsg) {
  * Props: { error, onRetry, label?, compact? }
  */
 export function ErrorInline({ error, onRetry, label, compact = false }) {
-  const info = classifyError(error?.message || error);
+  const rawMsg = error?.message || (typeof error === "string" ? error : "");
+  const info = classifyError(rawMsg);
+  // Show underlying error message kalau ada & beda dari generic hint
+  // (debug + transparansi — user tau apa yg salah, bukan cuma "menyempurnakan")
+  const detailMsg = rawMsg && rawMsg !== info.hint && rawMsg.length < 240 ? rawMsg : null;
   return (
     <div style={{
       padding: compact ? "10px 14px" : "16px 18px",
@@ -98,6 +102,19 @@ export function ErrorInline({ error, onRetry, label, compact = false }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 700, color: "#fca5a5", marginBottom: 2 }}>{label || info.title}</div>
           <div style={{ color: COLORS.textMuted, lineHeight: 1.45 }}>{info.hint}</div>
+          {detailMsg && (
+            <div style={{
+              marginTop: 8, padding: "8px 10px",
+              background: "rgba(239,68,68,0.08)",
+              border: "1px solid rgba(239,68,68,0.18)",
+              borderRadius: 6,
+              fontSize: 11, color: "#fca5a5",
+              fontFamily: "'Geist Mono',monospace",
+              wordBreak: "break-word",
+            }}>
+              {detailMsg}
+            </div>
+          )}
           {info.retryable && onRetry && (
             <button onClick={onRetry} style={{
               marginTop: 8, padding: "5px 12px",
