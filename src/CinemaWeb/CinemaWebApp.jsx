@@ -1043,9 +1043,9 @@ function HistoryPage({ session, brandPrimary, onSignInClick }) {
   if (!session) return (
     <div style={{ padding: "60px 0", display:"flex",flexDirection:"column",alignItems:"center",textAlign: "center", maxWidth: 480, margin: "0 auto", gap: 12 }}>
       <div style={{ fontSize: 64, lineHeight: 1, margin: 0 }}>🔐</div>
-      <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", lineHeight: 1.2, margin: 0 }}>Sign In Dulu</h2>
+      <h2 style={{ fontSize: 22, fontWeight: 800, color: "#fff", lineHeight: 1.2, margin: 0 }}>Masuk Dulu Yuk</h2>
       <p style={{ fontSize: 13, color: C.sub, lineHeight: 1.5, margin: "0 0 8px" }}>Untuk lihat akun Anda (booking, poin, promo), masuk dengan nomor HP.</p>
-      <button onClick={onSignInClick} style={{ padding: "12px 24px", background: brandPrimary, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>🔐 Sign In</button>
+      <button onClick={onSignInClick} style={{ padding: "12px 24px", background: brandPrimary, color: "#fff", border: "none", borderRadius: 10, fontSize: 14, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>🔐 Masuk</button>
     </div>
   );
 
@@ -1130,7 +1130,7 @@ function HistoryPage({ session, brandPrimary, onSignInClick }) {
           ) : upcoming.length === 0 && (
             <div style={{ textAlign: "center", padding: 60, color: C.dim, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14 }}>
               <div style={{ fontSize: 48, marginBottom: 14 }}>🎬</div>
-              <div style={{ fontSize: 15, marginBottom: 4 }}>Belum ada booking</div>
+              <div style={{ fontSize: 15, marginBottom: 4 }}>Belum ada booking · waktu yang baik untuk mulai 🎬</div>
               <div style={{ fontSize: 12 }}>Mulai pesan tiket pertama Anda!</div>
             </div>
           )}
@@ -2010,7 +2010,7 @@ const FAQ_GROUPS = [
     title: "📱 Akun & E-Ticket",
     items: [
       { q: "Harus daftar akun dulu?", a: "Tidak. Cukup masukkan nomor HP saat booking — sistem otomatis buat profile member untuk Anda. Tidak ada formulir berlembar-lembar, tidak ada password yang harus diingat." },
-      { q: "Cara akses booking history?", a: "Klik tombol Sign In di header, masukkan nomor HP yang dipakai booking. Anda akan lihat semua booking (aktif & past), saldo poin, dan promo yang tersedia." },
+      { q: "Cara akses riwayat booking?", a: "Klik tombol Masuk di header, masukkan nomor HP yang dipakai booking. Anda akan lihat semua booking (aktif & selesai), saldo poin, dan promo yang tersedia." },
       { q: "Tidak terima WhatsApp e-tiket?", a: "Cek folder spam atau pastikan nomor WhatsApp aktif. Atau buka halaman 'Akun' Anda — semua e-tiket bisa di-download manual dari sana. Kalau masih tidak ada, chat CS kami." },
       { q: "Bisa transfer tiket ke orang lain?", a: "Bisa. Tiket tidak diatasnamakan — siapapun yang bawa QR codenya bisa masuk. Forward saja QR-nya ke teman. Tapi jaga baik-baik, sekali QR di-scan, tiket terpakai." },
     ],
@@ -2245,7 +2245,7 @@ function ContactRow({ icon, label, value, link }) {
 // ════════════════════════════════════════════════════════════════════
 // Default footer config — dipakai kalau tenant belum kustomisasi
 const DEFAULT_FOOTER_CONFIG = {
-  description: "Premium cinema experience at your fingertips. Book tickets online, pick seats, watch instantly.",
+  description: "Pengalaman bioskop premium di ujung jari Anda. Pesan tiket online, pilih kursi sendiri, nikmati film dengan tenang.",
   social: [
     { name: "WA", icon: "💬", url: "https://wa.me/6285190062368" },
     { name: "IG", icon: "📷", url: "https://instagram.com" },
@@ -2253,28 +2253,28 @@ const DEFAULT_FOOTER_CONFIG = {
     { name: "YT", icon: "▶", url: "https://youtube.com" },
   ],
   nav: [
-    { label: "Home", target: "outlet" },
-    { label: "Movies", target: "movies" },
+    { label: "Beranda", target: "outlet" },
+    { label: "Film", target: "movies" },
     { label: "Promo", target: "promo" },
-    { label: "Private Event", target: "studio" },
-    { label: "Locations", target: "locations" },
-    { label: "About", target: "about" },
+    { label: "Sewa Studio", target: "studio" },
+    { label: "Lokasi", target: "locations" },
+    { label: "Tentang Kami", target: "about" },
   ],
   help: [
     { label: "FAQ", target: "faq" },
     { label: "Cara Pesan Tiket", target: "faq" },
     { label: "Kebijakan Refund", target: "faq" },
-    { label: "Loyalty Program", target: "faq" },
-    { label: "Customer Service", url: "https://wa.me/6285190062368" },
+    { label: "Program Loyalty", target: "faq" },
+    { label: "Bantuan Customer", url: "https://wa.me/6285190062368" },
   ],
   company: [
-    { label: "About Us", target: "about" },
-    { label: "Careers", target: "about" },
-    { label: "Partnership", target: "about" },
+    { label: "Tentang Kami", target: "about" },
+    { label: "Karir", target: "about" },
+    { label: "Kemitraan", target: "about" },
   ],
   legal: [
-    { label: "Terms & Conditions", target: "faq" },
-    { label: "Privacy Policy", target: "faq" },
+    { label: "Syarat & Ketentuan", target: "faq" },
+    { label: "Kebijakan Privasi", target: "faq" },
   ],
 };
 
@@ -2609,7 +2609,7 @@ function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrima
                   <div style={{ fontSize: 11, color: brandPrimary, marginTop: 4, fontWeight: 700 }}>⭐ {session.points || 0} poin</div>
                 </div>
                 <button onClick={() => { setProfileOpen(false); onNav?.("history"); }} style={menuBtnStyle}>📋 History Pembelian</button>
-                <button onClick={() => { setProfileOpen(false); onSignOut(); }} style={{ ...menuBtnStyle, color: "#fca5a5" }}>↪ Sign Out</button>
+                <button onClick={() => { setProfileOpen(false); onSignOut(); }} style={{ ...menuBtnStyle, color: "#fca5a5" }}>↪ Keluar</button>
               </div>
             )}
           </div>
@@ -2619,7 +2619,7 @@ function Header({ outlet, step, onResetOutlet, onBack, onHome, brand, brandPrima
             borderRadius: 8, padding: "8px 16px", fontSize: 13, fontWeight: 800,
             cursor: "pointer", fontFamily: "inherit", flexShrink: 0,
             boxShadow: `0 4px 14px ${brandPrimary}55`,
-          }}>Sign In</button>
+          }}>Masuk</button>
         )}
       </div>
 
@@ -2688,7 +2688,7 @@ function SearchModal({ onClose, onPickFilm, brandPrimary }) {
         <div style={{ maxHeight: "60vh", overflowY: "auto" }}>
           {filtered.length === 0 ? (
             <div style={{ padding: 40, textAlign: "center", color: C.dim, fontSize: 13 }}>
-              {query ? `Tidak ada film cocok "${query}"` : "Belum ada film tersedia"}
+              {query ? `Hmm, belum ketemu film yang cocok untuk "${query}"` : "Belum ada film tayang · cek lagi nanti ya 🎬"}
             </div>
           ) : (
             filtered.map(f => (
@@ -3389,7 +3389,7 @@ function OutletPicker({ onPick, onPickFeaturedFilm, pendingFilm, brandPrimary, o
       {filteredOutlets.length === 0 ? (
         <div style={{ textAlign: "center", padding: 60, color: C.dim }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>🎬</div>
-          <div>{outlets.length === 0 ? "Belum ada lokasi bioskop aktif" : "Tidak ada outlet untuk filter ini"}</div>
+          <div>{outlets.length === 0 ? "Belum ada lokasi bioskop aktif · cek lagi nanti ya 📍" : "Coba ganti filter — outlet lain mungkin lebih dekat"}</div>
         </div>
       ) : (
         <div className="cw-outlets-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 320px), 1fr))", gap: 18 }}>
@@ -3484,7 +3484,7 @@ function OutletPicker({ onPick, onPickFeaturedFilm, pendingFilm, brandPrimary, o
           <div style={{ textAlign: "center", marginBottom: 18 }}>
             <div style={{ display: "inline-block", padding: "4px 12px", background: `${brandPrimary}22`, border: `1px solid ${brandPrimary}66`, borderRadius: 999, fontSize: 10, fontWeight: 800, letterSpacing: 1.5, color: brandPrimary, fontFamily: "'JetBrains Mono',monospace", textTransform: "uppercase" }}>🔜 Coming Soon</div>
             <h3 style={{ fontSize: 20, fontWeight: 800, margin: "10px 0 4px", color: "#fff" }}>Film yang Akan Tayang</h3>
-            <p style={{ fontSize: 12, color: C.dim, margin: 0 }}>Stay tuned · {comingFilms.length} film</p>
+            <p style={{ fontSize: 12, color: C.dim, margin: 0 }}>Tunggu yuk · {comingFilms.length} film tayang sebentar lagi</p>
           </div>
           <div style={{ overflowX: "auto", paddingBottom: 12, margin: "0 -20px" }}>
             <div style={{ display: "flex", gap: 14, padding: "8px 20px", minWidth: "fit-content" }}>
@@ -4002,7 +4002,7 @@ function FilmDetail({ outlet, film, onPickShowtime, brandPrimary, session, onSig
                 opacity: listBusy ? 0.6 : 1,
               }}>
                 <span style={{ fontSize: 16 }}>{inList ? "✓" : "+"}</span>
-                {inList ? "Tersimpan" : "My List"}
+                {inList ? "✓ Tersimpan" : "+ Daftar Saya"}
               </button>
             </div>
           </div>
@@ -4273,7 +4273,7 @@ function ShowtimesList({ outlet, film, onPickShowtime, brandPrimary }) {
       {showtimes.length === 0 ? (
         <div style={{ textAlign: "center", padding: 60, color: C.dim, background: C.card, border: `1px solid ${C.border}`, borderRadius: 14 }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>📅</div>
-          <div style={{ ...TY.subtitle, color: C.text, marginBottom: 4 }}>Tidak ada jadwal tersedia</div>
+          <div style={{ ...TY.subtitle, color: C.text, marginBottom: 4 }}>Belum ada jadwal · coba tanggal lain ya 🎬</div>
           <div style={{ ...TY.caption, color: C.sub }}>Coba pilih film lain atau cek lokasi berbeda</div>
         </div>
       ) : (
@@ -4400,7 +4400,7 @@ function SeatPicker({ showtime, film, initialSeats, onConfirm, brandPrimary }) {
         <div style={{
           fontSize: T.xs, color: C.gold, fontFamily: T.mono, fontWeight: T.semibold,
           letterSpacing: T.tracking_wider, textTransform: "uppercase", marginBottom: S[2],
-        }}>🎬 Now Seating</div>
+        }}>🎬 Pilih Kursi Anda</div>
         <h2 style={{
           fontSize: "clamp(24px, 3vw, 32px)", fontWeight: 900,
           letterSpacing: -0.8, lineHeight: 1.1, margin: 0, marginBottom: S[2], color: C.text,
@@ -4418,7 +4418,7 @@ function SeatPicker({ showtime, film, initialSeats, onConfirm, brandPrimary }) {
         {/* Realtime seats left counter */}
         <div style={{ marginTop: S[3], fontSize: T.xs, color: seatsLeft <= 10 ? C.crimson : seatsLeft <= 30 ? C.gold : C.dim, fontFamily: T.mono, fontWeight: T.semibold, letterSpacing: 0.6 }}>
           {seatsLeft <= 10 ? "🔥 " : seatsLeft <= 30 ? "⚡ " : ""}
-          {seatsLeft} of {totalCapacity} seats available
+          {seatsLeft} dari {totalCapacity} kursi tersedia
         </div>
         {/* Whisper hangat — bantu customer yg ragu */}
         <div style={{ marginTop: S[2], fontSize: 12, color: C.dim, fontStyle: "italic", letterSpacing: 0.2 }}>
@@ -4450,7 +4450,7 @@ function SeatPicker({ showtime, film, initialSeats, onConfirm, brandPrimary }) {
         }} />
         <div style={{
           ...TY.eyebrow, color: C.meta, marginTop: S[8], letterSpacing: "0.5em",
-        }}>S C R E E N</div>
+        }}>L A Y A R</div>
       </div>
 
       {/* Seat grid */}
