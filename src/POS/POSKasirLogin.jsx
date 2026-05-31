@@ -295,7 +295,14 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
           <img src="/logo.png" alt="KaryaOS" style={{ height: 54, width: 54, objectFit: "contain", display: 'block', flexShrink: 0 }} />
           <span style={styles.logoText}>KaryaOS POS</span>
         </div>
-        <div style={styles.logoSub}>POINT OF SALE TERMINAL</div>
+        <div style={styles.logoSub}>{(() => {
+          const h = new Date().getHours();
+          if (h >= 5 && h < 11)  return '🌅 SELAMAT PAGI · SIAP MENEMANI HARI INI';
+          if (h >= 11 && h < 15) return '☀️ SELAMAT SIANG · TIM SUDAH SIAP';
+          if (h >= 15 && h < 18) return '🌤️ SELAMAT SORE · MASIH SEMANGAT';
+          if (h >= 18 && h < 22) return '🌙 SELAMAT MALAM · SAMPAI BERTEMU CUSTOMER';
+          return '✨ SHIFT MALAM · KAMI MASIH MENEMANI';
+        })()}</div>
       </div>
 
       {/* KPI STATS — hide kalau semua 0 (shift baru), tampilkan welcome message */}

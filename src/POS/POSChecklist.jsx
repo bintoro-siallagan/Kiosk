@@ -12,8 +12,8 @@ import React, { useState, useEffect } from 'react';
 import { LoadingState } from "../components/uiKit.jsx";
 
 const COPY = {
-  opening: { kicker: 'CHECKLIST BUKA TOKO', title: 'Sebelum Mulai Shift', cta: 'Mulai Shift →', accent: '#10b981' },
-  closing: { kicker: 'CHECKLIST TUTUP TOKO', title: 'Sebelum Close Shift', cta: 'Lanjut Close Shift →', accent: '#f97316' },
+  opening: { kicker: '✨ RITUAL BUKA OUTLET', title: 'Mulai Hari dengan Tenang', cta: '✓ Mulai Shift →', accent: '#10b981' },
+  closing: { kicker: '🌙 RITUAL TUTUP OUTLET', title: 'Tutup Hari dengan Lega', cta: '✓ Lanjut Tutup Shift →', accent: '#f97316' },
 };
 
 const MOODS = [
@@ -23,6 +23,15 @@ const MOODS = [
   { v: 4, emoji: '😄', label: 'Senang' },
   { v: 5, emoji: '🤩', label: 'Semangat' },
 ];
+
+function timeGreet() {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 11)  return { greet: 'Selamat pagi', sub: 'Pagi terbaik untuk awal yang rapi', emoji: '🌅' };
+  if (h >= 11 && h < 15) return { greet: 'Selamat siang', sub: 'Cek dulu, baru jalan', emoji: '☀️' };
+  if (h >= 15 && h < 18) return { greet: 'Selamat sore', sub: 'Sore yang teduh, mari mulai', emoji: '🌤️' };
+  if (h >= 18 && h < 22) return { greet: 'Selamat malam', sub: 'Malam yang siap menyambut', emoji: '🌙' };
+  return { greet: 'Selamat datang', sub: 'Tengah malam pun kami nemenin', emoji: '✨' };
+}
 
 export default function POSChecklist({ type = 'opening', apiBase = '', cashier, onDone, vertical = 'fnb' }) {
   const [items, setItems] = useState([]);
@@ -34,6 +43,7 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const c = COPY[type] || COPY.opening;
+  const tg = timeGreet();
 
   useEffect(() => {
     setLoading(true);
@@ -67,7 +77,17 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
   return (
     <div style={S.root}>
       <div style={S.box}>
-        <div style={{ ...S.kicker, color: c.accent }}>✅ {c.kicker}</div>
+        {/* Time-aware greeting hero — bikin checklist terasa ritual hangat,
+            bukan formalitas SaaS */}
+        {type === 'opening' && (
+          <div style={S.greetHero}>
+            <div style={S.greetEmoji}>{tg.emoji}</div>
+            <div style={S.greetMain}>{tg.greet}{cashier?.name ? `, ${cashier.name.split(' ')[0]}` : ''}.</div>
+            <div style={S.greetSub}>{tg.sub}</div>
+          </div>
+        )}
+
+        <div style={{ ...S.kicker, color: c.accent }}>{c.kicker}</div>
         <h1 style={S.title}>{c.title}</h1>
         <div style={S.sub}>
           {cashier?.name ? `Kasir: ${cashier.name} · ` : ''}
@@ -76,18 +96,18 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
 
         {type === 'closing' && (
           <div style={S.cheerBox}>
-            <div style={{ fontSize: 34 }}>👏</div>
+            <div style={{ fontSize: 38, lineHeight: 1.2 }}>👏</div>
             <div style={S.cheerText}>
-              {cashier?.name ? `${cashier.name}, ` : ''}kamu udah kerja keras hari ini!
+              {cashier?.name ? `${cashier.name}, ` : ''}terima kasih sudah jagain outlet hari ini.
             </div>
-            <div style={S.cheerSub}>Makasih ya 🙌 Istirahat yang cukup, sampai ketemu tomorrow!</div>
+            <div style={S.cheerSub}>Pulangnya hati-hati ya 🙌 Sampai ketemu besok dengan semangat baru.</div>
           </div>
         )}
 
         {loading ? (
           <LoadingState label="Memuat checklist…" />
         ) : items.length === 0 ? (
-          <div style={S.muted}>No items yet checklist. Hubungi admin buat nambahin.</div>
+          <div style={S.muted}>Belum ada item checklist. Hubungi admin untuk menambahkan.</div>
         ) : (
           <div style={{ margin: '18px 0' }}>
             {items.map(i => (
@@ -103,7 +123,7 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
 
         {type === 'opening' && (
           <div style={S.moodBox}>
-            <div style={S.moodLabel}>😊 Moodmu today gimana?</div>
+            <div style={S.moodLabel}>😊 Hari ini perasaan kamu gimana?</div>
             <div style={{ display: 'flex', gap: 8 }}>
               {MOODS.map(m => (
                 <button key={m.v} onClick={() => setMood(m.v)}
@@ -118,13 +138,13 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
 
         {type === 'opening' && (
           <div style={S.targetBox}>
-            <div style={S.targetLabel}>🎯 Target penjualan today</div>
+            <div style={S.targetLabel}>🎯 Target penjualan hari ini</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ color: '#9ca3af', fontSize: 17 }}>Rp</span>
               <input type="number" value={target} onChange={e => setTarget(e.target.value)}
                 placeholder="contoh: 3000000" style={S.targetInput} />
             </div>
-            <div style={S.targetHint}>Jadi KPI tim today — actual vs target dipantau di dashboard.</div>
+            <div style={S.targetHint}>Jadi KPI tim hari ini — actual vs target dipantau di dashboard.</div>
           </div>
         )}
 
@@ -148,8 +168,12 @@ export default function POSChecklist({ type = 'opening', apiBase = '', cashier, 
 const S = {
   root: { position: 'fixed', inset: 0, background: 'linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 10000, fontFamily: 'system-ui,-apple-system,sans-serif', padding: '24px 16px', overflowY: 'auto', WebkitOverflowScrolling: 'touch' },
   box: { background: "rgba(255,255,255,0.025)", borderRadius: 18, padding: '28px 30px', width: 'min(480px, 96vw)', border: '1px solid #2a2a2a', marginTop: 'max(20px, env(safe-area-inset-top))', marginBottom: 'max(40px, env(safe-area-inset-bottom))' },
-  kicker: { fontSize: 12, fontWeight: 700, letterSpacing: 1.5 },
-  title: { margin: '6px 0 2px', color: '#fff', fontSize: 24 },
+  greetHero: { textAlign: 'center', marginBottom: 18, padding: '10px 6px 12px', borderBottom: '1px dashed rgba(255,255,255,0.06)' },
+  greetEmoji: { fontSize: 54, lineHeight: 1.2, marginBottom: 8, filter: 'drop-shadow(0 6px 14px rgba(0,0,0,0.4))' },
+  greetMain: { fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px', lineHeight: 1.2 },
+  greetSub: { fontSize: 13, color: 'rgba(255,255,255,0.55)', marginTop: 4, fontStyle: 'italic' },
+  kicker: { fontSize: 11, fontWeight: 800, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", textTransform: 'uppercase' },
+  title: { margin: '6px 0 2px', color: '#fff', fontSize: 26, fontWeight: 800, letterSpacing: '-0.5px', lineHeight: 1.2 },
   sub: { color: '#9ca3af', fontSize: 13 },
   muted: { color: '#6b7280', textAlign: 'center', padding: 24 },
   item: { display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 10, background: "rgba(255,255,255,0.025)", border: '1px solid #2a2a2a', marginBottom: 8, cursor: 'pointer', color: '#e5e7eb' },
@@ -167,5 +191,5 @@ const S = {
   cheerText: { fontSize: 17, fontWeight: 700, color: '#fbbf24', marginTop: 6 },
   cheerSub: { fontSize: 12, color: '#9ca3af', marginTop: 4 },
   err: { marginTop: 10, padding: 10, background: 'rgba(239,68,68,0.1)', color: '#ef4444', borderRadius: 6, fontSize: 13, textAlign: 'center' },
-  cta: { width: '100%', marginTop: 14, padding: '15px', color: '#fff', border: 'none', borderRadius: 10, fontSize: 16, fontWeight: 700 },
+  cta: { width: '100%', marginTop: 14, padding: '18px', color: '#fff', border: 'none', borderRadius: 14, fontSize: 17, fontWeight: 800, letterSpacing: '-0.2px', boxShadow: '0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.18)' },
 };

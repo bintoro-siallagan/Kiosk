@@ -14,15 +14,15 @@ import POSLoyaltyRedeem from './POSLoyaltyRedeem.jsx';
 
 const TENDER_META = {
   cash:       { label: 'Tunai',     emoji: '💵', color: '#10b981', needsRef: false },
-  qris:       { label: 'QRIS',      emoji: '📱', color: '#3b82f6', needsRef: true,  refLabel: 'QRIS reference' },
-  card:       { label: 'Kartu',     emoji: '💳', color: '#6366f1', needsRef: true,  refLabel: 'Last 4 digit' },
-  gopay:      { label: 'GoPay',     emoji: '🟢', color: '#00aa13', needsRef: true,  refLabel: 'Reference / phone' },
-  ovo:        { label: 'OVO',       emoji: '🟣', color: '#4c2a85', needsRef: true,  refLabel: 'Reference / phone' },
-  dana:       { label: 'DANA',      emoji: '🔵', color: '#118eea', needsRef: true,  refLabel: 'Reference / phone' },
-  shopeepay:  { label: 'ShopeePay', emoji: '🟠', color: '#ee4d2d', needsRef: true,  refLabel: 'Reference' },
+  qris:       { label: 'QRIS',      emoji: '📱', color: '#3b82f6', needsRef: true,  refLabel: 'Kode referensi QRIS' },
+  card:       { label: 'Kartu',     emoji: '💳', color: '#6366f1', needsRef: true,  refLabel: '4 digit terakhir kartu' },
+  gopay:      { label: 'GoPay',     emoji: '🟢', color: '#00aa13', needsRef: true,  refLabel: 'Referensi / nomor HP' },
+  ovo:        { label: 'OVO',       emoji: '🟣', color: '#4c2a85', needsRef: true,  refLabel: 'Referensi / nomor HP' },
+  dana:       { label: 'DANA',      emoji: '🔵', color: '#118eea', needsRef: true,  refLabel: 'Referensi / nomor HP' },
+  shopeepay:  { label: 'ShopeePay', emoji: '🟠', color: '#ee4d2d', needsRef: true,  refLabel: 'Kode referensi' },
   points:     { label: 'Poin',      emoji: '⭐', color: '#f59e0b', needsRef: false, isPoints: true },
   voucher:    { label: 'Voucher',   emoji: '🎫', color: '#ec4899', needsRef: true,  refLabel: 'Kode voucher' },
-  transfer:   { label: 'Transfer',  emoji: '🏦', color: '#475569', needsRef: true,  refLabel: 'Bank + last 4' },
+  transfer:   { label: 'Transfer',  emoji: '🏦', color: '#475569', needsRef: true,  refLabel: 'Bank + 4 digit terakhir' },
 };
 
 const fmtIDR = (n) => new Intl.NumberFormat('id-ID', {
@@ -222,7 +222,7 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
         </div>
 
         <div style={styles.totalBox}>
-          <div style={styles.totalLabel}>{loyaltyDiscount > 0 ? 'Total Due' : 'Total Order'}</div>
+          <div style={styles.totalLabel}>{loyaltyDiscount > 0 ? 'Total Bayar' : 'Total Pesanan'}</div>
           <div style={styles.totalAmount}>{fmtIDR(orderDue)}</div>
           {loyaltyDiscount > 0 && (
             <div style={{ fontSize: 13, opacity: 0.9, marginTop: 2 }}>
@@ -338,7 +338,7 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
         </div>
 
         <div style={styles.tenderList}>
-          <div style={styles.sectionTitle}>Tender Lines ({tenders.length})</div>
+          <div style={styles.sectionTitle}>Rincian Pembayaran ({tenders.length})</div>
           {tenders.length === 0 && <div style={styles.empty}>No tender yet. Choose a method on the right →</div>}
           {tenders.map((t, i) => {
             const meta = TENDER_META[t.tender_type] || {};
@@ -378,7 +378,7 @@ export default function POSPayment({ order, onComplete, onCancel, apiBase = '/ap
 
       {/* RIGHT — tender selector + amount input */}
       <div style={styles.rightPane}>
-        <div style={styles.sectionTitle}>Choose Payment Method</div>
+        <div style={styles.sectionTitle}>Pilih Metode Pembayaran</div>
         <div style={styles.tenderGrid}>
           {enabledTenders.map(t => {
             const meta = TENDER_META[t]; if (!meta) return null;
