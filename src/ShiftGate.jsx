@@ -178,8 +178,8 @@ export default function ShiftGate({ children, cashier, onSwitchCashier, customer
 const S = {
   loading: { position: "fixed", inset: 0, background: "radial-gradient(ellipse 60% 50% at 30% 20%, rgba(70,76,98,0.45) 0%, transparent 65%), radial-gradient(ellipse 55% 45% at 75% 80%, rgba(50,55,72,0.35) 0%, transparent 65%), linear-gradient(160deg,#12141c 0%,#181b25 50%,#22253a 100%)", color: "#666", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", fontSize: 14 },
   overlay: { position: "fixed", inset: 0, background: "linear-gradient(160deg,#0a0b0e 0%,#111317 100%)", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: "'Inter',sans-serif", padding: "40px", textAlign: "center", zIndex: 9999 },
-  icon: { fontSize: 100, marginBottom: 16, opacity: 0.85, filter: "drop-shadow(0 0 20px color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent))" },
-  title: { fontFamily: "'Inter',sans-serif", fontSize: 44, letterSpacing: 3, margin: "0 0 8px", color: "#F59E0B", fontWeight: 800 },
+  icon: { fontSize: 100, lineHeight: 1.2, marginBottom: 28, opacity: 0.85, filter: "drop-shadow(0 0 20px color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent))", display: "block" },
+  title: { fontFamily: "'Inter',sans-serif", fontSize: 44, letterSpacing: 3, margin: "0 0 12px", color: "#F59E0B", fontWeight: 800, lineHeight: 1.2 },
   subtitle: { fontSize: 18, color: "#aaa", marginTop: 12, maxWidth: 540, lineHeight: 1.5 },
   btnPrimary: { marginTop: 28, background: "linear-gradient(135deg,#F59E0B,#fbbf24)", color: "#1a1205", border: "none", borderRadius: 14, padding: "18px 38px", fontFamily: "'Inter',sans-serif", fontSize: 17, fontWeight: 800, cursor: "pointer", boxShadow: "0 8px 32px color-mix(in srgb, var(--brand-primary,#FF6B35) 45%, transparent)", letterSpacing: 1 },
   btnGhost: { background: "#1a1b1e", color: "#aaa", border: "1px solid #30363d", borderRadius: 12, padding: "14px 26px", fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer" },
