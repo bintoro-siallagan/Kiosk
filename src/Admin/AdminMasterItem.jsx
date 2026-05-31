@@ -133,7 +133,7 @@ function Menus() {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <BulkImport categories={categories} onDone={load} />
-          <button onClick={() => { setEditing({ isNew: true }); setShowForm(true); }} style={btnPrimary}>+ Add Menu</button>
+          <button onClick={() => { setEditing({ isNew: true }); setShowForm(true); }} style={btnPrimary}>+ Tambah Menu</button>
         </div>
       </div>
 
@@ -142,12 +142,12 @@ function Menus() {
       <table style={tableStyle}>
         <thead>
           <tr>
-            <th>ID</th><th>Item</th><th>Kategori</th><th>Price</th>
-            <th>Free Extras</th><th>Popular</th><th>Avail</th><th></th>
+            <th>ID</th><th>Item</th><th>Kategori</th><th>Harga</th>
+            <th>Extras Gratis</th><th>Populer</th><th>Status</th><th></th>
           </tr>
         </thead>
         <tbody>
-          {list.length === 0 && <EmptyRow cols={8} icon="🍽️" title="Belum ada menu" desc="Klik '+ Add Menu' untuk tambah item pertama, atau Bulk Import dari CSV." />}
+          {list.length === 0 && <EmptyRow cols={8} icon="🍽️" title="Belum ada menu · saatnya buat yang pertama ✨" desc="Klik '+ Tambah Menu' untuk tambah item pertama, atau Bulk Import dari CSV." />}
           {list.map(m => (
             <tr key={m.id}>
               <td style={{ fontSize: 11, color: '#6b7280' }}>{m.id}</td>
@@ -160,9 +160,9 @@ function Menus() {
                 <button onClick={() => toggleAvailable(m.id, m.is_available)} style={{
                   ...btnSmall, background: m.is_available ? '#dcfce7' : '#fee2e2',
                   color: m.is_available ? '#166534' : '#991b1b'
-                }}>{m.is_available ? '✓ Ready' : '✗ Sold Out'}</button>
+                }}>{m.is_available ? '✓ Siap' : '✗ Habis'}</button>
               </td>
-              <td><button onClick={() => { setEditing(m); setShowForm(true); }} style={btnSmall}>Edit / BOM</button></td>
+              <td><button onClick={() => { setEditing(m); setShowForm(true); }} style={btnSmall}>Edit / Resep</button></td>
             </tr>
           ))}
         </tbody>
@@ -194,10 +194,10 @@ function BulkImport({ categories, onDone }) {
     <>
       <a href={`${API}/menus/bulk-template`} download
         style={{ ...btnSmall, background: '#f3f4f6', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-        📥 Download template
+        📥 Unduh Template
       </a>
       <button onClick={() => fileRef.current?.click()} disabled={uploading} style={{ ...btnSmall, background: '#e0e7ff', color: '#3730a3' }}>
-        {uploading ? '⏳ Uploading…' : '📤 Bulk upload CSV'}
+        {uploading ? '⏳ Mengunggah…' : '📤 Bulk Upload CSV'}
       </button>
       <input ref={fileRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }}
         onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f); }} />
@@ -313,7 +313,7 @@ function MenuForm({ initial, categories, onSave, onCancel }) {
     <div style={modalOverlay} onClick={onCancel}>
       <div style={modalBox} onClick={e=>e.stopPropagation()}>
         <div style={{ display:'flex', justifyContent:'space-between' }}>
-          <h3>{isNew ? 'Add Menu' : `Edit ${f.name}`}</h3>
+          <h3>{isNew ? 'Tambah Menu Baru' : `Edit ${f.name}`}</h3>
           <button onClick={onCancel} style={btnSmall}>×</button>
         </div>
 
@@ -445,14 +445,14 @@ function MenuForm({ initial, categories, onSave, onCancel }) {
         )}
 
         <div style={{ marginTop: 16 }}>
-          <button onClick={submit} style={btnPrimary}>Save</button>{' '}
-          <button onClick={onCancel} style={btnSecondary}>Cancel</button>
+          <button onClick={submit} style={btnPrimary}>Simpan</button>{' '}
+          <button onClick={onCancel} style={btnSecondary}>Batal</button>
           {!isNew && (
             <button onClick={async () => {
               if (!confirm(`Hapus menu ${f.name}?`)) return;
               await api(`/menus/${f.id}`, { method: 'DELETE' });
               onCancel();
-            }} style={{...btnSmallDanger, marginLeft: 'auto', float: 'right'}}>Delete Menu</button>
+            }} style={{...btnSmallDanger, marginLeft: 'auto', float: 'right'}}>Hapus Menu</button>
           )}
         </div>
       </div>
@@ -510,7 +510,7 @@ function BOMEditor({ parentType, parentId, bom, setBom, warehouseSkus, units }) 
           ))}
         </tbody>
       </table>
-      <button onClick={addRow} style={btnSmall}>+ Add Material</button>
+      <button onClick={addRow} style={btnSmall}>+ Tambah Bahan</button>
       <p style={{ fontSize: 11, color: '#6b7280', marginTop: 8 }}>
         Tip: ketik di kolom SKU untuk lihat saran dari warehouse. Unit conversion otomatis (gr↔kg, ml↔l).
       </p>
@@ -545,7 +545,7 @@ function Extras() {
         <h3 style={{ margin: 0 }}>Extras / Toppings ({list.length})</h3>
         <div>
           <input type="number" placeholder="Set all to..." value={bulkPrice} onChange={e=>setBulkPrice(e.target.value)} style={{width:120}} />{' '}
-          <button onClick={bulkSetPrice} style={btnSmall}>Bulk Set Price</button>{' '}
+          <button onClick={bulkSetPrice} style={btnSmall}>Set Harga Massal</button>{' '}
           <button onClick={() => { setEditing({ isNew: true }); setShowForm(true); }} style={btnPrimary}>+ Extra</button>
         </div>
       </div>
@@ -634,8 +634,8 @@ function ExtraForm({ initial, groups, onClose }) {
           </>
         )}
         <div style={{ marginTop: 16 }}>
-          <button onClick={submit} style={btnPrimary}>Save</button>{' '}
-          <button onClick={onClose} style={btnSecondary}>Cancel</button>
+          <button onClick={submit} style={btnPrimary}>Simpan</button>{' '}
+          <button onClick={onClose} style={btnSecondary}>Batal</button>
         </div>
       </div>
     </div>

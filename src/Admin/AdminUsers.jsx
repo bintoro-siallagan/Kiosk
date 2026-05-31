@@ -79,28 +79,28 @@ export default function AdminUsers({ apiBase = "" }) {
   };
 
   const unlockOne = async (u) => {
-    if (!confirm(`Unlock account "${u.name}"?\n\nFailed attempts will be reset to 0.`)) return;
+    if (!confirm(`Buka kunci akun "${u.name}"?\n\nPercobaan gagal akan direset ke 0.`)) return;
     try {
       await callApi(`/api/auth/users/${u.id}/unlock`);
-      setInfo(`✓ Account "${u.name}" reactivated`);
+      setInfo(`✓ Akun "${u.name}" sudah diaktifkan ulang`);
     } catch {}
   };
 
   const unlockAll = async () => {
-    if (!confirm(`Unlock ALL locked accounts (${lockedCount} accounts)?\n\nFailed attempts will be reset.`)) return;
+    if (!confirm(`Buka kunci SEMUA akun terkunci (${lockedCount} akun)?\n\nPercobaan gagal direset.`)) return;
     try {
       const j = await callApi(`/api/auth/users/unlock-all`);
-      setInfo(`✓ ${j.unlocked_count} accounts reactivated: ${(j.unlocked || []).join(", ")}`);
+      setInfo(`✓ ${j.unlocked_count} akun diaktifkan ulang: ${(j.unlocked || []).join(", ")}`);
     } catch {}
   };
 
   const setPassword = async (u) => {
-    const pwd = prompt(`Set new password for "${u.name}":\n\n(min 6 characters, leave empty to cancel)`);
+    const pwd = prompt(`Ganti password untuk "${u.name}":\n\n(min 6 karakter, kosongkan = batal)`);
     if (!pwd) return;
-    if (pwd.length < 6) { alert("Password must be at least 6 characters"); return; }
+    if (pwd.length < 6) { alert("Password minimal 6 karakter"); return; }
     try {
       await callApi(`/api/auth/users/${u.id}/set-password`, "POST", { password: pwd });
-      setInfo(`✓ Password for "${u.name}" updated`);
+      setInfo(`✓ Password "${u.name}" sudah diganti`);
     } catch {}
   };
 
@@ -144,7 +144,7 @@ export default function AdminUsers({ apiBase = "" }) {
       <header style={{ marginBottom: 18 }}>
         <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 2.5, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>karyaOS / AUTH / USERS</div>
         <div style={{ fontSize: 24, fontWeight: 900, color: "#fff", marginTop: 4, letterSpacing: -0.5 }}>👥 Users</div>
-        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>Manage user accounts, reset locked accounts, set passwords, assign roles.</div>
+        <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 4 }}>Kelola akun tim — buka kunci, ganti password, atur PIN, tetapkan role.</div>
       </header>
 
       {/* KPI summary */}
@@ -157,15 +157,15 @@ export default function AdminUsers({ apiBase = "" }) {
 
       {/* Action bar */}
       <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center", flexWrap: "wrap" }}>
-        <Pills value={filter} onChange={setFilter} options={[["all","All"],["locked",`🔒 Locked (${lockedCount})`],["inactive","Inactive"]]} />
+        <Pills value={filter} onChange={setFilter} options={[["all","Semua"],["locked",`🔒 Terkunci (${lockedCount})`],["inactive","Tidak Aktif"]]} />
         <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search nama / username / role…"
           style={{ flex: 1, minWidth: 220, padding: "8px 12px", background: CARD_BG, border: BORDER, borderRadius: 8, color: "#fff", fontSize: 12, fontFamily: "inherit", outline: "none" }} />
         <button onClick={() => setCreating(true)} style={{ padding: "8px 16px", background: `linear-gradient(135deg, ${PURPLE}, #7c3aed)`, border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", letterSpacing: 0.3 }}>
-          ➕ Add User
+          ➕ Tambah User
         </button>
         {lockedCount > 0 && (
           <button onClick={unlockAll} disabled={busy} style={{ padding: "8px 14px", background: RED, border: "none", borderRadius: 8, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", letterSpacing: 0.3 }}>
-            🔓 Unlock All ({lockedCount})
+            🔓 Buka Semua ({lockedCount})
           </button>
         )}
         <button onClick={load} style={ghostBtn}>{busy ? "⏳" : "↻"} Refresh</button>
@@ -187,7 +187,7 @@ export default function AdminUsers({ apiBase = "" }) {
         {filtered.length === 0 && (
           <div style={{ padding: 40, textAlign: "center", color: "#64748b" }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>👤</div>
-            <div>{filter === "locked" ? "No locked accounts" : filter === "inactive" ? "No inactive accounts" : "No users"}</div>
+            <div>{filter === "locked" ? "Tidak ada akun terkunci · semua aman ✓" : filter === "inactive" ? "Tidak ada akun nonaktif · tim semuanya aktif" : "Belum ada user · tambah anggota tim Anda di pojok kanan atas"}</div>
           </div>
         )}
         {filtered.map(u => (
@@ -208,7 +208,7 @@ export default function AdminUsers({ apiBase = "" }) {
               {u.is_locked ? (
                 <span style={chip(RED)}>🔒 {u.lock_remaining_min}m</span>
               ) : !u.active ? (
-                <span style={chip("#64748b")}>Inactive</span>
+                <span style={chip("#64748b")}>Tidak Aktif</span>
               ) : (
                 <span style={chip(GREEN)}>Active</span>
               )}
@@ -505,9 +505,9 @@ function CreateUserModal({ API, token, roles, onClose, onCreated }) {
 
   const submit = async () => {
     setErr("");
-    if (!name.trim()) { setErr("Name is required"); return; }
+    if (!name.trim()) { setErr("Nama wajib diisi"); return; }
     if (!/^\d{6}$/.test(pin)) { setErr("PIN must be 6 digits"); return; }
-    if (!role) { setErr("Please select a role"); return; }
+    if (!role) { setErr("Pilih role dulu ya"); return; }
     setBusy(true);
     try {
       const r = await fetch(`${API}/api/auth/users`, {
@@ -536,7 +536,7 @@ function CreateUserModal({ API, token, roles, onClose, onCreated }) {
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20, backdropFilter: "blur(6px)" }}>
       <div onClick={e => e.stopPropagation()} style={{ width: "min(480px, 100%)", background: "rgba(10,15,28,0.96)", border: `1px solid ${PURPLE}55`, borderRadius: 16, padding: 26 }}>
         <div style={{ fontSize: 11, color: PURPLE, letterSpacing: 2, fontFamily: "'Geist Mono',monospace", fontWeight: 800 }}>NEW USER</div>
-        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginTop: 6, marginBottom: 16 }}>➕ Tambah New Users</div>
+        <div style={{ fontSize: 22, fontWeight: 900, color: "#fff", marginTop: 6, marginBottom: 16 }}>➕ Tambah Anggota Tim Baru</div>
 
         <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 11, color: "#94a3b8", marginBottom: 6, fontFamily: "'Geist Mono',monospace", letterSpacing: 1, fontWeight: 700 }}>FULL NAME *</div>
@@ -597,7 +597,7 @@ function CreateUserModal({ API, token, roles, onClose, onCreated }) {
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={onClose} disabled={busy} style={{ flex: 1, padding: 12, background: "rgba(255,255,255,0.06)", border: BORDER, borderRadius: 10, color: "#fff", fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>Cancel</button>
           <button onClick={submit} disabled={busy} style={{ flex: 2, padding: 12, background: `linear-gradient(135deg, ${PURPLE}, #7c3aed)`, border: "none", borderRadius: 10, color: "#fff", fontWeight: 800, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit" }}>
-            {busy ? "⏳ Processing…" : "➕ Add User"}
+            {busy ? "⏳ Menyimpan…" : "➕ Tambah User"}
           </button>
         </div>
       </div>

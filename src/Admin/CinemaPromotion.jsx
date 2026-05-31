@@ -76,8 +76,8 @@ export default function CinemaPromotion({ apiBase = "" }) {
     <div style={{ fontFamily: "'Inter',sans-serif", color: "#e6edf3" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 14, marginBottom: 14 }}>
         <div>
-          <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🎁 Cinema Promotion Engine</div>
-          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Promo codes: movie / combo / bank / member discount · auto-validate di kasir &amp; kiosk.</div>
+          <div style={{ fontFamily: "'Geist Mono',monospace", fontSize: 19, fontWeight: 700, letterSpacing: 1 }}>🎁 Mesin Promo Cinema</div>
+          <div style={{ fontSize: 12, color: C.sub, marginTop: 3 }}>Kode promo: film / combo / bank / diskon member · auto-validasi di kasir &amp; kiosk.</div>
         </div>
         {!editing && <button onClick={startNew} style={B.add}>＋ Promo baru</button>}
       </div>
@@ -93,16 +93,16 @@ export default function CinemaPromotion({ apiBase = "" }) {
                 {PROMO_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
               </select>
             </Field>
-            <Field label="Discount type">
+            <Field label="Tipe Diskon">
               <select value={form.discount_type} onChange={e => setForm({ ...form, discount_type: e.target.value })} style={inp}>
                 <option value="percentage">Persentase (%)</option>
                 <option value="fixed">Nominal (Rp)</option>
               </select>
             </Field>
-            <Field label={form.discount_type === "percentage" ? "Discount %" : "Discount Rp"}>
+            <Field label={form.discount_type === "percentage" ? "Diskon %" : "Diskon Rp"}>
               <input type="number" step={form.discount_type === "percentage" ? "0.01" : "1000"} value={form.discount_value} onChange={e => setForm({ ...form, discount_value: parseFloat(e.target.value) || 0 })} style={inp} />
             </Field>
-            <Field label="Max discount (Rp)"><input type="number" value={form.max_discount ?? ""} onChange={e => setForm({ ...form, max_discount: e.target.value ? parseInt(e.target.value, 10) : null })} style={inp} /></Field>
+            <Field label="Maks Diskon (Rp)"><input type="number" value={form.max_discount ?? ""} onChange={e => setForm({ ...form, max_discount: e.target.value ? parseInt(e.target.value, 10) : null })} style={inp} /></Field>
             <Field label="Min pembelian (Rp)"><input type="number" value={form.min_purchase} onChange={e => setForm({ ...form, min_purchase: parseInt(e.target.value, 10) || 0 })} style={inp} /></Field>
             {form.promo_type === "movie" && (
               <Field label="Film">
@@ -158,7 +158,7 @@ export default function CinemaPromotion({ apiBase = "" }) {
           </div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
             <button onClick={save} style={B.save}>{editing === "new" ? "Buat promo" : "Save"}</button>
-            <button onClick={cancel} style={B.cancel}>Cancel</button>
+            <button onClick={cancel} style={B.cancel}>Batal</button>
           </div>
         </div>
       )}
@@ -174,7 +174,7 @@ export default function CinemaPromotion({ apiBase = "" }) {
           <span style={{ width: 60 }}>STATUS</span>
           <span style={{ width: 130, textAlign: "right" }}>ACTIONS</span>
         </div>
-        {rows.length === 0 ? <div style={{ padding: 22, textAlign: "center", color: C.sub, fontSize: 13 }}>No promo.</div> :
+        {rows.length === 0 ? <div style={{ padding: 22, textAlign: "center", color: C.sub, fontSize: 13 }}>Belum ada promo · saatnya bikin yang pertama 🎁</div> :
           rows.map(r => (
             <div key={r.id} style={{ display: "flex", padding: "11px 14px", borderBottom: `1px solid ${C.border}`, gap: 10, alignItems: "center" }}>
               <span style={{ width: 110, fontFamily: "'Geist Mono',monospace", color: "#fbbf24", letterSpacing: 1.5, fontSize: 12, fontWeight: 700 }}>

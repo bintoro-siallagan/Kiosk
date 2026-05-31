@@ -96,7 +96,7 @@ export default function AdminOutletMaster({ apiBase = "" }) {
   };
 
   const remove = async (o) => {
-    const ok = await confirm({ title: `Delete outlet "${o.name}"?`, message: `Outlet ${o.code} will be permanently deleted. Related transaction data remains in history but outlet reference is lost.\n\nCannot be undone.`, danger: true, okLabel: "Delete" });
+    const ok = await confirm({ title: `Hapus outlet "${o.name}"?`, message: `Outlet ${o.code} akan dihapus permanen. Data transaksi tetap tersimpan di history, tapi referensi outlet hilang.\n\nTidak bisa dibatalkan.`, danger: true, okLabel: "Hapus" });
     if (!ok) return;
     try {
       const r = await fetch(`${apiBase}/api/outlet-master/${o.id}`, { method: "DELETE", headers: authHeaders() });
@@ -104,14 +104,14 @@ export default function AdminOutletMaster({ apiBase = "" }) {
     } catch (e) { setMsg("⚠ " + String(e)); }
   };
 
-  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>Loading Outlet Master…</div>;
+  if (!d) return <div style={{ padding: 30, color: "#5b6470" }}>⏳ Memuat data outlet…</div>;
   const s = d.summary;
 
   return (
     <div>
       <div style={S.intro}>
-        🏪 <b style={{ color: "#4ade80" }}>OUTLET MASTER</b> — outlet registry &amp; lifecycle: profile, type,
-        capacity &amp; status (active / renovation / onboarding / closed). Click the status badge to change.
+        🏪 <b style={{ color: "#4ade80" }}>MASTER OUTLET</b> — daftar &amp; lifecycle outlet: profil, tipe,
+        kapasitas &amp; status (aktif / renovasi / onboarding / tutup). Klik badge status untuk ubah.
       </div>
 
       <div style={S.kpiRow}>
@@ -219,9 +219,9 @@ function OutletForm({ data, isEdit, d, onChange, onClose, onSave }) {
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 20 }}>
       <div onClick={e => e.stopPropagation()} style={{ background: "#0d1117", border: "1px solid #30363d", borderRadius: 12, padding: 22, maxWidth: 540, width: "100%" }}>
-        <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>{isEdit ? `✏️ Edit Outlet — ${data.code}` : "+ New Outlet"}</div>
+        <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginBottom: 14 }}>{isEdit ? `✏️ Edit Outlet — ${data.code}` : "+ Outlet Baru"}</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-          <div><div style={lbl}>NAME *</div><input value={data.name || ""} onChange={e => onChange({ name: e.target.value })} style={inp} /></div>
+          <div><div style={lbl}>NAMA *</div><input value={data.name || ""} onChange={e => onChange({ name: e.target.value })} style={inp} /></div>
           <div><div style={lbl}>AREA</div><input value={data.area || ""} onChange={e => onChange({ area: e.target.value })} style={inp} /></div>
           <div style={{ gridColumn: "1/-1" }}><div style={lbl}>ALAMAT</div><input value={data.address || ""} onChange={e => onChange({ address: e.target.value })} style={inp} /></div>
           <div><div style={lbl}>MANAGER</div><input value={data.manager || ""} onChange={e => onChange({ manager: e.target.value })} style={inp} /></div>
@@ -310,7 +310,7 @@ function OutletForm({ data, isEdit, d, onChange, onClose, onSave }) {
           </div>
         </div>
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-          <button onClick={onClose} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Cancel</button>
+          <button onClick={onClose} style={{ background: "#161b22", border: "1px solid #30363d", color: "#9ca3af", padding: "8px 14px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>Batal</button>
           <button onClick={onSave} style={{ background: AC, color: "#fff", border: "none", padding: "8px 18px", borderRadius: 7, cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>{isEdit ? "💾 Simpan" : "+ Tambah"}</button>
         </div>
       </div>
@@ -407,7 +407,7 @@ function OutletSetupModal({ outlet, onClose }) {
                 <button onClick={() => copy(urlPos, "pos")} style={{
                   padding: "8px 14px", background: copied === "pos" ? "#10b981" : "#38BDF8",
                   border: "none", borderRadius: 6, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-                }}>{copied === "pos" ? "✓ Tersalin" : "📋 Copy URL"}</button>
+                }}>{copied === "pos" ? "✓ Tersalin" : "📋 Salin URL"}</button>
               </div>
             </div>
           </div>
@@ -426,7 +426,7 @@ function OutletSetupModal({ outlet, onClose }) {
                 <button onClick={() => copy(urlCinema, "cinema")} style={{
                   padding: "8px 14px", background: copied === "cinema" ? "#10b981" : "#A855F7",
                   border: "none", borderRadius: 6, color: "#fff", fontSize: 12, fontWeight: 800, cursor: "pointer", fontFamily: "inherit",
-                }}>{copied === "cinema" ? "✓ Tersalin" : "📋 Copy URL"}</button>
+                }}>{copied === "cinema" ? "✓ Tersalin" : "📋 Salin URL"}</button>
               </div>
             </div>
           </div>
