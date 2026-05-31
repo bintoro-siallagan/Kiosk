@@ -122,8 +122,8 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
       {step==="phone" && (
         <div key="step-phone" style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"flex-start",padding:"28px 24px 24px",animation:"fadeUp 0.25s ease",gap:0,maxWidth:480,margin:"0 auto",width:"100%"}}>
           <div style={C.stepEmoji}>📱</div>
-          <div style={C.stepTitle}>Phone number</div>
-          <div style={{...C.stepSub,maxWidth:340}}>Get a notification when your order is ready and earn reward points.</div>
+          <div style={C.stepTitle}>Nomor HP Anda</div>
+          <div style={{...C.stepSub,maxWidth:340}}>Kami kirim notifikasi saat pesanan siap + kumpulkan poin tiap kunjungan.</div>
 
           {/* Phone display */}
           <div style={{...C.phoneDisplay, animation: shake?"shake 0.4s ease":"none"}}>
@@ -137,12 +137,12 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
           <Numpad onKey={handleNumKey}/>
 
           <div style={{display:'flex',gap:8,marginTop:16,flexWrap:'wrap',justifyContent:'center',maxWidth:380}}>
-            {["📍 Order tracking","💬 WhatsApp notif","🎁 Earn points"].map((b,i)=>(
+            {["📍 Tracking pesanan","💬 Notif WhatsApp","🎁 Kumpulkan poin"].map((b,i)=>(
               <span key={i} style={{fontSize:11,color:'rgba(255,255,255,0.55)',background:'rgba(255,255,255,0.025)',border:'1px solid rgba(255,255,255,0.06)',borderRadius:999,padding:'6px 12px',letterSpacing:'-0.1px'}}>{b}</span>
             ))}
           </div>
 
-          <button style={C.backLink} onClick={onBack}>← Back to menu</button>
+          <button style={C.backLink} onClick={onBack}>← Kembali ke menu</button>
         </div>
       )}
 
@@ -173,7 +173,7 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
             <button style={C.ghostBtn} onClick={()=>setStep("phone")}>← Ubah No.</button>
             <button style={{...C.bigBtn, opacity:!name.trim()||busy?0.45:1, flex:2}}
               disabled={!name.trim()||busy} onClick={handleConfirm}>
-              {busy ? <span style={C.spinner}/> : "DAFTAR & BAYAR →"}
+              {busy ? <span style={C.spinner}/> : "Daftar & Lanjut Bayar →"}
             </button>
           </div>
         </div>
@@ -183,7 +183,7 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
       {step==="found" && customer && (
         <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"0 28px 28px",animation:"fadeUp 0.25s ease",maxWidth:480,margin:"0 auto",width:"100%"}}>
           <div style={{...C.stepEmoji,animation:"pop 0.4s ease"}}>🎉</div>
-          <div style={C.stepTitle}>Welcome!</div>
+          <div style={C.stepTitle}>{customer.visits >= 10 ? `Selamat datang lagi, ${customer.name.split(" ")[0]}!` : customer.visits >= 2 ? `Selamat datang kembali, ${customer.name.split(" ")[0]}!` : `Selamat datang, ${customer.name.split(" ")[0]}!`}</div>
 
           {/* Member card — vertical stack to avoid horizontal overlap on narrow screens */}
           <div style={C.memberCard}>
@@ -195,7 +195,7 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
               </div>
               <div style={C.visitsBlock}>
                 <div style={C.visits}>{customer.visits}</div>
-                <div style={C.visitsLabel}>visits</div>
+                <div style={C.visitsLabel}>kunjungan</div>
               </div>
             </div>
             {(customer.tags||[]).length > 0 && (
@@ -235,7 +235,7 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
                       <span style={{fontSize:14,color:"#34D399",fontWeight:600}}>Hemat Rp {redeemDisc.toLocaleString("id-ID")}</span>
                     </>
                   ) : (
-                    <span style={{fontSize:13,color:"#666"}}>Slide to tukar poin</span>
+                    <span style={{fontSize:13,color:"#666"}}>Geser untuk tukar poin</span>
                   )}
                 </div>
               </div>
@@ -248,7 +248,7 @@ export default function CustomerInput({ cart, orderType, onConfirm, onBack }) {
             </button>
             <button style={{...C.bigBtn,flex:2,background:"linear-gradient(90deg,#34D399,#059669)"}}
               disabled={busy} onClick={handleConfirm}>
-              {busy ? <span style={C.spinner}/> : "✓ YA, LANJUT BAYAR"}
+              {busy ? <span style={C.spinner}/> : "✓ Ya, Lanjut Bayar"}
             </button>
           </div>
         </div>
@@ -284,8 +284,8 @@ const C = {
   stripLabel: { fontSize: 13, fontWeight: 600, marginBottom: 2, color: "rgba(255,255,255,0.92)", letterSpacing: "-0.2px" },
   stripItems: { fontSize: 11, color: "rgba(255,255,255,0.45)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 240 },
   stripTotal: { fontFamily: "'Inter',sans-serif", fontSize: 20, fontWeight: 600, color: "#fff", letterSpacing: "-0.4px", flexShrink: 0, fontVariantNumeric: "tabular-nums" },
-  stepEmoji: { fontSize: 72, marginBottom: 10, display: "block", textAlign: "center", filter: "drop-shadow(0 8px 20px rgba(0,0,0,0.35))" },
-  stepTitle: { fontFamily: "'Inter',sans-serif", fontSize: 28, fontWeight: 600, letterSpacing: "-0.8px", color: "rgba(255,255,255,0.95)", marginBottom: 8, textAlign: "center" },
+  stepEmoji: { fontSize: 72, lineHeight: 1.2, marginBottom: 20, display: "block", textAlign: "center", filter: "drop-shadow(0 8px 20px rgba(0,0,0,0.35))" },
+  stepTitle: { fontFamily: "'Inter',sans-serif", fontSize: 28, fontWeight: 800, letterSpacing: "-0.8px", color: "#fff", marginBottom: 12, textAlign: "center", lineHeight: 1.2 },
   stepSub: { fontSize: 14, color: "rgba(255,255,255,0.55)", marginBottom: 22, textAlign: "center", lineHeight: 1.5 },
   // Phone display + name input — glass
   phoneDisplay: {
