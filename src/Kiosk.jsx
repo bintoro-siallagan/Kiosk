@@ -552,7 +552,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
         <h1 style={K.brand}>
           {isCustomBrand ? tenantBrand.name : (<>karya<span style={{fontWeight:300,opacity:.5}}>os</span></>)}
         </h1>
-        <p style={K.tagline}>Crafted with love · Ordered with ease</p>
+        <p style={K.tagline}>Dibuat dengan cinta · Dipesan dengan mudah</p>
         <div style={K.clockDisp}>{time.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"})}</div>
 
         {/* Sambutan waktu — sapaan hangat ke customer.
@@ -579,13 +579,13 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
         <div style={K.orderRow}>
           <button className="lg order-pill" style={K.orderBtn} onClick={()=>setOrderType("dine")}>
             <span style={K.orderBtnIcon}>🪑</span>
-            <span style={K.orderBtnLabel}>Dine In</span>
-            <span style={K.orderBtnSub}>Enjoy at your table</span>
+            <span style={K.orderBtnLabel}>Makan di Sini</span>
+            <span style={K.orderBtnSub}>Nikmati santai di meja Anda</span>
           </button>
           <button className="lg lg-brand order-pill" style={{...K.orderBtn,...K.orderBtnAlt}} onClick={()=>setOrderType("takeaway")}>
             <span style={K.orderBtnIcon}>🛍️</span>
-            <span style={K.orderBtnLabel}>Takeaway</span>
-            <span style={K.orderBtnSub}>To go</span>
+            <span style={K.orderBtnLabel}>Bawa Pulang</span>
+            <span style={K.orderBtnSub}>Dikemas rapi untuk dibawa</span>
           </button>
         </div>
         <p style={K.tapHint}>Sentuh layar untuk memulai</p>
@@ -598,9 +598,9 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
     <div style={K.root}>
       <style>{FONT_CSS+KIOSK_CSS+BRAND_OVERRIDE_CSS}</style>
       <div style={K.confirmHeader}>
-        <button style={K.backBtn} onClick={()=>setScreen("menu")}>← Back</button>
-        <h2 style={K.confirmTitle}>Review your order</h2>
-        <div style={K.typePill}>{orderType==="dine"?"🪑 Dine In":"🛍️ Takeaway"}</div>
+        <button style={K.backBtn} onClick={()=>setScreen("menu")}>← Kembali</button>
+        <h2 style={K.confirmTitle}>Cek Pesanan Anda</h2>
+        <div style={K.typePill}>{orderType==="dine"?"🪑 Makan di Sini":"🛍️ Bawa Pulang"}</div>
       </div>
       <div style={K.confirmBody}>
         <div style={K.confirmItems}>
@@ -635,14 +635,14 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
                   <div style={K.promoDesc}>{promo.desc}</div>
                   {promo.freeItems?.length > 0 && (
                     <div style={K.promoFreeItems}>
-                      🎁 Free: {promo.freeItems.map(fi=>`${fi.qty}× ${fi.name}`).join(", ")}
+                      🎁 Gratis: {promo.freeItems.map(fi=>`${fi.qty}× ${fi.name}`).join(", ")}
                     </div>
                   )}
                 </>
               ) : (
                 <>
-                  <div style={K.promoTitle}>Have a promo code?</div>
-                  <div style={K.promoDesc}>Tap to enter your code</div>
+                  <div style={K.promoTitle}>Punya kode promo?</div>
+                  <div style={K.promoDesc}>Klik untuk masukkan kode</div>
                 </>
               )}
             </div>
@@ -660,7 +660,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
 
         <div style={K.pointsHint}>
           <span style={{fontSize:14}}>🎁</span>
-          <span><b style={{color:"rgba(255,255,255,0.85)"}}>Have loyalty points?</b> Redeem at the next step with your phone number.</span>
+          <span><b style={{color:"rgba(255,255,255,0.85)"}}>Punya poin loyalty?</b> Tukar di langkah berikut pakai nomor HP Anda.</span>
         </div>
 
         <div className="lg" style={K.billBox}>
@@ -672,7 +672,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
               </div>
               {promo.freeItems?.length > 0 && (
                 <div style={K.billFreeLine}>
-                  🎁 {promo.freeItems.map(fi=>`${fi.qty}× ${fi.name}`).join(", ")} included
+                  🎁 {promo.freeItems.map(fi=>`${fi.qty}× ${fi.name}`).join(", ")} sudah termasuk
                 </div>
               )}
             </>
@@ -683,7 +683,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
               <span style={K.billVal}>{fIDR(serviceCharge)}</span>
             </div>
           )}
-          <div style={K.billRow}><span style={K.billLabel}>VAT · 11%</span><span style={K.billVal}>{fIDR(tax)}</span></div>
+          <div style={K.billRow}><span style={K.billLabel}>PPN · 11%</span><span style={K.billVal}>{fIDR(tax)}</span></div>
           <div style={K.billDivider}/>
           <div style={K.billTotal}>
             <span style={K.billTotalLabel}>Total</span>
@@ -693,9 +693,9 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
       </div>
 
       <div style={K.confirmFooter}>
-        <button style={K.editOrderBtn} onClick={()=>setScreen("menu")}>✎ Edit order</button>
+        <button style={K.editOrderBtn} onClick={()=>setScreen("menu")}>✎ Ubah Pesanan</button>
         <button className="lg lg-brand order-pill" style={K.payBtn} onClick={()=>onCheckout?onCheckout(cart,orderType,promo,tableInfo):null}>
-          <span>Pay now</span>
+          <span>Bayar Sekarang</span>
           <span style={K.payBtnAmount}>{fIDR(total)}</span>
         </button>
       </div>
@@ -706,18 +706,18 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
           <div className="lg" onClick={e=>e.stopPropagation()}
             style={{borderRadius:28,padding:"40px 36px 32px",maxWidth:440,width:"90%",textAlign:"center",animation:"slideUp 0.35s cubic-bezier(.2,.8,.2,1)"}}>
             <div style={{fontSize:64,lineHeight:1,marginBottom:14,animation:"giftBounce 1.2s ease infinite",filter:"drop-shadow(0 8px 20px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%,transparent))"}}>🎁</div>
-            <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:600,letterSpacing:"-0.6px",margin:"0 0 10px",color:"rgba(255,255,255,0.95)"}}>Check promo first?</h2>
+            <h2 style={{fontFamily:"'Inter',sans-serif",fontSize:24,fontWeight:600,letterSpacing:"-0.6px",margin:"0 0 10px",color:"rgba(255,255,255,0.95)"}}>Cek promo dulu? 🎁</h2>
             <p style={{fontSize:14,color:"rgba(255,255,255,0.55)",lineHeight:1.55,margin:"0 0 26px",fontFamily:"'Inter',sans-serif"}}>
-              Got a code or voucher? Apply it before checkout.
+              Punya kode atau voucher? Pasang dulu yuk, kasih hemat.
             </p>
             <div style={{display:"flex",flexDirection:"column",gap:10}}>
               <button className="lg lg-brand order-pill" onClick={()=>{audio.playConfirm();setShowPromoTeaser(false);setScreen("confirm");setShowPromo(true);}}
                 style={{border:"none",borderRadius:14,padding:"15px 22px",color:"#fff",fontSize:15,fontWeight:600,fontFamily:"'Inter',sans-serif",letterSpacing:"-0.2px",cursor:"pointer"}}>
-                Enter promo code
+                Masukkan Kode Promo
               </button>
               <button onClick={()=>{audio.playClick();setShowPromoTeaser(false);setScreen("confirm");}}
                 style={{background:"transparent",border:"1px solid rgba(255,255,255,0.08)",borderRadius:14,padding:"13px 22px",color:"rgba(255,255,255,0.55)",fontSize:13,fontWeight:500,cursor:"pointer",fontFamily:"'Inter',sans-serif"}}>
-                Skip, continue to checkout
+                Lewati, lanjut bayar
               </button>
             </div>
           </div>
@@ -918,7 +918,7 @@ export default function Kiosk({ onCheckout, onAdminAccess, tableInfo: tableInfoP
                       <div style={K.cartRowName}>
                         {e.item.emoji && <span style={{marginRight:6}}>{e.item.emoji}</span>}{e.item.name}
                       </div>
-                      <div style={K.cartRowUnit}>{fIDR(e.item.price)} each</div>
+                      <div style={K.cartRowUnit}>{fIDR(e.item.price)} / pcs</div>
                     </div>
                     <button onClick={()=>changeQty(e.uid,-q)} style={K.removeBtn} aria-label="Remove item">✕</button>
                   </div>
@@ -1366,17 +1366,17 @@ const K = {
   tagline:    {fontSize:12,color:"rgba(255,255,255,0.38)",marginTop:10,letterSpacing:0.3,fontFamily:"'Inter',sans-serif",fontWeight:400},
   clockDisp:  {fontSize:11,color:"rgba(255,255,255,0.24)",marginBottom:24,marginTop:24,letterSpacing:8,fontFamily:"'Inter',sans-serif",fontVariantNumeric:"tabular-nums",fontWeight:400},
   // Sambutan waktu — terlihat sebelum tombol Dine In / Takeaway
-  warmGreet:  {fontSize:18,marginBottom:32,fontFamily:"'Inter',sans-serif",letterSpacing:"-0.2px",lineHeight:1.5},
-  warmGreetMain: {color:"rgba(255,255,255,0.92)",fontWeight:600},
-  warmGreetSub:  {color:"rgba(255,255,255,0.55)",fontWeight:400},
+  warmGreet:  {fontSize:20,marginBottom:36,fontFamily:"'Inter',sans-serif",letterSpacing:"-0.3px",lineHeight:1.5},
+  warmGreetMain: {color:"#fff",fontWeight:800,textShadow:"0 0 24px color-mix(in srgb,var(--brand-primary,#FF6B35) 35%, transparent)"},
+  warmGreetSub:  {color:"rgba(255,255,255,0.68)",fontWeight:500,fontStyle:"italic"},
   welcomeQ:   {fontSize:15,letterSpacing:"-0.2px",color:"rgba(255,255,255,0.78)",marginBottom:28,fontFamily:"'Inter',sans-serif",fontWeight:500},
   orderRow:   {display:"flex",gap:18,justifyContent:"center",marginBottom:36},
   // background/shadow/border handled by .lg / .lg-brand classes — keep here only layout
   orderBtn:   {border:"none",borderRadius:32,padding:"38px 32px",display:"flex",flexDirection:"column",alignItems:"center",gap:10,flex:1,maxWidth:240,color:"#fff",cursor:"pointer"},
   orderBtnAlt:{},
   orderBtnIcon:{fontSize:46,filter:"drop-shadow(0 4px 12px rgba(0,0,0,0.25))"},
-  orderBtnLabel:{fontFamily:"'Inter',sans-serif",fontSize:21,fontWeight:600,letterSpacing:"-0.4px"},
-  orderBtnSub:{fontSize:12,color:"rgba(255,255,255,0.6)",fontFamily:"'Inter',sans-serif",letterSpacing:0.1,marginTop:2,fontWeight:400},
+  orderBtnLabel:{fontFamily:"'Inter',sans-serif",fontSize:23,fontWeight:800,letterSpacing:"-0.5px"},
+  orderBtnSub:{fontSize:13,color:"rgba(255,255,255,0.75)",fontFamily:"'Inter',sans-serif",letterSpacing:0.1,marginTop:4,fontWeight:500},
   tapHint:    {fontSize:11,letterSpacing:3,color:"rgba(255,255,255,0.22)",fontFamily:"'Inter',sans-serif",textTransform:"uppercase",fontWeight:500},
 
   // ── HEADER ──
@@ -1429,7 +1429,7 @@ const K = {
   // ── CONFIRM SCREEN ──
   confirmHeader:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"18px 24px",background:"rgba(13,17,23,0.7)",backdropFilter:"blur(20px) saturate(180%)",WebkitBackdropFilter:"blur(20px) saturate(180%)",borderBottom:BORDER_DEFAULT,position:"sticky",top:0,zIndex:10,gap:12},
   backBtn:    {background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:999,padding:"7px 14px",color:"rgba(255,255,255,0.65)",fontSize:12,fontWeight:500,fontFamily:"'Inter',sans-serif",letterSpacing:"-0.1px",cursor:"pointer",transition:"all 0.2s ease"},
-  confirmTitle:{fontFamily:"'Inter',sans-serif",fontSize:18,fontWeight:600,letterSpacing:"-0.5px",color:"rgba(255,255,255,0.95)",margin:0,lineHeight:1},
+  confirmTitle:{fontFamily:"'Inter',sans-serif",fontSize:22,fontWeight:800,letterSpacing:"-0.5px",color:"#fff",margin:0,lineHeight:1.1},
   typePill:   {background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:999,padding:"6px 14px",fontSize:12,color:"rgba(255,255,255,0.75)",fontFamily:"'Inter',sans-serif",fontWeight:500,letterSpacing:"-0.1px"},
   confirmBody:{flex:1,overflowY:"auto",padding:"24px 24px 28px",display:"flex",flexDirection:"column",gap:0,color:"#fff"},
   confirmItems:{display:"flex",flexDirection:"column",gap:10,marginBottom:18},
@@ -1463,8 +1463,8 @@ const K = {
   billTotalLabel:{fontSize:13,letterSpacing:0.4,color:"rgba(255,255,255,0.55)",fontWeight:400,textTransform:"uppercase"},
   billTotalVal:{fontSize:30,fontWeight:600,color:"#fff",letterSpacing:"-0.8px",fontVariantNumeric:"tabular-nums"},
   confirmFooter:{padding:"16px 20px 20px",background:"rgba(13,17,23,0.75)",backdropFilter:"blur(20px) saturate(180%)",WebkitBackdropFilter:"blur(20px) saturate(180%)",borderTop:BORDER_DEFAULT,display:"flex",gap:10},
-  editOrderBtn:{background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:16,padding:"15px 18px",color:"rgba(255,255,255,0.7)",fontSize:13,fontWeight:500,flex:1,transition:"all 0.2s ease",cursor:"pointer",fontFamily:"'Inter',sans-serif",letterSpacing:"-0.1px"},
-  payBtn:     {flex:2,padding:"15px 22px",borderRadius:16,border:"none",color:"#fff",fontSize:15,fontWeight:600,letterSpacing:"-0.3px",fontFamily:"'Inter',sans-serif",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12},
+  editOrderBtn:{background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"18px 18px",color:"rgba(255,255,255,0.85)",fontSize:14,fontWeight:700,flex:1,transition:"all 0.2s ease",cursor:"pointer",fontFamily:"'Inter',sans-serif",letterSpacing:"-0.1px"},
+  payBtn:     {flex:2,padding:"20px 24px",borderRadius:16,border:"none",color:"#fff",fontSize:17,fontWeight:800,letterSpacing:"-0.3px",fontFamily:"'Inter',sans-serif",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,boxShadow:"0 12px 32px color-mix(in srgb,var(--brand-primary,#FF6B35) 45%, transparent), inset 0 1px 0 rgba(255,255,255,0.3)",animation:"checkoutGlow 2.4s ease-in-out infinite"},
   payBtnAmount:{fontSize:17,fontWeight:600,letterSpacing:"-0.4px",fontVariantNumeric:"tabular-nums"},
   proceedBtn: {width:"100%",marginTop:14,background:"linear-gradient(135deg,#FF6B35,#F59E0B)",border:"1px solid rgba(255,255,255,0.12)",borderRadius:16,padding:"18px",color:"#fff",fontSize:15,fontWeight:800,letterSpacing:1.5,fontFamily:"'Inter',sans-serif",boxShadow:SHADOW_CTA},
 };
