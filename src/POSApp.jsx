@@ -22,6 +22,48 @@ import DeviceOutletSetup, { getDeviceOutlet } from "./components/DeviceOutletSet
 import API_HOST from "./apiBase.js";
 
 
+// Gate paling depan: Manager/PIC harus Open Day sebelum kasir bisa PIN.
+// Render "OUTLET MASIH TUTUP" + tombol Open Day (Bearer token Manager).
+function DayClosedGate({ dayState, onDayOpen }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const openDay = async () => {
+    setBusy(true); setErr("");
+    try {
+      const token = (() => { try { return localStorage.getItem("adminToken") || ""; } catch { return ""; } })();
+      const headers = { "Content-Type": "application/json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const r = await fetch(`${API_HOST}/api/day/open?vertical=fnb`, {
+        method: "POST", headers, body: JSON.stringify({ by: "Manager", vertical: "fnb" }),
+      });
+      if (!r.ok) {
+        if (r.status === 401 || r.status === 403) {
+          throw new Error("Manager / Admin harus login di admin.karyaos.tech dulu sebelum buka hari.");
+        }
+        let detail = ""; try { detail = (await r.json())?.error || ""; } catch {}
+        throw new Error(detail || `Gagal buka hari (HTTP ${r.status})`);
+      }
+      onDayOpen?.();
+    } catch (e) { setErr(e.message); } finally { setBusy(false); }
+  };
+  return (
+    <div style={{ position:"fixed", inset:0, background:"linear-gradient(160deg,#0a0b0e 0%,#111317 100%)", color:"#fff", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", fontFamily:"'Inter',sans-serif", padding:"40px", textAlign:"center", zIndex:9999 }}>
+      <div style={{ fontSize:100, lineHeight:1.2, marginBottom:28, opacity:0.85, filter:"drop-shadow(0 0 20px color-mix(in srgb, var(--brand-primary,#FF6B35) 30%, transparent))", display:"block" }}>🌙</div>
+      <h1 style={{ fontFamily:"'Inter',sans-serif", fontSize:44, letterSpacing:3, margin:"0 0 12px", color:"#F59E0B", fontWeight:800, lineHeight:1.2 }}>OUTLET MASIH TUTUP</h1>
+      <p style={{ fontSize:16, color:"rgba(255,255,255,0.6)", margin:"0 0 28px", maxWidth:480, lineHeight:1.6 }}>
+        {dayState?.closedBy ? `Ditutup oleh ${dayState.closedBy}` : "Hari masih ditutup."}
+        <br/>Manager / PIC outlet harus buka hari dulu sebelum kasir mulai shift.
+      </p>
+      {err && <div style={{ background:"rgba(248,113,113,0.08)", border:"1px solid rgba(248,113,113,0.3)", color:"#f87171", borderRadius:12, padding:"12px 16px", marginBottom:18, maxWidth:480, fontSize:13 }}>⚠ {err}</div>}
+      <button onClick={openDay} disabled={busy}
+        style={{ background:"linear-gradient(135deg, #F59E0B, #D97706)", color:"#fff", border:"none", borderRadius:14, padding:"18px 36px", fontSize:16, fontWeight:800, letterSpacing:0.5, cursor: busy ? "wait" : "pointer", boxShadow:"0 14px 36px rgba(245,158,11,0.4), inset 0 1px 0 rgba(255,255,255,0.3)" }}>
+        {busy ? "⏳ Membuka hari…" : "🌅 BUKA HARI · OPEN DAY"}
+      </button>
+      <div style={{ marginTop:24, fontSize:12, color:"rgba(255,255,255,0.35)" }}>Auto-refresh setiap 20 detik</div>
+    </div>
+  );
+}
+
 // Quick Order — Wave 1-3 linear flow: master-menu pick → split payment → receipt.
 // Parallel to the existing POSOrder/settle/resume flow; does not replace it.
 function QuickOrderFlow({ cashier, onExit }) {
@@ -136,6 +178,21 @@ export default function POSApp() {
 
   useEffect(() => { if (cashier) reloadChecklist(); }, [cashier, reloadChecklist]);
 
+  // Status day (closed/open) — gate paling depan, dicek SEBELUM kasir PIN.
+  // Manager/PIC harus Open Day dulu sebelum kasir bisa login.
+  const [dayState, setDayState] = useState(undefined);
+  const reloadDayState = useCallback(() => {
+    fetch(`${API_HOST}/api/day/status?vertical=fnb`)
+      .then(r => r.json())
+      .then(d => setDayState(d || { closed: false }))
+      .catch(() => setDayState({ closed: false }));
+  }, []);
+  useEffect(() => {
+    reloadDayState();
+    const id = setInterval(reloadDayState, 20000);
+    return () => clearInterval(id);
+  }, [reloadDayState]);
+
   const handleLogin = (user) => {
     sessionStorage.setItem("posCashier", JSON.stringify(user));
     // Persist auth token agar fetch ke endpoint protected (requireAdmin) ga 401
@@ -206,6 +263,19 @@ export default function POSApp() {
     return <DeviceOutletSetup vertical="fnb" />;
   }
 
+  // GATE: Day-closed gate paling depan — Manager/PIC harus Open Day dulu
+  // sebelum kasir bisa input PIN. Order: OpenDay → PIN → Checklist → Cash modal → POS.
+  if (dayState === undefined) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0a0e16", color: "#9ca3af", fontFamily: "'Inter',sans-serif" }}>
+        <div style={{ fontSize: 14, letterSpacing: 1.5 }}>⏳ Memuat status hari…</div>
+      </div>
+    );
+  }
+  if (dayState?.closed) {
+    return <DayClosedGate dayState={dayState} onDayOpen={reloadDayState} />;
+  }
+
   if (!cashier) return <POSKasirLogin apiBase={API_HOST} onSelectKasir={handleLogin} />;
 
   // Wait for checklist state to load — jangan kasih jump ke ShiftGate dulu
@@ -226,7 +296,7 @@ export default function POSApp() {
 
   return (
     <ThemedPOSWrapper>
-    <ShiftGate cashier={cashier} onSwitchCashier={handleLogout} vertical="fnb" onDayOpen={reloadChecklist}>
+    <ShiftGate cashier={cashier} onSwitchCashier={handleLogout} vertical="fnb" onDayOpen={() => { reloadChecklist(); reloadDayState(); }}>
       <PromoBroadcastBanner />
       <OfflineBanner />
       {view === "home" && (
