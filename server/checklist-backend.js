@@ -238,14 +238,21 @@ function setupChecklist(app, opts = {}) {
   });
 
   // ── STATUS hari ini — buat gate shift ───────────────────
+  // Filter: created_at >= max(dayStart, dayOpenedAt). Tiap "Open Day" baru
+  // reset checklist agar kasir wajib isi ulang per cycle.
   router.get('/status', (req, res) => {
-    const from = dayStart();
+    const dayStartTs = dayStart();
+    const vertical = String(req.query.vertical || 'fnb').toLowerCase();
+    const dayOpenedAtMs = typeof opts.getDayOpenedAt === 'function' ? opts.getDayOpenedAt(vertical) : null;
+    const dayOpenedAtSec = dayOpenedAtMs ? Math.floor(dayOpenedAtMs / 1000) : 0;
+    const from = Math.max(dayStartTs, dayOpenedAtSec);
     const latest = (t) => db.prepare(
       `SELECT staff_name, created_at, target FROM checklist_submissions WHERE type = ? AND created_at >= ? ORDER BY id DESC LIMIT 1`
     ).get(t, from);
     const o = latest('opening'), c = latest('closing');
     res.json({
       date: new Date().toISOString().slice(0, 10),
+      cycleSince: from,
       opening: { done: !!o, by: o?.staff_name || null, at: o?.created_at || null, target: o?.target || null },
       closing: { done: !!c, by: c?.staff_name || null, at: c?.created_at || null },
     });

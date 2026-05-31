@@ -4,7 +4,7 @@ import API_HOST from "./apiBase.js";
 import { LoadingState } from "./components/uiKit.jsx";
 const API_BASE = API_HOST;
 
-export default function ShiftGate({ children, cashier, onSwitchCashier, customerMode = false, vertical = "fnb" }) {
+export default function ShiftGate({ children, cashier, onSwitchCashier, customerMode = false, vertical = "fnb", onDayOpen }) {
   const [shift, setShift]   = useState(undefined); // undefined=loading, null=closed, obj=active
   const [dayState, setDay]  = useState(null);      // { closed, closedAt, closedBy }
   const [busy, setBusy]     = useState(false);
@@ -49,6 +49,9 @@ export default function ShiftGate({ children, cashier, onSwitchCashier, customer
         throw new Error(detail || `Gagal buka hari (HTTP ${r.status})`);
       }
       await check();
+      // Notify parent — POSApp perlu refetch checklist agar gate jalan
+      // ulang dgn cycleSince yg baru. Tanpa ini, checklist stale dianggap done.
+      try { onDayOpen?.(); } catch {}
     } catch (e) { setErr(e.message); } finally { setBusy(false); }
   };
 

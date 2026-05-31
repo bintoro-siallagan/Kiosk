@@ -128,7 +128,7 @@ export default function POSApp() {
 
   // Status checklist opening/closing hari ini
   const reloadChecklist = useCallback(() => {
-    fetch(`${API_HOST}/api/checklist/status`)
+    fetch(`${API_HOST}/api/checklist/status?vertical=fnb`)
       .then(r => r.json())
       .then(setChecklist)
       .catch(() => setChecklist({ opening: { done: true }, closing: { done: true } })); // fail-open
@@ -226,7 +226,7 @@ export default function POSApp() {
 
   return (
     <ThemedPOSWrapper>
-    <ShiftGate cashier={cashier} onSwitchCashier={handleLogout} vertical="fnb">
+    <ShiftGate cashier={cashier} onSwitchCashier={handleLogout} vertical="fnb" onDayOpen={reloadChecklist}>
       <PromoBroadcastBanner />
       <OfflineBanner />
       {view === "home" && (

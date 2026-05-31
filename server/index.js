@@ -6813,7 +6813,15 @@ const paymentGateway = setupPaymentGateway(app, { dbPath: DB_PATH, requireAdmin 
 const loyaltyMod = setupLoyalty(app, { dbPath: DB_PATH });
 const feedback = setupFeedback(app, { dbPath: DB_PATH });
 const cashierKpi = setupCashierKpi(app, { dbPath: DB_PATH });
-const checklist = setupChecklist(app, { dbPath: DB_PATH });
+const checklist = setupChecklist(app, {
+  dbPath: DB_PATH,
+  // Reset checklist tiap cycle "Open Day" baru — checklist done sebelum
+  // openedAt terakhir dianggap obsolete, kasir harus isi ulang.
+  getDayOpenedAt: (vertical) => {
+    const ds = dayStates[vertical] || dayStates.fnb;
+    return ds?.openedAt || null;
+  },
+});
 const posBehavior = setupPosBehavior(app, { dbPath: DB_PATH });
 const executive = setupExecutive(app, { dbPath: DB_PATH });
 const sections = setupSections(app, { dbPath: DB_PATH });
