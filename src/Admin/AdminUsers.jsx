@@ -104,6 +104,29 @@ export default function AdminUsers({ apiBase = "" }) {
     } catch {}
   };
 
+  // Reset PIN — Manager generate ulang PIN 6-digit kasir (lupa PIN, dll).
+  // PATCH /api/auth/users/:id dgn { pin } — validasi weak-PIN di backend.
+  const resetPin = async (u) => {
+    const suggested = String(Math.floor(100000 + Math.random() * 900000));
+    const newPin = prompt(
+      `Reset PIN untuk "${u.name}":\n\n` +
+      `Ketik PIN baru (6 digit angka), atau kosongkan = pakai usulan random.\n` +
+      `Usulan: ${suggested}\n\n` +
+      `⚠️ Hindari PIN lemah (999999, 123456, sequential, atau berulang).`,
+      suggested
+    );
+    if (newPin === null) return; // cancel
+    const pin = (newPin || "").trim();
+    if (!/^\d{6}$/.test(pin)) { alert("PIN harus 6 digit angka."); return; }
+    if (!confirm(`Reset PIN "${u.name}" → ${pin}?\n\nKasir wajib pakai PIN baru ini untuk login.\nCatat dulu sebelum klik OK.`)) return;
+    try {
+      await callApi(`/api/auth/users/${u.id}`, "PATCH", { pin });
+      setInfo(`✓ PIN "${u.name}" diganti → ${pin} (kasih tau kasir-nya)`);
+    } catch (e) {
+      alert("Gagal reset PIN: " + (e?.message || e));
+    }
+  };
+
   const toggleActive = async (u) => {
     await callApi(`/api/auth/users/${u.id}`, "PATCH", { active: !u.active });
   };
@@ -217,6 +240,7 @@ export default function AdminUsers({ apiBase = "" }) {
               )}
               <button onClick={() => setEditingUser(u)} disabled={busy} title="Edit nama, role, vertical" style={{ ...actionBtn, background: `${PURPLE}15`, borderColor: `${PURPLE}55`, color: PURPLE }}>✏️ Edit</button>
               <button onClick={() => setPassword(u)} disabled={busy} style={actionBtn}>🔑 Password</button>
+              <button onClick={() => resetPin(u)} disabled={busy} style={actionBtn}>🔢 Reset PIN</button>
               <button onClick={() => toggleActive(u)} disabled={busy} style={actionBtn}>{u.active ? "✕ Deactivate" : "✓ Activate"}</button>
               <button onClick={() => deleteUser(u)} disabled={busy} title="Delete user permanently" style={{ ...actionBtn, background: "rgba(239,68,68,0.1)", borderColor: "rgba(239,68,68,0.4)", color: "#fca5a5" }}>🗑️ Delete</button>
             </div>
