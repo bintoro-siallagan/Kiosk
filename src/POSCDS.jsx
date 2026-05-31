@@ -982,11 +982,11 @@ function CDSQR({ state }) {
           <img src="/logo.png" alt="KaryaOS" style={{ height: 30, objectFit: "contain" }} />
           <span style={S.brandSmall}>KaryaOS</span>
         </div>
-        <div style={S.tag}>💳 QRIS Payment</div>
+        <div style={S.tag}>💳 Pembayaran QRIS</div>
       </header>
 
       <main style={S.qrMain}>
-        <div style={S.qrTitle}>Scan QR to Pay</div>
+        <div style={S.qrTitle}>Scan QR untuk Bayar</div>
 
         <div style={S.qrFrame}>
           {qrUrl ? (
@@ -994,7 +994,7 @@ function CDSQR({ state }) {
           ) : (
             <div style={S.qrLoading}>
               <div style={S.loader}>⏳</div>
-              <div>Generating QR...</div>
+              <div>Menyiapkan QR…</div>
             </div>
           )}
         </div>

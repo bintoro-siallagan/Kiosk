@@ -278,7 +278,7 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
     loadAll();
   };
 
-  if (loading) return <div style={{padding: 40, background: '#0a0a0a', minHeight: '100vh', color: '#9ca3af', textAlign: 'center'}}>Loading kitchen display...</div>;
+  if (loading) return <div style={{padding: 40, background: '#0a0a0a', minHeight: '100vh', color: '#9ca3af', textAlign: 'center'}}>⏳ Menyiapkan dapur…</div>;
 
   // Sambutan dapur — adaptive waktu, ucapan jujur ke tim kitchen
   const kdsWelcomeMsg = (() => {
@@ -327,13 +327,13 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
           <span style={styles.brand}><img src="/logo.png" alt="" style={{ height: 24, verticalAlign: "middle", marginRight: 7 }} />KDS</span>
           {/* VIEW MODE TOGGLE */}
           <div style={{display:'flex',gap:4,padding:3,background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,marginRight:4}}>
-            <button onClick={() => setViewMode('status')} title="Group by status (Queue/Cooking/Ready)" style={{
+            <button onClick={() => setViewMode('status')} title="Kelompokkan per status (Antrian/Dimasak/Siap)" style={{
               padding:'5px 11px', borderRadius:6, border:'none',
               background: viewMode==='status' ? '#fbbf24' : 'transparent',
               color: viewMode==='status' ? '#1a1205' : '#9ca3af',
               fontSize:11, fontWeight:800, cursor:'pointer', fontFamily:'inherit', letterSpacing:0.5,
             }}>BY STATUS</button>
-            <button onClick={() => setViewMode('station')} title="Mission grid — per-station columns" style={{
+            <button onClick={() => setViewMode('station')} title="Grid per stasiun — kolom per stasiun" style={{
               padding:'5px 11px', borderRadius:6, border:'none',
               background: viewMode==='station' ? '#fbbf24' : 'transparent',
               color: viewMode==='station' ? '#1a1205' : '#9ca3af',
@@ -359,8 +359,8 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
         <div style={{display: 'flex', alignItems: 'center', gap: 16}}>
           {stats && (
             <div style={styles.statSmall}>
-              <span style={{color: '#9ca3af'}}>Selesai today:</span> <b style={{color: '#fff'}}>{stats.completed_today?.total || 0}</b>
-              <span style={{color: '#9ca3af', marginLeft: 8}}>Avg prep:</span> <b style={{color: '#fff'}}>{stats.completed_today?.avg_prep ? `${Math.round(stats.completed_today.avg_prep)}d` : '-'}</b>
+              <span style={{color: '#9ca3af'}}>Selesai hari ini:</span> <b style={{color: '#fff'}}>{stats.completed_today?.total || 0}</b>
+              <span style={{color: '#9ca3af', marginLeft: 8}}>Rata-rata prep:</span> <b style={{color: '#fff'}}>{stats.completed_today?.avg_prep ? `${Math.round(stats.completed_today.avg_prep)}d` : '-'}</b>
             </div>
           )}
           <button onClick={() => setShowSidebar86(!showSidebar86)} style={{
@@ -400,7 +400,7 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
         {viewMode === 'status' ? (
           /* ── BY STATUS view (default 3-col) ── */
           <div style={styles.columns}>
-            <StatusColumn title="QUEUE" subtitle="Queued" count={grouped.queued.length} color="#fbbf24">
+            <StatusColumn title="ANTRIAN" subtitle="Menunggu" count={grouped.queued.length} color="#fbbf24">
               {grouped.queued.map(t => (
                 <TicketCard key={t.id} ticket={t} station={stationMap[t.station_id]} now={now}
                   onAdvance={() => advance(t.id, t.status)} ctaLabel="Mulai Buat →"
@@ -409,7 +409,7 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
               {grouped.queued.length === 0 && <Empty>Tidak ada antrian</Empty>}
             </StatusColumn>
 
-            <StatusColumn title="DIBUAT" subtitle="Preparing" count={grouped.preparing.length} color="#3b82f6">
+            <StatusColumn title="DIBUAT" subtitle="Sedang Dimasak" count={grouped.preparing.length} color="#3b82f6">
               {grouped.preparing.map(t => (
                 <TicketCard key={t.id} ticket={t} station={stationMap[t.station_id]} now={now}
                   onAdvance={() => advance(t.id, t.status)} ctaLabel="Selesai / Siap ✓"
@@ -418,7 +418,7 @@ export default function KDS({ apiBase = '', wsUrl = null, onTicketReady }) {
               {grouped.preparing.length === 0 && <Empty>Belum ada yang dibuat</Empty>}
             </StatusColumn>
 
-            <StatusColumn title="SIAP DIAMBIL" subtitle="Ready" count={grouped.ready.length} color="#4ade80">
+            <StatusColumn title="SIAP DIAMBIL" subtitle="Siap Disajikan" count={grouped.ready.length} color="#4ade80">
               {grouped.ready.map(t => (
                 <TicketCard key={t.id} ticket={t} station={stationMap[t.station_id]} now={now}
                   onAdvance={() => advance(t.id, t.status)} ctaLabel="Sudah Diserahkan"
