@@ -158,7 +158,17 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
 
   const role = (cashier.role || "kasir").toLowerCase();
 
-  const refresh = () => {
+  const refresh = async () => {
+    // Cycle-based filter — gunakan dayState.openedAt kalau ada, biar shift baru
+    // post Tutup-Buka Hari mulai dari 0 (bukan total kalender hari).
+    let cycleStart = 0;
+    try {
+      const ds = await fetch(`${API_BASE}/api/day/status?vertical=fnb`).then(r => r.json()).catch(() => null);
+      if (ds && !ds.closed && ds.openedAt) cycleStart = ds.openedAt;
+    } catch {}
+    const calendarTodayStart = new Date(); calendarTodayStart.setHours(0,0,0,0);
+    const filterFrom = Math.max(calendarTodayStart.getTime(), cycleStart);
+
     fetch(`${API_BASE}/api/orders`)
       .then(r => r.json())
       .then(data => {
@@ -166,9 +176,8 @@ export default function POSHome({ cashier, onLogout, onNewOrder, onSettleTab, on
         // Active tabs: status === "tab_open"
         const activeTabs = all.filter(o => o.status === "tab_open");
         setTabs(activeTabs);
-        // Today's orders: created today (any status, by any kasir)
-        const todayStart = new Date(); todayStart.setHours(0,0,0,0);
-        const today = all.filter(o => o.time >= todayStart.getTime() && o.status !== "cancelled");
+        // Today's orders dari cycle Open Day terakhir (bukan kalender)
+        const today = all.filter(o => o.time >= filterFrom && o.status !== "cancelled");
         setTodayOrders(today);
         setLoading(false);
       })
