@@ -12,40 +12,40 @@ export default function POSSuccess({ created, order, cashier, onDone, onAnother 
         </div>
 
         <h1 style={S.title}>
-          {isPay ? "Payment successful" : "Tab opened"}
+          {isPay ? "Pembayaran Berhasil ✨" : "Tab Dibuka"}
         </h1>
 
         {created?.queueNumber && (
           <div style={S.queueBlock}>
-            <div style={S.queueLabel}>Queue number</div>
+            <div style={S.queueLabel}>Nomor Antrian</div>
             <div style={S.queueNumber}>{created.queueNumber}</div>
-            <div style={S.queueHint}>Show this to the staff</div>
+            <div style={S.queueHint}>Tunjukkan ke staf kami ya</div>
           </div>
         )}
 
-        <div style={S.orderId}>Order · #{created?.id || "—"}</div>
+        <div style={S.orderId}>Pesanan · #{created?.id || "—"}</div>
 
         <div style={S.details}>
           <div style={S.detailRow}>
-            <span style={S.detailLabel}>Type</span>
-            <span style={S.detailVal}>{order.type === "dine-in" ? "🍽️ Dine-in" : "🛍️ Takeaway"}</span>
+            <span style={S.detailLabel}>Tipe</span>
+            <span style={S.detailVal}>{order.type === "dine-in" ? "🍽️ Makan di Sini" : "🛍️ Bawa Pulang"}</span>
           </div>
           {order.table && (
             <div style={S.detailRow}>
-              <span style={S.detailLabel}>Table</span>
+              <span style={S.detailLabel}>Meja</span>
               <span style={S.detailVal}>{order.table.name}</span>
             </div>
           )}
           {order.customerName && (
             <div style={S.detailRow}>
-              <span style={S.detailLabel}>Customer</span>
+              <span style={S.detailLabel}>Pelanggan</span>
               <span style={S.detailVal}>{order.customerName}</span>
             </div>
           )}
           <div style={S.detailRow}>
             <span style={S.detailLabel}>Status</span>
             <span style={isPay ? S.statusPaid : S.statusTab}>
-              {isPay ? "💵 Paid (Cash)" : "📋 Open tab"}
+              {isPay ? "💵 Dibayar (Tunai)" : "📋 Tab Terbuka"}
             </span>
           </div>
           <div style={{ ...S.detailRow, borderBottom: "none", paddingTop: 14 }}>
@@ -55,14 +55,14 @@ export default function POSSuccess({ created, order, cashier, onDone, onAnother 
         </div>
 
         <div style={S.actions}>
-          <button onClick={onAnother} className="lg lg-brand pop" style={S.anotherBtn}>+ Order again</button>
-          <button onClick={onDone} className="lg pop" style={S.doneBtn}>← Back to home</button>
+          <button onClick={onAnother} className="lg lg-brand pop" style={S.anotherBtn}>+ Pesan Lagi</button>
+          <button onClick={onDone} className="lg pop" style={S.doneBtn}>← Kembali ke Home</button>
         </div>
 
         <div style={S.hint}>
           {isPay
-            ? "Order will be processed by the kitchen."
-            : "Tap the tab on POS Home to settle payment later."}
+            ? "Pesanan langsung kami siapkan di dapur ✨"
+            : "Klik tab di POS Home untuk lunasi nanti."}
         </div>
       </div>
     </div>

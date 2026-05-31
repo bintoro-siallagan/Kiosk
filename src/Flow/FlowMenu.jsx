@@ -398,8 +398,8 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
 
       {/* ── Menu items (scrollable) ── */}
       <div style={{ flex: 1, overflowY: "auto", padding: 16 }}>
-        {loading && <div style={{ textAlign: "center", padding: 40, color: SUB }}>⏳ Loading menu...</div>}
-        {!loading && filtered.length === 0 && <div style={{ textAlign: "center", padding: 40, color: SUB }}>Tidak ada menu yang cocok</div>}
+        {loading && <div style={{ textAlign: "center", padding: 40, color: SUB }}>⏳ Sedang menyiapkan menu untuk Anda…</div>}
+        {!loading && filtered.length === 0 && <div style={{ textAlign: "center", padding: 40, color: SUB }}>Hmm, belum ketemu menu yang cocok 🤔</div>}
         <style>{`
           button[data-flow-tile]{transition:transform 0.2s cubic-bezier(.2,.8,.2,1),box-shadow 0.2s,border-color 0.2s}
           button[data-flow-tile]:active{transform:scale(0.97)}
@@ -464,7 +464,7 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
           }}>
             <span style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 600, fontSize: 13, letterSpacing: "-0.2px" }}>
               <span style={{ background: "rgba(0,0,0,0.4)", color: "#fff", borderRadius: 999, padding: "2px 9px", fontSize: 12, fontWeight: 600 }}>{cartCount}</span>
-              View order
+              Lihat Pesanan
             </span>
             <span style={{ fontFamily: "'Inter', sans-serif", fontSize: 22, letterSpacing: 0.5 }}>{rupiah(cartTotal)} →</span>
           </button>
@@ -621,8 +621,8 @@ export default function FlowMenu({ cart, addToCart, updateCartQty, removeFromCar
                 </div>
               </div>
               <div style={{ display: "flex", gap: 10 }}>
-                <button onClick={closeDetail} style={{ flex: 1, padding: "12px", borderRadius: 10, background: "transparent", border: `1px solid ${BORDER}`, color: TEXT, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Cancel</button>
-                <button onClick={handleAdd} style={{ flex: 2, padding: "13px", borderRadius: 12, background: `radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, var(--brand-primary,#FF6B35) 60%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 38%, #1a1d29), color-mix(in srgb, var(--brand-secondary,#E55A2B) 30%, #0d0f14))`, border: "1px solid rgba(255,255,255,0.16)", color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.45)", fontSize: 14, fontWeight: 600, letterSpacing: "-0.2px", cursor: "pointer", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 14px color-mix(in srgb, var(--brand-primary,#FF6B35) 22%, transparent)" }}>+ Add to cart</button>
+                <button onClick={closeDetail} style={{ flex: 1, padding: "12px", borderRadius: 10, background: "transparent", border: `1px solid ${BORDER}`, color: TEXT, fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Batal</button>
+                <button onClick={handleAdd} style={{ flex: 2, padding: "13px", borderRadius: 12, background: `radial-gradient(ellipse 90% 180% at 50% 100%, color-mix(in srgb, var(--brand-primary,#FF6B35) 60%, transparent), transparent 55%), linear-gradient(180deg, color-mix(in srgb, var(--brand-primary,#FF6B35) 38%, #1a1d29), color-mix(in srgb, var(--brand-secondary,#E55A2B) 30%, #0d0f14))`, border: "1px solid rgba(255,255,255,0.16)", color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.45)", fontSize: 14, fontWeight: 600, letterSpacing: "-0.2px", cursor: "pointer", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.22), 0 4px 14px color-mix(in srgb, var(--brand-primary,#FF6B35) 22%, transparent)" }}>+ Tambah ke Pesanan</button>
               </div>
             </div>
           </div>

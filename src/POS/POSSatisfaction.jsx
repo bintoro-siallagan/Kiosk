@@ -9,7 +9,7 @@
 
 import React, { useState } from 'react';
 
-const RATING_LABEL = { 1: 'Disappointed 😞', 2: 'Below average 😐', 3: 'Okay 🙂', 4: 'Great 😄', 5: 'Outstanding 🤩' };
+const RATING_LABEL = { 1: 'Kurang puas 😞', 2: 'Biasa aja 😐', 3: 'Cukup baik 🙂', 4: 'Menyenangkan 😄', 5: 'Luar biasa! 🤩' };
 
 export default function POSSatisfaction({ order, apiBase = '', source = 'pos', onDone }) {
   const [rating, setRating] = useState(0);
@@ -47,8 +47,8 @@ export default function POSSatisfaction({ order, apiBase = '', source = 'pos', o
             <span style={{ ...S.sparkle, top: '82%', left: '40%', animationDelay: '0.4s' }}>✨</span>
           </div>
           <div style={{ fontSize: 72, lineHeight: 1, filter: 'drop-shadow(0 0 30px color-mix(in srgb, var(--brand-primary,#FF6B35) 40%, transparent))', animation: 'pos-thanks-pop 0.7s cubic-bezier(0.18,1.05,0.4,1) both' }}>✨</div>
-          <h2 style={S.thanksTitle}>Thank you</h2>
-          <div style={S.thanksSub}>Your feedback means a lot to us 💛</div>
+          <h2 style={S.thanksTitle}>Terima kasih 💛</h2>
+          <div style={S.thanksSub}>Cerita Anda sangat berarti untuk kami</div>
         </div>
       </div>
     );
@@ -59,9 +59,9 @@ export default function POSSatisfaction({ order, apiBase = '', source = 'pos', o
     <div style={S.overlay}>
       <style>{POS_SAT_CSS}</style>
       <div style={S.box}>
-        <div style={S.kicker}>CUSTOMER SATISFACTION</div>
-        <h2 style={S.title}>How was your experience?</h2>
-        <div style={S.orderRef}>Order {order?.ref || ''}</div>
+        <div style={S.kicker}>★ NILAI KUNJUNGAN ANDA</div>
+        <h2 style={S.title}>Bagaimana pengalaman Anda?</h2>
+        <div style={S.orderRef}>Pesanan {order?.ref || ''}</div>
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: 4 }}>
           {[1, 2, 3, 4, 5].map(n => (
@@ -76,13 +76,13 @@ export default function POSSatisfaction({ order, apiBase = '', source = 'pos', o
         <div style={S.ratingLabel}>{shown ? RATING_LABEL[shown] : ' '}</div>
 
         <textarea value={comment} onChange={e => setComment(e.target.value)}
-          placeholder="Comments or suggestions (optional)…" rows={3} style={S.textarea} />
+          placeholder="Cerita atau saran (opsional) — kami baca semua…" rows={3} style={S.textarea} />
 
         <button onClick={submit} disabled={rating < 1 || submitting}
           style={{ ...S.submit, ...(rating < 1 || submitting ? S.submitOff : {}) }}>
-          {submitting ? 'Sending…' : 'Submit rating'}
+          {submitting ? 'Mengirim…' : 'Kirim Rating'}
         </button>
-        <button onClick={() => onDone?.()} style={S.skip}>Skip</button>
+        <button onClick={() => onDone?.()} style={S.skip}>Lewati</button>
       </div>
     </div>
   );

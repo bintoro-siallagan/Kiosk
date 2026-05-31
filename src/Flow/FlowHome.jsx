@@ -177,7 +177,7 @@ export default function FlowHome({ session, tableContext, cartCount, cartTotal, 
         <button className="flow-cart-floater" onClick={() => onNavigate("menu")} style={S.cartFloater}>
           <div style={S.cartFloaterLeft}>
             <span style={S.cartCount}>{cartCount}</span>
-            <span>Continue Pesan</span>
+            <span>Lanjut Pesan</span>
           </div>
           <span style={S.cartFloaterTotal}>{fIDR(cartTotal)} →</span>
         </button>

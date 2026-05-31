@@ -330,7 +330,7 @@ export default function FlowCheckout({
           {qrStep === "loading" && (<>
             <div style={S.qrLoadingIcon}>⏳</div>
             <div style={S.qrLoadingTitle}>Membuat QR Code...</div>
-            <div style={S.qrLoadingSub}>Please wait sebentar</div>
+            <div style={S.qrLoadingSub}>Mohon tunggu sebentar ✨</div>
           </>)}
 
           {qrStep === "waiting" && qrData && (<>
@@ -354,8 +354,8 @@ export default function FlowCheckout({
           {qrStep === "paid" && (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14, padding: 24 }}>
               <div style={S.successIcon}>✅</div>
-              <div style={S.successTitle}>Payment Successful!</div>
-              <div style={S.successSub}>Menyimpan pesanan...</div>
+              <div style={S.successTitle}>Pembayaran Berhasil ✨</div>
+              <div style={S.successSub}>Sedang menyimpan pesanan Anda...</div>
             </div>
           )}
 
@@ -363,8 +363,8 @@ export default function FlowCheckout({
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, padding: 24 }}>
               <div style={S.errorIcon}>⚠️</div>
               <div style={S.errorTitle}>Ada Masalah</div>
-              <div style={S.errorMsg}>{error || "Payment processing failed"}</div>
-              <button onClick={cancelQR} style={S.errorBtn}>Back</button>
+              <div style={S.errorMsg}>{error || "Pembayaran ga berhasil — coba lagi ya"}</div>
+              <button onClick={cancelQR} style={S.errorBtn}>Kembali</button>
             </div>
           )}
         </div>
@@ -376,13 +376,13 @@ export default function FlowCheckout({
   return (
     <div style={S.container}>
       <header style={S.header}>
-        <button onClick={onBack} style={S.backBtn}>← Back</button>
-        <div style={S.headTitle}>Checkout</div>
+        <button onClick={onBack} style={S.backBtn}>← Kembali</button>
+        <div style={S.headTitle}>Pembayaran</div>
         <div style={{width: 60}} />
       </header>
 
       <div style={S.customerCard}>
-        <div style={S.fieldLabel}>Customer</div>
+        <div style={S.fieldLabel}>Pelanggan</div>
         {isGuest ? (
           <>
             <input
@@ -520,7 +520,7 @@ export default function FlowCheckout({
                     </button>
                   ))}
                   {(pointsInput > 0 || actualPoints > 0) && (
-                    <button onClick={() => setPointsInput(0)} style={{ ...S.quickPickBtn, color: "#F87171" }}>Delete</button>
+                    <button onClick={() => setPointsInput(0)} style={{ ...S.quickPickBtn, color: "#F87171" }}>Hapus</button>
                   )}
                 </div>
                 {actualPoints > 0 && (

@@ -203,14 +203,14 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
         </div>
 
         {/* Title + Order ID kicker */}
-        <h1 style={successTitle}>Payment successful</h1>
-        <div style={successOrderId}>Order · #{order.ref}</div>
+        <h1 style={successTitle}>Pembayaran Berhasil ✨</h1>
+        <div style={successOrderId}>Pesanan · #{order.ref}</div>
 
         {order.queueNumber && (
           <div style={queueBlock}>
-            <div style={queueLabel}>Queue number</div>
+            <div style={queueLabel}>Nomor Antrian</div>
             <div style={queueNumberStyle}>{order.queueNumber}</div>
-            <div style={queueHint}>Show this to the staff</div>
+            <div style={queueHint}>Tunjukkan ke staf kami ya</div>
           </div>
         )}
 
@@ -222,18 +222,18 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
           </div>
           {order.cashier && (
             <div style={detailRow}>
-              <span style={detailLabel}>Cashier</span>
+              <span style={detailLabel}>Kasir</span>
               <span style={detailValue}>{order.cashier}</span>
             </div>
           )}
           {order.customer?.name && (
             <div style={detailRow}>
-              <span style={detailLabel}>Customer</span>
+              <span style={detailLabel}>Pelanggan</span>
               <span style={detailValue}>{order.customer.name}</span>
             </div>
           )}
           <div style={detailRow}>
-            <span style={detailLabel}>Items</span>
+            <span style={detailLabel}>Jumlah Item</span>
             <span style={detailValue}>{(order.items || []).length} item</span>
           </div>
           {(order.payments || []).map((p, i) => (
@@ -244,13 +244,13 @@ export default function POSReceipt({ order, onClose, onPrintDone }) {
           ))}
           {calc.loyaltyDiscount > 0 && (
             <div style={detailRow}>
-              <span style={detailLabel}>🏅 Discount Loyalty</span>
+              <span style={detailLabel}>🏅 Diskon Loyalty</span>
               <span style={{...detailValue, color: '#34d399'}}>−{fmtIDR(calc.loyaltyDiscount)}</span>
             </div>
           )}
           {calc.change > 0 && (
             <div style={detailRow}>
-              <span style={detailLabel}>💰 Change</span>
+              <span style={detailLabel}>💰 Kembalian</span>
               <span style={{...detailValue, color: '#34d399', fontWeight: 800}}>{fmtIDR(calc.change)}</span>
             </div>
           )}
