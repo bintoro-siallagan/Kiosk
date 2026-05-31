@@ -490,14 +490,18 @@ function setupFinance(app, opts = {}) {
   });
 
   // ========== DASHBOARD ==========
+  // Optional ?since=<unix-sec> override — "today" dihitung dari titik itu
+  // (dipakai POS login screen utk filter dari Open Day cycle, bukan calendar day).
   router.get('/dashboard', (req, res) => {
-    const todayStart = Math.floor(new Date().setHours(0,0,0,0) / 1000);
+    const calendarTodayStart = Math.floor(new Date().setHours(0,0,0,0) / 1000);
+    const sinceParam = Number(req.query.since) || 0;
+    const todayStart = sinceParam > 0 ? Math.max(calendarTodayStart, sinceParam) : calendarTodayStart;
     const monthStart = Math.floor(new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime() / 1000);
-    const yesterdayStart = todayStart - 86400;
+    const yesterdayStart = calendarTodayStart - 86400;
 
     res.json({
       today: calcPL(db, todayStart, nowSec()),
-      yesterday: calcPL(db, yesterdayStart, todayStart),
+      yesterday: calcPL(db, yesterdayStart, calendarTodayStart),
       this_month: calcPL(db, monthStart, nowSec()),
       tax_config: db.prepare(`SELECT * FROM tax_config WHERE is_active = 1`).all(),
       last_expenses: db.prepare(`

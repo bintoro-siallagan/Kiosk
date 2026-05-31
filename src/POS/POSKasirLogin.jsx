@@ -49,9 +49,19 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
   }, []);
 
   // FETCH KPI STATS (every 30s)
+  // Filter dari Open Day cycle (bukan calendar day) — kalau Tutup Hari lalu Buka Hari
+  // lagi di hari yg sama, stats reset jadi fresh. Lebih intuitif buat kasir.
   const loadStats = useCallback(async () => {
+    let sinceSec = 0;
     try {
-      const dash = await fetch(`${apiBase}/api/finance/dashboard`).then(r => r.json());
+      const ds = await fetch(`${apiBase}/api/day/status?vertical=fnb`).then(r => r.json()).catch(() => null);
+      if (ds && !ds.closed && ds.openedAt) sinceSec = Math.floor(ds.openedAt / 1000);
+    } catch {}
+    const todayStart = Math.floor(new Date().setHours(0,0,0,0)/1000);
+    const filterFrom = Math.max(todayStart, sinceSec);
+
+    try {
+      const dash = await fetch(`${apiBase}/api/finance/dashboard?since=${filterFrom}`).then(r => r.json());
       const today = dash?.today || {};
       setStats(prev => ({
         ...prev,
@@ -61,8 +71,7 @@ export default function POSKasirLogin({ onSelectKasir, apiBase = '' }) {
     } catch {}
 
     try {
-      const todayStart = Math.floor(new Date().setHours(0,0,0,0)/1000);
-      const ans = await fetch(`${apiBase}/api/pos/anomalies?from=${todayStart}`).then(r => r.json());
+      const ans = await fetch(`${apiBase}/api/pos/anomalies?from=${filterFrom}`).then(r => r.json());
       setStats(prev => ({ ...prev, anomalies: Array.isArray(ans) ? ans.length : 0 }));
     } catch {}
   }, [apiBase]);
